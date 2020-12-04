@@ -2,8 +2,6 @@ package com.evolving.nglm.evolution.elasticsearch;
 
 import java.util.Date;
 
-import org.elasticsearch.client.RestHighLevelClient;
-
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
@@ -19,7 +17,7 @@ public class ElasticsearchManager
   private SnapshotTask subscriberprofileSnapshotTask;
   private JourneyCleanUpTask journeyCleanUpTask;
   
-  public ElasticsearchManager(RestHighLevelClient elasticsearchClient, VoucherService voucherService, JourneyService journeyService) {
+  public ElasticsearchManager(ElasticsearchClientAPI elasticsearchClient, VoucherService voucherService, JourneyService journeyService) {
     this.elasticsearchJobScheduler = new JobScheduler("Elasticsearch jobs");
     
     this.subscriberprofileSnapshotTask = new SnapshotTask("Snapshot:subscriberprofile", "subscriberprofile", "subscriberprofile_snapshot", elasticsearchClient);

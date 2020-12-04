@@ -10,6 +10,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.zip.ZipOutputStream;
 
@@ -33,14 +35,20 @@ import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.Product;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
+import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.Reseller;
+import com.evolving.nglm.evolution.ResellerService;
 import com.evolving.nglm.evolution.SalesChannel;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
+import com.evolving.nglm.evolution.reports.ReportMonoPhase.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
+
 
 public class ODRReportMonoPhase implements ReportCsvFactory
 {
@@ -54,6 +62,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private SalesChannelService salesChannelService;
   private LoyaltyProgramService loyaltyProgramService;
   private ProductService productService;
+  private ResellerService resellerService;
 
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
@@ -81,6 +90,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private static final String voucherCode = "voucherCode";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDescription  = "returnCodeDescription ";
+  private static final String resellerDisplay = "reseller";
+  private static final String resellerID = "resellerID";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
@@ -94,9 +105,9 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(featureName);
     headerFieldsOrder.add(offerID);
     headerFieldsOrder.add(offerDisplay);
-    headerFieldsOrder.add(salesChannelID);
     headerFieldsOrder.add(voucherPartnerID);
     headerFieldsOrder.add(salesChannelDisplay);
+    headerFieldsOrder.add(salesChannelID);
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
       {
@@ -113,11 +124,49 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(offerStock);
     headerFieldsOrder.add(origin);
     headerFieldsOrder.add(voucherCode);
+    headerFieldsOrder.add(resellerDisplay);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(deliveryStatus);
   }
 
+  /****************************************
+  *
+  * dumpElementToCsv
+  *
+  ****************************************/
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+ {
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
+   if(mapLocal.size() != 1) {
+	   log.debug("We have multiple dates in the same index " + mapLocal.size());
+   } else {
+	   if(mapLocal.values().size() != 1) {
+		   log.debug("We have multiple values for this date " + mapLocal.values().size());
+	   }
+	   else {
+		   Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
+		   if(setLocal.size() != 1) {
+			   log.debug("We have multiple dates in this report " + setLocal.size());
+		   } else {
+			   for (Entry<String, List<Map<String, Object>>> entry : setLocal) {
+				   List<Map<String, Object>> list = entry.getValue();
+
+				   if(list.size() != 1) {
+					   log.debug("We have multiple reports in this folder " + list.size());
+				   } else {
+					   Map<String, Object> reportMap = list.get(0);
+					   dumpLineToCsv(reportMap, writer, addHeaders);
+					   return false;
+				   }
+			   }
+		   }
+	   }
+   }
+   return true;
+ }
+ 
+ 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
@@ -258,17 +307,54 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         // get salesChannel display
         if (odrFields.containsKey(salesChannelID))
           {
-            GUIManagedObject salesChannelObject = salesChannelService.getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
-            if(salesChannelObject instanceof SalesChannel)
+            if (odrFields.get(salesChannelID) != null)
               {
-                odrFields.put(salesChannelDisplay, ((SalesChannel)salesChannelObject).getGUIManagedObjectDisplay());
-                odrFields.remove(salesChannelID);
+                GUIManagedObject salesChannelObject = salesChannelService
+                    .getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
+                if (salesChannelObject != null && salesChannelObject instanceof SalesChannel)
+                  {
+                    oderRecs.put(salesChannelDisplay, ((SalesChannel) salesChannelObject).getGUIManagedObjectDisplay());
+                  }
+                else {
+                  oderRecs.put(salesChannelDisplay, "");
+                }
               }
+            else {
+              oderRecs.put(salesChannelDisplay, "");
+            }
+          }
+        
+        if (odrFields.containsKey(salesChannelID))
+          {
+            oderRecs.put(salesChannelID, odrFields.get(salesChannelID));
           }
         if (odrFields.containsKey(voucherCode))
           {
             oderRecs.put(voucherCode, odrFields.get(voucherCode));
           }
+        
+        if (odrFields.containsKey(resellerID))
+          {
+            if (odrFields.get(resellerID) != null)
+              {
+                String resellerIDString = (String) (odrFields.get(resellerID));
+                GUIManagedObject resellerObject = resellerService.getStoredReseller(resellerIDString);
+                if (resellerObject != null && resellerObject instanceof Reseller)
+                  {
+                    String display = ((Reseller) resellerObject).getGUIManagedObjectDisplay();
+                    oderRecs.put(resellerDisplay, display);
+                  }
+                else
+                  {
+                    oderRecs.put(resellerDisplay, "");
+                  }
+              }
+            else
+              {
+                oderRecs.put(resellerDisplay, "");
+              }
+          }
+        
         if (odrFields.containsKey(returnCode))
           {
             Object code = odrFields.get(returnCode);
@@ -382,6 +468,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     String salesChannelTopic = Deployment.getSalesChannelTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
     String productTopic = Deployment.getProductTopic();
+    String resellerTopic = Deployment.getResellerTopic();
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "odrreportcsvwriter-saleschannelservice-ODRReportMonoPhase", salesChannelTopic, false);
     offerService = new OfferService(Deployment.getBrokerServers(), "odrreportcsvwriter-offerservice-ODRReportMonoPhase", offerTopic, false);
@@ -394,6 +481,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     journeyService.start();
     loyaltyProgramService.start();
     productService.start();
+    resellerService = new ResellerService(Deployment.getBrokerServers(), "odrreportcsvwriter-resellerService-ODRReportMonoPhase", resellerTopic, false);
+    resellerService.start();
 
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
@@ -402,9 +491,16 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         csvfile
     );
 
-    if (!reportMonoPhase.startOneToOne(true))
+    // check if a report with multiple dates is required in the zipped file 
+    boolean isMultiDates = false;
+    if (reportPeriodQuantity > 1)
+    {
+    	isMultiDates = true;
+    }
+    
+    if (!reportMonoPhase.startOneToOne(isMultiDates))
       {
-        log.warn("An error occured, the report might be corrupted");
+        log.warn("An error occured, the report " + csvfile + "  might be corrupted");
         return;
       }
     salesChannelService.stop();
@@ -412,7 +508,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     journeyService.stop();
     loyaltyProgramService.stop();
     productService.stop();
-    log.info("Finished ODRReport");
+    log.info("The report " + csvfile + " is finished");
   }
   
 
@@ -420,7 +516,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   {
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
-    while(tempfromDate.getTime() <= toDate.getTime())
+    // to get the reports with yesterday's date only
+    while(tempfromDate.getTime() < toDate.getTime())
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());

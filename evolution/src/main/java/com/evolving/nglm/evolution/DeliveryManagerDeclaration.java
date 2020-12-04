@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
-import com.evolving.nglm.evolution.DeliveryManager.DeliveryGuarantee;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -15,6 +14,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 
+import com.evolving.nglm.evolution.kafka.Topic;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DeliveryManagerDeclaration
 {
@@ -38,20 +39,16 @@ public class DeliveryManagerDeclaration
   private JSONObject jsonRepresentation;
   private String deliveryType;
   private String requestClassName;
-  private List<String> requestTopics;
-  private String responseTopic;
-  private String internalTopic;
-  private String routingTopic;
+  private Topic[] requestTopics;
+  private Topic[] responseTopics;
+  private Topic routingTopic;
   private int deliveryRatePerMinute;
-  private DeliveryGuarantee deliveryGuarantee;
+  private int maxBufferedRequests;
   private int retries;
-  private int acknowledgementTimeoutSeconds;
   private int correlatorUpdateTimeoutSeconds;
   private int correlatorCleanerFrequencySeconds;
   private String providerID;
   private String providerName;
-  private String profileExternalSubscriberIDField;
-  // to replace previous one, and check with communication channels destination as well
   private Map<String,CriterionField> subscriberProfileFields;
 
   /*****************************************
@@ -63,28 +60,34 @@ public class DeliveryManagerDeclaration
   public JSONObject getJSONRepresentation() { return jsonRepresentation; }
   public String getDeliveryType() { return deliveryType; }
   public String getRequestClassName() { return requestClassName; }
-  public List<String> getRequestTopics() { return requestTopics; }
-  public String getResponseTopic() { return responseTopic; }
-  public String getInternalTopic() { return internalTopic; }
-  public String getRoutingTopic() { return routingTopic; }
   public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
-  public DeliveryGuarantee getDeliveryGuarantee() { return deliveryGuarantee; }
+  public int getMaxBufferedRequests() { return maxBufferedRequests; }
   public int getRetries() { return retries; }
-  public int getAcknowledgementTimeoutSeconds() { return acknowledgementTimeoutSeconds; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
   public int getCorrelatorCleanerFrequencyMilliSeconds() { return correlatorCleanerFrequencySeconds * 1000; }
   public String getProviderID() { return providerID; }
   public String getProviderName() { return providerName; }
-  public String getProfileExternalSubscriberIDField() { return profileExternalSubscriberIDField; }
   public Map<String,CriterionField> getSubscriberProfileFields() { return subscriberProfileFields; }
 
-  //
-  // derived
-  //
-
-  public String getDefaultRequestTopic() { return (requestTopics.size() > 0) ? requestTopics.get(0) : null; }
-  public String getRequestTopic(DeliveryPriority deliveryPriority) { return requestTopics.get(Math.min(requestTopics.size()-1,deliveryPriority.getTopicIndex())); }
   public CommodityType getProviderType() { return CommodityType.fromExternalRepresentation(getRequestClassName()); }
+  public String getRequestTopic(DeliveryPriority priority){return requestTopics[priority.getTopicIndex()].getName();}
+  public String getResponseTopic(DeliveryPriority priority){return responseTopics[priority.getTopicIndex()].getName();}
+  public List<Topic> getRequestTopics(){return Arrays.asList(requestTopics);}
+  public List<Topic> getResponseTopics(){return Arrays.asList(responseTopics);}
+  public Topic getRoutingTopic(){return routingTopic;}
+  public List<String> getRequestTopicsList() {
+    Set<String> topics = new HashSet<>();
+    for(Topic topic:requestTopics) topics.add(topic.getName());
+    return new ArrayList<>(topics);
+  }
+  public List<String> getResponseTopicsList() {
+    Set<String> topics = new HashSet<>();
+    for(Topic topic:responseTopics) topics.add(topic.getName());
+    return new ArrayList<>(topics);
+  }
+  public boolean isProcessedByEvolutionEngine(){
+    return deliveryType.equals("pointFulfillment") || deliveryType.equals("journeyFulfillment") || deliveryType.equals("loyaltyProgramFulfillment");
+  }
 
   //
   //  getRequestSerde
@@ -120,19 +123,65 @@ public class DeliveryManagerDeclaration
     this.jsonRepresentation = jsonRoot;
     this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", true);
     this.requestClassName = JSONUtilities.decodeString(jsonRoot, "requestClass", true);
-    this.requestTopics = decodeRequestTopics(jsonRoot);
-    this.responseTopic = JSONUtilities.decodeString(jsonRoot, "responseTopic", true);
-    this.internalTopic = JSONUtilities.decodeString(jsonRoot, "internalTopic", false);
-    this.routingTopic = JSONUtilities.decodeString(jsonRoot, "routingTopic", false);
+
+    // old
+    List<String> oldRequestTopics = decodeRequestTopics(jsonRoot);
+    String oldResponseTopic = JSONUtilities.decodeString(jsonRoot, "responseTopic", false);
+    String oldRoutingTopic = JSONUtilities.decodeString(jsonRoot, "routingTopic", false);
+    // empty/null if not used anymore
+    boolean isNewRequestTopic = oldRequestTopics.isEmpty();
+    boolean isNewResponseTopic = oldResponseTopic==null;
+    boolean isNewRoutingTopic =  oldRoutingTopic==null;
+    // new init
+    this.requestTopics = new Topic[DeliveryPriority.values().length];
+    this.responseTopics = new Topic[DeliveryPriority.values().length];
+    this.routingTopic = null;
+    // init topics
+
+    String warnLog = "topic configuration for {} is old way, please migrate, it will be not supported soon. {} messages will ends in {}";
+    for(DeliveryPriority priority:DeliveryPriority.values()){
+      // request
+      if(isNewRequestTopic){
+        // new
+        this.requestTopics[priority.getTopicIndex()] = new Topic(deliveryType+"_request_"+priority.getExternalRepresentation(), Topic.TYPE.traffic, true);
+      }else{
+        // old
+        String topic = oldRequestTopics.get(Math.min(oldRequestTopics.size()-1,priority.getTopicIndex()));
+        log.warn(warnLog,deliveryType,priority.getExternalRepresentation(),topic);
+        this.requestTopics[priority.getTopicIndex()] = new Topic(topic, Topic.TYPE.traffic/*type is irrelevant, won't create*/,false);
+      }
+      // response
+      if(isNewResponseTopic){
+        //new
+        this.responseTopics[priority.getTopicIndex()] = new Topic(deliveryType+"_response_"+priority.getExternalRepresentation(), Topic.TYPE.traffic, true);
+      }else{
+        //old (no priority)
+        log.warn(warnLog,deliveryType,priority.getExternalRepresentation(),oldResponseTopic);
+        this.responseTopics[priority.getTopicIndex()] = new Topic(oldResponseTopic, Topic.TYPE.traffic/*type is irrelevant, won't create*/,false);
+      }
+    }
+    // routing can not have priority topics by definition (we don't know when corelatorID ONLY come back, what was original request priority
+    if(isNewRoutingTopic){
+      //new
+      // no routing for evolution engine
+      if(!isProcessedByEvolutionEngine()){
+        // special case conf case, several channels linked together sharing the same routing topic (different channel on same SMSC, deliveryReceipt should be shared by all)
+        String topicName = JSONUtilities.decodeString(jsonRoot, "sharedRoutingTopic", deliveryType+"_routing");
+        this.routingTopic = new Topic(topicName, Topic.TYPE.traffic, true);
+      }
+    }else{
+      //old
+      log.warn(warnLog,deliveryType,"(no priority for routing)",oldRoutingTopic);
+      this.routingTopic = new Topic(oldRoutingTopic, Topic.TYPE.traffic/*type is irrelevant, won't create*/,false);
+    }
+
     this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", Integer.MAX_VALUE);
-    this.deliveryGuarantee = (JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", false) != null) ? DeliveryGuarantee.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", true)) : null;
+    this.maxBufferedRequests = JSONUtilities.decodeInteger(jsonRoot, "maxBufferedRequests", -1);//by default it is the worker thread number, there only for high throughput needed and duplicating requests in case of issue is not critical
     this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
-    this.acknowledgementTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "acknowledgementTimeoutSeconds", 86400);
     this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 86400);
     this.correlatorCleanerFrequencySeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorCleanerFrequencySeconds", 3600);
     this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", false);
     this.providerName = JSONUtilities.decodeString(jsonRoot, "providerName", false);
-    this.profileExternalSubscriberIDField = JSONUtilities.decodeString(jsonRoot, "profileExternalSubscriberIDField", false);
     this.subscriberProfileFields = decodeSubscriberProfileFields(jsonRoot);
   }
 
@@ -155,7 +204,8 @@ public class DeliveryManagerDeclaration
       }
     else
       {
-        requestTopics.add(JSONUtilities.decodeString(jsonRoot, "requestTopic", true));
+        String requestTopic = JSONUtilities.decodeString(jsonRoot, "requestTopic", false);
+        if(requestTopic!=null) requestTopics.add(requestTopic);
       }
     return requestTopics;
   }

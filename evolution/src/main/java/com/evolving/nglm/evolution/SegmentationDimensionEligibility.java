@@ -299,4 +299,29 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     this.setDefaultSegmentID(defaultSegmentID);
     this.setNumberOfSegments(numberOfSegments);
   }
+
+  @Override public boolean getSegmentsConditionEqual(SegmentationDimension dimension)
+  {
+    //verify the same type for objects
+    if(this.getClass() != dimension.getClass()) return false;
+    if(getSegments().size() != dimension.getSegments().size()) return false;
+    for(Segment segment: dimension.getSegments())
+    {
+      //a new segment in dimension
+      if(segment.getID() == null) return false;
+      //get stored segment by segment id
+      Segment storedSegment = this.getSegments().stream().filter(p -> p.getID().equals(segment.getID())).findFirst().orElse(null);
+      //stored segment null means that segment with id does not exist
+      if(storedSegment == null)
+      {
+        return false;
+      }
+      else
+      {
+        //verify segments with the same id are equals
+        if(! segment.getSegmentConditionEqual(storedSegment)) return false;
+      }
+    }
+    return true;
+  }
 }

@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import com.evolving.nglm.evolution.kafka.Topic;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -25,9 +26,9 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,13 @@ public class Deployment
   //  data
   //
 
+  // kafka topics configs
+  private static int topicSubscriberPartitions;
+  private static int topicReplication;
+  private static String topicMinInSyncReplicas;
+  private static String topicRetentionShortMs;
+  private static String topicRetentionMs;
+  private static String topicRetentionLongMs;
   private static int evolutionEngineStreamThreads;
   private static int evolutionEngineInstanceNumbers;
   private static String subscriberGroupLoaderAlternateID;
@@ -65,15 +73,11 @@ public class Deployment
   private static Map<String, CriterionField> profileChangeDetectionCriterionFields = new HashMap<>();
   private static Map<String, CriterionField> profileChangeGeneratedCriterionFields = new HashMap<>();
   private static boolean enableProfileSegmentChange;
-  private static String emptyTopic;
   private static String journeyTopic;
   private static String journeyTemplateTopic;
   private static String segmentationDimensionTopic;
   private static String pointTopic;
   private static String complexObjectTypeTopic;
-  private static String pointFulfillmentRequestTopic;
-  private static String pointFulfillmentResponseTopic;
-  private static String pointFulfillmentRekeyedTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String paymentMeanTopic;
@@ -111,10 +115,6 @@ public class Deployment
   private static String extendedSubscriberProfileChangeLogTopic;
   private static String subscriberHistoryChangeLog;
   private static String subscriberHistoryChangeLogTopic;
-  private static String journeyRequestTopic;
-  private static String journeyResponseTopic;
-  private static String loyaltyProgramRequestTopic;
-  private static String loyaltyProgramResponseTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
   private static String deliverableSourceTopic;
@@ -123,16 +123,12 @@ public class Deployment
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
+  private static String voucherActionTopic;
   private static String tokenRedeemedTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
-  private static String journeyTrafficChangeLog;
-  private static String journeyTrafficChangeLogTopic;
-  private static String journeyTrafficTopic;
   private static String tokenChangeTopic;
   private static String subscriberProfileRegistrySubject;
-  private static int journeyTrafficArchivePeriodInSeconds;
-  private static int journeyTrafficArchiveMaxNumberOfPeriods;
   private static Map<String,ScheduledJobConfiguration> datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
   private static Map<String,ScheduledJobConfiguration> elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
   private static PropensityRule propensityRule;
@@ -143,6 +139,7 @@ public class Deployment
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
+  private static Map<String,SupportedVoucherCodePattern> supportedVoucherCodePatternList = new LinkedHashMap<String,SupportedVoucherCodePattern>();
   private static Map<String,SupportedRelationship> supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
@@ -216,16 +213,12 @@ public class Deployment
   public static String communicationChannelBlackoutTopic;
   public static String communicationChannelTimeWindowTopic;
   public static String loyaltyProgramTopic;
-  private static int ucgEngineESConnectTimeout;
-  private static int ucgEngineESSocketTimeout;
-  private static int ucgEngineESMasRetryTimeout;
-  private static int guiManagerESConnectTimeout;
-  private static int guiManagerESSocketTimeout;
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
   private static String dynamicEventDeclarationsTopic;
   private static String dynamicCriterionFieldsTopic;
+  private static Map<String,ElasticsearchConnectionSettings> elasticsearchConnectionSettings = new LinkedHashMap<String,ElasticsearchConnectionSettings>();
   private static int maxPollIntervalMs;
   private static String criterionFieldAvailableValuesTopic;
   private static String sourceAddressTopic;
@@ -255,7 +248,6 @@ public class Deployment
   private static int kafkaRetentionDaysBDR;
   private static int kafkaRetentionDaysMDR;
 
-  private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
   private static boolean enableContactPolicyProcessing;
 
   //extracts configuration
@@ -271,6 +263,9 @@ public class Deployment
   //
   
   private static int recurrentCampaignCreationDaysRange;
+
+  // generated
+  private static Map<String,Topic> allTopics;
 
   /*****************************************
    *
@@ -289,7 +284,6 @@ public class Deployment
   public static String getBaseTimeZone() { return com.evolving.nglm.core.Deployment.getBaseTimeZone(); }
   public static String getBaseLanguage() { return com.evolving.nglm.core.Deployment.getBaseLanguage(); }
   public static String getBaseCountry() { return com.evolving.nglm.core.Deployment.getBaseCountry(); }
-  public static boolean getGenerateNumericIDs() { return com.evolving.nglm.core.Deployment.getGenerateNumericIDs(); }
   public static String getRedisSentinels() { return com.evolving.nglm.core.Deployment.getRedisSentinels(); }
   public static String getAssignSubscriberIDsTopic() { return com.evolving.nglm.core.Deployment.getAssignSubscriberIDsTopic(); }
   public static String getAssignExternalSubscriberIDsTopic() { return com.evolving.nglm.core.Deployment.getAssignExternalSubscriberIDsTopic(); }
@@ -309,6 +303,12 @@ public class Deployment
 
   public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
+  public static int getTopicSubscriberPartitions() { return topicSubscriberPartitions; }
+  public static int getTopicReplication() { return topicReplication; }
+  public static String getTopicMinInSyncReplicas() { return topicMinInSyncReplicas; }
+  public static String getTopicRetentionShortMs() { return topicRetentionShortMs; }
+  public static String getTopicRetentionMs() { return topicRetentionMs; }
+  public static String getTopicRetentionLongMs() { return topicRetentionLongMs; }
   public static int getEvolutionEngineStreamThreads() { return evolutionEngineStreamThreads; }
   public static int getEvolutionEngineInstanceNumbers() { return evolutionEngineInstanceNumbers; }
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
@@ -321,15 +321,11 @@ public class Deployment
   public static String getExtendedSubscriberProfileClassName() { return extendedSubscriberProfileClassName; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
   public static boolean getEnableProfileSegmentChange() { return enableProfileSegmentChange; }
-  public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getPointTopic() { return pointTopic; }
   public static String getComplexObjectTypeTopic() { return complexObjectTypeTopic; }
-  public static String getPointFulfillmentRequestTopic() { return pointFulfillmentRequestTopic; }
-  public static String getPointFulfillmentResponseTopic() { return pointFulfillmentResponseTopic; }
-  public static String getPointFulfillmentRekeyedTopic() { return pointFulfillmentRekeyedTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getPaymentMeanTopic() { return paymentMeanTopic; }
@@ -367,10 +363,6 @@ public class Deployment
   public static String getExtendedSubscriberProfileChangeLogTopic() { return extendedSubscriberProfileChangeLogTopic; }
   public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
-  public static String getJourneyRequestTopic() { return journeyRequestTopic; }
-  public static String getJourneyResponseTopic() { return journeyResponseTopic; }
-  public static String getLoyaltyProgramRequestTopic() { return loyaltyProgramRequestTopic; }
-  public static String getLoyaltyProgramResponseTopic() { return loyaltyProgramResponseTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
@@ -379,16 +371,12 @@ public class Deployment
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
+  public static String getVoucherActionTopic() { return voucherActionTopic; }
   public static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
-  public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
-  public static String getJourneyTrafficChangeLogTopic() { return journeyTrafficChangeLogTopic; }
-  public static String getJourneyTrafficTopic() { return journeyTrafficTopic; }
   public static String getTokenChangeTopic() { return tokenChangeTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
-  public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
-  public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
   public static Map<String,ScheduledJobConfiguration> getDatacubeJobsScheduling() { return datacubeJobsScheduling; }
   public static Map<String,ScheduledJobConfiguration> getElasticsearchJobsScheduling() { return elasticsearchJobsScheduling; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
@@ -399,6 +387,7 @@ public class Deployment
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
+  public static Map<String,SupportedVoucherCodePattern> getSupportedVoucherCodePatternList() { return supportedVoucherCodePatternList; }
   public static Map<String,SupportedRelationship> getSupportedRelationships() { return supportedRelationships; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
@@ -470,11 +459,6 @@ public class Deployment
   public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; }
   public static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
   public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
-  public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
-  public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
-  public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
-  public static int getGUIManagerESConnectTimeout() { return guiManagerESConnectTimeout; }
-  public static int getGUIManagerESSocketTimeout(){ return guiManagerESSocketTimeout; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
@@ -482,6 +466,7 @@ public class Deployment
   public static String getDynamicCriterionFieldTopic() { return dynamicCriterionFieldsTopic; }
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
+  public static Map<String,ElasticsearchConnectionSettings> getElasticsearchConnectionSettings() { return elasticsearchConnectionSettings; }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
@@ -511,7 +496,6 @@ public class Deployment
   public static int getKafkaRetentionDaysODR() { return kafkaRetentionDaysODR; }
   public static int getKafkaRetentionDaysBDR() { return kafkaRetentionDaysBDR; }
   public static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
-  public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
   public static boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
   public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
   public static String getExtractManagerOutputPath() { return extractManagerOutputPath; }
@@ -520,6 +504,7 @@ public class Deployment
   public static String getExtractManagerCsvSeparator() { return extractManagerCsvSeparator; }
   public static String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
   public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; }
+  public static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
 
   // addProfileCriterionField
   //
@@ -744,6 +729,23 @@ public class Deployment
        *
        *****************************************/
 
+      //
+      // kafka topics configuration
+      //
+      try
+        {
+          topicSubscriberPartitions = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "topicSubscriberPartitions", true));
+          topicReplication = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "topicReplication", true));
+          topicMinInSyncReplicas = JSONUtilities.decodeString(jsonRoot, "topicMinInSyncReplicas", true);
+          topicRetentionShortMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionShortHour", true) * 3600 * 1000L);
+          topicRetentionMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionDay", true) * 24 * 3600 * 1000L);
+          topicRetentionLongMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionLongDay", true) * 24 * 3600 * 1000L);
+        }
+      catch (JSONUtilitiesException|NumberFormatException e)
+        {
+          throw new ServerRuntimeException("deployment : topic configuration", e);
+        }
+
       try
         {
           evolutionEngineStreamThreads = Integer.parseInt(System.getProperty("evolutionengine.streamthreads","1"));
@@ -888,7 +890,20 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+      
+      //
+      //  VoucherActionTopic
+      //
 
+      try
+        {
+          voucherActionTopic = JSONUtilities.decodeString(jsonRoot, "voucherActionTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
       //
       //  tokenRedeemedTopic
       //
@@ -972,22 +987,10 @@ public class Deployment
               defaultTimeWindowJSON.put("active", true);
               defaultTimeWindowJSON.put("communicationChannelID", "default");
             }
+          GUIManagedObject.commonSchema();//avoiding a NPE in a "static init" loop
           defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null);          
         }
       catch (GUIManagerException | JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  emptyTopic
-      //
-
-      try
-        {
-          emptyTopic = JSONUtilities.decodeString(jsonRoot, "emptyTopic", true);
-        }
-      catch (JSONUtilitiesException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
@@ -1058,32 +1061,6 @@ public class Deployment
         }
 
       //
-      //  pointFulfillmentRequestTopic
-      //
-
-      try
-        {
-          pointFulfillmentRequestTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRequestTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  pointFulfillmentResponseTopic
-      //
-
-      try
-        {
-          pointFulfillmentResponseTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentResponseTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  maxPollIntervalMs
       //
 
@@ -1102,19 +1079,6 @@ public class Deployment
       try
         {
           purchaseTimeoutMs = JSONUtilities.decodeInteger(jsonRoot, "purchaseTimeoutMs", 15000);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  pointFulfillmentRekeyedTopic
-      //
-
-      try
-        {
-          pointFulfillmentRekeyedTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRekeyedTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -1734,58 +1698,6 @@ public class Deployment
         }
 
       //
-      //  journeyRequestTopic
-      //
-
-      try
-        {
-          journeyRequestTopic = JSONUtilities.decodeString(jsonRoot, "journeyRequestTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyResponseTopic
-      //
-
-      try
-        {
-          journeyResponseTopic = JSONUtilities.decodeString(jsonRoot, "journeyResponseTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  loyaltyProgramRequestTopic
-      //
-
-      try
-        {
-          loyaltyProgramRequestTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramRequestTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  loyaltyProgramResponseTopic
-      //
-
-      try
-        {
-          loyaltyProgramResponseTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramResponseTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  journeyStatisticTopic
       //
 
@@ -1929,46 +1841,7 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-
-      //
-      //  journeyTrafficChangeLog
-      //
-
-      try
-        {
-          journeyTrafficChangeLog = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLog", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyTrafficChangeLogTopic
-      //
-
-      try
-        {
-          journeyTrafficChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyTrafficTopic
-      //
-
-      try
-        {
-          journeyTrafficTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
+      
       //
       //  tokenChangeTopic
       //
@@ -1996,33 +1869,7 @@ public class Deployment
         }
 
       //
-      //  journeyTrafficArchivePeriodInSeconds
-      //
-
-      try
-        {
-          journeyTrafficArchivePeriodInSeconds = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchivePeriodInSeconds", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyTrafficArchiveMaxNumberOfPeriods
-      //
-
-      try
-        {
-          journeyTrafficArchiveMaxNumberOfPeriods = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchiveMaxNumberOfPeriods", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  datacubeJobsScheduling & elasticsearchJobsScheduling
+      //  datacubeJobsScheduling & elasticsearchJobsScheduling & others...
       //
 
       try
@@ -2038,6 +1885,13 @@ public class Deployment
           for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
             elasticsearchJobsScheduling.put((String) key, new ScheduledJobConfiguration((JSONObject) elasticsearchJobsSchedulingJSON.get(key)));
           }
+          
+          // elasticsearchConnectionSettings
+          JSONObject elasticsearchConnectionSettingsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "elasticsearchConnectionSettings", true);
+          for (Object key : elasticsearchConnectionSettingsJSON.keySet()) {
+            elasticsearchConnectionSettings.put((String) key, new ElasticsearchConnectionSettings((JSONObject) elasticsearchConnectionSettingsJSON.get(key)));
+          }
+          
         }
       catch (JSONUtilitiesException e)
         {
@@ -2257,6 +2111,28 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
+      //
+      //  voucherCodePatternList
+      //
+
+      try
+        {
+          JSONArray voucherCodePatternListValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedVoucherCodePatternList", new JSONArray());
+          for (int i=0; i<voucherCodePatternListValues.size(); i++)
+            {
+              JSONObject voucherCodePatternListJSON = (JSONObject) voucherCodePatternListValues.get(i);
+              SupportedVoucherCodePattern voucherCodePattern = new SupportedVoucherCodePattern(voucherCodePatternListJSON);
+              supportedVoucherCodePatternList.put(voucherCodePattern.getID(), voucherCodePattern);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      
+      
+      
       //
       //  supportedRelationships
       //
@@ -2743,6 +2619,17 @@ public class Deployment
                   fulfillmentProviders.put(deliveryManagerDeclaration.getProviderID(), deliveryManagerDeclaration);
                 }
             }
+          //TODO remove later, forcing conf cleaning
+          if(Deployment.getDeliveryManagers().get("notificationmanager")!=null)
+            {
+              log.error("notificationmanager deliveryManager declaration is not possible anymore, remove it");
+              throw new ServerRuntimeException("old conf for generic channel");
+            }
+          // auto generated notif ones
+          for (CommunicationChannel cc:getCommunicationChannels().values())
+            {
+              if (cc.getDeliveryManagerDeclaration()!=null) deliveryManagers.put(cc.getDeliveryManagerDeclaration().getDeliveryType(),cc.getDeliveryManagerDeclaration());
+            }
         }
       catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
         {
@@ -3154,76 +3041,6 @@ public class Deployment
         }
 
       //
-      //  ucgEngineESConnectTimeout
-      //
-
-      try
-        {
-          Integer ucgEngineESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESConnectTimeout",false);
-          ucgEngineESConnectTimeout = ucgEngineESConnectTimeoutJSON == null ? 30000:ucgEngineESConnectTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
-      //  ucgEngineESSocketTimeout
-      //
-
-      try
-        {
-          Integer ucgEngineESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESSocketTimeout",false);
-          ucgEngineESSocketTimeout = ucgEngineESSocketTimeoutJSON == null ? 60000:ucgEngineESSocketTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
-      //  ucgEngineESMasRetryTimeout
-      //
-
-      try
-        {
-          Integer ucgEngineESMasRetryTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESMasRetryTimeout",false);
-          ucgEngineESMasRetryTimeout = ucgEngineESMasRetryTimeoutJSON == null ? 60000:ucgEngineESMasRetryTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
-      //  guiManagerESConnectTimeout
-      //
-
-      try
-        {
-          Integer guiManagerESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"guiManagerESConnectTimeout",false);
-          guiManagerESConnectTimeout = guiManagerESConnectTimeoutJSON == null ? 30000:guiManagerESConnectTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
-      //  guiManagerESSocketTimeout
-      //
-
-      try
-        {
-          Integer guiManagerESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"guiManagerESSocketTimeout",false);
-          guiManagerESSocketTimeout = guiManagerESSocketTimeoutJSON == null ? 60000:guiManagerESSocketTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
       //  autoApproveGuiObjects
       //
 
@@ -3242,19 +3059,13 @@ public class Deployment
 
       try
         {
-          JSONArray deliveryTypes = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", new JSONArray());
-          for (int i = 0; i < deliveryTypes.size(); i++)
+          for (DeliveryManagerDeclaration deliveryManagerDeclaration:getDeliveryManagers().values())
             {
-              JSONObject deliveryTypeJOSN = (JSONObject) deliveryTypes.get(i);
-              String deliveryType = JSONUtilities.decodeString(deliveryTypeJOSN, "deliveryType", true);
-              JSONArray communicationChannels = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
-              for (int k = 0; k < communicationChannels.size(); k++)
+              for (CommunicationChannel communicationChannel:getCommunicationChannels().values())
                 {
-                  JSONObject communicationChannelJSON = (JSONObject) communicationChannels.get(k);
-                  String channelDeliveryType = JSONUtilities.decodeString(communicationChannelJSON, "deliveryType", true);
-                  if (deliveryType.equals(channelDeliveryType))
+                  if (deliveryManagerDeclaration.getDeliveryType().equals(communicationChannel.getDeliveryType()))
                     {
-                      deliveryTypeCommunicationChannelIDMap.put(deliveryType, JSONUtilities.decodeString(communicationChannelJSON, "id", true));
+                      deliveryTypeCommunicationChannelIDMap.put(communicationChannel.getDeliveryType(), communicationChannel.getID());
                     }
                 }
             }
@@ -3390,21 +3201,6 @@ public class Deployment
             throw new ServerRuntimeException("deployment", e);
           }
 
-
-      //
-      //  bypassJourneyTrafficEngine
-      //  @rl Hack TODO remove later
-      //  default to true
-
-      try
-        {
-          bypassJourneyTrafficEngine = JSONUtilities.decodeBoolean(jsonRoot, "bypassJourneyTrafficEngine", Boolean.TRUE);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
       try
         {
           enableContactPolicyProcessing = JSONUtilities.decodeBoolean(jsonRoot, "enableContactPolicyProcessing", Boolean.TRUE);
@@ -3459,14 +3255,26 @@ public class Deployment
         }
       
       try
-      {
-        recurrentCampaignCreationDaysRange = JSONUtilities.decodeInteger(jsonRoot, "recurrentCampaignCreationDaysRange", 3);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-      
+        {
+          recurrentCampaignCreationDaysRange = JSONUtilities.decodeInteger(jsonRoot, "recurrentCampaignCreationDaysRange", 3);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      // all dynamic topics
+      //
+      allTopics = new HashMap<>();
+      // from delivery managers
+      for(DeliveryManagerDeclaration dmd:getDeliveryManagers().values())
+        {
+          dmd.getRequestTopics().stream().filter(Topic::isAutoCreated).forEach(topic->allTopics.put(topic.getName(),topic));
+          dmd.getResponseTopics().stream().filter(Topic::isAutoCreated).forEach(topic->allTopics.put(topic.getName(),topic));
+          if(dmd.getRoutingTopic()!=null&&dmd.getRoutingTopic().isAutoCreated()) allTopics.put(dmd.getRoutingTopic().getName(),dmd.getRoutingTopic());
+        }
+
     }
 
   /*****************************************

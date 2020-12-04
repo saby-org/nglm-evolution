@@ -247,7 +247,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   
   private void start(String[] args, final Date reportGenerationDate)
   {
-	  log.info("received " + args.length + " args");
+	  log.info("** received " + args.length + " args");
 	  for(String arg : args){
 	    log.info("SubscriberReportMonoPhase: arg " + arg);
 	  }

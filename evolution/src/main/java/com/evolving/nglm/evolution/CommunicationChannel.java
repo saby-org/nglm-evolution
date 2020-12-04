@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.CommunicationChannelTimeWindow.DailyWindow;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -55,7 +56,9 @@ public class CommunicationChannel extends GUIManagedObject
     String journeyGUINodeSectionID;
     String workflowGUINodeSectionID;
     int toolboxTimeout;
-    String toolboxTimeoutUnit;    
+    String toolboxTimeoutUnit;
+    // not used for old channel
+    private DeliveryManagerDeclaration deliveryManagerDeclaration;
 
     /*****************************************
     *
@@ -84,6 +87,7 @@ public class CommunicationChannel extends GUIManagedObject
     public String getWorkflowGUINodeSectionID() { return workflowGUINodeSectionID; }
     public int getToolboxTimeout() { return toolboxTimeout; }
     public String getToolboxTimeoutUnit() { return toolboxTimeoutUnit; }
+    public DeliveryManagerDeclaration getDeliveryManagerDeclaration() { return deliveryManagerDeclaration; }
     
     /*****************************************
     *
@@ -195,6 +199,28 @@ public class CommunicationChannel extends GUIManagedObject
       this.allowGuiTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowGuiTemplate", Boolean.TRUE);
       this.allowInLineTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowInLineTemplate", Boolean.FALSE);
       this.isGeneric =  JSONUtilities.decodeBoolean(jsonRoot, "isGeneric", Boolean.FALSE);
+      // deliveryManagerDeclaration derived
+      if(isGeneric())
+        {
+          //TODO remove later, forcing conf cleaning
+          if(getDeliveryType()!=null)
+            {
+              log.error("deliveryType configuration for generic channel ("+getName()+") is not possible anymore");
+              throw new ServerRuntimeException("old conf for generic channel");
+            }
+          // delivery type should be derived
+          String deliveryType = "notification_"+getName();
+          this.deliveryType = deliveryType;
+          jsonRoot.put("deliveryType",deliveryType);
+          jsonRoot.put("requestClass", NotificationManager.NotificationManagerRequest.class.getName());
+          try
+            {
+              this.deliveryManagerDeclaration = new DeliveryManagerDeclaration(jsonRoot);
+            }
+          catch (NoSuchMethodException|IllegalAccessException e) {
+              throw new ServerRuntimeException("deployment", e);
+            }
+        }
       this.journeyGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "journeyGUINodeSectionID", false);
       this.workflowGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "workflowGUINodeSectionID", false);
       this.campaignGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "campaignGUINodeSectionID", false);

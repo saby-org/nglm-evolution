@@ -27,10 +27,12 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.NodeType.OutputType;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
@@ -45,113 +47,35 @@ import com.evolving.nglm.evolution.toolbox.TransitionCriteriaBuilder;
 
 public class NotificationManager extends DeliveryManagerForNotifications implements Runnable
 {
-  /*****************************************
-   *
-   * configuration
-   *
-   *****************************************/
-
-  private int threadNumber = 5; // TODO : make this configurable
-  private ArrayList<Thread> threads = new ArrayList<Thread>();
-  private Map<String, NotificationInterface> pluginInstances = new HashMap();
-
-  private static StatBuilder<CounterStat> statsCounter;
-  private static String applicationID = "deliverymanager-notificationmanager";
-  private ContactPolicyProcessor contactPolicyProcessor;
-
-  //
-  // logger
-  //
 
   private static final Logger log = LoggerFactory.getLogger(NotificationManager.class);
 
-  /*****************************************
-   *
-   * accessors
-   *
-   *****************************************/
+  private static StatBuilder<CounterStat> statsCounter;
+  private static final String applicationID = "deliverymanager-notificationmanager";
 
-  /*****************************************
-   *
-   * constructor
-   *
-   *****************************************/
+  private NotificationInterface pluginInstance;
 
-  public NotificationManager(String deliveryManagerKey, String channelsString)
+  public NotificationManager(String deliveryManagerKey, CommunicationChannel cc, int threadNumber)
     {
-      //
-      // superclass
-      //
 
-      super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get("notificationmanager"));
+      super(applicationID+"-"+cc.getName(), deliveryManagerKey, Deployment.getBrokerServers(), cc.getDeliveryManagerDeclaration().getRequestSerde(), cc.getDeliveryManagerDeclaration(), threadNumber);
 
-      //
-      // contact policy processor
-      //
-      contactPolicyProcessor = new ContactPolicyProcessor("notificationmanager-communicationchannel", deliveryManagerKey);
+      // this channel's plugin must be initialized
+      try {
+        pluginInstance = (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance());
+        pluginInstance.init(this, cc.getNotificationPluginConfiguration());
+      } catch (InstantiationException | IllegalAccessException | IllegalArgumentException e) {
+        log.error("NotificationManager: could not create new instance of class " + cc.getNotificationPluginClass(), e);
+        throw new RuntimeException("NotificationManager: could not create new instance of class " + cc.getNotificationPluginClass(), e);
+      } catch (ClassNotFoundException e) {
+        log.error("NotificationManager: could not find class " + cc.getNotificationPluginClass(), e);
+        throw new RuntimeException("NotificationManager: could not find class " + cc.getNotificationPluginClass(), e);
+      }
 
-      //
-      // manager
-      //
-
-      ArrayList<String> channels = new ArrayList<>();
-      if (channelsString != null)
-        {
-          for (String channel : channelsString.split("\\."))
-            {
-              channels.add(channel);
-            }
-        }
-
-      for (String channelName : channels)
-        {
-          log.info("-------> NotificationManager: Instanciate communication channel " + channelName);
-          Map<String, CommunicationChannel> configuredChannels = Deployment.getCommunicationChannels();
-          for (CommunicationChannel cc : configuredChannels.values())
-            {
-              if (cc.getName().equals(channelName))
-                {
-                  // this channel's plugin must be initialized
-                  try
-                    {
-                      NotificationInterface pluginInstance = (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance());
-                      pluginInstance.init(this, cc.getNotificationPluginConfiguration());
-                      pluginInstances.put(cc.getID(), pluginInstance);
-                    }
-                  catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
-                    {
-                      log.error("NotificationManager: could not create new instance of class " + cc.getNotificationPluginClass(), e);
-                      throw new RuntimeException("NotificationManager: could not create new instance of class " + cc.getNotificationPluginClass(), e);
-                    }
-                  catch (ClassNotFoundException e)
-                    {
-                      log.error("NotificationManager: could not find class " + cc.getNotificationPluginClass(), e);
-                      throw new RuntimeException("NotificationManager: could not find class " + cc.getNotificationPluginClass(), e);
-                    }
-                }
-            }
-        }
-
-      //
-      // statistics
-      //
+      for(int i=0;i<threadNumber;i++) new Thread(this,cc.getName()+"-"+i).start();
 
       statsCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("notificationdelivery","notificationmanager-"+deliveryManagerKey);
 
-      //
-      // threads
-      //
-
-      for (int i = 0; i < threadNumber; i++)
-        {
-          threads.add(new Thread(this, "NotificationManagerThread_" + i));
-        }
-
-      //
-      // startDelivery
-      //
-
-      startDelivery();
     }
 
   /*****************************************
@@ -672,14 +596,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     @Override
     public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
-      Module module = Module.fromExternalRepresentation(getModuleID());
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(EVENTID, null);
       guiPresentationMap.put(MODULEID, getModuleID());
-      guiPresentationMap.put(MODULENAME, module.toString());
+      guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(SOURCE, getSourceAddressParam());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
@@ -697,14 +620,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     @Override
     public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
-      Module module = Module.fromExternalRepresentation(getModuleID());
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
-      thirdPartyPresentationMap.put(MODULENAME, module.toString());
+      thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getSourceAddressParam());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
@@ -767,7 +689,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
      *
      *****************************************/
 
-    private String deliveryType;
     private String moduleID;
     private String channelID;
 
@@ -780,7 +701,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     public ActionManager(JSONObject configuration) throws GUIManagerException
       {
         super(configuration);
-        this.deliveryType = "notificationmanager";
         this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
         this.channelID = JSONUtilities.decodeString(configuration, "channelID", true);
       }
@@ -818,9 +738,17 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
        * get DialogTemplate
        *
        *****************************************/
-
-      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
+      String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      String newModuleID = moduleID;
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+        {
+          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+        }
+      
+      String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
+      
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
       DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now);
@@ -904,12 +832,11 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
          NotificationManagerRequest request = null;
          if (destAddress != null)
            {
-             request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
-             request.setModuleID(moduleID);
+             request = new NotificationManagerRequest(evolutionEventContext, communicationChannel.getDeliveryType(), deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
+             request.setModuleID(newModuleID);
              request.setFeatureID(deliveryRequestSource);
+             request.forceDeliveryPriority(contactType.getDeliveryPriority());
              request.setRestricted(contactType.getRestricted());
-             request.setDeliveryPriority(contactType.getDeliveryPriority());
-             request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
            }
          else
            {
@@ -943,7 +870,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   public void run()
   {
-    while (isProcessing())
+    while (true)
       {
         /*****************************************
          *
@@ -967,7 +894,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
               {
 
                 Date effectiveDeliveryTime = now;
-                CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
+                CommunicationChannel channel = Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
                 if(channel != null) 
                   {
                     effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
@@ -975,20 +902,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
                 if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
                   {
-                    NotificationInterface plugin = pluginInstances.get(dialogRequest.getChannelID());
-                    if(plugin != null) {
-                      if(log.isDebugEnabled()) log.debug("NotificationManagerRequest SEND Immediately restricted " + dialogRequest);
-                      plugin.send(dialogRequest);
-                    }
-                    else {
-                      log.warn("NotificationManagerRequest Can't retrieve NotificationInterface plugin for channel " + dialogRequest.getChannelID());
-                      dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
-                      dialogRequest.setReturnCode(MessageStatus.ERROR.getReturnCode());
-                      dialogRequest.setMessageStatus(MessageStatus.ERROR);
-                      dialogRequest.setReturnCodeDetails("NoChannelConfig" + dialogRequest.getChannelID());
-                      completeDeliveryRequest((DeliveryRequest)dialogRequest);
-;
-                    }
+                    if(log.isDebugEnabled()) log.debug("NotificationManagerRequest SEND Immediately restricted " + dialogRequest);
+                    pluginInstance.send(dialogRequest);
                   }
                 else
                   {
@@ -1000,38 +915,29 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                     completeDeliveryRequest((DeliveryRequest)dialogRequest);
                   }      
               }
-            else {
-              NotificationInterface plugin = pluginInstances.get(dialogRequest.getChannelID());
-              if(plugin != null) {
+            else
+              {
                 if(log.isDebugEnabled()) log.debug("NotificationManagerRequest SEND Immediately NON restricted " + dialogRequest);
-                plugin.send(dialogRequest);
-              }
-              else {
-                log.warn("NotificationManagerRequest Can't retrieve NotificationInterface plugin for channel " + dialogRequest.getChannelID());
-                dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
-                dialogRequest.setReturnCode(MessageStatus.ERROR.getReturnCode());
-                dialogRequest.setMessageStatus(MessageStatus.ERROR);
-                dialogRequest.setReturnCodeDetails("NoChannelConfig" + dialogRequest.getChannelID());
-                completeDeliveryRequest((DeliveryRequest)dialogRequest);
-;
+                pluginInstance.send(dialogRequest);
               }
             }
-          }
-        else
-          {
-            log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
-            if(log.isDebugEnabled()){
-              log.debug("subscriberMessageTemplateService contains :");
-              for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now)){
-                log.debug("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
-              }
+          else
+            {
+              log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
+              if(log.isDebugEnabled())
+                {
+                  log.debug("subscriberMessageTemplateService contains :");
+                  for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now))
+                    {
+                      log.debug("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
+                    }
+                }
+              dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
+              dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
+              dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
+              dialogRequest.setReturnCodeDetails("NoTemplate" + dialogRequest.getTemplateID());
+              completeDeliveryRequest((DeliveryRequest)dialogRequest);
             }
-            dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
-            dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
-            dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
-            dialogRequest.setReturnCodeDetails("NoTemplate" + dialogRequest.getTemplateID());
-            completeDeliveryRequest((DeliveryRequest)dialogRequest);
-          }
       }
 
   }
@@ -1074,7 +980,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       NotificationManagerRequest dr = (NotificationManagerRequest)deliveryRequest;
       statsCounter.withLabel(StatsBuilders.LABEL.status.name(),deliveryRequest.getDeliveryStatus().getExternalRepresentation())
               .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(dr.getChannelID()).getDisplay())
-              .withLabel(StatsBuilders.LABEL.module.name(), DeliveryRequest.Module.fromExternalRepresentation(dr.getModuleID()).name())
+              .withLabel(StatsBuilders.LABEL.module.name(), dr.getModule().name())
+              .withLabel(StatsBuilders.LABEL.priority.name(), dr.getDeliveryPriority().getExternalRepresentation())
               .getStats().increment();
     }
   }
@@ -1131,33 +1038,40 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
+
     log.info("NotificationManager: recieved " + args.length + " args");
     for (String arg : args)
       {
         log.info("NotificationManager: arg " + arg);
       }
 
-    //
-    // configuration
-    //
-
     String deliveryManagerKey = args[0];
-    String listOfChannels = args[1]; // Point separated by example: sms.sms_flash.email.pushapp
+    // Point separated by example: sms.sms_flash.email.pushapp
+    // and maybe each followed by ',threadNumber' : sms,10.sms_flash,10.email.pushapp
+    String listOfChannels = args[1];
 
-    //
-    // instance
-    //
+    int defaultThreadNumber = 10;//TODO make it configurable
 
-    log.info("NotificationManager: configuration " + Deployment.getDeliveryManagers());
-
-    NotificationManager manager = new NotificationManager(deliveryManagerKey, listOfChannels);
-    new LoggerInitialization().initLogger();
-    
-    //
-    // run
-    //
-
-    manager.run();
+    if (listOfChannels != null){
+      // specified plugin only
+      for (String channel : listOfChannels.split("\\.")){
+        String[] split2 = channel.split(",");
+        int threadNumber = split2.length==2 ? Integer.parseInt(split2[1]) : defaultThreadNumber;
+        for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
+          if(cc.getName().equals(channel)){
+            log.info("NotificationManager: starting plugin for "+channel+" with "+threadNumber+" threads");
+            new NotificationManager(deliveryManagerKey,cc,threadNumber).startDelivery();
+          }
+        }
+      }
+    } else{
+      // otherwise all ones
+      for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
+        log.info("NotificationManager: starting plugin for "+cc.getName()+" with "+defaultThreadNumber+" threads");
+        new NotificationManager(deliveryManagerKey,cc,defaultThreadNumber).startDelivery();
+      }
+    }
 
   }
 
@@ -1245,9 +1159,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         // address
         // node.parameter.contacttype
         ParameterBuilder parameterBuilder = new ParameterBuilder("node.parameter.contacttype", "Contact Type", CriterionDataType.StringCriterion, false, true, null);
-        // lambda filtering (only done once) to eliminate contact types with negative topic index
-        for (ContactType currentContactType : Arrays.stream(ContactType.values()).filter(ct -> ct.getDeliveryPriority().getTopicIndex() >= 0).toArray(ContactType[]::new))
+        // contact type
+        for (ContactType currentContactType : ContactType.values())
           {
+            if(currentContactType==ContactType.Unknown) continue;//not for GUI use
             parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.getExternalRepresentation(), currentContactType.getDisplay()));
           }
         tb.addParameter(parameterBuilder);
@@ -1283,7 +1198,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           } 
         
         // add parameter relation to relationship
-        tb.addParameter(new ParameterBuilder("node.parameter.relationship", "Hierarchy Relationship", CriterionDataType.StringCriterion, false, true, "customer").addAvailableValue(new AvailableValueDynamicBuilder("#supportedRelationships#")));
+        tb.addParameter(new ParameterBuilder("node.parameter.relationship", "Hierarchy Relationship", CriterionDataType.StringCriterion, false, true, "customer").addAvailableValue(new AvailableValueDynamicBuilder("#supportedRelationshipsAndPartners#")));
 
         // Action:
         tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager").addManagerClassConfigurationField("channelID", current.getID()).addManagerClassConfigurationField("moduleID", "1"));

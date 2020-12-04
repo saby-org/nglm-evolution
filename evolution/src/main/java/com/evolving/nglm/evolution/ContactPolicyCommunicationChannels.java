@@ -34,12 +34,12 @@ public class ContactPolicyCommunicationChannels
 
   public enum ContactType
   {
-    CallToAction("callToAction", "Advertising", DeliveryPriority.Standard, true),
-    Response("response", "Bonus Message", DeliveryPriority.High, false),
-    Reminder("reminder", "Reminder", DeliveryPriority.Standard, true),
-    Announcement("announcement", "Announcement", DeliveryPriority.Urgent, false),
-    ActionNotification("actionNotification", "Action Notification", DeliveryPriority.Urgent, false),
-    Unknown("(unknown)", "(unknown)", DeliveryPriority.Unknown, false);
+    CallToAction("callToAction", "Call to Action (Low priority - Limited)", DeliveryPriority.Standard, true),
+    Response("response", "Response (High priority)", DeliveryPriority.High, false),
+    Reminder("reminder", "Reminder (Low priority - Limited)", DeliveryPriority.Standard, true),
+    Announcement("announcement", "Announcement (Low priority - Limited)", DeliveryPriority.Standard, false),
+    ActionNotification("actionNotification", "Action Notification (High priority)", DeliveryPriority.High, false),
+    Unknown("(unknown)", "Unknown (Low priority)", DeliveryPriority.Standard, false);
     private String externalRepresentation;
     private String display;
     private DeliveryPriority deliveryPriority;

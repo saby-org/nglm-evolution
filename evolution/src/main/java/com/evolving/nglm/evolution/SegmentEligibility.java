@@ -151,7 +151,27 @@ public class SegmentEligibility implements Segment
   public String getName() { return name; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public boolean getDependentOnExtendedSubscriberProfile() { return dependentOnExtendedSubscriberProfile; }
-  
+
+  @Override public boolean getSegmentConditionEqual(Segment segment)
+  {
+    //verify if objects comapred are the same type
+    if(segment.getClass().getTypeName() != this.getClass().getTypeName()) return false;
+    //cast parameter to current type
+    SegmentEligibility eligilitySegment = (SegmentEligibility)segment;
+    //if profile criteria size is diferent than stored objects are not equals
+    if(this.getProfileCriteria().size() != eligilitySegment.getProfileCriteria().size()) return false;
+    //verify if each criteria exist and equal. At first element missing or not equal report inequality
+    for(EvaluationCriterion criterion : this.getProfileCriteria())
+    {
+      //this is not follow code formating convention to be more readable.
+      //the method equals from EvaluationCriterion cannot be used to get diff because contains Ojects.equals on types that are not override equals
+      if(!eligilitySegment.getProfileCriteria().stream().anyMatch(p -> (p.getCriterionOperator().equals(criterion.getCriterionOperator())
+                                                                    && (p.getArgumentExpression().equals(criterion.getArgumentExpression())))
+                                                                    && (p.getCriterionField().equals(criterion.getCriterionField())))) return false;
+    }
+    return true;
+  }
+
   /*****************************************
   *
   *  serde

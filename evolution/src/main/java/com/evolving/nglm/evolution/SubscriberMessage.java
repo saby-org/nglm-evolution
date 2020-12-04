@@ -46,8 +46,9 @@ public abstract class SubscriberMessage
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_message");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("subscriberMessageTemplateID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("communicationChannelID", Schema.OPTIONAL_STRING_SCHEMA); // A enlever
     schemaBuilder.field("parameterTags", SimpleParameterMap.schema());
     schemaBuilder.field("dialogMessages", SchemaBuilder.map(Schema.STRING_SCHEMA, DialogMessage.schema()).name("message_dialog_messages").schema());
     commonSchema = schemaBuilder.build();
@@ -66,6 +67,7 @@ public abstract class SubscriberMessage
   *****************************************/
 
   private String subscriberMessageTemplateID = null;
+  private String communicationChannelID = null;
   private SimpleParameterMap parameterTags = new SimpleParameterMap();
   private Map<String, DialogMessage> dialogMessages = new HashMap<String, DialogMessage>();
 
@@ -76,6 +78,7 @@ public abstract class SubscriberMessage
   *****************************************/
 
   public String getSubscriberMessageTemplateID() { return subscriberMessageTemplateID; }
+  public String getCommunicationChannelID() { return communicationChannelID; }
   public SimpleParameterMap getParameterTags() { return parameterTags; }
   public Map<String, DialogMessage> getDialogMessages() { return dialogMessages; }
   
@@ -93,8 +96,10 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  protected SubscriberMessage(Object subscriberMessageJSON, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  protected SubscriberMessage(Object subscriberMessageJSON, String communicationChannelID, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
+    this.communicationChannelID = communicationChannelID;
+    
     /*****************************************
     *
     *  case 1:  subscriberMessageJSON is a reference to a template
@@ -273,6 +278,7 @@ public abstract class SubscriberMessage
 
     Struct valueStruct = (Struct) value;
     String subscriberMessageTemplateID = valueStruct.getString("subscriberMessageTemplateID");
+    String communicationChannelID = schema.field("communicationChannelID") != null ? valueStruct.getString("communicationChannelID") : null;
     SimpleParameterMap parameterTags = SimpleParameterMap.unpack(new SchemaAndValue(schema.field("parameterTags").schema(), valueStruct.get("parameterTags")));    
     Map<String,DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (Map<String,Object>) valueStruct.get("dialogMessages"));
     
@@ -281,6 +287,7 @@ public abstract class SubscriberMessage
     //
 
     this.subscriberMessageTemplateID = subscriberMessageTemplateID;
+    this.communicationChannelID = communicationChannelID;
     this.parameterTags = parameterTags;
   }
 
@@ -328,6 +335,7 @@ public abstract class SubscriberMessage
     SubscriberMessage subscriberMessage = (SubscriberMessage) value;
     Struct struct = new Struct(schema);
     struct.put("subscriberMessageTemplateID", subscriberMessage.getSubscriberMessageTemplateID());
+    struct.put("communicationChannelID", subscriberMessage.getCommunicationChannelID());
     struct.put("parameterTags", SimpleParameterMap.pack(subscriberMessage.getParameterTags()));
     struct.put("dialogMessages", packDialogMessages(subscriberMessage.getDialogMessages()));
     return struct;

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,8 +61,6 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.streams.errors.InvalidStateStoreException;
-import org.apache.kafka.streams.state.KeyValueIterator;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -69,7 +68,6 @@ import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -85,7 +83,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.CronFormat;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
@@ -100,12 +97,12 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.core.utilities.UtilitiesException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
+import com.evolving.nglm.evolution.CustomerMetaData.MetaData;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
@@ -151,6 +148,8 @@ public class GUIManager
   *****************************************/
 
   public static String ProductID = "Evolution-GUIManager";
+
+  protected static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
 
   public enum API
   {
@@ -243,6 +242,7 @@ public class GUIManager
     removeSegmentationDimension("removeSegmentationDimension"),
     setStatusSegmentationDimension("setStatusSegmentationDimension"),
     getCountBySegmentationRanges("getCountBySegmentationRanges"),
+    getCountBySegmentationRangesBySegmentID("getCountBySegmentationRangesBySegmentID"),
     getCountBySegmentationEligibility("getCountBySegmentationEligibility"),
     evaluateProfileCriteria("evaluateProfileCriteria"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
@@ -366,6 +366,7 @@ public class GUIManager
     removeVoucherType("removeVoucherType"),
 
     getVoucherCodeFormatList("getVoucherCodeFormatList"),
+    generateVouchers("generateVouchers"),
     
     getVoucherList("getVoucherList"),
     getVoucherSummaryList("getVoucherSummaryList"),
@@ -377,6 +378,8 @@ public class GUIManager
     extendVoucherValidity("extendVoucherValidity"),
     expireVoucher("expireVoucher"),
 
+    getVoucherCodePatternList("getVoucherCodePatternList"),
+    
     getMailTemplateList("getMailTemplateList"),
     getFullMailTemplateList("getFullMailTemplateList"),
     getMailTemplateSummaryList("getMailTemplateSummaryList"),
@@ -563,6 +566,8 @@ public class GUIManager
 
 
     getDependencies("getDependencies"),
+    
+    getSoftwareVersions("getSoftwareVersions"),
 
     
     //
@@ -615,7 +620,7 @@ public class GUIManager
 
   protected KafkaProducer<byte[], byte[]> kafkaProducer;
   private HttpServer restServer;
-  protected RestHighLevelClient elasticsearch;
+  protected ElasticsearchClientAPI elasticsearch;
   
   protected DynamicCriterionFieldService dynamicCriterionFieldService;
   protected JourneyService journeyService;
@@ -648,7 +653,6 @@ public class GUIManager
   protected SubscriberProfileService subscriberProfileService;
   protected SubscriberIDService subscriberIDService;
   protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
-  protected ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
   protected ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
   protected DeliverableSourceService deliverableSourceService;
   protected String getCustomerAlternateID;
@@ -672,9 +676,6 @@ public class GUIManager
   protected KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
   protected KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   protected int httpTimeout = Deployment.getPurchaseTimeoutMs();
-  
-  private static final int connectTimeout = Deployment.getGUIManagerESConnectTimeout();
-  private static final int socketTimeout = Deployment.getGUIManagerESSocketTimeout();
 
   protected static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   protected static final String FILE_REQUEST = "file"; 
@@ -697,13 +698,6 @@ public class GUIManager
   //
   //  properties
   //
-  
-  /**
-   * @rl Hack while refactoring journeytraffic engine. 
-   * If activated, we will bypass journeytraffic engine 
-   * and use Elasticsearch for retrieving traffic data.
-   */
-  protected boolean bypassJourneyTrafficEngine;
   
   /*****************************************
   *
@@ -756,6 +750,11 @@ public class GUIManager
     int apiRestPort = parseInteger("apiRestPort", args[2]);
     String elasticsearchServerHost = args[3];
     int elasticsearchServerPort = parseInteger("elasticsearchServerPort", args[4]);
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("GUIManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("GUIManager").getQueryTimeout();
+    String userName = args[5];
+    String userPassword = args[6];
+    
     String nodeID = System.getProperty("nglm.license.nodeid");
 
     String dynamicCriterionFieldTopic = Deployment.getDynamicCriterionFieldTopic();
@@ -787,7 +786,6 @@ public class GUIManager
     String voucherTopic = Deployment.getVoucherTopic();
     String subscriberMessageTemplateTopic = Deployment.getSubscriberMessageTemplateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
-    String journeyTrafficChangeLogTopic = Deployment.getJourneyTrafficChangeLogTopic();
     String renamedProfileCriterionFieldTopic = Deployment.getRenamedProfileCriterionFieldTopic();
     String deliverableSourceTopic = Deployment.getDeliverableSourceTopic();
     String redisServer = Deployment.getRedisSentinels();
@@ -805,7 +803,6 @@ public class GUIManager
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
-    this.bypassJourneyTrafficEngine = Deployment.getBypassJourneyTrafficEngine();
 
     //
     //  log
@@ -854,12 +851,12 @@ public class GUIManager
     zuksVoucherChange = new ZookeeperUniqueKeyServer("voucherchange");
 
     //
-    // RestHighLevelClient
+    // ElasticsearchClientAPI
     //
 
     try
     {
-      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() { @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) { return builder.setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout); } } ));
+      elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
     }
     catch (ElasticsearchException e)
     {
@@ -995,9 +992,8 @@ public class GUIManager
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "guimanager-subscribermessagetemplateservice-" + apiProcessKey, subscriberMessageTemplateTopic, true);
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
-    journeyTrafficReader = (bypassJourneyTrafficEngine)? null : ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
-    renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", apiProcessKey, bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
+    renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
@@ -1011,16 +1007,16 @@ public class GUIManager
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
     elasticsearchManager = new ElasticsearchManager(elasticsearch, voucherService, journeyService);
-    
+
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
-    purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
+    purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
 
-    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
-    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
-    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
+    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
 
     /*****************************************
     *
@@ -1782,7 +1778,7 @@ public class GUIManager
     dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);
     criterionFieldAvailableValuesService.start();
     elasticsearchManager.start();
-    
+
     /*****************************************
     *
     *  REST interface -- server and handlers
@@ -1878,6 +1874,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APISimpleHandler(API.removeSegmentationDimension));
         restServer.createContext("/nglm-guimanager/setStatusSegmentationDimension", new APISimpleHandler(API.setStatusSegmentationDimension));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationRanges", new APISimpleHandler(API.getCountBySegmentationRanges));
+        restServer.createContext("/nglm-guimanager/getCountBySegmentationRangesBySegmentID", new APISimpleHandler(API.getCountBySegmentationRangesBySegmentID));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibility", new APISimpleHandler(API.getCountBySegmentationEligibility));
         restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APISimpleHandler(API.evaluateProfileCriteria));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APISimpleHandler(API.getUCGDimensionSummaryList));
@@ -2015,6 +2012,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/redeemVoucher", new APISimpleHandler(API.redeemVoucher));
         restServer.createContext("/nglm-guimanager/extendVoucherValidity", new APISimpleHandler(API.extendVoucherValidity));
         restServer.createContext("/nglm-guimanager/expireVoucher", new APISimpleHandler(API.expireVoucher));
+        
+        restServer.createContext("/nglm-guimanager/getVoucherCodePatternList", new APISimpleHandler(API.getVoucherCodePatternList));
+        restServer.createContext("/nglm-guimanager/generateVouchers", new APISimpleHandler(API.generateVouchers));
 
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getFullMailTemplateList", new APISimpleHandler(API.getFullMailTemplateList));
@@ -2178,6 +2178,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptIn", new APISimpleHandler(API.loyaltyProgramOptIn));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
         restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
+        restServer.createContext("/nglm-guimanager/getSoftwareVersions", new APISimpleHandler(API.getSoftwareVersions));
 
         restServer.createContext("/nglm-guimanager/launchExtract", new APISimpleHandler(API.launchExtract));
         restServer.createContext("/nglm-guimanager/downloadExtractFile", new APIComplexHandler(API.downloadExtractFile));
@@ -2212,7 +2213,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, elasticsearchManager));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, elasticsearchManager));
 
     /*****************************************
     *
@@ -2286,7 +2287,6 @@ public class GUIManager
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
-    private ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
     private ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
     private DeliverableSourceService deliverableSourceService;
     private UploadedFileService uploadedFileService;
@@ -2298,12 +2298,12 @@ public class GUIManager
     private SegmentContactPolicyService segmentContactPolicyService;
     private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
     private ElasticsearchManager elasticsearchManager;
-    
+
     //
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, ElasticsearchManager elasticsearchManager)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, ElasticsearchManager elasticsearchManager)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2335,7 +2335,6 @@ public class GUIManager
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
-      this.journeyTrafficReader = journeyTrafficReader;
       this.renamedProfileCriterionFieldReader = renamedProfileCriterionFieldReader;
       this.deliverableSourceService = deliverableSourceService;
       this.uploadedFileService = uploadedFileService;
@@ -2356,17 +2355,9 @@ public class GUIManager
 
     @Override public void shutdown(boolean normalShutdown)
     {
-      //
-      //  reference data readers
-      //
 
-      if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
-      if (journeyTrafficReader != null) journeyTrafficReader.close();
-      if (renamedProfileCriterionFieldReader != null) renamedProfileCriterionFieldReader.close();
-      
-      
       if (elasticsearchManager != null) elasticsearchManager.stop();
-      
+
       //
       //  services 
       //
@@ -2886,6 +2877,10 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetCountBySegmentationRanges(userID, jsonRoot);
                   break;
 
+                case getCountBySegmentationRangesBySegmentID:
+                  jsonResponse = guiManagerGeneral.processGetCountBySegmentationRangesBySegmentId(userID, jsonRoot);
+                  break;
+
                 case getCountBySegmentationEligibility:
                   jsonResponse = guiManagerGeneral.processGetCountBySegmentationEligibility(userID, jsonRoot);
                   break;
@@ -3362,6 +3357,14 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetTokenCodesFormats(userID, jsonRoot);
                   break;
 
+                case getVoucherCodePatternList:
+                  jsonResponse = guiManagerGeneral.processGetVoucherCodePatternList(userID, jsonRoot);
+                  break;
+                  
+                case generateVouchers:
+                  jsonResponse = guiManagerGeneral.processGenerateVouchers(userID, jsonRoot);
+                  break;
+                  
                 case getVoucherTypeList:
                   jsonResponse = processGetVoucherTypeList(userID, jsonRoot, true, includeArchived);
                   break;
@@ -4058,6 +4061,11 @@ public class GUIManager
                   jsonResponse = processRemoveSimpleOffer(userID, jsonRoot);
                   break;   
 
+
+                case getSoftwareVersions:
+                jsonResponse = processSoftwareVersions(userID, jsonRoot);
+                break;
+
               }
           }
         else
@@ -4263,11 +4271,15 @@ public class GUIManager
                 case downloadReport:
                   guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
+                  
                 case downloadExtractFile:
                   guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange);
                   break;
+                  
                 case launchAndDownloadExtract:
                   guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange);
+                  break;
+
               }
           }
         else
@@ -5386,34 +5398,20 @@ public class GUIManager
             String journeyID = journey.getGUIManagedObjectID();
 
             //
-            // retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine
-            // otherwise
+            // retrieve from Elasticsearch 
             //
-            
-            if (bypassJourneyTrafficEngine)
+            try
               {
-                try
-                  {
-                    ElasticsearchClientAPI client = new ElasticsearchClientAPI("", 0); // @rl deprecated use, change
-                    client.setConnection(this.elasticsearch);
-                    Long count = client.getJourneySubscriberCount(journeyID);
-                    subscriberCount = (count != null) ? count : 0;
-                  } 
-                catch (ElasticsearchClientException e)
-                  {
-                    StringWriter stackTraceWriter = new StringWriter();
-                    e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-                  }
+                Long count = this.elasticsearch.getJourneySubscriberCount(journeyID);
+                subscriberCount = (count != null) ? count : 0;
               } 
-            else
+            catch (ElasticsearchClientException e)
               {
-                JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
-                if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
-                  {
-                    subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
-                  }
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
+             
             journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
@@ -5637,7 +5635,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
+        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, approval);
         if(GUIManagedObjectType.Workflow.equals(objectType) || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType)) {
           journey.setApproval(JourneyStatus.StartedApproved);
         }
@@ -5999,7 +5997,7 @@ public class GUIManager
                  ****************************************/
 
                 Journey journey = new Journey(elementRoot, objectType, epoch, existingElement, journeyService,
-                    catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+                    catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService);
 
                 journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService,
                     (existingElement == null), userID);
@@ -6208,7 +6206,7 @@ public class GUIManager
              ****************************************/
 
             Journey element = new Journey(elementRoot, type, epoch, existingJourneyElement, journeyService,
-                catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService,
+                catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService,
                 approval);
 
             /*****************************************
@@ -6668,7 +6666,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
+        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, approval);
 
         //
         // Update targetCount
@@ -6923,7 +6921,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService);
 
         /*****************************************
         *
@@ -7135,7 +7133,7 @@ public class GUIManager
 
                 Journey journeyTemplate = new Journey(elementRoot, GUIManagedObjectType.JourneyTemplate, epoch,
                     existingElement, journeyService, catalogCharacteristicService, subscriberMessageTemplateService,
-                    dynamicEventDeclarationsService);
+                    dynamicEventDeclarationsService, journeyTemplateService);
 
                 /*****************************************
                  *
@@ -7228,7 +7226,7 @@ public class GUIManager
     
     /*****************************************
     *
-    *  retrieve corresponding Journey & JourneyTrafficHistory
+    *  retrieve corresponding Journey 
     *
     *****************************************/
     
@@ -7244,48 +7242,25 @@ public class GUIManager
         Set<String> nodeIDs = ((Journey) journey).getJourneyNodes().keySet();
         
         //
-        //  retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine otherwise
+        //  retrieve from Elasticsearch 
         // 
-        
-        if(bypassJourneyTrafficEngine) {
-          try {
-            ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
-            client.setConnection(this.elasticsearch);
-            Map<String, Long> esMap = client.getJourneyNodeCount(journeyID);
-            for (String key : nodeIDs) {
-              Long count = esMap.get(key);
-              result.put(key, (count != null)? count : 0);
-            }
+        try {
+          Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID);
+          for (String key : nodeIDs) {
+            Long count = esMap.get(key);
+            result.put(key, (count != null)? count : 0);
           }
-          catch (ElasticsearchClientException e) {
-            // Log
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-            
-            // Response
-            response.put("responseCode", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
-            response.put("responseMessage", e.getMessage());
-            return JSONUtilities.encodeObject(response);
-          }
-        } 
-        else {
-          JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
-          for (String key : nodeIDs)
-          {
-            int subscriberCount = 0;
-            
-            if(journeyTrafficHistory != null)
-              {
-                Map<String, SubscriberTraffic> byNodeMap = journeyTrafficHistory.getCurrentData().getByNode();
-                if(byNodeMap.get(key) != null)
-                  {
-                    subscriberCount = byNodeMap.get(key).getSubscriberCount();
-                  }
-              }
-              
-            result.put(key, subscriberCount);
-          }
+        }
+        catch (ElasticsearchClientException e) {
+          // Log
+          StringWriter stackTraceWriter = new StringWriter();
+          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+          log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+          
+          // Response
+          response.put("responseCode", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          response.put("responseMessage", e.getMessage());
+          return JSONUtilities.encodeObject(response);
         }
       }
     else
@@ -7520,7 +7495,84 @@ public class GUIManager
         *  instantiate offer
         *
         ****************************************/
+        if (existingOffer == null) {
         jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
+        }
+        
+        if (existingOffer != null) {
+            if (existingOffer instanceof Offer)
+              {
+                if (((Offer) existingOffer).getSimpleOffer() == true)
+                  {
+                    String display = ((Offer) existingOffer).getGUIManagedObjectDisplay();
+                    Set<OfferProduct> offerProducts = ((Offer) existingOffer).getOfferProducts();
+                    Set<OfferVoucher> offerVouchers = ((Offer) existingOffer).getOfferVouchers();
+                    String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
+                    if (!(jsonRootDisplay.equals(display)))
+                      {
+                        response.put("responseCode", "offerNotValid");
+                        response.put("responseMessage", "The display cannot be changed for the existing simpleOffer");
+                        return JSONUtilities.encodeObject(response);
+                      }
+                    else if (offerProducts != null && !(offerProducts).isEmpty())
+                      {
+                        OfferProduct offerProduct = offerProducts.stream().findFirst().get(); // simple offer can have only one product
+                                                                                              
+                        OfferProduct jsonRootOfferProduct = null;
+                        JSONArray jsonRootOfferProducts = JSONUtilities.decodeJSONArray(jsonRoot, "products", false);
+                        JSONObject jsonRootofferProduct = new JSONObject();
+                        if (jsonRootOfferProducts != null)
+                          {
+                            jsonRootofferProduct = (JSONObject) jsonRootOfferProducts.get(0); // simple offer can have only one product
+                                                                                              
+                          }
+                        if (jsonRootOfferProducts == null || (jsonRootOfferProducts != null
+                            && (!(offerProduct.getProductID().equals(jsonRootofferProduct.get("productID").toString()))
+                                || (offerProduct.getQuantity() != ((Number) jsonRootofferProduct.get("quantity"))
+                                    .intValue()))))
+                          {
+                            response.put("responseCode", "offerNotValid");
+                            response.put("responseMessage",
+                                "The product cannot be changed for the existing simpleOffer");
+                            return JSONUtilities.encodeObject(response);
+                          }
+                      }
+                    else if (offerVouchers != null && !(offerVouchers).isEmpty())
+                      {
+                        OfferVoucher offerVoucher = offerVouchers.stream().findFirst().get(); // simple offer can have only one voucher
+                                                                                             
+                        JSONArray jsonRootOfferVouchers = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false);
+                        JSONObject jsonRootofferVoucher = new JSONObject();
+                        if (jsonRootOfferVouchers != null)
+                          {
+                            jsonRootofferVoucher = (JSONObject) jsonRootOfferVouchers.get(0); //simple offer can have only one vouche
+                          }
+                        if (jsonRootOfferVouchers == null || (jsonRootOfferVouchers != null
+                            && (!(offerVoucher.getVoucherID().equals(jsonRootofferVoucher.get("voucherID").toString()))
+                                || (offerVoucher.getQuantity() != ((Number) jsonRootofferVoucher.get("quantity"))
+                                    .intValue()))))
+                          {
+                            response.put("responseCode", "offerNotValid");
+                            response.put("responseMessage",
+                                "The voucher cannot be changed for the existing simpleOffer");
+                            return JSONUtilities.encodeObject(response);
+                          }
+                      }
+                    else
+                      {
+                        jsonRoot.put("simpleOffer", true);
+                      }
+
+                  }
+                else
+                  {
+                    jsonRoot.put("simpleOffer", false);
+                  }
+
+              }
+          
+        
+        }
         Offer offer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
         /*****************************************
@@ -7697,6 +7749,7 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+ 
   /*****************************************
    *
    * processSetStatusOffer
@@ -10665,6 +10718,7 @@ public class GUIManager
     *
     *****************************************/
 
+    processPartnerAlternateID(jsonRoot);
     long epoch = epochServer.getKey();
     try
       {
@@ -10748,6 +10802,25 @@ public class GUIManager
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  private void processPartnerAlternateID(JSONObject jsonRoot)
+  {
+    // find out the subscriberID, so that we can do the processing in EvolutionEngine
+    String alternateID = JSONUtilities.decodeString(jsonRoot, "alternateID", false);
+    String alternateIDValue = JSONUtilities.decodeString(jsonRoot, "alternateIDValue", false);
+    if (alternateID != null && alternateIDValue != null)
+      {
+        try
+        {
+          String customerID = subscriberIDService.getSubscriberID(alternateID, alternateIDValue);
+          jsonRoot.put("customerIDfromAlternateID", customerID);
+        }
+        catch (SubscriberIDServiceException e)
+        {
+          log.error("SubscriberIDServiceException can not resolve subscriberID for {} = {} error is {}", alternateID, alternateIDValue, e.getMessage());
+        }
       }
   }
 
@@ -11049,7 +11122,20 @@ public class GUIManager
       }
     for (GUIManagedObject product : productsObjects)
       {
-        products.add(productService.generateResponseJSON(product, fullDetails, now));
+        JSONObject productJSON = productService.generateResponseJSON(product, fullDetails, now);
+        if (!fullDetails)
+          {
+            if (product.getJSONRepresentation().get("simpleOffer") != null)
+              {
+                productJSON.put("simpleOffer", product.getJSONRepresentation().get("simpleOffer"));
+              }
+            else
+              {
+                productJSON.put("simpleOffer", "");
+              }
+          }
+        products.add(productJSON);
+        
       }
 
     /*****************************************
@@ -11172,13 +11258,43 @@ public class GUIManager
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
-    
+
     /*****************************************
     *
-    *  Normal product creation. Not created from simpleOffer
+    * check if product is created by simpleOffer
     *
     *****************************************/
-    jsonRoot.put("simpleOffer", false);
+    if (existingProduct == null)
+      {
+        jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
+      }
+
+    if (existingProduct != null)
+      {
+        if (existingProduct instanceof Product)
+          {
+            if (((Product) existingProduct).getSimpleOffer() == true)
+              {
+                String display = ((Product) existingProduct).getGUIManagedObjectDisplay();
+                String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
+                if (!(jsonRootDisplay.equals(display)))
+                  {
+                    response.put("responseCode", "productNotValid");
+                    response.put("responseMessage", "The display cannot be changed for the existing product");
+                    return JSONUtilities.encodeObject(response);
+                  }
+                else
+                  {
+                    jsonRoot.put("simpleOffer", true);
+                  }
+
+              }
+            else
+              {
+                jsonRoot.put("simpleOffer", false);
+              }
+          }
+      }
     
     
 
@@ -11198,7 +11314,7 @@ public class GUIManager
         ****************************************/
 
         Product product = new Product(jsonRoot, epoch, existingProduct, deliverableService, catalogCharacteristicService);
-        
+
 
         /*****************************************
         *
@@ -11401,6 +11517,7 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+   
   /*****************************************
    *
    * processSetStatusProduct
@@ -13954,7 +14071,19 @@ public class GUIManager
       }
     for (GUIManagedObject voucher : voucherObjects)
       {
-        vouchers.add(voucherService.generateResponseJSON(voucher, fullDetails, now));
+        JSONObject voucherJSON = voucherService.generateResponseJSON(voucher, fullDetails, now);
+        if (!fullDetails)
+          {
+            if (voucher.getJSONRepresentation().get("simpleOffer") != null)
+              {
+                voucherJSON.put("simpleOffer", voucher.getJSONRepresentation().get("simpleOffer"));
+              }
+            else
+              {
+                voucherJSON.put("simpleOffer", "");
+              }
+          }
+        vouchers.add(voucherJSON);
       }
 
     /*****************************************
@@ -14081,10 +14210,43 @@ public class GUIManager
 
     /*****************************************
     *
-    *  Normal voucher creation. Not created from simpleOffer
+    *  check if voucher created by simple offer or standard voucher
     *
     *****************************************/
-    jsonRoot.put("simpleOffer", false);
+    if (existingVoucher == null)
+      {
+        jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
+      }
+    
+    if (existingVoucher != null)
+      {
+        if (existingVoucher instanceof Voucher)
+          {
+            if (((Voucher) existingVoucher).getSimpleOffer() == true)
+              {
+                String display = ((Voucher) existingVoucher).getGUIManagedObjectDisplay();
+                String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
+                if (!(jsonRootDisplay.equals(display)))
+                  {
+                    response.put("responseCode", "voucherNotValid");
+                    response.put("responseMessage", "The display cannot be changed for the existing voucher");
+                    return JSONUtilities.encodeObject(response);
+                  }
+                else
+                  {
+                    jsonRoot.put("simpleOffer", true);
+                  }
+              }
+            else
+              {
+                jsonRoot.put("simpleOffer", false);
+              }
+
+    
+    
+
+          }
+      }
     
     
     /*****************************************
@@ -16793,7 +16955,7 @@ public class GUIManager
 
                     if (moduleID != null)
                       {
-                        BDRs = BDRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                        BDRs = BDRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
                       }
                     
                     //
@@ -16802,7 +16964,7 @@ public class GUIManager
 
                     if (featureID != null)
                       {
-                        BDRs = BDRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                        BDRs = BDRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                       }
                     
                     //
@@ -16980,7 +17142,7 @@ public class GUIManager
 
                     if (moduleID != null)
                       {
-                        ODRs = ODRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                        ODRs = ODRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
                       }
                     
                     //
@@ -16989,7 +17151,7 @@ public class GUIManager
 
                     if (featureID != null)
                       {
-                        ODRs = ODRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                        ODRs = ODRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                       }
                     
                     //
@@ -17003,7 +17165,7 @@ public class GUIManager
                           {
                             if(request instanceof PurchaseFulfillmentRequest)
                               {
-                                if(((PurchaseFulfillmentRequest)request).getOfferID().equals(offerID))
+                                if(offerID.equals(((PurchaseFulfillmentRequest)request).getOfferID()))
                                   {
                                     result.add(request);
                                   }
@@ -17023,7 +17185,7 @@ public class GUIManager
                           {
                             if(request instanceof PurchaseFulfillmentRequest)
                               {
-                                if(((PurchaseFulfillmentRequest)request).getSalesChannelID().equals(salesChannelID))
+                                if (salesChannelID.equals(((PurchaseFulfillmentRequest)request).getSalesChannelID()))
                                   {
                                     result.add(request);
                                   }
@@ -17051,7 +17213,7 @@ public class GUIManager
                                       {
                                         for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
                                           {
-                                            if(channel.getPrice() != null && channel.getPrice().getPaymentMeanID().equals(paymentMeanID))
+                                            if(channel.getPrice() != null && paymentMeanID.equals(channel.getPrice().getPaymentMeanID()))
                                               {
                                                 result.add(request);
                                               }
@@ -17190,7 +17352,8 @@ public class GUIManager
 
                     if (moduleID != null)
                       {
-                        messages = messages.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                        messages = messages.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
+
                       }
                     
                     //
@@ -17199,7 +17362,7 @@ public class GUIManager
 
                     if (featureID != null)
                       {
-                        messages = messages.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                        messages = messages.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                       }
 
                     //
@@ -17376,7 +17539,7 @@ public class GUIManager
                     
                     if (journeyState != null)
                       {
-                        storeJourneys = storeJourneys.stream().filter(journey -> journeyService.getJourneyStatus(journey).getExternalRepresentation().equalsIgnoreCase(journeyState)).collect(Collectors.toList()); 
+                        storeJourneys = storeJourneys.stream().filter(journey -> journeyState.equalsIgnoreCase(journeyService.getJourneyStatus(journey).getExternalRepresentation())).collect(Collectors.toList()); 
                       }
 
                     //
@@ -17443,7 +17606,10 @@ public class GUIManager
                         Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
                         SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
-
+                        SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID()+"");
+                        if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
+                        	customerStatusInJourney=profilejourneyStatus;	
+                       
                         if (customerStatus != null)
                           {
                             SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
@@ -17740,6 +17906,10 @@ public class GUIManager
                         Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
                         SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+                        SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID()+"");
+                        if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
+                        	customerStatusInJourney=profilejourneyStatus;	
+                        
                         
                         if (customerStatus != null)
                           {
@@ -19492,8 +19662,6 @@ public class GUIManager
 
     GUIManagedObject existingReseller= resellerService.getStoredGUIManagedObject(resellerID);
     
-    
-    
     /*****************************************
     *
     *  To check if the user is already in another reseller users list
@@ -19543,7 +19711,8 @@ public class GUIManager
     *  process Reseller
     *
     *****************************************/
-
+    
+    processPartnerAlternateID(jsonRoot);
     long epoch = epochServer.getKey();
     try
       {
@@ -20250,8 +20419,9 @@ public class GUIManager
       {
         String uniqueKey = UUID.randomUUID().toString();
         JourneyRequest journeyRequest = new JourneyRequest(baseSubscriberProfile, subscriberGroupEpochReader, uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
+        journeyRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
-        String journeyRequestTopic = journeyManagerDeclaration.getDefaultRequestTopic();
+        String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic(journeyRequest.getDeliveryPriority());
         
         Properties kafkaProducerProperties = new Properties();
         kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
@@ -20259,7 +20429,7 @@ public class GUIManager
         kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         KafkaProducer journeyProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
-        journeyProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getJourneyRequestTopic(), StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
+        journeyProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
       
         responseCode = "ok";
       }
@@ -20356,7 +20526,7 @@ public class GUIManager
         validityPeriodType = point.getValidity().getPeriodType();
         validityPeriod = point.getValidity().getPeriodQuantity();
       }
-     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod);
+     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY);
     } catch (SubscriberProfileServiceException e) {
       throw new GUIManagerException(e);
     }
@@ -20443,7 +20613,7 @@ public class GUIManager
     String deliveryRequestID = zuks.getStringKey();
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY);
     } catch (SubscriberProfileServiceException e) {
       throw new GUIManagerException(e);
     }
@@ -21817,11 +21987,11 @@ public class GUIManager
      *
      ****************************************/
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);    
+    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
     Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplier", false);
     Supplier supplier = null;
-    
+
     /*****************************************
     *
     *  getSupplier
@@ -21833,7 +22003,7 @@ public class GUIManager
         supplier = (Supplier) supplierObject;
       }
     }
-    
+
     /*****************************************
      *
      *  resolve subscriberID
@@ -23065,6 +23235,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String existingproductID = null;
     String existingVoucherID = null;
     String existingSupplierID = null;
+    String existingProductOrVoucherID = null;
     
     /*****************************************
      *
@@ -23106,10 +23277,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             if (product != null)
               {
                 existingproductID = product.getProductID();
+                existingProductOrVoucherID = existingproductID;
               }
             if (voucher != null)
               {
                 existingVoucherID = voucher.getVoucherID();
+                existingProductOrVoucherID = existingproductID;
               }
           }
       }
@@ -23173,7 +23346,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             JSONArray voucherJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false); // to separate the voucher from the input json
             
             Map<String, JSONObject> OfferProductAndVoucher = splitOfferProductAndVoucher(productJSONArray, voucherJSONArray,
-                jsonRoot);
+                jsonRoot, existingproductID);
             
             JSONObject productJSON = OfferProductAndVoucher.get("productJSON"); // JSONObject to create a new product with offer name
             JSONObject voucherJSON = OfferProductAndVoucher.get("voucherJSON"); // JSONObject to create a new voucher with offer name
@@ -23739,7 +23912,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         log.error(str);
         throw new GUIManagerException("Internal error", str);
       }
-    String topic = deliveryManagerDeclaration.getDefaultRequestTopic();
+
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
     
@@ -23759,7 +23932,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime());
+    purchaseRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+	String topic = deliveryManagerDeclaration.getRequestTopic(purchaseRequest.getDeliveryPriority());
 
     Future<PurchaseFulfillmentRequest> waitingResponse=null;
     if(sync){
@@ -24261,26 +24436,39 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             CriterionField parameter = nodeType.getParameters().get(JSONUtilities.decodeString(parameterJSON, "id", true));
             if (parameter != null && parameter.getExpressionValuedParameter())
               {
-                //
-                //  default list of fields for parameter data type
-                //
-
-                CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, nodeType, (EvolutionEngineEventDeclaration) null, (Journey) null);
-                List<CriterionField> defaultFields = new ArrayList<CriterionField>();
-                for (CriterionField criterionField : criterionContext.getCriterionFields().values())
+                JSONArray expressionFieldsArray = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
+                if (expressionFieldsArray != null)
                   {
-                    if (! criterionField.getID().equals(CriterionField.EvaluationDateField) && criterionField.getFieldDataType() == parameter.getFieldDataType())
-                      {
-                        defaultFields.add(criterionField);
-                      }
+                    //
+                    // hard coded fields
+                    //
+                    
+                    List<JSONObject> expressionFields = evaluateAvailableValues(expressionFieldsArray, now);
+                    parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
                   }
+                else
+                  {
+                    //
+                    //  default list of fields for parameter data type
+                    //
 
-                //
-                //  evaluate comparable fields
-                //
+                    CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, nodeType, (EvolutionEngineEventDeclaration) null, (Journey) null);
+                    List<CriterionField> defaultFields = new ArrayList<CriterionField>();
+                    for (CriterionField criterionField : criterionContext.getCriterionFields().values())
+                      {
+                        if (! criterionField.getID().equals(CriterionField.EvaluationDateField) && criterionField.getFieldDataType() == parameter.getFieldDataType())
+                          {
+                            defaultFields.add(criterionField);
+                          }
+                      }
 
-                List<JSONObject> expressionFields = evaluateComparableFields(parameter.getID(), parameter.getJSONRepresentation(), defaultFields, true);
-                parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
+                    //
+                    //  evaluate comparable fields
+                    //
+
+                    List<JSONObject> expressionFields = evaluateComparableFields(parameter.getID(), parameter.getJSONRepresentation(), defaultFields, true);
+                    parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
+                  }
               }
 
             //
@@ -24410,6 +24598,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
       {
+        
+        case "suppliersDisplayExp":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject supplierUnchecked : supplierService.getStoredSuppliers())
+                {
+                  if (supplierUnchecked.getAccepted())
+                    {
+                      Supplier supplier = (Supplier) supplierUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", "'" + supplier.getGUIManagedObjectDisplay() + "'");
+                      availableValue.put("display", supplier.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
 
         case "callableCampaigns":
           if (includeDynamic)
@@ -24736,23 +24941,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
                         }
-                    }
-                }
-            }
-          break;
-          
-        case "suppliers":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject supplierUnchecked : supplierService.getStoredSuppliers())
-                {
-                  if (supplierUnchecked.getAccepted())
-                    {
-                      Supplier supplier = (Supplier) supplierUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", supplier.getSupplierID());
-                      availableValue.put("display", supplier.getGUIManagedObjectDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
             }
@@ -25132,6 +25320,33 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 }
             }
           break;
+          
+        case "resellers":
+          if (includeDynamic)
+            {
+              for (Reseller reseller : resellerService.getActiveResellers(now))
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", reseller.getGUIManagedObjectID());
+                  availableValue.put("display", reseller.getGUIManagedObjectDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
+        case "suppliers":
+          if (includeDynamic)
+            {
+              for (Supplier supplier : supplierService.getActiveSuppliers(now))
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", supplier.getGUIManagedObjectID());
+                  availableValue.put("display", supplier.getGUIManagedObjectDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
         case "weekDays":
           if (includeDynamic)
             {
@@ -25203,7 +25418,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         case "supportedRelationships":
           HashMap<String, Object> availableValue = new HashMap<String, Object>();
           availableValue.put("id", "customer");
-          availableValue.put("display", "customer");
+          availableValue.put("display", "Customer");
           result.add(JSONUtilities.encodeObject(availableValue));
           
           for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
@@ -25213,6 +25428,49 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               availableValue.put("display", supportedRelationship.getDisplay());
               result.add(JSONUtilities.encodeObject(availableValue));
             }
+          break;
+
+        case "subscriberAttributes":
+          for (MetaData metaData : Deployment.getCustomerMetaData().getGeneralDetailsMetaData())
+            {
+              Object value = null; // TODO : do we need to select only fields that are not ReadOnly ?
+              switch (metaData.getDataType())
+              {
+                case StringCriterion:
+                case IntegerCriterion:
+                case BooleanCriterion:
+                  // We don't support Double fields, because they are normalized at custo level (and we have no access to this in EvolutionEngine)
+                  availableValue = new HashMap<String, Object>();
+                  availableValue.put("id", metaData.getName() + EvolutionEngine.DELIMITER + metaData.getDataType().getExternalRepresentation()); // name -X- dataType
+                  availableValue.put("display", metaData.getDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                  break;
+              }
+            }
+          result.sort((m1, m2) -> ((String) m1.get("display")).compareTo((String) m2.get("display")));
+          break;
+          
+        case "supportedRelationshipsAndPartners":
+          availableValue = new HashMap<String, Object>();
+          availableValue.put("id", "customer");
+          availableValue.put("display", "Customer");
+          result.add(JSONUtilities.encodeObject(availableValue));
+          for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+            {
+              availableValue = new HashMap<String, Object>();
+              availableValue.put("id", "hierarchy_" + supportedRelationship.getID());
+              availableValue.put("display", supportedRelationship.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          
+          availableValue = new HashMap<String, Object>();
+          availableValue.put("id", EvolutionEngine.INTERNAL_ID_SUPPLIER);
+          availableValue.put("display", "Supplier");
+          
+          result.add(JSONUtilities.encodeObject(availableValue));
+          availableValue.put("id", EvolutionEngine.INTERNAL_ID_RESELLER);
+          availableValue.put("display", "Reseller");
+          result.add(JSONUtilities.encodeObject(availableValue));
           break;
 
       default:
@@ -25538,7 +25796,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         GUIManagedObject modifiedJourney;
         try
           {
-            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
             modifiedJourney = journey;
           }
@@ -26526,7 +26784,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //
 
           lastGeneratedObjectID += 1;
-          return String.format(Deployment.getGenerateNumericIDs() ? "%d" : "%03d", lastGeneratedObjectID);
+          return Long.toString(lastGeneratedObjectID);
         }
     }
   }
@@ -27164,7 +27422,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
  *  form a new json to create new product and new voucher with offer name.
  *
  ************************************************************************/
-  public Map<String, JSONObject> splitOfferProductAndVoucher (JSONArray productJSONArray, JSONArray voucherJSONArray, JSONObject jsonRoot) {
+  public Map<String, JSONObject> splitOfferProductAndVoucher (JSONArray productJSONArray, JSONArray voucherJSONArray, JSONObject jsonRoot, String existingProductOrVoucherID) {
     HashMap<String, JSONObject> response = new HashMap<String,JSONObject>();
     JSONObject productJSONObject = new JSONObject();
     JSONObject voucherJSONObject = new JSONObject();
@@ -27180,8 +27438,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       {
         productJSONObject = ((JSONObject) productJSONArray.get(0));
         productJSON = JSONUtilities.decodeJSONObject(productJSONObject, "product", false);
+        if (existingProductOrVoucherID == null) {
         String productID = productService.generateProductID();
-        productJSON.put("id", productID);
+        existingProductOrVoucherID = productID;
+        }
+        productJSON.put("id", existingProductOrVoucherID);
         if (jsonRoot.containsKey("loginID"))
           {
             productJSON.put("supplierID", activeSupplier);
@@ -27191,21 +27452,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         productJSON.put("display", JSONUtilities.decodeString(jsonRoot, "display"));
         productJSON.put("processing", JSONUtilities.decodeBoolean(jsonRoot, "processing"));
         productJSON.put("accepted", JSONUtilities.decodeBoolean(jsonRoot, "accepted"));
-        productJSON.put("active", JSONUtilities.decodeBoolean(jsonRoot, "active"));
+        productJSON.put("active", true);
         productJSON.put("readOnly", JSONUtilities.decodeBoolean(jsonRoot, "readonly"));
         productJSON.put("valid", JSONUtilities.decodeBoolean(jsonRoot, "valid"));
         productJSON.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate"));
         productJSON.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate"));
         productJSON.put("imageURL", JSONUtilities.decodeString(jsonRoot, "imageURL"));
         productJSON.put("simpleOffer", true);
-       
+
       }
     if (voucherJSONArray != null && !(voucherJSONArray.isEmpty()))
       {
         voucherJSONObject = ((JSONObject) voucherJSONArray.get(0));
         voucherJSON = JSONUtilities.decodeJSONObject(voucherJSONObject, "voucher", false); 
+        if (existingProductOrVoucherID == null) {
         String voucherID = voucherService.generateVoucherID();
-        voucherJSON.put("id", voucherID);
+        existingProductOrVoucherID = voucherID;
+        }
+        voucherJSON.put("id", existingProductOrVoucherID);
         if (jsonRoot.containsKey("loginID"))
           {
             voucherJSON.put("supplierID", activeSupplier);
@@ -27215,14 +27479,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         voucherJSON.put("display", JSONUtilities.decodeString(jsonRoot, "display"));
         voucherJSON.put("processing", JSONUtilities.decodeBoolean(jsonRoot, "processing"));
         voucherJSON.put("accepted", JSONUtilities.decodeBoolean(jsonRoot, "accepted"));
-        voucherJSON.put("active", JSONUtilities.decodeBoolean(jsonRoot, "active"));
+        voucherJSON.put("active", true);
         voucherJSON.put("readOnly", JSONUtilities.decodeBoolean(jsonRoot, "readonly"));
         voucherJSON.put("valid", JSONUtilities.decodeBoolean(jsonRoot, "valid"));
         voucherJSON.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate"));
         voucherJSON.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate"));
         voucherJSON.put("imageURL", JSONUtilities.decodeString(jsonRoot, "imageURL"));
         voucherJSON.put("simpleOffer", true);
-        
+
       }
     
     response.put("productJSONObject", productJSONObject);
@@ -27299,13 +27563,22 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         for (OfferProduct offerProduct : offerProducts)
           {
             String productId = offerProduct.getProductID();
-            GUIManagedObject productObject = productService.getStoredProduct(productId);
-            Product product = (Product) productObject;
-            supplierID = product.getSupplierID();
-            response.put("supplierID", supplierID);
-            response.put("offerProduct", offerProduct);          
-            break;
-            
+            if (productId != null)
+              {
+                GUIManagedObject productObject = productService.getStoredProduct(productId);
+                if (productObject != null)
+                  {
+                    Product product = (Product) productObject;
+                    if (product.getSupplierID() != null)
+                      {
+                        supplierID = product.getSupplierID();
+                        response.put("supplierID", supplierID);
+                        response.put("offerProduct", offerProduct);
+                        break;
+                      }
+                  }
+              }
+
           }
       }
     
@@ -27314,12 +27587,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         for (OfferVoucher offerVoucher : offerVouchers)
           {
             String voucherId = offerVoucher.getVoucherID();
-            GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherId);
-            Voucher voucher = (Voucher) voucherObject;
-            supplierID = voucher.getSupplierID();
-            response.put("supplierID", supplierID);          
-            response.put("offerVoucher", offerVoucher);
-            break;
+            if (voucherId != null)
+              {
+                GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherId);
+                if (voucherObject != null)
+                  {
+                    Voucher voucher = (Voucher) voucherObject;                    
+                    if (voucher.getSupplierID() != null)
+                      {
+                        supplierID = voucher.getSupplierID();
+                        response.put("supplierID", supplierID);
+                        response.put("offerVoucher", offerVoucher);
+                        break;
+                      }
+                  }
+              }
           }
       }
    
@@ -27333,6 +27615,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
     return result;
   }
+
 
   /************************************************************************
    *
@@ -27729,7 +28012,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String existingVoucherID = null;
     String existingSupplierID = null;
     Boolean dryRun = false;
-    
+    String existingProductOrVoucherID = null;
 
     /*****************************************
     *
@@ -27781,10 +28064,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             if (product != null)
               {
                 existingproductID = product.getProductID();
+                existingProductOrVoucherID = existingproductID;
               }
             if (voucher != null)
               {
                 existingVoucherID = voucher.getVoucherID();
+                existingProductOrVoucherID = existingVoucherID;
               }
           }
       }
@@ -27820,7 +28105,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         JSONArray voucherJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false); // to separate the voucher from the input json
 
         Map<String, JSONObject> OfferProductAndVoucher = splitOfferProductAndVoucher(productJSONArray, voucherJSONArray,
-            jsonRoot);
+            jsonRoot, existingProductOrVoucherID);
 
         JSONObject productJSON = OfferProductAndVoucher.get("productJSON"); // JSONObject to create a new product with offer name
         JSONObject voucherJSON = OfferProductAndVoucher.get("voucherJSON"); // JSONObject to create a new voucher with offer name
@@ -27844,8 +28129,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
              *
              *****************************************/
 
-            GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
-            GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+            GUIManagedObject existingVoucher = null;
+            GUIManagedObject existingProduct = null;
+
+            if (existingVoucherID != null)
+              {
+                existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+              }
+            if (existingproductID != null)
+              {
+                existingProduct = productService.getStoredProduct(existingproductID);
+              }
 
             if (existingVoucher != null)
               {
@@ -27920,8 +28214,18 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
              *
              *****************************************/
 
-            GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
-            GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
+            GUIManagedObject existingVoucher = null;
+            GUIManagedObject existingProduct = null;
+
+            if (existingVoucherID != null)
+              {
+                existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+              }
+            if (existingproductID != null)
+              {
+                existingProduct = productService.getStoredProduct(existingproductID);
+              }
+            
             if (existingProduct != null)
               {
                 productService.removeProduct(existingproductID, userID);
@@ -28104,7 +28408,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             String productID = product.getProductID();
             String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
-            if (offerName.equals(productName))
+            if (offer.getSimpleOffer() == true && offerName.equals(productName))
               {
                 offerJSON = offerService.generateResponseJSON(offerObject, true, SystemTime.getCurrentTime());                
                 JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product",offerJSON); 
@@ -28125,7 +28429,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             Voucher voucherObject = (Voucher) voucherService.getStoredVoucher(voucherID);
             String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-            if (offerName.equals(voucherName))
+            if (offer.getSimpleOffer() == true && offerName.equals(voucherName))
               {
                 offerJSON = offerService.generateResponseJSON(offerObject, true, SystemTime.getCurrentTime());
                 JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher", offerJSON);                 
@@ -28210,7 +28514,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 String productID = product.getProductID();               
                 String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
-                if (offerName.equals(productName))
+                if (offer.getSimpleOffer() == true && offerName.equals(productName))
                   {
                     JSONObject offerJSON = offerService.generateResponseJSON(offer, fullDetails, now);
                     if (!fullDetails)
@@ -28224,8 +28528,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                             offerJSON.put("simpleOffer", "");
                           }
                       } 
-                    JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product", offerJSON);                    
-                    offerJSON.put("products", productJSONArray);
+                    if (fullDetails)
+                      {
+                        JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product", offerJSON);
+                        offerJSON.put("products", productJSONArray);
+                      }
                     offers.add(offerJSON);
                   }
                 else
@@ -28239,7 +28546,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 String voucherID = voucher.getVoucherID();                
                 String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                if (offerName.equals(voucherName))
+                if (offer.getSimpleOffer() == true && offerName.equals(voucherName))
                   {
                     JSONObject offerJSON = offerService.generateResponseJSON(offer, fullDetails, now);
                     if (!fullDetails)
@@ -28251,10 +28558,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         else
                           {
                             offerJSON.put("simpleOffer", "");
-                          }
+                          }                        
                       }
-                    JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher",offerJSON);
-                    offerJSON.put("vouchers", voucherJSONArray); 
+                    if (fullDetails)
+                      {
+                        JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher", offerJSON);
+                        offerJSON.put("vouchers", voucherJSONArray);
+                      }
 
                     offers.add(offerJSON);
                   }
@@ -28361,69 +28671,76 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     for (int i = 0; i < offers.size(); i++)
       {
         GUIManagedObject offerObject = offers.get(i);
-        if (offerObject != null && offerObject instanceof Offer)
+        if (offerObject != null)
           {
-            Offer offer = (Offer) offerObject;
-            String offerName = offerObject.getGUIManagedObjectName();
-            Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(offer);
-            OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
-            OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
-
-            if (product != null)
+            if (offerObject instanceof Offer)
               {
-                String productID = product.getProductID();
-                String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
-                if (offerName.equals(productName))
+                Offer offer = (Offer) offerObject;
+                String offerName = offerObject.getGUIManagedObjectName();
+                Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(offer);
+                OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+                OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
+
+                if (product != null)
                   {
-                    String productId = product.getProductID();
-                    productService.removeProduct(productId, userID);
-                    offerService.removeOffer(offer.getOfferID(), userID);
-                    validIDs.add(offer.getOfferID());
-                  }
-                else if (!(offerName.equals(productName)) && jsonRoot.containsKey("id"))
-                  {
-                    response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
-                    response.put("responseMessage",
-                        RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
-                    return JSONUtilities.encodeObject(response);
-                  }
-                else
-                  {
-                    if (log.isDebugEnabled())
+                    String productID = product.getProductID();
+                    String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
+                    if (offerName.equals(productName))
                       {
-                        log.debug(offer + "is not a simple offer");
+                        String productId = product.getProductID();
+                        productService.removeProduct(productId, userID);
+                        offerService.removeOffer(offer.getOfferID(), userID);
+                        validIDs.add(offer.getOfferID());
+                      }
+                    else if (!(offerName.equals(productName)) && jsonRoot.containsKey("id"))
+                      {
+                        response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
+                        response.put("responseMessage",
+                            RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
+                        return JSONUtilities.encodeObject(response);
+                      }
+                    else
+                      {
+                        if (log.isDebugEnabled())
+                          {
+                            log.debug(offer + "is not a simple offer");
+                          }
                       }
                   }
-              }
-            if (voucher != null)
-              {
-                String voucherID = voucher.getVoucherID();
-                String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
+                if (voucher != null)
+                  {
+                    String voucherID = voucher.getVoucherID();
+                    String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                if (offerName.equals(voucherName))
-                  {
-                    String voucherId = voucher.getVoucherID();
-                    voucherService.removeVoucher(voucherId, userID, uploadedFileService);
-                    offerService.removeOffer(offer.getOfferID(), userID);
-                    validIDs.add(offer.getOfferID());
-                  }
-
-                else if (!(offerName.equals(voucherName)) && jsonRoot.containsKey("id"))
-                  {
-                    response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
-                    response.put("responseMessage",
-                        RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
-                    return JSONUtilities.encodeObject(response);
-                  }
-                else
-                  {
-                    if (log.isDebugEnabled())
+                    if (offerName.equals(voucherName))
                       {
-                        log.debug(offer + "is not a simple offer");
+                        String voucherId = voucher.getVoucherID();
+                        voucherService.removeVoucher(voucherId, userID, uploadedFileService);
+                        offerService.removeOffer(offer.getOfferID(), userID);
+                        validIDs.add(offer.getOfferID());
                       }
-                  }
 
+                    else if (!(offerName.equals(voucherName)) && jsonRoot.containsKey("id"))
+                      {
+                        response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
+                        response.put("responseMessage",
+                            RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
+                        return JSONUtilities.encodeObject(response);
+                      }
+                    else
+                      {
+                        if (log.isDebugEnabled())
+                          {
+                            log.debug(offer + "is not a simple offer");
+                          }
+                      }
+
+                  }
               }
+            else {
+
+              offerService.removeOffer(offerObject.getGUIManagedObjectID(), userID);
+            }
           }
       }
     /*****************************************
@@ -28451,6 +28768,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     response.put("removedOfferIDs", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
 
+  }
+
+  
+  public JSONObject processSoftwareVersions(String userID, JSONObject jsonRoot)
+  {
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
+    response.put("evolutionVersion", com.evolving.nglm.core.Deployment.getEvolutionVersion());
+    response.put("customerVersion", com.evolving.nglm.core.Deployment.getCustomerVersion());
+    
+    return JSONUtilities.encodeObject(response);
+   
   }
 
 }

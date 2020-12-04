@@ -131,6 +131,8 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
   public boolean getPeriodicEvaluation() { return periodicEvaluation; }
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
 
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
+
   /*****************************************
   *
   *  setters

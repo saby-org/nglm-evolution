@@ -73,21 +73,6 @@ public abstract class DeliveryManager
   }
 
   //
-  //  DeliveryGuarantee
-  //
-
-  public enum DeliveryGuarantee
-  {
-    AtLeastOnce("atLeastOnce"),
-    AtMostOnce("atMostOnce"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private DeliveryGuarantee(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static DeliveryGuarantee fromExternalRepresentation(String externalRepresentation) { for (DeliveryGuarantee enumeratedValue : DeliveryGuarantee.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
-  //
   //  ManagerStatus
   //
 
@@ -95,18 +80,9 @@ public abstract class DeliveryManager
   {
     Created,
     Delivering,
-    SuspendRequested,
-    Suspended,
-    ResumeRequested,
-    Stopping,
-    Aborting,
-    Stopped;
-    public boolean isRunning() { return EnumSet.of(Created,Delivering,SuspendRequested,Suspended,ResumeRequested).contains(this); }
-    public boolean isSuspending() { return EnumSet.of(SuspendRequested).contains(this); }
-    public boolean isSuspended() { return EnumSet.of(Created, SuspendRequested,Suspended,ResumeRequested).contains(this); }
-    public boolean isWaitingToDeliverRequests() { return EnumSet.of(Created, Suspended).contains(this); }
-    public boolean isDeliveringRequests() { return EnumSet.of(Delivering).contains(this); }
-    public boolean isProcessingResponses() { return EnumSet.of(Created, Delivering,SuspendRequested,Suspended,ResumeRequested,Stopping).contains(this); }
+    Stopping;
+    public boolean isCreated() { return this==Created;}
+    public boolean isRunning() { return this==Delivering; }
   }
 
   /*****************************************
@@ -137,9 +113,8 @@ public abstract class DeliveryManager
   private volatile static DeliveryRequest hackyDeliveryRequestInstance;
   private static CountDownLatch hackyDeliveryRequestInstanceReady = new CountDownLatch(1);
 
-  private List<String> requestTopics;
-  private String responseTopic;
-  private String routingTopic;
+  private DeliveryManagerDeclaration deliveryManagerDeclaration;
+
   private int deliveryRatePerMinute;
   private int correlatorUpdateTimeoutSeconds;
   private long correlatorCleanerFrequencyMilliSeconds;
@@ -155,7 +130,6 @@ public abstract class DeliveryManager
   //
 
   private volatile ManagerStatus managerStatus = ManagerStatus.Created;
-  private volatile boolean deliveryManagerRunning = false;
   private Date lastSubmitDate = NGLMRuntime.BEGINNING_OF_TIME;
 
   //
@@ -196,7 +170,7 @@ public abstract class DeliveryManager
   //
   //  internal processing
   //
-  private ContactPolicyProcessor contactPolicyProcessor = null;
+  private static ContactPolicyProcessor contactPolicyProcessor = null;
 
   /*****************************************
   *
@@ -205,31 +179,8 @@ public abstract class DeliveryManager
   *****************************************/
 
   public String getDeliveryManagerKey() { return deliveryManagerKey; }
-  public List<String> getRequestTopics() { return requestTopics; }
-  public String getResponseTopic() { return responseTopic; }
-  public String getRoutingTopic() { return routingTopic; }
   public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
-
-  //
-  //  derived
-  //
-
-  private String getDefaultRequestTopic() { return requestTopics.get(0); }
-
-  /*****************************************
-  *
-  *  isProcessing
-  *
-  *****************************************/
-
-  protected boolean isProcessing() { return managerStatus.isProcessingResponses(); }
-
-  /*****************************************
-  *
-  *  startDelivery
-  *
-  *****************************************/
 
   protected void startDelivery()
   {
@@ -243,22 +194,6 @@ public abstract class DeliveryManager
 
   /*****************************************
   *
-  *  suspendDelivery
-  *
-  *****************************************/
-
-  protected void suspendDelivery()
-  {
-    log.info("Suspending DeliveryManager " + applicationID + "-" + deliveryManagerKey);
-    synchronized (this)
-      {
-        managerStatus = ManagerStatus.SuspendRequested;
-        this.notifyAll();
-      }
-  }
-
-  /*****************************************
-  *
   *  nextRequest
   *
   *****************************************/
@@ -266,7 +201,7 @@ public abstract class DeliveryManager
   protected DeliveryRequest nextRequest()
   {
     DeliveryRequest result = null;
-    while (managerStatus.isProcessingResponses() && result == null)
+    while (result == null)
       {
         try
           {
@@ -339,7 +274,7 @@ public abstract class DeliveryManager
   *
   *****************************************/
 
-  protected DeliveryManager(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration)
+  protected DeliveryManager(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration, int workerThreadNumber)
   {
     /*****************************************
     *
@@ -349,22 +284,8 @@ public abstract class DeliveryManager
 
     NGLMRuntime.initialize(true);
 
-    /*****************************************
-    *
-    *  validate -- TEMPORARY, DeliveryManagers dervied from DeliveryManager.java doe NOT support priority
-    *
-    *****************************************/
-
     if (deliveryManagerDeclaration == null) throw new RuntimeException("invalid delivery manager (no such delivery manager)");
     if (deliveryManagerDeclaration.getRequestTopics().size() == 0) throw new RuntimeException("invalid delivery manager (no request topic)");
-
-    /*****************************************
-    *
-    *  status
-    *
-    *****************************************/
-
-    this.managerStatus = ManagerStatus.Suspended;
 
     /*****************************************
     *
@@ -376,9 +297,7 @@ public abstract class DeliveryManager
     this.deliveryManagerKey = deliveryManagerKey;
     this.bootstrapServers = bootstrapServers;
     this.requestSerde = (ConnectSerde<DeliveryRequest>) requestSerde;
-    this.requestTopics = deliveryManagerDeclaration.getRequestTopics();
-    this.responseTopic = deliveryManagerDeclaration.getResponseTopic();
-    this.routingTopic = deliveryManagerDeclaration.getRoutingTopic();
+    this.deliveryManagerDeclaration = deliveryManagerDeclaration;
     this.deliveryRatePerMinute = deliveryManagerDeclaration.getDeliveryRatePerMinute();
     this.correlatorUpdateTimeoutSeconds = deliveryManagerDeclaration.getCorrelatorUpdateTimeoutSeconds();
     this.correlatorCleanerFrequencyMilliSeconds = deliveryManagerDeclaration.getCorrelatorCleanerFrequencyMilliSeconds();
@@ -389,8 +308,9 @@ public abstract class DeliveryManager
     *
     *****************************************/
 
-    millisecondsPerDelivery = (int) Math.ceil(1.0 / ((double) deliveryRatePerMinute / (60.0 * 1000.0)));
-    maxOutstandingRequests = Math.min((int) Math.ceil((double) deliveryRatePerMinute / 60.0), 100);
+    millisecondsPerDelivery = (int) Math.ceil(1.0 / ((double) getDeliveryRatePerMinute() / (60.0 * 1000.0)));
+    maxOutstandingRequests = workerThreadNumber;// this put a cap to how much request could be duplicated in case of hard failure
+    if(deliveryManagerDeclaration.getMaxBufferedRequests()>0) maxOutstandingRequests=deliveryManagerDeclaration.getMaxBufferedRequests();// could be forced for extreme cases
 
     /*****************************************
     *
@@ -460,9 +380,13 @@ public abstract class DeliveryManager
     *
     *****************************************/
 
-    Runnable receiveCorrelatorUpdateWorker = new Runnable() { @Override public void run() { runReceiveCorrelatorWorker(); } };
-    receiveCorrelatorUpdateWorkerThread = new Thread(receiveCorrelatorUpdateWorker, applicationID + "-ReceiveCorrelatorWorker");
-    receiveCorrelatorUpdateWorkerThread.start();
+    if(deliveryManagerDeclaration.getRoutingTopic()!=null){
+      Runnable receiveCorrelatorUpdateWorker = new Runnable() { @Override public void run() { runReceiveCorrelatorWorker(); } };
+      receiveCorrelatorUpdateWorkerThread = new Thread(receiveCorrelatorUpdateWorker, applicationID + "-ReceiveCorrelatorWorker");
+      receiveCorrelatorUpdateWorkerThread.start();
+    }else{
+      log.info("no routing topic declaration, no correlator update consumer");
+    }
 
     /*****************************************
     *
@@ -489,9 +413,9 @@ public abstract class DeliveryManager
             }
           }
         }catch (Exception ex){
-          log.error("error during cleaning",ex);
+          log.error("correlatorCleanerThread : error during cleaning",ex);
         }
-        log.info("finish execution, sent {} timeout request in {} ms",nbTimeOut,System.currentTimeMillis()-startTime);
+        log.info("correlatorCleanerThread : finish execution, sent {} timeout request in {} ms, over {} total in memory requests",nbTimeOut,System.currentTimeMillis()-startTime,waitingForCorrelatorUpdate.size());
       }
     }, correlatorCleanerFrequencyMilliSeconds, correlatorCleanerFrequencyMilliSeconds);
 
@@ -501,11 +425,17 @@ public abstract class DeliveryManager
      *
      *****************************************/
 
-    // skip if not needed
-    if(deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_MANAGER_NAME)){
+    // skip if not needed TODO: move to DeliveryManagerForNotifications if not common
+    if(deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)){
       log.info("skipping contactPolicyProcessor init for "+deliveryManagerDeclaration.getDeliveryType());
     }else{
-      contactPolicyProcessor = new ContactPolicyProcessor("deliveryManager-communicationchannel", deliveryManagerKey);
+      if(contactPolicyProcessor==null){
+        synchronized (this){
+          if(contactPolicyProcessor==null){
+            contactPolicyProcessor = new ContactPolicyProcessor();
+          }
+        }
+      }
     }
   }
 
@@ -521,28 +451,32 @@ public abstract class DeliveryManager
 
     // wait start
     synchronized (this){
-      while(!managerStatus.isDeliveringRequests()){
+      while(managerStatus.isCreated()){
         try {
           this.wait();
         } catch (InterruptedException e){}
       }
     }
-    log.info("runSubmitRequestWorker: starting delivery");
+    log.info("runSubmitRequestWorker : starting {} delivery from {} inputs",deliveryManagerDeclaration.getDeliveryType(),deliveryManagerDeclaration.getRequestTopicsList());
 
     ConsumerRebalanceListener listener = new ConsumerRebalanceListener()
     {
-      @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+      @Override public void onPartitionsRevoked(Collection<TopicPartition> revokedPartitions) {
         synchronized (this) {
-          log.info("requestConsumer partitions revoked: {}", partitions);
-          int nbWaiting = waitingForAcknowledgement.size();
-          waitingForAcknowledgement.clear();
-          log.info("requestConsumer {} requests pending in memory removed, {} requests waiting for acknowledgement removed",submitRequestQueue.drainTo(new ArrayList<>()),nbWaiting);
+          log.info("requestConsumer.onPartitionsRevoked() : partitions revoked: {}", revokedPartitions);
+          // just log some info, but we actually just do nothing here
+          // this onPartitionsRevoked can only happen during the "poll()"
+          // and if happening, no records should be returned by this "poll()"
+          // so previous records have already been "commitSync" to kafka
+          // so new deliveryManager will not process them
+          long nbWaiting = waitingForAcknowledgement.values().stream().filter(dr->revokedPartitions.contains(dr.getTopicPartition())).count();
+          log.info("requestConsumer.onPartitionsRevoked() : {} requests pending in memory for those partitions, will still be done by this instance",nbWaiting);
         }
       }
-      @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { log.info("requestConsumer partitions assigned: {}", partitions); }
+      @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { log.info("requestConsumer.onPartitionsAssigned() partitions assigned: {}", partitions); }
     };
 
-    requestConsumer.subscribe(requestTopics,listener);
+    requestConsumer.subscribe(deliveryManagerDeclaration.getRequestTopicsList(),listener);
     while (managerStatus.isRunning())
     {
       /****************************************
@@ -555,7 +489,7 @@ public abstract class DeliveryManager
       ConsumerRecords<byte[], byte[]> requestRecords;
       try
       {
-        requestRecords = requestConsumer.poll(5000);
+        requestRecords = requestConsumer.poll(1000);
       }
       catch (WakeupException e)
       {
@@ -570,11 +504,6 @@ public abstract class DeliveryManager
 
       for (ConsumerRecord<byte[], byte[]> requestRecord : requestRecords)
       {
-        //
-        //  running?
-        //
-
-        if (! managerStatus.isDeliveringRequests()) break;
 
         //
         //  topicPartition
@@ -587,26 +516,21 @@ public abstract class DeliveryManager
         //
 
         DeliveryRequest deliveryRequest = requestSerde.deserializer().deserialize(topicPartition.topic(), requestRecord.value());
+        deliveryRequest.setTopicPartition(topicPartition);
         setHackyDeliveryRequestInstanceIfNeeded(deliveryRequest);
-
-        //
-        //  partition
-        //
-
-        deliveryRequest.setDeliveryPartition(requestRecord.partition());
 
         //
         //  process
         //
 
-        submitDeliveryRequest(deliveryRequest, false, false, requestRecord.topic(), requestRecord.offset());
+        submitDeliveryRequest(deliveryRequest);
       }
-      if (managerStatus.isDeliveringRequests()){
+      if (requestRecords.count()>0){
         try{
           requestConsumer.commitSync();
         }catch (CommitFailedException ex){
           long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
-          log.info("CommitFailedException catched, can be normal rebalancing or poll time interval too long, last was {}ms ago",lastPoll_ms);
+          log.warn("runSubmitRequestWorker : CommitFailedException caught, last poll was {}ms ago",lastPoll_ms);
         }
       }
     }
@@ -618,13 +542,8 @@ public abstract class DeliveryManager
   *
   *****************************************/
 
-  private void submitDeliveryRequest(DeliveryRequest deliveryRequest, boolean restart, boolean retry, String deliveryRequestTopic, Long deliveryRequestOffset)
+  private void submitDeliveryRequest(DeliveryRequest deliveryRequest)
   {
-    /****************************************
-    *
-    *  in progress
-    *
-    ****************************************/
 
     // timeout in correlator waiting memory queue
     Date timeout = RLMDateUtils.addSeconds(SystemTime.getCurrentTime(), getCorrelatorUpdateTimeoutSeconds());
@@ -645,7 +564,7 @@ public abstract class DeliveryManager
         //  maxOutstandingRequests
         //
 
-        while (managerStatus.isDeliveringRequests() && waitingForAcknowledgement.size() >= maxOutstandingRequests)
+        while (waitingForAcknowledgement.size() >= maxOutstandingRequests)
           {
             try
               {
@@ -656,14 +575,6 @@ public abstract class DeliveryManager
               }
           }
 
-        //
-        //  abort if no longer delivering
-        //
-
-        if (! managerStatus.isDeliveringRequests())
-          {
-            return;
-          }
       }
 
     /****************************************
@@ -679,7 +590,7 @@ public abstract class DeliveryManager
     NGLMRuntime.registerSystemTimeDependency(this);
     Date now = SystemTime.getCurrentTime();
     Date nextSubmitDate = RLMDateUtils.addMilliseconds(lastSubmitDate, millisecondsPerDelivery);
-    while (managerStatus.isDeliveringRequests() && now.before(nextSubmitDate))
+    while (now.before(nextSubmitDate))
       {
         synchronized (this)
           {
@@ -695,22 +606,13 @@ public abstract class DeliveryManager
       }
     lastSubmitDate = now;
 
-    //
-    //  abort if no longer delivering
-    //
-
-    if (! managerStatus.isDeliveringRequests())
-      {
-        return;
-      }
-
     /*****************************************
     *
     *  log (debug)
     *
     *****************************************/
 
-    if(log.isDebugEnabled()) log.debug("submitDeliveryRequest: {}", deliveryRequest);
+    if(log.isDebugEnabled()) log.debug("submitDeliveryRequest : {}", deliveryRequest);
 
     /*****************************************
     *
@@ -745,82 +647,82 @@ public abstract class DeliveryManager
 
   private void processUpdateRequest(DeliveryRequest deliveryRequest)
   {
-    if (managerStatus.isProcessingResponses())
-      {
-        /*****************************************
-        *
-        *  log (debug)
-        *
-        *****************************************/
+      /*****************************************
+      *
+      *  log (debug)
+      *
+      *****************************************/
 
-        if(log.isDebugEnabled()) log.debug("processUpdateRequest: {}", deliveryRequest);
+      if(log.isDebugEnabled()) log.debug("processUpdateRequest : {}", deliveryRequest);
 
-        /*****************************************
-        *
-        *  validate -- correlator
-        *
-        *****************************************/
+      /*****************************************
+      *
+      *  validate -- correlator
+      *
+      *****************************************/
 
-        if (deliveryRequest.getCorrelator() == null)
-          {
-            throw new RuntimeException("updateRequest with no correlator");
-          }
+      if (deliveryRequest.getCorrelator() == null)
+        {
+          throw new RuntimeException("updateRequest with no correlator");
+        }
 
-        /*****************************************
-        *
-        *  copy
-        *
-        *****************************************/
+      /*****************************************
+      *
+      *  copy
+      *
+      *****************************************/
 
-        deliveryRequest = deliveryRequest.copy();
+      deliveryRequest = deliveryRequest.copy();
 
-        /*****************************************
-        *
-        *  request outstanding?
-        *
-        *****************************************/
+      /*****************************************
+      *
+      *  request outstanding?
+      *
+      *****************************************/
 
-        synchronized (this)
-          {
-            /*****************************************
-            *
-            *  in waitingForAcknowledgement?
-            *
-            *****************************************/
+      synchronized (this)
+        {
+          /*****************************************
+          *
+          *  in waitingForAcknowledgement?
+          *
+          *****************************************/
 
-            if (! waitingForAcknowledgement.containsKey(deliveryRequest.getDeliveryRequestID()))
-              {
-                log.info("processUpdateRequest stale: {}", deliveryRequest);
-                return;
-              }
+          if (! waitingForAcknowledgement.containsKey(deliveryRequest.getDeliveryRequestID()))
+            {
+              log.warn("processUpdateRequest : request not hold {}", deliveryRequest);
+              return;
+            }
 
-          }
+        }
 
-        /*****************************************
-        *
-        *  commit
-        *
-        *****************************************/
+      /*****************************************
+      *
+      *  commit
+      *
+      *****************************************/
 
-        // forward the deliveryRequest to the instance that will received correlator response
+      // forward the deliveryRequest to the instance that will received correlator response
+      if(deliveryManagerDeclaration.getRoutingTopic()!=null){
+        String routingTopic = deliveryManagerDeclaration.getRoutingTopic().getName();
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(deliveryRequest.getCorrelator())), requestSerde.optionalSerializer().serialize(routingTopic, deliveryRequest)));
-
-        /*****************************************
-        *
-        *  move to next state
-        *
-        *****************************************/
-
-        synchronized (this)
-          {
-            //
-            //  no longer waiting on subclass
-            //
-
-            waitingForAcknowledgement.remove(deliveryRequest.getDeliveryRequestID());
-            this.notifyAll();
-          }
       }
+
+      /*****************************************
+      *
+      *  move to next state
+      *
+      *****************************************/
+
+      synchronized (this)
+        {
+          //
+          //  no longer waiting on subclass
+          //
+
+          waitingForAcknowledgement.remove(deliveryRequest.getDeliveryRequestID());
+          this.notifyAll();
+        }
   }
 
   /*****************************************
@@ -831,132 +733,131 @@ public abstract class DeliveryManager
 
   private void processCompleteRequest(DeliveryRequest deliveryRequest)
   {
-    if (managerStatus.isProcessingResponses())
-      {
-        /*****************************************
-        *
-        *  log (debug)
-        *
-        *****************************************/
 
-        if(log.isDebugEnabled()) log.debug("processCompleteRequest: {}", deliveryRequest);
+      /*****************************************
+      *
+      *  log (debug)
+      *
+      *****************************************/
 
-        /*****************************************
-        *
-        *  copy
-        *
-        *****************************************/
+      if(log.isDebugEnabled()) log.debug("processCompleteRequest : {}", deliveryRequest);
 
-        deliveryRequest = deliveryRequest.copy();
+      /*****************************************
+      *
+      *  copy
+      *
+      *****************************************/
 
-        /*****************************************
-        *
-        *  state
-        *
-        *****************************************/
+      deliveryRequest = deliveryRequest.copy();
 
-        synchronized (this)
-          {
-            //
-            //  waiting?
-            //
+      /*****************************************
+      *
+      *  state
+      *
+      *****************************************/
 
-            DeliveryRequest deliveryRequestOnScheduler = null;
-            boolean waiting = false;
-            boolean rescheduled = (deliveryRequest.getDeliveryStatus() != null && deliveryRequest.getDeliveryStatus().equals(DeliveryStatus.Reschedule));
-            if (waitingForAcknowledgement.containsKey(deliveryRequest.getDeliveryRequestID()))
-              {
-                deliveryRequestOnScheduler = waitingForAcknowledgement.get(deliveryRequest.getDeliveryRequestID());
-                waiting = true;
-              }
-            else if (deliveryRequest.getCorrelator() != null && waitingForCorrelatorUpdate.containsKey(deliveryRequest.getCorrelator()))
-              {
-                deliveryRequestOnScheduler = waitingForCorrelatorUpdate.get(deliveryRequest.getCorrelator());
-                waiting = true;
-              }
+      synchronized (this)
+        {
+          //
+          //  waiting?
+          //
 
-            //
-            //  stale?
-            //
-
-            if (! waiting && ! rescheduled)
-              {
-                log.info("processCompleteRequest stale: {}", deliveryRequest);
-                return;
-              }
-
-            //
-            //  clear timeout
-            //
-
-            if(deliveryRequestOnScheduler != null) {
-              deliveryRequestOnScheduler.setTimeout(null);
-            }
-            deliveryRequest.setTimeout(null);
-
-            //
-            //  remove from waiting (if necessary)
-            //
-
-            waitingForAcknowledgement.remove(deliveryRequest.getDeliveryRequestID());
-            if (deliveryRequest.getCorrelator() != null) waitingForCorrelatorUpdate.remove(deliveryRequest.getCorrelator());
-            this.notifyAll();
-          }
-
-        /*****************************************
-        *
-        *  ensure invariants
-        *
-        *****************************************/
-
-        if (deliveryRequest.getDeliveryStatus() == null) deliveryRequest.setDeliveryStatus(DeliveryStatus.Indeterminate);
-        if (deliveryRequest.getDeliveryDate() == null && ! deliveryRequest.getDeliveryStatus().equals(DeliveryStatus.Reschedule)) deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
-
-        /*****************************************
-        *
-        *  retry required?
-        *
-        *****************************************/
-        
-        if(deliveryRequest.getOriginatingRequest()) 
-          {
-            // response to be sent indexed by subscriber ID
-            if(deliveryRequest.getOriginatingSubscriberID() != null) {
-              // EVPRO-178
-              // means this request has been made by originatingSubscriberID on behalf of current subscsriberID
-              // so need to send a response to:
-              // - originatingSubscriberID to unlock the current state of its Journey: SubscriberID = originatingSubscriberID and originatingSubscriberID becomes targeted-<effectivelyTargeted>
-              // - targeted subscriberID (i.e. the one which effectively got, by example, a SMS..., for delivery history: subscriberID = currentSubscriberID and originatingSubscriberID origin-<originating>
-              String originating = deliveryRequest.getOriginatingSubscriberID();
-              String targeted = deliveryRequest.getSubscriberID();
-              
-              // send the response to the originating:
-              deliveryRequest.setSubscriberID(originating);
-              deliveryRequest.setOriginatingSubscriberID(TARGETED + targeted);
-              StringKey key = new StringKey(originating);
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
-              
-              // send the response to the targetted
-              deliveryRequest.setSubscriberID(targeted);
-              deliveryRequest.setOriginatingSubscriberID(ORIGIN + originating);
-              key = new StringKey(targeted);
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
-
-            }
-          else 
+          DeliveryRequest deliveryRequestOnScheduler = null;
+          boolean waiting = false;
+          boolean rescheduled = (deliveryRequest.getDeliveryStatus() != null && deliveryRequest.getDeliveryStatus().equals(DeliveryStatus.Reschedule));
+          if (waitingForAcknowledgement.containsKey(deliveryRequest.getDeliveryRequestID()))
             {
-              // normal case
-              StringKey key = new StringKey(deliveryRequest.getSubscriberID());
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
+              deliveryRequestOnScheduler = waitingForAcknowledgement.get(deliveryRequest.getDeliveryRequestID());
+              waiting = true;
             }
+          else if (deliveryRequest.getCorrelator() != null && waitingForCorrelatorUpdate.containsKey(deliveryRequest.getCorrelator()))
+            {
+              deliveryRequestOnScheduler = waitingForCorrelatorUpdate.get(deliveryRequest.getCorrelator());
+              waiting = true;
+            }
+
+          //
+          //  stale?
+          //
+
+          if (! waiting && ! rescheduled)
+            {
+              log.info("processCompleteRequest :  request not hold  {}", deliveryRequest);
+              return;
+            }
+
+          //
+          //  clear timeout
+          //
+
+          if(deliveryRequestOnScheduler != null) {
+            deliveryRequestOnScheduler.setTimeout(null);
           }
-        else 
+          deliveryRequest.setTimeout(null);
+
+          //
+          //  remove from waiting (if necessary)
+          //
+
+          waitingForAcknowledgement.remove(deliveryRequest.getDeliveryRequestID());
+          if (deliveryRequest.getCorrelator() != null) waitingForCorrelatorUpdate.remove(deliveryRequest.getCorrelator());
+          this.notifyAll();
+        }
+
+      /*****************************************
+      *
+      *  ensure invariants
+      *
+      *****************************************/
+
+      if (deliveryRequest.getDeliveryStatus() == null) deliveryRequest.setDeliveryStatus(DeliveryStatus.Indeterminate);
+      if (deliveryRequest.getDeliveryDate() == null && ! deliveryRequest.getDeliveryStatus().equals(DeliveryStatus.Reschedule)) deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
+
+      /*****************************************
+      *
+      *  retry required?
+      *
+      *****************************************/
+
+      String responseTopic = deliveryManagerDeclaration.getResponseTopic(deliveryRequest.getDeliveryPriority());
+      if(deliveryRequest.getOriginatingRequest())
+        {
+          // response to be sent indexed by subscriber ID
+          if(deliveryRequest.getOriginatingSubscriberID() != null) {
+            // EVPRO-178
+            // means this request has been made by originatingSubscriberID on behalf of current subscsriberID
+            // so need to send a response to:
+            // - originatingSubscriberID to unlock the current state of its Journey: SubscriberID = originatingSubscriberID and originatingSubscriberID becomes targeted-<effectivelyTargeted>
+            // - targeted subscriberID (i.e. the one which effectively got, by example, a SMS..., for delivery history: subscriberID = currentSubscriberID and originatingSubscriberID origin-<originating>
+            String originating = deliveryRequest.getOriginatingSubscriberID();
+            String targeted = deliveryRequest.getSubscriberID();
+
+            // send the response to the originating:
+            deliveryRequest.setSubscriberID(originating);
+            deliveryRequest.setOriginatingSubscriberID(TARGETED + targeted);
+            StringKey key = new StringKey(originating);
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
+
+            // send the response to the targetted
+            deliveryRequest.setSubscriberID(targeted);
+            deliveryRequest.setOriginatingSubscriberID(ORIGIN + originating);
+            key = new StringKey(targeted);
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
+
+          }
+        else
           {
-            // index by requestID
-            StringKey key = new StringKey(deliveryRequest.getDeliveryRequestID());
+            // normal case
+            StringKey key = new StringKey(deliveryRequest.getSubscriberID());
             kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
           }
-      }
+        }
+      else
+        {
+          // index by requestID
+          StringKey key = new StringKey(deliveryRequest.getDeliveryRequestID());
+          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
+        }
   }
 
   /*****************************************
@@ -970,44 +871,35 @@ public abstract class DeliveryManager
     // construct a fake delivery request containing only correlatorUpdate to forward to the right instance
     if(hackyDeliveryRequestInstance==null){
       try {
-        log.info("DeliveryManager processSubmitCorrelatorUpdate need to wait to deserialize at least one object for a hack ...");
+        log.warn("processSubmitCorrelatorUpdate : need to wait to deserialize at least one object for a hack ...");
         hackyDeliveryRequestInstanceReady.await();// need to wait we got the hacky instance....
-        log.info("DeliveryManager processSubmitCorrelatorUpdate hacky object instance ready");
+        log.info("processSubmitCorrelatorUpdate : hacky object instance ready");
       } catch (InterruptedException e) {}
     }
     DeliveryRequest deliveryRequestForCorrelatorUpdate = hackyDeliveryRequestInstance.copy();
     deliveryRequestForCorrelatorUpdate.getDiplomaticBriefcase().put(CORRELATOR_UPDATE_KEY,correlatorUpdate.toJSONString());
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), requestSerde.serializer().serialize(routingTopic, deliveryRequestForCorrelatorUpdate)));
+    if(deliveryManagerDeclaration.getRoutingTopic()!=null){
+      String routingTopic = deliveryManagerDeclaration.getRoutingTopic().getName();
+      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), requestSerde.serializer().serialize(routingTopic, deliveryRequestForCorrelatorUpdate)));
+    }else{
+      log.error("processSubmitCorrelatorUpdate : on declaration without routing topic!");
+    }
 
   }
 
-  /*****************************************
-   *
-   *  revokeRoutingConsumerPartitions
-   *
-   *****************************************/
-
-  private void revokeRoutingConsumerPartitions(Collection<TopicPartition> partitions)
-  {
-    synchronized (this)
-    {
-      log.info("routingConsumer partitions revoked: {}", partitions);
-      waitingForCorrelatorUpdate.clear();
+  private void revokeRoutingConsumerPartitions(Collection<TopicPartition> revokedPartitions) {
+    synchronized (this) {
+      log.info("routingConsumer.revokeRoutingConsumerPartitions() : partitions revoked {}", revokedPartitions);
+      int oldSize = waitingForCorrelatorUpdate.size();
+      // we can clean up those, this is the new instance that will now received the update
+      waitingForCorrelatorUpdate.values().removeIf(deliveryRequest -> revokedPartitions.contains(deliveryRequest.getTopicPartition()));
+      log.info("routingConsumer.revokeRoutingConsumerPartitions() : cleaning waitingForCorrelatorUpdate done, old size {}, new size {}", oldSize, waitingForCorrelatorUpdate.size());
     }
   }
-
-  /*****************************************
-   *
-   *  assignRoutingConsumerPartitions
-   *
-   *****************************************/
 
   private void assignRoutingConsumerPartitions(Collection<TopicPartition> partitions)
   {
-    log.info("routingConsumer partitions assigned: {}", partitions);
-    synchronized (this) {
-      if (waitingForCorrelatorUpdate.size() > 0) throw new RuntimeException("waitingForCorrelatorUpdate size: " + waitingForCorrelatorUpdate.size());
-    }
+    log.info("routingConsumer.assignRoutingConsumerPartitions() : partitions assigned {}", partitions);
 
     /*****************************************
     *
@@ -1027,10 +919,10 @@ public abstract class DeliveryManager
     //  assign topic partitions
     //
 
-    Set<TopicPartition> routingProgressConsumerPartitions = new HashSet<TopicPartition>();
+    Set<TopicPartition> routingProgressConsumerPartitions = new HashSet<>();
     for (TopicPartition topicPartition : partitions)
     {
-      routingProgressConsumerPartitions.add(new TopicPartition(routingTopic, topicPartition.partition()));
+      routingProgressConsumerPartitions.add(new TopicPartition(topicPartition.topic(), topicPartition.partition()));
     }
     routingProgressConsumer.assign(routingProgressConsumerPartitions);
 
@@ -1039,24 +931,28 @@ public abstract class DeliveryManager
     //
 
     boolean consumedAllAvailable = false;
-    Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
+    Map<TopicPartition,Long> consumedOffsets = new HashMap<>();
+    Map<TopicPartition,Long> lastOffsetsToConsume = new HashMap<>();
     for (TopicPartition topicPartition : routingProgressConsumer.assignment())
     {
-      consumedOffsets.put(topicPartition, routingProgressConsumer.position(topicPartition) - 1L);
+      consumedOffsets.put(topicPartition, routingProgressConsumer.position(topicPartition)-1);
+      lastOffsetsToConsume.put(topicPartition, routingConsumer.position(topicPartition)-1);
     }
+
+    log.info("routingConsumer.assignRoutingConsumerPartitions() : will reload all from "+consumedOffsets+" till : "+lastOffsetsToConsume);
 
     //
     //  read
     //
 
-    SortedMap<String,DeliveryRequest> restartRequests = new TreeMap<String,DeliveryRequest>();
+    SortedMap<String,DeliveryRequest> restartRequests = new TreeMap<>();
     do
     {
       //
       // poll
       //
 
-      ConsumerRecords<byte[], byte[]> progressRecords = (routingProgressConsumer.assignment().size() > 0) ? routingProgressConsumer.poll(5000) : ConsumerRecords.<byte[], byte[]>empty();
+      ConsumerRecords<byte[], byte[]> progressRecords = (routingProgressConsumer.assignment().size() > 0) ? routingProgressConsumer.poll(100) : ConsumerRecords.empty();
 
       //
       //  process
@@ -1070,6 +966,12 @@ public abstract class DeliveryManager
 
         TopicPartition topicPartition = new TopicPartition(progressRecord.topic(), progressRecord.partition());
 
+        // skip if routingConsumer not yet consumed it
+        if(progressRecord.offset()>lastOffsetsToConsume.get(topicPartition)){
+          if(log.isDebugEnabled()) log.debug("skipping offset "+topicPartition+":"+progressRecord.offset()+", because "+lastOffsetsToConsume.get(topicPartition));
+          continue;
+        }
+
         //
         //  parse
         //
@@ -1078,12 +980,13 @@ public abstract class DeliveryManager
         DeliveryRequest deliveryRequest = null;
         try{
           deliveryRequest = requestSerde.optionalDeserializer().deserialize(topicPartition.topic(), progressRecord.value());
+          setHackyDeliveryRequestInstanceIfNeeded(deliveryRequest);
+          deliveryRequest.setTopicPartition(topicPartition);
         }catch (ClassCastException ex){
-          log.info("DeliveryManager assignRoutingConsumerPartitions: old routing format message, skipping");
+          log.info("routingConsumer.assignRoutingConsumerPartitions() : old routing format message, skipping");
         }
         if (deliveryRequest != null && deliveryRequest.getDiplomaticBriefcase().get(CORRELATOR_UPDATE_KEY)==null && deliveryRequest.getTimeout()!=null && deliveryRequest.getTimeout().after(SystemTime.getCurrentTime()) )
         {
-          setHackyDeliveryRequestInstanceIfNeeded(deliveryRequest);
           restartRequests.put(correlator, deliveryRequest);
         }
         else
@@ -1102,19 +1005,19 @@ public abstract class DeliveryManager
       //  consumed all available?
       //
 
-      Map<TopicPartition,Long> availableOffsets = routingProgressConsumer.endOffsets(routingProgressConsumerPartitions);
       consumedAllAvailable = true;
-      for (TopicPartition topicPartition : availableOffsets.keySet())
+      for (TopicPartition topicPartition : lastOffsetsToConsume.keySet())
       {
-        Long availableOffsetForPartition = availableOffsets.get(topicPartition);
+        Long lastOffsetsToConsumeForPartition = lastOffsetsToConsume.get(topicPartition);
         Long consumedOffsetForPartition = consumedOffsets.get(topicPartition);
         if (consumedOffsetForPartition == null)
         {
-          consumedOffsetForPartition = routingProgressConsumer.position(topicPartition) - 1L;
+          consumedOffsetForPartition = routingProgressConsumer.position(topicPartition)-1;
           consumedOffsets.put(topicPartition, consumedOffsetForPartition);
         }
-        if (consumedOffsetForPartition < availableOffsetForPartition-1)
+        if (consumedOffsetForPartition < lastOffsetsToConsumeForPartition)
         {
+          log.info("routingConsumer.assignRoutingConsumerPartitions() : "+topicPartition.topic()+":"+topicPartition.partition()+", still not reached end ("+consumedOffsetForPartition+" vs "+lastOffsetsToConsumeForPartition+")");
           consumedAllAvailable = false;
           break;
         }
@@ -1139,11 +1042,11 @@ public abstract class DeliveryManager
       for (DeliveryRequest deliveryRequest : restartRequests.values())
       {
 
-        if(log.isDebugEnabled()) log.debug("waitingForCorrelatorUpdate.put (restart): {} {}", deliveryRequest.getCorrelator(), deliveryRequest);
+        if(log.isDebugEnabled()) log.debug("routingConsumer.assignRoutingConsumerPartitions() : (restart) {} {}", deliveryRequest.getCorrelator(), deliveryRequest);
         waitingForCorrelatorUpdate.put(deliveryRequest.getCorrelator(), deliveryRequest);
 
       }
-      log.debug("waitingForCorrelatorUpdate.put (restart): waitingForCorrelatorUpdate rebuilt with size {}", waitingForCorrelatorUpdate.size());
+      log.info("routingConsumer.assignRoutingConsumerPartitions() : waitingForCorrelatorUpdate rebuilt with size {}", waitingForCorrelatorUpdate.size());
     }
 
   }
@@ -1167,19 +1070,19 @@ public abstract class DeliveryManager
       @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions) {  revokeRoutingConsumerPartitions(partitions); }
       @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { assignRoutingConsumerPartitions(partitions); }
     };
-    routingConsumer.subscribe(Arrays.asList(routingTopic), listener);
+    routingConsumer.subscribe(Collections.singleton(deliveryManagerDeclaration.getRoutingTopic().getName()), listener);
 
     // wait start
     synchronized (this){
-      while(!managerStatus.isDeliveringRequests()){
+      while(managerStatus.isCreated()){
         try {
           this.wait();
         } catch (InterruptedException e){}
       }
     }
-    log.info("runReceiveCorrelatorWorker: starting delivery");
+    log.info("runReceiveCorrelatorWorker : starting delivery");
 
-    while (managerStatus.isProcessingResponses())
+    while (managerStatus.isRunning())
     {
 
       /****************************************
@@ -1192,7 +1095,7 @@ public abstract class DeliveryManager
       ConsumerRecords<byte[], byte[]> correlatorUpdateRecords;
       try
       {
-        correlatorUpdateRecords = routingConsumer.poll(5000);
+        correlatorUpdateRecords = routingConsumer.poll(1000);
       }
       catch (WakeupException e)
       {
@@ -1212,12 +1115,13 @@ public abstract class DeliveryManager
         //  deserialize
         //
 
-        String correlator = stringKeySerde.deserializer().deserialize(routingTopic, correlatorUpdateRecord.key()).getKey();
+        String correlator = stringKeySerde.deserializer().deserialize(correlatorUpdateRecord.topic(), correlatorUpdateRecord.key()).getKey();
         DeliveryRequest deliveryRequest;
         try{
-          deliveryRequest = requestSerde.deserializer().deserialize(routingTopic, correlatorUpdateRecord.value());
+          deliveryRequest = requestSerde.deserializer().deserialize(correlatorUpdateRecord.topic(), correlatorUpdateRecord.value());
+          deliveryRequest.setTopicPartition(new TopicPartition(correlatorUpdateRecord.topic(),correlatorUpdateRecord.partition()));
         }catch (ClassCastException ex){
-          log.info("DeliveryManager correlatorUpdate: old routing format message, skipping");
+          log.info("runReceiveCorrelatorWorker : old routing format message, skipping");
           continue;
         }
         setHackyDeliveryRequestInstanceIfNeeded(deliveryRequest);
@@ -1229,19 +1133,19 @@ public abstract class DeliveryManager
 
           if(deliveryRequest.getCorrelator()==null)
           {
-            log.warn("DeliveryManager correlatorUpdate: received request for correlator response without correlator !");
+            log.warn("runReceiveCorrelatorWorker : received request for correlator response without correlator !");
             continue;
           }
           if(!deliveryRequest.getCorrelator().equals(correlator))
           {
-            log.warn("DeliveryManager correlatorUpdate: received badly routed correlator {} {} !", deliveryRequest.getCorrelator(), correlator);
+            log.warn("runReceiveCorrelatorWorker : received badly routed correlator {} {} !", deliveryRequest.getCorrelator(), correlator);
             continue;
           }
 
           synchronized (this)
           {
             waitingForCorrelatorUpdate.put(correlator,deliveryRequest);
-            if(log.isDebugEnabled()) log.debug("DeliveryManager correlatorUpdate : adding waitingForCorrelatorUpdate {}, new waitingForCorrelatorUpdate size {}",correlator,waitingForCorrelatorUpdate.size());
+            if(log.isDebugEnabled()) log.debug("runReceiveCorrelatorWorker : adding waitingForCorrelatorUpdate {}, new waitingForCorrelatorUpdate size {}",correlator,waitingForCorrelatorUpdate.size());
           }
 
         }
@@ -1263,9 +1167,7 @@ public abstract class DeliveryManager
           }
           catch (org.json.simple.parser.ParseException e)
           {
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.error("Exception processing DeliveryManager correlatorUpdate: {}", stackTraceWriter.toString());
+            log.error("runReceiveCorrelatorWorker : exception processing correlatorUpdate", e);
             correlatorUpdate = null;
           }
 
@@ -1283,7 +1185,7 @@ public abstract class DeliveryManager
 
           if(deliveryRequest==null)
           {
-            log.info("receiveCorrelatorUpdate for a request we do not store {}",correlator);
+            log.info("runReceiveCorrelatorWorker : received update for a request we do not store {}",correlator);
             continue;
           }
 
@@ -1291,7 +1193,7 @@ public abstract class DeliveryManager
           //  log (debug)
           //
 
-          if(log.isDebugEnabled()) log.debug("receiveCorrelatorUpdate: {} {} {}", correlator, correlatorUpdate, deliveryRequest);
+          if(log.isDebugEnabled()) log.debug("runReceiveCorrelatorWorker : {} , {} , {}", correlator, correlatorUpdate, deliveryRequest);
 
           //
           //  update
@@ -1302,11 +1204,13 @@ public abstract class DeliveryManager
         }
 
       }
-      try{
-        routingConsumer.commitSync();
-      }catch (CommitFailedException ex){
-        long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
-        log.info("CommitFailedException catched, can be normal rebalancing or poll time interval too long, last was {}ms ago",lastPoll_ms);
+      if(correlatorUpdateRecords.count()>0){
+        try{
+          routingConsumer.commitSync();
+        }catch (CommitFailedException ex){
+          long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
+          log.warn("runReceiveCorrelatorWorker : CommitFailedException caught, last poll was {}ms ago",lastPoll_ms);
+        }
       }
     }
   }
@@ -1338,12 +1242,13 @@ public abstract class DeliveryManager
   {
     boolean blockedByContactPolicy = false;
     //if request is not type of any of contact policy affected request types do nothing
-    if(request instanceof SMSNotificationManager.SMSNotificationManagerRequest || request instanceof PushNotificationManager.PushNotificationManagerRequest || request instanceof MailNotificationManager.MailNotificationManagerRequest)
+    if(request instanceof INotificationRequest)
       {
+        INotificationRequest notifRequest = (INotificationRequest) request;
         RESTAPIGenericReturnCodes returnCode = RESTAPIGenericReturnCodes.UNKNOWN;
         try
           {
-            blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request);
+            blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(notifRequest);
             if (blockedByContactPolicy)
               {
                 request.setDeliveryStatus(DeliveryStatus.Failed);
@@ -1355,181 +1260,85 @@ public abstract class DeliveryManager
             blockedByContactPolicy = true;
             request.setDeliveryStatus(DeliveryStatus.Failed);
             returnCode = RESTAPIGenericReturnCodes.CONTACT_POLICY_EVALUATION_ERROR;
-            log.warn("Processing contact policy for " + request.getSubscriberID() + " failed", ex);
+            log.warn("processRequestBlockedByContactPolicy : Processing contact policy for " + request.getSubscriberID() + " failed", ex);
           }
-        //because the return code is defined at each notification request type need to identify type cast and call setReturnCode
         if (blockedByContactPolicy)
           {
-            if (request instanceof SMSNotificationManager.SMSNotificationManagerRequest)
-              {
-                ((SMSNotificationManager.SMSNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
-                ((SMSNotificationManager.SMSNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
-              } else if (request instanceof PushNotificationManager.PushNotificationManagerRequest)
-              {
-                ((PushNotificationManager.PushNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
-                ((PushNotificationManager.PushNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
-              } else if (request instanceof MailNotificationManager.MailNotificationManagerRequest)
-              {
-                ((MailNotificationManager.MailNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
-                ((MailNotificationManager.MailNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
-              }
+            notifRequest.setReturnCode(returnCode.getGenericResponseCode());
+            notifRequest.setReturnCodeDetails(returnCode.toString());
             completeRequest(request);
           }
       }
     return blockedByContactPolicy;
   }
 
-  /*****************************************
-  *
-  *  class ShutdownHook
-  *
-  *****************************************/
-
-  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
-  {
-    //
-    //  data
-    //
+  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook {
 
     private DeliveryManager deliveryManager;
 
-    //
-    //  constructor
-    //
-
-    private ShutdownHook(DeliveryManager deliveryManager)
-    {
+    private ShutdownHook(DeliveryManager deliveryManager) {
       this.deliveryManager = deliveryManager;
     }
 
-    //
-    //  shutdown
-    //
-
-    @Override public void shutdown(boolean normalShutdown)
-    {
-      deliveryManager.shutdownDeliveryManager(normalShutdown);
-    }
+    @Override public void shutdown(boolean normalShutdown) { deliveryManager.shutdownDeliveryManager(normalShutdown); }
   }
 
-  /****************************************
-  *
-  *  shutdownDeliveryManager
-  *
-  ****************************************/
+  private void shutdownDeliveryManager(boolean normalShutdown){
 
-  private void shutdownDeliveryManager(boolean normalShutdown)
-  {
-    /*****************************************
-    *
-    *  stop threads
-    *
-    *****************************************/
+	log.info("DeliveryManager.shutdownDeliveryManager("+normalShutdown+") : stopping "+applicationID);
 
-    synchronized (this)
-      {
-        managerStatus = normalShutdown ? ManagerStatus.Stopping : ManagerStatus.Aborting;
-        requestConsumer.wakeup();
-        routingConsumer.wakeup();
+	synchronized (this){
+		managerStatus = ManagerStatus.Stopping;
+	}
 
-        this.notifyAll();
+	// first stop all new requests
+	log.info("DeliveryManager.shutdownDeliveryManager() : stopping submitRequestWorkerThread");
+	if(requestConsumer!=null){
+      while(true){
+        try {
+          submitRequestWorkerThread.join();
+          break;
+        } catch (InterruptedException e) {}
       }
+      requestConsumer.close();
+    }
+    log.info("DeliveryManager.shutdownDeliveryManager() : submitRequestWorkerThread stopped");
 
-    /*****************************************
-    *
-    *  stopped
-    *
-    *****************************************/
+	// now wait for in memory jobs to complete
+	synchronized (this){
+        int remaining = waitingForAcknowledgement.size();
+		log.info("DeliveryManager.shutdownDeliveryManager() : {} pending in memory requests", waitingForAcknowledgement.size());
+		while(remaining>0){
+			synchronized (this){
+				try { this.wait(500); } catch (InterruptedException e) {}
+				remaining = waitingForAcknowledgement.size();
+				if(remaining==0) break;
+				log.info("DeliveryManager.shutdownDeliveryManager() : still waiting for {} pending in memory requests to complete", remaining);
+			}
+		}
+		if(submitRequestQueue.size()>0) log.warn("DeliveryManager.shutdownDeliveryManager() : there is a bug here, please report it, still {} pending jobs ({})", submitRequestQueue.size(), waitingForAcknowledgement.size());
+		log.info("DeliveryManager.shutdownDeliveryManager() : all in memory request done");
+	}
 
-    synchronized (this)
-      {
-        managerStatus = ManagerStatus.Stopped;
-        this.notifyAll();
+	// stopping now receive correlator worker thread
+    log.info("DeliveryManager.shutdownDeliveryManager() : stopping receiveCorrelatorUpdateWorkerThread");
+    if(routingConsumer!=null){
+      while(true){
+        try {
+          receiveCorrelatorUpdateWorkerThread.join();
+          break;
+        } catch (InterruptedException e) { e.printStackTrace(); }
       }
+      routingConsumer.close();
+    }
+    log.info("DeliveryManager.shutdownDeliveryManager() : receiveCorrelatorUpdateWorkerThread stopped");
 
-    /*****************************************
-    *
-    *  shutdown subclass
-    *
-    *****************************************/
+    shutdown(); //sub classes implementation
+    kafkaProducer.flush(); // flush what we got at least now (sub classes might still have few to send if shutdown call not perfectly handled)
+    // a dirty hack probably mainly for CommodityDeliveryManager and PurchaseFulfillmentManager to avoid too much complexity there (not perfectly handled shutdown call there...)
+    try { Thread.sleep(4000); } catch (InterruptedException e) { log.warn("DeliveryManager.shutdownDeliveryManager() : issue while peacefully sleeping",e); }
+    kafkaProducer.close();// finally close it
 
-    shutdown();
-
-    /*****************************************
-    *
-    *  kafka
-    *
-    *****************************************/
-
-    //
-    //  requestConsumer
-    //
-
-    if (requestConsumer != null)
-      {
-        requestConsumer.wakeup();
-        while (true)
-          {
-            try
-              {
-                submitRequestWorkerThread.join();
-                break;
-              }
-            catch (InterruptedException e)
-              {
-              }
-          }
-        requestConsumer.close();
-      }
-
-    //
-    //  routingConsumer
-    //
-
-    if (routingConsumer != null)
-      {
-        routingConsumer.wakeup();
-        while (true)
-          {
-            try
-              {
-                receiveCorrelatorUpdateWorkerThread.join();
-                break;
-              }
-            catch (InterruptedException e)
-              {
-              }
-          }
-        routingConsumer.close();
-      }
-
-    //
-    //  kafkaProducer
-    //
-
-    if (kafkaProducer != null)
-      {
-        while (true)
-          {
-            try
-              {
-                submitRequestWorkerThread.join();
-                receiveCorrelatorUpdateWorkerThread.join();
-                break;
-              }
-            catch (InterruptedException e)
-              {
-              }
-          }
-        kafkaProducer.close();
-      }
-
-    /*****************************************
-    *
-    *  log
-    *
-    *****************************************/
-
-    log.info("Stopped DeliveryManager " + applicationID);
+	log.info("DeliveryManager.shutdownDeliveryManager() : stopped "+applicationID);
   }
 }

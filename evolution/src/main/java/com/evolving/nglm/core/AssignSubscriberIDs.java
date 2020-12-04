@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.DeliveryRequest;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -76,6 +77,8 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
   public Date getEventDate() { return eventDate; }
   public SubscriberAction getSubscriberAction() { return subscriberAction; }
   public Map<String,String> getAlternateIDs() { return alternateIDs; }
+
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
 
   /****************************************
   *

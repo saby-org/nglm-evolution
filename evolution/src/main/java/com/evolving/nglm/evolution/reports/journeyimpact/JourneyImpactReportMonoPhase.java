@@ -20,9 +20,10 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.JourneyService;
-import com.evolving.nglm.evolution.JourneyTrafficHistory;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -38,8 +39,10 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
   private static final Logger log = LoggerFactory.getLogger(JourneyImpactReportMonoPhase.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private JourneyService journeyService;
+  private ReportMonoPhase reportMonoPhase;
+  private ElasticsearchClientAPI elasticsearchReaderClient = null;
+
   List<String> headerFieldsOrder = new ArrayList<String>();
-  private ReferenceDataReader<String, JourneyTrafficHistory> journeyTrafficReader;
   
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
@@ -67,53 +70,62 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
     if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
       {
         Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
-        JourneyTrafficHistory journeyTrafficHistory = null;
         Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
         if (journey != null)
           {
-            journeyTrafficHistory = journeyTrafficReader.get(journey.getJourneyID());
-            journeyInfo.put("journeyID", journey.getJourneyID());
+            String journeyID = journey.getJourneyID();
+            journeyInfo.put("journeyID", journeyID);
             journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
             journeyInfo.put("journeyType", journey.getTargetingType());
             
-            StringBuilder sbStatus = new StringBuilder();
-            StringBuilder sbRewards = new StringBuilder();
-            String journeyStatus = null;
+            String journeyStatus = "";
             String journeyRewards = "";
-            if (journeyTrafficHistory != null)
-              {
-                for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values())
-                  {
-                    sbStatus.append(states.getDisplay()).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
-                  }
+            String journeyAbTesting = "";
+            try
+            {
+              if (elasticsearchReaderClient == null)
+                {
+                  elasticsearchReaderClient = reportMonoPhase.getESClient(); // reportMonoPhase cannot be null here
+                }
+              Map<String, Long> journeyStatusCount = elasticsearchReaderClient.getJourneyStatusCount(journeyID);
+              StringBuilder sbStatus = new StringBuilder();
 
-                if (sbStatus.length() > 0)
-                  {
-                    journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length() - 1);
-                  }
+              for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values())
+                {
+                  Long statusCount = journeyStatusCount.get(states.getDisplay());
+                  sbStatus.append(states.getDisplay()).append("=").append((statusCount==null) ? "0" : statusCount.toString()).append(",");
+                }
 
-                if (journeyTrafficHistory.getCurrentData().getGlobal().getDistributedRewards() != null)
-                  {
-                    for (Entry<String, Integer> rewards : journeyTrafficHistory.getCurrentData().getGlobal().getDistributedRewards().entrySet())
-                      {
-                        sbRewards.append(rewards.getKey()).append("=").append(rewards.getValue()).append(",");
-                      }
-                    if (sbRewards.toString().length() > 0)
-                      {
-                        journeyRewards = sbRewards.toString().substring(0, sbRewards.toString().length() - 1);
-                      }
-                  }
-              }
-            
-            StringBuilder abTesting = new StringBuilder();
-            String journeyAbTesting = null;
-            if (journeyTrafficHistory.getCurrentData().getByAbTesting() != null && !journeyTrafficHistory.getCurrentData().getByAbTesting().isEmpty())
+              if (sbStatus.length() > 0)
+                {
+                  journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length() - 1);
+                }
+
+              StringBuilder sbRewards = new StringBuilder();
+              Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID);
+              for (Entry<String, Long> rewards : distributedRewards.entrySet())
+                {
+                  sbRewards.append(rewards.getKey()).append("=").append(rewards.getValue()).append(",");
+                }
+              if (sbRewards.toString().length() > 0)
+                {
+                  journeyRewards = sbRewards.toString().substring(0, sbRewards.toString().length() - 1);
+                }
+
+              StringBuilder abTesting = new StringBuilder();
+              Map<String, Long> byAbTesting = elasticsearchReaderClient.getByAbTesting(journeyID);
+              for (Entry<String, Long> value : byAbTesting.entrySet())
+                {
+                  abTesting.append(value.getKey()).append("=").append(value.getValue()).append(",");
+                }
+              if (abTesting.toString().length() > 0)
+                {
+                  journeyAbTesting = abTesting.toString().substring(0, abTesting.toString().length() - 1);
+                }
+            }
+            catch (ElasticsearchClientException e)
               {
-                for (Entry<String, Integer> value : journeyTrafficHistory.getCurrentData().getByAbTesting().entrySet())
-                  {
-                    abTesting.append(value.getKey()).append("=").append(value.getValue()).append(",");
-                  }
-                journeyAbTesting = abTesting.toString().substring(0, abTesting.toString().length() - 1);
+                log.info("Exception processing "+journey.getGUIManagedObjectDisplay(), e);
               }
             journeyInfo.put("abTesting", journeyAbTesting);
             journeyInfo.put("customerStatuses", journeyStatus);
@@ -176,12 +188,10 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
 
     log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and " + esIndexJourney + " index on " + esNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
     
-    journeyTrafficReader = ReferenceDataReader.<String, JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-JourneyImpactReportMonoPhase" , Deployment.getBrokerServers(), Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
-
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
     
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+    reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
         this,

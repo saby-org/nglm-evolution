@@ -271,7 +271,7 @@ public class SegmentationDimensionService extends GUIService
     synchronized (this)
       {
         lastGeneratedSegmentID += 1;
-        return String.format(Deployment.getGenerateNumericIDs() ? "%d" : "%03d", lastGeneratedSegmentID);
+        return Long.toString(lastGeneratedSegmentID);
       }
   }
 

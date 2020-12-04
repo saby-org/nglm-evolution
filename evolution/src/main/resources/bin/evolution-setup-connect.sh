@@ -22,6 +22,8 @@ prepare-curl -XPOST $CONNECT_URL_SUBSCRIBERPROFILE_ES/connectors -H "Content-Typ
       "topics" : "${changelog.evolutionengine.subscriberstate.topic}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "subscriberprofile",
       "batchRecordCount" : "'$CONNECT_ES_SUBSCRIBERPROFILE_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_SUBSCRIBERPROFILE_BATCHSIZEMB'"
@@ -46,6 +48,8 @@ prepare-curl -XPOST $CONNECT_URL_EXTENDEDSUBSCRIBERPROFILE_ES/connectors -H "Con
       "topics" : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "subscriberprofile",
       "batchRecordCount" : "'$CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_BATCHSIZEMB'"
@@ -70,6 +74,8 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYSTATISTIC_ES/connectors -H "Content-Type
       "topics" : "${topic.journeystatistic}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "journeystatistic",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEYSTATISTIC_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_JOURNEYSTATISTIC_BATCHSIZEMB'"
@@ -94,33 +100,11 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYMETRIC_ES/connectors -H "Content-Type: a
       "topics" : "${topic.journeymetric}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "journeystatistic",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHSIZEMB'"
-      }
-  }' 
-
-#
-#  source connector -- externalDeliveryRequest
-#
-
-export CONNECT_URL_EXTERNALDELIVERYREQUEST=${CONNECT_URL_EXTERNALDELIVERYREQUEST:-$DEFAULT_CONNECT_URL}
-prepare-curl -XPOST $CONNECT_URL_EXTERNALDELIVERYREQUEST/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "externaldeliveryrequest_file_connector",
-    "config" :
-      {
-        "connector.class" : "com.evolving.nglm.evolution.ExternalDeliveryRequestFileSourceConnector",
-        "tasks.max" : 1,
-        "directory" : "/app/data/externaldeliveryrequests",
-        "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
-        "pollMaxRecords" : 5,
-        "pollingInterval" : 10,
-        "verifySizeInterval" : 0,
-        "topic" : "(automatically populated)",
-        "bootstrapServers" : "'$BROKER_SERVERS'",
-        "internalTopic" : "${topic.externaldeliveryrequest_fileconnector}",
-        "archiveDirectory" : "/app/data/externaldeliveryrequestsarchive"
       }
   }' 
 
@@ -235,9 +219,10 @@ prepare-curl -XPOST $CONNECT_URL_ODR_ES/connectors -H "Content-Type: application
        {
        "connector.class" : "com.evolving.nglm.evolution.ODRSinkConnector",
        "tasks.max" : '$CONNECT_ES_ODR_SINK_TASKS',
-       "topics" : "${topic.fulfillment.purchasefulfillment.response}",
        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+       "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+       "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
        "indexName" : "detailedrecords_offers",
        "pipelineName" : "odr-daily",
        "batchRecordCount" : "'$CONNECT_ES_ODR_BATCHRECORDCOUNT'",
@@ -263,6 +248,8 @@ prepare-curl -XPOST $CONNECT_URL_TOKENCHANGE_ES/connectors -H "Content-Type: app
         "topics"           : "${topic.tokenchange}",
         "connectionHost"   : "'$MASTER_ESROUTER_HOST'",
         "connectionPort"   : "'$MASTER_ESROUTER_PORT'",
+        "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+        "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
         "indexName"        : "detailedrecords_tokens",
         "pipelineName"     : "token-daily",
         "batchRecordCount" : "'$CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT'",
@@ -284,9 +271,10 @@ prepare-curl -XPOST $CONNECT_URL_BDR_ES/connectors -H "Content-Type: application
        {
        "connector.class" : "com.evolving.nglm.evolution.BDRSinkConnector",
        "tasks.max" : '$CONNECT_ES_BDR_SINK_TASKS',
-       "topics" : "${topic.commoditydelivery.response}",
        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+       "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+       "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
        "indexName" : "detailedrecords_bonuses",
        "pipelineName" : "bdr-daily",
        "batchRecordCount" : "'$CONNECT_ES_BDR_BATCHRECORDCOUNT'",
@@ -309,9 +297,10 @@ prepare-curl -XPOST $CONNECT_URL_NOTIFICATION_ES/connectors -H "Content-Type: ap
       {
       "connector.class" : "com.evolving.nglm.evolution.NotificationSinkConnector",
       "tasks.max" : '$CONNECT_ES_NOTIFICATION_SINK_TASKS',
-      "topics" : "${topic.notificationmanager.response},${topic.notificationmanagerpush.response},${topic.notificationmanagermail.response},${topic.notificationmanagersms.response}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "detailedrecords_messages",
       "pipelineName" : "mdr-daily",
       "batchRecordCount" : "'$CONNECT_ES_NOTIFICATION_BATCHRECORDCOUNT'",
@@ -364,6 +353,8 @@ prepare-curl -XPOST $CONNECT_URL_DELIVERABLE_ES/connectors -H "Content-Type: app
       "topics" : "${topic.deliverable}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "mapping_deliverables",
       "batchRecordCount" : "'$CONNECT_ES_DELIVERABLE_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_DELIVERABLE_BATCHSIZEMB'"
@@ -388,6 +379,8 @@ prepare-curl -XPOST $CONNECT_URL_BASEMANAGEMENT_ES/connectors -H "Content-Type: 
       "topics" : "${topic.segmentationdimension}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "mapping_basemanagement",
       "batchRecordCount" : "'$CONNECT_ES_BASEMANAGEMENT_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_BASEMANAGEMENT_BATCHSIZEMB'"
@@ -412,6 +405,8 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYOBJECTIVE_ES/connectors -H "Content-Type
       "topics" : "${topic.journeyobjective}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "mapping_journeyobjective",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEYOBJECTIVE_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_JOURNEYOBJECTIVE_BATCHSIZEMB'"
@@ -436,10 +431,39 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEY_ES/connectors -H "Content-Type: applica
       "topics" : "${topic.journey}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "mapping_journeys",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEY_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_JOURNEY_BATCHSIZEMB'"
       }
   }' 
+ 
+#
+#  sink connector -- VDR (elasticsearch)
+#
+
+export CONNECT_URL_VDR_ES=${CONNECT_URL_VDR_ES:-$DEFAULT_CONNECT_URL}
+export CONNECT_ES_VDR_SINK_TASKS=${CONNECT_ES_VDR_SINK_TASKS:-$CONNECT_ES_DEFAULT_SINK_TASKS}
+export CONNECT_ES_VDR_BATCHRECORDCOUNT=${CONNECT_ES_VDR_BATCHRECORDCOUNT:-$CONNECT_ES_DEFAULT_BATCHRECORDCOUNT}
+export CONNECT_ES_VDR_BATCHSIZEMB=${CONNECT_ES_VDR_BATCHSIZEMB:-$CONNECT_ES_DEFAULT_BATCHSIZEMB}
+prepare-curl -XPOST $CONNECT_URL_VDR_ES/connectors -H "Content-Type: application/json" -d '
+   {
+     "name" : "vdr_es_sink_connector",
+     "config" :
+       {
+       "connector.class" : "com.evolving.nglm.evolution.VDRSinkConnector",
+       "tasks.max" : '$CONNECT_ES_VDR_SINK_TASKS',
+       "topics" : "${topic.voucherchange.response}",
+       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+       "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+       "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
+       "indexName" : "detailedrecords_vouchers",
+       "pipelineName" : "vdr-daily",
+       "batchRecordCount" : "'$CONNECT_ES_VDR_BATCHRECORDCOUNT'",
+       "batchSize" : "'$CONNECT_ES_VDR_BATCHSIZEMB'"
+       }
+   }'
 
 wait

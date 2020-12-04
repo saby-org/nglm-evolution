@@ -1,11 +1,16 @@
 package com.evolving.nglm.evolution.statistics;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class StatBuilder<T extends Stat<T>> {
+
+	private static final Logger log = LoggerFactory.getLogger(StatBuilder.class);
 
 	// a reference to the stats instance
 	private T stats;

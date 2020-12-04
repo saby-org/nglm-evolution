@@ -9,7 +9,13 @@ package com.evolving.nglm.evolution;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -18,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -404,13 +411,34 @@ public class ReportService extends GUIService
     //  filter by name
     //
     
-    FileFilter filter = new FileFilter() { public boolean accept(File file) { return file.getName().startsWith(report.getName()); } };
+    //FileFilter filter = new FileFilter() { public boolean accept(File file) { return file.getName().startsWith(report.getName()); } };
+    DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() { @Override public boolean accept(Path entry) throws IOException { return entry.getFileName().toString().startsWith(report.getName()); } };
     
     //
     //  generatedReports
     //
     
     Set<Date> generatedDates = new HashSet<Date>();
+    final Path dir = Paths.get(Deployment.getReportManagerOutputPath());
+    try
+      {
+        final DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir, filter);
+        Iterator<Path> iterator = dirStream.iterator();
+        while (iterator.hasNext())
+          {
+            Path generatedReportFilePath = iterator.next();
+            String fileName = generatedReportFilePath.getFileName().toString();
+            Date reportDate = getReportDate(fileName, report.getName());
+            if (reportDate != null) generatedDates.add(reportDate);
+          }
+        dirStream.close();
+      } 
+    catch (IOException e) { e.printStackTrace(); }
+    
+    
+    
+    
+    /*   listFiles is not believable
     int doLs = 0;
     while(doLs < 3)
       {
@@ -435,7 +463,7 @@ public class ReportService extends GUIService
               }
           }
         doLs ++;
-      }
+      }*/
     
     //
     //  pendingDates
@@ -443,13 +471,13 @@ public class ReportService extends GUIService
     
     StringBuilder generatedDatesRAJKString = new StringBuilder();
     generatedDates.forEach(dt -> generatedDatesRAJKString.append("," + printDate(dt)));
-    if(log.isInfoEnabled()) log.info("{} already generatedDates {}", report.getName(), generatedDatesRAJKString);
+    if(log.isErrorEnabled()) log.error("{} already generatedDates {}", report.getName(), generatedDatesRAJKString);
     
     pendingDates = compareAndGetDates(report, generatedDates);
     
     StringBuilder pendingDatesDatesRAJKString = new StringBuilder();
     pendingDates.forEach(dt -> pendingDatesDatesRAJKString.append("," + printDate(dt)));
-    if(log.isInfoEnabled()) log.info("{} has pendingDates {} for EffectiveScheduling {}", report.getName(), pendingDatesDatesRAJKString, report.getEffectiveScheduling());
+    if(log.isErrorEnabled()) log.error("{} has pendingDates {} ", report.getName(), pendingDatesDatesRAJKString);
     
     //
     //  filterIfUpdated
@@ -646,17 +674,20 @@ public class ReportService extends GUIService
   private Date getReportDate(String reportFileName, String fileNameInitial)
   {
     Date result = null;
-    String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getReportManagerFileExtension())[0];
     try
       {
+        String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getReportManagerFileExtension())[0];
         SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getReportManagerDateFormat());
         sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
         result = sdf.parse(reportDateString);
         result = RLMDateUtils.truncate(result, Calendar.DATE, Deployment.getBaseTimeZone());
       } 
-    catch (ParseException e)
+    catch (Exception e)
       {
-        log.error(e.getMessage());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
+        log.error("skipping as badfile {}", reportFileName);
       }
     return result;
   }
@@ -679,13 +710,21 @@ public class ReportService extends GUIService
     // validate
     //
     
-    if (! reportDirectoryFile.isAbsolute())throw new ServerRuntimeException("reportDirectory must specify absolute path");
+    if (! reportDirectoryFile.isAbsolute())
+      {
+        if (log.isErrorEnabled()) log.error("reportDirectory must specify absolute path");
+        throw new ServerRuntimeException("reportDirectory must specify absolute path");
+      }
     
     //
     // can ls
     //
     
-    if (reportDirectoryFile.listFiles() == null) throw new ServerRuntimeException("unable to ls reportDirectory " + reportDirectoryFile.getAbsolutePath());
+    if (reportDirectoryFile.listFiles() == null)
+      {
+        if (log.isErrorEnabled()) log.error("unable to ls reportDirectory {}", reportDirectoryFile.getAbsolutePath());
+        throw new ServerRuntimeException("unable to ls reportDirectory " + reportDirectoryFile.getAbsolutePath());
+      }
     
     //
     // return

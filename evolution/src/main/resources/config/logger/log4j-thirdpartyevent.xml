@@ -20,6 +20,10 @@
 		<param name="MaxBackupIndex" value="2" />
 	</appender>
 
+	<category name="com.evolving.nglm">
+		<priority value="<_TRACE_LEVEL_>" />
+	</category>
+
 	<root>
 		<priority value="<_TRACE_LEVEL_>" />
 		<appender-ref ref="stdout" />

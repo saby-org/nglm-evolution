@@ -23,7 +23,6 @@ import com.evolving.nglm.evolution.JourneyNode;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportEsReader;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
@@ -106,7 +105,11 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
             Boolean statusTargetGroup  = journeyStats.get("statusTargetGroup")  == null ? null : (boolean) journeyStats.get("statusTargetGroup");
             Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
             Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
-
+//          String specialExit=journeyStats.get("specialExitStatus") == null ? null : (String) journeyStats.get("specialExitStatus");
+         // Required Changes in accordance to EVPRO-530
+//            if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty())
+//            journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
+//            else   
             journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
 
             List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");

@@ -15,8 +15,8 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
 
-import kafka.security.auth.Topic;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.errors.RecordTooLargeException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.json.simple.JSONObject;
 
@@ -39,8 +39,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,11 +70,11 @@ public class GUIService
   *****************************************/
 
   private volatile boolean stopRequested = false;
-  private Map<String,GUIManagedObject> storedGUIManagedObjects = new HashMap<String,GUIManagedObject>();
-  private Map<String,GUIManagedObject> availableGUIManagedObjects = new HashMap<String,GUIManagedObject>();
-  private Map<String,GUIManagedObject> activeGUIManagedObjects = new HashMap<String,GUIManagedObject>();
+  private ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = new ConcurrentHashMap<>();
+  private ConcurrentHashMap<String,GUIManagedObject> availableGUIManagedObjects = new ConcurrentHashMap<>();
+  private ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = new ConcurrentHashMap<>();
   // store objects that should have been "active", but are not because an update "suspend" them, either from direct normal GUI call "suspend" or an invalid update, but they were active at some point to end up there
-  private Map<String,GUIManagedObject> interruptedGUIManagedObjects = new HashMap<String,GUIManagedObject>();
+  private ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = new ConcurrentHashMap<>();
   private Date lastUpdate = SystemTime.getCurrentTime();
   private TreeSet<ScheduleEntry> schedule = new TreeSet<ScheduleEntry>();
   private String guiManagedObjectTopic;
@@ -118,6 +117,7 @@ public class GUIService
   *****************************************/
 
   // to remove once cleaned up
+  @Deprecated // groupID not needed
   protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange){
     this(bootstrapServers,serviceName,guiManagedObjectTopic,masterService,guiManagedObjectListener,putAPIString,removeAPIString,notifyOnSignificantChange);
   }
@@ -297,6 +297,8 @@ public class GUIService
 
     if (guiManagedObjectsConsumer != null) guiManagedObjectsConsumer.close();
     if (kafkaProducer != null) kafkaProducer.close();
+    
+    NGLMRuntime.unregisterSystemTimeDependency(this); // remove this, otherwise references to the service exists, even after we stop it
   }
 
   /*****************************************
@@ -324,7 +326,7 @@ public class GUIService
     synchronized (this)
       {
         lastGeneratedObjectID += 1;
-        return String.format(Deployment.getGenerateNumericIDs() ? "%d" : "%03d", lastGeneratedObjectID);
+        return Long.toString(lastGeneratedObjectID);
       }
   }
 
@@ -350,12 +352,9 @@ public class GUIService
 
   protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID, boolean includeArchived)
   {
-    synchronized (this)
-      {
-        GUIManagedObject result = storedGUIManagedObjects.get(guiManagedObjectID);
-        result = (result != null && (includeArchived || ! result.getDeleted())) ? result : null;
-        return result;
-      }
+    GUIManagedObject result = storedGUIManagedObjects.get(guiManagedObjectID);
+    result = (result != null && (includeArchived || ! result.getDeleted())) ? result : null;
+      return result;
   }
 
   //
@@ -372,18 +371,15 @@ public class GUIService
 
   protected Collection<GUIManagedObject> getStoredGUIManagedObjects(boolean includeArchived)
   {
-    synchronized (this)
+    List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
+    for (GUIManagedObject guiManagedObject : storedGUIManagedObjects.values())
       {
-        List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
-        for (GUIManagedObject guiManagedObject : storedGUIManagedObjects.values())
+        if (includeArchived || ! guiManagedObject.getDeleted())
           {
-            if (includeArchived || ! guiManagedObject.getDeleted())
-              {
-                result.add(guiManagedObject);
-              }
+            result.add(guiManagedObject);
           }
-        return result;
       }
+    return result;
   }
 
   //
@@ -411,36 +407,21 @@ public class GUIService
   *
   *****************************************/
 
-  protected boolean isActiveGUIManagedObject(GUIManagedObject guiManagedObjectUnchecked, Date date)
-  {
-    if (guiManagedObjectUnchecked instanceof GUIManagedObject)
-      {
-        GUIManagedObject guiManagedObject = (GUIManagedObject) guiManagedObjectUnchecked;
-        synchronized (this)
-          {
-            return guiManagedObject.getAccepted() && activeGUIManagedObjects.containsKey(guiManagedObject.getGUIManagedObjectID()) && guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0 && date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0;
-          }
-      }
-    else
-      {
-        return false;
-      }
+  protected boolean isActiveGUIManagedObject(GUIManagedObject guiManagedObject, Date date) {
+    if(guiManagedObject==null) return false;
+    if(!guiManagedObject.getAccepted()) return false;
+    if(activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID())==null) return false;
+    if(guiManagedObject.getEffectiveStartDate().after(date)) return false;
+    if(guiManagedObject.getEffectiveEndDate().before(date)) return false;
+    return true;
   }
 
-  protected boolean isInterruptedGUIManagedObject(GUIManagedObject guiManagedObjectUnchecked, Date date)
-  {
-    if (guiManagedObjectUnchecked instanceof GUIManagedObject)
-    {
-      GUIManagedObject guiManagedObject = (GUIManagedObject) guiManagedObjectUnchecked;
-      synchronized (this)
-      {
-        return interruptedGUIManagedObjects.containsKey(guiManagedObject.getGUIManagedObjectID()) && (guiManagedObject.getEffectiveStartDate()==null || guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (guiManagedObject.getEffectiveEndDate()==null || date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
-      }
-    }
-    else
-    {
-      return false;
-    }
+  protected boolean isInterruptedGUIManagedObject(GUIManagedObject guiManagedObject, Date date) {
+    if(guiManagedObject==null) return false;
+    if(interruptedGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID())==null) return false;
+    if(guiManagedObject.getEffectiveStartDate()!=null && guiManagedObject.getEffectiveStartDate().after(date)) return false;
+    if(guiManagedObject.getEffectiveEndDate()!=null && guiManagedObject.getEffectiveEndDate().before(date)) return false;
+    return true;
   }
 
   /*****************************************
@@ -451,26 +432,20 @@ public class GUIService
 
   protected GUIManagedObject getActiveGUIManagedObject(String guiManagedObjectID, Date date)
   {
-    synchronized (this)
-      {
-        GUIManagedObject guiManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
-        if (isActiveGUIManagedObject(guiManagedObject, date))
-          return guiManagedObject;
-        else
-          return null;
-      }
+    GUIManagedObject guiManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
+    if (isActiveGUIManagedObject(guiManagedObject, date))
+      return guiManagedObject;
+    else
+      return null;
   }
 
   protected GUIManagedObject getInterruptedGUIManagedObject(String guiManagedObjectID, Date date)
   {
-    synchronized (this)
-    {
-      GUIManagedObject guiManagedObject = interruptedGUIManagedObjects.get(guiManagedObjectID);
-      if (isInterruptedGUIManagedObject(guiManagedObject, date))
-        return guiManagedObject;
-      else
-        return null;
-    }
+    GUIManagedObject guiManagedObject = interruptedGUIManagedObjects.get(guiManagedObjectID);
+    if (isInterruptedGUIManagedObject(guiManagedObject, date))
+      return guiManagedObject;
+    else
+      return null;
   }
 
   /*****************************************
@@ -482,16 +457,13 @@ public class GUIService
   protected Collection<? extends GUIManagedObject> getActiveGUIManagedObjects(Date date)
   {
     Collection<GUIManagedObject> result = new HashSet<GUIManagedObject>();
-    synchronized (this)
-      {
-        for (GUIManagedObject guiManagedObject : activeGUIManagedObjects.values())
-          {
-            if (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0 && date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
-              {
-                result.add(guiManagedObject);
-              }
-          }
-      }
+	for (GUIManagedObject guiManagedObject : activeGUIManagedObjects.values())
+	  {
+		if (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0 && date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
+		  {
+			result.add(guiManagedObject);
+		  }
+	  }
     return result;
   }
 
@@ -520,8 +492,15 @@ public class GUIService
     //
     //  submit to kafka
     //
-
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObject.getGUIManagedObjectID())), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, guiManagedObject)));
+    try {
+      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObject.getGUIManagedObjectID())), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, guiManagedObject))).get();
+    } catch (InterruptedException|ExecutionException e) {
+      log.error("putGUIManagedObject error saving to kafka "+guiManagedObject.getClass().getSimpleName()+" "+guiManagedObject.getGUIManagedObjectID(),e);
+      if(e.getCause() instanceof RecordTooLargeException){
+        throw new RuntimeException("too big to be saved",e);
+	  }
+	  throw new RuntimeException(e);
+    }
 
     //
     //  audit
@@ -615,15 +594,6 @@ public class GUIService
         boolean active = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
         boolean future = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) > 0);
         boolean deleted = (guiManagedObject == null) || guiManagedObject.getDeleted();
-
-        //
-        //  copy
-        //
-
-        storedGUIManagedObjects = new HashMap<>(storedGUIManagedObjects);
-        availableGUIManagedObjects = new HashMap<>(availableGUIManagedObjects);
-        activeGUIManagedObjects = new HashMap<>(activeGUIManagedObjects);
-        interruptedGUIManagedObjects = new HashMap<>(interruptedGUIManagedObjects);
 
         //
         //  store
@@ -833,7 +803,7 @@ public class GUIService
               }
 
             if (guiManagedObject != null)
-              log.info("read {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObjectID);
+              log.debug("read {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObjectID);
             else
               log.info("clearing {}", guiManagedObjectID);
 
@@ -971,13 +941,6 @@ public class GUIService
             GUIManagedObject guiManagedObject = availableGUIManagedObjects.get(entry.getGUIManagedObjectID());
             if (guiManagedObject != null)
               {
-                //
-                //  copy
-                //
-
-                availableGUIManagedObjects = new HashMap<>(availableGUIManagedObjects);
-                activeGUIManagedObjects = new HashMap<>(activeGUIManagedObjects);
-                interruptedGUIManagedObjects = new HashMap<>(interruptedGUIManagedObjects);
 
                 //
                 //  existingActiveGUIManagedObject

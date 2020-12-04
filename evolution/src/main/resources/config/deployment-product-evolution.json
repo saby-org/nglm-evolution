@@ -1,12 +1,16 @@
+
 {
   "baseTimeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
   "baseLanguage"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
   "baseCountry"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
-  "generateNumericIDs"                       : true,
   "APIresponseDateFormat"                    : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
 
-  "journeyTrafficArchivePeriodInSeconds"     : 3600,
-  "journeyTrafficArchiveMaxNumberOfPeriods"  : 168,
+  "topicSubscriberPartitions" : "<_SUBSCRIBER_PARTITIONS_>",
+  "topicReplication"          : "<_KAFKA_REPLICATION_FACTOR_>",
+  "topicMinInSyncReplicas"    : "<_KAFKA_MIN_INSYNC_REPLICAS_>",
+  "topicRetentionShortHour"   : 24,
+  "topicRetentionDay"         : 4,
+  "topicRetentionLongDay"     : 31,
 
   "kafkaRetentionDaysExpiredTokens"   : 31,
   "kafkaRetentionDaysExpiredVouchers" : 31,
@@ -31,18 +35,25 @@
     "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
     "SubscriberProfile-preview"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
     "SubscriberProfile-definitive"   : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
-    "Journeys"                       : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" }
+    "Journeys"                       : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "1 * * * *" }
   },
   "elasticsearchJobsScheduling" : {
-    "SubscriberProfileSnapshot"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
+    "SubscriberProfileSnapshot"      : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
     "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
     "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
   },
-  
+
   "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   "elasticsearchScrollSize" : 1000,
-  "elasticsearchConnectTimeout" : 5000,
-  "elasticsearchQueryTimeout" : 7200000,
+  "elasticsearchConnectionSettings" : {
+    "UCGEngine"                      : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
+    "GUIManager"                     : { "connectTimeout" : 30000, "queryTimeout" : 7200000 },
+    "ThirdPartyManager"              : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
+    "PurchaseFulfillmentManager"     : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
+    "ReportManager"                  : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
+    "DatacubeManager"                : { "connectTimeout" : 30000, "queryTimeout" : 900000 }
+  },
+  "elasticSearchScrollKeepAlive" : 15,
   
   "elasticsearchDefaultShards" : 1,
   "elasticsearchDefaultReplicas" : 1,
@@ -52,7 +63,7 @@
   "elasticsearchSnapshotReplicas" : 0,
   "elasticsearchLiveVoucherShards" : 1,
   "elasticsearchLiveVoucherReplicas" : 1,
-  
+
   "ESRetentionDaysODR"              : 45,
   "ESRetentionDaysBDR"              : 45,
   "ESRetentionDaysMDR"              : 45,
@@ -62,6 +73,7 @@
   "ESRetentionDaysCampaigns"        : 15,
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
+  "ESRetentionDaysVDR"              : 45,
 
   "subscriberESIndexes" :
   [
@@ -72,7 +84,8 @@
     "detailedrecords_tokens-*",
     "journeystatistic*",
     "journeymetric",
-    "regr_criteria"
+    "regr_criteria",
+    "detailedrecords_vouchers-*"
   ],
 
   "hourlyReportCronEntryString"   : "0 * * * *",
@@ -88,13 +101,6 @@
   "voucherESCacheCleanerFrequencyInSec" : 300,
   "numberConcurrentVoucherAllocationToES" : 10,
 
-  "ucgEngineESConnectTimeout" : 30000,
-  "ucgEngineESSocketTimeout" : 60000,
-  "ucgEngineESMasRetryTimeout" : 60000,
-  
-  "guiManagerESConnectTimeout" : 30000,
-  "guiManagerESSocketTimeout" : 60000,
-  
   "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 300000,
   
@@ -105,8 +111,8 @@
   [
     "subscriberprofile"
   ],
-
-  "emptyTopic"                                           : "${topic.empty}",
+  "evolutionVersion"                                     : "${nglm.evolution.version}",
+  "customerVersion"                                      : "${project.version}",
   "journeyTopic"                                         : "${topic.journey}",
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
   "segmentationDimensionTopic"                           : "${topic.segmentationdimension}",
@@ -149,6 +155,7 @@
   "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "executeActionOtherSubscriberTopic"                    : "${topic.executeactionothersubscriber}",
+  "voucherActionTopic"                               	 : "${topic.voucheraction}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
@@ -156,9 +163,6 @@
   "extendedSubscriberProfileChangeLogTopic"              : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
   "subscriberHistoryChangeLog"                           : "${changelog.evolutionengine.subscriberhistory}",
   "subscriberHistoryChangeLogTopic"                      : "${changelog.evolutionengine.subscriberhistory.topic}",
-  "journeyTrafficChangeLog"                              : "${changelog.journeytrafficengine.journeytraffic}",
-  "journeyTrafficChangeLogTopic"                         : "${changelog.journeytrafficengine.journeytraffic.topic}",
-  "journeyTrafficTopic"                                  : "${topic.journeytraffic}",
   "tokenChangeTopic"                                     : "${topic.tokenchange}",
   "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
   "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",
@@ -167,21 +171,14 @@
   "subscriberTraceControlAssignSubscriberIDTopic"        : "${topic.subscribertracecontrol.assignsubscriberid}",
   "subscriberTraceTopic"                                 : "${topic.subscribertrace}",
   "simulatedTimeTopic"                                   : "${topic.simulatedtime}",
-  "journeyRequestTopic"                                  : "${topic.journeyrequest}",
-  "journeyResponseTopic"                                 : "${topic.journeyresponse}",
   "journeyStatisticTopic"                                : "${topic.journeystatistic}",
   "journeyMetricTopic"                                   : "${topic.journeymetric}",
-  "loyaltyProgramRequestTopic"                           : "${topic.loyaltyprogramrequest}",
-  "loyaltyProgramResponseTopic"                          : "${topic.loyaltyprogramresponse}",
   "deliverableSourceTopic"                               : "${topic.deliverable.source}",
   "presentationLogTopic"                                 : "${topic.presentationlog}",
   "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
   "subscriberMessageTemplateTopic"                       : "${topic.template.subscribermessage}",
   "uploadedFileTopic"                                    : "${topic.uploadedfile}",
   "targetTopic"                                          : "${topic.target}",
-  "pointFulfillmentRequestTopic"                         : "${topic.pointfulfillment.request}",
-  "pointFulfillmentResponseTopic"                        : "${topic.pointfulfillment.response}",
-  "pointFulfillmentRekeyedTopic"                         : "${topic.pointfulfillment.rekeyed}",
   "communicationChannelTopic"                            : "${topic.communicationchannel}",
   "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
   "communicationChannelTimeWindowTopic"                  : "${topic.timewindowperiod}",
@@ -369,6 +366,30 @@
     "evolutionEngineCoreEvents" :
       [
         { 
+          "name" : "VoucherValidation",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
+          "eventCriterionFields" : 
+            [
+              { "id" : "event.vouchervalidation.vouchercode",          	"display" : "Voucher Code",       								"dataType" : "string",	 "retriever" : "getVoucherValidationVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.vouchervalidation.actionstatus", 	   		"display" : "Voucher Validation Status Details",				"dataType" : "string",	 "retriever" : "getVoucherValidationStatus",			"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.vouchervalidation.actionstatusCode", 	    "display" : "Voucher Validation Status Code",					"dataType" : "integer",	 "retriever" : "getVoucherValidationStatusCode",		"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+            ]
+        },
+        { 
+          "name" : "VoucherRedemption",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
+          "eventCriterionFields" : 
+            [
+              { "id" : "event.voucherredemption.vouchercode",          	"display" : "Voucher Code",       								"dataType" : "string",	 "retriever" : "getVoucherRedemptionVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherredemption.actionstatus", 	   		"display" : "Voucher Redemption Status Details",				"dataType" : "string",	 "retriever" : "getVoucherRedemptionStatus",			"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherredemption.actionstatusCode", 	   	"display" : "Voucher Redemption Status Code",					"dataType" : "integer",	 "retriever" : "getVoucherRedemptionStatusCode",		"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+            ]
+        },
+        { 
           "name" : "tokenRedeemed",
           "eventClass" : "com.evolving.nglm.evolution.TokenRedeemed",
           "eventTopic" : "${topic.tokenredeemed}",
@@ -436,7 +457,9 @@
               { "id" : "event.meanOfPayment",    "display" : "Mean Of Payment",    "dataType" : "string", "retriever" : "getMeanOfPayment_OfferDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#paymentMeans#"] },
               { "id" : "event.offerContent",     "display" : "Offer Content",      "dataType" : "string", "retriever" : "getOfferContent_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
               { "id" : "event.voucherCode",      "display" : "Voucher Code",       "dataType" : "string", "retriever" : "getVoucherCode_OfferDelivery",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.voucherPartnerId", "display" : "Voucher Partner Id", "dataType" : "string", "retriever" : "getVoucherPartnerId_OfferDelivery", "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+              { "id" : "event.voucherPartnerId", "display" : "Voucher Partner Id", "dataType" : "string", "retriever" : "getVoucherPartnerId_OfferDelivery", "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.resellerName",     "display" : "Reseller Name",      "dataType" : "string", "retriever" : "getResellerName_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#resellers#"] },
+              { "id" : "event.supplierName",     "display" : "Supplier Name",      "dataType" : "string", "retriever" : "getSupplierName_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#suppliers#"] }
             ]
         },      
         { 
@@ -550,6 +573,15 @@
     { "id" : "alphanumeric", "name"  : "Alphanumeric"}
   ],
 
+  "supportedVoucherCodePatternList" :
+  [ 
+    { "id" : "vc1", "display" : "[ACDEFGHJKMNPQRTWXY34679]{5}" },
+    { "id" : "vc2", "display" : "[ACDEFGHJKMNPQRTWXY34679]{6}" },
+    { "id" : "vc3", "display" : "[ACDEFGHJKMNPQRTWXY34679]{7}" },
+    { "id" : "vc4", "display" : "[0123456789abcdef]{5}" },
+    { "id" : "vc5", "display" : "[0123456789abcdef]{6}" }
+  ],
+  
   "universalControlGroupCriteria" :
   [
     { "id" : "1", "criterionField" : "subscriber.universalControlGroup", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "true",  "expression" : "true" } }
@@ -603,8 +635,6 @@
       "id"                        : "pointFulfillment",
       "deliveryType"              : "pointFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.PointFulfillmentRequest",
-      "requestTopic"              : "${topic.pointfulfillment.request}",
-      "responseTopic"             : "${topic.pointfulfillment.response}",
       "providerID"                : "provider_Point",
       "providerName"              : "Points provider"
     },
@@ -612,8 +642,6 @@
       "id"                        : "journeyFulfillment",
       "deliveryType"              : "journeyFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.JourneyRequest",
-      "requestTopic"              : "${topic.journeyrequest}",
-      "responseTopic"             : "${topic.journeyresponse}",
       "providerID"                : "provider_Journey",
       "providerName"              : "Journeys provider"
     },
@@ -621,8 +649,6 @@
       "id"                        : "loyaltyProgramFulfillment",
       "deliveryType"              : "loyaltyProgramFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.LoyaltyProgramRequest",
-      "requestTopic"              : "${topic.loyaltyprogramrequest}",
-      "responseTopic"             : "${topic.loyaltyprogramresponse}",
       "providerID"                : "provider_Loyalty_Program",
       "providerName"              : "Loyalty Programs provider"
     },
@@ -630,22 +656,12 @@
       "id"                             : "purchaseFulfillment",
       "deliveryType"                   : "purchaseFulfillment",
       "requestClass"                   : "com.evolving.nglm.evolution.PurchaseFulfillmentManager$PurchaseFulfillmentRequest",
-      "requestTopic"                   : "${topic.fulfillment.purchasefulfillment.request}",
-      "responseTopic"                  : "${topic.fulfillment.purchasefulfillment.response}",
-      "internalTopic"                  : "${topic.fulfillment.purchasefulfillment.internal}",
-      "routingTopic"                   : "${topic.fulfillment.purchasefulfillment.routing}",
-      "deliveryGuarantee"              : "atLeastOnce",
       "correlatorUpdateTimeoutSeconds" : 90000
     },
     {
       "id"                                : "commodityDelivery",
       "deliveryType"                      : "commodityDelivery",
       "requestClass"                      : "com.evolving.nglm.evolution.CommodityDeliveryManager$CommodityDeliveryRequest",
-      "requestTopic"                      : "${topic.commoditydelivery.request}",
-      "responseTopic"                     : "${topic.commoditydelivery.response}",
-      "internalTopic"                     : "${topic.commoditydelivery.internal}",
-      "routingTopic"                      : "${topic.commoditydelivery.routing}",
-      "deliveryGuarantee"                 : "atLeastOnce",
       "correlatorCleanerFrequencySeconds" : 1200
     }
   ],
@@ -1008,7 +1024,9 @@
       "display"             : "Journey Impact Report",
       "description"         : "Description of the Journey Impact Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
+
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+
     },
     {
       "name"                : "journeyCustomerStatisticsReport",
@@ -1016,6 +1034,7 @@
       "description"         : "Description of the Journey Customer Statistics Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+
     },
     {
       "name"                : "contactPolicyConfiguration",
@@ -1051,6 +1070,27 @@
       "display"             : "Token Offer Report",
       "description"         : "Description offer details of the tokens",
       "class"               : "com.evolving.nglm.evolution.reports.tokenOffer.TokenOfferReportDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "voucherCustomerReport",
+      "display"             : "Voucher Customer Report",
+      "description"         : "Description of status of vouchers delivered to customers",
+      "class"               : "com.evolving.nglm.evolution.reports.voucherCustomer.VoucherCustomerReportDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "VDRReport",
+      "display"             : "VDR Report",
+      "description"         : "Description of the VDR Report",
+      "class"               : "com.evolving.nglm.evolution.reports.vdr.VDRReportDriver",
+      "availableScheduling" : [ "none","daily" ]
+    },
+    {
+      "name"                : "voucherStockReport",
+      "display"             : "Voucher Stock Report",
+      "description"         : "Description of personal vouchers uploaded into solutions",
+      "class"               : "com.evolving.nglm.evolution.reports.voucherUploaded.VoucherUploadedReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
@@ -1185,10 +1225,6 @@
     "enableProfileSegmentChange" : true,
     "enableEvaluateTargetRandomness" : false,
     "enableContactPolicyProcessing" : true,
-    
-    --
-    -- recurrentCampaignCreationDaysRange default value is 3 - creates child campaigns before x days and creates missing child campaigns whose start date with in now-x days
-    --
     
     "recurrentCampaignCreationDaysRange" : 3
 }

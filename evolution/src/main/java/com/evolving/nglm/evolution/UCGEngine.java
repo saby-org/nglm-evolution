@@ -10,6 +10,7 @@ import com.evolving.nglm.core.*;
 import com.evolving.nglm.core.utilities.UtilitiesException;
 import com.evolving.nglm.evolution.UCGRuleService.UCGRuleListener;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
@@ -22,7 +23,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -76,12 +76,9 @@ public class UCGEngine
   private BlockingQueue<UCGRule> evaluationRequests = new LinkedBlockingQueue<UCGRule>();
   private Thread ucgEvaluatorThread = null;
   private UCGEngineStatistics ucgEngineStatistics = null;
-  private RestHighLevelClient elasticsearchRestClient;
+  private ElasticsearchClientAPI elasticsearchRestClient;
   private String subscriberGroupField = null;
   private static final HashMap<String,String> bucketAggCounters = new HashMap<>();
-  private static final int connectTimeout = Deployment.getUcgEngineESConnectTimeout();
-  private static final int socketTimeout = Deployment.getUcgEngineESSocketTimeout();
-  private static final int maxRetryTimeout = Deployment.getUcgEngineESMasRetryTimeout();
 
   /*****************************************
   *
@@ -163,7 +160,7 @@ public class UCGEngine
     *
     *****************************************/
 
-    ucgStateReader = ReferenceDataReader.<String,UCGState>startReader("ucgengine-ucgstate", "001", Deployment.getBrokerServers(), Deployment.getUCGStateTopic(), UCGState::unpack);
+    ucgStateReader = ReferenceDataReader.<String,UCGState>startReader("ucgengine-ucgstate", Deployment.getBrokerServers(), Deployment.getUCGStateTopic(), UCGState::unpack);
 
     /*****************************************
     *
@@ -198,15 +195,18 @@ public class UCGEngine
 
     /*****************************************
     *
-    *  initialize elastic search rest client
-    *  args[2] elatic search host
-    *  args[3] elastic search port
+    *  initialize elastic search rest client 
     *****************************************/
-
+    String elasticsearchServerHost = args[2];
+    Integer elasticsearchServerPort = Integer.parseInt(args[3]);
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("UCGEngine").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("UCGEngine").getQueryTimeout();
+    String userName = args[4];
+    String userPassword = args[5];
+    
     try
       {
-        RestClientBuilder builder = RestClient.builder(new HttpHost(args[2], Integer.parseInt(args[3]), "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() { @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) { return builder.setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout); } } );
-        elasticsearchRestClient = new RestHighLevelClient(builder);
+        elasticsearchRestClient = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
         subscriberGroupField = CriterionContext.Profile.getCriterionFields().get("subscriber.segments").getESField();
       }
     catch (ElasticsearchException e)
@@ -686,7 +686,6 @@ public class UCGEngine
     if (ucgRuleService != null) ucgRuleService.stop();
     if (segmentationDimensionService != null) segmentationDimensionService.stop();
     if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
-    if (ucgStateReader != null) ucgStateReader.close();
     if (kafkaProducer != null) kafkaProducer.close();
 
     /*****************************************

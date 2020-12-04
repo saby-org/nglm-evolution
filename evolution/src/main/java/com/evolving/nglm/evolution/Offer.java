@@ -28,6 +28,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -86,6 +87,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("offerTranslations", SchemaBuilder.array(OfferTranslation.schema()).schema());
     schemaBuilder.field("offerCharacteristics", OfferCharacteristics.schema());
     schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("maximumAcceptances", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("maximumAcceptancesPeriodDays", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -120,6 +123,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   private OfferCharacteristics offerCharacteristics;
   private String description;
   private boolean simpleOffer;
+  private Integer maximumAcceptances;
+  private Integer maximumAcceptancesPeriodDays;
 
   //
   //  derived
@@ -152,7 +157,9 @@ public class Offer extends GUIManagedObject implements StockableItem
   public String getStockableItemID() { return stockableItemID; }
   public String getDescription() { return JSONUtilities.decodeString(getJSONRepresentation(), "description"); }
   public boolean getSimpleOffer() { return simpleOffer; }
-
+  public Integer getMaximumAcceptances() { return maximumAcceptances; }
+  public Integer getMaximumAcceptancesPeriodDays() { return maximumAcceptancesPeriodDays; }
+ 
   /*****************************************
   *
   *  evaluateProfileCriteria
@@ -170,7 +177,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays)
   {
     super(schemaAndValue);
     this.initialPropensity = getValidPropensity(initialPropensity);
@@ -185,6 +192,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.stockableItemID = "offer-" + getOfferID();
     this.offerCharacteristics = offerCharacteristics;
     this.simpleOffer = simpleOffer;
+    this.maximumAcceptances = maximumAcceptances;
+    this.maximumAcceptancesPeriodDays = maximumAcceptancesPeriodDays;
   }
 
   /*****************************************
@@ -209,6 +218,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("offerTranslations", packOfferTranslations(offer.getOfferTranslations()));
     struct.put("offerCharacteristics", OfferCharacteristics.pack(offer.getOfferCharacteristics()));
     struct.put("simpleOffer", offer.getSimpleOffer());
+    struct.put("maximumAcceptances", offer.getMaximumAcceptances());
+    struct.put("maximumAcceptancesPeriodDays", offer.getMaximumAcceptancesPeriodDays());
     return struct;
   }
 
@@ -340,11 +351,14 @@ public class Offer extends GUIManagedObject implements StockableItem
     Set<OfferTranslation> offerTranslations = unpackOfferTranslations(schema.field("offerTranslations").schema(), valueStruct.get("offerTranslations"));
     OfferCharacteristics offerCharacteristics = OfferCharacteristics.unpack(new SchemaAndValue(schema.field("offerCharacteristics").schema(), valueStruct.get("offerCharacteristics")));
     boolean simpleOffer = (schemaVersion >= 3) ? valueStruct.getBoolean("simpleOffer") : false;
+    Integer maximumAcceptances = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptances") : Integer.MAX_VALUE;
+    Integer maximumAcceptancesPeriodDays = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptancesPeriodDays") : 1;
+    
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays);
   }
   
   /*****************************************
@@ -587,7 +601,9 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.stockableItemID = "offer-" + getOfferID();
     this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false), catalogCharacteristicService);
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
-    
+    this.maximumAcceptances = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptances", false);
+    this.maximumAcceptancesPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriodDays", false);
+
     /*****************************************
     *
     *  epoch
@@ -736,6 +752,8 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(offerTranslations, existingOffer.getOfferTranslations());
         epochChanged = epochChanged || ! Objects.equals(offerCharacteristics, existingOffer.getOfferCharacteristics());
         epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingOffer.getSimpleOffer());
+        epochChanged = epochChanged || ! Objects.equals(maximumAcceptances, existingOffer.getMaximumAcceptances());
+        epochChanged = epochChanged || ! Objects.equals(maximumAcceptancesPeriodDays, existingOffer.getMaximumAcceptancesPeriodDays());
         return epochChanged;
       }
     else

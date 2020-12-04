@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.5_3-EVPRO-351-SNAPSHOT</version>
+  <version>1.5.0_0-EVPRO-351-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,7 +27,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.5_3-SNAPSHOT</version>
+    <version>1.5.0_0-SNAPSHOT</version>
   </parent>
 
   <scm>
@@ -39,19 +39,19 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.4.5_3-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.5.0_0-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
-    <gui-fwk.version>1.4.27</gui-fwk.version>
-    <gui-csr.version>1.4.27</gui-csr.version>
+    <gui-fwk.version>1.4.29</gui-fwk.version>
+    <gui-csr.version>1.4.28</gui-csr.version>
     <gui-itm.version>1.4.3</gui-itm.version>
-    <gui-jmr.version>1.4.56</gui-jmr.version>
-    <gui-opc.version>1.4.16</gui-opc.version>
-    <gui-iar.version>1.4.6</gui-iar.version>
+    <gui-jmr.version>1.4.63</gui-jmr.version>
+    <gui-opc.version>1.4.21</gui-opc.version>
+    <gui-iar.version>1.4.8</gui-iar.version>
     <gui-opr.version>1.4.4</gui-opr.version>
     <gui-stg.version>1.4.13</gui-stg.version>
-    <gui-sbm.version>1.4.26</gui-sbm.version>
-    <gui-lpm.version>1.4.11</gui-lpm.version>
+    <gui-sbm.version>1.4.26.1</gui-sbm.version>
+    <gui-lpm.version>1.4.13</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.4</gui-audit.version>
 
@@ -207,7 +207,7 @@
               <Commit>${buildNumber}</Commit>
               <Branch>${scmBranch}</Branch>
               <Build-Time>${maven.build.timestamp}</Build-Time>
-            </manifestEntries> 
+            </manifestEntries>
           </archive>
         </configuration>
       </plugin>
@@ -272,7 +272,6 @@
                   <includes>
                     <include>bin/evolution-*.sh</include>
                     <include>bin/evolutionengine-run.sh</include>
-                    <include>bin/journeytrafficengine-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>
                     <include>bin/storeconfiguration-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
@@ -294,7 +293,6 @@
                     <include>config/kafka-lag-exporter-logback.xml</include>
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
-                    <include>config/journeytrafficengine_jmx.yml</include>
                     <include>config/ucgengine_jmx.yml</include>
                     <include>config/infulfillmentmanager_jmx.yml</include>
                     <include>config/emptyfulfillmentmanager_jmx.yml</include>
@@ -324,8 +322,6 @@
                     <include>docker/dnboproxy.yml</include>
                     <include>docker/evolutionengine/*</include>
                     <include>docker/evolutionengine.yml</include>
-                    <include>docker/journeytrafficengine/*</include>
-                    <include>docker/journeytrafficengine.yml</include>
                     <include>docker/ucgengine/*</include>
                     <include>docker/ucgengine.yml</include>
                     <include>docker/infulfillmentmanager/*</include>
@@ -377,7 +373,6 @@
                     <exclude>docker/thirdpartymanager.yml</exclude>
                     <exclude>docker/dnboproxy.yml</exclude>
                     <exclude>docker/evolutionengine.yml</exclude>
-                    <exclude>docker/journeytrafficengine.yml</exclude>
                     <exclude>docker/ucgengine.yml</exclude>
                     <exclude>docker/infulfillmentmanager.yml</exclude>
                     <exclude>docker/emptyfulfillmentmanager.yml</exclude>

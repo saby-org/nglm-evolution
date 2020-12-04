@@ -65,6 +65,19 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
             if (journey != null)
               {
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
+                if (journeyStats.get(subscriberID) != null)
+                  {
+                    Object subscriberIDField = journeyStats.get(subscriberID);
+                    journeyInfo.put(customerID, subscriberIDField);
+                  }
+                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+                  {
+                    if (journeyStats.get(alternateID.getID()) != null)
+                      {
+                        Object alternateId = journeyStats.get(alternateID.getID());
+                        journeyInfo.put(alternateID.getID(), alternateId);
+                      }
+                  }
                 journeyInfo.put("journeyID", journey.getJourneyID());
                 journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                 journeyInfo.put("journeyType", journey.getTargetingType());
@@ -80,7 +93,12 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                   {
                     journeyInfo.put("sample", journeyStats.get("sample"));
                   }
-
+ //Required Changes in accordance to EVPRO-530          
+//                String specialExit=journeyStats.get("status") == null ? null : (String) journeyStats.get("status");
+//                if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty() &&  (SubscriberJourneyStatus.fromExternalRepresentation(specialExit).in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
+//                     )
+//                journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
+//                else 
                 journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
                 Date currentDate = SystemTime.getCurrentTime();
                 journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
@@ -93,20 +111,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                     journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
                     journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
                   }
-
-                if (journeyStats.get(subscriberID) != null)
-                  {
-                    Object subscriberIDField = journeyStats.get(subscriberID);
-                    journeyInfo.put(customerID, subscriberIDField);
-                  }
-                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-                  {
-                    if (journeyStats.get(alternateID.getID()) != null)
-                      {
-                        Object alternateId = journeyStats.get(alternateID.getID());
-                        journeyInfo.put(alternateID.getID(), alternateId);
-                      }
-                  }
+                
 
                 /*
                  * if (addHeaders) { headerFieldsOrder.clear(); addHeaders(writer,

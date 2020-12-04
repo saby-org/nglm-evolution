@@ -11,7 +11,6 @@ import java.util.Map;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -65,7 +64,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsHistoryDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, LoyaltyProgramService loyaltyProgramService)
+  public ProgramsHistoryDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, LoyaltyProgramService loyaltyProgramService)
   {
     super(datacubeName, elasticsearch);
 
@@ -122,7 +121,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     List<CompositeValuesSourceBuilder<?>> sources = new ArrayList<>();
     sources.add(new TermsValuesSourceBuilder("loyaltyProgramID").field("loyaltyPrograms.programID"));
     sources.add(new TermsValuesSourceBuilder("tier").field("loyaltyPrograms.tierName").missingBucket(false)); // Missing means opt-out. Do not count them here
-    sources.add(new TermsValuesSourceBuilder("redeemer").field("loyaltyPrograms.redeemer").missingBucket(true)); // Can be missing TODO not implemented yet
+    sources.add(new TermsValuesSourceBuilder("redeemer").field("loyaltyPrograms.rewardTodayRedeemer").missingBucket(false)); // Missing should NOT happen
     
     //
     // Sub Aggregation STATUS(filter) with metrics
@@ -181,11 +180,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     
     // "tier" stay the same 
     // "evolutionSubscriberStatus" stay the same. TODO: retrieve display for evolutionSubscriberStatus
-    // "redeemer" stay the same
-    if(filters.get("redeemer").equals(UNDEFINED_BUCKET_VALUE)) {
-      filters.replace("redeemer", null); // Because it must be a boolean, TODO implements it.
-    }
-    
+    // "redeemer" stay the same    
   }
 
   @Override
@@ -225,7 +220,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       Map<String, Object> filters = bucket.getKey();
       for(String key: filters.keySet()) {
         if(filters.get(key) == null) {
-          filters.replace(key, UNDEFINED_BUCKET_VALUE); // @rl especially for "redeemer" till it is implemented
+          filters.replace(key, UNDEFINED_BUCKET_VALUE);
         }
       }
       

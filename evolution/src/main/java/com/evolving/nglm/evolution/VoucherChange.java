@@ -3,12 +3,15 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
+
 import org.apache.kafka.connect.data.*;
 
 import java.util.Date;
 
 // main purpose is to trigger request to modify voucher in evolutionEngine, might be used as an event
-public class VoucherChange extends SubscriberStreamOutput implements EvolutionEngineEvent {
+public class VoucherChange extends SubscriberStreamOutput implements EvolutionEngineEvent{
 
   //action
   public enum VoucherChangeAction {
@@ -16,6 +19,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     Resend("resend"),
     Extend("extend"),
     Expire("expire"),
+    Deliver("deliver"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private VoucherChangeAction(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}
@@ -148,6 +152,21 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     this.origin = origin;
     this.returnStatus = returnStatus;
   }
+  
+  public VoucherChange(VoucherChange voucherChange) {
+    this.subscriberID = voucherChange.getSubscriberID();
+    this.eventDate = voucherChange.getEventDate();
+    this.newVoucherExpiryDate = voucherChange.getNewVoucherExpiryDate();
+    this.eventID = voucherChange.getEventID();
+    this.action = voucherChange.getAction();
+    this.voucherCode = voucherChange.getVoucherCode();
+    this.voucherID = voucherChange.getVoucherID();
+    this.fileID = voucherChange.getFileID();
+    this.moduleID = voucherChange.getModuleID();
+    this.featureID = voucherChange.getFeatureID();
+    this.origin = voucherChange.getOrigin();
+    this.returnStatus = voucherChange.getReturnStatus();
+  }
 
   public VoucherChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus) {
     super(schemaAndValue);
@@ -182,5 +201,4 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
             ", returnStatus=" + returnStatus.getGenericResponseMessage() +
             '}';
   }
-
 }

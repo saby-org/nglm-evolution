@@ -161,6 +161,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       documentMap.put("endDate", RLMDateUtils.printTimestamp(journey.getEffectiveEndDate()));
       documentMap.put("active", journey.getActive());
       documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+      documentMap.put("status", journeyService.getJourneyStatus(journey).getExternalRepresentation());
 
       //
       // return

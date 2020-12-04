@@ -49,7 +49,8 @@ public class Deployment
   private static ZoneId baseZoneId;
   private static String baseLanguage;
   private static String baseCountry;
-  private static boolean generateNumericIDs;
+  private static String evolutionVersion;
+  private static String customerVersion;
   private static Map<String,AlternateID> alternateIDs = new LinkedHashMap<String,AlternateID>();
   private static String assignSubscriberIDsTopic;
   private static String assignExternalSubscriberIDsTopic;
@@ -69,10 +70,11 @@ public class Deployment
   private static String subscriberTraceTopic;
   private static String simulatedTimeTopic;
   private static Map<String,AutoProvisionEvent> autoProvisionEvents = new LinkedHashMap<String,AutoProvisionEvent>();
-  // ELASTICSEARCH
+  // ELASTICSEARCH (moved in core because it's needed for setup/upgrade process)
   private static int elasticsearchConnectTimeout;
   private static int elasticsearchQueryTimeout;
   private static int elasticsearchScrollSize;
+  private static int elasticSearchScrollKeepAlive;
   private static String elasticsearchDateFormat;
   private static int elasticsearchDefaultShards;
   private static int elasticsearchDefaultReplicas;
@@ -90,7 +92,8 @@ public class Deployment
   private static int elasticsearchRetentionDaysJourneys;
   private static int elasticsearchRetentionDaysCampaigns;
   private static int elasticsearchRetentionDaysBulkCampaigns;
-  private static int elasticsearchRetentionDaysExpiredVouchers;  
+  private static int elasticsearchRetentionDaysExpiredVouchers; 
+  private static int elasticsearchRetentionDaysVDR;
 
   //
   //  accessors
@@ -104,7 +107,8 @@ public class Deployment
   public static ZoneId getBaseZoneId() { return baseZoneId; }
   public static String getBaseLanguage() { return baseLanguage; }
   public static String getBaseCountry() { return baseCountry; }
-  public static boolean getGenerateNumericIDs() { return generateNumericIDs; }
+  public static String getEvolutionVersion() { return evolutionVersion!=null?evolutionVersion:"unknown"; }
+  public static String getCustomerVersion() { return customerVersion!=null?customerVersion:"unknown"; }
   public static String getRedisSentinels() { return System.getProperty("redis.sentinels",""); }
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getAssignSubscriberIDsTopic() { return assignSubscriberIDsTopic; }
@@ -128,8 +132,7 @@ public class Deployment
   // ELASTICSEARCH 
   public static String getElasticsearchDateFormat() { return elasticsearchDateFormat; }
   public static int getElasticsearchScrollSize() {return elasticsearchScrollSize; }
-  public static int getElasticsearchConnectTimeout() { return elasticsearchConnectTimeout; }
-  public static int getElasticsearchQueryTimeout() { return elasticsearchQueryTimeout; }
+  public static int getElasticSearchScrollKeepAlive() {return elasticSearchScrollKeepAlive; }
   public static int getElasticsearchDefaultShards() { return elasticsearchDefaultShards; }
   public static int getElasticsearchDefaultReplicas() { return elasticsearchDefaultReplicas; }
   public static int getElasticsearchSubscriberprofileShards() { return elasticsearchSubscriberprofileShards; }
@@ -148,6 +151,7 @@ public class Deployment
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
   public static int getElasticsearchRetentionDaysExpiredVouchers() { return elasticsearchRetentionDaysExpiredVouchers; }  
   public static Set<String> getCleanupSubscriberElasticsearchIndexes() { return cleanupSubscriberElasticsearchIndexes; }
+  public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
   
   /*****************************************
   *
@@ -504,21 +508,34 @@ public class Deployment
         throw new RuntimeException("deployment", e);
       }
 
-    /*****************************************
-    *
-    *  generateNumericIDs
-    *
-    *****************************************/
+    //
+    //  evolutionVersion
+    //
 
     try
       {
-        generateNumericIDs = JSONUtilities.decodeBoolean(jsonRoot, "generateNumericIDs", Boolean.FALSE);
+    	evolutionVersion = JSONUtilities.decodeString(jsonRoot, "evolutionVersion", Boolean.TRUE);
       }
     catch (JSONUtilitiesException e)
       {
-        throw new RuntimeException("deployment", e);
+        throw new ServerRuntimeException("deployment : evolutionVersion", e);
       }
+    
+    //
+    // customerVersion
+    //
 
+    try
+      {
+    	customerVersion = JSONUtilities.decodeString(jsonRoot, "customerVersion", Boolean.TRUE);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment : customerVersion", e);
+      }
+    
+   
+    
     /*****************************************
     *
     *  subscribermanager configuration
@@ -818,8 +835,7 @@ public class Deployment
         // Elasticsearch settings
         elasticsearchDateFormat = JSONUtilities.decodeString(jsonRoot, "elasticsearchDateFormat", true);
         elasticsearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchScrollSize", true);
-        elasticsearchConnectTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchConnectTimeout", true);
-        elasticsearchQueryTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchQueryTimeout", true);
+        elasticSearchScrollKeepAlive = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollKeepAlive", 0);
         
         // Elasticsearch shards & replicas
         elasticsearchDefaultShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchDefaultShards", true);
@@ -841,6 +857,7 @@ public class Deployment
         elasticsearchRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysCampaigns", true);
         elasticsearchRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysBulkCampaigns", true);
         elasticsearchRetentionDaysExpiredVouchers = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysExpiredVouchers", true);
+        elasticsearchRetentionDaysVDR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysVDR", true);
       }
     catch (JSONUtilitiesException|NumberFormatException e)
       {

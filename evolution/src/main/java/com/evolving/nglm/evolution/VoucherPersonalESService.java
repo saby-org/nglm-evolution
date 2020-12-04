@@ -1,6 +1,8 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.DocWriteResponse;
@@ -12,7 +14,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -32,7 +33,7 @@ public class VoucherPersonalESService{
 
   private static final Logger log = LoggerFactory.getLogger(VoucherPersonalESService.class);
 
-  private RestHighLevelClient elasticsearch;
+  private ElasticsearchClientAPI elasticsearch;
   private boolean isMaster;
   // the indices configuration
   private int liveVoucherIndexNumberOfShards;
@@ -47,7 +48,7 @@ public class VoucherPersonalESService{
   private static final long sleepUnit = 200;
   private static final int maxTries=5;
 
-  public VoucherPersonalESService(RestHighLevelClient elasticsearch, boolean masterService, int liveVoucherIndexNumberOfShards, int liveVoucherIndexNumberOfReplicas) {
+  public VoucherPersonalESService(ElasticsearchClientAPI elasticsearch, boolean masterService, int liveVoucherIndexNumberOfShards, int liveVoucherIndexNumberOfReplicas) {
     this.elasticsearch = elasticsearch;
     this.isMaster = masterService;
     this.liveVoucherIndexNumberOfShards=liveVoucherIndexNumberOfShards;

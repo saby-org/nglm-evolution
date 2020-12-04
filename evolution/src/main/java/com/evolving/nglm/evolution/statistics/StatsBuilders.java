@@ -13,7 +13,8 @@ public class StatsBuilders {
     commoditytype,
 	operation,
     module,
-    channel
+    channel,
+    priority
   }
   // keep different status used at one place
   public enum STATUS{
@@ -44,21 +45,21 @@ public class StatsBuilders {
   private static final Map<String,DurationStat> evolutionDurationStatistics = new HashMap<>();
   // get the instance
   public static StatBuilder<DurationStat> getEvolutionDurationStatisticsBuilder(String metricName, String processName){
-    // we need a counter instance to put in duration one
-    StatBuilder<CounterStat> toLink = getEvolutionCounterStatisticsBuilder(metricName,processName);
     String key=metricName+"-"+processName;
     DurationStat statToRet = evolutionDurationStatistics.get(key);
     if(statToRet==null){
       synchronized (evolutionDurationStatistics){
         statToRet = evolutionDurationStatistics.get(key);
         if(statToRet==null){
+          // we need a counter instance to put in duration one
+          StatBuilder<CounterStat> toLink = getEvolutionCounterStatisticsBuilder(metricName,processName);
           statToRet = new DurationStat(metricName,processName,toLink);
           evolutionDurationStatistics.put(key,statToRet);
         }
       }
     }
     StatBuilder<DurationStat> toRet = new StatBuilder<>(statToRet);
-    toRet.addLinkedBuilder(toLink);
+    toRet.addLinkedBuilder(statToRet.getCounterStatBuilder());
     return toRet;
   }
 

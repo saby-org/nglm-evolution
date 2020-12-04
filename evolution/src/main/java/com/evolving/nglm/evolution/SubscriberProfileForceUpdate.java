@@ -34,7 +34,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SubscriberProfileForceUpdate implements SubscriberStreamEvent
+public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Action
 {
   /*****************************************
   *
@@ -91,6 +91,9 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent
   public String getSubscriberID() { return subscriberID; }
   public Date getEventDate() { return eventDate; }
   public ParameterMap getParameterMap() { return parameterMap; }
+
+  //TODO: this should probably extends SubscriberStreamOutput instead
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Standard; }
 
   /*****************************************
   *
@@ -234,5 +237,11 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent
     //
 
     return new SubscriberProfileForceUpdate(subscriberID, eventDate, parameterMap);
+  }
+  
+  @Override
+  public ActionType getActionType()
+  {
+    return ActionType.UpdateProfile;
   }
 }

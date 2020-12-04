@@ -47,7 +47,8 @@ public class CommunicationChannelBlackoutService extends GUIService
   *  constructor
   *
   *****************************************/
-  
+
+  @Deprecated // groupID not used
   public CommunicationChannelBlackoutService(String bootstrapServers, String groupID, String catalogObjectiveTopic, boolean masterService, CommunicationChannelBlackoutListener communicationChannelListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "CommunicationChannelBlackoutService", groupID, catalogObjectiveTopic, masterService, getSuperListener(communicationChannelListener), "getCommunicationChannelBlackout", "putCommunicationChannelBlackout", notifyOnSignificantChange);
@@ -55,7 +56,8 @@ public class CommunicationChannelBlackoutService extends GUIService
   //
   //  constructor
   //
-  
+
+  @Deprecated // groupID not used
   public CommunicationChannelBlackoutService(String bootstrapServers, String groupID, String communicationChannelTopic, boolean masterService, CommunicationChannelBlackoutListener communicationChannelListener)
   {
     this(bootstrapServers, groupID, communicationChannelTopic, masterService, communicationChannelListener, true);
@@ -65,6 +67,7 @@ public class CommunicationChannelBlackoutService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not used
   public CommunicationChannelBlackoutService(String bootstrapServers, String groupID, String communicationChannelTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, communicationChannelTopic, masterService, (CommunicationChannelBlackoutListener) null, true);

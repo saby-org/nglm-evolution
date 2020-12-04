@@ -16,7 +16,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -44,7 +43,7 @@ public abstract class DatacubeGenerator
   * Properties
   *
   *****************************************/
-  protected RestHighLevelClient elasticsearch;
+  protected ElasticsearchClientAPI elasticsearch;
   protected String datacubeName;
   protected ByteBuffer tmpBuffer = null;
 
@@ -53,7 +52,7 @@ public abstract class DatacubeGenerator
   * Constructor
   *
   *****************************************/
-  public DatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch) 
+  public DatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch) 
   {
     this.datacubeName = datacubeName;
     this.elasticsearch = elasticsearch;

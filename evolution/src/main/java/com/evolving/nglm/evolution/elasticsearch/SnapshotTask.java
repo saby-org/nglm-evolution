@@ -11,13 +11,13 @@ import java.util.TimeZone;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkItemResponse.Failure;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.ReindexRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.core.RLMDateUtils;
 
 public class SnapshotTask
@@ -29,7 +29,7 @@ public class SnapshotTask
   * Properties
   *
   *****************************************/
-  private RestHighLevelClient elasticsearch;
+  private ElasticsearchClientAPI elasticsearch;
   private String snapshotName;
   private String srcIndex;
   private String destIndexPrefix;
@@ -39,7 +39,7 @@ public class SnapshotTask
   * Constructor
   *
   *****************************************/
-  public SnapshotTask(String snapshotName, String srcIndex, String destIndexPrefix, RestHighLevelClient elasticsearch) 
+  public SnapshotTask(String snapshotName, String srcIndex, String destIndexPrefix, ElasticsearchClientAPI elasticsearch) 
   {
     this.elasticsearch = elasticsearch;
     this.snapshotName = snapshotName;

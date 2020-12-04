@@ -2,7 +2,6 @@
 
   "nodeTypes" :
     [
-
       {
         "id"                    : "101",
         "name"                  : "start",
@@ -20,7 +19,6 @@
           ],
         "parameters"       : [ ]
       },
-
       {
         "id"               : "102",
         "name"             : "end",
@@ -33,7 +31,6 @@
         "outputConnectors" : [ ],
         "parameters"       : [ ]
       }, 
-
       {
         "id"               : "103",
         "name"             : "wait",
@@ -110,7 +107,6 @@
             
           ]
       },
-      
       {
         "id"                     : "104",
         "name"                   : "schedule",
@@ -156,7 +152,6 @@
           "additionalCriteria" : "link.parameter.profilecriteria"
         }
       }, 
-
       {
         "id"               : "111",
         "name"             : "control.group",
@@ -189,7 +184,6 @@
             "actionManagerClass" : "com.evolving.nglm.evolution.Journey$ControlGroupAction"
           } 
       },
-
       {
           "id"               : "112",
           "name"             : "ab.split",
@@ -220,9 +214,8 @@
                   "actionManagerClass" : "com.evolving.nglm.evolution.Journey$ABTestingAction"
             }
       },
-
       {
-        "id"                     : "121",
+        "id"                     : "121","EVOL_comment":"DO NOT CHANGE '121' WITHOUT SEARCHING FOR IT IN Journey.java ! (MK)",
         "name"                   : "event.selection",
         "display"                : "Event Selection",
         "icon"                   : "jmr_components/styles/images/objects/event-selection.png",
@@ -288,7 +281,6 @@
             }
           ]
       },
-
       {
         "id"                     : "122",
         "name"                   : "profile.selection",
@@ -333,7 +325,6 @@
           "additionalCriteria" : "link.parameter.profilecriteria"
         }
       },
-
       {
         "id"                     : "125",
         "name"                   : "event.multi.selection",
@@ -426,7 +417,6 @@
             }
           ]
       },
-
       {
         "id"                     : "131",
         "name"                   : "enter.campaign",
@@ -492,7 +482,6 @@
             "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$EnterJourneyAction"
           }
       },
-
       {
         "id"                     : "133",
         "name"                   : "bonus.point.credit",
@@ -575,7 +564,6 @@
             "operation" : "credit"
           }
       },
-
       {
         "id"                     : "135",
         "name"                   : "loyalty.opt-in",
@@ -662,7 +650,6 @@
           "salesChannel" : "2"
         }
       },
-
       {
         "id"                     : "137",
         "name"                   : "journey.status",
@@ -698,7 +685,6 @@
           "actionManagerClass" : "com.evolving.nglm.evolution.Journey$SetStatusAction"
         }
       },
-
       {
         "id"                     : "138",
         "name"                   : "bonus.point.debit",
@@ -754,7 +740,6 @@
             "operation" : "debit"
           }
       },
-
       {
         "id"                     : "139",
         "name"                   : "loyalty.opt-out",
@@ -786,6 +771,104 @@
             "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$LoyaltyProgramAction",
             "moduleID" : "1",
             "operation" : "opt-out"
+          }
+      },
+      
+      {
+        "id"                     : "evolution.voucher.redeem",
+        "name"                   : "voucher.redeem",
+        "display"                : "Redeem Voucher",
+        "icon"                   : "jmr_components/styles/images/objects/redeem-voucher.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "redeemed",      "display" : "Redeemed",  	 "evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
+            { "name" : "failed",        "display" : "Failed",        "evaluationPriority" : "last", 	 "transitionCriteria" : [ ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.voucher.code",
+              "display" : "Voucher Code", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : null,
+              "expressionFields" : [ ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+            },
+            {
+			  "id" : "node.parameter.supplier",
+		      "display" : "Supplier",
+			  "dataType" : "string",
+			  "multiple" : false,
+			  "mandatory" : true,
+			  "availableValues" : null,
+			  "expressionFields" : [ "#suppliersDisplayExp#" ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+			}
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$VoucherActionManager",
+            "moduleID" : "1",
+            "operation": "redeem",
+            "origin" : "JMR"
+          }
+      },
+      
+      {
+        "id"                     : "evolution.voucher.validate",
+        "name"                   : "voucher.validate",
+        "display"                : "Validate Voucher",
+        "icon"                   : "jmr_components/styles/images/objects/validate-voucher.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "valid",      	 "display" : "Valid",  	 		"evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
+            { "name" : "invalid",        "display" : "Invalid",        	"evaluationPriority" : "last", 	 "transitionCriteria" : [ ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.voucher.code",
+              "display" : "Voucher Code", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : null,
+              "expressionFields" : [ ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+            },
+            {
+			  "id" : "node.parameter.supplier",
+		      "display" : "Supplier",
+			  "dataType" : "string",
+			  "multiple" : false,
+			  "mandatory" : true,
+			  "availableValues" : null,
+			  "expressionFields" : [ "#suppliersDisplayExp#" ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+			}
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$VoucherActionManager",
+            "moduleID" : "1",
+            "operation": "validate",
+            "origin" : "JMR"
           }
       },
 
@@ -1133,7 +1216,6 @@
             }
           ]
       },
-
       {
         "id"                     : "301",
         "name"                   : "enter.workflow",
@@ -1165,10 +1247,50 @@
         {
           "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$EnterWorkflowAction"
         }
+      },
+      {
+        "id"                     : "302",
+        "name"                   : "update.profile",
+        "display"                : "Update Profile",
+        "icon"                   : "jmr_components/styles/images/objects/account-edit.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "enableCycle"            : false,
+        "allowContextVariables"  : true,
+        "outputType"             : "static",
+        "outputConnectors"       :
+        [
+          { "name" : "updated", "display" : "Updated", "transitionCriteria" : [ ] }
+        ],
+        "parameters" :
+        [
+          {
+            "id" : "node.parameter.attribute.name",
+            "display" : "Attribute name",
+            "dataType" : "string",
+            "width" : "100%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : [ "#subscriberAttributes#" ],
+            "defaultValue" : null
+          },
+          {
+            "id" : "node.parameter.attribute.value",
+            "display" : "Attribute value",
+            "dataType" : "string",
+            "width" : "100%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : null,
+            "defaultValue" : null
+          }
+        ],
+        "action" :
+        {
+          "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$UpdateProfileAction"
+        }
       }
-
     ],
-
 
   "journeyToolbox" :
     [
@@ -1184,7 +1306,6 @@
             { "id" : "104", "name" : "schedule" }
           ]
       },
-
       {
         "id"  : "1002",
         "name"  : "Target",
@@ -1195,7 +1316,6 @@
             { "id" : "112", "name" : "ab.split" }
           ]
       },
-
       {
         "id"  : "1003",
         "name"  : "Conditions",
@@ -1206,22 +1326,23 @@
             { "id" : "125", "name" : "event.multi.selection" }
           ]
       },
-
       {
         "id"  : "1004",
         "name"  : "Actions",
         "color" : "#549D9F",
         "items" :
           [
+            { "id" : "302", "name" : "update.profile" },
             { "id" : "131", "name" : "campaign" },
             { "id" : "132", "name" : "subjourney" },
             { "id" : "301", "name" : "workflow" },
             { "id" : "135", "name" : "loyalty.opt-in" },
-            { "id" : "139", "name" : "loyalty.opt-out" }
+            { "id" : "139", "name" : "loyalty.opt-out" },
+            { "id" : "evolution.voucher.redeem", "name" : "voucher.redeem" },
+            { "id" : "evolution.voucher.validate", "name" : "voucher.validate" }
           ]
        }
     ],
-
 
   "campaignToolbox" :
     [
@@ -1264,13 +1385,16 @@
         "color" : "#549D9F",
         "items" :
           [
+            { "id" : "302", "name" : "update.profile" },
             { "id" : "137", "name" : "journey.status" },
             { "id" : "301", "name" : "workflow" },
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" }
+            { "id" : "136", "name" : "purchase.offer" },
+            { "id" : "evolution.voucher.redeem", "name" : "voucher.redeem" },
+            { "id" : "evolution.voucher.validate", "name" : "voucher.validate" }
           ]
       },
       {
@@ -1363,7 +1487,6 @@
       }
     ],
 
-
   "workflowToolbox" :
     [
       {
@@ -1405,12 +1528,15 @@
         "color" : "#549D9F",
         "items" :
           [
+            { "id" : "302", "name" : "update.profile" },
             { "id" : "137", "name" : "journey.status" },
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" }
+            { "id" : "136", "name" : "purchase.offer" },
+            { "id" : "evolution.voucher.redeem", "name" : "voucher.redeem" },
+            { "id" : "evolution.voucher.validate", "name" : "voucher.validate" }
           ]
       },
       {
@@ -1434,5 +1560,4 @@
           ]
       }
     ]
-
 }

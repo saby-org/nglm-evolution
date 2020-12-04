@@ -140,7 +140,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(6));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(7));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -161,6 +161,8 @@ public abstract class SubscriberProfile
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
+    schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
+
     commonSchema = schemaBuilder.build();
   };
 
@@ -237,6 +239,7 @@ public abstract class SubscriberProfile
   private SubscriberHistory subscriberHistory;
   private Map<String,Integer> exclusionInclusionTargets; 
   private List<ComplexObjectInstance> complexObjectInstances; 
+  private Map<String, List<Date>> offerPurchaseHistory;
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
@@ -270,7 +273,7 @@ public abstract class SubscriberProfile
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
   public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
-  
+  public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
   public List<Pair<String, String>> getUnknownRelationships(){ return unknownRelationships ; }
 
   //
@@ -289,6 +292,7 @@ public abstract class SubscriberProfile
   {
     return (languageID != null && Deployment.getSupportedLanguages().get(getLanguageID()) != null) ? Deployment.getSupportedLanguages().get(getLanguageID()).getName() : Deployment.getBaseLanguage();
   }
+
 
   /*****************************************
   *
@@ -463,6 +467,9 @@ public abstract class SubscriberProfile
                     Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
                     Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
                     loyalty.put("tierChangeType", Tier.changeFromTierToTier(previousTier, tier).getExternalRepresentation());
+                    
+                    boolean todayRedeemer = false;
+                    boolean yesterdayRedeemer = false;
                     if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
                       { 
                         String rewardPointsID = loyaltyProgramPoints.getRewardPointsID();
@@ -473,7 +480,10 @@ public abstract class SubscriberProfile
                             loyalty.put("rewardPointName", (point!=null)?(point.getJSONRepresentation().get("display").toString()):"");
                             int balance = 0;
                             if(this.pointBalances.get(rewardPointsID) != null){
-                              balance = this.pointBalances.get(rewardPointsID).getBalance(now);
+                              PointBalance pointBalance = this.pointBalances.get(rewardPointsID);
+                              balance = pointBalance.getBalance(now);
+                              todayRedeemer = pointBalance.getConsumedHistory().getToday(now) > 0;
+                              yesterdayRedeemer = pointBalance.getConsumedHistory().getYesterday(now) > 0;
                             }
                             loyalty.put("rewardPointBalance", balance);
                           }
@@ -490,6 +500,8 @@ public abstract class SubscriberProfile
                             loyalty.put("statusPointBalance", balance);
                           } 
                       }
+                    loyalty.put("rewardTodayRedeemer", todayRedeemer);
+                    loyalty.put("rewardYesterdayRedeemer", yesterdayRedeemer);
                   }
               }
             
@@ -623,6 +635,7 @@ public abstract class SubscriberProfile
         obj.put("voucherCode",voucher.getVoucherCode());
         obj.put("voucherStatus",voucher.getVoucherStatus().getExternalRepresentation());
         obj.put("voucherExpiryDate",voucher.getVoucherExpiryDate().getTime());
+        obj.put("voucherDeliveryDate",voucher.getVoucherDeliveryDate().getTime());
         array.add(obj);
       }
       result.put("vouchers", array);
@@ -821,7 +834,7 @@ public abstract class SubscriberProfile
     //
     //  prepare points
     //
-
+    
     ArrayList<JSONObject> pointsPresentation = new ArrayList<JSONObject>();
     for (String pointID : pointBalances.keySet())
       {
@@ -1428,6 +1441,7 @@ public abstract class SubscriberProfile
     this.subscriberHistory = null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
     this.complexObjectInstances = new ArrayList<>();
+    this.offerPurchaseHistory = new HashMap<>();
   }
 
   /*****************************************
@@ -1469,8 +1483,9 @@ public abstract class SubscriberProfile
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
-    Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();    
     List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
+    Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
+    Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
 
     //
     //  return
@@ -1496,6 +1511,7 @@ public abstract class SubscriberProfile
     this.subscriberHistory = subscriberHistory;
     this.exclusionInclusionTargets = exclusionInclusionTargets;
     this.complexObjectInstances = complexObjectInstances;
+    this.offerPurchaseHistory = offerPurchaseHistory;
   }
 
   /*****************************************
@@ -1811,7 +1827,8 @@ public abstract class SubscriberProfile
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
-    
+    this.subscriberHistory = subscriberProfile.getSubscriberHistory();
+    this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
   }
 
@@ -1843,6 +1860,7 @@ public abstract class SubscriberProfile
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
+    struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
   }
 
   /****************************************

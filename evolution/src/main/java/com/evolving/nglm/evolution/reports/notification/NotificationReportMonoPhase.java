@@ -20,12 +20,10 @@ import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManag
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportCsvWriter;
-import com.evolving.nglm.evolution.reports.ReportEsReader;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
+import com.evolving.nglm.evolution.reports.ReportMonoPhase.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
@@ -47,7 +45,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.Map.Entry;
 import java.util.zip.ZipOutputStream;
 
 public class NotificationReportMonoPhase implements ReportCsvFactory
@@ -116,6 +116,42 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(communicationChannel);
   }
 
+  /****************************************
+  *
+  * dumpElementToCsv
+  *
+  ****************************************/
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+ {
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
+   if(mapLocal.size() != 1) {
+	   log.debug("We have multiple dates in the same index " + mapLocal.size());
+   } else {
+	   if(mapLocal.values().size() != 1) {
+		   log.debug("We have multiple values for this date " + mapLocal.values().size());
+	   }
+	   else {
+		   Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
+		   if(setLocal.size() != 1) {
+			   log.debug("We have multiple dates in this report " + setLocal.size());
+		   } else {
+			   for (Entry<String, List<Map<String, Object>>> entry : setLocal) {
+				   List<Map<String, Object>> list = entry.getValue();
+
+				   if(list.size() != 1) {
+					   log.debug("We have multiple reports in this folder " + list.size());
+				   } else {
+					   Map<String, Object> reportMap = list.get(0);
+					   dumpLineToCsv(reportMap, writer, addHeaders);
+					   return false;
+				   }
+			   }
+		   }
+	   }
+   }
+   return true;
+ }
+ 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
@@ -554,24 +590,31 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         this,
         csvfile
     );
-
-    if (!reportMonoPhase.startOneToOne(true))
+    // check if a report with multiple dates is required in the zipped file 
+    boolean isMultiDates = false;
+    if (reportPeriodQuantity > 1)
+    {
+    	isMultiDates = true;
+    }
+    
+    if (!reportMonoPhase.startOneToOne(isMultiDates))
       {
-        log.warn("An error occured, the report might be corrupted");
+        log.warn("An error occured, the report " + csvfile + " might be corrupted");
         return;
       }
     offerService.stop();
     journeyService.stop();
     loyaltyProgramService.stop();
     subscriberMessageTemplateService.stop();
-    log.info("Finished NotificationReport");
+    log.info("The report " + csvfile + " is finished");
   }
   
   private static List<String> getEsIndexDates(final Date fromDate, Date toDate)
   {
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
-    while(tempfromDate.getTime() <= toDate.getTime())
+ // to get the reports with yesterday's date only
+    while(tempfromDate.getTime() < toDate.getTime())	
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
@@ -580,7 +623,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   }
   
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
-  {
+  { 
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
     if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
 

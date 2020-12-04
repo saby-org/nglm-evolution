@@ -1,0 +1,43 @@
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration debug="true" xmlns:log4j='http://jakarta.apache.org/log4j/'>
+	<appender name="stdout"
+		class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.out" />
+		<layout class="org.apache.log4j.EnhancedPatternLayout">
+			<param name="ConversionPattern"
+				value="%d{ISO8601}{<_DEPLOYMENT_TIMEZONE_>} %p [%t] %m%n" />
+		</layout>
+	</appender>
+
+	<appender name="eventAppender"
+		class="org.apache.log4j.RollingFileAppender">
+		<param name="File" value="/app/logs/reportmanager-<_KEY_>.log" />
+		<layout class="org.apache.log4j.EnhancedPatternLayout">
+			<param name="ConversionPattern"
+				value="%d{ISO8601}{<_DEPLOYMENT_TIMEZONE_>} %p [%t] %m%n" />
+		</layout>
+		<param name="MaxFileSize" value="50MB" />
+		<param name="MaxBackupIndex" value="9" />
+	</appender>
+
+	<category name="com.evolving.nglm">
+		<priority value="<_TRACE_LEVEL_>" />
+	</category>
+
+	<root>
+		<priority value="<_TRACE_LEVEL_>" />
+		<appender-ref ref="stdout" />
+		<appender-ref ref="eventAppender" />
+	</root>
+
+	<category name="org.apache.kafka">
+		<priority value="ERROR" />
+	</category>
+	<category name="io.confluent">
+		<priority value="ERROR" />
+	</category>
+	<category name="org.apache.zookeeper">
+		<priority value="ERROR" />
+	</category>
+
+</log4j:configuration>

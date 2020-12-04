@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.DeliveryRequest;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -69,6 +70,7 @@ public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStrea
   @Override public String getSubscriberID() { return subscriberID; }
   @Override public Date getEventDate() { return eventDate; }
   @Override public SubscriberAction getSubscriberAction() { return SubscriberAction.Cleanup; }
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
 
   /*****************************************
   *
