@@ -329,9 +329,9 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectTypeList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectTypeSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d "{ "id" : "EventCounter", "name" : "EventCounter", "display" : "Event Counter", "active" : true, "availableNames" : ["LifeCycle", "Recharge"], "subfields" : { "Nb" :  "integer", "Date" : "date"} , "apiVersion" : 1 }" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putComplexObjectType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "EventCounter" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "id" : "ComplexObjectExample", "name" : "ComplexObjectExample", "display" : "Complex Object Example", "active" : true, "availableNames" : ["Example1", "Example2"], "subfields" : [{ "subfieldName" : "stringExample", "subfieldDataType" : "string"}, { "subfieldName" : "stringSetExample", "subfieldDataType" : "stringSet", "availableValues" : ["S1", "S2", "S3"]}, { "subfieldName" : "booleanExample", "subfieldDataType" : "boolean"}, { "subfieldName" : "integerExample", "subfieldDataType" : "integer"}, {"subfieldName" : "dateExample", "subfieldDataType" : "date"}] , "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "ComplexObjectExample" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "ComplexObjectExample" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeComplexObjectType; echo
 
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true, "includeHistory" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo

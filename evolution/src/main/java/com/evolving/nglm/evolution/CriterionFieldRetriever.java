@@ -762,7 +762,7 @@ public abstract class CriterionFieldRetriever
   {
     // parse the field name to retrieve the good value...
     // complexObject.<objectTypeID>.<elementID>.<subfieldName>;
-    String[] split = fieldName.split(".");
+    String[] split = fieldName.split("\\.");
     if(split.length != 4 || !split[0].equals("complexObject")) {throw new CriterionException("field " + fieldName + " can't be handled"); }
     String objectTypeID = split[1];
     String elementID = split[2];
@@ -770,7 +770,13 @@ public abstract class CriterionFieldRetriever
     List<ComplexObjectInstance> complexObjectInstances = evaluationRequest.getSubscriberProfile().getComplexObjectInstances();
     if(complexObjectInstances == null) { return null; }
     ComplexObjectInstance instance = null;
-    for(ComplexObjectInstance current : complexObjectInstances) { if(current.getComplexObjectTypeID().equals(objectTypeID) && current.getElementID().equals(elementID)) { instance = current; break; } }
+    for(ComplexObjectInstance current : complexObjectInstances) 
+      { 
+        if(current.getComplexObjectTypeID().equals(objectTypeID) && current.getElementID().equals(elementID)) 
+          { 
+            instance = current; break; 
+          }
+      }
     if(instance == null) { return null; }
     Map<String, ComplexObjectinstanceSubfieldValue> values = instance.getFieldValues();
     if(values == null) { return null; }

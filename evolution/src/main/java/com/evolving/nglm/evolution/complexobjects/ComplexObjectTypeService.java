@@ -125,6 +125,32 @@ public class ComplexObjectTypeService extends GUIService
     //
 
     Date now = SystemTime.getCurrentTime();
+    
+    //
+    // Make checks: not more than 5 complex fields in total and not more than 100 availableNames 
+    //
+    
+    Collection<ComplexObjectType> complexObjectTypes = getActiveComplexObjectTypes(now);
+    
+    
+    boolean alreadyContainsThis = false;
+    if(complexObjectTypes != null)
+      {
+        for(ComplexObjectType current : complexObjectTypes)
+          {
+            if(current.getComplexObjectTypeID().equals(complexObjectType.getComplexObjectTypeID())) { alreadyContainsThis = true; break; }
+          }
+      }
+    
+    if(!alreadyContainsThis && complexObjectTypes != null && complexObjectTypes.size() >= 5)
+      {
+        throw new GUIManagerException("putComplexObjectType Can't put " + complexObjectType + " because only a total of 5 complex field is allowed", "");
+      }
+    
+    if(complexObjectType.getAvailableElements() != null && complexObjectType.getAvailableElements().size() > 100)
+      {
+        throw new GUIManagerException("putComplexObjectType Can't put " + complexObjectType + " because only a total of 100 elements is allowed, here there are " + complexObjectType.getAvailableElements().size(), ""); 
+      }    
 
     //
     //  put
