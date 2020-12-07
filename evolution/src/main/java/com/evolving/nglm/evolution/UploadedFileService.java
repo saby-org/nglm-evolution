@@ -473,6 +473,7 @@ public class UploadedFileService extends GUIService
   private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue, int lineNumber, List<GUIManagerException> violations) throws GUIManagerException
   {
     log.debug("validateValue {}, {}, {}", variableName, criterionDataType, rawValue);
+    String dataType = criterionDataType.getExternalRepresentation();
     switch (criterionDataType)
     {
       case StringCriterion:
@@ -485,7 +486,7 @@ public class UploadedFileService extends GUIService
           }
         catch(Exception ex)
           {
-            processViolations(violations, new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
+            processViolations(violations, new GUIManagerException("bad value in " + dataType, "invalid " + dataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
           }
         break;
         
@@ -496,7 +497,7 @@ public class UploadedFileService extends GUIService
           }
       catch(Exception ex)
         {
-          processViolations(violations, new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
+          processViolations(violations, new GUIManagerException("bad value in " + dataType, "invalid " + dataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
         }
         break;
         
@@ -520,7 +521,7 @@ public class UploadedFileService extends GUIService
         break;
 
       default:
-        processViolations(violations, new GUIManagerException("datatype not supported", "invalid dataType " + criterionDataType + " for variable " + variableName + " in file line no " + lineNumber));
+        processViolations(violations, new GUIManagerException("datatype not supported", "invalid dataType " + dataType + " for variable " + variableName));
     }
   }
 
