@@ -612,6 +612,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       journeyService.stop();
       loyaltyProgramService.stop();
       productService.stop();
+      resellerService.stop();
       voucherService.stop();
       supplierService.stop();
       log.info("The report " + csvfile + " is finished");
