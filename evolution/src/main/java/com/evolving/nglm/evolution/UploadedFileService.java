@@ -371,7 +371,7 @@ public class UploadedFileService extends GUIService
                             Map<String, AlternateID> alternateIDs = Deployment.getAlternateIDs();
                             if (alternateIDs.get(header) == null)
                               {
-                                processViolations(violations, new GUIManagerException("invalid alternateID " + header, "supported alternateIDs are " + alternateIDs.keySet()));
+                                processViolations(violations, new GUIManagerException("invalidAlternateId", header));
                               }
                             fileHeader.add(header);
                             uploadededFile.setCustomerAlternateID(header);
@@ -447,7 +447,7 @@ public class UploadedFileService extends GUIService
             Character ch = variableName.charAt(i);
             if(Character.isDigit(ch) || Character.isUpperCase(ch))
               {
-                GUIManagerException e = new GUIManagerException("variable names must use letters only and not capital letters", variableName);
+                GUIManagerException e = new GUIManagerException("invalidVarName", variableName);
                 processViolations(violations, e);
               }
           }
@@ -486,7 +486,7 @@ public class UploadedFileService extends GUIService
           }
         catch(Exception ex)
           {
-            processViolations(violations, new GUIManagerException("bad value in " + dataType, "invalid " + dataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
+            processViolations(violations, new GUIManagerException("badFieldValue", rawValue + "," + variableName + "," + lineNumber));
           }
         break;
         
@@ -497,7 +497,7 @@ public class UploadedFileService extends GUIService
           }
       catch(Exception ex)
         {
-          processViolations(violations, new GUIManagerException("bad value in " + dataType, "invalid " + dataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
+          processViolations(violations, new GUIManagerException("badFieldValue", rawValue + "," + variableName + "," + lineNumber));
         }
         break;
         
@@ -508,7 +508,7 @@ public class UploadedFileService extends GUIService
         }
       catch(JSONUtilitiesException ex)
         {
-          processViolations(violations, new GUIManagerException("invaid date format", "invalid dateString " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
+          processViolations(violations, new GUIManagerException("badFieldValue", rawValue + "," + variableName + "," + lineNumber));
         }
         break;
         
@@ -516,7 +516,7 @@ public class UploadedFileService extends GUIService
         String[] args = rawValue.split(":");
         if (args.length != 3) 
           {
-            processViolations(violations, new GUIManagerException("invaid time format", "invalid timeString " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
+            processViolations(violations, new GUIManagerException("badFieldValue", rawValue + "," + variableName + "," + lineNumber));
           }
         break;
 
@@ -536,7 +536,7 @@ public class UploadedFileService extends GUIService
       }
     else
       {
-        processViolations(violations, new GUIManagerException("invalid variable declearation", header));
+        processViolations(violations, new GUIManagerException("invalidVarDec", header));
       }
     return result;
   }
@@ -552,7 +552,7 @@ public class UploadedFileService extends GUIService
       }
     else
       {
-        processViolations(violations, new GUIManagerException("invalid variable datatype declearation", header));
+        processViolations(violations, new GUIManagerException("invalidVarDec", header));
       }
     return result;
   }
