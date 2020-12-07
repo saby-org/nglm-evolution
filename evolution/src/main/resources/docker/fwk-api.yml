@@ -19,6 +19,9 @@ fwk-api-<_KEY_>:
     FwkSettings__PasswordHistoryCheckNo:  <_FWKSETTINGS_PASSWORDHISTORYCHECKNO_>
     FwkSettings__PasswordExpireDays: <_FWKSETTINGS_PASSWORDEXPIREDAYS_>
     FwkSettings__ResetPasswordTokenExpireMinutes: <_FWKSETTINGS_RESETPASSWORDTOKENEXPIREMINUTES_>
+    FwkSettings__LDAPauthentication: '<_FWKSETTINGS_LDAPauthentication_>'
+    FwkSettings__LDAPHost: '<_FWKSETTINGS_LDAPHost_>'
+    FwkSettings__LDAPPort: <_FWKSETTINGS_LDAPPort_>
     Email__Smtp__Host: '<_FWKSETTINGS_EMAIL_SMTP_HOST_>'
     Email__Smtp__Port: <_FWKSETTINGS_EMAIL_SMTP_PORT_>
     Email__Smtp__Username: '<_FWKSETTINGS_EMAIL_SMTP_USERNAME_>'
