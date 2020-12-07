@@ -2,8 +2,11 @@ package com.evolving.nglm.evolution;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -131,6 +134,8 @@ public class ODRSinkConnector extends SimpleESSinkConnector
     {
       Date now = SystemTime.getCurrentTime();
       Offer offer = offerService.getActiveOffer(purchaseManager.getOfferID(), now);
+
+      List<Map<String, Object>> voucherList = new ArrayList<>();
       
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", purchaseManager.getSubscriberID());
@@ -142,7 +147,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       documentMap.put("offerID", purchaseManager.getOfferID());
       documentMap.put("offerQty", purchaseManager.getQuantity());
       documentMap.put("salesChannelID", purchaseManager.getSalesChannelID());
-      String voucherCodes = "";
+     
         if (offer != null)
           {
             if (offer.getOfferSalesChannelsAndPrices() != null)
@@ -178,26 +183,44 @@ public class ODRSinkConnector extends SimpleESSinkConnector
             sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
           }
         }
-        if(purchaseManager.getVoucherDeliveries()!=null){
-          StringBuilder voucherCodeSb=new StringBuilder("");//ready for several vouchers in 1 purchase, though might only just allow one for simplicity
-          for(VoucherDelivery voucherDelivery:purchaseManager.getVoucherDeliveries()){
-            Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherDelivery.getVoucherID());
-            sb.append("1 ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+voucherDelivery.getVoucherID()).append(",");
-            if(voucherDelivery.getVoucherCode()!=null&&!voucherDelivery.getVoucherCode().isEmpty()){
-              voucherCodeSb.append(voucherDelivery.getVoucherCode()).append(",");
+          if (purchaseManager.getVoucherDeliveries() != null)
+            {
+              // StringBuilder voucherCodeSb=new StringBuilder("");//ready for
+              // several vouchers in 1 purchase, though might only just allow
+              // one for simplicity
+              for (VoucherDelivery voucherDelivery : purchaseManager.getVoucherDeliveries())
+                {
+                  Map<String, Object> voucherJsonObject = new LinkedHashMap<String, Object>();
+                  Voucher voucher = null;
+                  if (voucherDelivery.getVoucherID() != null)
+                    {
+                      voucher = (Voucher) voucherService.getStoredVoucher(voucherDelivery.getVoucherID());
+                    }
+                  String supplierID = null;
+                  String voucherCode = null;
+                  if (voucher instanceof Voucher && voucher != null)
+                    {
+                      supplierID = voucher.getSupplierID();
+                    }
+                  if (voucherDelivery.getVoucherCode() != null && !voucherDelivery.getVoucherCode().isEmpty())
+                    {
+                      voucherCode = voucherDelivery.getVoucherCode();
+                    }
+                  voucherJsonObject.put("voucherCode", voucherCode);
+                  voucherJsonObject.put("supplierID", supplierID);
+                  voucherList.add(voucherJsonObject);
+
+                }
+
             }
-          }
-          voucherCodes = voucherCodeSb.length()>0?voucherCodeSb.toString().substring(0,voucherCodeSb.toString().length()-1):"";
-        }
-        String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
-        documentMap.put("offerContent", offerContent);
+        /*String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
+        documentMap.put("offerContent", offerContent);*/
       }
 
       // populate with default values (for reports)
       if (documentMap.get("offerPrice") == null) documentMap.put("offerPrice", 0L);
       if (documentMap.get("meanOfPayment") == null) documentMap.put("meanOfPayment", "");
       if (documentMap.get("offerStock") == null) documentMap.put("offerStock", -1);
-      if (documentMap.get("offerContent") == null) documentMap.put("offerContent", "");
       
       documentMap.put("moduleID", purchaseManager.getModuleID());
       documentMap.put("featureID", purchaseManager.getFeatureID());
@@ -206,8 +229,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       Object code = purchaseManager.getReturnCode();
       documentMap.put("returnCode", code);
       documentMap.put("returnCodeDetails", purchaseManager.getOfferDeliveryReturnCodeDetails());
-      documentMap.put("voucherCode", voucherCodes);
-      documentMap.put("voucherPartnerID", "");
+      documentMap.put("vouchers", voucherList);
       
       return documentMap;
     }
