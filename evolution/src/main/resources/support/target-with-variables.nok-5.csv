@@ -1,4 +1,0 @@
-msisdn; <string>name; <integer>years; <string>gift; <double>doubleval; <date>dateval; <time>timeval
-0123456789; John; 42; FT Monthly Subscription Free Try;20.2;2099-06-30T00:00:00+00:00; 02:03:10
-0123456790; Laura; 21; Ubber Eat 20% Off Coupon;30.4;2099-06-30T00:00:00+00:00; 02:03:11
-0123456790; Laura; 21; Ubber Eat 20% Off Coupon;30.4;2099-06-3; 02:03:11

@@ -282,6 +282,7 @@ public class UploadedFileService extends GUIService
 
     Date now = SystemTime.getCurrentTime();
     FileOutputStream destFile = null;
+    List<GUIManagerException> violations = new ArrayList<GUIManagerException>(3);
     try {
 
       //
@@ -318,7 +319,14 @@ public class UploadedFileService extends GUIService
     if (guiManagedObject instanceof UploadedFile)
       {
         UploadedFile uploadededFile = (UploadedFile) guiManagedObject;
-        uploadededFile.validate();
+        try
+          {
+            uploadededFile.validate();
+          } 
+        catch (GUIManagerException e1)
+          {
+            processViolations(violations, e1);
+          }
         
         ArrayList<String> fileHeader = new ArrayList<String>();
         ArrayList<JSONObject> valiablesJSON = new ArrayList<JSONObject>();
@@ -361,7 +369,10 @@ public class UploadedFileService extends GUIService
                             //
                             
                             Map<String, AlternateID> alternateIDs = Deployment.getAlternateIDs();
-                            if (alternateIDs.get(header) == null) throw new GUIManagerException("invalid alternateID " + header, "supported alternateIDs are " + alternateIDs.keySet());
+                            if (alternateIDs.get(header) == null)
+                              {
+                                processViolations(violations, new GUIManagerException("invalid alternateID " + header, "supported alternateIDs are " + alternateIDs.keySet()));
+                              }
                             fileHeader.add(header);
                             uploadededFile.setCustomerAlternateID(header);
                             isFirstColumn = false;
@@ -370,7 +381,7 @@ public class UploadedFileService extends GUIService
                           {
                             String dataType = getDatatype(header);
                             String variableName = getVaribaleName(header);
-                            validateVaribaleName(variableName);
+                            validateVaribaleName(variableName, violations);
                             HashMap<String, String> variablesDataTypes = new LinkedHashMap<String, String>();
                             variablesDataTypes.put("name", variableName);
                             variablesDataTypes.put("dataType", dataType);
@@ -396,7 +407,7 @@ public class UploadedFileService extends GUIService
                             String variableName = fileHeader.get(index);
                             String dataType = getDataType(variableName, valiablesJSON);
                             CriterionDataType CriterionDataType = EvaluationCriterion.CriterionDataType.fromExternalRepresentation(dataType);
-                            validateValue(variableName, CriterionDataType, value, lineNumber);
+                            validateValue(variableName, CriterionDataType, value, lineNumber, violations);
                           }
                         isFirstColumn = false;
                         index++;
@@ -404,6 +415,7 @@ public class UploadedFileService extends GUIService
                   }
               }
             uploadededFile.setNumberOfLines(lineNumber);
+            if (violations.size() > 0) prepareAndThrowViolations(violations);
           } 
         catch (IOException e)
           {
@@ -426,7 +438,7 @@ public class UploadedFileService extends GUIService
     putGUIManagedObject(guiManagedObject, now, newObject, userID);  
   }
   
-  private void validateVaribaleName(String variableName) throws GUIManagerException
+  private void validateVaribaleName(String variableName, List<GUIManagerException> violations) throws GUIManagerException
   {
     if (variableName != null)
       {
@@ -435,7 +447,8 @@ public class UploadedFileService extends GUIService
             Character ch = variableName.charAt(i);
             if(Character.isDigit(ch) || Character.isUpperCase(ch))
               {
-                throw new GUIManagerException("variable names must use letters only and not capital letters", variableName);
+                GUIManagerException e = new GUIManagerException("variable names must use letters only and not capital letters", variableName);
+                processViolations(violations, e);
               }
           }
       }
@@ -457,7 +470,7 @@ public class UploadedFileService extends GUIService
     return result;
   }
 
-  private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue, int lineNumber) throws GUIManagerException
+  private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue, int lineNumber, List<GUIManagerException> violations) throws GUIManagerException
   {
     log.debug("validateValue {}, {}, {}", variableName, criterionDataType, rawValue);
     switch (criterionDataType)
@@ -472,7 +485,7 @@ public class UploadedFileService extends GUIService
           }
         catch(Exception ex)
           {
-            throw new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber);
+            processViolations(violations, new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
           }
         break;
         
@@ -483,7 +496,7 @@ public class UploadedFileService extends GUIService
           }
       catch(Exception ex)
         {
-          throw new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber);
+          processViolations(violations, new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
         }
         break;
         
@@ -494,7 +507,7 @@ public class UploadedFileService extends GUIService
         }
       catch(JSONUtilitiesException ex)
         {
-          throw new GUIManagerException("invaid date format", "invalid dateString " + rawValue + " for variable " + variableName + " in file line no " + lineNumber);
+          processViolations(violations, new GUIManagerException("invaid date format", "invalid dateString " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
         }
         break;
         
@@ -502,12 +515,12 @@ public class UploadedFileService extends GUIService
         String[] args = rawValue.split(":");
         if (args.length != 3) 
           {
-            throw new GUIManagerException("invaid time format", "invalid timeString " + rawValue + " for variable " + variableName + " in file line no " + lineNumber);
+            processViolations(violations, new GUIManagerException("invaid time format", "invalid timeString " + rawValue + " for variable " + variableName + " in file line no " + lineNumber));
           }
         break;
 
       default:
-        throw new GUIManagerException("datatype not supported", "invalid dataType " + criterionDataType + " for variable " + variableName + " in file line no " + lineNumber);
+        processViolations(violations, new GUIManagerException("datatype not supported", "invalid dataType " + criterionDataType + " for variable " + variableName + " in file line no " + lineNumber));
     }
   }
 
@@ -530,6 +543,31 @@ public class UploadedFileService extends GUIService
     Matcher matcher = pattern.matcher(header);
     if (matcher.find()) result = matcher.group(1);
     return result;
+  }
+  
+  private void processViolations(List<GUIManagerException> violations, GUIManagerException e) throws GUIManagerException
+  {
+    violations.add(e);
+    if (violations.size() > 2) prepareAndThrowViolations(violations);
+  }
+
+  private void prepareAndThrowViolations(List<GUIManagerException> violations) throws GUIManagerException
+  {
+    StringBuilder responseMessageBuilder = new StringBuilder();
+    StringBuilder responseParameterBuilder = new StringBuilder();
+    boolean firstOne = true;
+    for (GUIManagerException violation : violations)
+      {
+        responseMessageBuilder.append(violation.getMessage());
+        responseParameterBuilder.append(violation.getResponseParameter());
+        if (firstOne)
+          {
+            responseMessageBuilder.append("|");
+            responseParameterBuilder.append("|");
+          }
+        firstOne = false;
+      }
+    throw new GUIManagerException(responseMessageBuilder.toString(), responseParameterBuilder.toString());
   }
 
   /*****************************************
