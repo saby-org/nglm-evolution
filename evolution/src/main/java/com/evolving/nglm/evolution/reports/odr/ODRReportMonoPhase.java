@@ -32,14 +32,19 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferProduct;
 import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.OfferVoucher;
 import com.evolving.nglm.evolution.Product;
 import com.evolving.nglm.evolution.ProductService;
+import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.Reseller;
 import com.evolving.nglm.evolution.ResellerService;
 import com.evolving.nglm.evolution.SalesChannel;
 import com.evolving.nglm.evolution.SalesChannelService;
+import com.evolving.nglm.evolution.Supplier;
+import com.evolving.nglm.evolution.SupplierService;
+import com.evolving.nglm.evolution.Voucher;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
@@ -63,6 +68,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private LoyaltyProgramService loyaltyProgramService;
   private ProductService productService;
   private ResellerService resellerService;
+  private VoucherService voucherService;
+  private SupplierService supplierService;
 
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
@@ -89,9 +96,10 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private static final String origin = "origin";
   private static final String voucherCode = "voucherCode";
   private static final String returnCode = "returnCode";
-  private static final String returnCodeDescription  = "returnCodeDescription ";
+  private static final String returnCodeDescription  = "returnCodeDescription";
   private static final String resellerDisplay = "reseller";
   private static final String resellerID = "resellerID";
+  private static final String vouchers = "vouchers";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
@@ -105,7 +113,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(featureName);
     headerFieldsOrder.add(offerID);
     headerFieldsOrder.add(offerDisplay);
-    headerFieldsOrder.add(voucherPartnerID);
     headerFieldsOrder.add(salesChannelDisplay);
     headerFieldsOrder.add(salesChannelID);
     headerFieldsOrder.add(customerID);
@@ -123,11 +130,12 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(offerQty);
     headerFieldsOrder.add(offerStock);
     headerFieldsOrder.add(origin);
-    headerFieldsOrder.add(voucherCode);
-    headerFieldsOrder.add(resellerDisplay);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(deliveryStatus);
+    headerFieldsOrder.add(vouchers);
+    headerFieldsOrder.add(resellerID);
+    headerFieldsOrder.add(resellerDisplay);
   }
 
   /****************************************
@@ -269,27 +277,64 @@ public class ODRReportMonoPhase implements ReportCsvFactory
             oderRecs.put(offerPrice, odrFields.get(offerPrice));
           }
 
-        if (odrFields.containsKey(offerContent))
+        if (odrFields.containsKey(offerID))
           {
             List<Map<String, Object>> offerContentJSON = new ArrayList<>();
             GUIManagedObject offerObject = offerService.getStoredOffer(String.valueOf(odrFields.get(offerID)));
             if (offerObject != null && offerObject instanceof Offer)
               {
-                Offer offer = (Offer) offerObject;
-                for (OfferProduct offerProduct : offer.getOfferProducts())
+                if (((Offer) offerObject).getOfferProducts() != null
+                    && !((Offer) offerObject).getOfferProducts().isEmpty())
                   {
-                    Map<String, Object> outputJSON = new HashMap<>();
-                    String objectid = offerProduct.getProductID();
-                    GUIManagedObject guiManagedObject = (GUIManagedObject) productService.getStoredProduct(objectid);
-                    if (guiManagedObject != null && guiManagedObject instanceof Product)
+                    Offer offer = (Offer) offerObject;
+                    for (OfferProduct offerProduct : offer.getOfferProducts())
                       {
-                        Product product = (Product) guiManagedObject;
-                        outputJSON.put(product.getDisplay(), offerProduct.getQuantity());
+                        Map<String, Object> outputJSON = new LinkedHashMap<>();
+                        String objectid = offerProduct.getProductID();
+                        GUIManagedObject guiManagedObject = (GUIManagedObject) productService
+                            .getStoredProduct(objectid);
+                        if (guiManagedObject != null && guiManagedObject instanceof Product)
+                          {
+                            Product product = (Product) guiManagedObject;
+                            String productDisplay = null;
+                            if (product != null) {
+                              productDisplay = product.getGUIManagedObjectDisplay();
+                            }
+                            outputJSON.put("type","product");
+                            outputJSON.put("name",productDisplay);
+                          }
+                        offerContentJSON.add(outputJSON);
                       }
-                    offerContentJSON.add(outputJSON);
+                  }
+                if (((Offer) offerObject).getOfferVouchers() != null
+                    && !((Offer) offerObject).getOfferVouchers().isEmpty())
+                  {
+                    Offer offer = (Offer) offerObject;
+                    for (OfferVoucher offerVoucher : offer.getOfferVouchers())
+                      {
+                        Map<String, Object> outputJSON = new LinkedHashMap<>();
+                        String objectid = offerVoucher.getVoucherID();
+                        GUIManagedObject guiManagedObject = (GUIManagedObject) voucherService
+                            .getStoredVoucher(objectid);
+                        if (guiManagedObject != null && guiManagedObject instanceof Voucher)
+                          {
+                            Voucher voucher = (Voucher) guiManagedObject;
+                            String voucherDisplay = null;
+                            if (voucher != null) {
+                              voucherDisplay = voucher.getGUIManagedObjectDisplay();
+                            }
+                            outputJSON.put("type","voucher");
+                            outputJSON.put("name",voucherDisplay);
+                          }
+                        offerContentJSON.add(outputJSON);
+                      }
                   }
               }
             oderRecs.put(offerContent, ReportUtils.formatJSON(offerContentJSON));
+          }
+        else
+          {
+            oderRecs.put(offerContent, "");
           }
 
         if (odrFields.containsKey(offerQty))
@@ -328,10 +373,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
           {
             oderRecs.put(salesChannelID, odrFields.get(salesChannelID));
           }
-        if (odrFields.containsKey(voucherCode))
-          {
-            oderRecs.put(voucherCode, odrFields.get(voucherCode));
-          }
         
         if (odrFields.containsKey(resellerID))
           {
@@ -354,7 +395,62 @@ public class ODRReportMonoPhase implements ReportCsvFactory
                 oderRecs.put(resellerDisplay, "");
               }
           }
+        if (odrFields.containsKey(resellerID) && odrFields.get(resellerID) != null) 
+          {
+            oderRecs.put(resellerID, odrFields.get(resellerID));
+          }
+        else
+          {
+            oderRecs.put(resellerID, "");
+          }
         
+        if (odrFields.containsKey(vouchers) && odrFields.get(vouchers) != null)
+            {
+              List<Map<String, Object>> vouchersList = (ArrayList<Map<String, Object>>) (odrFields.get(vouchers));
+              List<Map<String, Object>> vouchersNewList = new ArrayList<Map<String, Object>>();
+              
+              for (Map<String, Object> voucher : vouchersList)
+                {
+                  Map<String, Object> voucherDetail = new LinkedHashMap<>();
+                  String supplierDisplay = null;
+                  if (voucher.get("supplierID") != null)
+                    {
+                      String supplierID = voucher.get("supplierID").toString();
+                      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+                      if (supplierObject != null && supplierObject instanceof Supplier)
+                        {
+                          supplierDisplay = ((Supplier) supplierObject).getGUIManagedObjectDisplay();
+                        }
+  
+                      voucherDetail.put("supplier", supplierDisplay);
+                    }
+                  else
+                    {
+                      voucherDetail.put("supplier", "");
+                    }
+                  if (voucher.get("voucherCode") != null)
+                    {
+                      voucherDetail.put("voucherCode", voucher.get("voucherCode"));
+                    }
+                  else
+                    {
+                      voucherDetail.put("voucherCode", "");
+                    }
+                  vouchersNewList.add(voucherDetail);
+                }
+              if (!vouchersList.isEmpty())
+                {
+                  oderRecs.put(vouchers, ReportUtils.formatJSON(vouchersNewList));
+                }
+              else
+                {
+                  oderRecs.put(vouchers, "");
+                }
+            }
+        else
+          {
+            oderRecs.put(vouchers, "");
+          }
         if (odrFields.containsKey(returnCode))
           {
             Object code = odrFields.get(returnCode);
@@ -469,20 +565,27 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
     String productTopic = Deployment.getProductTopic();
     String resellerTopic = Deployment.getResellerTopic();
+    String voucherTopic = Deployment.getVoucherTopic();
+    String supplierTopic = Deployment.getSupplierTopic();
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "odrreportcsvwriter-saleschannelservice-ODRReportMonoPhase", salesChannelTopic, false);
     offerService = new OfferService(Deployment.getBrokerServers(), "odrreportcsvwriter-offerservice-ODRReportMonoPhase", offerTopic, false);
     journeyService = new JourneyService(Deployment.getBrokerServers(), "odrreportcsvwriter-journeyservice-ODRReportMonoPhase", journeyTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "odrreportcsvwriter-loyaltyprogramservice-ODRReportMonoPhase", loyaltyProgramTopic, false);
     productService = new ProductService(Deployment.getBrokerServers(), "odrreportcsvwriter-productService-ODRReportMonoPhase", productTopic, false);
+    resellerService = new ResellerService(Deployment.getBrokerServers(), "odrreportcsvwriter-resellerService-ODRReportMonoPhase", resellerTopic, false);
+    voucherService = new VoucherService(Deployment.getBrokerServers(),"odrreportcsvwriter-voucherservice-ODRReportMonoPhase", voucherTopic);
+    supplierService = new SupplierService(Deployment.getBrokerServers(), "odrreportcsvwriter-supplierService-ODRReportMonoPhase", supplierTopic, false);
+    
 
     salesChannelService.start();
     offerService.start();
     journeyService.start();
     loyaltyProgramService.start();
     productService.start();
-    resellerService = new ResellerService(Deployment.getBrokerServers(), "odrreportcsvwriter-resellerService-ODRReportMonoPhase", resellerTopic, false);
     resellerService.start();
+    voucherService.start();
+    supplierService.start();
 
     try {
       ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
@@ -509,8 +612,12 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       journeyService.stop();
       loyaltyProgramService.stop();
       productService.stop();
+      resellerService.stop();
+      voucherService.stop();
+      supplierService.stop();
       log.info("The report " + csvfile + " is finished");
     }
+
   }
   
 
