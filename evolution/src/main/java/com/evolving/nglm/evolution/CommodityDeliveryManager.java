@@ -119,7 +119,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     INSUFFICIENT_BALANCE(405),
     CHECK_BALANCE_LT(300),
     CHECK_BALANCE_GT(301),
-    CHECK_BALANCE_EQUALS(302),
+    CHECK_BALANCE_ET(302),
     UNKNOWN(-1);
     private Integer externalRepresentation;
     private CommodityDeliveryStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -148,7 +148,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         return DeliveryStatus.CheckBalanceLowerThan;
       case CHECK_BALANCE_GT:
         return DeliveryStatus.CheckBalanceGreaterThan;
-      case CHECK_BALANCE_EQUALS:
+      case CHECK_BALANCE_ET:
         return DeliveryStatus.CheckBalanceEqualsTo;
       default:
         return DeliveryStatus.Failed;
@@ -1027,6 +1027,18 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     switch (responseDeliveryStatus) {
     case Delivered:
       submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SUCCESS, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case CheckBalanceLowerThan:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_LT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case CheckBalanceEqualsTo:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_ET, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case CheckBalanceGreaterThan:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_GT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
       break;
 
     case FailedRetry:
