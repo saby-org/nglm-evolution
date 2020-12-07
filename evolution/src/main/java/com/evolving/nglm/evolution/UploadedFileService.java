@@ -379,8 +379,8 @@ public class UploadedFileService extends GUIService
                           }
                         else
                           {
-                            String dataType = getDatatype(header);
-                            String variableName = getVaribaleName(header);
+                            String dataType = getDatatype(header, violations);
+                            String variableName = getVaribaleName(header, violations);
                             validateVaribaleName(variableName, violations);
                             HashMap<String, String> variablesDataTypes = new LinkedHashMap<String, String>();
                             variablesDataTypes.put("name", variableName);
@@ -525,7 +525,7 @@ public class UploadedFileService extends GUIService
     }
   }
 
-  private String getVaribaleName(String header)
+  private String getVaribaleName(String header, List<GUIManagerException> violations) throws GUIManagerException
   {
     String result = null;
     Pattern pattern = Pattern.compile(DATATYPE_VRIABLE_PATTERN);
@@ -534,15 +534,26 @@ public class UploadedFileService extends GUIService
       {
         result = header.replaceAll(matcher.group(0), "");
       }
+    else
+      {
+        processViolations(violations, new GUIManagerException("invalid variable declearation", header));
+      }
     return result;
   }
 
-  private String getDatatype(String header)
+  private String getDatatype(String header, List<GUIManagerException> violations) throws GUIManagerException
   {
     String result = null;
     Pattern pattern = Pattern.compile(DATATYPE_VRIABLE_PATTERN);
     Matcher matcher = pattern.matcher(header);
-    if (matcher.find()) result = matcher.group(1);
+    if (matcher.find())
+      {
+        result = matcher.group(1);
+      }
+    else
+      {
+        processViolations(violations, new GUIManagerException("invalid variable datatype declearation", header));
+      }
     return result;
   }
   
