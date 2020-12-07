@@ -1041,6 +1041,14 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_GT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
       break;
 
+    case BonusNotFound:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case InsufficientBalance:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.INSUFFICIENT_BALANCE, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
     case FailedRetry:
     case Indeterminate:
     case Failed:

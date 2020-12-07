@@ -81,8 +81,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         case THIRD_PARTY_ERROR:
         case CUSTOMER_NOT_FOUND:
         case BONUS_NOT_FOUND:
-          return DeliveryStatus.Failed;
+          return DeliveryStatus.BonusNotFound;
         case INSUFFICIENT_BALANCE:
+          return DeliveryStatus.InsufficientBalance;
         case TIMEOUT:
         case THROTTLING:
           return DeliveryStatus.FailedRetry;

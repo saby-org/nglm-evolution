@@ -49,6 +49,8 @@ public abstract class DeliveryManager
     *****************************************/
 
     Delivered("delivered"),
+    BonusNotFound("bonusnotfound"),
+    InsufficientBalance("insufficientbalance"),
     CheckBalanceLowerThan("checkbalancelowerthan"),
     CheckBalanceGreaterThan("checkbalancegreaterthan"),
     CheckBalanceEqualsTo("checkbalanceequalsto"),
