@@ -124,6 +124,7 @@ public abstract class DeliveryManager
 
   private int millisecondsPerDelivery;
   private int maxOutstandingRequests;
+  private int oneLoopConfiguredProcessTimeMs;
 
   //
   //  status
@@ -311,6 +312,8 @@ public abstract class DeliveryManager
     millisecondsPerDelivery = (int) Math.ceil(1.0 / ((double) getDeliveryRatePerMinute() / (60.0 * 1000.0)));
     maxOutstandingRequests = workerThreadNumber;// this put a cap to how much request could be duplicated in case of hard failure
     if(deliveryManagerDeclaration.getMaxBufferedRequests()>0) maxOutstandingRequests=deliveryManagerDeclaration.getMaxBufferedRequests();// could be forced for extreme cases
+    // this is, per conf, how much time it should takes to process "one loop" of maxOutstandingRequests at deliveryRatePerMinute throughput configuration
+    oneLoopConfiguredProcessTimeMs = maxOutstandingRequests*millisecondsPerDelivery;
 
     /*****************************************
     *
@@ -525,14 +528,20 @@ public abstract class DeliveryManager
 
         submitDeliveryRequest(deliveryRequest);
       }
+
       if (requestRecords.count()>0){
         try{
+          // if we need at AtLeastOnce, need to wait processing to finish and then only commit progress
+          if(deliveryManagerDeclaration.getDeliveryGuarantee()==DeliveryManagerDeclaration.DeliveryGuarantee.AtLeastOnce){
+            waitForAllInMemoryJobs();
+          }
           requestConsumer.commitSync();
         }catch (CommitFailedException ex){
           long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
           log.warn("runSubmitRequestWorker : CommitFailedException caught, last poll was {}ms ago",lastPoll_ms);
         }
       }
+
     }
   }
 
@@ -1272,6 +1281,33 @@ public abstract class DeliveryManager
     return blockedByContactPolicy;
   }
 
+  private void waitForAllInMemoryJobs(){
+    synchronized (this){
+      // no jobs, return
+      if(submitRequestQueue.size()==0 && waitingForAcknowledgement.size()==0){
+        return;
+      }
+      // to log if we wait too much, cause either there is a lack of thread, either the configured throughput is too big compare to the delivery processor capacity
+      Long startTime = SystemTime.currentTimeMillis();
+      Date warningBigWait = RLMDateUtils.addMilliseconds(SystemTime.getCurrentTime(),oneLoopConfiguredProcessTimeMs*5);
+      boolean warned = false;
+      while(true){
+      	long timeToWait = warningBigWait.getTime()-SystemTime.getCurrentTime().getTime();
+      	if(timeToWait<=0) timeToWait=500;
+        try { wait(timeToWait); } catch (InterruptedException e) {}
+        if(SystemTime.getCurrentTime().after(warningBigWait)){
+          log.warn("waitForAllInMemoryJobs() : we are waiting since "+(SystemTime.currentTimeMillis()-startTime)+" ms to complete in memory jobs, check consistency of your thread/throughput configuration (still remaining "+submitRequestQueue.size()+", "+waitingForAcknowledgement.size()+")");
+          warned=true;
+        }
+        if(submitRequestQueue.size()==0 && waitingForAcknowledgement.size()==0){
+          if(warned) log.info("waitForAllInMemoryJobs() : all memory jobs done in "+(SystemTime.currentTimeMillis()-startTime)+" ms");
+          return;
+        }
+      }
+
+    }
+  }
+
   private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook {
 
     private DeliveryManager deliveryManager;
@@ -1305,20 +1341,13 @@ public abstract class DeliveryManager
     log.info("DeliveryManager.shutdownDeliveryManager() : submitRequestWorkerThread stopped");
 
 	// now wait for in memory jobs to complete
-	synchronized (this){
-        int remaining = waitingForAcknowledgement.size();
-		log.info("DeliveryManager.shutdownDeliveryManager() : {} pending in memory requests", waitingForAcknowledgement.size());
-		while(remaining>0){
-			synchronized (this){
-				try { this.wait(500); } catch (InterruptedException e) {}
-				remaining = waitingForAcknowledgement.size();
-				if(remaining==0) break;
-				log.info("DeliveryManager.shutdownDeliveryManager() : still waiting for {} pending in memory requests to complete", remaining);
-			}
-		}
-		if(submitRequestQueue.size()>0) log.warn("DeliveryManager.shutdownDeliveryManager() : there is a bug here, please report it, still {} pending jobs ({})", submitRequestQueue.size(), waitingForAcknowledgement.size());
-		log.info("DeliveryManager.shutdownDeliveryManager() : all in memory request done");
-	}
+    log.info("DeliveryManager.shutdownDeliveryManager() : will wait all in memory jobs to complete");
+    waitForAllInMemoryJobs();
+	if(submitRequestQueue.size()>0 || waitingForAcknowledgement.size()>0){
+	  log.warn("DeliveryManager.shutdownDeliveryManager() : there is a bug here, please report it, still {} pending jobs ({})", submitRequestQueue.size(), waitingForAcknowledgement.size());
+    }else{
+      log.info("DeliveryManager.shutdownDeliveryManager() : all in memory request done");
+    }
 
 	// stopping now receive correlator worker thread
     log.info("DeliveryManager.shutdownDeliveryManager() : stopping receiveCorrelatorUpdateWorkerThread");

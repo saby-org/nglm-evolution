@@ -23,18 +23,20 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DeliveryManagerDeclaration
 {
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryManagerDeclaration.class);
 
-  /****************************************
-  *
-  *  data
-  *
-  ****************************************/
+  public enum DeliveryGuarantee {
+    AtLeastOnce("atLeastOnce"),
+    AtMostOnce("atMostOnce");
+    private String externalRepresentation;
+    DeliveryGuarantee(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static DeliveryGuarantee fromExternalRepresentation(String externalRepresentation) { for (DeliveryGuarantee enumeratedValue : DeliveryGuarantee.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return AtLeastOnce; }
+  }
 
   private JSONObject jsonRepresentation;
   private String deliveryType;
@@ -44,6 +46,7 @@ public class DeliveryManagerDeclaration
   private Topic routingTopic;
   private int deliveryRatePerMinute;
   private int maxBufferedRequests;
+  private DeliveryGuarantee deliveryGuarantee;
   private int retries;
   private int correlatorUpdateTimeoutSeconds;
   private int correlatorCleanerFrequencySeconds;
@@ -62,6 +65,7 @@ public class DeliveryManagerDeclaration
   public String getRequestClassName() { return requestClassName; }
   public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
   public int getMaxBufferedRequests() { return maxBufferedRequests; }
+  public DeliveryGuarantee getDeliveryGuarantee() { return deliveryGuarantee; }
   public int getRetries() { return retries; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
   public int getCorrelatorCleanerFrequencyMilliSeconds() { return correlatorCleanerFrequencySeconds * 1000; }
@@ -177,6 +181,7 @@ public class DeliveryManagerDeclaration
 
     this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", Integer.MAX_VALUE);
     this.maxBufferedRequests = JSONUtilities.decodeInteger(jsonRoot, "maxBufferedRequests", -1);//by default it is the worker thread number, there only for high throughput needed and duplicating requests in case of issue is not critical
+    this.deliveryGuarantee = DeliveryGuarantee.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", DeliveryGuarantee.AtLeastOnce.getExternalRepresentation()));
     this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
     this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 86400);
     this.correlatorCleanerFrequencySeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorCleanerFrequencySeconds", 3600);
