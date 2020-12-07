@@ -55,6 +55,7 @@
               "multiple" : false, 
               "mandatory" : false,
               "availableValues" : null,
+              "showContextVariables":true,
               "defaultValue" : 0
             },
             { 
@@ -82,6 +83,7 @@
               "multiple" : false, 
               "mandatory" : false,
               "availableValues" : null,
+              "showContextVariables":true,
               "defaultValue" : null
             },
             { 
@@ -102,6 +104,7 @@
               "multiple" : false, 
               "mandatory" : false,
               "availableValues" : null,
+              "showContextVariables":true,
               "defaultValue" : null
             }
             
@@ -145,6 +148,7 @@
               "multiple" : true,
               "mandatory" : true,
               "availableValues" : null,
+              "showContextVariables":true,
               "defaultValue" : [ ]
             }
           ],
@@ -250,6 +254,7 @@
               "multiple" : true, 
               "mandatory" : false,
               "availableValues" : null,
+              "showContextVariables":true,
               "defaultValue" : [ ]
             },
             { 
@@ -318,6 +323,7 @@
               "multiple" : true,
               "mandatory" : true,
               "availableValues" : null,
+              "showContextVariables":true,
               "defaultValue" : [ ]
             }
           ],
@@ -373,6 +379,7 @@
                   "multiple" : true, 
                   "mandatory" : true,
                   "availableValues" : null,
+                  "showContextVariables":true,
                   "defaultValue" : [ ]
                 }
               ],
@@ -517,6 +524,7 @@
               "mandatory" : true,
               "expressionValuedParameter" : true,
               "availableValues" : null,
+              "showContextVariables":true,
               "defaultValue" : null
             },
             { 
@@ -720,6 +728,7 @@
               "mandatory" : true,
               "expressionValuedParameter" : true,
               "availableValues" : null,
+              "showContextVariables":true,
               "defaultValue" : null
             },
             { 
@@ -1149,6 +1158,7 @@
             "multiple" : false,
             "mandatory" : true,
             "availableValues" : null,
+            "showContextVariables":true,
             "defaultValue" : null
           },
           {
@@ -1282,6 +1292,7 @@
             "multiple" : false,
             "mandatory" : true,
             "availableValues" : null,
+            "showContextVariables":true,
             "defaultValue" : null
           }
         ],
