@@ -175,36 +175,38 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
     journeyService = new JourneyService(Deployment.getBrokerServers(), "JourneyImpactReport-journeyservice-JourneyImpactReportMonoDriver", Deployment.getJourneyTopic(), false);
     journeyService.start();
     
-    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
-    StringBuilder activeJourneyEsIndex = new StringBuilder();
-    boolean firstEntry = true;
-    for (Journey journey : activeJourneys)
-      {
-        if (!firstEntry) activeJourneyEsIndex.append(",");
-        String indexName = esIndexJourney + journey.getJourneyID();
-        activeJourneyEsIndex.append(indexName);
-        firstEntry = false;
-      }
+    try {
+      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
+      StringBuilder activeJourneyEsIndex = new StringBuilder();
+      boolean firstEntry = true;
+      for (Journey journey : activeJourneys)
+        {
+          if (!firstEntry) activeJourneyEsIndex.append(",");
+          String indexName = esIndexJourney + journey.getJourneyID();
+          activeJourneyEsIndex.append(indexName);
+          firstEntry = false;
+        }
 
-    log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and " + esIndexJourney + " index on " + esNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
-    
-    LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
-    
-    reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile
-    );
+      log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and " + esIndexJourney + " index on " + esNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
 
-    if (!reportMonoPhase.startOneToOne(true))
-      {
-        log.warn("An error occured, the report might be corrupted");
-        return;
-      }
-    journeyService.stop();
-    log.info("Finished JourneyImpactReport");
+      LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
+      esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
+
+      reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile
+          );
+
+      if (!reportMonoPhase.startOneToOne(true))
+        {
+          log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+      journeyService.stop();
+      log.info("Finished JourneyImpactReport");
+    }
   }
 
   private void addHeaders(ZipOutputStream writer, Map<String, Object> values, int offset) throws IOException

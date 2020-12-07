@@ -296,14 +296,15 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
     offerService.start();
     salesChannelService.start();
 
-    if (!reportMonoPhase.startOneToOne())
-      {
-        log.warn("An error occured, the report might be corrupted");
-        return;
-      }
-    offerService.stop();
-    salesChannelService.stop();
-
+    try {
+      if (!reportMonoPhase.startOneToOne())
+        {
+          log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+      offerService.stop();
+      salesChannelService.stop();
+    }
   }
 
 }

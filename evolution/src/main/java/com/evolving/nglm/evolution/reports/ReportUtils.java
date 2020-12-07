@@ -315,6 +315,7 @@ public class ReportUtils {
       {
         log.error("Problem when creating topic " + topicName + " : " + e.getLocalizedMessage());
       }
+			if (adminClient != null) adminClient.close();
 	}
 	
 	public static void createTopic(String topicName, String kzHostList) {
@@ -356,6 +357,7 @@ public class ReportUtils {
     {
       log.error("Problem when deleting topic " + topicName + " : " + e.getLocalizedMessage());
     }
+    if (adminClient != null) adminClient.close();
 }
 
 	/**

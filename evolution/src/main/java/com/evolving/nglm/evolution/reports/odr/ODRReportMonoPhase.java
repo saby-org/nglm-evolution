@@ -484,31 +484,33 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     resellerService = new ResellerService(Deployment.getBrokerServers(), "odrreportcsvwriter-resellerService-ODRReportMonoPhase", resellerTopic, false);
     resellerService.start();
 
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile
-    );
+    try {
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile
+          );
 
-    // check if a report with multiple dates is required in the zipped file 
-    boolean isMultiDates = false;
-    if (reportPeriodQuantity > 1)
-    {
-    	isMultiDates = true;
+      // check if a report with multiple dates is required in the zipped file 
+      boolean isMultiDates = false;
+      if (reportPeriodQuantity > 1)
+        {
+          isMultiDates = true;
+        }
+
+      if (!reportMonoPhase.startOneToOne(isMultiDates))
+        {
+          log.warn("An error occured, the report " + csvfile + "  might be corrupted");
+        }
+    } finally {
+      salesChannelService.stop();
+      offerService.stop();
+      journeyService.stop();
+      loyaltyProgramService.stop();
+      productService.stop();
+      log.info("The report " + csvfile + " is finished");
     }
-    
-    if (!reportMonoPhase.startOneToOne(isMultiDates))
-      {
-        log.warn("An error occured, the report " + csvfile + "  might be corrupted");
-        return;
-      }
-    salesChannelService.stop();
-    offerService.stop();
-    journeyService.stop();
-    loyaltyProgramService.stop();
-    productService.stop();
-    log.info("The report " + csvfile + " is finished");
   }
   
 

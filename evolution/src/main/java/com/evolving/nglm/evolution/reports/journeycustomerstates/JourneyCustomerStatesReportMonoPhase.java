@@ -295,36 +295,38 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     journeyService = new JourneyService(Deployment.getBrokerServers(), "journeycustomerstatesreport-journeyservice-JourneyCustomerStatesReportMonoPhase", Deployment.getJourneyTopic(), false);
     journeyService.start();
     
-    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
-    StringBuilder activeJourneyEsIndex = new StringBuilder();
-    boolean firstEntry = true;
-    for (Journey journey : activeJourneys)
-      {
-        if (!firstEntry) activeJourneyEsIndex.append(",");
-        String indexName = esIndexJourney + journey.getJourneyID();
-        activeJourneyEsIndex.append(indexName);
-        firstEntry = false;
-      }
+    try {
+      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
+      StringBuilder activeJourneyEsIndex = new StringBuilder();
+      boolean firstEntry = true;
+      for (Journey journey : activeJourneys)
+        {
+          if (!firstEntry) activeJourneyEsIndex.append(",");
+          String indexName = esIndexJourney + journey.getJourneyID();
+          activeJourneyEsIndex.append(indexName);
+          firstEntry = false;
+        }
 
-    log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and writing to " + csvfile);
-    LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
+      log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and writing to " + csvfile);
+      LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
+      esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
 
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile
-    );
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile
+          );
 
-    if (!reportMonoPhase.startOneToOne(true))
-      {
-        log.warn("An error occured, the report might be corrupted");
-        return;
-      }
-    
-    journeyService.stop();
-    log.info("Finished JourneyCustomerStatesReportESReader");
+      if (!reportMonoPhase.startOneToOne(true))
+        {
+          log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+
+      journeyService.stop();
+      log.info("Finished JourneyCustomerStatesReportESReader");
+    }  
   }
 
 }

@@ -584,29 +584,31 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     loyaltyProgramService.start();
     subscriberMessageTemplateService.start();
     
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile
-    );
-    // check if a report with multiple dates is required in the zipped file 
-    boolean isMultiDates = false;
-    if (reportPeriodQuantity > 1)
-    {
-    	isMultiDates = true;
+    try {
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile
+          );
+      // check if a report with multiple dates is required in the zipped file 
+      boolean isMultiDates = false;
+      if (reportPeriodQuantity > 1)
+        {
+          isMultiDates = true;
+        }
+
+      if (!reportMonoPhase.startOneToOne(isMultiDates))
+        {
+          log.warn("An error occured, the report " + csvfile + " might be corrupted");
+        }
+    } finally {
+      offerService.stop();
+      journeyService.stop();
+      loyaltyProgramService.stop();
+      subscriberMessageTemplateService.stop();
+      log.info("The report " + csvfile + " is finished");
     }
-    
-    if (!reportMonoPhase.startOneToOne(isMultiDates))
-      {
-        log.warn("An error occured, the report " + csvfile + " might be corrupted");
-        return;
-      }
-    offerService.stop();
-    journeyService.stop();
-    loyaltyProgramService.stop();
-    subscriberMessageTemplateService.stop();
-    log.info("The report " + csvfile + " is finished");
   }
   
   private static List<String> getEsIndexDates(final Date fromDate, Date toDate)

@@ -180,33 +180,35 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     pointService = new PointService(Deployment.getBrokerServers(), "customerpointdetailsreport-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPointTopic(), false);
     pointService.start();
 
-    LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    
-    esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
-    
-    List<String> subscriberFields = new ArrayList<>();
-    subscriberFields.add("subscriberID");
-    for (AlternateID alternateID : Deployment.getAlternateIDs().values()){
-      subscriberFields.add(alternateID.getESField());
-    }
-    subscriberFields.add("pointBalances");
-    
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile,
-        true,
-        true,
-        subscriberFields
-    );
+    try {
+      LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
 
-    if (!reportMonoPhase.startOneToOne())
-      {
-        log.warn("An error occured, the report might be corrupted");
-        return;
+      esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
+
+      List<String> subscriberFields = new ArrayList<>();
+      subscriberFields.add("subscriberID");
+      for (AlternateID alternateID : Deployment.getAlternateIDs().values()){
+        subscriberFields.add(alternateID.getESField());
       }
-    pointService.stop();
+      subscriberFields.add("pointBalances");
+
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile,
+          true,
+          true,
+          subscriberFields
+          );
+
+      if (!reportMonoPhase.startOneToOne())
+        {
+          log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+      pointService.stop();
+    }
   }
 
   private void addHeaders(ZipOutputStream writer, Map<String,Object> values, int offset) throws IOException {

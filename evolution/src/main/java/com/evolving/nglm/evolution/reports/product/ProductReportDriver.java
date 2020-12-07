@@ -57,20 +57,19 @@ public class ProductReportDriver extends ReportDriver
     productTypeService = new ProductTypeService(kafka, "productReportDriver-productTypeservice-" + apiProcessKey, Deployment.getProductTypeTopic(), false);
     productTypeService.start();
     File file = new File(csvFilename + ".zip");
-    FileOutputStream fos;
+    FileOutputStream fos = null;
+    ZipOutputStream writer = null;
     try
       {
         log.info("productService.getStoredProducts().size(): " + productService.getStoredProducts().size());
         if (productService.getStoredProducts().size() == 0)
           {
             log.info("No products ");
-            NGLMRuntime.addShutdownHook(new ShutdownHook(productService, supplierService, deliverableService, productTypeService));
-
           } else
           {
 
             fos = new FileOutputStream(file);
-            ZipOutputStream writer = new ZipOutputStream(fos);
+            writer = new ZipOutputStream(fos);
             ZipEntry entry = new ZipEntry(new File(csvFilename).getName()); // do not include tree structure in
                                                                             // zipentry, just csv filename
             writer.putNextEntry(entry);
@@ -97,7 +96,7 @@ public class ProductReportDriver extends ReportDriver
                     ++first;
                   } catch (IOException | InterruptedException e)
                   {
-                    e.printStackTrace();
+                    log.info("exception " + e.getLocalizedMessage());
                   }
 
               }
@@ -105,8 +104,33 @@ public class ProductReportDriver extends ReportDriver
 
       } catch (IOException e)
       {
-        e.printStackTrace();
+        log.info("exception " + e.getLocalizedMessage());
       }
+    finally {
+      productService.stop();
+      supplierService.stop();
+      deliverableService.stop();
+      productTypeService.stop();
+      try
+        {
+          if (writer != null) writer.close();
+        }
+      catch (IOException e)
+        {
+          log.info("exception " + e.getLocalizedMessage());
+        }
+      if (fos != null)
+        {
+          try
+          {
+            fos.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception generating "+csvFilename, e);
+          }
+        }
+    }
 
   }
 
@@ -212,49 +236,7 @@ public class ProductReportDriver extends ReportDriver
     writer.closeEntry();
     writer.close();
     log.info("csv Writer closed");
-    NGLMRuntime.addShutdownHook(new ShutdownHook(productService, supplierService, deliverableService, productTypeService));
-
   }
 
-  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
-  {
 
-    private ProductService productService;
-    private SupplierService supplierService;
-    private DeliverableService deliverableService;
-    private ProductTypeService productTypeService;
-
-    public ShutdownHook(ProductService productService, SupplierService supplierService, DeliverableService deliverableService, ProductTypeService productTypeService)
-    {
-
-      this.productService = productService;
-      this.supplierService = supplierService;
-      this.deliverableService = deliverableService;
-      this.productTypeService = productTypeService;
-    }
-
-    @Override
-    public void shutdown(boolean normalShutdown)
-    {
-
-      if (productService != null)
-        {
-          productService.stop();
-        }
-      if (supplierService != null)
-        {
-          supplierService.stop();
-        }
-      if (deliverableService != null)
-        {
-          deliverableService.stop();
-        }
-      if (productTypeService != null)
-        {
-          productTypeService.stop();
-        }
-
-    }
-
-  }
 }

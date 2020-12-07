@@ -485,30 +485,33 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     offerService.start();
     loyaltyProgramService.start();
 
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile
-    );
-    
-    // check if a report with multiple dates is required in the zipped file 
-    boolean isMultiDates = false;
-    if (reportPeriodQuantity > 1)
-    {
-    	isMultiDates = true;
+    try {
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile
+          );
+
+      // check if a report with multiple dates is required in the zipped file 
+      boolean isMultiDates = false;
+      if (reportPeriodQuantity > 1)
+        {
+          isMultiDates = true;
+        }
+
+      if (!reportMonoPhase.startOneToOne(isMultiDates))
+        {
+          log.warn("An error occured, the report " + csvfile + "  might be corrupted");
+          return;
+        }
+
+    } finally {
+      deliverableService.stop();
+      journeyService.stop();
+      offerService.stop();
+      loyaltyProgramService.stop();
+      log.info("The report " + csvfile + " is finished");
     }
-    
-    if (!reportMonoPhase.startOneToOne(isMultiDates))
-      {
-        log.warn("An error occured, the report " + csvfile + "  might be corrupted");
-        return;
-      }
-    
-    deliverableService.stop();
-    journeyService.stop();
-    offerService.stop();
-    loyaltyProgramService.stop();
-    log.info("The report " + csvfile + " is finished");
   }
 }

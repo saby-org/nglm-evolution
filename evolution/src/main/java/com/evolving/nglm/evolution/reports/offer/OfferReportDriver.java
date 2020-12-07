@@ -73,19 +73,19 @@ public class OfferReportDriver extends ReportDriver
     boolean header = true;
     int first = 0;
     File file = new File(csvFilename + ".zip");
-    FileOutputStream fos;
+    FileOutputStream fos = null;
+    ZipOutputStream writer = null;
     try
       {
         log.info("no. of Offers :" + offerService.getStoredOffers().size());
         if (offerService.getStoredOffers().size() == 0)
           {
             log.info("No Offers ");
-            NGLMRuntime.addShutdownHook(new ShutdownHook(offerService, salesChannelService, offerObjectiveService, productService, paymentmeanservice));
           }
         else
           {
             fos = new FileOutputStream(file);
-            ZipOutputStream writer = new ZipOutputStream(fos);
+            writer = new ZipOutputStream(fos);
             // do not include tree structure in zipentry, just csv filename
             ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
             writer.putNextEntry(entry);
@@ -107,15 +107,43 @@ public class OfferReportDriver extends ReportDriver
                   }
                 catch (IOException | InterruptedException e)
                   {
-                    e.printStackTrace();
+                    log.info("exception " + e.getLocalizedMessage());
                   }
               }
           }
       }
     catch (IOException e)
       {
-        e.printStackTrace();
+        log.info("exception " + e.getLocalizedMessage());
       }
+    finally {
+      offerService.stop();
+      salesChannelService.stop();
+      offerObjectiveService.stop();
+      productService.stop();
+      paymentmeanservice.stop();
+      catalogCharacteristicService.stop();
+
+      try
+      {
+        if (writer != null) writer.close();
+      }
+      catch (IOException e)
+      {
+        log.info("exception " + e.getLocalizedMessage());
+      }
+      if (fos != null)
+        {
+          try
+          {
+            fos.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception " + e);
+          }
+        }
+    }
   }
 
   /****************************************
@@ -361,67 +389,5 @@ public class OfferReportDriver extends ReportDriver
     writer.closeEntry();
     writer.close();
     log.debug("csv Writer closed");
-    NGLMRuntime.addShutdownHook(
-        new ShutdownHook(offerService, salesChannelService, offerObjectiveService, productService, paymentmeanservice));
-  }
-
-  /****************************************
-   *
-   * ShutdownHook
-   *
-   ****************************************/
-
-  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
-  {
-
-    private OfferService offerService;
-    private SalesChannelService salesChannelService;
-    private OfferObjectiveService offerObjectiveService;
-    private ProductService productService;
-    private PaymentMeanService paymentMeanService;
-
-    public ShutdownHook(OfferService offerService, SalesChannelService salesChannelService,
-        OfferObjectiveService offerObjectiveService, ProductService productService,
-        PaymentMeanService paymentMeanService)
-    {
-
-      this.offerService = offerService;
-      this.salesChannelService = salesChannelService;
-      this.offerObjectiveService = offerObjectiveService;
-      this.productService = productService;
-      this.paymentMeanService = paymentMeanService;
-    }
-
-    @Override
-    public void shutdown(boolean normalShutdown)
-    {
-
-      if (offerService != null)
-        {
-          offerService.stop();
-          log.trace("offerService stopped..");
-        }
-      if (salesChannelService != null)
-        {
-          salesChannelService.stop();
-          log.trace("salesChannelService stopped..");
-        }
-      if (offerObjectiveService != null)
-        {
-          offerObjectiveService.stop();
-          log.trace("offerObjectiveService stopped..");
-        }
-      if (productService != null)
-        {
-          productService.stop();
-          log.trace("productService stopped..");
-        }
-      if (paymentMeanService != null)
-        {
-          paymentMeanService.stop();
-          log.trace("paymentMeanService stopped..");
-        }
-
-    }
   }
 }

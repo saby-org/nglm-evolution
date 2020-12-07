@@ -119,11 +119,12 @@ public class JourneysReportDriver extends ReportDriver
     ReportsCommonCode.initializeDateFormats();
     
     File file = new File(csvFilename + ".zip");
-    FileOutputStream fos;
+    FileOutputStream fos = null;
+    ZipOutputStream writer = null;
     try
       {
         fos = new FileOutputStream(file);
-        ZipOutputStream writer = new ZipOutputStream(fos);
+        writer = new ZipOutputStream(fos);
         // do not include tree structure in zipentry, just csv filename
         ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
         writer.putNextEntry(entry);
@@ -210,17 +211,52 @@ public class JourneysReportDriver extends ReportDriver
             }
           }
         log.info("WriteCompleted ");
-        writer.flush();
-        writer.closeEntry();
-        writer.close();
         log.info("csv Writer closed");
-        NGLMRuntime.addShutdownHook(
-            new ShutdownHook(journeyService, pointService, journeyObjectiveService));
       }
     catch (IOException e)
       {
         log.info("Exception generating "+csvFilename, e);
       }
+    finally {
+      if (writer != null)
+        {
+          try
+          {
+            writer.flush();
+            writer.closeEntry();
+            writer.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception generating "+csvFilename, e);
+          }
+        }
+      if (fos != null)
+        {
+          try
+          {
+            fos.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception generating "+csvFilename, e);
+          }
+        }
+      if (elasticsearchReaderClient != null)
+        {
+          try
+          {
+            elasticsearchReaderClient.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception generating "+csvFilename, e);
+          }
+        }
+      journeyService.stop();
+      pointService.stop();
+      journeyObjectiveService.stop();
+    }
   }
    
   private void addHeaders(ZipOutputStream writer, Map<String,Object> values, int offset) throws IOException {
@@ -239,46 +275,4 @@ public class JourneysReportDriver extends ReportDriver
     }
   }
   
-  /****************************************
-  *
-  *  ShutdownHook
-  *
-  ****************************************/
-
-  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
-  {
-
-    private JourneyService journeyService;
-    private PointService pointService;
-    private JourneyObjectiveService journeyObjectiveService;
-
-    public ShutdownHook(JourneyService journeyService, PointService pointService, JourneyObjectiveService journeyObjectiveService)
-    {
-
-      this.journeyService = journeyService;
-      this.pointService = pointService;
-      this.journeyObjectiveService = journeyObjectiveService;
-    }
-
-    @Override
-    public void shutdown(boolean normalShutdown)
-    {
-
-      if (journeyService != null)
-        {
-          journeyService.stop();
-          log.trace("journeyService stopped..");
-        }
-      if (pointService != null)
-        {
-          pointService.stop();
-          log.trace("pointService stopped..");
-        }
-      if (journeyObjectiveService != null)
-        {
-          journeyObjectiveService.stop();
-          log.trace("journeyObjectiveService stopped..");
-        }
-    }
-  }
 }
