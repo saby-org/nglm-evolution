@@ -558,13 +558,13 @@ public class UploadedFileService extends GUIService
     boolean firstOne = true;
     for (GUIManagerException violation : violations)
       {
-        responseMessageBuilder.append(violation.getMessage());
-        responseParameterBuilder.append(violation.getResponseParameter());
-        if (firstOne)
+        if (!firstOne)
           {
             responseMessageBuilder.append("|");
             responseParameterBuilder.append("|");
           }
+        responseMessageBuilder.append(violation.getMessage());
+        responseParameterBuilder.append(violation.getResponseParameter());
         firstOne = false;
       }
     throw new GUIManagerException(responseMessageBuilder.toString(), responseParameterBuilder.toString());
