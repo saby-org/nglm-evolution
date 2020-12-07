@@ -275,7 +275,7 @@ public class ComplexObjectType extends GUIManagedObject
     //  }
     //      
 
-    this.availableElements = JSONUtilities.decodeJSONArray(jsonRoot, "availableNames", true);    
+    this.availableElements = JSONUtilities.decodeJSONArray(jsonRoot, "availableElements", true);    
     JSONArray f = JSONUtilities.decodeJSONArray(jsonRoot, "subfields", true);
     this.subfields = new HashMap<>();
     for(int i=0 ; i<f.size(); i++)
