@@ -67,7 +67,7 @@ public class UploadedFileService extends GUIService
 
   private UploadedFileListener uploadedFileListener = null;
   public static final String basemanagementApplicationID = "101";
-  public static final String DATATYPE_VRIABLE_PATTER = "\\<(.*?)\\>";  // <String>Name, <Int>Years, <String>Gift
+  public static final String DATATYPE_VRIABLE_PATTERN = "\\<(.*?)\\>";  // <String>Name, <Int>Years, <String>Gift
 
   /*****************************************
   *
@@ -528,7 +528,7 @@ public class UploadedFileService extends GUIService
   private String getVaribaleName(String header)
   {
     String result = null;
-    Pattern pattern = Pattern.compile(DATATYPE_VRIABLE_PATTER);
+    Pattern pattern = Pattern.compile(DATATYPE_VRIABLE_PATTERN);
     Matcher matcher = pattern.matcher(header);
     if (matcher.find())
       {
@@ -540,7 +540,7 @@ public class UploadedFileService extends GUIService
   private String getDatatype(String header)
   {
     String result = null;
-    Pattern pattern = Pattern.compile(DATATYPE_VRIABLE_PATTER);
+    Pattern pattern = Pattern.compile(DATATYPE_VRIABLE_PATTERN);
     Matcher matcher = pattern.matcher(header);
     if (matcher.find()) result = matcher.group(1);
     return result;
