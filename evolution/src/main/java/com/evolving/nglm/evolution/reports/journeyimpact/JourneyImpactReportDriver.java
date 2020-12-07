@@ -55,8 +55,6 @@ public class JourneyImpactReportDriver extends ReportDriver
     Random r = new Random();
     int apiProcessKey = r.nextInt(999);
 
-    log.info("apiProcessKey" + apiProcessKey);
-
     String journeyTopic = Deployment.getJourneyTopic();
 
     journeyService = new JourneyService(kafkaNode, "journeysreportcsvwriter-journeyservice-" + apiProcessKey, journeyTopic, false);
@@ -168,55 +166,60 @@ public class JourneyImpactReportDriver extends ReportDriver
 //                      }
 //                }
               
-              // TODO metrics
+              Map<String, Map<String, Long>> metricsPerStatus = elasticsearchReaderClient.getMetricsPerStatus(journeyID);
               
-              boolean addHeader = true;
-              for (Entry<String, Long> status : journeyStatusCount.entrySet())
-                {
-                  Map<String, Object> mapPerStatus = new LinkedHashMap<>();
-                  mapPerStatus.putAll(journeyInfo1);
-                  mapPerStatus.put("customerStatus", status.getKey());
-                  mapPerStatus.put("qty_customers", status.getValue());
-                  mapPerStatus.putAll(journeyInfo2);
-                  // We have data for this journey, write it to tmp file
-                  String tmpFileName = file+"."+journeyID+".tmp";
-                  FileOutputStream fos = null;
-                  ZipOutputStream writer = null;
-                  try
+              // We have data for this journey, write it to tmp file
+
+              String tmpFileName = file+"."+journeyID+".tmp";
+              FileOutputStream fos = null;
+              ZipOutputStream writer = null;
+              try
+              {
+                fos = new FileOutputStream(tmpFileName);
+                writer = new ZipOutputStream(fos);
+                String dataFile[] = csvFilename.split("[.]");
+                String dataFileName = dataFile[0] + "_" + journeyID;
+                String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
+                ZipEntry zipEntry = new ZipEntry(zipEntryName);
+                writer.putNextEntry(zipEntry);
+                writer.setLevel(Deflater.BEST_SPEED);
+                tmpZipFiles.put(tmpFileName,writer); // to add it later to final ZIP file
+                boolean addHeader = true;
+                for (String status : journeyStatusCount.keySet())
                   {
-                    fos = new FileOutputStream(tmpFileName);
-                    writer = new ZipOutputStream(fos);
-                    String dataFile[] = csvFilename.split("[.]");
-                    String dataFileName = dataFile[0] + "_" + journeyID;
-                    String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
-                    ZipEntry entry = new ZipEntry(zipEntryName);
-                    writer.putNextEntry(entry);
-                    writer.setLevel(Deflater.BEST_SPEED);
-                    tmpZipFiles.put(tmpFileName,writer); // to add it later to final ZIP file
+                    Map<String, Object> mapPerStatus = new LinkedHashMap<>();
+                    mapPerStatus.putAll(journeyInfo1);
+                    mapPerStatus.put("customerStatus", status);
+                    mapPerStatus.put("qty_customers", journeyStatusCount.get(status));
+                    mapPerStatus.putAll(journeyInfo2);
+                    // add metrics
+                    for (Entry<String, Long> entry : metricsPerStatus.get(status).entrySet()) {
+                      mapPerStatus.put(entry.getKey(), entry.getValue());
+                    }
                     dumpLineToCsv(mapPerStatus, writer, addHeader);
                     addHeader = false;
-                  } catch (IOException e) {
-                    log.error("Error writing to " + tmpFileName, e);
-                  } finally {
-                    try {
-                      if (writer != null) {
-                        writer.flush();
-                        writer.closeEntry();
-                        writer.close();
-                      }
-                    } catch (IOException e) {
-                      log.info("Exception generating "+tmpFileName, e);
-                    } finally {
-                      try {
-                        if (fos != null) {
-                          fos.close();
-                        }
-                      } catch (IOException e) {
-                        log.info("Exception generating "+tmpFileName, e);
-                      }
+                  }
+              } catch (IOException e) {
+                log.error("Error writing to " + tmpFileName, e);
+              } finally {
+                try {
+                  if (writer != null) {
+                    writer.flush();
+                    writer.closeEntry();
+                    writer.close();
+                  }
+                } catch (IOException e) {
+                  log.info("Exception generating "+tmpFileName, e);
+                } finally {
+                  try {
+                    if (fos != null) {
+                      fos.close();
                     }
+                  } catch (IOException e) {
+                    log.info("Exception generating "+tmpFileName, e);
                   }
                 }
+              }
             }
             catch (ElasticsearchClientException e)
             {
