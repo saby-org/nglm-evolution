@@ -2804,7 +2804,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "origin", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, nodeName, "");
       request.setModuleID(newModuleID);
       request.setFeatureID(deliveryRequestSource);
 
