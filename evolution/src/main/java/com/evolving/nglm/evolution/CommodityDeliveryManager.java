@@ -142,8 +142,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       case PENDING:
         return DeliveryStatus.Pending;
       case CUSTOMER_NOT_FOUND:
+        return DeliveryStatus.Failed;
       case BONUS_NOT_FOUND:
+        return DeliveryStatus.Failed;
       case INSUFFICIENT_BALANCE:
+        return DeliveryStatus.Failed;
       case CHECK_BALANCE_LT:
         return DeliveryStatus.CheckBalanceLowerThan;
       case CHECK_BALANCE_GT:
