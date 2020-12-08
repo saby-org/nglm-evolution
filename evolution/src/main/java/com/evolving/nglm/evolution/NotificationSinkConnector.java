@@ -113,7 +113,6 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = new HashMap<String,Object>();
       
       if (notification instanceof MailNotificationManagerRequest) {
-        log.info("RAJ K MailNotificationManagerRequest");
         MailNotificationManagerRequest mailNotification = (MailNotificationManagerRequest) notification;
         if(mailNotification.getOriginatingSubscriberID() != null && mailNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
           {
@@ -175,7 +174,6 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("contactType", smsNotification.getContactType());
       }
       else if (notification instanceof NotificationManagerRequest) {
-        log.info("RAJ K NotificationManagerRequest");
         NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
         if(notifNotification.getOriginatingSubscriberID() != null && notifNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
           {
@@ -202,7 +200,6 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("contactType", notifNotification.getContactType());
       }
       else {
-        log.info("RAJ K PushNotificationManagerRequest");
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
         if(pushNotification.getOriginatingSubscriberID() != null && pushNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
           {
