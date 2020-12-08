@@ -101,7 +101,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       {
         SchemaBuilder schemaBuilder = SchemaBuilder.struct();
         schemaBuilder.name("service_notification_request");
-        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 8));
+        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 9));
         for (Field field : commonSchema().fields())
           schemaBuilder.field(field.name(), field.schema());
         schemaBuilder.field("destination", Schema.STRING_SCHEMA);
@@ -113,7 +113,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
         schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
         schemaBuilder.field("notificationParameters", ParameterMap.serde().optionalSchema());
-        
+        schemaBuilder.field("contactType", SchemaBuilder.string().defaultValue("unknown").schema());
         schema = schemaBuilder.build();
       };
 
@@ -158,6 +158,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     private String returnCodeDetails;
     private String channelID;
     private ParameterMap notificationParameters;
+    private String contactType;
 
     //
     // accessors
@@ -212,6 +213,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     {
       return notificationParameters;
     }
+    public String getContactType() { return contactType; }
 
 
     // this resolved the source address
@@ -348,7 +350,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
      *
      *****************************************/
 
-    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID, ParameterMap notificationParameters)
+    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID, ParameterMap notificationParameters, String contactType)
       {
         super(context, deliveryType, deliveryRequestSource);
         this.destination = destination;
@@ -360,6 +362,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         this.returnCodeDetails = null;
         this.channelID = channelID;
         this.notificationParameters = notificationParameters;
+        this.contactType = contactType;
       }
 
 //    /*****************************************
@@ -423,7 +426,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
      *
      *****************************************/
 
-    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters)
+    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters, String contactType)
       {
         super(schemaAndValue);
         this.destination = destination;
@@ -436,6 +439,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         this.returnCodeDetails = returnCodeDetails;
         this.channelID = channelID;
         this.notificationParameters = notificationParameters;
+        this.contactType = contactType;
       }
 
     /*****************************************
@@ -444,19 +448,20 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
      *
      *****************************************/
 
-    private NotificationManagerRequest(NotificationManagerRequest NotificationManagerRequest)
+    private NotificationManagerRequest(NotificationManagerRequest notificationManagerRequest)
       {
-        super(NotificationManagerRequest);
-        this.destination = NotificationManagerRequest.getDestination();
-        this.language = NotificationManagerRequest.getLanguage();
-        this.templateID = NotificationManagerRequest.getTemplateID();
-        this.tags = NotificationManagerRequest.getTags();
-        this.restricted = NotificationManagerRequest.getRestricted();
-        this.status = NotificationManagerRequest.getMessageStatus();
-        this.returnCode = NotificationManagerRequest.getReturnCode();
-        this.returnCodeDetails = NotificationManagerRequest.getReturnCodeDetails();
-        this.channelID = NotificationManagerRequest.getChannelID();
-        this.notificationParameters = NotificationManagerRequest.getNotificationParameters();
+        super(notificationManagerRequest);
+        this.destination = notificationManagerRequest.getDestination();
+        this.language = notificationManagerRequest.getLanguage();
+        this.templateID = notificationManagerRequest.getTemplateID();
+        this.tags = notificationManagerRequest.getTags();
+        this.restricted = notificationManagerRequest.getRestricted();
+        this.status = notificationManagerRequest.getMessageStatus();
+        this.returnCode = notificationManagerRequest.getReturnCode();
+        this.returnCodeDetails = notificationManagerRequest.getReturnCodeDetails();
+        this.channelID = notificationManagerRequest.getChannelID();
+        this.notificationParameters = notificationManagerRequest.getNotificationParameters();
+        this.contactType = notificationManagerRequest.getContactType();
       }
 
     /*****************************************
@@ -490,6 +495,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       struct.put("channelID", notificationRequest.getChannelID());
       struct.put("notificationParameters", ParameterMap.serde().packOptional(notificationRequest.getNotificationParameters()));
+      struct.put("contactType", notificationRequest.getContactType());
       return struct;
     }
 
@@ -542,12 +548,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           notificationParameters = ParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("notificationParameters").schema(), valueStruct.get("notificationParameters")));
       }
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
+      String contactType = schemaVersion >= 9 ? valueStruct.getString("contactType") : "unknown"; 
 
       //
       // return
       //
 
-      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, restricted, status, returnCodeDetails, channelID, notificationParameters);
+      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, restricted, status, returnCodeDetails, channelID, notificationParameters, contactType);
     }
 
 //    /*****************************************
@@ -610,6 +617,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       guiPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
+      guiPresentationMap.put("contactType", getContactType());
       
     }
 
@@ -635,6 +643,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       thirdPartyPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
+      thirdPartyPresentationMap.put("contactType", getContactType());
     }
 
     public Map<String, Object> gatherChannelParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
@@ -832,7 +841,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
          NotificationManagerRequest request = null;
          if (destAddress != null)
            {
-             request = new NotificationManagerRequest(evolutionEventContext, communicationChannel.getDeliveryType(), deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
+             request = new NotificationManagerRequest(evolutionEventContext, communicationChannel.getDeliveryType(), deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters, contactType.getExternalRepresentation());
              request.setModuleID(newModuleID);
              request.setFeatureID(deliveryRequestSource);
              request.forceDeliveryPriority(contactType.getDeliveryPriority());
