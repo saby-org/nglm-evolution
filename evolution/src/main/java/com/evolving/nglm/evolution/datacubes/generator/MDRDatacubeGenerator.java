@@ -89,6 +89,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("templateID");
     this.filterFields.add("returnCode");
     this.filterFields.add("channelID");
+    this.filterFields.add("contactType");
     
     //
     // Data Aggregations
