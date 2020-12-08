@@ -3,7 +3,7 @@ lpm-web-<_KEY_>:
   environment:
     lpm_api_server_path: "http://<_GUI_LPM_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_LPM_API_SERVER_PORT_>/api/"
     lpm_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
-    lpm_api_server_path_for_upload_files: "http://<_GUI_lpm_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_LPM_API_SERVER_PORT_>/api/file/flowupload"
+    lpm_api_server_path_for_upload_files: "http://<_GUI_LPM_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_LPM_API_SERVER_PORT_>/api/file/flowupload"
     LPM_URL_ELASTICSEARCH_PATH: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>"
     LPM_URL_KIBANA_PATH: "http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>"
     DIALOG_TEMPLATE_SMS: '<_DIALOG_TEMPLATE_SMS_>'
