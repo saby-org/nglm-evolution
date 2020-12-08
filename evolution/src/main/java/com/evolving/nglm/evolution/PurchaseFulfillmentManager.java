@@ -2796,6 +2796,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
       
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
+      String nodeName = subscriberEvaluationRequest.getJourneyNode().getNodeName();
 
       /*****************************************
       *
@@ -2803,7 +2804,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "origin", "");
       request.setModuleID(newModuleID);
       request.setFeatureID(deliveryRequestSource);
 
