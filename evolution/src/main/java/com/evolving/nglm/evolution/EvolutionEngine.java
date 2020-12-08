@@ -4527,7 +4527,7 @@ public class EvolutionEngine
     *****************************************/
 
     List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now));
-    Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
+    prioritizeAndShuffle(activeJourneys);
     
     /*****************************************
     *
@@ -5752,6 +5752,13 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
+
+  private static void prioritizeAndShuffle(List<Journey> activeJourneys)
+  {
+    Collections.sort(activeJourneys, j -> (j.get));
+    Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
+    
+  }
 
   private static void addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
   {
