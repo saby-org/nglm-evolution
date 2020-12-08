@@ -54,7 +54,15 @@ cat $DEPLOY_ROOT/docker/prometheus-application.yml | perl -e 'while ( $line=<STD
 #  kafka-lag-exporter
 #
 
-cat $DEPLOY_ROOT/docker/kafka-lag-exporter.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-application-monitoring.yml
+for TUPLE in $KAFKA_LAG_EXPORTER
+do  
+  export HOST=`echo $TUPLE | cut -d: -f2`
+  export PORT=`echo $TUPLE | cut -d: -f3`    
+  export KAFKA_LAG_EXPORTER_URL="'$HOST:$PORT'"
+  export KAFKA_LAG_EXPORTER_PORT="$PORT"
+  cat $DEPLOY_ROOT/docker/kafka-lag-exporter.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-application-monitoring.yml
+
+done
 
 #
 # configs
