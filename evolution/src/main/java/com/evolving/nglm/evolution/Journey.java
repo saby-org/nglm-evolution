@@ -716,6 +716,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     struct.put("occurrenceNumber", journey.getOccurrenceNumber());
     struct.put("scheduler", JourneyScheduler.serde().packOptional(journey.getJourneyScheduler()));
     struct.put("lastCreatedOccurrenceNumber", journey.getLastCreatedOccurrenceNumber());
+    struct.put("priority", journey.getPriority());
     return struct;
   }
 
