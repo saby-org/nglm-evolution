@@ -5755,9 +5755,7 @@ public class EvolutionEngine
 
   private static void prioritizeAndShuffle(List<Journey> activeJourneys)
   {
-    Collections.sort(activeJourneys, j -> (j.get));
-    Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
-    
+    Collections.sort(activeJourneys, ((j1, j2) -> (j2.getPriority()==j1.getPriority())?ThreadLocalRandom.current().nextInt(3)-1:j2.getPriority()-j1.getPriority()));
   }
 
   private static void addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
