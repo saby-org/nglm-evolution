@@ -4476,7 +4476,7 @@ public class ThirdPartyManager
         {
           for (Offer offer : offerService.getActiveOffers(now))
             {
-              if (offer.getDisplay().equals(offerDisplay))
+              if (offerDisplay.equals(offer.getDisplay()))
                 {
                   offerID = offer.getGUIManagedObjectID();
                   break;
