@@ -27666,7 +27666,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
       Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
-      Collection<Journey> recurrentJourneys = journeyService.getActiveAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
+      Collection<Journey> recurrentJourneys = journeyService.getAcceptedAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
       if(log.isDebugEnabled()) log.debug("recurrentJourneys {}", recurrentJourneys);
       for (Journey recurrentJourney : recurrentJourneys)
         {
@@ -27802,6 +27802,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       Date rawEffectiveEntryPeriodEndDate = recurrentJourney.getRawEffectiveEntryPeriodEndDate();
       int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
+      boolean active = recurrentJourney.getActive();
       for (Date startDate : journeyCreationDates)
         {
           //
@@ -27867,7 +27868,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           if (GUIManagedObjectType.BulkCampaign == recurrentJourney.getGUIManagedObjectType())
             {
               processPutBulkCampaign("0", journeyJSON);
-              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), active);
               
               //
               //  lastCreatedOccurrenceNumber
@@ -27880,7 +27881,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           else
             {
               processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
-              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), active);
               
               //
               //  lastCreatedOccurrenceNumber
