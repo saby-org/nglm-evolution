@@ -359,7 +359,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_commodityDelivery_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),9));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),10));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
@@ -371,6 +371,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       schemaBuilder.field("deliverableExpirationDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("commodityDeliveryStatusCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("statusMessage", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     }
 
@@ -404,6 +405,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     private Date deliverableExpirationDate;
     private CommodityDeliveryStatus commodityDeliveryStatus;
     private String statusMessage;
+    private String origin;
     
     //
     //  accessors
@@ -429,6 +431,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     }    
     public CommodityDeliveryStatus getCommodityDeliveryStatus() { return commodityDeliveryStatus; }
     public String getStatusMessage() { return statusMessage; }
+    public String getOrigin() { return origin; }
 
     //
     //  setters
@@ -457,7 +460,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     *****************************************/
 
-    public CommodityDeliveryRequest(EvolutionEventContext context, String deliveryRequestSource, Map<String, String> diplomaticBriefcase, String providerID, String commodityID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date deliverableExpirationDate)
+    public CommodityDeliveryRequest(EvolutionEventContext context, String deliveryRequestSource, Map<String, String> diplomaticBriefcase, String providerID, String commodityID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date deliverableExpirationDate, String origin)
     {
       super(context, "commodityDelivery", deliveryRequestSource);
       setDiplomaticBriefcase(diplomaticBriefcase);
@@ -470,6 +473,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       this.deliverableExpirationDate = deliverableExpirationDate;
       this.commodityDeliveryStatus = CommodityDeliveryStatus.PENDING;
       this.statusMessage = "";
+      this.origin = origin;
     }
 
     /*****************************************
@@ -492,6 +496,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       this.deliverableExpirationDate = JSONUtilities.decodeDate(jsonRoot, "deliverableExpirationDate", false);
       this.commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode(JSONUtilities.decodeInteger(jsonRoot, "commodityDeliveryStatusCode", true));
       this.statusMessage = JSONUtilities.decodeString(jsonRoot, "statusMessage", false);
+      this.origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
     }
 
     /*****************************************
@@ -514,6 +519,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       this.deliverableExpirationDate = JSONUtilities.decodeDate(jsonRoot, "deliverableExpirationDate", false);
       this.commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode(JSONUtilities.decodeInteger(jsonRoot, "commodityDeliveryStatusCode", true));
       this.statusMessage = JSONUtilities.decodeString(jsonRoot, "statusMessage", false);
+      this.origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
     }
 
     /*****************************************
@@ -554,6 +560,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       data.put("commodityDeliveryStatusCode", this.getCommodityDeliveryStatus().getReturnCode());
       data.put("statusMessage", this.getStatusMessage());
+      data.put("origin", this.getOrigin());
 
       return JSONUtilities.encodeObject(data);
     }
