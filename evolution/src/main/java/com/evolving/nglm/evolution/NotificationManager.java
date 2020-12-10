@@ -884,6 +884,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         if(log.isDebugEnabled()) log.debug("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
+        incrementStats(dialogRequest);
         dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService());
         DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
         
@@ -912,7 +913,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                     dialogRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
                     dialogRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
                     dialogRequest.setMessageStatus(MessageStatus.RESCHEDULE);
-                    completeDeliveryRequest((DeliveryRequest)dialogRequest);
+                    completeDeliveryRequest((INotificationRequest) dialogRequest);
                   }      
               }
             else
@@ -936,54 +937,32 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
               dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
               dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
               dialogRequest.setReturnCodeDetails("NoTemplate" + dialogRequest.getTemplateID());
-              completeDeliveryRequest((DeliveryRequest)dialogRequest);
+              completeDeliveryRequest((INotificationRequest)dialogRequest);
             }
       }
 
   }
-
-  /*****************************************
-   *
-   * updateDeliveryRequest
-   *
-   *****************************************/
 
   public void updateDeliveryRequest(INotificationRequest deliveryRequest)
   {
     if(log.isDebugEnabled()) log.debug("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     updateRequest((DeliveryRequest)deliveryRequest);
   }
-  
-  public void updateDeliveryRequest(DeliveryRequest deliveryRequest)
-  {
-    if(log.isDebugEnabled()) log.debug("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
-    updateRequest(deliveryRequest);
-  }
-
-  /*****************************************
-   *
-   * completeDeliveryRequest
-   *
-   *****************************************/
 
   public void completeDeliveryRequest(INotificationRequest deliveryRequest)
   {
-    completeDeliveryRequest((DeliveryRequest)deliveryRequest);
+    if(log.isDebugEnabled()) log.debug("NotificationManager.completeDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
+    completeRequest((DeliveryRequest)deliveryRequest);
+    incrementStats((NotificationManagerRequest) deliveryRequest);
   }
-  
-  public void completeDeliveryRequest(DeliveryRequest deliveryRequest)
+
+  private void incrementStats(NotificationManagerRequest notificationManagerRequest)
   {
-    if(log.isDebugEnabled()) log.debug("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
-    completeRequest(deliveryRequest);
-    // new stats for generic only (old way notification manager use old way "NotificationStatistics", to clean everything of this once not used anymore)
-    if(deliveryRequest instanceof NotificationManagerRequest){
-      NotificationManagerRequest dr = (NotificationManagerRequest)deliveryRequest;
-      statsCounter.withLabel(StatsBuilders.LABEL.status.name(),deliveryRequest.getDeliveryStatus().getExternalRepresentation())
-              .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(dr.getChannelID()).getDisplay())
-              .withLabel(StatsBuilders.LABEL.module.name(), dr.getModule().name())
-              .withLabel(StatsBuilders.LABEL.priority.name(), dr.getDeliveryPriority().getExternalRepresentation())
-              .getStats().increment();
-    }
+    statsCounter.withLabel(StatsBuilders.LABEL.status.name(),notificationManagerRequest.getDeliveryStatus().getExternalRepresentation())
+            .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
+            .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
+            .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
+            .getStats().increment();
   }
 
   /*****************************************
@@ -1008,13 +987,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   protected void processCorrelatorUpdate(DeliveryRequest deliveryRequest, JSONObject correlatorUpdate)
   {
     int result = JSONUtilities.decodeInteger(correlatorUpdate, "result", true);
-    NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
+    INotificationRequest dialogRequest = (INotificationRequest) deliveryRequest;
     if (dialogRequest != null)
       {
         dialogRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
         dialogRequest.setDeliveryStatus(getDeliveryStatus(dialogRequest.getMessageStatus()));
         dialogRequest.setDeliveryDate(SystemTime.getCurrentTime());
-        completeRequest(dialogRequest);
+        completeDeliveryRequest(dialogRequest);
       }
   }
 
