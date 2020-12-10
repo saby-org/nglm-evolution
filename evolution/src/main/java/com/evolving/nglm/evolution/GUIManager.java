@@ -6498,6 +6498,7 @@ public class GUIManager
     JSONObject journeyScheduler = JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence);
     Integer lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     if (recurrence && lastCreatedOccurrenceNumber == null) lastCreatedOccurrenceNumber = 1;
+    boolean recurrenceActive = JSONUtilities.decodeBoolean(jsonRoot, "recurrenceActive", Boolean.FALSE);
     
     /*****************************************
     *
@@ -6594,6 +6595,7 @@ public class GUIManager
         campaignJSONRepresentation.put("occurrenceNumber", occurrenceNumber);
         if (journeyScheduler != null)campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
         campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
+        campaignJSONRepresentation.put("recurrenceActive", recurrenceActive);
 
         //
         //  campaignJSON
@@ -27638,6 +27640,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       if(log.isDebugEnabled()) log.debug("recurrentJourneys {}", recurrentJourneys);
       for (Journey recurrentJourney : recurrentJourneys)
         {
+          if (!recurrentJourney.getRecurrenceActive())
+            {
+              log.debug("recurrence is not active for {} - child will not be created", recurrentJourney.getGUIManagedObjectDisplay());
+              continue;
+            }
+          
           List<Date> journeyCreationDates = new ArrayList<Date>();
           JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
           int limitCount = journeyScheduler.getNumberOfOccurrences() - recurrentJourney.getLastCreatedOccurrenceNumber();
@@ -27761,6 +27769,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     {
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       String timeZone = Deployment.getBaseTimeZone();
+      Date rawEffectiveEntryPeriodEndDate = recurrentJourney.getRawEffectiveEntryPeriodEndDate();
       int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       for (Date startDate : journeyCreationDates)
@@ -27779,6 +27788,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           startDate = RLMDateUtils.setField(startDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.SECOND, timeZone), timeZone);
           
           //
+          //  prepare effectiveEntryPeriodEndDate
+          //
+          
+          Date recRawEffectiveEntryPeriodEndDate = null;
+          if (rawEffectiveEntryPeriodEndDate != null)
+            {
+              int daysBetweenEntryPeriodEndDateAndStartDate = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(rawEffectiveEntryPeriodEndDate, Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.addDays(RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone), daysBetweenEntryPeriodEndDateAndStartDate, timeZone);
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, timeZone), timeZone);
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.MINUTE, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.MINUTE, timeZone), timeZone);
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.SECOND, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.SECOND, timeZone), timeZone);
+            }
+          
+          //
           //  journeyJSON
           //
           
@@ -27792,6 +27815,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           journeyJSON.remove("recurrence");
           journeyJSON.remove("scheduler");
           journeyJSON.remove("status");
+          journeyJSON.remove("recurrenceActive");
           
           //
           //  add
@@ -27804,6 +27828,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
           journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
           journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(endDate));
+          journeyJSON.put("effectiveEntryPeriodEndDate", recurrentJourney.formatDateField(recRawEffectiveEntryPeriodEndDate));
           
           //
           //  create and activate
