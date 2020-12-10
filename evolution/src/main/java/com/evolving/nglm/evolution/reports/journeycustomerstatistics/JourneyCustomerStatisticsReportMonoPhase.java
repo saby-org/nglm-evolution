@@ -82,16 +82,26 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                 journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                 journeyInfo.put("journeyType", journey.getTargetingType());
                 journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("toNodeID")).getNodeName());
+                
+                // No need to do all that anymore, "status" is already correct in ES
+                /*
                 boolean statusNotified = (boolean) journeyStats.get("statusNotified");
                 boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
                 boolean statusConverted = (boolean) journeyStats.get("statusConverted");
                 Boolean statusTargetGroup = journeyStats.get("statusTargetGroup") == null ? null : (boolean) journeyStats.get("statusTargetGroup");
                 Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
                 Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
-
+                journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
+                 */
+                journeyInfo.put("customerStatus", journeyStats.get("status"));
+                
                 if (journeyStats.get("sample") != null)
                   {
                     journeyInfo.put("sample", journeyStats.get("sample"));
+                  }
+                else
+                  {
+                    journeyInfo.put("sample", "");
                   }
  //Required Changes in accordance to EVPRO-530          
 //                String specialExit=journeyStats.get("status") == null ? null : (String) journeyStats.get("status");
@@ -99,7 +109,6 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
 //                     )
 //                journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
 //                else 
-                journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
                 Date currentDate = SystemTime.getCurrentTime();
                 journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
                 journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));

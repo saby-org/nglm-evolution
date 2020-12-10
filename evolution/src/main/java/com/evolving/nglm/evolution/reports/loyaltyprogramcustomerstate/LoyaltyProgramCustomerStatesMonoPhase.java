@@ -24,7 +24,6 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportMonoPhase;
 
 public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
 {

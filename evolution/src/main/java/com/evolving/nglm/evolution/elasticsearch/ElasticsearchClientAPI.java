@@ -2,6 +2,7 @@ package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,6 +29,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
@@ -38,6 +40,8 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
@@ -72,10 +76,10 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   * that will also be used in "sink connectors"
   *
   *****************************************/
-  public static String JOURNEYSTATISTIC_STATUS_FIELD = "status";
-  public static String JOURNEYSTATISTIC_NODEID_FIELD = "nodeID";
-  public static String JOURNEYSTATISTIC_REWARD_FIELD = "rewards";
-  public static String JOURNEYSTATISTIC_SAMPLE_FIELD = "sample";
+  public static final String JOURNEYSTATISTIC_STATUS_FIELD = "status";
+  public static final String JOURNEYSTATISTIC_NODEID_FIELD = "nodeID";
+  public static final String JOURNEYSTATISTIC_REWARD_FIELD = "rewards";
+  public static final String JOURNEYSTATISTIC_SAMPLE_FIELD = "sample";
   public static String getJourneyIndex(String journeyID) {
     if(journeyID == null) {
       return "";
@@ -397,6 +401,180 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         log.debug(e.getLocalizedMessage());
         throw new ElasticsearchClientException(e.getLocalizedMessage());
       }
+  }
+
+  
+  
+  
+  public Map<String, Map<String, Long>> getMetricsPerStatus(String journeyID) throws ElasticsearchClientException
+  {
+    Map<String, Map<String, Long>> result = new LinkedHashMap<>();
+    /*
+     * "Entered"   -> { "rechargeAmountPrior" -> 123, "rechargeAmountDuring" -> 98, ...}
+     * "Converted" -> { "rechargeAmountPrior" -> 123, "rechargeAmountDuring" -> 98, ...}
+     * ....
+     */
+    try {
+      
+      /*
+ 
+      build a request containing all rewards, to journeystatistic-JJJJJJ
+  
+         "aggs": {
+            "status": {
+              "terms": {
+                "field": "status"
+              },
+              "aggs": {
+                "rechargeAmountPrior": {
+                  "sum": {
+                    "field": "rechargeAmountPrior"
+                  }
+                },
+                "rechargeAmountDuring": {
+                  "sum": {
+                    "field": "rechargeAmountDuring"
+                  }
+                },
+                "rechargeAmountPost": {
+                  "sum": {
+                    "field": "rechargeAmountPost"
+                  }
+                }
+              }
+            }
+          }
+        }
+
+      result :
+              "aggregations": {
+                  "status": {
+                      "buckets": [
+                          {
+                              "key": "Entered",
+                              "doc_count": 11,
+                              "rechargeAmountPrior": {
+                                  "value": 123
+                              },
+                              "rechargeAmountDuring": {
+                                  "value": 119
+                              },
+                              "rechargeAmountPost": {
+                                  "value": 49
+                              }
+                          },
+                          {
+                              "key": "Converted",
+                              "doc_count": 5,
+                              "rechargeAmountPrior": {
+                                  "value": 15
+                              },.....
+                          }
+                      ]
+                  }
+              }
+       */
+      
+      //
+      // Build Elasticsearch query
+      // 
+      String index = getJourneyIndex(journeyID);
+      AggregationBuilder aggregationStatus =
+          AggregationBuilders.terms(JOURNEYSTATISTIC_STATUS_FIELD)
+                             .field(JOURNEYSTATISTIC_STATUS_FIELD).size(MAX_BUCKETS);
+      String field = "";
+      for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+        field = journeyMetricDeclaration.getESFieldPrior();
+        aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders.sum(field).field(field));
+        field = journeyMetricDeclaration.getESFieldDuring();
+        aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders.sum(field).field(field));
+        field = journeyMetricDeclaration.getESFieldPost();
+        aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders.sum(field).field(field));
+      }
+
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(QueryBuilders.matchAllQuery())
+          .size(0)
+          .aggregation(aggregationStatus);
+
+      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
+      
+      //
+      // Send request & retrieve response synchronously (blocking call)
+      // 
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+
+      //
+      // Check search response
+      //
+      if (searchResponse.status() == RestStatus.NOT_FOUND) {
+        return result; // empty map
+      }
+
+      // TODO checking status seems useless because it raises exception
+      if (searchResponse.isTimedOut()
+          || searchResponse.getFailedShards() > 0) {
+            throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+      }
+
+      Aggregations aggregations = searchResponse.getAggregations();
+
+      if(aggregations == null) {
+        throw new ElasticsearchClientException("Aggregation is missing in search response.");
+      }
+
+      ParsedStringTerms buckets = aggregations.get(JOURNEYSTATISTIC_STATUS_FIELD);
+      if(buckets == null) {
+        throw new ElasticsearchClientException("Buckets are missing in search response.");
+      }
+
+      /*
+       * Fill result map
+       * "Entered"   -> { "rechargeAmountPrior" -> 123, "rechargeAmountDuring" -> 98, ...}
+       * "Converted" -> { "rechargeAmountPrior" -> 123, "rechargeAmountDuring" -> 98, ...}
+       * ....
+       */
+      for(Bucket bucket : buckets.getBuckets()) {
+        Aggregations subAgg = bucket.getAggregations();
+        Map<String, Long> result2 = new LinkedHashMap<>();
+        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+          extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPrior(),  subAgg, result2);
+          extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldDuring(), subAgg, result2);
+          extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPost(),   subAgg, result2);
+        }
+        result.put(bucket.getKeyAsString(), result2);
+      }
+      return result;
+    }
+    catch (ElasticsearchClientException e) { // forward
+      throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return result;
+      }
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (IOException e)
+      {
+        log.debug(e.getLocalizedMessage());
+        throw new ElasticsearchClientException(e.getLocalizedMessage());
+      }
+  }
+
+  private void extractFieldFromSubAgg(String field, Aggregations subAgg, Map<String, Long> result2)
+  {
+    ParsedSum sum = subAgg.get(field);
+    if (sum == null) {
+      log.error("Sum aggregation missing in search response for " + field);
+    } else {
+      result2.put(field, (long) sum.getValue());
+    }
   }
 
   public Map<String, Long> getByAbTesting(String journeyID) throws ElasticsearchClientException
