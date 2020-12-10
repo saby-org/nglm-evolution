@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -1767,7 +1768,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
       purchaseStatus.incrementNewRequestCounter();
       String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
     }
     
@@ -1784,7 +1785,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0);
+          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
         }else{
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
@@ -1809,7 +1810,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
       purchaseStatus.incrementNewRequestCounter();
       String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
     }
     
@@ -1826,7 +1827,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0);
+          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
         }else{
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
@@ -2797,7 +2798,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       String nodeName = subscriberEvaluationRequest.getJourneyNode().getNodeName();
-
+      
       /*****************************************
       *
       *  request
