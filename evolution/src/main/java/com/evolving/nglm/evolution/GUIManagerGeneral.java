@@ -686,6 +686,9 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
+    //this piece of code is only for developing new esQuery() method in EvalutionCriterion and will extract from json if object is comming for new method
+    //the call can be performed from json object to verify if results are the same
+    boolean useNewEsQueryMethod = JSONUtilities.decodeBoolean(jsonRoot,"useNewEsQueryMethod",false);
     if(targetingType != SegmentationDimensionTargetingType.ELIGIBILITY)
       {
         //
@@ -747,7 +750,14 @@ public class GUIManagerGeneral extends GUIManager
           BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
           for (EvaluationCriterion evaluationCriterion : segmentEligibility.getProfileCriteria())
           {
-            segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
+            if(useNewEsQueryMethod)
+            {
+              segmentQuery = segmentQuery.filter(evaluationCriterion.esQueryWithoutPainless());
+            }
+            else
+            {
+              segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
+            }
             processedQueries.add(segmentQuery);
           }
           query = query.filter(segmentQuery);
