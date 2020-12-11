@@ -124,7 +124,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // Rewards list update
     //
-    this.journeyRewardsList.update(this.journeyID, this.getDataESIndex());
+    this.journeyRewardsList.updateAndPush(this.journeyID, this.getDataESIndex(), datacubeWriter);
     if(this.journeyRewardsList.getRewards().isEmpty()) {
       log.info("No rewards found in JourneyID=" + this.journeyID + " journey statistics.");
       // It is useless to generate a rewards datacube if there is not any rewards.

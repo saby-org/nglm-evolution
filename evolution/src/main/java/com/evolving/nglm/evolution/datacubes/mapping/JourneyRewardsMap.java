@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 /**
@@ -126,8 +127,10 @@ public class JourneyRewardsMap
     }
   }
   
-  private void pushInMapping(String journeyID) throws ElasticsearchException, IOException {
+  private void pushInMapping(String journeyID, DatacubeWriter datacubeWriter) throws ElasticsearchException, IOException {
     String timestamp = RLMDateUtils.printTimestamp(SystemTime.getCurrentTime());
+    
+    List<UpdateRequest> list = new LinkedList<UpdateRequest>();
     for(String reward: this.rewards) {
       Map<String,Object> mappingRow = new HashMap<String,Object>();
       mappingRow.put("timestamp", timestamp);
@@ -140,13 +143,19 @@ public class JourneyRewardsMap
       request.doc(mappingRow);
       request.docAsUpsert(true);
       request.retryOnConflict(4);
-      
-      this.elasticsearch.update(request, RequestOptions.DEFAULT);
+
+      list.add(request);
     }
+    
+    datacubeWriter.getDatacubeBulkProcessor().add(list);
   }
   
   public void update(String journeyID, String journeyStatisticESindex) throws ElasticsearchException, IOException {
     this.updateFromElasticsearch(journeyStatisticESindex);
-    this.pushInMapping(journeyID);
+  }
+  
+  public void updateAndPush(String journeyID, String journeyStatisticESindex, DatacubeWriter datacubeWriter) throws ElasticsearchException, IOException {
+    this.updateFromElasticsearch(journeyStatisticESindex);
+    this.pushInMapping(journeyID, datacubeWriter);
   }
 }
