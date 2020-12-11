@@ -2438,10 +2438,10 @@ public class Journey extends GUIManagedObject implements StockableItem
 
   public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters) throws GUIManagerException
   {
-    return processContextVariableNodes(contextVariableNodes, journeyParameters, null);
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, new JSONArray());
   }
 
-  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType) throws GUIManagerException
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType, JSONArray targetFileVariables) throws GUIManagerException
   {
     /*****************************************
     *
@@ -2452,12 +2452,23 @@ public class Journey extends GUIManagedObject implements StockableItem
     Map<ContextVariable,Pair<CriterionContext,CriterionContext>> contextVariables = new IdentityHashMap<ContextVariable,Pair<CriterionContext,CriterionContext>>();
     for (GUINode guiNode : contextVariableNodes.values())
       {
+        log.info("RAJ K guiNode {}", guiNode.getNodeName());
         for (ContextVariable contextVariable : guiNode.getContextVariables())
           {
             if (expectedDataType == null || (contextVariable.getType().equals(expectedDataType)))
               {
                 contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
               }
+          }
+        
+        //
+        // targetFileVariables 
+        //
+        
+        for (int i=0; i < targetFileVariables.size(); i++)
+          {
+            JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
+            log.info("RAJ K targetFileVariableJSON {}", targetFileVariableJSON);
           }
       }
 
@@ -3209,6 +3220,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           for (int i=0; i<jsonArray.size(); i++)
             {
               JSONObject contextVariableJSON = (JSONObject) jsonArray.get(i);
+              log.info("RAJ K contextVariableJSON {}", contextVariableJSON);
               contextVariables.add(new ContextVariable(contextVariableJSON));
             }
         }
