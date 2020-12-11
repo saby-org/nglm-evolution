@@ -872,7 +872,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     Integer occurrenceNumber = (schema.field("occurrenceNumber") != null) ? valueStruct.getInt32("occurrenceNumber") : null;
     JourneyScheduler scheduler = (schema.field("scheduler")!= null) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(),valueStruct.get("scheduler"))) : null;
     Integer lastCreatedOccurrenceNumber = (schema.field("lastCreatedOccurrenceNumber")!= null) ? valueStruct.getInt32("lastCreatedOccurrenceNumber") : null;
-    Integer priority = (schema.field("priority")!= null) ? valueStruct.getInt32("priority") : null;
+    Integer priority = (schema.field("priority")!= null) ? valueStruct.getInt32("priority") : Integer.MAX_VALUE; // for legacy campaigns, very low priority
     /*****************************************
     *
     *  validate
