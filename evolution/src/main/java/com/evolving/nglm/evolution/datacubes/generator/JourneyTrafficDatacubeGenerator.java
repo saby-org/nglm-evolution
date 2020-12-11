@@ -12,6 +12,9 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
@@ -38,6 +41,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   private JourneysMap journeysMap;
   
   private String journeyID;
+  private Date publishDate;
 
   /*****************************************
   *
@@ -94,6 +98,31 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
     this.segmentationDimensionList.update();
     this.journeysMap.update();
     
+    //
+    // Should we keep pushing datacube for this journey ?
+    //
+    Journey journey = this.journeysMap.get(this.journeyID);
+    if(journey == null) {
+      log.error("Error, unable to retrieve info for JourneyID=" + this.journeyID);
+      return false;
+    }
+    // Retrieve the number of day we should wait after EndDate to be sure that every JourneyMetrics is pushed.
+    int maximumPostPeriod = 0;
+    for(JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+      if(maximumPostPeriod < journeyMetricDeclaration.getPostPeriodDays()) {
+        maximumPostPeriod = journeyMetricDeclaration.getPostPeriodDays();
+      }
+    }
+    maximumPostPeriod = maximumPostPeriod + 1; // Add 24 hours to be sure (due to truncation, see populateMetricsPost)
+    Date stopDate = RLMDateUtils.addDays(journey.getEffectiveEndDate(), maximumPostPeriod, Deployment.getBaseTimeZone());
+    if(publishDate.after(stopDate)) {
+      log.info("JourneyID=" + this.journeyID + " has ended more than " + maximumPostPeriod + " days ago. No data will be published anymore.");
+      return false;
+    }
+    
+    //
+    // Segments
+    //
     this.filterFields = new ArrayList<String>(this.basicFilterFields);
     for(String dimensionID: segmentationDimensionList.keySet()) {
       this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
@@ -150,6 +179,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   public void definitive(String journeyID, long journeyStartDateTime, Date publishDate)
   {
     this.journeyID = journeyID;
+    this.publishDate = publishDate;
     
     String timestamp = RLMDateUtils.printTimestamp(publishDate);
     long targetPeriod = publishDate.getTime() - journeyStartDateTime;

@@ -14,8 +14,12 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.Pa
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
+import com.evolving.nglm.evolution.MetricHistory;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
@@ -41,6 +45,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   private JourneyRewardsMap journeyRewardsList;
   
   private String journeyID;
+  private Date publishDate;
 
   /*****************************************
   *
@@ -93,8 +98,33 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     
     this.segmentationDimensionList.update();
     this.journeysMap.update();
-    this.journeyRewardsList.update(this.journeyID, this.getDataESIndex());
     
+    //
+    // Should we keep pushing datacube for this journey ?
+    //
+    Journey journey = this.journeysMap.get(this.journeyID);
+    if(journey == null) {
+      log.error("Error, unable to retrieve info for JourneyID=" + this.journeyID);
+      return false;
+    }
+    // Retrieve the number of day we should wait after EndDate to be sure that every JourneyMetrics is pushed.
+    int maximumPostPeriod = 0;
+    for(JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+      if(maximumPostPeriod < journeyMetricDeclaration.getPostPeriodDays()) {
+        maximumPostPeriod = journeyMetricDeclaration.getPostPeriodDays();
+      }
+    }
+    maximumPostPeriod = maximumPostPeriod + 1; // Add 24 hours to be sure (due to truncation, see populateMetricsPost)
+    Date stopDate = RLMDateUtils.addDays(journey.getEffectiveEndDate(), maximumPostPeriod, Deployment.getBaseTimeZone());
+    if(publishDate.after(stopDate)) {
+      log.info("JourneyID=" + this.journeyID + " has ended more than " + maximumPostPeriod + " days ago. No data will be published anymore.");
+      return false;
+    }
+    
+    //
+    // Rewards list update
+    //
+    this.journeyRewardsList.update(this.journeyID, this.getDataESIndex());
     if(this.journeyRewardsList.getRewards().isEmpty()) {
       log.info("No rewards found in JourneyID=" + this.journeyID + " journey statistics.");
       // It is useless to generate a rewards datacube if there is not any rewards.
@@ -185,6 +215,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   public void definitive(String journeyID, long journeyStartDateTime, Date publishDate)
   {
     this.journeyID = journeyID;
+    this.publishDate = publishDate;
 
     String timestamp = RLMDateUtils.printTimestamp(publishDate);
     long targetPeriod = publishDate.getTime() - journeyStartDateTime;
