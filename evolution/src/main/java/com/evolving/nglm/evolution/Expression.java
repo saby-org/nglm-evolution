@@ -1542,7 +1542,7 @@ public abstract class Expression
       
       switch (arg1.getType())
         {
-          case StringExpression: // DaysUntil('2020-09-20')
+          case StringExpression: // firstWord('this is a sentence')
             break;
 
           default:
@@ -2209,7 +2209,7 @@ public abstract class Expression
           case DaysSinceFunction:
           case MonthsSinceFunction:
             if (expressionNullExceptionOccoured) throw expressionNullException;
-            if (arg1Value instanceof String)
+            if (arg1Value instanceof String) // If param is a String, then it is a constant, otherwise it is a Date (to be evaluated)
               {
                 result = preevaluatedResult;  // DaysUntil('2020-09-20')
               }
@@ -2223,14 +2223,7 @@ public abstract class Expression
           case SecondWordFunction:
           case ThirdWordFunction:
             if (expressionNullExceptionOccoured) throw expressionNullException;
-            if (arg1Value instanceof String)
-              {
-                result = preevaluatedResult;  // firstWord('this is a sentence')
-              }
-            else
-              {
-                result = evaluateWordFunction((String) arg1Value, function);
-              }
+            result = evaluateWordFunction((String) arg1Value, function);
             break;
             
           default:
@@ -2749,7 +2742,7 @@ public abstract class Expression
     private String evaluateWordFunction(String phrase, ExpressionFunction function)
     {
       String res = "";
-      String words[] = phrase.split("\\s"); // A whitespace character: [ \t\n\x0B\f\r]
+      String words[] = phrase.trim().split("\\s+"); // A whitespace character: [ \t\n\x0B\f\r]
       switch (function)
       {
         case FirstWordFunction:
