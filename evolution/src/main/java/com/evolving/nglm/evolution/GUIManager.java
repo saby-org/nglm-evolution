@@ -79,6 +79,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -4746,7 +4747,20 @@ public class GUIManager
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
     boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
     String nodeTypeParameterID = JSONUtilities.decodeString(jsonRoot, "nodeTypeParameterID", false);
-    JSONArray targetFileVariables = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
+    
+    String RAJKString = "{\"variables\":[{\"dataType\":\"string\",\"name\":\"name\"},{\"dataType\":\"integer\",\"name\":\"years\"},{\"dataType\":\"string\",\"name\":\"gift\"},{\"dataType\":\"double\",\"name\":\"doubleval\"},{\"dataType\":\"date\",\"name\":\"dateval\"},{\"dataType\":\"time\",\"name\":\"timeval\"}]}";
+    JSONArray RAJKJSONAR = new JSONArray();
+    try
+      {
+        JSONObject RAJKJSON = (JSONObject) new JSONParser().parse(RAJKString);
+        RAJKJSONAR = JSONUtilities.decodeJSONArray(RAJKJSON, "variables", true);
+      } 
+    catch (ParseException e)
+      {
+        e.printStackTrace();
+      }
+    
+    JSONArray targetFileVariables = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", RAJKJSONAR);
     
     /*****************************************
     *
