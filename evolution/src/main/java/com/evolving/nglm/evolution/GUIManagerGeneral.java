@@ -688,7 +688,7 @@ public class GUIManagerGeneral extends GUIManager
     SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
     //this piece of code is only for developing new esQuery() method in EvalutionCriterion and will extract from json if object is comming for new method
     //the call can be performed from json object to verify if results are the same
-    boolean useNewEsQueryMethod = JSONUtilities.decodeBoolean(jsonRoot,"useNewEsQueryMethod",false);
+    boolean useNewEsQueryMethod = JSONUtilities.decodeBoolean(jsonRoot,"useNewEsQueryMethod",Boolean.FALSE);
     if(targetingType != SegmentationDimensionTargetingType.ELIGIBILITY)
       {
         //
