@@ -23313,12 +23313,22 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 *
                 *****************************************/
 
-                GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
-                GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
-                
-                if (existingVoucher != null) {
-                  voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService);
-                }
+                GUIManagedObject existingVoucher = null;
+                GUIManagedObject existingProduct = null;
+
+                if (existingVoucherID != null)
+                  {
+                    existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+                  }
+                if (existingproductID != null)
+                  {
+                    existingProduct = productService.getStoredProduct(existingproductID);
+                  }
+
+                if (existingVoucher != null)
+                  {
+                    voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService);
+                  }
                 
 
                 Product product = new Product(productJSON, epoch, existingProduct, deliverableService,
@@ -23386,8 +23396,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                  *
                  *****************************************/
 
-                GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
-                GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
+                GUIManagedObject existingVoucher = null;
+                GUIManagedObject existingProduct = null;
+
+                if (existingVoucherID != null)
+                  {
+                    existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+                  }
+                if (existingproductID != null)
+                  {
+                    existingProduct = productService.getStoredProduct(existingproductID);
+                  }
                 if (existingProduct != null) {
                   productService.removeProduct(existingproductID, userID);
                 }
@@ -23573,12 +23592,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     String productID = product.getProductID();
                     String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
-                    if (activeSupplier.equals(supplierID) && offerName.equals(productName))
+                    if (activeSupplier.equals(supplierID) && offerName.equals(productName) && offer.getSimpleOffer())
                       {
                         // products.add(product);
                         offers.add(offer);
                       }
-                    else if (offerName.equals(productName) && !(activeSupplier.equals(supplierID)))
+                    else if (offerName.equals(productName) && offer.getSimpleOffer() && !(activeSupplier.equals(supplierID)))
                       {
 
                         if (log.isDebugEnabled())
@@ -23596,12 +23615,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     String voucherID = voucher.getVoucherID();
                     String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                    if (activeSupplier.equals(supplierID) && offerName.equals(voucherName))
+                    if (activeSupplier.equals(supplierID) && offerName.equals(voucherName) && offer.getSimpleOffer())
                       {
                         vouchers.add(voucher);
                         offers.add(offer);
                       }
-                    else if (offerName.equals(voucherName) && !(activeSupplier.equals(supplierID)))
+                    else if (offerName.equals(voucherName) && offer.getSimpleOffer() && !(activeSupplier.equals(supplierID)))
                       {
 
                         if (log.isDebugEnabled())
@@ -23731,7 +23750,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               {
                 String productID = product.getProductID();
                 String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
-                if (activeSupplier.equals(supplierID) && offerName.equals(productName))
+                if (activeSupplier.equals(supplierID) && offerName.equals(productName) && offer.getSimpleOffer() )
                   {
                     String productId = product.getProductID();
                     productService.removeProduct(productId, userID);
@@ -23742,7 +23761,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     response.put("responseCode", responseCode);
                   }
 
-                else if (offerName.equals(productName) && !(activeSupplier.equals(supplierID)))
+                else if (offerName.equals(productName) && offer.getSimpleOffer() && !(activeSupplier.equals(supplierID)))
 
                   {
 
@@ -23765,7 +23784,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 String voucherID = voucher.getVoucherID();
                 String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                if (activeSupplier.equals(supplierID) && offerName.equals(voucherName))
+                if (activeSupplier.equals(supplierID) && offerName.equals(voucherName) && offer.getSimpleOffer())
                   {
                     String voucherId = voucher.getVoucherID();
                     voucherService.removeVoucher(voucherId, userID, uploadedFileService);
@@ -23776,7 +23795,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     response.put("responseCode", responseCode);
                   }
 
-                else if (offerName.equals(voucherName) && !(activeSupplier.equals(supplierID)))
+                else if (offerName.equals(voucherName) && offer.getSimpleOffer() && !(activeSupplier.equals(supplierID)))
 
                   {
 
