@@ -55,6 +55,9 @@ public class ContextVariable
     MonthsUntil("monthsUntil"),
     DaysSince("daysSince"),
     MonthsSince("monthsSince"),
+    FirstWord("firstWord"),
+    SecondWord("secondWord"),
+    ThirdWord("thirdWord"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private Assignment(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -429,6 +432,9 @@ public class ContextVariable
                   case MonthsUntil:
                   case DaysSince:
                   case MonthsSince:
+                  case FirstWord:
+                  case SecondWord:
+                  case ThirdWord:
                     break;
                   default:
                     // NO-OP

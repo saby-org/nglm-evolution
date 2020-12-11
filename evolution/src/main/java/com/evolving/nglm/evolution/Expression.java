@@ -167,6 +167,9 @@ public abstract class Expression
     MonthsUntilFunction("monthsUntil"),
     DaysSinceFunction("daysSince"),
     MonthsSinceFunction("monthsSince"),
+    FirstWordFunction("firstWord"),
+    SecondWordFunction("secondWord"),
+    ThirdWordFunction("thirdWord"),
     UnknownFunction("(unknown)");
     private String functionName;
     private ExpressionFunction(String functionName) { this.functionName = functionName; }
@@ -1261,6 +1264,12 @@ public abstract class Expression
           case MonthsSinceFunction:
             typeCheckUntilFunction(function);
             break;
+
+          case FirstWordFunction:
+          case SecondWordFunction:
+          case ThirdWordFunction:
+            typeCheckWordFunction(function);
+            break;
             
           default:
             throw new ExpressionTypeCheckException("type exception");
@@ -1477,6 +1486,7 @@ public abstract class Expression
               case MonthsSinceFunction:
                 preevaluatedResult = evaluateUntilFunction(arg1_value, function);
                 break;
+
               default:
                 throw new ExpressionTypeCheckException("type exception");
             }
@@ -1495,6 +1505,93 @@ public abstract class Expression
       ****************************************/
       
       setType(ExpressionDataType.IntegerExpression);
+
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
+    }
+
+    private void typeCheckWordFunction(ExpressionFunction function)
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 1) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+
+      //
+      //  validate arg1
+      //
+      
+      switch (arg1.getType())
+        {
+          case StringExpression: // firstWord('this is a sentence')
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+      if (arg1.isConstant())
+        {
+          String arg1_value = null;
+          Object res = arg1.evaluate(null, TimeUnit.Unknown);
+          if (res instanceof String)
+            {
+              // firstWord('this is a sentence')
+              arg1_value = (String) res;
+            }
+          
+          try
+          {
+            switch (function)
+            {
+              case FirstWordFunction:
+              case SecondWordFunction:
+              case ThirdWordFunction:
+                preevaluatedResult = evaluateWordFunction(arg1_value, function);
+                break;
+
+              default:
+                throw new ExpressionTypeCheckException("type exception");
+            }
+
+          }
+          catch (ExpressionEvaluationException e)
+          {
+            throw new ExpressionTypeCheckException("type exception");
+          }
+        }
+
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+      
+      setType(ExpressionDataType.StringExpression);
 
       /*****************************************
       *
@@ -2112,7 +2209,7 @@ public abstract class Expression
           case DaysSinceFunction:
           case MonthsSinceFunction:
             if (expressionNullExceptionOccoured) throw expressionNullException;
-            if (arg1Value instanceof String)
+            if (arg1Value instanceof String) // If param is a String, then it is a constant, otherwise it is a Date (to be evaluated)
               {
                 result = preevaluatedResult;  // DaysUntil('2020-09-20')
               }
@@ -2120,6 +2217,13 @@ public abstract class Expression
               {
                 result = evaluateUntilFunction((Date) arg1Value, function);    
               }
+            break;
+
+          case FirstWordFunction:
+          case SecondWordFunction:
+          case ThirdWordFunction:
+            if (expressionNullExceptionOccoured) throw expressionNullException;
+            result = evaluateWordFunction((String) arg1Value, function);
             break;
             
           default:
@@ -2633,6 +2737,39 @@ public abstract class Expression
           throw new ExpressionEvaluationException();
       }
       return res;
+    }
+
+    private String evaluateWordFunction(String phrase, ExpressionFunction function)
+    {
+      String res = "";
+      String words[] = phrase.trim().split("\\s+"); // A whitespace character: [ \t\n\x0B\f\r]
+      switch (function)
+      {
+        case FirstWordFunction:
+          if (words.length < 1) {
+            log.info("Not enough words in " + phrase + " for " + function.getFunctionName());
+            throw new ExpressionEvaluationException();
+          } else
+            res = words[0];
+          break;
+        case SecondWordFunction:
+          if (words.length < 2) {
+            log.info("Not enough words in " + phrase + " for " + function.getFunctionName());
+            throw new ExpressionEvaluationException();
+          } else
+            res = words[1];
+          break;
+        case ThirdWordFunction:
+          if (words.length < 3) {
+            log.info("Not enough words in " + phrase + " for " + function.getFunctionName());
+            throw new ExpressionEvaluationException();
+          } else
+            res = words[2];
+          break;
+        default:
+          throw new ExpressionEvaluationException();
+      }
+      return res.trim();
     }
 
     /*****************************************
