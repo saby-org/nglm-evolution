@@ -4502,6 +4502,8 @@ public class GUIManagerGeneral extends GUIManager
                     InputStream streams = fis.openStream();
                     String jsonAsString = Streams.asString(streams, "UTF-8");
                     jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
+                    String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
+                    if (!UploadedFileService.FILE_WITH_VARIABLES_APPLICATION_ID.equals(applicationID)) throw new GUIManagerException("invalid applicationID", applicationID);
                     userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
                     if(!jsonRoot.containsKey("id"))
                       {
@@ -4698,6 +4700,10 @@ public class GUIManagerGeneral extends GUIManager
             if(fullDetails && applicationID.equals(UploadedFileService.basemanagementApplicationID))
               {
                 jsonObject.put("segmentCounts", ((UploadedFile)uploaded).getMetaData().get("segmentCounts"));
+              }
+            else if (fullDetails && applicationID.equals(UploadedFileService.FILE_WITH_VARIABLES_APPLICATION_ID))
+              {
+                jsonObject.put("variables", JSONUtilities.decodeJSONArray(((UploadedFile)uploaded).getMetaData().get("variables"), "fileVariables", new JSONArray()));
               }
             uploadedFiles.add(jsonObject);
           }
