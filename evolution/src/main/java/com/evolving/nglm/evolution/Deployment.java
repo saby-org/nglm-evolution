@@ -2599,8 +2599,7 @@ public class Deployment
           //TODO remove later, forcing conf cleaning
           if(Deployment.getDeliveryManagers().get("notificationmanager")!=null)
             {
-              log.error("notificationmanager deliveryManager declaration is not possible anymore, remove it");
-              throw new ServerRuntimeException("old conf for generic channel");
+              log.warn("notificationmanager deliveryManager declaration is not possible anymore, clean it once you don't have any more in history");
             }
           // auto generated notif ones
           for (CommunicationChannel cc:getCommunicationChannels().values())
