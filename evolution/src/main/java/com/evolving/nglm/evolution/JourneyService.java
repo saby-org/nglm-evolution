@@ -103,6 +103,20 @@ public class JourneyService extends GUIService
   @Override protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject result = super.getJSONRepresentation(guiManagedObject);
+    boolean recurrence = JSONUtilities.decodeBoolean(result, "recurrence", Boolean.FALSE);
+    Integer lastCompletedOccurrenceNumber =  null;
+    if (recurrence)
+      {
+        Collection<Journey> allRecs = getAllRecurrentJourneysByID(guiManagedObject.getGUIManagedObjectID(), true);
+        
+        //
+        //  filter completed
+        //
+        
+        allRecs = allRecs.stream().filter(journey -> JourneyStatus.Complete == getJourneyStatus(journey)).collect(Collectors.toList());
+        lastCompletedOccurrenceNumber =  allRecs.size();
+      }
+    result.put("lastCompletedOccurrenceNumber", lastCompletedOccurrenceNumber);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
     return result;
   }
@@ -124,20 +138,14 @@ public class JourneyService extends GUIService
     boolean recurrence = JSONUtilities.decodeBoolean(fullJSON, "recurrence", Boolean.FALSE);
     Integer occurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "occurrenceNumber", recurrence);
     JSONObject scheduler = JSONUtilities.decodeJSONObject(fullJSON, "scheduler", recurrence);
-    Integer numberOfOccurrences =  null;
-    Integer lastCompletedOccurrenceNumber =  null;
-    if (recurrence)
-      {
-        Collection<Journey> allRecs = getAllRecurrentJourneysByID(guiManagedObject.getGUIManagedObjectID(), true);
-        
-        //
-        //  filter completed
-        //
-        
-        allRecs = allRecs.stream().filter(journey -> JourneyStatus.Complete == getJourneyStatus(journey)).collect(Collectors.toList());
-        numberOfOccurrences =  JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
-        lastCompletedOccurrenceNumber =  allRecs.size();
-      }
+    Integer numberOfOccurrences = null;
+    if (recurrence) numberOfOccurrences = JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
+    Integer lastCompletedOccurrenceNumber = JSONUtilities.decodeInteger(fullJSON, "lastCompletedOccurrenceNumber", false);
+    boolean recurrenceActive = JSONUtilities.decodeBoolean(fullJSON, "recurrenceActive", Boolean.FALSE);
+    
+    //
+    //  result
+    //
     
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
@@ -145,6 +153,7 @@ public class JourneyService extends GUIService
     result.put("occurrenceNumber", occurrenceNumber);
     result.put("numberOfOccurrences", numberOfOccurrences);
     result.put("lastCompletedOccurrenceNumber", lastCompletedOccurrenceNumber);
+    result.put("recurrenceActive", recurrenceActive);
     
     if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign))
       {
@@ -198,27 +207,27 @@ public class JourneyService extends GUIService
       }
     return subJourneys;
   }
-  public Collection<Journey> getActiveAndCompletedRecurrentJourneys(Date now)
+  public Collection<Journey> getAcceptedAndCompletedRecurrentJourneys(Date now)
   {
     Collection<Journey> result = new ArrayList<Journey>();
     for (GUIManagedObject uncheckedJourney : getStoredJourneys())
       {
         if (uncheckedJourney.getAccepted())
           {
-            boolean activeAndCompleted = true;
+            boolean acceptedAndCompleted = true;
             Journey journey = (Journey) uncheckedJourney;
             
             //
             //  recurrent
             //
             
-            activeAndCompleted = activeAndCompleted && journey.getRecurrence();
+            acceptedAndCompleted = acceptedAndCompleted && journey.getRecurrence();
             
             //
-            //  active / completed
+            //  completed
             //
             
-            activeAndCompleted = activeAndCompleted && journey.getActive() && journey.getEffectiveStartDate().compareTo(now) <= 0;
+            acceptedAndCompleted = acceptedAndCompleted && journey.getEffectiveStartDate().compareTo(now) <= 0;
             
             
             //
@@ -227,14 +236,14 @@ public class JourneyService extends GUIService
             
             if (!Deployment.getAutoApproveGuiObjects())
               {
-                activeAndCompleted = activeAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
+                acceptedAndCompleted = acceptedAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
               }
             
             //
             //  add
             //
             
-            if (activeAndCompleted) result.add(journey);
+            if (acceptedAndCompleted) result.add(journey);
           }
       }
     return result;
