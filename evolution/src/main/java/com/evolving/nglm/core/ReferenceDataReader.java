@@ -28,33 +28,8 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
 {
-  /*****************************************
-  *
-  *  configuration
-  *
-  *****************************************/
-
-  //
-  //  logger
-  //
 
   private static final Logger log = LoggerFactory.getLogger(ReferenceDataReader.class);
-
-  /*****************************************
-  *
-  *  data
-  *
-  *****************************************/
-
-  //
-  //  singleton
-  //
-
-  protected static volatile Map<String, ReferenceDataReader> readers = new HashMap<>();
-
-  //
-  //  data
-  //
 
   private volatile boolean stopRequested = false;
   private String readerName;
@@ -66,12 +41,8 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
   private UnpackValue<V> unpackValue;
   protected ConcurrentMap<K,V> referenceData = new ConcurrentHashMap<>();
 
-  /*****************************************
-  *
-  *  startReader
-  *
-  *****************************************/
-
+  // singletons
+  protected static final Map<String, ReferenceDataReader> readers = new HashMap<>();
   public static <K, V extends ReferenceDataValue<K>> ReferenceDataReader<K,V> startReader(String readerName, String bootstrapServers, String referenceDataTopic, UnpackValue<V> unpackValue) {
     ReferenceDataReader toRet = readers.get(readerName);
     if(toRet==null){

@@ -6,28 +6,31 @@
 
 package com.evolving.nglm.core;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> extends ReferenceDataReader<String,V>
 {
-  /*****************************************
-  *
-  *  data
-  *
-  *****************************************/
 
   private volatile TrieNode trie;
 
-  /*****************************************
-  *
-  *  startReader
-  *
-  *****************************************/
-
+  // singletons
+  protected static final Map<String, PrefixReferenceDataReader> prefixReaders = new HashMap<>();
   public static <V extends ReferenceDataValue<String>> PrefixReferenceDataReader<V> startPrefixReader(String readerName, String bootstrapServers, String referenceDataTopic, UnpackValue<V> unpackValue) {
-    return (PrefixReferenceDataReader<V>)startReader(readerName,bootstrapServers,referenceDataTopic,unpackValue);
+    PrefixReferenceDataReader toRet = prefixReaders.get(readerName);
+    if(toRet==null){
+      synchronized (prefixReaders){
+        toRet = prefixReaders.get(readerName);
+        if(toRet==null){
+          toRet=new PrefixReferenceDataReader<>(readerName, bootstrapServers, referenceDataTopic, unpackValue);
+          toRet.start();
+          prefixReaders.put(readerName, toRet);
+        }
+      }
+    }
+    return toRet;
   }
 
   /*****************************************
@@ -36,9 +39,9 @@ public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> ext
   *
   *****************************************/
 
-  private PrefixReferenceDataReader(String readerName, String readerKey, String bootstrapServers, String referenceDataTopic, UnpackValue<V> unpackValue)
+  private PrefixReferenceDataReader(String readerName, String bootstrapServers, String referenceDataTopic, UnpackValue<V> unpackValue)
   {
-    super(readerName, readerKey, bootstrapServers, referenceDataTopic, unpackValue);
+    super(readerName, bootstrapServers, referenceDataTopic, unpackValue);
     this.trie = new TrieNode("");
   }
 
