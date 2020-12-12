@@ -353,6 +353,7 @@ public class GUIService
 
   protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID, boolean includeArchived)
   {
+    if(guiManagedObjectID==null) return null;
     GUIManagedObject result = storedGUIManagedObjects.get(guiManagedObjectID);
     result = (result != null && (includeArchived || ! result.getDeleted())) ? result : null;
       return result;
@@ -433,6 +434,7 @@ public class GUIService
 
   protected GUIManagedObject getActiveGUIManagedObject(String guiManagedObjectID, Date date)
   {
+    if(guiManagedObjectID==null) return null;
     GUIManagedObject guiManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
     if (isActiveGUIManagedObject(guiManagedObject, date))
       return guiManagedObject;
@@ -442,6 +444,7 @@ public class GUIService
 
   protected GUIManagedObject getInterruptedGUIManagedObject(String guiManagedObjectID, Date date)
   {
+    if(guiManagedObjectID==null) return null;
     GUIManagedObject guiManagedObject = interruptedGUIManagedObjects.get(guiManagedObjectID);
     if (isInterruptedGUIManagedObject(guiManagedObject, date))
       return guiManagedObject;
@@ -527,6 +530,9 @@ public class GUIService
 
   protected void removeGUIManagedObject(String guiManagedObjectID, Date date, String userID)
   {
+
+    if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID");
+
     //
     //  created/updated date
     //
@@ -571,6 +577,7 @@ public class GUIService
 
   protected void processGUIManagedObject(String guiManagedObjectID, GUIManagedObject guiManagedObject, Date date)
   {
+    if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID");
     synchronized (this)
       {
         //
