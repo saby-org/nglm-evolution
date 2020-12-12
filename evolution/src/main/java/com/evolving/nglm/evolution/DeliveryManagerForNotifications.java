@@ -28,7 +28,10 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
     UNDELIVERABLE(703, DeliveryStatus.Failed), 
     INVALID(704, DeliveryStatus.Failed), 
     QUEUE_FULL(705, DeliveryStatus.Failed), 
-    RESCHEDULE(709, DeliveryStatus.Reschedule), 
+    RESCHEDULE(709, DeliveryStatus.Reschedule),
+    BLOCKED_BY_CONTACT_POLICY(710, DeliveryStatus.Failed),
+    CONTACT_POLICY_EVALUATION_ERROR(711, DeliveryStatus.Failed),
+    CUSTOMER_NOT_ELIGIBLE(51, DeliveryStatus.Failed),//returned  by message gateway where eligibility evaluation happened there as well, outside evolution
     THROTTLING(23, DeliveryStatus.Failed), 
     UNKNOWN(-1, DeliveryStatus.Unknown);
    
