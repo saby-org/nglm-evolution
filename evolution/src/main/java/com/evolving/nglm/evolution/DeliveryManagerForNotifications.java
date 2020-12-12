@@ -19,20 +19,20 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
 
   public enum MessageStatus
   {
-    PENDING(708, DeliveryStatus.Pending), 
-    NO_CUSTOMER_LANGUAGE(701, DeliveryStatus.Failed), 
-    NO_CUSTOMER_CHANNEL(702, DeliveryStatus.Failed), 
-    DELIVERED(0, DeliveryStatus.Delivered), 
-    EXPIRED(707, DeliveryStatus.Failed), 
-    ERROR(24, DeliveryStatus.Failed), 
-    UNDELIVERABLE(703, DeliveryStatus.Failed), 
-    INVALID(704, DeliveryStatus.Failed), 
-    QUEUE_FULL(705, DeliveryStatus.Failed), 
+    DELIVERED(0, DeliveryStatus.Delivered),
+    THROTTLING(23, DeliveryStatus.Failed),
+    ERROR(24, DeliveryStatus.Failed),
+    CUSTOMER_NOT_ELIGIBLE(51, DeliveryStatus.Failed),//returned  by message gateway where eligibility evaluation happened there as well, outside evolution
+    NO_CUSTOMER_LANGUAGE(701, DeliveryStatus.Failed),
+    NO_CUSTOMER_CHANNEL(702, DeliveryStatus.Failed),
+    UNDELIVERABLE(703, DeliveryStatus.Failed),
+    INVALID(704, DeliveryStatus.Failed),
+    QUEUE_FULL(705, DeliveryStatus.Failed),
+    EXPIRED(707, DeliveryStatus.Failed),
+    PENDING(708, DeliveryStatus.Pending),
     RESCHEDULE(709, DeliveryStatus.Reschedule),
     BLOCKED_BY_CONTACT_POLICY(710, DeliveryStatus.Failed),
     CONTACT_POLICY_EVALUATION_ERROR(711, DeliveryStatus.Failed),
-    CUSTOMER_NOT_ELIGIBLE(51, DeliveryStatus.Failed),//returned  by message gateway where eligibility evaluation happened there as well, outside evolution
-    THROTTLING(23, DeliveryStatus.Failed), 
     UNKNOWN(-1, DeliveryStatus.Unknown);
    
     private Integer returncode;
