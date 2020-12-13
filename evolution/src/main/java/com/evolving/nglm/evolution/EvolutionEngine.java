@@ -5166,7 +5166,27 @@ public class EvolutionEngine
                   }
               }
           }
-        
+
+        /*****************************************
+        *
+        *   get reward information
+        *
+        *****************************************/
+
+        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
+          {
+            DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
+            if(deliveryResponse.getOriginatingSubscriberID() == null || deliveryResponse.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN))
+              {
+                // case where the response is to the parent into the relationship, so the history must be taken in account...
+                // this history is not taken in account for a response to the original subscriber as this response is only here to unlock the Journey
+                if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
+                  {
+                    journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
+                  }
+              }
+          }
+
         /*****************************************
         *
         *  transition(s)
@@ -5237,6 +5257,7 @@ public class EvolutionEngine
             *
             *****************************************/
 
+            //TODO: should we create JourneyStatistics if reward history added previously (journeyState.getJourneyHistory().addRewardInformation) but no node transition happens ?
             if (firedLink == null)
               {
                 for (Date nextEvaluationDate : nextEvaluationDates)
