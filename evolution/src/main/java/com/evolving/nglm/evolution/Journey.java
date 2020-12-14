@@ -164,6 +164,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     Target("criteria", "Target"),
     Event("event", "Trigger"),
     Manual("manual", "Manual"),
+    FileVariables("fileVariables", "FileVariables"),
     Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
     private String display;
@@ -218,7 +219,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
     schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
-
+    schemaBuilder.field("targetingFileVariableID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -272,6 +273,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   private Integer occurrenceNumber;
   private JourneyScheduler journeyScheduler;
   private Integer lastCreatedOccurrenceNumber;
+  private String targetingFileVariableID;
 
 
   /****************************************
@@ -326,6 +328,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   public Integer getOccurrenceNumber() { return occurrenceNumber ; }
   public JourneyScheduler getJourneyScheduler() { return journeyScheduler ; }
   public Integer getLastCreatedOccurrenceNumber() {return lastCreatedOccurrenceNumber; }
+  public String getTargetingFileVariableID() { return targetingFileVariableID; }
 
   //
   //  package protected
@@ -644,7 +647,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, String targetingFileVariableID)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -673,6 +676,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.occurrenceNumber = occurrenceNumber;
     this.journeyScheduler = scheduler;
     this.lastCreatedOccurrenceNumber = lastCreatedOccurrenceNumber;
+    this.targetingFileVariableID = targetingFileVariableID;
   }
 
   /*****************************************
@@ -712,6 +716,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     struct.put("occurrenceNumber", journey.getOccurrenceNumber());
     struct.put("scheduler", JourneyScheduler.serde().packOptional(journey.getJourneyScheduler()));
     struct.put("lastCreatedOccurrenceNumber", journey.getLastCreatedOccurrenceNumber());
+    struct.put("targetingFileVariableID", journey.getTargetingFileVariableID());
     return struct;
   }
 
@@ -867,6 +872,8 @@ public class Journey extends GUIManagedObject implements StockableItem
     Integer occurrenceNumber = (schema.field("occurrenceNumber") != null) ? valueStruct.getInt32("occurrenceNumber") : null;
     JourneyScheduler scheduler = (schema.field("scheduler")!= null) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(),valueStruct.get("scheduler"))) : null;
     Integer lastCreatedOccurrenceNumber = (schema.field("lastCreatedOccurrenceNumber")!= null) ? valueStruct.getInt32("lastCreatedOccurrenceNumber") : null;
+    String targetingFileVariableID = (schema.field("targetingFileVariableID")!= null) ? valueStruct.getString("targetingFileVariableID") : null;
+    
     /*****************************************
     *
     *  validate
@@ -927,7 +934,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetingEventCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers, fullStatistics, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetingEventCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers, fullStatistics, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, targetingFileVariableID);
   }
   
   /*****************************************
@@ -1194,6 +1201,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
     if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", recurrence);
+    this.targetingFileVariableID = JSONUtilities.decodeString(jsonRoot, "targetingFileVariableID", targetingType == TargetingType.FileVariables);
 
 
     /*****************************************
@@ -1201,8 +1209,9 @@ public class Journey extends GUIManagedObject implements StockableItem
     *  contextVariables
     *
     *****************************************/
-
-    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters);
+    
+    JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
+    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters, targetFileVariablesJSON);
     this.contextVariables = new HashMap<String,CriterionField>();
     this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
     for (CriterionField contextVariable : contextVariablesAndParameters.values())
@@ -2441,6 +2450,11 @@ public class Journey extends GUIManagedObject implements StockableItem
     return processContextVariableNodes(contextVariableNodes, journeyParameters, null, new JSONArray());
   }
 
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, JSONArray targetFileVariables) throws GUIManagerException
+  {
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, targetFileVariables);
+  }
+
   public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType, JSONArray targetFileVariables) throws GUIManagerException
   {
     /*****************************************
@@ -2689,7 +2703,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     Map<String, Object> valueJSONMap = new LinkedHashMap<String, Object>();
     
     valueJSONMap.put("valueAdd", null);
-    valueJSONMap.put("expression", null); // TO DO:
+    valueJSONMap.put("expression", null);
     valueJSONMap.put("assignment", "=");
     valueJSONMap.put("valueMultiply", null);
     valueJSONMap.put("valueType", "complex" + "." + fileVarDataType);
