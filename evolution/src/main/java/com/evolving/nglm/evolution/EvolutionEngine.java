@@ -4529,9 +4529,14 @@ public class EvolutionEngine
     List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now));
     
     // Sort journeys by priorities, and randomize those with equal priorities
-    //logCollectionPrioritiesJourneys("Before sort 1", activeJourneys);
-    Collections.sort(activeJourneys, ((j1, j2) -> (j1.getPriority()==j2.getPriority()) ? ThreadLocalRandom.current().nextInt(3)-1 : j1.getPriority()-j2.getPriority()));
-    //logCollectionPrioritiesJourneys("After sort 1", activeJourneys);
+
+    // 1) sort randomly
+    Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
+    
+    // 2) sort by priorities, do not reorder journeys with same priorities
+    //logCollectionPrioritiesJourneys("Before sort journeys", activeJourneys);
+    Collections.sort(activeJourneys, ((j1, j2) -> j1.getPriority()-j2.getPriority()));
+    //logCollectionPrioritiesJourneys("After sort journeys", activeJourneys);
     
     /*****************************************
     *
@@ -5053,9 +5058,9 @@ public class EvolutionEngine
 
     // sort by priorities, do not change order if same priority
     // from Collections.sort Javadoc : This sort is guaranteed to be stable: equal elements will not be reordered as a result of the sort.
-    //logCollectionPrioritiesJourneyStates("Before sort 2", orderedJourneyStates);
+    //logCollectionPrioritiesJourneyStates("Before sort nodes", orderedJourneyStates);
     Collections.sort(orderedJourneyStates, ((j1, j2) -> j1.getPriority()-j2.getPriority()));
-    //logCollectionPrioritiesJourneyStates("After sort 2", orderedJourneyStates);
+    //logCollectionPrioritiesJourneyStates("After sort nodes", orderedJourneyStates);
     
     for (JourneyState journeyState : orderedJourneyStates)
       {
