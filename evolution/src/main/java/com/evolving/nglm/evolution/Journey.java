@@ -2459,17 +2459,6 @@ public class Journey extends GUIManagedObject implements StockableItem
                 contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
               }
           }
-        
-        //
-        // targetFileVariables 
-        //
-        
-        for (int i=0; i < targetFileVariables.size(); i++)
-          {
-            JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
-            JSONObject contextVarJson = generateContextVariableJson(targetFileVariableJSON);
-            ContextVariable fileContextVariable = new ContextVariable(contextVarJson);
-          }
       }
 
 
@@ -2658,6 +2647,19 @@ public class Journey extends GUIManagedObject implements StockableItem
         StringBuilder buffer = new StringBuilder();
         unvalidatedContextVariables.iterator().forEachRemaining(var -> buffer.append(var.getID()+" "));
         throw new GUIManagerException("unvalidatedContextVariables "+buffer, Integer.toString(unvalidatedContextVariables.size()));
+      }
+    
+    //
+    // targetFileVariables 
+    //
+    
+    for (int i=0; i < targetFileVariables.size(); i++)
+      {
+        JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
+        JSONObject contextVarJson = generateContextVariableJson(targetFileVariableJSON);
+        ContextVariable fileContextVariable = new ContextVariable(contextVarJson);
+        CriterionField criterionField = new CriterionField(fileContextVariable);
+        contextVariableFields.put(criterionField.getID(), criterionField);
       }
 
     /*****************************************
