@@ -601,8 +601,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.stockableItemID = "offer-" + getOfferID();
     this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false), catalogCharacteristicService);
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
-    this.maximumAcceptances = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptances", false);
-    this.maximumAcceptancesPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriodDays", false);
+    this.maximumAcceptances = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptances", Integer.MAX_VALUE);
+    this.maximumAcceptancesPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriodDays", 1);
 
     /*****************************************
     *
