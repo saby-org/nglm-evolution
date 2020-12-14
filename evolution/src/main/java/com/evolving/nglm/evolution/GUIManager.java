@@ -27517,7 +27517,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     Set<OfferVoucher> offerVouchers = offer.getOfferVouchers();
     HashMap<String,Object> response = new HashMap<String,Object>();
     String supplierID = null;
-    if (offerProducts.size() != 0 && offerProducts != null)
+    if (offerProducts != null && offerProducts.size() != 0)
       {
         for (OfferProduct offerProduct : offerProducts)
           {
@@ -27541,7 +27541,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           }
       }
     
-    if (offerVouchers.size() != 0 && offerVouchers != null)
+    if (offerVouchers != null && offerVouchers.size() != 0)
       {
         for (OfferVoucher offerVoucher : offerVouchers)
           {
