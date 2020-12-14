@@ -190,6 +190,7 @@ public class GUIManager
     getJourney("getJourney"),
     putJourney("putJourney"),
     removeJourney("removeJourney"),
+    updateJourney("updateJourney"),
     startJourney("startJourney"),
     setStatusJourney("setStatusJourney"),
     stopJourney("stopJourney"),
@@ -199,6 +200,7 @@ public class GUIManager
     getCampaign("getCampaign"),
     putCampaign("putCampaign"),
     removeCampaign("removeCampaign"),
+    updateCampaign("updateCampaign"),
     setStatusCampaign("setStatusCampaign"),
     startCampaign("startCampaign"),
     stopCampaign("stopCampaign"),
@@ -209,6 +211,7 @@ public class GUIManager
     getWorkflow("getWorkflow"),
     putWorkflow("putWorkflow"),
     removeWorkflow("removeWorkflow"),
+    updateWorkflow("updateWorkflow"),
     setStatusWorkflow("setStatusWorkflow"),
     
     getLoyaltyWorkflowList("getLoyaltyWorkflowList"),
@@ -224,6 +227,7 @@ public class GUIManager
     getBulkCampaignCapacity("getBulkCampaignCapacity"),
     putBulkCampaign("putBulkCampaign"),
     removeBulkCampaign("removeBulkCampaign"),
+    updateBulkCampaign("updateBulkCampaign"),
     setStatusBulkCampaign("setStatusBulkCampaign"),
     startBulkCampaign("startBulkCampaign"),
     stopBulkCampaign("stopBulkCampaign"),
@@ -256,6 +260,7 @@ public class GUIManager
     getOffer("getOffer"),
     putOffer("putOffer"),
     removeOffer("removeOffer"),
+    updateOffer("updateOffer"),
     setStatusOffer("setStatusOffer"),
     getReportGlobalConfiguration("getReportGlobalConfiguration"),
     getReportList("getReportList"),
@@ -304,6 +309,7 @@ public class GUIManager
     getProductSummaryList("getProductSummaryList"),
     getProduct("getProduct"),
     putProduct("putProduct"),
+    updateProduct("updateProduct"),
     removeProduct("removeProduct"),
     setStatusProduct("setStatusProduct"),
     getCatalogCharacteristicList("getCatalogCharacteristicList"),
@@ -1792,6 +1798,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourney", new APISimpleHandler(API.getJourney));
         restServer.createContext("/nglm-guimanager/putJourney", new APISimpleHandler(API.putJourney));
         restServer.createContext("/nglm-guimanager/removeJourney", new APISimpleHandler(API.removeJourney));
+        restServer.createContext("/nglm-guimanager/updateJourney", new APISimpleHandler(API.updateJourney));
         restServer.createContext("/nglm-guimanager/setStatusJourney", new APISimpleHandler(API.setStatusJourney));
         restServer.createContext("/nglm-guimanager/startJourney", new APISimpleHandler(API.startJourney));
         restServer.createContext("/nglm-guimanager/stopJourney", new APISimpleHandler(API.stopJourney));
@@ -1801,6 +1808,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCampaign", new APISimpleHandler(API.getCampaign));
         restServer.createContext("/nglm-guimanager/putCampaign", new APISimpleHandler(API.putCampaign));
         restServer.createContext("/nglm-guimanager/removeCampaign", new APISimpleHandler(API.removeCampaign));
+        restServer.createContext("/nglm-guimanager/updateCampaign", new APISimpleHandler(API.updateCampaign));
         restServer.createContext("/nglm-guimanager/setStatusCampaign", new APISimpleHandler(API.setStatusCampaign));
         restServer.createContext("/nglm-guimanager/startCampaign", new APISimpleHandler(API.startCampaign));
         restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
@@ -1811,6 +1819,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getWorkflow", new APISimpleHandler(API.getWorkflow));
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
         restServer.createContext("/nglm-guimanager/removeWorkflow", new APISimpleHandler(API.removeWorkflow));
+        restServer.createContext("/nglm-guimanager/updateWorkflow", new APISimpleHandler(API.updateWorkflow));
         restServer.createContext("/nglm-guimanager/setStatusWorkflow", new APISimpleHandler(API.setStatusWorkflow));
         
         restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowList", new APISimpleHandler(API.getLoyaltyWorkflowList));
@@ -1826,6 +1835,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBulkCampaignCapacity", new APISimpleHandler(API.getBulkCampaignCapacity));
         restServer.createContext("/nglm-guimanager/putBulkCampaign", new APISimpleHandler(API.putBulkCampaign));
         restServer.createContext("/nglm-guimanager/removeBulkCampaign", new APISimpleHandler(API.removeBulkCampaign));
+        restServer.createContext("/nglm-guimanager/updateBulkCampaign", new APISimpleHandler(API.updateBulkCampaign));
         restServer.createContext("/nglm-guimanager/setStatusBulkCampaign", new APISimpleHandler(API.setStatusBulkCampaign));
         restServer.createContext("/nglm-guimanager/startBulkCampaign", new APISimpleHandler(API.startBulkCampaign));
         restServer.createContext("/nglm-guimanager/stopBulkCampaign", new APISimpleHandler(API.stopBulkCampaign));
@@ -1858,6 +1868,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getOffer", new APISimpleHandler(API.getOffer));
         restServer.createContext("/nglm-guimanager/putOffer", new APISimpleHandler(API.putOffer));
         restServer.createContext("/nglm-guimanager/removeOffer", new APISimpleHandler(API.removeOffer));
+        restServer.createContext("/nglm-guimanager/updateOffer", new APISimpleHandler(API.updateOffer));
         restServer.createContext("/nglm-guimanager/setStatusOffer", new APISimpleHandler(API.setStatusOffer));
         restServer.createContext("/nglm-guimanager/getPresentationStrategyList", new APISimpleHandler(API.getPresentationStrategyList));
         restServer.createContext("/nglm-guimanager/getReportGlobalConfiguration", new APISimpleHandler(API.getReportGlobalConfiguration));
@@ -1906,6 +1917,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getProductSummaryList", new APISimpleHandler(API.getProductSummaryList));
         restServer.createContext("/nglm-guimanager/getProduct", new APISimpleHandler(API.getProduct));
         restServer.createContext("/nglm-guimanager/putProduct", new APISimpleHandler(API.putProduct));
+        restServer.createContext("/nglm-guimanager/updateProduct", new APISimpleHandler(API.updateProduct));
         restServer.createContext("/nglm-guimanager/setStatusProduct", new APISimpleHandler(API.setStatusProduct));
         restServer.createContext("/nglm-guimanager/removeProduct", new APISimpleHandler(API.removeProduct));
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristicList", new APISimpleHandler(API.getCatalogCharacteristicList));
@@ -2642,6 +2654,10 @@ public class GUIManager
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
                   break;
                   
+                case updateJourney:
+                  jsonResponse = processUpdateJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
+                  break;
+                  
                 case setStatusJourney:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
                   break;
@@ -2677,6 +2693,11 @@ public class GUIManager
                 case removeCampaign:
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
                   break;
+                  
+                case updateCampaign:
+                  jsonResponse = processUpdateJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
+                  break;
+
                   
                 case setStatusCampaign:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
@@ -2716,6 +2737,10 @@ public class GUIManager
 
                 case removeWorkflow:
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
+                  break;
+                  
+                case updateWorkflow:
+                  jsonResponse = processUpdateJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
                   break;
                   
                 case setStatusWorkflow:
@@ -2768,6 +2793,10 @@ public class GUIManager
 
                 case removeBulkCampaign:
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
+                  break;
+                  
+                case updateBulkCampaign:
+                  jsonResponse = processUpdateBulkCampaign(userID, jsonRoot);
                   break;
                   
                 case setStatusBulkCampaign:
@@ -2896,6 +2925,10 @@ public class GUIManager
 
                 case removeOffer:
                   jsonResponse = processRemoveOffer(userID, jsonRoot);
+                  break;
+                  
+                case updateOffer:
+                  jsonResponse = processUpdateOffer(userID, jsonRoot);
                   break;
                   
                 case setStatusOffer:
@@ -3088,6 +3121,10 @@ public class GUIManager
 
                 case putProduct:
                   jsonResponse = processPutProduct(userID, jsonRoot);
+                  break;
+                  
+                case updateProduct:
+                  jsonResponse = processUpdateProduct(userID, jsonRoot);
                   break;
 
                 case removeProduct:
@@ -5897,6 +5934,331 @@ public class GUIManager
     
   }
   
+  
+  
+  /*****************************************
+  *
+  *  processUpdateJourney
+  *
+  *****************************************/
+
+  private JSONObject processUpdateJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();    
+    Boolean dryRun = false;
+    JSONArray journeyIDs = new JSONArray();
+    List<GUIManagedObject> existingJourneys = new ArrayList();
+    List<String> updatedIDs = new ArrayList();    
+    List<Object> exceptionList= new ArrayList();
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
+
+    /*****************************************
+    *
+    * update product
+    *
+    *****************************************/
+   
+  if (jsonRoot.containsKey("ids"))
+     {
+       journeyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple product
+     }
+   else
+     {
+       response.put("responseCode", "invalidJourney");
+       response.put("responseMessage", "Journey ID is empty");
+       return JSONUtilities.encodeObject(response);
+     }
+      
+   /*****************************************
+   *
+   * existing journeys
+   *
+   *****************************************/
+  for (int i = 0; i < journeyIDs.size(); i++)
+    {
+      String journeyID = (journeyIDs.get(i)).toString();
+      GUIManagedObject existingJourneyObject = journeyService.getStoredJourney(journeyID);
+      if (existingJourneyObject != null)
+        {
+          existingJourneys.add(existingJourneyObject); //ignore the wrong journeyIDs
+        }
+    }
+
+  if (existingJourneys == null || existingJourneys.isEmpty())
+    {
+      response.put("responseCode", "invalidjourneys");
+      response.put("responseMessage", "journeys does not exist");
+      return JSONUtilities.encodeObject(response);
+    }
+  
+  for (GUIManagedObject existingJourneyToBeUpdated : existingJourneys)
+    {    
+    //
+    // recurrence
+    //
+    boolean recurrence = false;
+    String recurrenceID = null;
+    JSONObject JSONToBeUpdated = new JSONObject();        
+    Set<String> JsonRootkeySets = jsonRoot.keySet();
+    JSONObject existingJourneyObject = existingJourneyToBeUpdated.getJSONRepresentation();
+        if (jsonRoot.containsKey("recurrence"))
+          {
+
+            recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
+          }
+        else
+          {
+            recurrence = JSONUtilities.decodeBoolean(existingJourneyObject, "recurrence", Boolean.FALSE);
+          }
+        if (jsonRoot.containsKey("recurrenceId"))
+          {
+            recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
+          }
+        else
+          {
+            recurrenceID = JSONUtilities.decodeString(existingJourneyObject, "recurrenceId", false);
+          }
+        if (recurrence && recurrenceID == null)
+          jsonRoot.put("recurrenceId", existingJourneyToBeUpdated.getGUIManagedObjectID());
+        if (recurrence && JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false) == null)
+          jsonRoot.put("lastCreatedOccurrenceNumber", 1);
+        
+        for (String JsonRootkey : JsonRootkeySets)
+          {
+            JSONToBeUpdated.put(JsonRootkey, jsonRoot.get(JsonRootkey));  // get the part of GUI object which need to be updated from jsonRoot
+          }
+        JSONToBeUpdated.put("id", existingJourneyToBeUpdated.getGUIManagedObjectID());
+        for (Object keyObject : existingJourneyObject.keySet())
+          {
+            String key = keyObject.toString();
+            if (key != null && (!(JsonRootkeySets.contains(key))))
+              {
+                JSONToBeUpdated.put(key, existingJourneyObject.get(key)); //get the other parts of the GUI objects from the existing journey JSON
+              
+              }
+          }
+
+
+    //
+    // initial approval
+    //
+    
+    JourneyStatus approval = JourneyStatus.Pending;
+
+    /*****************************************
+    *
+    *  process journey
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+          {
+            //
+            // change approval if existingJourney
+            //
+
+            if (existingJourneyToBeUpdated != null && existingJourneyToBeUpdated.getAccepted())
+              {
+                approval = ((Journey) existingJourneyToBeUpdated).getApproval();
+              }
+
+            /****************************************
+             *
+             * instantiate journey
+             *
+             ****************************************/
+            if (JSONToBeUpdated.containsKey("id"))
+              {
+                JSONToBeUpdated.remove("ids");
+              }
+            Journey journey = new Journey(JSONToBeUpdated, objectType, epoch, existingJourneyToBeUpdated,
+                journeyService, catalogCharacteristicService, subscriberMessageTemplateService,
+                dynamicEventDeclarationsService, journeyTemplateService, approval);
+            
+            if (GUIManagedObjectType.Workflow.equals(objectType)
+                || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType))
+              {
+                journey.setApproval(JourneyStatus.StartedApproved);
+              }
+
+            //
+            // Update targetCount
+            //
+            journey.setTargetCount(elasticsearch);
+
+            /*****************************************
+             *
+             * store
+             *
+             *****************************************/
+            if (!dryRun)
+              {
+
+                journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService,
+                    subscriberMessageTemplateService, (existingJourneyToBeUpdated == null), userID);
+
+                /*****************************************
+                 *
+                 * handle related deliverable
+                 *
+                 *****************************************/
+
+                if (GUIManagedObjectType.Campaign.equals(objectType))
+                  {
+                    DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers()
+                        .get("journeyFulfillment");
+                    JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation()
+                        : null;
+                    String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID")
+                        : null;
+                    if (providerID != null)
+                      {
+                        if (journey.getTargetingType().equals(TargetingType.Manual))
+                          {
+
+                            //
+                            // create deliverable -- only if campaign has
+                            // "manual
+                            // provisioning"
+                            //
+
+                            Map<String, Object> deliverableMap = new HashMap<String, Object>();
+                            deliverableMap.put("id", CommodityDeliveryManager.JOURNEY_PREFIX + journey.getJourneyID());
+                            deliverableMap.put("fulfillmentProviderID", providerID);
+                            deliverableMap.put("externalAccountID", journey.getJourneyID());
+                            deliverableMap.put("name", journey.getJourneyName());
+                            deliverableMap.put("display", journey.getJourneyName());
+                            deliverableMap.put("active", true);
+                            deliverableMap.put("unitaryCost", 0);
+                            deliverableMap.put("label", "campaign");
+                            Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch,
+                                null);
+                            deliverableService.putDeliverable(deliverable, true, userID);
+                          }
+                        else
+                          {
+
+                            //
+                            // delete deliverable -- only if campaign does NOT
+                            // have
+                            // "manual provisioning"
+                            //
+
+                            // TODO SCH : may need to check that deliverable is
+                            // not
+                            // used in any offer
+
+                            for (GUIManagedObject deliverableObject : deliverableService.getStoredDeliverables())
+                              {
+                                Deliverable deliverable = (Deliverable) deliverableObject;
+                                if (deliverable.getFulfillmentProviderID().equals(providerID)
+                                    && deliverable.getExternalAccountID().equals(journey.getJourneyID()))
+                                  {
+                                    deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                                  }
+                              }
+
+                          }
+                      }
+                  }
+              }
+
+            /*****************************************
+             *
+             * response
+             *
+             *****************************************/
+            
+            if (jsonRoot.containsKey("ids"))
+              {
+                updatedIDs.add(journey.getJourneyID());
+              }
+          }
+    catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            //
+            // incompleteObject
+            //
+
+            IncompleteObject incompleteObject = new IncompleteObject(JSONToBeUpdated, objectType, epoch);
+
+            //
+            // store
+            //
+            if (!dryRun)
+              {
+                journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
+                    targetService, subscriberMessageTemplateService, (existingJourneyToBeUpdated == null), userID);
+              }
+            //
+            // log
+            //
+
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+            //
+            // response
+            //
+            
+            if (jsonRoot.containsKey("ids"))
+              {
+                HashMap<String, String> invalidProductsExceptions = new HashMap<String, String>();
+                invalidProductsExceptions.put("id", incompleteObject.getGUIManagedObjectID());
+                switch (objectType)
+                  {
+                    case Journey:
+                      invalidProductsExceptions.put("responseCode", "journeyNotValid");
+                      break;
+
+                    case Campaign:
+                      invalidProductsExceptions.put("responseCode", "campaignNotValid");
+                      break;
+
+                    case Workflow:
+                      invalidProductsExceptions.put("responseCode", "workflowNotValid");
+                      break;
+
+                    default:
+                      invalidProductsExceptions.put("responseCode", "NotValid");
+                      break;
+                  }
+                invalidProductsExceptions.put("responseMessage", e.getMessage());
+                invalidProductsExceptions.put("responseParameter",
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+                exceptionList.add(invalidProductsExceptions); // get the exceptions for multiple journeys
+                updatedIDs.add(incompleteObject.getGUIManagedObjectID());
+              }
+          }
+    }
+    if (jsonRoot.containsKey("ids"))
+      {
+        response.put("updatedIds", updatedIDs);
+        response.put("exceptionIds", exceptionList);
+      }
+      
+  return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
    *
    * processSetStatusJourney
@@ -6672,6 +7034,523 @@ public class GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+  }
+  
+  
+  /*****************************************
+  *
+  *  processUpdateBulkCampaign
+  *
+  *****************************************/  
+
+  private JSONObject processUpdateBulkCampaign(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    JSONArray BulkCampaignIDs = new JSONArray();
+    List<GUIManagedObject> existingbulkCampaigns = new ArrayList();
+    List<String> updatedIDs = new ArrayList();    
+    List<Object> exceptionList= new ArrayList();
+
+    /*****************************************
+     *
+     * dryRun
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("dryRun"))
+      {
+        dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+      }
+    
+    /*****************************************
+    *
+    * update product
+    *
+    *****************************************/
+   
+   if (jsonRoot.containsKey("ids"))
+     {
+       BulkCampaignIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple product
+     }
+   else
+     {
+       response.put("responseCode", "invalidBulkCampaign");
+       response.put("responseMessage", "bulkCampaign ID is empty");
+       return JSONUtilities.encodeObject(response);
+     }
+
+   /*****************************************
+    *
+    * existing bulkCampaign
+    *
+    *****************************************/
+   for (int i = 0; i < BulkCampaignIDs.size(); i++)
+     {
+       String bulkCampaignID = (BulkCampaignIDs.get(i)).toString();
+       GUIManagedObject existingBulkCampaignObject = journeyService.getStoredJourney(bulkCampaignID);
+       if (existingBulkCampaignObject != null)
+         {
+           existingbulkCampaigns.add(existingBulkCampaignObject); //ignore the wrong productIDs
+         }
+     }
+
+   if (existingbulkCampaigns == null || existingbulkCampaigns.isEmpty())
+     {
+       response.put("responseCode", "invalidBulkCampaigns");
+       response.put("responseMessage", "bulkCampaigns does not exist");
+       return JSONUtilities.encodeObject(response);
+     }
+
+    /*****************************************
+    *
+    *  retrieve campaign informations
+    *
+    *****************************************/
+   for (GUIManagedObject existingBulkCampaignToBeUpdated : existingbulkCampaigns)
+      {
+
+        JSONObject JSONToBeUpdated = new JSONObject();
+        Set<String> JsonRootkeySets = jsonRoot.keySet();
+        JSONObject existingBulkCampaignObject = existingBulkCampaignToBeUpdated.getJSONRepresentation();
+        String journeyTemplateID = null;
+        //
+        // get journey template
+        //
+        if (jsonRoot.containsKey("journeyTemplateID"))
+          {
+            journeyTemplateID = journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", false);
+          }
+        else
+          {
+            journeyTemplateID = journeyTemplateID = JSONUtilities.decodeString(existingBulkCampaignObject,
+                "journeyTemplateID", false);
+          }
+        if (journeyTemplateID == null || journeyTemplateID.isEmpty())
+          {
+            response.put("responseCode", "missingJourneyTemplate");
+            return JSONUtilities.encodeObject(response);
+          }
+        Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(journeyTemplateID, now);
+        if (journeyTemplate == null)
+          {
+            response.put("responseCode", "journeyTemplateNotFound");
+            return JSONUtilities.encodeObject(response);
+          }
+
+        //
+        // get campaign parameters
+        //
+
+        String bulkCampaignID = existingBulkCampaignToBeUpdated.getGUIManagedObjectID();
+        String bulkCampaignName = null;
+        String bulkCampaignDisplay = null;
+        String bulkCampaignDescription = null;
+        String bulkCampaignEffectiveStartDate = null;
+        String bulkCampaignEffectiveEndDate = null;
+        JSONArray bulkCampaignTargetIDs = new JSONArray();
+        JSONArray bulkCampaignBoundParameters = new JSONArray();
+        boolean appendUCG = false;
+        boolean appendInclusionLists = false;
+        boolean appendExclusionLists = false;
+        String userIdentifier = null;
+        String userName = null;
+        boolean active = false;
+        JSONArray bulkCampaignJourneyObjectives = new JSONArray();
+        JSONObject bulkCampaignStory = new JSONObject();
+        JSONObject bulkCampaignInfo = new JSONObject();
+        JSONArray bulkCampaignTargetCriteria = new JSONArray();
+        JSONObject campaignJSON = new JSONObject();
+
+        if (jsonRoot.containsKey("name"))
+          {
+            bulkCampaignName = JSONUtilities.decodeString(jsonRoot, "name", false);
+          }
+        else
+          {
+            bulkCampaignName = JSONUtilities.decodeString(existingBulkCampaignObject, "name", true);
+          }
+        if (jsonRoot.containsKey("display"))
+          {
+            bulkCampaignDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
+          }
+        else
+          {
+            bulkCampaignDisplay = JSONUtilities.decodeString(existingBulkCampaignObject, "display", true);
+          }
+        if (jsonRoot.containsKey("description"))
+          {
+            bulkCampaignDescription = JSONUtilities.decodeString(jsonRoot, "description", false);
+          }
+        else
+          {
+            bulkCampaignDescription = JSONUtilities.decodeString(existingBulkCampaignObject, "description", false);
+          }
+        if (jsonRoot.containsKey("effectiveStartDate"))
+          {
+            bulkCampaignEffectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false);
+          }
+        else
+          {
+            bulkCampaignEffectiveStartDate = JSONUtilities.decodeString(existingBulkCampaignObject,
+                "effectiveStartDate", true);
+          }
+        if (jsonRoot.containsKey("effectiveEndDate"))
+          {
+            bulkCampaignEffectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false);
+          }
+        else
+          {
+            bulkCampaignEffectiveEndDate = JSONUtilities.decodeString(existingBulkCampaignObject, "effectiveEndDate",
+                true);
+          }
+
+        if (jsonRoot.containsKey("targetID"))
+          {
+            bulkCampaignTargetIDs = JSONUtilities.decodeJSONArray(jsonRoot, "targetID", false);
+          }
+        else
+          {
+            bulkCampaignTargetIDs = JSONUtilities.decodeJSONArray(existingBulkCampaignObject, "targetID", true);
+          }
+        if (jsonRoot.containsKey("boundParameters"))
+          {
+            bulkCampaignBoundParameters = JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", false);
+          }
+        else
+          {
+            bulkCampaignBoundParameters = JSONUtilities.decodeJSONArray(existingBulkCampaignObject, "boundParameters", true);
+          }
+        if (jsonRoot.containsKey("appendUCG"))
+          {
+            appendUCG = JSONUtilities.decodeBoolean(jsonRoot, "appendUCG", false);
+          }
+        else
+          {
+            appendUCG = JSONUtilities.decodeBoolean(existingBulkCampaignObject, "appendUCG", true);
+          }
+        if (jsonRoot.containsKey("appendInclusionLists"))
+          {
+            appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", false);
+          }
+        else
+          {
+            appendInclusionLists = JSONUtilities.decodeBoolean(existingBulkCampaignObject, "appendInclusionLists",
+                true);
+          }
+        if (jsonRoot.containsKey("appendExclusionLists"))
+          {
+            appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", false);
+          }
+        else
+          {
+            appendExclusionLists = JSONUtilities.decodeBoolean(existingBulkCampaignObject, "appendExclusionLists",
+                true);
+          }
+        if (jsonRoot.containsKey("userID"))
+          {
+            userIdentifier = JSONUtilities.decodeString(jsonRoot, "userID", false);
+          }
+        else
+          {
+            userIdentifier = JSONUtilities.decodeString(existingBulkCampaignObject, "userID", "");
+          }
+        if (jsonRoot.containsKey("userName"))
+          {
+            userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+          }
+        else
+          {
+            userName = JSONUtilities.decodeString(existingBulkCampaignObject, "userName", "");
+          }
+        if (jsonRoot.containsKey("active"))
+          {
+            active = JSONUtilities.decodeBoolean(jsonRoot, "active", false);
+          }
+        else
+          {
+            active = JSONUtilities.decodeBoolean(existingBulkCampaignObject, "active", Boolean.FALSE);
+          }
+        if (jsonRoot.containsKey("journeyObjectives"))
+          {
+            bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false);
+          }
+        else
+          {
+            bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(existingBulkCampaignObject,
+                "journeyObjectives", true);
+          }
+        if (jsonRoot.containsKey("story"))
+          {
+            bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", false);
+          }
+        else
+          {
+            bulkCampaignStory = JSONUtilities.decodeJSONObject(existingBulkCampaignObject, "story", true);
+          }
+        if (jsonRoot.containsKey("info"))
+          {
+            bulkCampaignInfo = JSONUtilities.decodeJSONObject(jsonRoot, "info", false);
+          }
+        else
+          {
+            bulkCampaignInfo = JSONUtilities.decodeJSONObject(existingBulkCampaignObject, "info", false);
+          }
+        if (jsonRoot.containsKey("targetingCriteria"))
+          {
+            bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false);
+          }
+        else
+          {
+            bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(existingBulkCampaignObject, "targetingCriteria",
+                true);
+          }
+
+        //
+        // recurrent
+        //
+        boolean recurrence = false;
+        String recurrenceId = null;
+        if (jsonRoot.containsKey("recurrence"))
+          {
+            recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", false);
+          }
+        else
+          {
+            recurrence = JSONUtilities.decodeBoolean(existingBulkCampaignObject, "recurrence", Boolean.FALSE);
+          }
+        if (jsonRoot.containsKey("recurrenceId"))
+          {
+            recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
+          }
+        else
+          {
+            recurrenceId = JSONUtilities.decodeString(existingBulkCampaignObject, "recurrenceId", false);
+          }
+
+        if (recurrence && recurrenceId == null)
+          recurrenceId = bulkCampaignID;
+        Integer occurrenceNumber ;
+        if (jsonRoot.containsKey("occurrenceNumber"))
+          {
+            occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", false);
+
+          }
+        else
+          {
+            occurrenceNumber = JSONUtilities.decodeInteger(existingBulkCampaignObject, "occurrenceNumber", recurrence);
+          }
+        
+        JSONObject journeyScheduler = new JSONObject();
+        if (jsonRoot.containsKey("scheduler"))
+          {
+            journeyScheduler = JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", false);
+
+          }
+        else
+          {
+            journeyScheduler = JSONUtilities.decodeJSONObject(existingBulkCampaignObject, "scheduler", recurrence);
+          }
+        Integer lastCreatedOccurrenceNumber;
+        if (jsonRoot.containsKey("lastCreatedOccurrenceNumber"))
+          {
+            lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
+
+          }
+        else
+          {
+            lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(existingBulkCampaignObject,
+                "lastCreatedOccurrenceNumber", false);
+          }
+        if (recurrence && lastCreatedOccurrenceNumber == null)
+          lastCreatedOccurrenceNumber = 1;
+
+        /*****************************************
+         *
+         * existing journey
+         *
+         *****************************************/
+        existingBulkCampaignToBeUpdated = (existingBulkCampaignToBeUpdated != null
+            && existingBulkCampaignToBeUpdated.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)
+                ? existingBulkCampaignToBeUpdated
+                : null;
+
+        /*****************************************
+         *
+         * process journey
+         *
+         *****************************************/
+
+        long epoch = epochServer.getKey();
+        try
+          {
+            //
+            // initial approval
+            //
+
+            JourneyStatus approval = JourneyStatus.Pending;
+
+            if (existingBulkCampaignToBeUpdated != null && existingBulkCampaignToBeUpdated.getAccepted())
+              {
+                approval = ((Journey) existingBulkCampaignToBeUpdated).getApproval();
+              }
+
+            /*****************************************
+             *
+             * templateJSONRepresentation
+             *
+             *****************************************/
+
+            JSONObject templateJSONRepresentation = journeyTemplate.getJSONRepresentation();
+
+            /*****************************************
+             *
+             * generate JSON representation of the bulk campaign
+             *
+             *****************************************/
+
+            Map<String, Object> campaignJSONRepresentation = new HashMap<String, Object>(templateJSONRepresentation);
+
+            //
+            // override with bulkCampaign attributes
+            //
+
+            campaignJSONRepresentation.put("journeyTemplateID", journeyTemplateID);
+            campaignJSONRepresentation.put("id", bulkCampaignID);
+            campaignJSONRepresentation.put("name", bulkCampaignName);
+            campaignJSONRepresentation.put("display", bulkCampaignDisplay);
+            campaignJSONRepresentation.put("description", bulkCampaignDescription);
+            campaignJSONRepresentation.put("effectiveStartDate", bulkCampaignEffectiveStartDate);
+            campaignJSONRepresentation.put("effectiveEndDate", bulkCampaignEffectiveEndDate);
+            campaignJSONRepresentation.put("targetingType", "criteria");
+            campaignJSONRepresentation.put("targetID", bulkCampaignTargetIDs);
+            campaignJSONRepresentation.put("boundParameters", bulkCampaignBoundParameters);
+            campaignJSONRepresentation.put("appendUCG", appendUCG);
+            campaignJSONRepresentation.put("appendInclusionLists", appendInclusionLists);
+            campaignJSONRepresentation.put("appendExclusionLists", appendExclusionLists);
+            campaignJSONRepresentation.put("userID", userIdentifier);
+            campaignJSONRepresentation.put("userName", userName);
+            campaignJSONRepresentation.put("active", active);
+            campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives);
+            campaignJSONRepresentation.put("story", bulkCampaignStory);
+            if (bulkCampaignInfo != null)
+              {
+                campaignJSONRepresentation.put("info", bulkCampaignInfo);
+              }
+
+            campaignJSONRepresentation.put("targetingCriteria", bulkCampaignTargetCriteria);
+
+            campaignJSONRepresentation.put("recurrence", recurrence);
+            campaignJSONRepresentation.put("recurrenceId", recurrenceId);
+            campaignJSONRepresentation.put("occurrenceNumber", occurrenceNumber);
+            if (journeyScheduler != null)
+              campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
+            campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
+
+            //
+            // campaignJSON
+            //
+
+            campaignJSON = JSONUtilities.encodeObject(campaignJSONRepresentation);
+
+            /****************************************
+             *
+             * instantiate bulk campaign
+             *
+             ****************************************/
+
+            Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch,
+                existingBulkCampaignToBeUpdated, journeyService, catalogCharacteristicService,
+                subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, approval);
+
+            //
+            // Update targetCount
+            //
+            bulkCampaign.setTargetCount(elasticsearch);
+
+            /*****************************************
+             *
+             * store
+             *
+             *****************************************/
+            if (!dryRun)
+              {
+
+                journeyService.putJourney(bulkCampaign, journeyObjectiveService, catalogCharacteristicService,
+                    targetService, subscriberMessageTemplateService, (existingBulkCampaignToBeUpdated == null), userID);
+              }
+            /*****************************************
+             *
+             * response
+             *
+             *****************************************/
+          
+            if (jsonRoot.containsKey("ids"))
+              {
+                updatedIDs.add(bulkCampaign.getJourneyID());
+              }
+          }
+        catch (JSONUtilitiesException | GUIManagerException e)
+          {
+            //
+            // incompleteObject
+            //
+
+            IncompleteObject incompleteObject = new IncompleteObject(campaignJSON, GUIManagedObjectType.BulkCampaign,
+                epoch);
+
+            //
+            // store
+            //
+            if (!dryRun)
+              {
+                journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
+                    targetService, subscriberMessageTemplateService, (existingBulkCampaignToBeUpdated == null), userID);
+              }
+            //
+            // log
+            //
+
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+            //
+            // response
+            //
+         
+            if (jsonRoot.containsKey("ids"))
+              {
+                HashMap<String, String> invalidProductsExceptions = new HashMap<String, String>();
+                invalidProductsExceptions.put("id", incompleteObject.getGUIManagedObjectID());
+                invalidProductsExceptions.put("responseCode", "bulkCampaignNotValid");
+                invalidProductsExceptions.put("responseMessage", e.getMessage());
+                invalidProductsExceptions.put("responseParameter",
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+
+                exceptionList.add(invalidProductsExceptions); // get the
+                                                              // exceptions for
+                                                              // multiple
+                                                              // products
+                updatedIDs.add(incompleteObject.getGUIManagedObjectID());
+
+              }
+          }
+      }
+    if (jsonRoot.containsKey("ids"))
+      {
+        response.put("updatedIds", updatedIDs);
+        response.put("exceptionIds", exceptionList);
+
+      }
+
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
@@ -7692,7 +8571,246 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
- 
+  
+  /*****************************************
+  *
+  *  processUpdateOffer
+  *
+  *****************************************/
+
+  private JSONObject processUpdateOffer(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    Boolean dryRun = false;
+    JSONArray offerIDs = new JSONArray();
+    List<GUIManagedObject> existingOffers = new ArrayList();
+    List<String> updatedIDs = new ArrayList();    
+    List<Object> exceptionList= new ArrayList();
+
+    /*****************************************
+     *
+     * dryRun
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("dryRun"))
+      {
+        dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+      }
+
+    /*****************************************
+     *
+     * update product
+     *
+     *****************************************/
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        offerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple offer
+      }
+    else
+      {
+        response.put("responseCode", "invalidOffer");
+        response.put("responseMessage", "offer ID is empty");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     * existing offers
+     *
+     *****************************************/
+    for (int i = 0; i < offerIDs.size(); i++)
+      {
+        String offerID = (offerIDs.get(i)).toString();
+        GUIManagedObject existingOfferObject = offerService.getStoredOffer(offerID);
+        if (existingOfferObject != null)
+          {
+            existingOffers.add(existingOfferObject); //ignore the wrong offerIDs
+          }
+      }
+
+    if (existingOffers == null || existingOffers.isEmpty())
+      {
+        response.put("responseCode", "invalidOffers");
+        response.put("responseMessage", "offers does not exist");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    for (GUIManagedObject existingOfferToBeUpdated : existingOffers)
+      {
+        JSONObject JSONToBeUpdated = new JSONObject();        
+        Set<String> JsonRootkeySets = jsonRoot.keySet();
+        if (existingOfferToBeUpdated instanceof Offer)
+          {
+            if (((Offer) existingOfferToBeUpdated).getSimpleOffer() == true)
+              {
+                if (jsonRoot.containsKey("display"))
+                  {
+                    HashMap<String, String> errorResponseDisplay = new HashMap<String, String>();
+                    errorResponseDisplay.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+                    errorResponseDisplay.put("responseMessage",
+                        "The display cannot be changed for the existing simple offer");
+                    exceptionList.add(errorResponseDisplay);
+                    continue;
+                                        
+                  }
+                if (jsonRoot.containsKey("simpleOffer"))
+                  {
+                    HashMap<String, String> errorResponseSimpleOffer = new HashMap<String, String>();
+                    boolean simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", false);
+                    if (!simpleOffer)
+                      {
+                        errorResponseSimpleOffer.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+                        errorResponseSimpleOffer.put("responseMessage",
+                            "The simple Offer cannot be changed for the existing simple offer");
+                        exceptionList.add(errorResponseSimpleOffer);
+                        continue;
+                      }
+                  }
+                if (jsonRoot.containsKey("products"))
+                  {
+                    HashMap<String, String> errorResponseProduct = new HashMap<String, String>();
+                    errorResponseProduct.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+                    errorResponseProduct.put("responseMessage",
+                        "The products cannot be changed for the existing simple offer");
+                    exceptionList.add(errorResponseProduct);
+                    continue;
+                  }
+                if (jsonRoot.containsKey("vouchers"))
+                  {
+                    HashMap<String, String> errorResponseVoucher = new HashMap<String, String>();
+                    errorResponseVoucher.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+                    
+                    errorResponseVoucher.put("responseMessage",
+                        "The vouchers cannot be changed for the existing simple offer");
+                    exceptionList.add(errorResponseVoucher);
+                    continue;
+                    
+                  }
+              }
+          }
+        JSONObject existingOfferObject = existingOfferToBeUpdated.getJSONRepresentation();
+        for (String JsonRootkey : JsonRootkeySets)
+          {            
+            JSONToBeUpdated.put(JsonRootkey, jsonRoot.get(JsonRootkey));  // get the part of GUI object which need to be updated from jsonRoot
+          }
+        JSONToBeUpdated.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+        for (Object keyObject : existingOfferObject.keySet())
+          {
+            String key = keyObject.toString();
+            if (key != null && ((!(JsonRootkeySets.contains(key)))))
+              {
+                JSONToBeUpdated.put(key, existingOfferObject.get(key));
+              }
+
+          }
+        
+        /*****************************************
+         *
+         * process offer
+         *
+         *****************************************/
+
+        long epoch = epochServer.getKey();
+        try
+          {
+            /****************************************
+            *
+            *  instantiate offer
+            *
+            ****************************************/
+            if (JSONToBeUpdated.containsKey("id"))
+              {
+                JSONToBeUpdated.remove("ids");
+              }
+            Offer offer = new Offer(JSONToBeUpdated, epoch, existingOfferToBeUpdated, catalogCharacteristicService);
+
+            /*****************************************
+            *
+            *  store
+            *
+            *****************************************/
+            if (!dryRun)
+              {
+
+                offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService,
+                    (existingOfferToBeUpdated == null), userID);
+              }
+
+            /*****************************************
+             *
+             * response
+             *
+             *****************************************/
+           
+            if (jsonRoot.containsKey("ids")) {
+              updatedIDs.add(offer.getOfferID());
+            }
+          }
+
+        catch (JSONUtilitiesException | GUIManagerException e)
+          {
+            //
+            // incompleteObject
+            //
+
+            //
+            //  incompleteObject
+            //
+
+            IncompleteObject incompleteObject = new IncompleteObject(JSONToBeUpdated, epoch);
+
+            //
+            //  store
+            //
+            if (!dryRun)
+              {
+                offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
+                    voucherService, (existingOfferToBeUpdated == null), userID);
+              }
+            //
+            //  log
+            //
+
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+            // response
+            //
+          
+            if (jsonRoot.containsKey("ids"))
+              {
+                updatedIDs.add(incompleteObject.getGUIManagedObjectID());
+                HashMap<String, String> invalidOfferExceptions = new HashMap<String, String>();                
+                invalidOfferExceptions.put("id", incompleteObject.getGUIManagedObjectID());
+                invalidOfferExceptions.put("responseCode", "OfferNotValid");
+                invalidOfferExceptions.put("responseMessage", e.getMessage());
+                invalidOfferExceptions.put("responseParameter",
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null); 
+
+                exceptionList.add(invalidOfferExceptions); //get the exceptions for multiple offers
+                
+              }
+
+          }
+      }
+    if (jsonRoot.containsKey("ids")) {
+      response.put("updatedIds", updatedIDs);
+      response.put("exceptionIds", exceptionList);
+      
+    }
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
    *
    * processSetStatusOffer
@@ -11460,7 +12578,236 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
-   
+  
+  /*****************************************
+  *
+  *  processUpdateProduct
+  *
+  *****************************************/
+
+  private JSONObject processUpdateProduct(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    Boolean dryRun = false;
+    JSONArray productIDs = new JSONArray();
+    List<GUIManagedObject> existingProducts = new ArrayList();
+    List<String> updatedIDs = new ArrayList();    
+    List<Object> exceptionList= new ArrayList();
+
+    /*****************************************
+     *
+     * dryRun
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("dryRun"))
+      {
+        dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+      }
+
+    /*****************************************
+     *
+     * update product
+     *
+     *****************************************/
+    
+   if (jsonRoot.containsKey("ids"))
+      {
+        productIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple product
+      }
+    else
+      {
+        response.put("responseCode", "invalidProduct");
+        response.put("responseMessage", "product ID is empty");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     * existing products
+     *
+     *****************************************/
+    for (int i = 0; i < productIDs.size(); i++)
+      {
+        String productID = (productIDs.get(i)).toString();
+        GUIManagedObject existingProductObject = productService.getStoredProduct(productID);
+        if (existingProductObject != null)
+          {
+            existingProducts.add(existingProductObject); //ignore the wrong productIDs
+          }
+      }
+
+    if (existingProducts == null || existingProducts.isEmpty())
+      {
+        response.put("responseCode", "invalidProducts");
+        response.put("responseMessage", "products does not exist");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    for (GUIManagedObject existingProductToBeUpdated : existingProducts)
+      {
+        JSONObject JSONToBeUpdated = new JSONObject();        
+        Set<String> JsonRootkeySets = jsonRoot.keySet();
+        JSONObject existingProductObject = existingProductToBeUpdated.getJSONRepresentation();
+        if (existingProductToBeUpdated instanceof Product)
+          {
+            if (((Product) existingProductToBeUpdated).getSimpleOffer() == true)
+              {
+                if (jsonRoot.containsKey("display"))
+                  {
+                    HashMap<String, String> errorResponseDisplay = new HashMap<String, String>();
+                    errorResponseDisplay.put("id", existingProductToBeUpdated.getGUIManagedObjectID());
+                    errorResponseDisplay.put("responseMessage",
+                        "The display cannot be changed for the existing simple offer product");
+                    exceptionList.add(errorResponseDisplay);
+                    continue;
+                  }
+                if (jsonRoot.containsKey("simpleOffer"))
+                  {
+                    boolean simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", false);
+                    if (!simpleOffer)
+                      {
+                        HashMap<String, String> errorResponseSimpleOffer = new HashMap<String, String>();
+                        errorResponseSimpleOffer.put("id", existingProductToBeUpdated.getGUIManagedObjectID());
+                        errorResponseSimpleOffer.put("responseMessage",
+                            "The simple Offer cannot be changed for the existing simple offer product");
+                        exceptionList.add(errorResponseSimpleOffer);
+                        continue;
+                      }
+                  }
+              }
+          }
+        for (String JsonRootkey : JsonRootkeySets)
+          {
+            JSONToBeUpdated.put(JsonRootkey, jsonRoot.get(JsonRootkey));  // get the part of GUI object which need to be updated from jsonRoot
+          }
+        JSONToBeUpdated.put("id", existingProductToBeUpdated.getGUIManagedObjectID());
+        for (Object keyObject : existingProductObject.keySet())
+          {
+            String key = keyObject.toString();
+           if (key != null && (!(JsonRootkeySets.contains(key))))
+              {
+                JSONToBeUpdated.put(key, existingProductObject.get(key)); //get the other parts of the GUI objects from the existing product JSON
+              
+              }
+          }
+        /*****************************************
+         *
+         * process product
+         *
+         *****************************************/
+
+        long epoch = epochServer.getKey();
+        try
+          {
+            /****************************************
+             *
+             * instantiate product
+             *
+             ****************************************/
+            if (JSONToBeUpdated.containsKey("id"))
+              {
+                JSONToBeUpdated.remove("ids");
+              }
+            Product product = new Product(JSONToBeUpdated, epoch, existingProductToBeUpdated, deliverableService,
+                catalogCharacteristicService);
+
+            /*****************************************
+             *
+             * store
+             *
+             *****************************************/
+            if (!dryRun)
+              {
+
+                productService.putProduct(product, supplierService, productTypeService, deliverableService,
+                    (existingProductToBeUpdated == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidateOffers
+                 *
+                 *****************************************/
+
+                revalidateOffers(now);
+              }
+
+            /*****************************************
+             *
+             * response
+             *
+             *****************************************/
+           if (jsonRoot.containsKey("ids")) {
+              updatedIDs.add(product.getProductID());
+            }
+          }
+
+        catch (JSONUtilitiesException | GUIManagerException e)
+          {
+            //
+            // incompleteObject
+            //
+
+            IncompleteObject incompleteObject = new IncompleteObject(JSONToBeUpdated, epoch);
+
+            //
+            // store
+            //
+            if (!dryRun)
+              {
+
+                productService.putProduct(incompleteObject, supplierService, productTypeService, deliverableService,
+                    (existingProductToBeUpdated == null), userID);
+
+                //
+                // revalidateOffers
+                //
+
+                revalidateOffers(now);
+              }
+
+            //
+            // log
+            //
+
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+            //
+            // response
+            //
+            if (jsonRoot.containsKey("ids"))
+              {
+                HashMap<String, String> invalidProductsExceptions = new HashMap<String, String>();
+                invalidProductsExceptions.put("id", incompleteObject.getGUIManagedObjectID());
+                invalidProductsExceptions.put("responseCode", "productNotValid");
+                invalidProductsExceptions.put("responseMessage", e.getMessage());
+                invalidProductsExceptions.put("responseParameter",
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null); 
+
+                exceptionList.add(invalidProductsExceptions); //get the exceptions for multiple products
+                updatedIDs.add(incompleteObject.getGUIManagedObjectID());
+                
+              }
+
+          }
+      }
+    if (jsonRoot.containsKey("ids")) {
+      response.put("updatedIds", updatedIDs);
+      response.put("exceptionIds", exceptionList);
+      
+    }
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
    *
    * processSetStatusProduct
