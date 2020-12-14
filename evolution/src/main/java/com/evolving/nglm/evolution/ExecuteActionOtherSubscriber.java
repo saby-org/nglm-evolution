@@ -2,10 +2,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.Date;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.*;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -34,7 +31,8 @@ public class ExecuteActionOtherSubscriber extends SubscriberStreamOutput impleme
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("execute_action_other_subscriber");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+      for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("originatingSubscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("originalJourneyID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -154,12 +152,29 @@ public class ExecuteActionOtherSubscriber extends SubscriberStreamOutput impleme
 
   /*****************************************
    *
-   * constructor and unpack
+   * constructor
    *
    *****************************************/
 
   public ExecuteActionOtherSubscriber(String subscriberID, String originatingSubscriberID, String originalJourneyID, String originatingNodeID, String outstandingDeliveryRequestID, JourneyState originatedJourneyState)
     {
+      this.subscriberID = subscriberID;
+      this.originatingSubscriberID = originatingSubscriberID;
+      this.originalJourneyID = originalJourneyID;
+      this.originatingNodeID = originatingNodeID;
+      this.outstandingDeliveryRequestID = outstandingDeliveryRequestID;
+      this.originatedJourneyState = originatedJourneyState;
+    }
+
+  /*****************************************
+   *
+   * unpack
+   *
+   *****************************************/
+
+  public ExecuteActionOtherSubscriber(SchemaAndValue schemaAndValue, String subscriberID, String originatingSubscriberID, String originalJourneyID, String originatingNodeID, String outstandingDeliveryRequestID, JourneyState originatedJourneyState)
+    {
+      super(schemaAndValue);
       this.subscriberID = subscriberID;
       this.originatingSubscriberID = originatingSubscriberID;
       this.originalJourneyID = originalJourneyID;
@@ -178,6 +193,7 @@ public class ExecuteActionOtherSubscriber extends SubscriberStreamOutput impleme
   {
     ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,executeActionOtherSubscriber);
     struct.put("subscriberID", executeActionOtherSubscriber.getSubscriberID());
     struct.put("originatingSubscriberID", executeActionOtherSubscriber.getOriginatingSubscriberID());
     struct.put("originalJourneyID", executeActionOtherSubscriber.getOriginalJourneyID());
@@ -227,7 +243,7 @@ public class ExecuteActionOtherSubscriber extends SubscriberStreamOutput impleme
     // return
     //
 
-    return new ExecuteActionOtherSubscriber(subscriberID, originatingSubscriberID, originalJourneyID, originatingNodeID, outstandingDeliveryRequestID, originatedJourneyState);
+    return new ExecuteActionOtherSubscriber(schemaAndValue, subscriberID, originatingSubscriberID, originalJourneyID, originatingNodeID, outstandingDeliveryRequestID, originatedJourneyState);
   }
 
   @Override

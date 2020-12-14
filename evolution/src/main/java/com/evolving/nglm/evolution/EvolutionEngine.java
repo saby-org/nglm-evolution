@@ -168,7 +168,6 @@ public class EvolutionEngine
   //  static data (for the singleton instance)
   //
 
-  private static KafkaProducer<byte[], byte[]> kafkaProducer;
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static ReferenceDataReader<String,UCGState> ucgStateReader;
   private static DynamicCriterionFieldService dynamicCriterionFieldService; 
@@ -296,25 +295,12 @@ public class EvolutionEngine
     String cleanupSubscriberTopic = Deployment.getCleanupSubscriberTopic();
     String subscriberProfileForceUpdateTopic = Deployment.getSubscriberProfileForceUpdateTopic();
     String executeActionOtherSubscriberTopic = Deployment.getExecuteActionOtherSubscriberTopic();
-    String profileChangeEventTopic = Deployment.getProfileChangeEventTopic();
-    String profileSegmentChangeEventTopic = Deployment.getProfileSegmentChangeEventTopic();
-    String profileLoyaltyProgramChangeEventTopic = Deployment.getProfileLoyaltyProgramChangeEventTopic();
-    String journeyStatisticTopic = Deployment.getJourneyStatisticTopic();
-    String journeyMetricTopic = Deployment.getJourneyMetricTopic();
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
     String presentationLogTopic = Deployment.getPresentationLogTopic();
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
-
-    //
-    //  sink topics
-    //
-
-    String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
-    String tokenChangeTopic = Deployment.getTokenChangeTopic();
-    String voucherChangeResponseTopic = Deployment.getVoucherChangeResponseTopic();
 
     //
     //  changelogs
@@ -336,19 +322,6 @@ public class EvolutionEngine
 
     log.info("main START: {} {} {} {} {}", stateDirectory, bootstrapServers, kafkaStreamsStandbyReplicas, kafkaReplicationFactor);
 
-    
-    //
-    // kafka producer
-    //    
-
-   Properties producerProperties = new Properties();
-   producerProperties.put("bootstrap.servers", bootstrapServers);
-   producerProperties.put("acks", "all");
-   producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-   producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-   kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
-    
-    
     //
     //  dynamicCriterionFieldsService
     //
@@ -725,9 +698,10 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
-    final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
-    final Serde<TokenChange> tokenChangeSerde = TokenChange.serde();
+    final ConnectSerde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
+    final ConnectSerde<TokenChange> tokenChangeSerde = TokenChange.serde();
     final ConnectSerde<VoucherChange> voucherChangeSerde = VoucherChange.serde();
+    final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
 
     //
     //  special serdes
@@ -789,8 +763,8 @@ public class EvolutionEngine
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     KStream<StringKey, PresentationLog> presentationLogSourceStream = builder.stream(presentationLogTopic, Consumed.with(stringKeySerde, presentationLogSerde));
     KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
-    KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(profileSegmentChangeEventTopic, Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
-    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(profileLoyaltyProgramChangeEventTopic, Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
+    KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(Deployment.getProfileSegmentChangeEventTopic(), Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
+    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
 
     //
@@ -973,27 +947,36 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyStatistic), 
         (key,value) -> (value instanceof JourneyMetric), 
         (key,value) -> (value instanceof SubscriberTrace),
-
         (key,value) -> (value instanceof ExternalAPIOutput),
+
         (key,value) -> (value instanceof ProfileChangeEvent),
         (key,value) -> (value instanceof ProfileSegmentChangeEvent),
         (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent),
         (key,value) -> (value instanceof TokenChange),
+        (key,value) -> (value instanceof VoucherChange),
 
-        (key,value) -> (value instanceof VoucherChange));
+        (key,value) -> (value instanceof ExecuteActionOtherSubscriber),
+        (key,value) -> (value instanceof VoucherAction),
+        (key,value) -> (value instanceof JourneyTriggerEventAction),
+        (key,value) -> (value instanceof SubscriberProfileForceUpdate)
+    );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[2];
     KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[3];
-
     KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[4];
+
     KStream<StringKey, ProfileChangeEvent> profileChangeEventsStream = (KStream<StringKey, ProfileChangeEvent>) branchedEvolutionEngineOutputs[5];
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventsStream = (KStream<StringKey, ProfileSegmentChangeEvent>) branchedEvolutionEngineOutputs[6];
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[7];
     KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[8];
-
     KStream<StringKey, VoucherChange> voucherChangeStream = (KStream<StringKey, VoucherChange>) branchedEvolutionEngineOutputs[9];
+
+    KStream<StringKey, ExecuteActionOtherSubscriber> executeActionOtherSubscriberStream = (KStream<StringKey, ExecuteActionOtherSubscriber>) branchedEvolutionEngineOutputs[10];
+    KStream<StringKey, VoucherAction> voucherActionStream = (KStream<StringKey, VoucherAction>) branchedEvolutionEngineOutputs[11];
+    KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
+    KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
 
     /*****************************************
     *
@@ -1020,15 +1003,18 @@ public class EvolutionEngine
     //  sink - core streams
     //
 
-    journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
-    journeyMetricStream.to(journeyMetricTopic, Produced.with(stringKeySerde, journeyMetricSerde));
-    subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
-    extendedProfileSubscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
-    profileChangeEventsStream.to(profileChangeEventTopic, Produced.with(stringKeySerde, profileChangeEventSerde));
-    profileSegmentChangeEventsStream.to(profileSegmentChangeEventTopic, Produced.with(stringKeySerde, profileSegmentChangeEventSerde));
-    profileLoyaltyProgramChangeEventsStream.to(profileLoyaltyProgramChangeEventTopic, Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
-    tokenChangeStream.to(tokenChangeTopic, Produced.with(stringKeySerde, tokenChangeSerde));
-    voucherChangeStream.to(voucherChangeResponseTopic, Produced.with(stringKeySerde, voucherChangeSerde));
+    journeyStatisticStream.to(Deployment.getJourneyStatisticTopic(), Produced.with(stringKeySerde, journeyStatisticSerde));
+    journeyMetricStream.to(Deployment.getJourneyMetricTopic(), Produced.with(stringKeySerde, journeyMetricSerde));
+    subscriberTraceStream.to(Deployment.getSubscriberTraceTopic(), Produced.with(stringKeySerde, subscriberTraceSerde));
+    extendedProfileSubscriberTraceStream.to(Deployment.getSubscriberTraceTopic(), Produced.with(stringKeySerde, subscriberTraceSerde));
+    profileChangeEventsStream.to(Deployment.getProfileChangeEventTopic(), Produced.with(stringKeySerde, profileChangeEventSerde));
+    profileSegmentChangeEventsStream.to(Deployment.getProfileSegmentChangeEventTopic(), Produced.with(stringKeySerde, profileSegmentChangeEventSerde));
+    profileLoyaltyProgramChangeEventsStream.to(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
+    tokenChangeStream.to(Deployment.getTokenChangeTopic(), Produced.with(stringKeySerde, tokenChangeSerde));
+    voucherChangeStream.to(Deployment.getVoucherChangeResponseTopic(), Produced.with(stringKeySerde, voucherChangeSerde));
+	executeActionOtherSubscriberStream.map((key,value)->new KeyValue<>(new StringKey(value.getSubscriberID()),value)).to(Deployment.getExecuteActionOtherSubscriberTopic(), Produced.with(stringKeySerde, executeActionOtherSubscriberSerde));
+    voucherActionStream.to(Deployment.getVoucherActionTopic(), Produced.with(stringKeySerde, voucherActionSerde));
+    subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
 
     //
 	//  sink DeliveryRequest
@@ -1036,15 +1022,15 @@ public class EvolutionEngine
 
 	// rekeyed as needed
 	KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
-	// topics/predicates/serdes for branching by request or reponse and priority
-	// important to keep to 2 list coherent one with the other!
+	// topics/predicates/serdes for branching by request or response and priority
+	// important to keep those 2 lists coherent one with the other!
 	LinkedList<String> topics = new LinkedList<>();
 	LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
 	Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
 	// populate
 	for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
 	  for(DeliveryPriority priority:DeliveryPriority.values()){
-	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine()){
+	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine() || deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)/*or special case the "hacky loyalty point update BDR only" (sounds to me that is actually not the hacky at all, sending point request to commodity delivery manager to send back to engine to send back to commodity delivery manager to send back to engine feels a bit more shitty)*/){
 	  	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
 		  topics.add(topic);
 	  	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
@@ -1062,6 +1048,26 @@ public class EvolutionEngine
 	  String topic = topicIterator.next();
 	  stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
 	}
+
+	//
+    // sink TriggerEvent
+    //
+
+    // important to keep those 2 lists coherent one with the other!
+    LinkedList<EvolutionEngineEventDeclaration> triggerEventsDeclarations = new LinkedList<>();
+    LinkedList<Predicate<StringKey,JourneyTriggerEventAction>> triggerEventsPredicates = new LinkedList<>();
+	for(EvolutionEngineEventDeclaration eventDeclaration:Deployment.getEvolutionEngineEvents().values()){
+	  if(!eventDeclaration.isTriggerEvent()) continue;
+	  triggerEventsDeclarations.add(eventDeclaration);
+	  triggerEventsPredicates.add((key,value)->value.getEventDeclaration().getEventClass().equals(eventDeclaration.getEventClass()));
+	}
+	//branch and sink
+    Iterator<EvolutionEngineEventDeclaration> eventDeclarationIterator = triggerEventsDeclarations.iterator();
+    for(KStream<StringKey,JourneyTriggerEventAction> stream:journeyTriggerEventActionStream.branch(triggerEventsPredicates.toArray(new Predicate[triggerEventsPredicates.size()]))){
+      EvolutionEngineEventDeclaration eventDeclaration = eventDeclarationIterator.next();
+      KStream<StringKey,EvolutionEngineEvent> outputStream = stream.mapValues(value->value.getEventToTrigger());
+      outputStream.to(eventDeclaration.getEventTopic(),Produced.with(stringKeySerde,eventDeclaration.getEventSerde()));
+    }
 
     //
     //  sink -- externalAPI output stream
@@ -1988,7 +1994,7 @@ public class EvolutionEngine
       {
         return false;
       }
-    
+
     //
     //  subscriberStateUpdated
     //
@@ -2114,7 +2120,7 @@ public class EvolutionEngine
         subscriberState.getTokenChanges().clear();
         subscriberStateUpdated = true;
       }
-    
+
     //
     //  voucherChange cleaning
     //
@@ -2160,6 +2166,45 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
+    //
+    //  executeActionOtherSubscribers cleaning
+    //
+
+    if (subscriberState.getExecuteActionOtherSubscribers() != null)
+      {
+        subscriberState.getExecuteActionOtherSubscribers().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  voucherActions cleaning
+    //
+
+    if (subscriberState.getVoucherActions() != null)
+      {
+        subscriberState.getVoucherActions().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  journeyTriggerEventActions cleaning
+    //
+
+    if (subscriberState.getJourneyTriggerEventActions() != null)
+      {
+        subscriberState.getJourneyTriggerEventActions().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  subscriberProfileForceUpdates cleaning
+    //
+
+    if (subscriberState.getSubscriberProfileForceUpdates() != null)
+      {
+        subscriberState.getSubscriberProfileForceUpdates().clear();
+        subscriberStateUpdated = true;
+      }
 
 
     //
@@ -5819,7 +5864,7 @@ public class EvolutionEngine
             case ExecuteActionOtherSubscriber:
               ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber) action;
               if(executeActionOtherSubscriber.getOutstandingDeliveryRequestID() != null) { journeyState.setJourneyOutstandingDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID()); }
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getExecuteActionOtherSubscriberTopic(), StringKey.serde().serializer().serialize(Deployment.getExecuteActionOtherSubscriberTopic(), new StringKey(executeActionOtherSubscriber.getSubscriberID())), ExecuteActionOtherSubscriber.serde().serializer().serialize(Deployment.getExecuteActionOtherSubscriberTopic(), executeActionOtherSubscriber)));
+              subscriberState.getExecuteActionOtherSubscribers().add(executeActionOtherSubscriber);
               break;
 
             case JourneyRequest:
@@ -5873,21 +5918,19 @@ public class EvolutionEngine
             case VoucherChange:
               if (action instanceof VoucherAction)
                 {
-                  String eventTopic = Deployment.getVoucherActionTopic();
                   VoucherAction event = (VoucherAction) action;
-                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(event.getSubscriberID())), VoucherAction.serde().serializer().serialize(eventTopic, event)));
+                  subscriberState.getVoucherActions().add(event);
                 }
               break;
               
             case TriggerEvent:
               JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
-              EvolutionEngineEventDeclaration eventDeclaration =  triggerEventAction.getEventDeclaration();
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), triggerEventAction.getEventToTrigger())));
+              subscriberState.getJourneyTriggerEventActions().add(triggerEventAction);
               break;
 
             case UpdateProfile:
               SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) action;
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+              subscriberState.getSubscriberProfileForceUpdates().add(subscriberProfileForceUpdate);
               break;
 
             default:
@@ -6290,9 +6333,15 @@ public class EvolutionEngine
         result.addAll(subscriberState.getVoucherChanges());
         result.addAll(subscriberState.getProfileSegmentChangeEvents());
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
+        result.addAll(subscriberState.getExecuteActionOtherSubscribers());
+        result.addAll(subscriberState.getVoucherActions());
+        result.addAll(subscriberState.getJourneyTriggerEventActions());
+        result.addAll(subscriberState.getSubscriberProfileForceUpdates());
       }
-    // enrich with alternateIds all here
+    // enrich with needed output all here
     result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
+    // as well as output wrapped in
+    subscriberState.getJourneyTriggerEventActions().forEach(journeyTriggerEventAction -> ((SubscriberStreamOutput)journeyTriggerEventAction.getEventToTrigger()).enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
     return result;
   }
 
@@ -6315,6 +6364,8 @@ public class EvolutionEngine
     boolean isEvolutionEngineProcessor = Deployment.getDeliveryManagers().get(value.getDeliveryType()).isProcessedByEvolutionEngine();
     if(isEvolutionEngineProcessor && value.isPending()) return new KeyValue<>(new StringKey(value.getSubscriberID()), value);//loop back of request to be processed by evolution engine
   	if(isEvolutionEngineProcessor && !value.isPending() && value.getOriginatingRequest()) return new KeyValue<>(new StringKey(value.getSubscriberID()), value);// response to evolution engine directly (compare to response to purchase or commodityDeliveryManager I guess...)
+	// is the "hacky BDR" (not so hacky to me, refer comment at "stream branching")
+	if(value.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE) && !value.isPending()) return new KeyValue<>(new StringKey(value.getSubscriberID()), value);// response to evolution engine directly
 	return new KeyValue<>(new StringKey(value.getDeliveryRequestID()), value);//all the other
   }
   
@@ -7917,7 +7968,9 @@ public class EvolutionEngine
 
     private EvolutionEngineEventDeclaration eventDeclaration;
     private HashMap<String, String> eventFieldMappings = new HashMap<>();
-    private Constructor<? extends EvolutionEngineEvent> eventConstructor = null; 
+    private Constructor<? extends EvolutionEngineEvent> eventConstructor;
+
+    public EvolutionEngineEventDeclaration getEventDeclaration() { return eventDeclaration; }
 
     /*****************************************
     *
@@ -7951,8 +8004,7 @@ public class EvolutionEngine
       
       try
       {
-        Class eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventDeclaration.getEventClassName());
-        eventConstructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+        eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
       }
     catch (Exception e)
       {
@@ -8007,7 +8059,7 @@ public class EvolutionEngine
     }
   }
   
-  public static class JourneyTriggerEventAction implements Action {
+  public static class JourneyTriggerEventAction extends SubscriberStreamOutput implements Action {
 
     private EvolutionEngineEventDeclaration eventDeclaration;
     private EvolutionEngineEvent eventToTrigger;

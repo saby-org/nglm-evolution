@@ -99,17 +99,6 @@ public class PointBalance
   *
   *****************************************/
 
-  private static KafkaProducer commodityDeliveryProducer;
-  static{
-    Properties kafkaProducerProperties = new Properties();
-    kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
-    kafkaProducerProperties.put("acks", "all");
-    kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    commodityDeliveryProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
-    NGLMRuntime.addShutdownHook(notused->commodityDeliveryProducer.close());
-  }
-
   private SortedMap<Date,Integer> balances;
   private MetricHistory earnedHistory;
   private MetricHistory consumedHistory;
@@ -549,8 +538,7 @@ public class PointBalance
     commodityDeliveryRequest.setStatusMessage("Success");
     commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
 
-    String commodityDeliveryResponseTopic = commodityDeliveryManagerDeclaration.getResponseTopic(commodityDeliveryRequest.getDeliveryPriority());
-    commodityDeliveryProducer.send(new ProducerRecord<byte[], byte[]>(commodityDeliveryResponseTopic, StringKey.serde().serializer().serialize(commodityDeliveryResponseTopic, new StringKey(commodityDeliveryRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)commodityDeliveryManagerDeclaration.getRequestSerde()).serializer().serialize(commodityDeliveryResponseTopic, commodityDeliveryRequest)));
+    context.getSubscriberState().getDeliveryRequests().add(commodityDeliveryRequest);
 
   }
 }

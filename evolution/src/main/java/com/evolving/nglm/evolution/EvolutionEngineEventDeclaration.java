@@ -52,6 +52,7 @@ public class EvolutionEngineEventDeclaration
   private JSONObject jsonRepresentation;
   private String name;
   private String eventClassName;
+  private Class<? extends EvolutionEngineEvent> eventClass;
   private String eventTopic;
   private EventRule eventRule;
   private Map<String,CriterionField> eventCriterionFields;
@@ -61,6 +62,7 @@ public class EvolutionEngineEventDeclaration
   //
 
   private ConnectSerde<EvolutionEngineEvent> eventSerde;
+  private boolean isTriggerEvent = false;
   
   /*****************************************
   *
@@ -71,10 +73,14 @@ public class EvolutionEngineEventDeclaration
   protected JSONObject getJSONRepresentation() { return jsonRepresentation; }
   public String getName() { return name; }
   public String getEventClassName() { return eventClassName; }
+  public Class<? extends EvolutionEngineEvent> getEventClass() { return eventClass; }//null if internal event
   public String getEventTopic() { return eventTopic; }
   public EventRule getEventRule() { return eventRule; }
   public Map<String,CriterionField> getEventCriterionFields() { return eventCriterionFields; }
   public ConnectSerde<EvolutionEngineEvent> getEventSerde() { return eventSerde; }
+  public boolean isTriggerEvent() { return isTriggerEvent; }
+
+  public void markAsTriggerEvent(){ this.isTriggerEvent=true; }
 
   /*****************************************
   *
@@ -106,8 +112,8 @@ public class EvolutionEngineEventDeclaration
         case All:
           try
             {
-              Class<? extends EvolutionEngineEvent> eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventClassName);
-              if (! EvolutionEngineEvent.class.isAssignableFrom(eventClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration", eventClassName);
+              this.eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventClassName);
+              if (! EvolutionEngineEvent.class.isAssignableFrom(eventClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration, need to implement "+EvolutionEngineEvent.class.getCanonicalName(), eventClassName);
               Method serdeMethod = eventClass.getMethod("serde");
               this.eventSerde = (ConnectSerde<EvolutionEngineEvent>) serdeMethod.invoke(null);
             }
@@ -154,8 +160,8 @@ public class EvolutionEngineEventDeclaration
         case All:
           try
             {
-              Class<? extends EvolutionEngineEvent> eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventClassName);
-              if (! EvolutionEngineEvent.class.isAssignableFrom(eventClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration", eventClassName);
+              this.eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventClassName);
+              if (! EvolutionEngineEvent.class.isAssignableFrom(eventClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration, need to implement "+EvolutionEngineEvent.class.getCanonicalName(), eventClassName);
               Method serdeMethod = eventClass.getMethod("serde");
               this.eventSerde = (ConnectSerde<EvolutionEngineEvent>) serdeMethod.invoke(null);
             }

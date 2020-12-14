@@ -7,15 +7,9 @@
 package com.evolving.nglm.evolution;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
+import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.kafka.Topic;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -2684,6 +2678,21 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+
+      //
+      // check nodeTypes about action manager TriggerEventAction
+      //
+
+      for(NodeType nodeType:nodeTypes.values()){
+        if(nodeType.getActionManager()==null) continue;
+        if(nodeType.getActionManager() instanceof EvolutionEngine.TriggerEventAction){
+          EvolutionEngine.TriggerEventAction triggerEventAction = (EvolutionEngine.TriggerEventAction)nodeType.getActionManager();
+          triggerEventAction.getEventDeclaration().markAsTriggerEvent();
+          if(!triggerEventAction.getEventDeclaration().getEventClass().getSuperclass().equals(SubscriberStreamOutput.class)){
+            throw new ServerRuntimeException("deployment nodeType "+nodeType.getID()+" "+nodeType.getName()+" eventName in action declaration does not extends "+SubscriberStreamOutput.class.getCanonicalName()+", it needs to");
+          }
+        }
+      }
 
       //
       //  journeyToolboxSections

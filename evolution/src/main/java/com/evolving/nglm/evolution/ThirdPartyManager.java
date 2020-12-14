@@ -159,7 +159,7 @@ public class ThirdPartyManager
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
   private KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
-  private static Map<String, Constructor<? extends EvolutionEngineEvent>> JSON3rdPartyEventsConstructor = new HashMap<>();
+  private static Map<String, Constructor<? extends SubscriberStreamOutput>> JSON3rdPartyEventsConstructor = new HashMap<>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
@@ -4889,13 +4889,13 @@ public class ThirdPartyManager
       }
     else
       {
-        Constructor<? extends EvolutionEngineEvent> constructor = JSON3rdPartyEventsConstructor.get(eventName);
-        Class<? extends EvolutionEngineEvent> eventClass;
+        Constructor<? extends SubscriberStreamOutput> constructor = JSON3rdPartyEventsConstructor.get(eventName);
+        Class<? extends SubscriberStreamOutput> eventClass;
         if (constructor == null)
           {
             try
               {
-                eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventDeclaration.getEventClassName());
+                eventClass = (Class<? extends SubscriberStreamOutput>) Class.forName(eventDeclaration.getEventClassName());
                 constructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
                 JSON3rdPartyEventsConstructor.put(eventName, constructor);
               }
@@ -4905,10 +4905,11 @@ public class ThirdPartyManager
                 return JSONUtilities.encodeObject(response);
               }
           }
-        EvolutionEngineEvent eev = null;
+        SubscriberStreamOutput eev = null;
         try
           {
-            eev = (EvolutionEngineEvent) constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody });
+            eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody });
+            eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
           }
         catch (Exception e)
           {
@@ -4916,7 +4917,7 @@ public class ThirdPartyManager
             return JSONUtilities.encodeObject(response);
           }
 
-        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberID)), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), eev)));
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberID)), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), (EvolutionEngineEvent)eev)));
         updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS, "{event triggered}");
       }
 
