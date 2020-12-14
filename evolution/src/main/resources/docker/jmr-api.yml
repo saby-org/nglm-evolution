@@ -24,7 +24,7 @@ jmr-api-<_KEY_>:
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
     FwkSettings__FileType: '<_FWKSETTINGS_FILETYPE_>' 
     FwkSettings__MaxFileSizeInMB: '<_FWKSETTINGS_MAXFILESIZEINMB_>' 
-    JmrSettings__FWKApiBaseUrl: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
+    JmrSettings__FWKApiBaseUrl: 'http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/jmr-api-<_KEY_>/mnt
