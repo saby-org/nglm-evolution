@@ -2452,7 +2452,6 @@ public class Journey extends GUIManagedObject implements StockableItem
     Map<ContextVariable,Pair<CriterionContext,CriterionContext>> contextVariables = new IdentityHashMap<ContextVariable,Pair<CriterionContext,CriterionContext>>();
     for (GUINode guiNode : contextVariableNodes.values())
       {
-        log.info("RAJ K guiNode {}", guiNode.getNodeName());
         for (ContextVariable contextVariable : guiNode.getContextVariables())
           {
             if (expectedDataType == null || (contextVariable.getType().equals(expectedDataType)))
@@ -2468,7 +2467,8 @@ public class Journey extends GUIManagedObject implements StockableItem
         for (int i=0; i < targetFileVariables.size(); i++)
           {
             JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
-            log.info("RAJ K targetFileVariableJSON {}", targetFileVariableJSON);
+            JSONObject contextVarJson = generateContextVariableJson(targetFileVariableJSON);
+            ContextVariable fileContextVariable = new ContextVariable(contextVarJson);
           }
       }
 
@@ -2483,6 +2483,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     Set<ContextVariable> unvalidatedContextVariables = new HashSet<ContextVariable>();
     for (ContextVariable contextVariable : contextVariables.keySet())
       {
+        log.info("RAJ K contextVariable {}, {}", contextVariable.getName(), contextVariable.getVariableType());
         switch (contextVariable.getVariableType())
           {
             case Parameter:
@@ -2526,6 +2527,7 @@ public class Journey extends GUIManagedObject implements StockableItem
 
         for (ContextVariable contextVariable : unvalidatedContextVariables)
           {
+            log.info("RAJ K unvalidatedContextVariable {}, {}", contextVariable.getName(), contextVariable.getVariableType());
             try
               {
                 //
@@ -2570,8 +2572,10 @@ public class Journey extends GUIManagedObject implements StockableItem
         boolean anyFieldTypeModified = false;
         for (ContextVariable contextVariable : newlyValidatedContextVariables)
           {
+            log.info("RAJ K newlyValidatedContextVariables {}, {}", contextVariable.getName(), contextVariable.getVariableType());
             CriterionField criterionField = new CriterionField(contextVariable);
             CriterionField existingCriterionField = contextVariableFields.get(criterionField.getID());
+            log.info("RAJ K existingCriterionField isNull {}", existingCriterionField == null);
             if (existingCriterionField != null)
               {
                 //
@@ -2661,8 +2665,39 @@ public class Journey extends GUIManagedObject implements StockableItem
     *  return
     *
     *****************************************/
+    for (String k : contextVariableFields.keySet())
+      {
+        log.info("RAJ K contextVariableField final {}", contextVariableFields.get(k).getJSONRepresentation());
+      }
     
     return contextVariableFields;
+  }
+  
+  /*****************************************
+  *
+  *  generateContextVariableJson
+  *
+  *****************************************/
+  
+  private static JSONObject generateContextVariableJson(JSONObject targetFileVariableJSON)
+  {
+    String fileVarName = JSONUtilities.decodeString(targetFileVariableJSON, "name", true);
+    String fileVarDataType = JSONUtilities.decodeString(targetFileVariableJSON, "dataType", true);
+    Map<String, Object> resultJSONMap = new LinkedHashMap<String, Object>();
+    Map<String, Object> valueJSONMap = new LinkedHashMap<String, Object>();
+    
+    valueJSONMap.put("valueAdd", null);
+    valueJSONMap.put("expression", null); // TO DO:
+    valueJSONMap.put("assignment", "=");
+    valueJSONMap.put("valueMultiply", null);
+    valueJSONMap.put("valueType", "complex" + "." + fileVarDataType);
+    valueJSONMap.put("expressionType", fileVarDataType);
+    valueJSONMap.put("value", null);
+    valueJSONMap.put("timeUnit", null);
+    
+    resultJSONMap.put("name", fileVarName);
+    resultJSONMap.put("value", JSONUtilities.encodeObject(valueJSONMap));
+    return JSONUtilities.encodeObject(resultJSONMap);
   }
   
   /*****************************************
