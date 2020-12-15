@@ -54,7 +54,7 @@ public class DNBOUtils
   private static TokenChange generateTokenChange(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, String tokenCode, String action, String str)
   {
     String eventID = "";
-    String origin = "Journey";
+   /* String origin = "Journey";
     switch (action)
     {
       case TokenChange.CREATE:
@@ -69,7 +69,8 @@ public class DNBOUtils
       default:
         break;
         
-    }
+    }*/
+    String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
     String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
     Date date = evolutionEventContext.now();
     String featureID = subscriberEvaluationRequest.getJourneyState().getJourneyID();

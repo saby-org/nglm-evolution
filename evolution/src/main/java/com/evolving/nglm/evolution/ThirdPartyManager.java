@@ -1693,10 +1693,12 @@ public class ThirdPartyManager
   /*****************************************
   *
   *  processCreditBonus
+   * @throws ParseException 
+   * @throws IOException 
   *
   *****************************************/
   
-  private JSONObject processCreditBonus(JSONObject jsonRoot) throws ThirdPartyManagerException {
+  private JSONObject processCreditBonus(JSONObject jsonRoot) throws ThirdPartyManagerException, IOException, ParseException {
     /****************************************
     *
     *  response
@@ -1714,6 +1716,19 @@ public class ThirdPartyManager
     String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    AuthenticatedResponse authResponse = null;
+    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+    if (!Deployment.getRegressionMode())
+      {
+        authResponse = authCache.get(thirdPartyCredential);
+      }
+    else
+      {
+        authResponse = authenticate(thirdPartyCredential);
+      } 
+    int user = (authResponse.getUserId());
+    String userID = Integer.toString(user);
+    String featureID = userID;
     
     /*****************************************
     *
@@ -1768,7 +1783,7 @@ public class ThirdPartyManager
         validityPeriodType = point.getValidity().getPeriodType();
         validityPeriod = point.getValidity().getPeriodQuantity();
       }
-     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY);
+     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin);
     } catch (SubscriberProfileServiceException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1791,7 +1806,7 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private JSONObject processDebitBonus(JSONObject jsonRoot) throws ThirdPartyManagerException {
+  private JSONObject processDebitBonus(JSONObject jsonRoot) throws ThirdPartyManagerException, IOException, ParseException {
     /****************************************
     *
     *  response
@@ -1809,6 +1824,20 @@ public class ThirdPartyManager
     String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    
+    AuthenticatedResponse authResponse = null;
+    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+    if (!Deployment.getRegressionMode())
+      {
+        authResponse = authCache.get(thirdPartyCredential);
+      }
+    else
+      {
+        authResponse = authenticate(thirdPartyCredential);
+      } 
+    int user = (authResponse.getUserId());
+    String userID = Integer.toString(user);
+    String featureID = userID;
     
     /*****************************************
     *
@@ -1845,7 +1874,7 @@ public class ThirdPartyManager
     String deliveryRequestID = zuks.getStringKey();
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin);
     } catch (SubscriberProfileServiceException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -6654,7 +6683,8 @@ public class ThirdPartyManager
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
     String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "3rdParty", Module.REST_API, featureID);
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, origin, Module.REST_API, featureID);
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),
