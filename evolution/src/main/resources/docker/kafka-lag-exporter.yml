@@ -6,6 +6,7 @@ kafka-lag-exporter:
   environment:
     BROKER_SERVERS: <_BROKER_SERVERS_>
     KAFKA_LAG_EXPORTER_PORT: <_KAFKA_LAG_EXPORTER_PORT_>
+    JAVA_OPTS: <_KAFKA_LAG_EXPORTER_JAVA_OPTS_>
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
