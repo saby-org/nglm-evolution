@@ -860,6 +860,18 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
               + " node " + subscriberEvaluationRequest.getJourneyNode().getNodeID() + "/" + subscriberEvaluationRequest.getJourneyNode().getNodeName());
         }
       }
+    
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      NotificationTemplateParameters templateParameters = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(new SubscriberEvaluationRequest(null, null, null, null, journeyNode, null, null, SystemTime.getCurrentTime())
+      , "node.parameter.dialog_template");
+      String dialogueTemplateID = (String) templateParameters.getSubscriberMessageTemplateID();
+      if (dialogueTemplateID != null) {
+    	  System.out.println("received value"+dialogueTemplateID);
+    	  result.put("dialogtemplate", dialogueTemplateID);}
+      return result;
+    }
   }
 
   /*****************************************

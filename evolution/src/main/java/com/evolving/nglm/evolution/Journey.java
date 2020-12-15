@@ -58,7 +58,7 @@ import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" , "target"})
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate"})
 public class Journey extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -3865,6 +3865,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> targetIDs = new ArrayList<String>();
+    List<String> wrkflowIDs = new ArrayList<String>();
     switch (getGUIManagedObjectType())
       {
         case Journey:
@@ -3874,15 +3875,21 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           
           List<String> campaignIDs = new ArrayList<String>();
+          
           for (JourneyNode journeyNode : getJourneyNodes().values())
             {
               if (journeyNode.getNodeType().getActionManager() != null)
                 {
                   String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("journey");
                   if (campaignID != null)campaignIDs.add(campaignID);
+                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("workflow");
+                  if (workflowID != null) wrkflowIDs.add(workflowID);
+                 
                 }
             }
           result.put("campaign", campaignIDs);
+          result.put("journey", campaignIDs);
+          result.put("workflow", wrkflowIDs);
           
           List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
           result.put("journeyobjective", journeyObjectiveIDs);
@@ -3900,6 +3907,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           List<String> pointIDs = new ArrayList<String>();
           List<String> offerIDs = new ArrayList<String>();
+          List<String> workflowIDs = new ArrayList<String>();
           for (JourneyNode offerNode : getJourneyNodes().values())
             {
               if (offerNode.getNodeType().getActionManager() != null)
@@ -3911,10 +3919,14 @@ public class Journey extends GUIManagedObject implements StockableItem
                   
                   String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("point");
                   if (pointID != null) pointIDs.add(pointID);
+                  
+                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("workflow");
+                  if (workflowID != null) workflowIDs.add(workflowID);
                 }
             }
           result.put("offer", offerIDs);
           result.put("point", pointIDs);
+          result.put("workflow", workflowIDs);
           
           List<String> journeyObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
           result.put("journeyobjective", journeyObjIDs);
@@ -3933,6 +3945,10 @@ public class Journey extends GUIManagedObject implements StockableItem
              
             targetIDs = getTargetID();
              result.put("target", targetIDs);
+             
+             List<String> jourObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+             result.put("journeyobjective", jourObjIDs);
+             
              
             break;
             

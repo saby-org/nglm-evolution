@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.HashMap;
 
 import org.apache.kafka.connect.data.Field;
@@ -646,6 +647,14 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       *****************************************/
 
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      EmailMessage emailMessage = (EmailMessage) journeyNode.getNodeParameters().get("node.parameter.message");
+      if (emailMessage != null) result.put("mailtemplate", emailMessage.getSubscriberMessageTemplateID());
+      return result;
     }
   }
 

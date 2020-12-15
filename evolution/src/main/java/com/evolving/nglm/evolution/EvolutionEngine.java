@@ -7744,6 +7744,14 @@ public class EvolutionEngine
 
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
+    
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String workflowID = (String) journeyNode.getNodeParameters().get("node.parameter.workflow");
+      if (workflowID != null) result.put("workflow", workflowID);
+      return result;
+    }
   }
 
   /*****************************************
