@@ -1291,9 +1291,9 @@
             "width" : "100%",
             "multiple" : false,
             "mandatory" : true,
-            "expressionValuedParameter" : true,
             "availableValues" : null,
             "showContextVariables":true,
+            "expressionValuedParameter" : true,
             "defaultValue" : null
           }
         ],

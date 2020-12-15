@@ -3017,17 +3017,50 @@ public class EvolutionEngine
                     }
                     if (parameterType != null)
                       {
-                        try
-                        {
-                          Method setter = subscriberProfile.getClass().getMethod(methodName, parameterType);
-                          setter.invoke(subscriberProfile, value);
-                          subscriberProfileUpdated = true;
-                        }
-                        catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
-                        {
-                          log.info("unable to set profile attribute " + attributeName + " : " + e.getLocalizedMessage());
-                        }
-                      }
+                        // special case for evolutionSubscriberStatus
+                        if ("evolutionSubscriberStatus".equals(attributeName) && (value instanceof String))
+                          {
+                            EvolutionSubscriberStatus currentEvolutionSubscriberStatus = subscriberProfile.getEvolutionSubscriberStatus();
+                            EvolutionSubscriberStatus updatedEvolutionSubscriberStatus = EvolutionSubscriberStatus.fromExternalRepresentation((String) value);
+                            if (currentEvolutionSubscriberStatus != updatedEvolutionSubscriberStatus)
+                              {
+                                subscriberProfile.setEvolutionSubscriberStatus(updatedEvolutionSubscriberStatus);
+                                subscriberProfile.setEvolutionSubscriberStatusChangeDate(subscriberProfileForceUpdate.getEventDate());
+                                subscriberProfile.setPreviousEvolutionSubscriberStatus(currentEvolutionSubscriberStatus);
+                                subscriberProfileUpdated = true;
+                              }
+                          }
+                        else
+                          {
+                            try
+                            {
+                              Method setter = subscriberProfile.getClass().getMethod(methodName, parameterType);
+                              setter.invoke(subscriberProfile, value);
+                              subscriberProfileUpdated = true;
+                            }
+                            catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1)
+                              {
+                                // setters defined as Integer can be declared with long param (ex: setLastRechargeAmount())
+                                if (Integer.class.equals(parameterType) && (value instanceof Integer))
+                                  {
+                                    try
+                                    {
+                                      Method setter = subscriberProfile.getClass().getMethod(methodName, Long.class);
+                                      setter.invoke(subscriberProfile, new Long((long) (int) value));
+                                      subscriberProfileUpdated = true;
+                                     }
+                                     catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+                                     {
+                                       log.info("unable to set profile attribute with long " + attributeName + " : " + e.getLocalizedMessage());
+                                     }
+                                   }
+                                 else
+                                   {
+                                     log.info("unable to set profile attribute " + attributeName + " : " + e1.getLocalizedMessage());
+                                   }
+                               }
+                           }
+                       }
                   }
               }
           }
