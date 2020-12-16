@@ -3866,6 +3866,10 @@ public class Journey extends GUIManagedObject implements StockableItem
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> targetIDs = new ArrayList<String>();
     List<String> wrkflowIDs = new ArrayList<String>();
+    List<String> pushTemplateIDs = new ArrayList<String>();
+    List<String> mailtemplateIDs = new ArrayList<String>();
+    List<String> dialogIDs = new ArrayList<String>();
+    
     switch (getGUIManagedObjectType())
       {
         case Journey:
@@ -3885,6 +3889,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                   String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("workflow");
                   if (workflowID != null) wrkflowIDs.add(workflowID);
                  
+                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("pushtemplate");
+                  if (pushId != null) pushTemplateIDs.add(pushId);
+                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("mailtemplate");
+                  if (mailId != null) mailtemplateIDs.add(mailId);
+                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("dialogtemplate");
+                  if (dialogID != null) dialogIDs.add(dialogID);
                 }
             }
           result.put("campaign", campaignIDs);
@@ -3896,6 +3906,9 @@ public class Journey extends GUIManagedObject implements StockableItem
        
           targetIDs = getTargetID();
           result.put("target", targetIDs);
+          result.put("pushtemplate", pushTemplateIDs);
+          result.put("mailtemplate", mailtemplateIDs);
+          result.put("dialogtemplate", dialogIDs);
           
           
           break;
@@ -3922,6 +3935,13 @@ public class Journey extends GUIManagedObject implements StockableItem
                   
                   String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("workflow");
                   if (workflowID != null) workflowIDs.add(workflowID);
+                  
+                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
+                  if (pushId != null) pushTemplateIDs.add(pushId);
+                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
+                  if (mailId != null) mailtemplateIDs.add(mailId);
+                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
+                  if (dialogID != null) dialogIDs.add(dialogID);
                 }
             }
           result.put("offer", offerIDs);
@@ -3933,6 +3953,9 @@ public class Journey extends GUIManagedObject implements StockableItem
           
           targetIDs = getTargetID();
           result.put("target", targetIDs);
+          result.put("pushtemplate", pushTemplateIDs);
+          result.put("mailtemplate", mailtemplateIDs);
+          result.put("dialogtemplate", dialogIDs);
             
           
           break;
@@ -3941,17 +3964,62 @@ public class Journey extends GUIManagedObject implements StockableItem
             List<String> blkpointIDs = new ArrayList<String>();
          if (this.boundParameters.containsKey("journey.deliverableID") && boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
         	 blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-             result.put("point", blkpointIDs);    
+             result.put("point", blkpointIDs);  
+             
+             for (JourneyNode offerNode : getJourneyNodes().values())
+             {
+               if (offerNode.getNodeType().getActionManager() != null)
+                 {
+            	   String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
+                   if (pushId != null) pushTemplateIDs.add(pushId);
+                   String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
+                   if (mailId != null) mailtemplateIDs.add(mailId);
+                   String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
+                   if (dialogID != null) dialogIDs.add(dialogID);
+            	   
+                 }
+               }
              
             targetIDs = getTargetID();
              result.put("target", targetIDs);
              
              List<String> jourObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
              result.put("journeyobjective", jourObjIDs);
+             result.put("pushtemplate", pushTemplateIDs);
+             result.put("mailtemplate", mailtemplateIDs);
+             result.put("dialogtemplate", dialogIDs);
              
              
             break;
             
+        case Workflow:
+            
+            //
+            //  offer
+            //
+            
+            for (JourneyNode offerNode : getJourneyNodes().values())
+              {
+                if (offerNode.getNodeType().getActionManager() != null)
+                  {
+                           
+                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
+                    if (pushId != null) pushTemplateIDs.add(pushId);
+                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
+                    if (mailId != null) mailtemplateIDs.add(mailId);
+                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
+                    if (dialogID != null) dialogIDs.add(dialogID);
+                  }
+              }
+            result.put("pushtemplate", pushTemplateIDs);
+            result.put("mailtemplate", mailtemplateIDs);
+            result.put("dialogtemplate", dialogIDs);
+           
+            
+           
+              
+            
+            break;
         default:
           break;
       }
