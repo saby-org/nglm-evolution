@@ -1212,19 +1212,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
     
-    String RAJKString = "{\"variables\":[{\"dataType\":\"string\",\"name\":\"name\"},{\"dataType\":\"integer\",\"name\":\"years\"},{\"dataType\":\"string\",\"name\":\"gift\"},{\"dataType\":\"double\",\"name\":\"doubleval\"},{\"dataType\":\"date\",\"name\":\"dateval\"},{\"dataType\":\"time\",\"name\":\"timeval\"}]}";
-    JSONArray RAJKJSONAR = new JSONArray();
-    try
-      {
-        JSONObject RAJKJSON = (JSONObject) new JSONParser().parse(RAJKString);
-        RAJKJSONAR = JSONUtilities.decodeJSONArray(RAJKJSON, "variables", true);
-      } 
-    catch (ParseException e)
-      {
-        e.printStackTrace();
-      }
-    
-    JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", RAJKJSONAR);
+    JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
     Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters, targetFileVariablesJSON);
     this.contextVariables = new HashMap<String,CriterionField>();
     this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
@@ -2500,7 +2488,6 @@ public class Journey extends GUIManagedObject implements StockableItem
     Set<ContextVariable> unvalidatedContextVariables = new HashSet<ContextVariable>();
     for (ContextVariable contextVariable : contextVariables.keySet())
       {
-        log.info("RAJ K contextVariable {}, {}", contextVariable.getName(), contextVariable.getVariableType());
         switch (contextVariable.getVariableType())
           {
             case Parameter:
@@ -2544,7 +2531,6 @@ public class Journey extends GUIManagedObject implements StockableItem
 
         for (ContextVariable contextVariable : unvalidatedContextVariables)
           {
-            log.info("RAJ K unvalidatedContextVariable {}, {}", contextVariable.getName(), contextVariable.getVariableType());
             try
               {
                 //
@@ -2589,10 +2575,8 @@ public class Journey extends GUIManagedObject implements StockableItem
         boolean anyFieldTypeModified = false;
         for (ContextVariable contextVariable : newlyValidatedContextVariables)
           {
-            log.info("RAJ K newlyValidatedContextVariables {}, {}", contextVariable.getName(), contextVariable.getVariableType());
             CriterionField criterionField = new CriterionField(contextVariable);
             CriterionField existingCriterionField = contextVariableFields.get(criterionField.getID());
-            log.info("RAJ K existingCriterionField isNull {}", existingCriterionField == null);
             if (existingCriterionField != null)
               {
                 //
@@ -2695,10 +2679,6 @@ public class Journey extends GUIManagedObject implements StockableItem
     *  return
     *
     *****************************************/
-    for (String k : contextVariableFields.keySet())
-      {
-        log.info("RAJ K contextVariableField final {}", contextVariableFields.get(k).getJSONRepresentation());
-      }
     
     return contextVariableFields;
   }
@@ -3285,7 +3265,6 @@ public class Journey extends GUIManagedObject implements StockableItem
           for (int i=0; i<jsonArray.size(); i++)
             {
               JSONObject contextVariableJSON = (JSONObject) jsonArray.get(i);
-              log.info("RAJ K contextVariableJSON {}", contextVariableJSON);
               contextVariables.add(new ContextVariable(contextVariableJSON));
             }
         }
