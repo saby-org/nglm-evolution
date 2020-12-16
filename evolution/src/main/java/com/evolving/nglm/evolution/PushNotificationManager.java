@@ -671,7 +671,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       Map<String, String> result = new HashMap<String, String>();
       String pushTemplateID = (String) journeyNode.getNodeParameters().get("node.parameter.message");
       if (pushTemplateID != null) {
-    	  System.out.println("received value"+pushTemplateID);
+    	  System.out.println("received value 1"+pushTemplateID);
     	  result.put("pushtemplate", pushTemplateID);}
       return result;
     }
