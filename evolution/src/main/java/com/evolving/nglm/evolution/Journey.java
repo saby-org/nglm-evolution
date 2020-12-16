@@ -37,6 +37,8 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
@@ -1210,7 +1212,19 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
     
-    JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
+    String RAJKString = "{\"variables\":[{\"dataType\":\"string\",\"name\":\"name\"},{\"dataType\":\"integer\",\"name\":\"years\"},{\"dataType\":\"string\",\"name\":\"gift\"},{\"dataType\":\"double\",\"name\":\"doubleval\"},{\"dataType\":\"date\",\"name\":\"dateval\"},{\"dataType\":\"time\",\"name\":\"timeval\"}]}";
+    JSONArray RAJKJSONAR = new JSONArray();
+    try
+      {
+        JSONObject RAJKJSON = (JSONObject) new JSONParser().parse(RAJKString);
+        RAJKJSONAR = JSONUtilities.decodeJSONArray(RAJKJSON, "variables", true);
+      } 
+    catch (ParseException e)
+      {
+        e.printStackTrace();
+      }
+    
+    JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", RAJKJSONAR);
     Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters, targetFileVariablesJSON);
     this.contextVariables = new HashMap<String,CriterionField>();
     this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
