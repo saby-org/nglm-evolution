@@ -213,7 +213,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
   *
   *****************************************/
 
-  public ExclusionInclusionTarget(JSONObject jsonRoot, long epoch, GUIManagedObject existingExclusionInclusionTargetUnchecked) throws GUIManagerException
+  public ExclusionInclusionTarget(JSONObject jsonRoot, long epoch, GUIManagedObject existingExclusionInclusionTargetUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -221,7 +221,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingExclusionInclusionTargetUnchecked != null) ? existingExclusionInclusionTargetUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingExclusionInclusionTargetUnchecked != null) ? existingExclusionInclusionTargetUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

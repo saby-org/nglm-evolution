@@ -80,9 +80,9 @@ public class VoucherType extends OfferContentType {
     this.validity = validity;
   }
 
-  public VoucherType(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherTypeUnchecked) throws GUIManagerException {
+  public VoucherType(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherTypeUnchecked, int tenantID) throws GUIManagerException {
 
-    super(jsonRoot, epoch, existingVoucherTypeUnchecked);
+    super(jsonRoot, epoch, existingVoucherTypeUnchecked, tenantID);
 
     VoucherType existingVoucherType = (existingVoucherTypeUnchecked != null && existingVoucherTypeUnchecked instanceof VoucherType) ? (VoucherType) existingVoucherTypeUnchecked : null;
 

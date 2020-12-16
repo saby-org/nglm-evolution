@@ -193,7 +193,7 @@ public class UCGRule extends GUIManagedObject
   *
   *****************************************/
 
-  public UCGRule(JSONObject jsonRoot, long epoch, GUIManagedObject existingUCGRuleUnchecked) throws GUIManagerException
+  public UCGRule(JSONObject jsonRoot, long epoch, GUIManagedObject existingUCGRuleUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -201,7 +201,7 @@ public class UCGRule extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingUCGRuleUnchecked != null) ? existingUCGRuleUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingUCGRuleUnchecked != null) ? existingUCGRuleUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

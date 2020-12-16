@@ -142,9 +142,9 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   *
   *****************************************/
 
-  public RewardManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String msisdn, String providerID, String deliverableID, String deliverableName, double amount, int periodQuantity, TimeUnit periodType)
+  public RewardManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String msisdn, String providerID, String deliverableID, String deliverableName, double amount, int periodQuantity, TimeUnit periodType, int tenantID)
   {
-    super(context, deliveryType, deliveryRequestSource);
+    super(context, deliveryType, deliveryRequestSource, tenantID);
     this.msisdn = msisdn;
     this.providerID = providerID;
     this.deliverableID = deliverableID;
@@ -163,9 +163,9 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   *
   *****************************************/
 
-  public RewardManagerRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  public RewardManagerRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
   {
-    super(originatingRequest,jsonRoot);
+    super(originatingRequest,jsonRoot, tenantID);
     this.msisdn = JSONUtilities.decodeString(jsonRoot, "msisdn", true);
     this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
     this.deliverableID = JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
@@ -184,9 +184,9 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
    *
    *****************************************/
 
-  public RewardManagerRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  public RewardManagerRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
   {
-    super(subscriberProfile,subscriberGroupEpochReader,jsonRoot);
+    super(subscriberProfile,subscriberGroupEpochReader,jsonRoot, tenantID);
     this.msisdn = JSONUtilities.decodeString(jsonRoot, "msisdn", true);
     this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
     this.deliverableID = JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
@@ -331,13 +331,13 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   //  addFieldsForGUIPresentation
   //
 
-  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
   {
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
     guiPresentationMap.put(PROVIDERID, getProviderID());
     guiPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
     guiPresentationMap.put(DELIVERABLEID, getDeliverableID());
-    guiPresentationMap.put(DELIVERABLENAME, deliverableService.getActiveDeliverable(getDeliverableID(), SystemTime.getCurrentTime()).getDeliverableName());
+    guiPresentationMap.put(DELIVERABLENAME, deliverableService.getActiveDeliverable(getDeliverableID(), SystemTime.getCurrentTime(), tenantID).getDeliverableName());
     guiPresentationMap.put(DELIVERABLEQTY, getAmount());
     guiPresentationMap.put(OPERATION, "credit");
     guiPresentationMap.put(VALIDITYPERIODTYPE, getPeriodType().getExternalRepresentation());
@@ -356,13 +356,13 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   //  addFieldsForThirdPartyPresentation
   //
 
-  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
   {
     thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
     thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
     thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
     thirdPartyPresentationMap.put(DELIVERABLEID, getDeliverableID());
-    thirdPartyPresentationMap.put(DELIVERABLENAME, deliverableService.getActiveDeliverable(getDeliverableID(), SystemTime.getCurrentTime()).getDeliverableName());
+    thirdPartyPresentationMap.put(DELIVERABLENAME, deliverableService.getActiveDeliverable(getDeliverableID(), SystemTime.getCurrentTime(), tenantID).getDeliverableName());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
     thirdPartyPresentationMap.put(OPERATION, "credit");
     thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getPeriodType().getExternalRepresentation());
@@ -504,7 +504,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
           // Other than Debit => check in paymentMean list
           //
           
-          deliverable = evolutionEventContext.getDeliverableService().getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
+          deliverable = evolutionEventContext.getDeliverableService().getActiveDeliverable(commodityID, SystemTime.getCurrentTime(), subscriberEvaluationRequest.getTenantID());
           if(deliverable == null){
             log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : deliverable not found ");
             return new ArrayList<ActionManager.Action>();
@@ -558,7 +558,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       
       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
 
-      RewardManagerRequest rewardRequest = new RewardManagerRequest(evolutionEventContext.getSubscriberState().getSubscriberProfile(),evolutionEventContext.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      RewardManagerRequest rewardRequest = new RewardManagerRequest(evolutionEventContext.getSubscriberState().getSubscriberProfile(),evolutionEventContext.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType), subscriberEvaluationRequest.getTenantID());
       rewardRequest.setModuleID(newModuleID);
       rewardRequest.setFeatureID(deliveryRequestSource);
 

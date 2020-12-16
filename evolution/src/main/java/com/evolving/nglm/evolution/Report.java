@@ -150,7 +150,7 @@ public class Report extends GUIManagedObject
    *
    *****************************************/
 
-  public Report(JSONObject jsonRoot, long epoch, GUIManagedObject existingReportUnchecked) throws GUIManagerException
+  public Report(JSONObject jsonRoot, long epoch, GUIManagedObject existingReportUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
      *
@@ -158,7 +158,7 @@ public class Report extends GUIManagedObject
      *
      *****************************************/
 
-    super(jsonRoot, (existingReportUnchecked != null) ? existingReportUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingReportUnchecked != null) ? existingReportUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
      *

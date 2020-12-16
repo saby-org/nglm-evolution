@@ -246,13 +246,13 @@ public class SegmentationDimensionService extends GUIService
   *****************************************/
 
   public String generateSegmentationDimensionID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID) { return getStoredGUIManagedObject(segmentationDimensionID); }
-  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID, boolean includeArchived) { return getStoredGUIManagedObject(segmentationDimensionID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredSegmentationDimensions() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredSegmentationDimensions(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID, int tenantID) { return getStoredGUIManagedObject(segmentationDimensionID, tenantID); }
+  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(segmentationDimensionID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredSegmentationDimensions(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredSegmentationDimensions(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveSegmentationDimension(GUIManagedObject segmentationDimensionUnchecked, Date date) { return isActiveGUIManagedObject(segmentationDimensionUnchecked, date); }
-  public SegmentationDimension getActiveSegmentationDimension(String segmentationDimensionID, Date date) { return (SegmentationDimension) getActiveGUIManagedObject(segmentationDimensionID, date); }
-  public Collection<SegmentationDimension> getActiveSegmentationDimensions(Date date) { return (Collection<SegmentationDimension>) getActiveGUIManagedObjects(date); }
+  public SegmentationDimension getActiveSegmentationDimension(String segmentationDimensionID, Date date, int tenantID) { return (SegmentationDimension) getActiveGUIManagedObject(segmentationDimensionID, date, tenantID); }
+  public Collection<SegmentationDimension> getActiveSegmentationDimensions(Date date, int tenantID) { return (Collection<SegmentationDimension>) getActiveGUIManagedObjects(date, tenantID); }
 
   //
   //  getSegment
@@ -281,7 +281,7 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
-  public void putSegmentationDimension(SegmentationDimension segmentationDimension, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID) throws GUIManagerException{
+  public void putSegmentationDimension(SegmentationDimension segmentationDimension, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID, int tenantID) throws GUIManagerException{
     
     this.uploadedFileService = uploadedFileService;
     this.subscriberIDService = subscriberIDService;
@@ -302,7 +302,7 @@ public class SegmentationDimensionService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(segmentationDimension, now, newObject, userID);
+    putGUIManagedObject(segmentationDimension, now, newObject, userID, tenantID);
     
     //
     // add to queue
@@ -319,9 +319,9 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteSegmentationDimension(IncompleteObject segmentationDimension, boolean newObject, String userID)
+  public void putIncompleteSegmentationDimension(IncompleteObject segmentationDimension, boolean newObject, String userID, int tenantID)
   {
-    putGUIManagedObject(segmentationDimension, SystemTime.getCurrentTime(), newObject, userID);
+    putGUIManagedObject(segmentationDimension, SystemTime.getCurrentTime(), newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -330,9 +330,9 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
   
-  public void removeSegmentationDimension(String segmentationDimensionID, String userID) 
+  public void removeSegmentationDimension(String segmentationDimensionID, String userID, int tenantID) 
   { 
-    removeGUIManagedObject(segmentationDimensionID, SystemTime.getCurrentTime(), userID); 
+    removeGUIManagedObject(segmentationDimensionID, SystemTime.getCurrentTime(), userID, tenantID); 
   }
 
   /*****************************************

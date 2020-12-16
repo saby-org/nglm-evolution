@@ -1753,8 +1753,8 @@ public class EvolutionEngine
     *  profileChangeEvent get Old Values
     *
     *****************************************/
-    
-    SubscriberEvaluationRequest changeEventEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
+    // TODO EVPRO-99
+    SubscriberEvaluationRequest changeEventEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, 0);
     ParameterMap profileChangeOldValues = saveProfileChangeOldValues(changeEventEvaluationRequest); 
     
     /*****************************************
@@ -1779,7 +1779,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    subscriberStateUpdated = executeActionOtherSubscriber(context, evolutionEvent) || subscriberStateUpdated;
+    subscriberStateUpdated = executeActionOtherSubscriber(context, evolutionEvent, context.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -1787,7 +1787,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    subscriberStateUpdated = updateSubscriberLoyaltyProgram(context, evolutionEvent) || subscriberStateUpdated;
+    subscriberStateUpdated = updateSubscriberLoyaltyProgram(context, evolutionEvent, context.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberStateUpdated;
     
     /*****************************************
     *
@@ -1803,7 +1803,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
+    subscriberStateUpdated = updateJourneys(context, evolutionEvent, context.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberStateUpdated;
     
     /*****************************************
     *
@@ -1827,7 +1827,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updatePointBalances(context, subscriberState, now);
+    updatePointBalances(context, subscriberState, now, context.getSubscriberState().getSubscriberProfile().getTenantID());
     
     /*****************************************
     *
@@ -2223,7 +2223,7 @@ public class EvolutionEngine
   *
   *****************************************/
   
-  private static void updatePointBalances(EvolutionEventContext context, SubscriberState subscriberState, Date now)
+  private static void updatePointBalances(EvolutionEventContext context, SubscriberState subscriberState, Date now, int tenantID)
   {
     Map<String, PointBalance> pointBalances = subscriberState.getSubscriberProfile().getPointBalances() != null ? subscriberState.getSubscriberProfile().getPointBalances() : Collections.<String,PointBalance>emptyMap();
     for(String pointID: pointBalances.keySet())
@@ -2232,7 +2232,7 @@ public class EvolutionEngine
         if(point != null)
           {
             //TODO : what module is best here ?
-            updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true);
+            updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, tenantID);
           }
       }
   }
@@ -2819,6 +2819,8 @@ public class EvolutionEngine
 
   private static boolean updateSubscriberProfile(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
   {
+    int tenantID = context.getSubscriberState().getSubscriberProfile().getTenantID();
+    
     /*****************************************
     *
     *  result
@@ -3081,7 +3083,7 @@ public class EvolutionEngine
             // update balance 
             //
             
-            boolean success = updatePointBalance(context, pointFulfillmentResponse, pointFulfillmentRequest.getEventID(), pointFulfillmentRequest.getModuleID(), pointFulfillmentRequest.getFeatureID(), subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now, false);
+            boolean success = updatePointBalance(context, pointFulfillmentResponse, pointFulfillmentRequest.getEventID(), pointFulfillmentRequest.getModuleID(), pointFulfillmentRequest.getFeatureID(), subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now, false, tenantID);
             
             //
             //  response
@@ -3144,7 +3146,7 @@ public class EvolutionEngine
             if (subscriberGroupEpoch != null && subscriberGroupEpoch.getEpoch() == segmentationDimension.getSubscriberGroupEpoch().getEpoch())
               {
                 boolean inGroup = false;
-                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
                 switch (segmentationDimension.getTargetingType())
                   {
                     case ELIGIBILITY:
@@ -3263,7 +3265,7 @@ public class EvolutionEngine
 
     for(Target target : targetService.getActiveTargets(now))
       {
-        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
         if (target.getTargetingType().equals(Target.TargetingType.Eligibility))
           {
             boolean addTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, target.getTargetingCriteria());
@@ -3460,7 +3462,7 @@ public class EvolutionEngine
   }
 
 
-  private static boolean executeActionOtherSubscriber(EvolutionEventContext evolutionEventContext, SubscriberStreamEvent evolutionEvent)
+  private static boolean executeActionOtherSubscriber(EvolutionEventContext evolutionEventContext, SubscriberStreamEvent evolutionEvent, int tenantID)
   {
     if(evolutionEvent instanceof ExecuteActionOtherSubscriber)
       {
@@ -3491,7 +3493,7 @@ public class EvolutionEngine
               originalJourneyNode,
               null,
               null,
-              evolutionEventContext.now);
+              evolutionEventContext.now, tenantID);
           List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
           handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions);
 
@@ -3616,7 +3618,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static boolean updatePointBalance(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now, boolean generateBDR)
+  private static boolean updatePointBalance(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now, boolean generateBDR, int tenantID)
   {
 
     //
@@ -3639,7 +3641,7 @@ public class EvolutionEngine
     //  update
     //
 
-    boolean success = pointBalance.update(context, pointFulfillmentResponse, eventID, moduleID, featureID, subscriberProfile.getSubscriberID(), operation, amount, point, now, generateBDR);
+    boolean success = pointBalance.update(context, pointFulfillmentResponse, eventID, moduleID, featureID, subscriberProfile.getSubscriberID(), operation, amount, point, now, generateBDR, tenantID);
 
     //
     //  update balances
@@ -3677,7 +3679,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static boolean updateSubscriberLoyaltyProgram(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  private static boolean updateSubscriberLoyaltyProgram(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, int tenantID)
   {
     /*****************************************
     *
@@ -4006,7 +4008,7 @@ public class EvolutionEngine
 
                           if(log.isDebugEnabled()) log.debug("update loyalty program STATUS => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit()+" of point "+point.getPointName());
                           int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit();
-                          updatePointBalance(context, null, statusEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
+                          updatePointBalance(context, null, statusEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, tenantID);
                           triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowStatus(), loyaltyProgramID);
                           subscriberProfileUpdated = true;
                         }
@@ -4053,7 +4055,7 @@ public class EvolutionEngine
                         {
                           if(log.isDebugEnabled()) log.debug("update loyalty program REWARD => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit()+" of point with ID "+loyaltyProgramPoints.getRewardPointsID());
                           int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit();
-                          updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
+                          updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, tenantID);
                           
                           // TODO Previous call might have changed tier -> do we need to generate tier changed event + trigger workflow for tier change ?
                           triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowReward(), loyaltyProgramID);
@@ -4397,7 +4399,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static boolean updateJourneys(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  private static boolean updateJourneys(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, int tenantID)
   {
     /*****************************************
     *
@@ -4535,7 +4537,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now, tenantID);
     boolean inclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
     boolean exclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
     context.getSubscriberTraceDetails().addAll(inclusionExclusionEvaluationRequest.getTraceDetails());
@@ -4716,7 +4718,7 @@ public class EvolutionEngine
                     for(List<EvaluationCriterion> current : targetsAndTriggerCriteria)
                       {
                         if(inAnyTargetOrTrigger == false) { // avoid evaluating target is already true
-                          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now, tenantID);
                           context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                           boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
                           if(inThisTarget)
@@ -4746,7 +4748,7 @@ public class EvolutionEngine
                       }
                     else 
                       {
-                        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now, tenantID);
                         List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
                         eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
                         //eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
@@ -4764,7 +4766,7 @@ public class EvolutionEngine
                         else 
                           {
                             // 5. Apply the journeyUniversalEligibilityCriteria
-                            evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                            evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now, tenantID);
                             eligibilityAndTargetting = new ArrayList<>();
                             eligibilityAndTargetting.addAll(Deployment.getJourneyUniversalEligibilityCriteria());
                             
@@ -5069,7 +5071,7 @@ public class EvolutionEngine
           {
 
             // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
-            if(journeyService.getInterruptedGUIManagedObject(journeyState.getJourneyID(), now)!=null){
+            if(journeyService.getInterruptedGUIManagedObject(journeyState.getJourneyID(), now, tenantID)!=null){
             	 if(journeyState.isSpecialExit())
                 context.subscriberTrace("ignoring inactive for now journey {0}", journeyState.getJourneyID());
                 continue;
@@ -5125,7 +5127,7 @@ public class EvolutionEngine
                         case JourneyResult:
                           try
                             {
-                              SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, callingJourneyNode, null, evolutionEvent, now);
+                              SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, callingJourneyNode, null, evolutionEvent, now, tenantID);
                               Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
                               journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
                               context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
@@ -5213,7 +5215,7 @@ public class EvolutionEngine
                 //  evaluationRequest (including link)
                 //
 
-                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, journeyLink, evolutionEvent, now);
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, journeyLink, evolutionEvent, now, tenantID);
 
                 //
                 //  evaluate
@@ -5303,7 +5305,7 @@ public class EvolutionEngine
                             case Local:
                               try
                                 {
-                                  SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
+                                  SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now, tenantID);
                                   Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
                                   journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
                                   context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
@@ -5359,7 +5361,7 @@ public class EvolutionEngine
                         //  evaluate action
                         //
 
-                        SubscriberEvaluationRequest exitActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
+                        SubscriberEvaluationRequest exitActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now, tenantID);
                         List<Action> actions = journeyNode.getNodeType().getActionManager().executeOnExit(context, exitActionEvaluationRequest, firedLink);
                         context.getSubscriberTraceDetails().addAll(exitActionEvaluationRequest.getTraceDetails());
 
@@ -5437,7 +5439,7 @@ public class EvolutionEngine
                       {
 
                         List<Action> actions = new ArrayList<>();
-                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
+                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now, tenantID);
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
                         if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_SUPPLIER))
                           {
@@ -5506,7 +5508,7 @@ public class EvolutionEngine
                             case Local:
                               try
                                 {
-                                  SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
+                                  SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now, tenantID);
                                   Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
                                   journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
                                   context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
@@ -7646,7 +7648,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, journeyID);
+      JourneyRequest request = new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, journeyID, subscriberEvaluationRequest.getTenantID());
 
       /*****************************************
       *
@@ -7755,7 +7757,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters) : null;
+      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters, subscriberEvaluationRequest.getTenantID()) : null;
 
       /*****************************************
       *
@@ -7823,7 +7825,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, deliveryRequestSource, operation, loyaltyProgramID);
+      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, deliveryRequestSource, operation, loyaltyProgramID, subscriberEvaluationRequest.getTenantID());
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 

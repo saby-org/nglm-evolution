@@ -176,7 +176,7 @@ public class TimerService
     GUIManagedObjectListener journeyListener = new GUIManagedObjectListener()
     {
       @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { processJourneyActivated(); }
-      @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { }
+      @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { }
     };
 
     //
@@ -1038,7 +1038,7 @@ public class TimerService
                             switch (target.getTargetingType())
                               {
                                 case Eligibility:
-                                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now, target.getTenantID());
                                   boolean addTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, target.getTargetingCriteria());
                                   if (addTarget)
                                     {
@@ -1063,7 +1063,7 @@ public class TimerService
                           }
                       }
                     
-                    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now, subscriberState.getSubscriberProfile().getTenantID());
                     boolean inclusionList = subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now);
                     if(inclusionList)
                       {

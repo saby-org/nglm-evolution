@@ -10,7 +10,7 @@ import java.util.Date;
 public class BDRReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(BDRReportDriver.class);
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.debug("Processing " + report.getName());
     String esIndexBdr = "detailedrecords_bonuses-";

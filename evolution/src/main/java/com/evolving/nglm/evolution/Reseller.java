@@ -221,7 +221,7 @@ public class Reseller extends GUIManagedObject
   *
   *****************************************/
 
-  public Reseller(JSONObject jsonRoot, long epoch, GUIManagedObject existingResellerUnchecked) throws GUIManagerException
+  public Reseller(JSONObject jsonRoot, long epoch, GUIManagedObject existingResellerUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -229,7 +229,7 @@ public class Reseller extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingResellerUnchecked != null) ? existingResellerUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingResellerUnchecked != null) ? existingResellerUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

@@ -155,7 +155,7 @@ public class SalesChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public SalesChannel(JSONObject jsonRoot, long epoch, GUIManagedObject existingSalesChannelUnchecked) throws GUIManagerException
+  public SalesChannel(JSONObject jsonRoot, long epoch, GUIManagedObject existingSalesChannelUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -163,7 +163,7 @@ public class SalesChannel extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSalesChannelUnchecked != null) ? existingSalesChannelUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingSalesChannelUnchecked != null) ? existingSalesChannelUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -266,7 +266,7 @@ public class SalesChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(CallingChannelService callingChannelService, ResellerService resellerService, Date date) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, ResellerService resellerService, Date date, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -276,7 +276,7 @@ public class SalesChannel extends GUIManagedObject
 
     for (String callingChannelID : callingChannelIDs)
       {
-        if (callingChannelService.getActiveCallingChannel(callingChannelID, date) == null) throw new GUIManagerException("unknown calling channel", callingChannelID);
+        if (callingChannelService.getActiveCallingChannel(callingChannelID, date, tenantID) == null) throw new GUIManagerException("unknown calling channel", callingChannelID);
       }
     
     //
@@ -285,7 +285,7 @@ public class SalesChannel extends GUIManagedObject
 
     for (String callingChannelID : callingChannelIDs)
       {
-        CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, date);
+        CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, date, tenantID);
         if (! callingChannelService.isActiveCallingChannelThroughInterval(callingChannel, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid calling channel (start/end dates)", callingChannelID);
       }
    

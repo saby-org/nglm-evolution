@@ -90,14 +90,14 @@ public class CatalogCharacteristicInstance
   *
   *****************************************/
 
-  CatalogCharacteristicInstance(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  CatalogCharacteristicInstance(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     //
     //  catalog characteristic
     //
 
     this.catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", true);
-    CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime());
+    CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime(), tenantID);
     CriterionDataType dataType = (catalogCharacteristic != null) ? catalogCharacteristic.getDataType() : CriterionDataType.Unknown;
 
     //

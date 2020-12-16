@@ -216,7 +216,7 @@ public class PointBalance
   *
   *****************************************/
 
-  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR)
+  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR, int tenantID)
   {
     //
     //  validate
@@ -271,7 +271,7 @@ public class PointBalance
               //  get related deliverable
               //
               
-              Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate);
+              Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate, tenantID);
               Deliverable searchedDeliverable = null;
               for(Deliverable deliverable : deliverables){
                 if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(point.getPointID())){
@@ -287,7 +287,7 @@ public class PointBalance
                   //  generate fake commodityDeliveryResponse (always generate BDR when bonuses expire, needed to get BDRs)
                   //
                   
-                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null);
+                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null, tenantID);
                   
                 }
               
@@ -353,7 +353,7 @@ public class PointBalance
             //  generate fake commodityDeliveryResponse (needed to get BDRs)
             //
             
-            Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate);
+            Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate, tenantID);
             Deliverable searchedDeliverable = null;
             for(Deliverable deliverable : deliverables){
               if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(point.getPointID())){
@@ -362,7 +362,7 @@ public class PointBalance
               }
             }
             if(generateBDR){
-              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate);
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate, tenantID);
             }
            
           }
@@ -416,7 +416,7 @@ public class PointBalance
             //  generate fake commodityDeliveryResponse (needed to get BDRs)
             //
             
-            Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate);
+            Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate, tenantID);
             Deliverable searchedDeliverable = null;
             for(Deliverable deliverable : deliverables){
               if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(point.getPointID())){
@@ -425,7 +425,7 @@ public class PointBalance
               }
             }
             if(generateBDR){
-              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null);
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null, tenantID);
             }
             
           }
@@ -509,7 +509,7 @@ public class PointBalance
   *
   *****************************************/
 
-  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate){
+  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate, int tenantID){
     
     //
     //  generate fake commodityDeliveryResponse (needed to get BDRs)
@@ -543,7 +543,7 @@ public class PointBalance
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : generating fake response DONE");
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : sending fake response ...");
 
-    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration);
+    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration, tenantID);
     commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryStatus.SUCCESS);
     commodityDeliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
     commodityDeliveryRequest.setStatusMessage("Success");

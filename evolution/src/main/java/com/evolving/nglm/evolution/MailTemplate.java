@@ -88,7 +88,7 @@ public class MailTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public MailTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public MailTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -96,7 +96,7 @@ public class MailTemplate extends SubscriberMessageTemplate
     *
     *****************************************/
     
-    super(jsonRoot, GUIManagedObjectType.MailMessageTemplate, epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.MailMessageTemplate, epoch, existingTemplateUnchecked, tenantID);
     
     /*****************************************
     *

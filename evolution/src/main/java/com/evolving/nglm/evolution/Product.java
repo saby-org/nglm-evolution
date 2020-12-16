@@ -230,7 +230,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductUnchecked, DeliverableService deliverableService, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  public Product(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductUnchecked, DeliverableService deliverableService, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -238,7 +238,7 @@ public class Product extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    super(jsonRoot, (existingProductUnchecked != null) ? existingProductUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingProductUnchecked != null) ? existingProductUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -256,7 +256,7 @@ public class Product extends GUIManagedObject implements StockableItem
 
     this.supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "stock", false);
-    this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService);
+    this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService, tenantID);
     this.stockableItemID = "product-" + getProductID();
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
 
@@ -317,14 +317,14 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private Set<ProductTypeInstance> decodeProductTypes(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  private Set<ProductTypeInstance> decodeProductTypes(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     Set<ProductTypeInstance> result = new HashSet<ProductTypeInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new ProductTypeInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
+            result.add(new ProductTypeInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
           }
       }
     return result;

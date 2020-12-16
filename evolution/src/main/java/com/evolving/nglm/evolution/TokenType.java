@@ -206,7 +206,7 @@ public class TokenType extends GUIManagedObject
   *
   *****************************************/
 
-  public TokenType(JSONObject jsonRoot, long epoch, GUIManagedObject existingTokenTypeUnchecked) throws GUIManagerException
+  public TokenType(JSONObject jsonRoot, long epoch, GUIManagedObject existingTokenTypeUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -214,7 +214,7 @@ public class TokenType extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingTokenTypeUnchecked != null) ? existingTokenTypeUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingTokenTypeUnchecked != null) ? existingTokenTypeUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

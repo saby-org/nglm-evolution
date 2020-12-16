@@ -192,7 +192,7 @@ public class CatalogCharacteristic extends GUIManagedObject
   *
   *****************************************/
 
-  public CatalogCharacteristic(JSONObject jsonRoot, long epoch, GUIManagedObject existingCatalogCharacteristicUnchecked) throws GUIManagerException
+  public CatalogCharacteristic(JSONObject jsonRoot, long epoch, GUIManagedObject existingCatalogCharacteristicUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -200,7 +200,7 @@ public class CatalogCharacteristic extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingCatalogCharacteristicUnchecked != null) ? existingCatalogCharacteristicUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingCatalogCharacteristicUnchecked != null) ? existingCatalogCharacteristicUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

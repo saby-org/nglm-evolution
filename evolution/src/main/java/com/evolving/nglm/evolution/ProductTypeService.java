@@ -101,7 +101,7 @@ public class ProductTypeService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { productTypeListener.productTypeActivated((ProductType) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { productTypeListener.productTypeDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { productTypeListener.productTypeDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -114,13 +114,13 @@ public class ProductTypeService extends GUIService
   *****************************************/
 
   public String generateProductTypeID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredProductType(String productTypeID) { return getStoredGUIManagedObject(productTypeID); }
-  public GUIManagedObject getStoredProductType(String productTypeID, boolean includeArchived) { return getStoredGUIManagedObject(productTypeID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredProductTypes() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredProductTypes(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredProductType(String productTypeID, int tenantID) { return getStoredGUIManagedObject(productTypeID, tenantID); }
+  public GUIManagedObject getStoredProductType(String productTypeID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(productTypeID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredProductTypes(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredProductTypes(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveProductType(GUIManagedObject productTypeUnchecked, Date date) { return isActiveGUIManagedObject(productTypeUnchecked, date); }
-  public ProductType getActiveProductType(String productTypeID, Date date) { return (ProductType) getActiveGUIManagedObject(productTypeID, date); }
-  public Collection<ProductType> getActiveProductTypes(Date date) { return (Collection<ProductType>) getActiveGUIManagedObjects(date); }
+  public ProductType getActiveProductType(String productTypeID, Date date, int tenantID) { return (ProductType) getActiveGUIManagedObject(productTypeID, date, tenantID); }
+  public Collection<ProductType> getActiveProductTypes(Date date, int tenantID) { return (Collection<ProductType>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -128,7 +128,7 @@ public class ProductTypeService extends GUIService
   *
   *****************************************/
 
-  public void putProductType(GUIManagedObject productType, boolean newObject, String userID) { putGUIManagedObject(productType, SystemTime.getCurrentTime(), newObject, userID); }
+  public void putProductType(GUIManagedObject productType, boolean newObject, String userID, int tenantID) { putGUIManagedObject(productType, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
 
   /*****************************************
   *
@@ -136,7 +136,7 @@ public class ProductTypeService extends GUIService
   *
   *****************************************/
 
-  public void removeProductType(String productTypeID, String userID) { removeGUIManagedObject(productTypeID, SystemTime.getCurrentTime(), userID); }
+  public void removeProductType(String productTypeID, String userID, int tenantID) { removeGUIManagedObject(productTypeID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

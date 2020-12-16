@@ -103,9 +103,9 @@ public class CriterionFieldAvailableValues extends GUIManagedObject
   *
   *****************************************/
 
-  private CriterionFieldAvailableValues(CriterionFieldAvailableValues criterionFieldAvailableValues)
+  private CriterionFieldAvailableValues(CriterionFieldAvailableValues criterionFieldAvailableValues, int tenantID)
   {
-    super(criterionFieldAvailableValues.getJSONRepresentation(), criterionFieldAvailableValues.getEpoch());
+    super(criterionFieldAvailableValues.getJSONRepresentation(), criterionFieldAvailableValues.getEpoch(), tenantID);
     this.availableValues = criterionFieldAvailableValues.getAvailableValues();
   }
 
@@ -117,7 +117,7 @@ public class CriterionFieldAvailableValues extends GUIManagedObject
 
   public CriterionFieldAvailableValues copy()
   {
-    return new CriterionFieldAvailableValues(this);
+    return new CriterionFieldAvailableValues(this, this.getTenantID());
   }
 
   /*****************************************
@@ -210,7 +210,7 @@ public class CriterionFieldAvailableValues extends GUIManagedObject
   *
   *****************************************/
 
-  public CriterionFieldAvailableValues(JSONObject jsonRoot, long epoch, GUIManagedObject existingCriterionFieldAvailableValuesUnchecked) throws GUIManagerException
+  public CriterionFieldAvailableValues(JSONObject jsonRoot, long epoch, GUIManagedObject existingCriterionFieldAvailableValuesUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -218,7 +218,7 @@ public class CriterionFieldAvailableValues extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingCriterionFieldAvailableValuesUnchecked != null) ? existingCriterionFieldAvailableValuesUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingCriterionFieldAvailableValuesUnchecked != null) ? existingCriterionFieldAvailableValuesUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

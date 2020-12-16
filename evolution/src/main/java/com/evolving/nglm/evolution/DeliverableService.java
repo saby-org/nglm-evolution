@@ -103,7 +103,7 @@ public class DeliverableService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { deliverableListener.deliverableActivated((Deliverable) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { deliverableListener.deliverableDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { deliverableListener.deliverableDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -116,23 +116,23 @@ public class DeliverableService extends GUIService
   *****************************************/
 
   public String generateDeliverableID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredDeliverable(String deliverableID) { return getStoredGUIManagedObject(deliverableID); }
-  public GUIManagedObject getStoredDeliverable(String deliverableID, boolean includeArchived) { return getStoredGUIManagedObject(deliverableID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredDeliverables() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredDeliverables(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredDeliverable(String deliverableID, int tenantID) { return getStoredGUIManagedObject(deliverableID, tenantID); }
+  public GUIManagedObject getStoredDeliverable(String deliverableID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(deliverableID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredDeliverables(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredDeliverables(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveDeliverableThroughInterval(GUIManagedObject deliverableUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(deliverableUnchecked, startDate, endDate); }
   public boolean isActiveDeliverable(GUIManagedObject deliverableUnchecked, Date date) { return isActiveGUIManagedObject(deliverableUnchecked, date); }
-  public Deliverable getActiveDeliverable(String deliverableID, Date date) { return (Deliverable) getActiveGUIManagedObject(deliverableID, date); }
-  public Collection<Deliverable> getActiveDeliverables(Date date) { return (Collection<Deliverable>) getActiveGUIManagedObjects(date); }
+  public Deliverable getActiveDeliverable(String deliverableID, Date date, int tenantID) { return (Deliverable) getActiveGUIManagedObject(deliverableID, date, tenantID); }
+  public Collection<Deliverable> getActiveDeliverables(Date date, int tenantID) { return (Collection<Deliverable>) getActiveGUIManagedObjects(date, tenantID); }
 
   //
   //  getStoredDeliverableByName
   //
   
-  public GUIManagedObject getStoredDeliverableByName(String deliverableName, boolean includeArchived)
+  public GUIManagedObject getStoredDeliverableByName(String deliverableName, boolean includeArchived, int tenantID)
   {
     GUIManagedObject result = null;
-    for (GUIManagedObject guiManagedObject : getStoredDeliverables(includeArchived))
+    for (GUIManagedObject guiManagedObject : getStoredDeliverables(includeArchived, tenantID))
       {
         if (Objects.equals(deliverableName, guiManagedObject.getGUIManagedObjectName()))
           {
@@ -147,7 +147,7 @@ public class DeliverableService extends GUIService
   //  getStoredDeliverableByName
   //
   
-  public GUIManagedObject getStoredDeliverableByName(String deliverableName) { return getStoredDeliverableByName(deliverableName, false); }
+  public GUIManagedObject getStoredDeliverableByName(String deliverableName, int tenantID) { return getStoredDeliverableByName(deliverableName, false, tenantID); }
 
   /*****************************************
   *
@@ -155,7 +155,7 @@ public class DeliverableService extends GUIService
   *
   *****************************************/
 
-  public void putDeliverable(GUIManagedObject deliverable, boolean newObject, String userID) { putGUIManagedObject(deliverable, SystemTime.getCurrentTime(), newObject, userID); }
+  public void putDeliverable(GUIManagedObject deliverable, boolean newObject, String userID, int tenantID) { putGUIManagedObject(deliverable, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
 
   /*****************************************
   *
@@ -163,7 +163,7 @@ public class DeliverableService extends GUIService
   *
   *****************************************/
 
-  public void removeDeliverable(String deliverableID, String userID) { removeGUIManagedObject(deliverableID, SystemTime.getCurrentTime(), userID); }
+  public void removeDeliverable(String deliverableID, String userID, int tenantID) { removeGUIManagedObject(deliverableID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

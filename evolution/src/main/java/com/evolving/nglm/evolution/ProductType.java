@@ -61,8 +61,8 @@ public class ProductType extends OfferContentType {
     this.catalogCharacteristics = catalogCharacteristics;
   }
 
-  public ProductType(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductTypeUnchecked) throws GUIManagerException {
-    super(jsonRoot, epoch, existingProductTypeUnchecked);
+  public ProductType(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductTypeUnchecked, int tenantID) throws GUIManagerException {
+    super(jsonRoot, epoch, existingProductTypeUnchecked, tenantID);
     this.catalogCharacteristics = decodeCatalogCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", true));
 
   }

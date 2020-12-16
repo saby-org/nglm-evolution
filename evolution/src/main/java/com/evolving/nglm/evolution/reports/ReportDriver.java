@@ -42,7 +42,7 @@ public abstract class ReportDriver
    * 
    **********************/
   
-  public abstract void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params);
+  public abstract void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID);
 
   /******************************
    * 

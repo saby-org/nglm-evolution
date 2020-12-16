@@ -91,7 +91,7 @@ public class DynamicEventDeclarationsService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { dynamicEventDeclarationsListener.dynamicEventDeclarationsActivated((DynamicEventDeclarations) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { dynamicEventDeclarationsListener.dynamicEventDeclarationsDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { dynamicEventDeclarationsListener.dynamicEventDeclarationsDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -104,17 +104,17 @@ public class DynamicEventDeclarationsService extends GUIService
   *****************************************/
 
   public String generateDynamicEventDeclarationsID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredDynamicEventDeclarations(String dynamicEventDeclarationsID) { return getStoredGUIManagedObject(dynamicEventDeclarationsID); }
-  public Collection<GUIManagedObject> getStoredDynamicEventDeclarationss() { return getStoredGUIManagedObjects(); }
+  public GUIManagedObject getStoredDynamicEventDeclarations(String dynamicEventDeclarationsID, int tenantID) { return getStoredGUIManagedObject(dynamicEventDeclarationsID, tenantID); }
+  public Collection<GUIManagedObject> getStoredDynamicEventDeclarationss(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public boolean isActiveDynamicEventDeclarations(GUIManagedObject dynamicEventDeclarationsUnchecked, Date date) { return isActiveGUIManagedObject(dynamicEventDeclarationsUnchecked, date); }
-  public DynamicEventDeclarations getActiveDynamicEventDeclarations(String dynamicEventDeclarationsID, Date date) { return (DynamicEventDeclarations) getActiveGUIManagedObject(dynamicEventDeclarationsID, date); }
+  public DynamicEventDeclarations getActiveDynamicEventDeclarations(String dynamicEventDeclarationsID, Date date, int tenantID) { return (DynamicEventDeclarations) getActiveGUIManagedObject(dynamicEventDeclarationsID, date, tenantID); }
   
-  public DynamicEventDeclarations getSingletonDynamicEventDeclarations() { return getActiveDynamicEventDeclarations(DynamicEventDeclarations.singletonID, SystemTime.getCurrentTime()); }
-  public Map<String, EvolutionEngineEventDeclaration> getStaticAndDynamicEvolutionEventDeclarations()
+  public DynamicEventDeclarations getSingletonDynamicEventDeclarations(int tenantID) { return getActiveDynamicEventDeclarations(DynamicEventDeclarations.singletonID, SystemTime.getCurrentTime(), tenantID); }
+  public Map<String, EvolutionEngineEventDeclaration> getStaticAndDynamicEvolutionEventDeclarations(int tenantID)
   {
     Map<String, EvolutionEngineEventDeclaration> result = new HashMap<>();
     result.putAll(Deployment.getEvolutionEngineEvents());
-    DynamicEventDeclarations singletonDynamicEventDeclarations = getSingletonDynamicEventDeclarations();
+    DynamicEventDeclarations singletonDynamicEventDeclarations = getSingletonDynamicEventDeclarations(tenantID);
     if(singletonDynamicEventDeclarations != null)
       {
         for(String singletonDynamicEventDeclarationName : singletonDynamicEventDeclarations.getDynamicEventDeclarations().keySet()) 
@@ -131,7 +131,7 @@ public class DynamicEventDeclarationsService extends GUIService
   *
   *****************************************/
 
-  public void refreshLoyaltyProgramChangeEvent(LoyaltyProgramService loyaltyProgramService)
+  public void refreshLoyaltyProgramChangeEvent(LoyaltyProgramService loyaltyProgramService, int tenantID)
   {
     DynamicEventDeclaration loyaltyProgramPointChangeEventDeclaration;
     try
@@ -143,7 +143,7 @@ public class DynamicEventDeclarationsService extends GUIService
         throw new ServerRuntimeException("dynamicEventDeclaration point program change ", e);
       }
 
-    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations();
+    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations(tenantID);
     boolean newObject;
     Map<String, DynamicEventDeclaration> dynamicEventDeclarationsMap;
     if (dynamicEventDeclarations == null)
@@ -161,13 +161,13 @@ public class DynamicEventDeclarationsService extends GUIService
     JSONObject guiManagedObjectJson = new JSONObject();
     guiManagedObjectJson.put("id", DynamicEventDeclarations.singletonID);
     guiManagedObjectJson.put("active", Boolean.TRUE);
-    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap);
+    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap, tenantID);
 
     //
     // put
     //
 
-    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null);
+    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null, tenantID);
   }
 
   /*****************************************
@@ -176,7 +176,7 @@ public class DynamicEventDeclarationsService extends GUIService
   *
   *****************************************/
 
-  public void refreshSegmentationChangeEvent(SegmentationDimensionService segmentationDimensionService)
+  public void refreshSegmentationChangeEvent(SegmentationDimensionService segmentationDimensionService, int tenantID)
   {
     if (!Deployment.getEnableProfileSegmentChange()) 
       {
@@ -193,7 +193,7 @@ public class DynamicEventDeclarationsService extends GUIService
         throw new ServerRuntimeException("dynamicEventDeclaration", e);
       }
 
-    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations();
+    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations(tenantID);
     boolean newObject;
     Map<String, DynamicEventDeclaration> dynamicEventDeclarationsMap;
     if (dynamicEventDeclarations == null)
@@ -211,13 +211,13 @@ public class DynamicEventDeclarationsService extends GUIService
     JSONObject guiManagedObjectJson = new JSONObject();
     guiManagedObjectJson.put("id", DynamicEventDeclarations.singletonID);
     guiManagedObjectJson.put("active", Boolean.TRUE);
-    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap);
+    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap, tenantID);
 
     //
     // put
     //
 
-    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null);
+    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null, tenantID);
   }
   
   /*****************************************
@@ -420,7 +420,7 @@ public class DynamicEventDeclarationsService extends GUIService
   *
   *****************************************/
 
-  public void removeDynamicEventDeclarations(String dynamicEventDeclarationsID, String userID) { removeGUIManagedObject(dynamicEventDeclarationsID, SystemTime.getCurrentTime(), userID); }
+  public void removeDynamicEventDeclarations(String dynamicEventDeclarationsID, String userID, int tenantID) { removeGUIManagedObject(dynamicEventDeclarationsID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

@@ -131,7 +131,7 @@ public class SubscriberRelationship extends GUIManagedObject
   *
   *****************************************/
 
-  public SubscriberRelationship(JSONObject jsonRoot, long epoch, GUIManagedObject existingRelationshipUnchecked) throws GUIManagerException
+  public SubscriberRelationship(JSONObject jsonRoot, long epoch, GUIManagedObject existingRelationshipUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -139,7 +139,7 @@ public class SubscriberRelationship extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingRelationshipUnchecked != null) ? existingRelationshipUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingRelationshipUnchecked != null) ? existingRelationshipUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

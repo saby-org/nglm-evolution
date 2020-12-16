@@ -164,7 +164,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       }
   }
 
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     LinkedHashMap<String, Object> bdrRecs = new LinkedHashMap<>();
@@ -195,7 +195,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         if (bdrFields.containsKey(deliverableID))
           {               
             GUIManagedObject deliverableObject = deliverableService
-                .getStoredDeliverable(String.valueOf(bdrFields.get(deliverableID)));
+                .getStoredDeliverable(String.valueOf(bdrFields.get(deliverableID)), tenantID);
             if (deliverableObject instanceof Deliverable)
               {
                 bdrRecs.put(deliverableDisplay, ((Deliverable) deliverableObject).getDeliverableDisplay());                   

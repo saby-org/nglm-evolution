@@ -2203,7 +2203,7 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now, tenantID);
                           characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
                           characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
                           characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
@@ -2494,7 +2494,7 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now, tenantID);
                           characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
                           characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
                           characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
@@ -3253,7 +3253,7 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now, tenantID);
                           characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
                           characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
                           characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
@@ -3725,7 +3725,7 @@ public class ThirdPartyManager
      if (callingChannelDisplay != null)
        {
          String callingChannelID = null;
-         for (CallingChannel callingChannelLoop : callingChannelService.getActiveCallingChannels(now))
+         for (CallingChannel callingChannelLoop : callingChannelService.getActiveCallingChannels(now, tenantID))
            {
              if (callingChannelLoop.getGUIManagedObjectDisplay().equals(callingChannelDisplay))
                {
@@ -3739,7 +3739,7 @@ public class ThirdPartyManager
              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseMessage());
              return JSONUtilities.encodeObject(response);          
            }
-         callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, now);
+         callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, now, tenantID);
          if (callingChannel == null)
            {
              log.error(RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericDescription()+" unknown id : "+callingChannelID);

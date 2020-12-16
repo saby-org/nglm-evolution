@@ -151,7 +151,7 @@ public class OfferObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public OfferObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferObjectiveUnchecked) throws GUIManagerException
+  public OfferObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferObjectiveUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -159,7 +159,7 @@ public class OfferObjective extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingOfferObjectiveUnchecked != null) ? existingOfferObjectiveUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingOfferObjectiveUnchecked != null) ? existingOfferObjectiveUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -242,7 +242,7 @@ public class OfferObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException
+  public void validate(CatalogCharacteristicService catalogCharacteristicService, Date date, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -252,7 +252,7 @@ public class OfferObjective extends GUIManagedObject
 
     for (String catalogCharacteristicID : catalogCharacteristics)
       {
-        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date);
+        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date, tenantID);
         if (catalogCharacteristic == null) throw new GUIManagerException("unknown catalog characteristic", catalogCharacteristicID);
       }
   }

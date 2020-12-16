@@ -124,6 +124,7 @@ public class Deployment
   private static String profileSegmentChangeEventTopic;
   private static String voucherActionTopic;
   private static String tokenRedeemedTopic;
+  private static String tenantTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
   private static String tokenChangeTopic;
@@ -370,6 +371,7 @@ public class Deployment
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
   public static String getVoucherActionTopic() { return voucherActionTopic; }
   public static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
+  public static String getTenantTopic() { return tenantTopic; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
   public static String getTokenChangeTopic() { return tokenChangeTopic; }
@@ -959,7 +961,7 @@ public class Deployment
           for (int i=0; i<communicationChannelsJSONArray.size(); i++)
             {
               JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);
-              CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON);
+              CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON, JSONUtilities.decodeInteger(communicationChannelJSON, "tenantID", true));
               communicationChannels.put(communicationChannel.getID(), communicationChannel);
             }
         }
@@ -984,7 +986,7 @@ public class Deployment
               defaultTimeWindowJSON.put("communicationChannelID", "default");
             }
           GUIManagedObject.commonSchema();//avoiding a NPE in a "static init" loop
-          defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null);          
+          defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null, tenantID);          
         }
       catch (GUIManagerException | JSONUtilitiesException e)
         {
@@ -2030,6 +2032,19 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+      
+      //
+      //  tenantTopic
+      //
+
+      try
+        {
+          tenantTopic = JSONUtilities.decodeString(jsonRoot, "tenantTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
       //
       //  baseLanguageID
@@ -2450,7 +2465,7 @@ public class Deployment
           for (int i=0; i<evaluationCriterionValues.size(); i++)
             {
               JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile.get(tenantID));
               universalControlGroupCriteria.add(evaluationCriterion);
             }
         }

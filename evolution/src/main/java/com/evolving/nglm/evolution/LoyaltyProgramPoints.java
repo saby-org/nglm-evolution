@@ -279,7 +279,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramPoints(JSONObject jsonRoot, long epoch, GUIManagedObject existingLoyaltyProgramUnchecked, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  public LoyaltyProgramPoints(JSONObject jsonRoot, long epoch, GUIManagedObject existingLoyaltyProgramUnchecked, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     /*****************************************
      *
@@ -287,7 +287,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
      *
      *****************************************/
 
-    super(jsonRoot, epoch, existingLoyaltyProgramUnchecked, catalogCharacteristicService);
+    super(jsonRoot, epoch, existingLoyaltyProgramUnchecked, catalogCharacteristicService, tenantID);
 
     /*****************************************
      *

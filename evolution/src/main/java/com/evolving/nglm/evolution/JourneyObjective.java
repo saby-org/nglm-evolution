@@ -209,7 +209,7 @@ public class JourneyObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public JourneyObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingJourneyObjectiveUnchecked) throws GUIManagerException
+  public JourneyObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingJourneyObjectiveUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -217,7 +217,7 @@ public class JourneyObjective extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingJourneyObjectiveUnchecked != null) ? existingJourneyObjectiveUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingJourneyObjectiveUnchecked != null) ? existingJourneyObjectiveUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -316,7 +316,7 @@ public class JourneyObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException
+  public void validate(JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, Date date, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -326,7 +326,7 @@ public class JourneyObjective extends GUIManagedObject
 
     if (contactPolicyID != null)
       {
-        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, date);
+        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, date, tenantID);
         if (contactPolicy == null) throw new GUIManagerException("unknown contact policy", contactPolicyID);
       }
 
@@ -338,7 +338,7 @@ public class JourneyObjective extends GUIManagedObject
 
     for (String catalogCharacteristicID : catalogCharacteristics)
       {
-        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date);
+        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date, tenantID);
         if (catalogCharacteristic == null) throw new GUIManagerException("unknown catalog characteristic", catalogCharacteristicID);
       }
     

@@ -108,11 +108,11 @@ public class DynamicCriterionFieldService extends GUIService
   *****************************************/
 
   public String generateDynamicCriterionFieldID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredDynamicCriterionField(String dynamicCriterionFieldID) { return getStoredGUIManagedObject(dynamicCriterionFieldID); }
-  public Collection<GUIManagedObject> getStoredDynamicCriterionFields() { return getStoredGUIManagedObjects(); }
+  public GUIManagedObject getStoredDynamicCriterionField(String dynamicCriterionFieldID, int tenantID) { return getStoredGUIManagedObject(dynamicCriterionFieldID, tenantID); }
+  public Collection<GUIManagedObject> getStoredDynamicCriterionFields(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public boolean isActiveDynamicCriterionField(GUIManagedObject dynamicCriterionFieldUnchecked, Date date) { return isActiveGUIManagedObject(dynamicCriterionFieldUnchecked, date); }
-  public DynamicCriterionField getActiveDynamicCriterionField(String dynamicCriterionFieldID, Date date) { return (DynamicCriterionField) getActiveGUIManagedObject(dynamicCriterionFieldID, date); }
-  public Collection<DynamicCriterionField> getActiveDynamicCriterionFields(Date date) { return (Collection<DynamicCriterionField>) getActiveGUIManagedObjects(date); }
+  public DynamicCriterionField getActiveDynamicCriterionField(String dynamicCriterionFieldID, Date date, int tenantID) { return (DynamicCriterionField) getActiveGUIManagedObject(dynamicCriterionFieldID, date, tenantID); }
+  public Collection<DynamicCriterionField> getActiveDynamicCriterionFields(Date date, int tenantID) { return (Collection<DynamicCriterionField>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -179,13 +179,13 @@ public class DynamicCriterionFieldService extends GUIService
     criterionFieldJSON.put("excludedOperators", null);
     criterionFieldJSON.put("includedComparableFields", null); 
     criterionFieldJSON.put("excludedComparableFields", null);
-    DynamicCriterionField criterionField = new DynamicCriterionField(loyaltyProgram, criterionFieldJSON);
+    DynamicCriterionField criterionField = new DynamicCriterionField(loyaltyProgram, criterionFieldJSON, loyaltyProgram.getTenantID());
 
     //
     //  put
     //
 
-    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newLoyaltyProgram, null);
+    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newLoyaltyProgram, null, loyaltyProgram.getTenantID());
   }
 
   /*****************************************
@@ -219,19 +219,19 @@ public class DynamicCriterionFieldService extends GUIService
   public void removeLoyaltyProgramCriterionFields(GUIManagedObject loyaltyProgram)
   {
     String prefix = "loyaltyprogram" + "." + loyaltyProgram.getGUIManagedObjectID() + ".";
-    removeDynamicCriterionField(prefix + "tier", null);
-    removeDynamicCriterionField(prefix + "rewardpoint.balance", null);
-    removeDynamicCriterionField(prefix + "statuspoint.balance", null);
+    removeDynamicCriterionField(prefix + "tier", null, loyaltyProgram.getTenantID());
+    removeDynamicCriterionField(prefix + "rewardpoint.balance", null, loyaltyProgram.getTenantID());
+    removeDynamicCriterionField(prefix + "statuspoint.balance", null, loyaltyProgram.getTenantID());
     
     if (loyaltyProgram instanceof LoyaltyProgramPoints)
       {
         LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
         String statusPointID = loyaltyProgramPoints.getStatusPointsID();
         String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
-        removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpirydate", null);
-        removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpirydate", null);
-        removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpiryquantity", null);
-        removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpiryquantity", null);
+        removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpirydate", null, loyaltyProgram.getTenantID());
+        removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpirydate", null, loyaltyProgram.getTenantID());
+        removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpiryquantity", null, loyaltyProgram.getTenantID());
+        removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpiryquantity", null, loyaltyProgram.getTenantID());
       }
   }
 
@@ -288,13 +288,13 @@ public class DynamicCriterionFieldService extends GUIService
     criterionFieldJSON.put("excludedOperators", null);
     criterionFieldJSON.put("includedComparableFields", null); 
     criterionFieldJSON.put("excludedComparableFields", null);
-    DynamicCriterionField criterionField = new DynamicCriterionField(point, criterionFieldJSON);
+    DynamicCriterionField criterionField = new DynamicCriterionField(point, criterionFieldJSON, point.getTenantID());
 
     //
     //  put
     //
 
-    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newPoint, null);
+    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newPoint, null, point.getTenantID());
   }
 
   /*****************************************
@@ -303,23 +303,23 @@ public class DynamicCriterionFieldService extends GUIService
   *
   *****************************************/
 
-  public void removePointCriterionFields(GUIManagedObject point)
+  public void removePointCriterionFields(GUIManagedObject point, int tenantID)
   {
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "balance", null);
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earliestexpirydate", null);
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earliestexpiryquantity", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "balance", null, tenantID);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earliestexpirydate", null, tenantID);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earliestexpiryquantity", null, tenantID);
   
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.yesterday", null);
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.last7days", null);
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.last30days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.yesterday", null, tenantID);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.last7days", null, tenantID);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.last30days", null, tenantID);
 
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.yesterday", null);
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.last7days", null);
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.last30days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.yesterday", null, tenantID);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.last7days", null, tenantID);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.last30days", null, tenantID);
 
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.yesterday", null);
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last7days", null);
-    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last30days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.yesterday", null, tenantID);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last7days", null, tenantID);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last30days", null, tenantID);
   }
   
   /*****************************************
@@ -328,7 +328,7 @@ public class DynamicCriterionFieldService extends GUIService
   *
   *****************************************/
 
-  public void removeDynamicCriterionField(String dynamicCriterionFieldID, String userID) { removeGUIManagedObject(dynamicCriterionFieldID, SystemTime.getCurrentTime(), userID); }
+  public void removeDynamicCriterionField(String dynamicCriterionFieldID, String userID, int tenantID) { removeGUIManagedObject(dynamicCriterionFieldID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

@@ -86,9 +86,9 @@ public class DynamicCriterionField extends GUIManagedObject
   *
   *****************************************/
 
-  public DynamicCriterionField(GUIManagedObject parent, JSONObject criterionFieldJSON) throws GUIManagerException
+  public DynamicCriterionField(GUIManagedObject parent, JSONObject criterionFieldJSON, int tenantID) throws GUIManagerException
   {
-    super(criterionFieldJSON, parent.getEpoch());
+    super(criterionFieldJSON, parent.getEpoch(), tenantID);
     this.criterionField = new CriterionField(criterionFieldJSON);
   }
 

@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,17 +58,18 @@ public class CriterionContext
   *  constants
   *
   *****************************************/
-
-  public static final CriterionContext Profile = new CriterionContext(CriterionContextType.Profile);
-  public static final CriterionContext FullProfile = new CriterionContext(CriterionContextType.FullProfile);
-  public static final CriterionContext DynamicProfile = new CriterionContext(CriterionContextType.DynamicProfile);
-  public static final CriterionContext FullDynamicProfile = new CriterionContext(CriterionContextType.FullDynamicProfile);
-  public static final CriterionContext Presentation = new CriterionContext(CriterionContextType.Presentation);
+ 
   public static final String EVALUATION_WK_DAY_ID = "evaluation.weekday";
   public static final String EVALUATION_TIME_ID = "evaluation.time";
   public static final String EVALUATION_MONTH_ID = "evaluation.month";
   public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
   public static final String EVALUATION_ANIVERSARY_DAY_ID = "evaluation.aniversary.day";
+  
+  public static HashMap<Integer, CriterionContext> Profile;
+  public static HashMap<Integer, CriterionContext> FullProfile;
+  public static HashMap<Integer, CriterionContext> DynamicProfile;
+  public static HashMap<Integer, CriterionContext> FullDynamicProfile;
+  public static HashMap<Integer, CriterionContext> Presentation;
 
   /*****************************************
   *
@@ -97,8 +99,35 @@ public class CriterionContext
   private static CriterionField subscriberTmpSuccessVouchers;
   private static CriterionField internalFalse;
   private static CriterionField internalTargets;
+  
+  private static TenantService tenantService;
+  
   static
-  {
+  {    
+    tenantService = new TenantService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getTenantTopic(), false);
+    tenantService.start();
+
+    Profile = new HashMap<Integer, CriterionContext>();
+    FullProfile = new HashMap<Integer, CriterionContext>();
+    DynamicProfile = new HashMap<Integer, CriterionContext>();
+    FullDynamicProfile = new HashMap<Integer, CriterionContext>();
+    Presentation = new HashMap<Integer, CriterionContext>();
+    
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+      {
+        CriterionContext profileCriterionContext = new CriterionContext(CriterionContextType.Profile, tenant.getEffectiveTenantID());  
+        CriterionContext fullProfileCriterionContext = new CriterionContext(CriterionContextType.FullProfile, tenant.getEffectiveTenantID());
+        CriterionContext dynamicProfileCriterionContext = new CriterionContext(CriterionContextType.DynamicProfile, tenant.getEffectiveTenantID()); 
+        CriterionContext fullDynamicProfileCriterionContext = new CriterionContext(CriterionContextType.FullDynamicProfile, tenant.getEffectiveTenantID()); 
+        CriterionContext presentation = new CriterionContext(CriterionContextType.Presentation, tenant.getEffectiveTenantID()); 
+
+        Profile.put(tenant.getEffectiveTenantID(), profileCriterionContext);
+        FullProfile.put(tenant.getEffectiveTenantID(), fullProfileCriterionContext);
+        DynamicProfile.put(tenant.getEffectiveTenantID(), dynamicProfileCriterionContext);
+        FullDynamicProfile.put(tenant.getEffectiveTenantID(), fullDynamicProfileCriterionContext);
+        Presentation.put(tenant.getEffectiveTenantID(), presentation);
+      }
+    
     //
     //  evaluationDate
     //
@@ -478,6 +507,7 @@ public class CriterionContext
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("criterionContextType", Schema.STRING_SCHEMA);
     schemaBuilder.field("additionalCriterionFields", SchemaBuilder.array(CriterionField.schema()).schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -502,6 +532,7 @@ public class CriterionContext
 
   private CriterionContextType criterionContextType;
   private Map<String,CriterionField> additionalCriterionFields;
+  private int tenantID;
 
   /*****************************************
   *
@@ -511,6 +542,7 @@ public class CriterionContext
 
   public CriterionContextType getCriterionContextType() { return criterionContextType; }
   public Map<String,CriterionField> getAdditionalCriterionFields() { return additionalCriterionFields; }
+  public int getTenantID() { return tenantID; }
 
   /*****************************************
   *
@@ -518,10 +550,11 @@ public class CriterionContext
   *
   *****************************************/
 
-  public CriterionContext(CriterionContextType criterionContextType)
+  public CriterionContext(CriterionContextType criterionContextType, int tenantID)
   {
     this.criterionContextType = criterionContextType;
     this.additionalCriterionFields = Collections.<String,CriterionField>emptyMap();
+    this.tenantID = tenantID;
   }
   
   /*****************************************
@@ -530,7 +563,7 @@ public class CriterionContext
   *
   *****************************************/
   
-  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables)
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, int tenantID)
   {
     this.criterionContextType = CriterionContextType.Journey;
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -541,6 +574,7 @@ public class CriterionContext
       {
         this.additionalCriterionFields.put(contextVariable.getID(), contextVariable);
       }
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -549,11 +583,12 @@ public class CriterionContext
   *
   *****************************************/
 
-  public CriterionContext(CriterionContext baseCriterionContext, Map<String,CriterionField> additionalCriterionFields)
+  public CriterionContext(CriterionContext baseCriterionContext, Map<String,CriterionField> additionalCriterionFields, int tenantID)
   {
     this.criterionContextType = CriterionContextType.JourneyNode;
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>(baseCriterionContext.getAdditionalCriterionFields());
     this.additionalCriterionFields.putAll(additionalCriterionFields);
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -561,13 +596,16 @@ public class CriterionContext
   *  constructor -- journey node
   *
   *****************************************/
-  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney) throws GUIManagerException
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney, int tenantID) throws GUIManagerException
   {
-    this(journeyParameters, contextVariables, journeyNodeType, journeyEvent, selectedJourney, null);
+    this(journeyParameters, contextVariables, journeyNodeType, journeyEvent, selectedJourney, null, tenantID);
   }
 
-  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney, CriterionDataType expectedDataType) throws GUIManagerException
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney, CriterionDataType expectedDataType, int tenantID) throws GUIManagerException
   {
+    
+    this.tenantID = tenantID;
+    
     /*****************************************
     *
     *  contextType
@@ -686,7 +724,7 @@ public class CriterionContext
   *
   *****************************************/
 
-  public CriterionContext(CriterionContext nodeCriterionContext, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent)
+  public CriterionContext(CriterionContext nodeCriterionContext, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, int tenantID)
   {
     this.criterionContextType = CriterionContextType.JourneyNode;
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>(nodeCriterionContext.getAdditionalCriterionFields());
@@ -695,6 +733,7 @@ public class CriterionContext
       {
         this.additionalCriterionFields.putAll(journeyEvent.getEventCriterionFields());
       }
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -703,10 +742,11 @@ public class CriterionContext
   *
   *****************************************/
 
-  private CriterionContext(CriterionContextType criterionContextType, Map<String,CriterionField> additionalCriterionFields)
+  private CriterionContext(CriterionContextType criterionContextType, Map<String,CriterionField> additionalCriterionFields, int tenantID)
   {
     this.criterionContextType = criterionContextType;
     this.additionalCriterionFields = additionalCriterionFields;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -721,6 +761,7 @@ public class CriterionContext
     Struct struct = new Struct(schema);
     struct.put("criterionContextType", criterionContext.getCriterionContextType().getExternalRepresentation());
     struct.put("additionalCriterionFields", packAdditionalCriterionFields(criterionContext.getAdditionalCriterionFields()));
+    struct.put("tenantID", criterionContext.getTenantID());
     return struct;
   }
 
@@ -763,12 +804,12 @@ public class CriterionContext
     Struct valueStruct = (Struct) value;
     CriterionContextType criterionContextType = CriterionContextType.fromExternalRepresentation(valueStruct.getString("criterionContextType"));
     Map<String,CriterionField> additionalCriterionFields = (schemaVersion >= 2) ? unpackAdditionalCriterionFields(schema.field("additionalCriterionFields").schema(), valueStruct.get("additionalCriterionFields")) : unpackAdditionalCriterionFields(schema.field("journeyCriterionFields").schema(), valueStruct.get("journeyCriterionFields"));
-
+    int tenantID = valueStruct.getInt16("tenantID");
     //
     //  return
     //
 
-    return new CriterionContext(criterionContextType, additionalCriterionFields);
+    return new CriterionContext(criterionContextType, additionalCriterionFields, tenantID);
   }
 
   /*****************************************
@@ -810,7 +851,7 @@ public class CriterionContext
   *
   *****************************************/
   
-  public Map<String,CriterionField> getCriterionFields()
+  public Map<String,CriterionField> getCriterionFields(int tenantID)
   {
     Map<String,CriterionField> result;
     switch (criterionContextType)
@@ -831,15 +872,15 @@ public class CriterionContext
 
         case FullProfile:
           result = new LinkedHashMap<String,CriterionField>();
-          result.putAll(Profile.getCriterionFields());
+          result.putAll(Profile.get(tenantID).getCriterionFields(tenantID));
           result.putAll(Deployment.getExtendedProfileCriterionFields());
           break;
 
         case DynamicProfile:
           if (dynamicCriterionFieldService == null) throw new ServerRuntimeException("criterion context not initialized");
           result = new LinkedHashMap<String,CriterionField>();
-          result.putAll(Profile.getCriterionFields());
-          for (DynamicCriterionField dynamicCriterionField : dynamicCriterionFieldService.getActiveDynamicCriterionFields(SystemTime.getCurrentTime()))
+          result.putAll(Profile.get(tenantID).getCriterionFields(tenantID));
+          for (DynamicCriterionField dynamicCriterionField : dynamicCriterionFieldService.getActiveDynamicCriterionFields(SystemTime.getCurrentTime(), tenantID))
             {
               result.put(dynamicCriterionField.getCriterionField().getID(), dynamicCriterionField.getCriterionField());
             }
@@ -847,7 +888,7 @@ public class CriterionContext
 
         case FullDynamicProfile:
           result = new LinkedHashMap<String,CriterionField>();
-          result.putAll(DynamicProfile.getCriterionFields());
+          result.putAll(DynamicProfile.get(tenantID).getCriterionFields(tenantID));
           result.putAll(Deployment.getExtendedProfileCriterionFields());
           break;
 
@@ -855,7 +896,7 @@ public class CriterionContext
         case JourneyNode:
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(additionalCriterionFields);
-          result.putAll(DynamicProfile.getCriterionFields());
+          result.putAll(DynamicProfile.get(tenantID).getCriterionFields(tenantID));
           break;
 
         case Presentation:

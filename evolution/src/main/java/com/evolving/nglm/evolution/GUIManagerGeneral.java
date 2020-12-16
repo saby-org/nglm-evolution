@@ -217,7 +217,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetStaticConfiguration(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetStaticConfiguration(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -329,7 +329,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields(), false);
+    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.get(tenantID).getCriterionFields(tenantID), false, tenantID);
 
     /*****************************************
     *
@@ -337,7 +337,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields(), false);
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.get(tenantID).getCriterionFields(tenantID), false, tenantID);
 
 
     /*****************************************
@@ -388,7 +388,7 @@ public class GUIManagerGeneral extends GUIManager
     List<JSONObject> nodeTypes;
     try
       {
-        nodeTypes = processNodeTypes(Deployment.getNodeTypes(), Collections.<String,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap());
+        nodeTypes = processNodeTypes(Deployment.getNodeTypes(), Collections.<String,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap(), tenantID);
       }
     catch (GUIManagerException e)
       {
@@ -465,7 +465,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetSupportedLanguages(String userID, JSONObject jsonRoot)
+  JSONObject processGetSupportedLanguages(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -498,7 +498,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetSupportedCurrencies(String userID, JSONObject jsonRoot)
+  JSONObject processGetSupportedCurrencies(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -531,7 +531,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetSupportedTimeUnits(String userID, JSONObject jsonRoot)
+  JSONObject processGetSupportedTimeUnits(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -564,7 +564,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetCatalogCharacteristicUnits(String userID, JSONObject jsonRoot)
+  JSONObject processGetCatalogCharacteristicUnits(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -597,7 +597,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetSupportedDataTypes(String userID, JSONObject jsonRoot)
+  JSONObject processGetSupportedDataTypes(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -630,7 +630,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetSupportedEvents(String userID, JSONObject jsonRoot)
+  JSONObject processGetSupportedEvents(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -638,7 +638,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    List<JSONObject> events = evaluateEnumeratedValues("eventNames", SystemTime.getCurrentTime(), true);
+    List<JSONObject> events = evaluateEnumeratedValues("eventNames", SystemTime.getCurrentTime(), true, tenantID);
 
     /*****************************************
     *
@@ -658,9 +658,9 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processConfigAdaptorSupportedLanguages(JSONObject jsonRoot)
+  JSONObject processConfigAdaptorSupportedLanguages(JSONObject jsonRoot, int tenantID)
   {
-    return processGetSupportedLanguages(null, jsonRoot);
+    return processGetSupportedLanguages(null, jsonRoot, tenantID);
   }
 
   /*****************************************
@@ -669,7 +669,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetCountBySegmentationEligibility(String userID,JSONObject jsonRoot)
+  JSONObject processGetCountBySegmentationEligibility(String userID,JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -728,13 +728,13 @@ public class GUIManagerGeneral extends GUIManager
     String stratumESFieldName = "stratum";
     try
       {
-        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false, tenantID);
         if(evaluateBySegmentId)
         {
           SegmentationDimension storedSegmentationDimensionEligibility = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionEligibility.getGUIManagedObjectID() , SystemTime.getCurrentTime());
           evaluateBySegmentId = evaluateBySegmentId && segmentationDimensionEligibility.getSegmentsConditionEqual(storedSegmentationDimensionEligibility);
         }
-        if(evaluateBySegmentId) return processGetCountBySegmentationEligibilityBySegmentId(segmentationDimensionEligibility);
+        if(evaluateBySegmentId) return processGetCountBySegmentationEligibilityBySegmentId(segmentationDimensionEligibility, tenantID);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
         List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
         for (SegmentEligibility segmentEligibility : segmentationDimensionEligibility.getSegments())
@@ -803,7 +803,7 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-  private JSONObject processGetCountBySegmentationEligibilityBySegmentId(SegmentationDimensionEligibility segmentationDimensionEligibility)
+  private JSONObject processGetCountBySegmentationEligibilityBySegmentId(SegmentationDimensionEligibility segmentationDimensionEligibility, int tenantID)
   {
 
     /****************************************
@@ -883,7 +883,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processEvaluateProfileCriteria(String userID, JSONObject jsonRoot)
+  JSONObject processEvaluateProfileCriteria(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -905,7 +905,7 @@ public class GUIManagerGeneral extends GUIManager
         JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
         for (int i=0; i<jsonCriteriaList.size(); i++)
           {
-            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile));
+            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile.get(tenantID)));
           }
       }
     catch (JSONUtilitiesException|GUIManagerException e)
@@ -1021,7 +1021,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetPointList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetPointList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -1075,7 +1075,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetPoint(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetPoint(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -1119,7 +1119,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutPoint(String userID, JSONObject jsonRoot)
+  JSONObject processPutPoint(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -1205,7 +1205,7 @@ public class GUIManagerGeneral extends GUIManager
         *
         ****************************************/
 
-        Point point = new Point(jsonRoot, epoch, existingPoint);
+        Point point = new Point(jsonRoot, epoch, existingPoint, tenantID);
 
         /*****************************************
          *
@@ -1250,8 +1250,8 @@ public class GUIManagerGeneral extends GUIManager
                 deliverableMap.put("active", true);
                 deliverableMap.put("unitaryCost", 0);
                 deliverableMap.put("label", "points");
-                Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-                deliverableService.putDeliverable(deliverable, true, userID);
+                Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null, tenantID);
+                deliverableService.putDeliverable(deliverable, true, userID, tenantID);
               }
 
             //
@@ -1268,7 +1268,7 @@ public class GUIManagerGeneral extends GUIManager
                 paymentMeanMap.put("display", point.getDisplay());
                 paymentMeanMap.put("active", true);
                 paymentMeanMap.put("label", point.getLabel());
-                PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
+                PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null, tenantID);
                 paymentMeanService.putPaymentMean(paymentMean, true, userID);
               }
 
@@ -1278,9 +1278,9 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            revalidateSubscriberMessageTemplates(now);
-            revalidateTargets(now);
-            revalidateJourneys(now);
+            revalidateSubscriberMessageTemplates(now, tenantID);
+            revalidateTargets(now, tenantID);
+            revalidateJourneys(now, tenantID);
           }
 
         /*****************************************
@@ -1302,7 +1302,7 @@ public class GUIManagerGeneral extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -1338,7 +1338,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemovePoint(String userID, JSONObject jsonRoot)
+  JSONObject processRemovePoint(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -1431,7 +1431,7 @@ public class GUIManagerGeneral extends GUIManager
             // deliverable
             //
 
-            Collection<GUIManagedObject> deliverableObjects = deliverableService.getStoredDeliverables();
+            Collection<GUIManagedObject> deliverableObjects = deliverableService.getStoredDeliverables(tenantID);
             for (GUIManagedObject deliverableObject : deliverableObjects)
               {
                 if (deliverableObject instanceof Deliverable)
@@ -1440,7 +1440,7 @@ public class GUIManagerGeneral extends GUIManager
                     if (deliverable.getFulfillmentProviderID().equals(providerID)
                         && deliverable.getExternalAccountID().equals(point.getGUIManagedObjectID()))
                       {
-                        deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
+                        deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0", tenantID);
                       }
                   }
               }
@@ -1480,15 +1480,15 @@ public class GUIManagerGeneral extends GUIManager
         // remove dynamic criterion fields
         //
 
-        dynamicCriterionFieldService.removePointCriterionFields(point);
+        dynamicCriterionFieldService.removePointCriterionFields(point, tenantID);
 
         //
         // revalidate
         //
 
-        revalidateSubscriberMessageTemplates(now);
-        revalidateTargets(now);
-        revalidateJourneys(now);
+        revalidateSubscriberMessageTemplates(now, tenantID);
+        revalidateTargets(now, tenantID);
+        revalidateJourneys(now, tenantID);
           
       }
         /*****************************************
@@ -1523,7 +1523,7 @@ public class GUIManagerGeneral extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusPoint(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusPoint(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -1556,7 +1556,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  ****************************************/
 
-                Point point = new Point(elementRoot, epoch, existingElement);
+                Point point = new Point(elementRoot, epoch, existingElement, tenantID);
 
                 /*****************************************
                  *
@@ -1572,9 +1572,9 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
 
-                revalidateSubscriberMessageTemplates(now);
-                revalidateTargets(now);
-                revalidateJourneys(now);
+                revalidateSubscriberMessageTemplates(now, tenantID);
+                revalidateTargets(now, tenantID);
+                revalidateJourneys(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -1583,7 +1583,7 @@ public class GUIManagerGeneral extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -1616,7 +1616,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetCountBySegmentationRanges(String userID, JSONObject jsonRoot)
+  JSONObject processGetCountBySegmentationRanges(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -1650,7 +1650,7 @@ public class GUIManagerGeneral extends GUIManager
         switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
           {
             case RANGES:
-              segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+              segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false, tenantID);
               break;
 
             case Unknown:
@@ -1684,7 +1684,7 @@ public class GUIManagerGeneral extends GUIManager
       log.info("evaluate by segment_id = "+evaluateBySegmentId);
     }
     //tamporary call only for banglaink hot fix because in 1.4.26 sbm is called
-    if(evaluateBySegmentId) return processGetCountBySegmentationRangesBySegmentId(userID,jsonRoot);
+    if(evaluateBySegmentId) return processGetCountBySegmentationRangesBySegmentId(userID,jsonRoot, tenantID);
     /*****************************************
     *
     *  extract BaseSplits
@@ -1844,7 +1844,7 @@ public class GUIManagerGeneral extends GUIManager
             // Retrieving the ElasticSearch field from the Criterion field.
             //
 
-            CriterionField criterionField = CriterionContext.FullProfile.getCriterionFields().get(baseSplit.getVariableName());
+            CriterionField criterionField = CriterionContext.FullProfile.get(tenantID).getCriterionFields(tenantID).get(baseSplit.getVariableName());
             if(criterionField.getESField() == null)
               {
                 //
@@ -2040,7 +2040,7 @@ public class GUIManagerGeneral extends GUIManager
    *
    *****************************************/
 
-  JSONObject processGetCountBySegmentationRangesBySegmentId(String userID, JSONObject jsonRoot)
+  JSONObject processGetCountBySegmentationRangesBySegmentId(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -2067,7 +2067,7 @@ public class GUIManagerGeneral extends GUIManager
       switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
       {
       case RANGES:
-        segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+        segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false, tenantID);
         break;
 
       case Unknown:
@@ -2218,7 +2218,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetCatalogCharacteristic(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetCatalogCharacteristic(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -2242,7 +2242,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived);
+    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived, tenantID);
     JSONObject catalogCharacteristicJSON = catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -2262,7 +2262,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutCatalogCharacteristic(String userID, JSONObject jsonRoot)
+  JSONObject processPutCatalogCharacteristic(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -2303,7 +2303,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingCatalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+    GUIManagedObject existingCatalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
 
     /*****************************************
     *
@@ -2336,7 +2336,7 @@ public class GUIManagerGeneral extends GUIManager
         *
         ****************************************/
 
-        CatalogCharacteristic catalogCharacteristic = new CatalogCharacteristic(jsonRoot, epoch, existingCatalogCharacteristic);
+        CatalogCharacteristic catalogCharacteristic = new CatalogCharacteristic(jsonRoot, epoch, existingCatalogCharacteristic, tenantID);
 
         /*****************************************
         *
@@ -2347,7 +2347,7 @@ public class GUIManagerGeneral extends GUIManager
           {
 
             catalogCharacteristicService.putCatalogCharacteristic(catalogCharacteristic,
-                (existingCatalogCharacteristic == null), userID);
+                (existingCatalogCharacteristic == null), userID, tenantID);
 
             /*****************************************
              *
@@ -2355,15 +2355,15 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            revalidateOffers(now);
-            revalidateJourneyObjectives(now);
-            revalidateOfferObjectives(now);
-            revalidateProductTypes(now);
-            revalidateProducts(now);
+            revalidateOffers(now, tenantID);
+            revalidateJourneyObjectives(now, tenantID);
+            revalidateOfferObjectives(now, tenantID);
+            revalidateProductTypes(now, tenantID);
+            revalidateProducts(now, tenantID);
             // right now voucher has no characteristics, the way I'm
             // implementing however I think should logically have
-            revalidateVoucherTypes(now);
-            revalidateVouchers(now);
+            revalidateVoucherTypes(now, tenantID);
+            revalidateVouchers(now, tenantID);
           }
 
         /*****************************************
@@ -2385,7 +2385,7 @@ public class GUIManagerGeneral extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -2393,19 +2393,19 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
             catalogCharacteristicService.putCatalogCharacteristic(incompleteObject,
-                (existingCatalogCharacteristic == null), userID);
+                (existingCatalogCharacteristic == null), userID, tenantID);
 
             //
             // revalidate dependent objects
             //
 
-            revalidateOffers(now);
-            revalidateJourneyObjectives(now);
-            revalidateOfferObjectives(now);
-            revalidateProductTypes(now);
-            revalidateProducts(now);
-            revalidateVoucherTypes(now);
-            revalidateVouchers(now);
+            revalidateOffers(now, tenantID);
+            revalidateJourneyObjectives(now, tenantID);
+            revalidateOfferObjectives(now, tenantID);
+            revalidateProductTypes(now, tenantID);
+            revalidateProducts(now, tenantID);
+            revalidateVoucherTypes(now, tenantID);
+            revalidateVouchers(now, tenantID);
           }
 
         //
@@ -2434,7 +2434,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveCatalogCharacteristic(String userID, JSONObject jsonRoot)
+  JSONObject processRemoveCatalogCharacteristic(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -2473,7 +2473,7 @@ public class GUIManagerGeneral extends GUIManager
         String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", false);
         catalogCharacteristicIDs.add(catalogCharacteristicID);
         GUIManagedObject catalogCharacteristic = catalogCharacteristicService
-            .getStoredCatalogCharacteristic(catalogCharacteristicID);
+            .getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
         if (catalogCharacteristic != null && (force || !catalogCharacteristic.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (catalogCharacteristic != null)
@@ -2493,7 +2493,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String catalogCharacteristicID = catalogCharacteristicIDs.get(i).toString();
         GUIManagedObject catalogCharacteristic = catalogCharacteristicService
-            .getStoredCatalogCharacteristic(catalogCharacteristicID);
+            .getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
 
         if (catalogCharacteristic != null && (force || !catalogCharacteristic.getReadOnly()))
           {
@@ -2511,7 +2511,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         GUIManagedObject catalogCharacteristic = catalogCharacteristics.get(i);
-        catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristic.getGUIManagedObjectID(), userID);
+        catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristic.getGUIManagedObjectID(), userID, tenantID);
 
         /*****************************************
          *
@@ -2519,13 +2519,13 @@ public class GUIManagerGeneral extends GUIManager
          *
          *****************************************/
 
-        revalidateOffers(now);
-        revalidateJourneyObjectives(now);
-        revalidateOfferObjectives(now);
-        revalidateProductTypes(now);
-        revalidateProducts(now);
-        revalidateVoucherTypes(now);
-        revalidateVouchers(now);
+        revalidateOffers(now, tenantID);
+        revalidateJourneyObjectives(now, tenantID);
+        revalidateOfferObjectives(now, tenantID);
+        revalidateProductTypes(now, tenantID);
+        revalidateProducts(now, tenantID);
+        revalidateVoucherTypes(now, tenantID);
+        revalidateVouchers(now, tenantID);
       }
 
     /*****************************************
@@ -2560,7 +2560,7 @@ public class GUIManagerGeneral extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusCatalogCharacteristic(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusCatalogCharacteristic(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -2580,7 +2580,7 @@ public class GUIManagerGeneral extends GUIManager
 
         String catalogCharacteristicID = catalogCharacteristicIDs.get(i).toString();
         GUIManagedObject existingElement = catalogCharacteristicService
-            .getStoredCatalogCharacteristic(catalogCharacteristicID);
+            .getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(catalogCharacteristicID);
@@ -2595,7 +2595,7 @@ public class GUIManagerGeneral extends GUIManager
                  ****************************************/
 
                 CatalogCharacteristic catalogCharacteristic = new CatalogCharacteristic(elementRoot, epoch,
-                    existingElement);
+                    existingElement, tenantID);
 
                 /*****************************************
                  *
@@ -2603,7 +2603,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
                 catalogCharacteristicService.putCatalogCharacteristic(catalogCharacteristic, (existingElement == null),
-                    userID);
+                    userID, tenantID);
 
                 /*****************************************
                  *
@@ -2611,15 +2611,15 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
 
-                revalidateOffers(now);
-                revalidateJourneyObjectives(now);
-                revalidateOfferObjectives(now);
-                revalidateProductTypes(now);
-                revalidateProducts(now);
+                revalidateOffers(now, tenantID);
+                revalidateJourneyObjectives(now, tenantID);
+                revalidateOfferObjectives(now, tenantID);
+                revalidateProductTypes(now, tenantID);
+                revalidateProducts(now, tenantID);
                 // right now voucher has no characteristics, the way I'm
                 // implementing however I think should logically have
-                revalidateVoucherTypes(now);
-                revalidateVouchers(now);
+                revalidateVoucherTypes(now, tenantID);
+                revalidateVouchers(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -2628,26 +2628,26 @@ public class GUIManagerGeneral extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
                 //
 
                 catalogCharacteristicService.putCatalogCharacteristic(incompleteObject, (existingElement == null),
-                    userID);
+                    userID, tenantID);
 
                 //
                 // revalidate dependent objects
                 //
 
-                revalidateOffers(now);
-                revalidateJourneyObjectives(now);
-                revalidateOfferObjectives(now);
-                revalidateProductTypes(now);
-                revalidateProducts(now);
-                revalidateVoucherTypes(now);
-                revalidateVouchers(now);
+                revalidateOffers(now, tenantID);
+                revalidateJourneyObjectives(now, tenantID);
+                revalidateOfferObjectives(now, tenantID);
+                revalidateProductTypes(now, tenantID);
+                revalidateProducts(now, tenantID);
+                revalidateVoucherTypes(now, tenantID);
+                revalidateVouchers(now, tenantID);
 
                 //
                 // log
@@ -2676,7 +2676,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetCatalogCharacteristicList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetCatalogCharacteristicList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -2694,7 +2694,7 @@ public class GUIManagerGeneral extends GUIManager
   for (int i = 0; i < catalogCharacteristicIDs.size(); i++)
     {
       String catalogCharacteristicID = catalogCharacteristicIDs.get(i).toString();
-      GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived);
+      GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived, tenantID);
       if (catalogCharacteristic != null)
         {
           catalogCharacteristicObjects.add(catalogCharacteristic);
@@ -2703,7 +2703,7 @@ public class GUIManagerGeneral extends GUIManager
       }
     else
       {
-        catalogCharacteristicObjects = catalogCharacteristicService.getStoredCatalogCharacteristics(includeArchived);
+        catalogCharacteristicObjects = catalogCharacteristicService.getStoredCatalogCharacteristics(includeArchived, tenantID);
       }
     for (GUIManagedObject catalogCharacteristic : catalogCharacteristicObjects)
       {
@@ -2728,7 +2728,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetDeliverable(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetDeliverable(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -2752,7 +2752,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived);
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived, tenantID);
     JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -2772,7 +2772,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetDeliverableByName(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetDeliverableByName(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -2796,7 +2796,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject deliverable = deliverableService.getStoredDeliverableByName(deliverableName, includeArchived);
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverableByName(deliverableName, includeArchived, tenantID);
     JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -2816,7 +2816,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutDeliverable(String userID, JSONObject jsonRoot)
+  JSONObject processPutDeliverable(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -2857,7 +2857,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverable(deliverableID);
+    GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
 
     /*****************************************
     *
@@ -2890,7 +2890,7 @@ public class GUIManagerGeneral extends GUIManager
         *
         ****************************************/
 
-        Deliverable deliverable = new Deliverable(jsonRoot, epoch, existingDeliverable);
+        Deliverable deliverable = new Deliverable(jsonRoot, epoch, existingDeliverable, tenantID);
 
         /*****************************************
         *
@@ -2900,7 +2900,7 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
 
-            deliverableService.putDeliverable(deliverable, (existingDeliverable == null), userID);
+            deliverableService.putDeliverable(deliverable, (existingDeliverable == null), userID, tenantID);
 
             /*****************************************
              *
@@ -2908,7 +2908,7 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            revalidateProducts(now);
+            revalidateProducts(now, tenantID);
           }
 
         /*****************************************
@@ -2930,7 +2930,7 @@ public class GUIManagerGeneral extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -2938,13 +2938,13 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
 
-            deliverableService.putDeliverable(incompleteObject, (existingDeliverable == null), userID);
+            deliverableService.putDeliverable(incompleteObject, (existingDeliverable == null), userID, tenantID);
 
             //
             // revalidateProducts
             //
 
-            revalidateProducts(now);
+            revalidateProducts(now, tenantID);
           }
 
         //
@@ -2973,7 +2973,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveDeliverable(String userID, JSONObject jsonRoot)
+  JSONObject processRemoveDeliverable(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -3011,7 +3011,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", false);
         deliverableIDs.add(deliverableID);
-        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
         if (deliverable != null && (force || !deliverable.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (deliverable != null)
@@ -3031,7 +3031,7 @@ public class GUIManagerGeneral extends GUIManager
     for (int i = 0; i < deliverableIDs.size(); i++)
       {
         String deliverableID = deliverableIDs.get(i).toString();
-        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
         if (deliverable != null && (force || !deliverable.getReadOnly())) 
           {
             deliverables.add(deliverable);
@@ -3051,7 +3051,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         GUIManagedObject deliverable = deliverables.get(i);
-        deliverableService.removeDeliverable(deliverable.getGUIManagedObjectID(), userID);
+        deliverableService.removeDeliverable(deliverable.getGUIManagedObjectID(), userID, tenantID);
 
         /*****************************************
          *
@@ -3059,7 +3059,7 @@ public class GUIManagerGeneral extends GUIManager
          *
          *****************************************/
 
-        revalidateProducts(now);
+        revalidateProducts(now, tenantID);
         
       }
 
@@ -3094,7 +3094,7 @@ public class GUIManagerGeneral extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusDeliverable(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusDeliverable(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -3113,7 +3113,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         String deliverableID = deliverableIDs.get(i).toString();
-        GUIManagedObject existingElement = deliverableService.getStoredDeliverable(deliverableID);
+        GUIManagedObject existingElement = deliverableService.getStoredDeliverable(deliverableID, tenantID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(deliverableID);
@@ -3128,14 +3128,14 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  ****************************************/
 
-                Deliverable deliverable = new Deliverable(elementRoot, epoch, existingElement);
+                Deliverable deliverable = new Deliverable(elementRoot, epoch, existingElement, tenantID);
 
                 /*****************************************
                  *
                  * store
                  *
                  *****************************************/
-                deliverableService.putDeliverable(deliverable, (existingElement == null), userID);
+                deliverableService.putDeliverable(deliverable, (existingElement == null), userID, tenantID);
 
                 /*****************************************
                  *
@@ -3143,7 +3143,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
 
-                revalidateProducts(now);
+                revalidateProducts(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -3152,18 +3152,18 @@ public class GUIManagerGeneral extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
                 //
-                deliverableService.putDeliverable(incompleteObject, (existingElement == null), userID);
+                deliverableService.putDeliverable(incompleteObject, (existingElement == null), userID, tenantID);
 
                 //
                 // revalidateProducts
                 //
 
-                revalidateProducts(now);
+                revalidateProducts(now, tenantID);
 
                 //
                 // log
@@ -3194,7 +3194,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetTokenTypeList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetTokenTypeList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -3246,7 +3246,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetTokenType(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetTokenType(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -3290,7 +3290,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutTokenType(String userID, JSONObject jsonRoot)
+  JSONObject processPutTokenType(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -3364,7 +3364,7 @@ public class GUIManagerGeneral extends GUIManager
         *
         ****************************************/
 
-        TokenType tokenType = new TokenType(jsonRoot, epoch, existingTokenType);
+        TokenType tokenType = new TokenType(jsonRoot, epoch, existingTokenType, tenantID);
 
         /*****************************************
         *
@@ -3382,7 +3382,7 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            revalidateProducts(now);
+            revalidateProducts(now, tenantID);
           }
 
         /*****************************************
@@ -3404,7 +3404,7 @@ public class GUIManagerGeneral extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -3417,7 +3417,7 @@ public class GUIManagerGeneral extends GUIManager
             // revalidateProducts
             //
 
-            revalidateProducts(now);
+            revalidateProducts(now, tenantID);
           }
 
         //
@@ -3446,7 +3446,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveTokenType(String userID, JSONObject jsonRoot)
+  JSONObject processRemoveTokenType(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -3533,7 +3533,7 @@ public class GUIManagerGeneral extends GUIManager
          *
          *****************************************/
 
-        revalidateProducts(now);
+        revalidateProducts(now, tenantID);
       }
 
     /*****************************************
@@ -3569,7 +3569,7 @@ public class GUIManagerGeneral extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusTokenType(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusTokenType(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -3602,7 +3602,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  ****************************************/
 
-                TokenType tokenType = new TokenType(elementRoot, epoch, existingElement);
+                TokenType tokenType = new TokenType(elementRoot, epoch, existingElement, tenantID);
 
                 /*****************************************
                  *
@@ -3618,7 +3618,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
 
-                revalidateProducts(now);
+                revalidateProducts(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -3627,7 +3627,7 @@ public class GUIManagerGeneral extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -3638,7 +3638,7 @@ public class GUIManagerGeneral extends GUIManager
                 // revalidateProducts
                 //
 
-                revalidateProducts(now);
+                revalidateProducts(now, tenantID);
 
                 //
                 // log
@@ -3664,7 +3664,7 @@ public class GUIManagerGeneral extends GUIManager
   *  processGetTokenCodesFormats
   *
   *****************************************/
-  JSONObject processGetTokenCodesFormats(String userID, JSONObject jsonRoot)
+  JSONObject processGetTokenCodesFormats(String userID, JSONObject jsonRoot, int tenantID)
   {
 
     /*****************************************
@@ -3697,7 +3697,7 @@ public class GUIManagerGeneral extends GUIManager
   *  processGetVoucherCodePatternList
   *
   *****************************************/
-  JSONObject processGetVoucherCodePatternList(String userID, JSONObject jsonRoot)
+  JSONObject processGetVoucherCodePatternList(String userID, JSONObject jsonRoot, int tenantID)
   {
 
     /*****************************************
@@ -3732,7 +3732,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGenerateVouchers(String userID, JSONObject jsonRoot)
+  JSONObject processGenerateVouchers(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -3754,7 +3754,7 @@ public class GUIManagerGeneral extends GUIManager
     // find existing vouchers
     
     List<String> existingVoucherCodes = new ArrayList<>();
-    Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true);
+    Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
 
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
 
@@ -3853,7 +3853,7 @@ public class GUIManagerGeneral extends GUIManager
     
     try
       {
-        UploadedFile uploadedFile = new UploadedFile(fileJSON, epoch, existingFileUpload);
+        UploadedFile uploadedFile = new UploadedFile(fileJSON, epoch, existingFileUpload, tenantID);
         uploadedFileService.putUploadedFile(uploadedFile, vouchersStream, uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
       }
     catch (GUIManagerException|IOException e)
@@ -3879,7 +3879,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetPaymentMean(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetPaymentMean(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -3923,7 +3923,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutPaymentMean(String userID, JSONObject jsonRoot)
+  JSONObject processPutPaymentMean(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -3996,7 +3996,7 @@ public class GUIManagerGeneral extends GUIManager
         *
         ****************************************/
 
-        PaymentMean paymentMean = new PaymentMean(jsonRoot, epoch, existingPaymentMean);
+        PaymentMean paymentMean = new PaymentMean(jsonRoot, epoch, existingPaymentMean, tenantID);
 
         /*****************************************
         *
@@ -4014,7 +4014,7 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            revalidateProducts(now);
+            revalidateProducts(now, tenantID);
           }
 
         /*****************************************
@@ -4035,7 +4035,7 @@ public class GUIManagerGeneral extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -4048,7 +4048,7 @@ public class GUIManagerGeneral extends GUIManager
             // revalidateProducts
             //
 
-            revalidateProducts(now);
+            revalidateProducts(now, tenantID);
           }
 
         //
@@ -4077,7 +4077,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemovePaymentMean(String userID, JSONObject jsonRoot)
+  JSONObject processRemovePaymentMean(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -4180,7 +4180,7 @@ public class GUIManagerGeneral extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusPaymentMean(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusPaymentMean(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -4213,7 +4213,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  ****************************************/
 
-                PaymentMean paymentMean = new PaymentMean(elementRoot, epoch, existingElement);
+                PaymentMean paymentMean = new PaymentMean(elementRoot, epoch, existingElement, tenantID);
 
                 /*****************************************
                  *
@@ -4228,7 +4228,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
 
-                revalidateProducts(now);
+                revalidateProducts(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -4237,7 +4237,7 @@ public class GUIManagerGeneral extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -4249,7 +4249,7 @@ public class GUIManagerGeneral extends GUIManager
                 // revalidateProducts
                 //
 
-                revalidateProducts(now);
+                revalidateProducts(now, tenantID);
 
                 //
                 // log
@@ -4277,7 +4277,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  void processPutFile(JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  void processPutFile(JSONObject jsonResponse, HttpExchange exchange, int tenantID) throws IOException
   {
     /****************************************
     *
@@ -4403,7 +4403,7 @@ public class GUIManagerGeneral extends GUIManager
                         *
                         ****************************************/
 
-                        UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload);
+                        UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload, tenantID);
 
                         /*****************************************
                         *
@@ -4419,7 +4419,7 @@ public class GUIManagerGeneral extends GUIManager
                         *
                         *****************************************/
 
-                        revalidateTargets(now);
+                        revalidateTargets(now, tenantID);
 
                         /*****************************************
                         *
@@ -4443,7 +4443,7 @@ public class GUIManagerGeneral extends GUIManager
                         //  incompleteObject
                         //
 
-                        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+                        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
                         //
                         //  store
@@ -4455,7 +4455,7 @@ public class GUIManagerGeneral extends GUIManager
                         //  revalidate dependent objects
                         //
 
-                        revalidateTargets(now);
+                        revalidateTargets(now, tenantID);
 
                         //
                         //  log
@@ -4520,7 +4520,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -4547,7 +4547,7 @@ public class GUIManagerGeneral extends GUIManager
       }
     else
       {
-        uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(includeArchived);
+        uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(includeArchived, tenantID);
       }
     String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
     for (GUIManagedObject uploaded : uploadedFileObjects)
@@ -4594,7 +4594,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveUploadedFile(String userID, JSONObject jsonRoot)
+  JSONObject processRemoveUploadedFile(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -4682,7 +4682,7 @@ public class GUIManagerGeneral extends GUIManager
          *
          *****************************************/
 
-        revalidateTargets(now);
+        revalidateTargets(now, tenantID);
       }
 
     /*****************************************
@@ -4717,7 +4717,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetEffectiveSystemTime(String userID, JSONObject jsonRoot)
+  JSONObject processGetEffectiveSystemTime(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -4737,7 +4737,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *********************************************/
 
-  JSONObject processGetTenantList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetTenantList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -4790,7 +4790,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   ****************************************/
   
-  public JSONObject processGetDependencies(String userID, JSONObject jsonRoot)
+  public JSONObject processGetDependencies(String userID, JSONObject jsonRoot, int tenantID)
   {
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     

@@ -178,7 +178,7 @@ public class Supplier extends GUIManagedObject
   *
   *****************************************/
 
-  public Supplier(JSONObject jsonRoot, long epoch, GUIManagedObject existingSupplierUnchecked) throws GUIManagerException
+  public Supplier(JSONObject jsonRoot, long epoch, GUIManagedObject existingSupplierUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -186,7 +186,7 @@ public class Supplier extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSupplierUnchecked != null) ? existingSupplierUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingSupplierUnchecked != null) ? existingSupplierUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

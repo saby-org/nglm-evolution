@@ -151,7 +151,7 @@ public class SegmentContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public SegmentContactPolicy(JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentContactPolicyUnchecked) throws GUIManagerException
+  public SegmentContactPolicy(JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentContactPolicyUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -159,7 +159,7 @@ public class SegmentContactPolicy extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSegmentContactPolicyUnchecked != null) ? existingSegmentContactPolicyUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingSegmentContactPolicyUnchecked != null) ? existingSegmentContactPolicyUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -240,7 +240,7 @@ public class SegmentContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(ContactPolicyService contactPolicyService, SegmentationDimensionService dimensionService, Date date) throws GUIManagerException
+  public void validate(ContactPolicyService contactPolicyService, SegmentationDimensionService dimensionService, Date date, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -264,7 +264,7 @@ public class SegmentContactPolicy extends GUIManagedObject
 
     for (String contactPolicyID : segments.values())
       {
-        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, date);
+        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, date, tenantID);
         if (contactPolicy == null) throw new GUIManagerException("unknown contact policy", contactPolicyID);
       }
   }

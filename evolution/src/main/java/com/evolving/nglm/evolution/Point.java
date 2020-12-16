@@ -116,9 +116,9 @@ public class Point extends GUIManagedObject
   *
   *****************************************/
 
-  private Point(Point point)
+  private Point(Point point, int tenantID)
   {
-    super(point.getJSONRepresentation(), point.getEpoch());
+    super(point.getJSONRepresentation(), point.getEpoch(), tenantID);
     this.debitable = point.getDebitable();
     this.creditable = point.getCreditable();
     this.setable = point.getSetable();
@@ -134,7 +134,7 @@ public class Point extends GUIManagedObject
 
   public Point copy()
   {
-    return new Point(this);
+    return new Point(this, this.getTenantID());
   }
 
   /*****************************************
@@ -196,7 +196,7 @@ public class Point extends GUIManagedObject
   *
   *****************************************/
 
-  public Point(JSONObject jsonRoot, long epoch, GUIManagedObject existingPointUnchecked) throws GUIManagerException
+  public Point(JSONObject jsonRoot, long epoch, GUIManagedObject existingPointUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -204,7 +204,7 @@ public class Point extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingPointUnchecked != null) ? existingPointUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingPointUnchecked != null) ? existingPointUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

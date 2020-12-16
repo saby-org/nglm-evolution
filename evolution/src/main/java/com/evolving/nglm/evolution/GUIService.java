@@ -70,11 +70,11 @@ public class GUIService
   *****************************************/
 
   private volatile boolean stopRequested = false;
-  private ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = new ConcurrentHashMap<>();
-  private ConcurrentHashMap<String,GUIManagedObject> availableGUIManagedObjects = new ConcurrentHashMap<>();
-  private ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = new ConcurrentHashMap<>();
+  private HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> storedPerTenantGUIManagedObjects = new HashMap<>();
+  private HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> availablePerTenantGUIManagedObjects = new HashMap<>();
+  private HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> activePerTenantGUIManagedObjects = new HashMap<>();
   // store objects that should have been "active", but are not because an update "suspend" them, either from direct normal GUI call "suspend" or an invalid update, but they were active at some point to end up there
-  private ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = new ConcurrentHashMap<>();
+  private HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> interruptedPerTenantGUIManagedObjects = new HashMap();
   private Date lastUpdate = SystemTime.getCurrentTime();
   private TreeSet<ScheduleEntry> schedule = new TreeSet<ScheduleEntry>();
   private String guiManagedObjectTopic;
@@ -351,9 +351,11 @@ public class GUIService
   *
   *****************************************/
 
-  protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID, boolean includeArchived)
+  protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID, boolean includeArchived, int tenantID)
   {
     if(guiManagedObjectID==null) return null;
+    ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
+    if(storedGUIManagedObjects == null) return null;    
     GUIManagedObject result = storedGUIManagedObjects.get(guiManagedObjectID);
     result = (result != null && (includeArchived || ! result.getDeleted())) ? result : null;
       return result;
@@ -363,7 +365,7 @@ public class GUIService
   //  (w/o includeArchived)
   //
 
-  protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID) { return getStoredGUIManagedObject(guiManagedObjectID, false); }
+  protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID, int tenantID) { return getStoredGUIManagedObject(guiManagedObjectID, false, tenantID); }
 
   /*****************************************
   *
@@ -371,9 +373,11 @@ public class GUIService
   *
   ****************************************/
 
-  protected Collection<GUIManagedObject> getStoredGUIManagedObjects(boolean includeArchived)
+  protected Collection<GUIManagedObject> getStoredGUIManagedObjects(boolean includeArchived, int tenantID)
   {
     List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
+    ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
+    if(storedGUIManagedObjects == null) storedGUIManagedObjects = new ConcurrentHashMap<>();
     for (GUIManagedObject guiManagedObject : storedGUIManagedObjects.values())
       {
         if (includeArchived || ! guiManagedObject.getDeleted())
@@ -388,7 +392,7 @@ public class GUIService
   //  (w/o includeArchived)
   //
 
-  protected Collection<GUIManagedObject> getStoredGUIManagedObjects() { return getStoredGUIManagedObjects(false); }
+  protected Collection<GUIManagedObject> getStoredGUIManagedObjects(int tenantID) { return getStoredGUIManagedObjects(false, tenantID); }
 
   /*****************************************
   *
@@ -412,14 +416,18 @@ public class GUIService
   protected boolean isActiveGUIManagedObject(GUIManagedObject guiManagedObject, Date date) {
     if(guiManagedObject==null) return false;
     if(!guiManagedObject.getAccepted()) return false;
+    ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(guiManagedObject.getTenantID());
+    if(activeGUIManagedObjects == null) return false;   
     if(activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID())==null) return false;
     if(guiManagedObject.getEffectiveStartDate().after(date)) return false;
     if(guiManagedObject.getEffectiveEndDate().before(date)) return false;
     return true;
   }
 
-  protected boolean isInterruptedGUIManagedObject(GUIManagedObject guiManagedObject, Date date) {
+  protected boolean isInterruptedGUIManagedObject(GUIManagedObject guiManagedObject, Date date, int tenantID) {
     if(guiManagedObject==null) return false;
+    ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(tenantID);
+    if(interruptedGUIManagedObjects == null) return false;
     if(interruptedGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID())==null) return false;
     if(guiManagedObject.getEffectiveStartDate()!=null && guiManagedObject.getEffectiveStartDate().after(date)) return false;
     if(guiManagedObject.getEffectiveEndDate()!=null && guiManagedObject.getEffectiveEndDate().before(date)) return false;
@@ -432,9 +440,11 @@ public class GUIService
   *
   *****************************************/
 
-  protected GUIManagedObject getActiveGUIManagedObject(String guiManagedObjectID, Date date)
+  protected GUIManagedObject getActiveGUIManagedObject(String guiManagedObjectID, Date date, int tenantID)
   {
     if(guiManagedObjectID==null) return null;
+    ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(tenantID);
+    if(activeGUIManagedObjects == null)  activeGUIManagedObjects = new ConcurrentHashMap<>();      
     GUIManagedObject guiManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
     if (isActiveGUIManagedObject(guiManagedObject, date))
       return guiManagedObject;
@@ -442,11 +452,13 @@ public class GUIService
       return null;
   }
 
-  protected GUIManagedObject getInterruptedGUIManagedObject(String guiManagedObjectID, Date date)
+  protected GUIManagedObject getInterruptedGUIManagedObject(String guiManagedObjectID, Date date, int tenantID)
   {
     if(guiManagedObjectID==null) return null;
+    ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(tenantID);
+    if(interruptedGUIManagedObjects == null)  interruptedGUIManagedObjects = new ConcurrentHashMap<>();   
     GUIManagedObject guiManagedObject = interruptedGUIManagedObjects.get(guiManagedObjectID);
-    if (isInterruptedGUIManagedObject(guiManagedObject, date))
+    if (isInterruptedGUIManagedObject(guiManagedObject, date, tenantID))
       return guiManagedObject;
     else
       return null;
@@ -458,10 +470,12 @@ public class GUIService
   *
   ****************************************/
 
-  protected Collection<? extends GUIManagedObject> getActiveGUIManagedObjects(Date date)
+  protected Collection<? extends GUIManagedObject> getActiveGUIManagedObjects(Date date, int tenantID)
   {
     Collection<GUIManagedObject> result = new HashSet<GUIManagedObject>();
-	for (GUIManagedObject guiManagedObject : activeGUIManagedObjects.values())
+    ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(tenantID);
+    if(activeGUIManagedObjects == null)  activeGUIManagedObjects = new ConcurrentHashMap<>();    
+    for (GUIManagedObject guiManagedObject : activeGUIManagedObjects.values())
 	  {
 		if (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0 && date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
 		  {
@@ -477,8 +491,22 @@ public class GUIService
   *
   *****************************************/
 
-  public void putGUIManagedObject(GUIManagedObject guiManagedObject, Date date, boolean newObject, String userID)
+  public void putGUIManagedObject(GUIManagedObject guiManagedObject, Date date, boolean newObject, String userID, int tenantID)
   {
+    ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
+    if(storedGUIManagedObjects == null)
+      {
+        synchronized (this)
+          {
+            storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
+            if(storedGUIManagedObjects == null) 
+              { 
+                storedGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
+                storedPerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
+              }
+          }
+      }
+    
     //
     //  created/updated date
     //
@@ -519,7 +547,7 @@ public class GUIService
     //  process
     //
 
-    processGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), guiManagedObject, date);
+    processGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), guiManagedObject, date, tenantID);
   }
 
   /*****************************************
@@ -528,10 +556,13 @@ public class GUIService
   *
   *****************************************/
 
-  protected void removeGUIManagedObject(String guiManagedObjectID, Date date, String userID)
+  protected void removeGUIManagedObject(String guiManagedObjectID, Date date, String userID, int tenantID)
   {
 
-    if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID");
+    if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID " + guiManagedObjectID + " " + tenantID);
+    
+    ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
+    if(storedGUIManagedObjects == null) throw new RuntimeException("null storedGUIManagedObjects " + guiManagedObjectID + " " + tenantID);
 
     //
     //  created/updated date
@@ -566,7 +597,7 @@ public class GUIService
     //  process
     //
 
-    processGUIManagedObject(guiManagedObjectID, existingStoredGUIManagedObject, date);
+    processGUIManagedObject(guiManagedObjectID, existingStoredGUIManagedObject, date, tenantID);
   }
 
   /****************************************
@@ -575,7 +606,7 @@ public class GUIService
   *
   ****************************************/
 
-  protected void processGUIManagedObject(String guiManagedObjectID, GUIManagedObject guiManagedObject, Date date)
+  protected void processGUIManagedObject(String guiManagedObjectID, GUIManagedObject guiManagedObject, Date date, int tenantID)
   {
     if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID");
     synchronized (this)
@@ -590,6 +621,20 @@ public class GUIService
         //  created/updated dates
         //
 
+        ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
+        if(storedGUIManagedObjects == null)
+          {
+            synchronized (this)
+              {
+                storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
+                if(storedGUIManagedObjects == null) 
+                  { 
+                    storedGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
+                    storedPerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
+                  }
+              }
+          }
+        
         GUIManagedObject existingStoredGUIManagedObject = storedGUIManagedObjects.get(guiManagedObjectID);
         guiManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
         guiManagedObject.setUpdatedDate(date);
@@ -630,16 +675,58 @@ public class GUIService
         //
         //  existingActiveGUIManagedObject
         //
+        
+        ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(tenantID);
+        if(activeGUIManagedObjects == null)
+          {
+            synchronized (this)
+              {
+                activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(tenantID);
+                if(activeGUIManagedObjects == null) 
+                  { 
+                    activeGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
+                    activePerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
+                  }
+              }
+          }
 
         GUIManagedObject existingActiveGUIManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
 
         //
         //  clear
         //
+        
+        ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(tenantID);
+        if(interruptedGUIManagedObjects == null)
+          {
+            synchronized (this)
+              {
+                interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(tenantID);
+                if(interruptedGUIManagedObjects == null) 
+                  { 
+                    interruptedGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
+                    interruptedPerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
+                  }
+              }
+          }
 
         if (!inActivePeriod || active || future)
           {
             interruptedGUIManagedObjects.remove(guiManagedObjectID);
+          }
+        
+        ConcurrentHashMap<String,GUIManagedObject> availableGUIManagedObjects = availablePerTenantGUIManagedObjects.get(tenantID);
+        if(availableGUIManagedObjects == null)
+          {
+            synchronized (this)
+              {
+                availableGUIManagedObjects = availablePerTenantGUIManagedObjects.get(tenantID);
+                if(availableGUIManagedObjects == null) 
+                  { 
+                    availableGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
+                    availablePerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
+                  }
+              }
           }
 
         if (!active)
@@ -648,7 +735,7 @@ public class GUIService
             activeGUIManagedObjects.remove(guiManagedObjectID);
             if (existingActiveGUIManagedObject != null){
               if(inActivePeriod) interruptedGUIManagedObjects.put(guiManagedObjectID,existingActiveGUIManagedObject);
-              notifyListener(new IncompleteObject(guiManagedObjectID));
+              notifyListener(new IncompleteObject(guiManagedObjectID, tenantID));
             }
           }
 
@@ -661,7 +748,7 @@ public class GUIService
             availableGUIManagedObjects.put(guiManagedObjectID, (GUIManagedObject) guiManagedObject);
             if (guiManagedObject.getEffectiveEndDate().compareTo(NGLMRuntime.END_OF_TIME) < 0)
               {
-                ScheduleEntry scheduleEntry = new ScheduleEntry(guiManagedObject.getEffectiveEndDate(), guiManagedObject.getGUIManagedObjectID());
+                ScheduleEntry scheduleEntry = new ScheduleEntry(guiManagedObject.getEffectiveEndDate(), guiManagedObject.getGUIManagedObjectID(), tenantID);
                 schedule.add(scheduleEntry);
                 this.notifyAll();
               }
@@ -683,7 +770,7 @@ public class GUIService
 
         if (future)
           {
-            ScheduleEntry scheduleEntry = new ScheduleEntry(guiManagedObject.getEffectiveStartDate(), guiManagedObject.getGUIManagedObjectID());
+            ScheduleEntry scheduleEntry = new ScheduleEntry(guiManagedObject.getEffectiveStartDate(), guiManagedObject.getGUIManagedObjectID(), tenantID);
             schedule.add(scheduleEntry);
             this.notifyAll();
           }
@@ -819,7 +906,7 @@ public class GUIService
             //  process
             //
 
-            processGUIManagedObject(guiManagedObjectID, guiManagedObject, readInitialTopicRecords ? readStartDate : now);
+            processGUIManagedObject(guiManagedObjectID, guiManagedObject, readInitialTopicRecords ? readStartDate : now, guiManagedObject.getTenantID());
             
             //
             //  offsets
@@ -946,7 +1033,18 @@ public class GUIService
             //
 
             ScheduleEntry entry = schedule.pollFirst();
-            GUIManagedObject guiManagedObject = availableGUIManagedObjects.get(entry.getGUIManagedObjectID());
+            GUIManagedObject guiManagedObject = null;
+            ConcurrentHashMap<String,GUIManagedObject> availableGUIManagedObjects = availablePerTenantGUIManagedObjects.get(entry.getTenantID());
+            if(availableGUIManagedObjects == null) { availableGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>(); }           
+            
+            ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(entry.getTenantID());
+            if(activeGUIManagedObjects == null) { activeGUIManagedObjects = new ConcurrentHashMap<>(); }
+            
+            ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(entry.getTenantID());
+            if(interruptedGUIManagedObjects == null) { interruptedGUIManagedObjects = new ConcurrentHashMap<>(); }
+            
+            guiManagedObject = availableGUIManagedObjects.get(entry.getGUIManagedObjectID());
+            
             if (guiManagedObject != null)
               {
 
@@ -976,7 +1074,7 @@ public class GUIService
                     availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     activeGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
-                    if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObject.getGUIManagedObjectID()));
+                    if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID()));
                   }
 
                 //
@@ -1063,6 +1161,7 @@ public class GUIService
 
     private Date evaluationDate;
     private String guiManagedObjectID;
+    private int tenantID;
 
     //
     //  accessors
@@ -1070,15 +1169,17 @@ public class GUIService
 
     Date getEvaluationDate() { return evaluationDate; }
     String getGUIManagedObjectID() { return guiManagedObjectID; }
+    int getTenantID() { return tenantID; }
 
     //
     //  constructor
     //
 
-    ScheduleEntry(Date evaluationDate, String guiManagedObjectID)
+    ScheduleEntry(Date evaluationDate, String guiManagedObjectID, int tenantID)
     {
       this.evaluationDate = evaluationDate;
       this.guiManagedObjectID = guiManagedObjectID;
+      this.tenantID = tenantID;
     }
 
     //
@@ -1138,7 +1239,7 @@ public class GUIService
   protected interface GUIManagedObjectListener
   {
     public void guiManagedObjectActivated(GUIManagedObject guiManagedObject);
-    public void guiManagedObjectDeactivated(String objectID);
+    public void guiManagedObjectDeactivated(String objectID, int tenantID);
   }
 
   /*****************************************

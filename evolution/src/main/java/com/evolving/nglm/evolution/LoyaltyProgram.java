@@ -225,7 +225,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
    *
    *****************************************/
 
-  public LoyaltyProgram(JSONObject jsonRoot, long epoch, GUIManagedObject existingLoyaltyProgramUnchecked, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  public LoyaltyProgram(JSONObject jsonRoot, long epoch, GUIManagedObject existingLoyaltyProgramUnchecked, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     /*****************************************
      *
@@ -233,7 +233,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
      *
      *****************************************/
 
-    super(jsonRoot, (existingLoyaltyProgramUnchecked != null) ? existingLoyaltyProgramUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingLoyaltyProgramUnchecked != null) ? existingLoyaltyProgramUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
      *
@@ -243,7 +243,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
     
     this.loyaltyProgramType = LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true));
     this.loyaltyProgramDescription = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramDescription", false);
-    this.characteristics = decodeLoyaltyProgramCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "characteristics", false), catalogCharacteristicService);
+    this.characteristics = decodeLoyaltyProgramCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "characteristics", false), catalogCharacteristicService, tenantID);
     
   }
   
@@ -253,14 +253,14 @@ public abstract class LoyaltyProgram extends GUIManagedObject
   *
   *****************************************/
 
-  private Set<CatalogCharacteristicInstance> decodeLoyaltyProgramCharacteristics(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  private Set<CatalogCharacteristicInstance> decodeLoyaltyProgramCharacteristics(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     Set<CatalogCharacteristicInstance> result = new HashSet<CatalogCharacteristicInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new CatalogCharacteristicInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
+            result.add(new CatalogCharacteristicInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
           }
       }
     return result;

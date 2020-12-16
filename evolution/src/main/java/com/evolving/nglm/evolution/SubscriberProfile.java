@@ -138,7 +138,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(7));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(8));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -159,6 +159,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
 
     commonSchema = schemaBuilder.build();
   };
@@ -236,6 +237,7 @@ public abstract class SubscriberProfile
   private SubscriberHistory subscriberHistory;
   private Map<String,Integer> exclusionInclusionTargets; 
   private Map<String, List<Date>> offerPurchaseHistory;
+  private int tenantID;
 
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
@@ -267,7 +269,8 @@ public abstract class SubscriberProfile
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
-  public List<Pair<String, String>> getUnknownRelationships(){ return unknownRelationships ; }
+  public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
+  public int getTenantID() { return tenantID; }
 
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -797,9 +800,9 @@ public abstract class SubscriberProfile
   *
   *****************************************/
 
-  public String getSegmentContactPolicyID(SegmentContactPolicyService segmentContactPolicyService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public String getSegmentContactPolicyID(SegmentContactPolicyService segmentContactPolicyService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
   {
-    SegmentContactPolicy segmentContactPolicy = segmentContactPolicyService.getSingletonSegmentContactPolicy();
+    SegmentContactPolicy segmentContactPolicy = segmentContactPolicyService.getSingletonSegmentContactPolicy(tenantID);
     SegmentationDimension segmentationDimension = (segmentContactPolicy != null) ? segmentationDimensionService.getActiveSegmentationDimension(segmentContactPolicy.getDimensionID(), SystemTime.getCurrentTime()) : null;
     String segmentID = (segmentationDimension != null) ? getSegmentsMap(subscriberGroupEpochReader).get(segmentationDimension.getSegmentationDimensionID()) : null;
     String segmentContactPolicyID = (segmentContactPolicy != null && segmentID != null) ? segmentContactPolicy.getSegments().get(segmentID) : null;
@@ -816,7 +819,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
   {
     //
     //  now
@@ -902,7 +905,7 @@ public abstract class SubscriberProfile
     
     //prepare Inclusion/Exclusion list
     
-    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now);
+    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
     
     //
     //  prepare loyalty programs
@@ -1072,7 +1075,7 @@ public abstract class SubscriberProfile
     HashMap<String, Object> kpiPresentation = new HashMap<String,Object>();
      //prepare Inclusion/Exclusion list
     Date now = SystemTime.getCurrentTime();
-    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now);
+    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
     
 
     //
@@ -1410,7 +1413,7 @@ public abstract class SubscriberProfile
   *
   *****************************************/
 
-  protected SubscriberProfile(String subscriberID)
+  protected SubscriberProfile(String subscriberID, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.subscriberTraceEnabled = false;
@@ -1432,6 +1435,7 @@ public abstract class SubscriberProfile
     this.subscriberHistory = null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
     this.offerPurchaseHistory = new HashMap<>();
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -1475,7 +1479,7 @@ public abstract class SubscriberProfile
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
-
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     //
     //  return
     //
@@ -1500,6 +1504,7 @@ public abstract class SubscriberProfile
     this.subscriberHistory = subscriberHistory;
     this.exclusionInclusionTargets = exclusionInclusionTargets;
     this.offerPurchaseHistory = offerPurchaseHistory;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -1785,6 +1790,7 @@ public abstract class SubscriberProfile
     this.subscriberHistory = subscriberProfile.getSubscriberHistory();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
+    this.tenantID = subscriberProfile.getTenantID();
   }
 
   /*****************************************
@@ -1815,6 +1821,7 @@ public abstract class SubscriberProfile
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
+    struct.put("tenantID", subscriberProfile.getTenantID());
   }
 
   /****************************************
@@ -2199,6 +2206,7 @@ public abstract class SubscriberProfile
     b.append("," + languageID);
     b.append("," + extendedSubscriberProfile);
     b.append("," + (subscriberHistory != null ? subscriberHistory.getDeliveryRequests().size() : null));
+    b.append("," + tenantID);
     return b.toString();
   }
 

@@ -198,7 +198,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),11));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),12));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
@@ -226,6 +226,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     schemaBuilder.field("rescheduledDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("notificationHistory",MetricHistory.serde().optionalSchema());
     schemaBuilder.field("subscriberFields", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).optional().schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
 
@@ -289,6 +290,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   private Date rescheduledDate;
   private MetricHistory notificationHistory;
   private Map<String,String> subscriberFields;
+  private int tenantID;
 
   // internal, not stored
   private TopicPartition topicPartition;
@@ -325,6 +327,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public Date getRescheduledDate() { return rescheduledDate; }
   public MetricHistory getNotificationHistory(){ return notificationHistory; }
   public Map<String,String> getSubscriberFields(){return subscriberFields;}
+  public int getTenantID(){ return tenantID; }
 
   public TopicPartition getTopicPartition(){return topicPartition;}
   //derived
@@ -363,8 +366,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public abstract DeliveryRequest copy();
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
-  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService);
-  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService);
+  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID);
+  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID);
   public abstract void resetDeliveryRequestAfterReSchedule();
   public ActivityType getActivityType() { return ActivityType.Other; }
 
@@ -426,7 +429,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   *
   *****************************************/
 
-  protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource)
+  protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, int tenantID)
   {
     /*****************************************
     *
@@ -463,8 +466,9 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
-    this.subscriberFields = buildSubscriberFields(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader());
+    this.subscriberFields = buildSubscriberFields(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader(), tenantID);
     this.topicPartition = new TopicPartition("unknown",-1);
+    this.tenantID = tenantID;
   }
   
   /*******************************************
@@ -473,7 +477,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   *
   *******************************************/
 
-  protected DeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, String uniqueKey, String subscriberID, String deliveryType, String deliveryRequestSource, boolean universalControlGroup)
+  protected DeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, String uniqueKey, String subscriberID, String deliveryType, String deliveryRequestSource, boolean universalControlGroup, int tenantID)
   {
     /*****************************************
     *
@@ -503,8 +507,9 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
-    this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader);
+    this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader, tenantID);
     this.topicPartition = new TopicPartition("unknown",-1);
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -541,6 +546,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberFields = new LinkedHashMap<>();
     if(deliveryRequest.getSubscriberFields()!=null) subscriberFields.putAll(deliveryRequest.getSubscriberFields());
     this.topicPartition = new TopicPartition(deliveryRequest.getTopicPartition().topic(),deliveryRequest.getTopicPartition().partition());
+    this.tenantID = deliveryRequest.getTenantID();
   }
 
   /*****************************************
@@ -549,7 +555,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
    *
    *****************************************/
 
-  protected DeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot)
+  protected DeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
      *
@@ -578,8 +584,9 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
     this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
-    this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader);
+    this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader, tenantID);
     this.topicPartition = new TopicPartition("unknown",-1);
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -588,7 +595,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
    *
    *****************************************/
 
-  protected DeliveryRequest(DeliveryRequest originatingDeliveryRequest, JSONObject jsonRoot)
+  protected DeliveryRequest(DeliveryRequest originatingDeliveryRequest, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
      *
@@ -622,6 +629,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberFields = new LinkedHashMap<>();
     if(originatingDeliveryRequest.getSubscriberFields()!=null) this.subscriberFields.putAll(originatingDeliveryRequest.getSubscriberFields());
     this.topicPartition = new TopicPartition("unknown",-1);
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -654,6 +662,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.notificationHistory = null;
     this.subscriberFields = null;
     this.topicPartition = null;
+    this.tenantID = -1;
   }
 
   /*****************************************
@@ -688,6 +697,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     struct.put("rescheduledDate", deliveryRequest.getRescheduledDate() != null ? deliveryRequest.getRescheduledDate().getTime() : null);
     struct.put("notificationHistory",MetricHistory.serde().packOptional(deliveryRequest.getNotificationHistory()));
     struct.put("subscriberFields",deliveryRequest.getSubscriberFields());
+    struct.put("tenantID", deliveryRequest.getTenantID()); 
   }
 
   /*****************************************
@@ -735,7 +745,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : null;
     MetricHistory notificationHistory = schemaVersion >= 4 ?  MetricHistory.serde().unpackOptional(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : null;
     Map<String,String> subscriberFields = (schemaVersion >= 8 && schema.field("subscriberFields")!=null && valueStruct.get("subscriberFields") != null) ? (Map<String,String>) valueStruct.get("subscriberFields") : new LinkedHashMap<>();
-
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant id 1 
     //
     //  return
     //
@@ -763,7 +773,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = rescheduledDate;
     this.notificationHistory = notificationHistory;
     this.subscriberFields = subscriberFields;
-	this.topicPartition = new TopicPartition("unknown",-1);
+    this.tenantID = tenantID;
+    this.topicPartition = new TopicPartition("unknown",-1);
   }
 
   /****************************************
@@ -776,7 +787,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //  getGUIPresentationMap
   //
 
-  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
@@ -788,7 +799,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     guiPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     guiPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     guiPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
-    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
     return guiPresentationMap;
   }
   
@@ -796,7 +807,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //  getThirdPartyPresentationMap
   //
 
-  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
@@ -808,7 +819,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
-    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
     return thirdPartyPresentationMap;
   }
   
@@ -960,6 +971,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     b.append("," + originatingSubscriberID);
     b.append("," + targetedSubscriberID);
     b.append("," + subscriberFields);
+    b.append("," + tenantID);
     if(topicPartition!=null) b.append("," + topicPartition);
     return b.toString();
   }
@@ -1004,9 +1016,9 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   }
 
   // build subscriberFields populated
-  private Map<String,String> buildSubscriberFields(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) {
+  private Map<String,String> buildSubscriberFields(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID) {
     Map<String,String> subscriberFields = new LinkedHashMap<>();
-    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
     for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values())
     {
       for(Map.Entry<String,CriterionField> entry:deliveryManagerDeclaration.getSubscriberProfileFields().entrySet())

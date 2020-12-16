@@ -194,7 +194,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionEligibility(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs) throws GUIManagerException
+  public SegmentationDimensionEligibility(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -202,7 +202,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     *
     *****************************************/
 
-    super(jsonRoot, epoch, existingSegmentationDimensionUnchecked);
+    super(jsonRoot, epoch, existingSegmentationDimensionUnchecked, tenantID);
 
     /*****************************************
     *

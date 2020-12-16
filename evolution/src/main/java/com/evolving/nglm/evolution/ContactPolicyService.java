@@ -109,7 +109,7 @@ public class ContactPolicyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { contactPolicyListener.contactPolicyActivated((ContactPolicy) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { contactPolicyListener.contactPolicyDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { contactPolicyListener.contactPolicyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -122,13 +122,13 @@ public class ContactPolicyService extends GUIService
   *****************************************/
 
   public String generateContactPolicyID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredContactPolicy(String contactPolicyID) { return getStoredGUIManagedObject(contactPolicyID); }
-  public GUIManagedObject getStoredContactPolicy(String contactPolicyID, boolean includeArchived) { return getStoredGUIManagedObject(contactPolicyID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredContactPolicies() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredContactPolicies(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredContactPolicy(String contactPolicyID, int tenantID) { return getStoredGUIManagedObject(contactPolicyID, tenantID); }
+  public GUIManagedObject getStoredContactPolicy(String contactPolicyID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(contactPolicyID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredContactPolicies(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredContactPolicies(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveContactPolicy(GUIManagedObject contactPolicyUnchecked, Date date) { return isActiveGUIManagedObject(contactPolicyUnchecked, date); }
-  public ContactPolicy getActiveContactPolicy(String contactPolicyID, Date date) { return (ContactPolicy) getActiveGUIManagedObject(contactPolicyID, date); }
-  public Collection<ContactPolicy> getActiveContactPolicies(Date date) { return (Collection<ContactPolicy>) getActiveGUIManagedObjects(date); }
+  public ContactPolicy getActiveContactPolicy(String contactPolicyID, Date date, int tenantID) { return (ContactPolicy) getActiveGUIManagedObject(contactPolicyID, date, tenantID); }
+  public Collection<ContactPolicy> getActiveContactPolicies(Date date, int tenantID) { return (Collection<ContactPolicy>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -136,7 +136,7 @@ public class ContactPolicyService extends GUIService
   *
   *****************************************/
 
-  public void putContactPolicy(GUIManagedObject contactPolicy, boolean newObject, String userID) throws GUIManagerException
+  public void putContactPolicy(GUIManagedObject contactPolicy, boolean newObject, String userID, int tenantID) throws GUIManagerException
   {
     //
     //  now
@@ -157,7 +157,7 @@ public class ContactPolicyService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(contactPolicy, SystemTime.getCurrentTime(), newObject, userID);
+    putGUIManagedObject(contactPolicy, SystemTime.getCurrentTime(), newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -166,11 +166,11 @@ public class ContactPolicyService extends GUIService
   *
   *****************************************/
 
-  public void putContactPolicy(IncompleteObject contactPolicy, boolean newObject, String userID)
+  public void putContactPolicy(IncompleteObject contactPolicy, boolean newObject, String userID, int tenantID)
   {
     try
       {
-        putContactPolicy((GUIManagedObject) contactPolicy, newObject, userID);
+        putContactPolicy((GUIManagedObject) contactPolicy, newObject, userID, tenantID);
       }
     catch (GUIManagerException e)
       {
@@ -184,7 +184,7 @@ public class ContactPolicyService extends GUIService
   *
   *****************************************/
 
-  public void removeContactPolicy(String contactPolicyID, String userID) { removeGUIManagedObject(contactPolicyID, SystemTime.getCurrentTime(), userID); }
+  public void removeContactPolicy(String contactPolicyID, String userID, int tenantID) { removeGUIManagedObject(contactPolicyID, SystemTime.getCurrentTime(), userID, tenantID); }
   
   /***********************************************
   *
@@ -192,10 +192,10 @@ public class ContactPolicyService extends GUIService
   *
   ***********************************************/
   
-  public List<String> getAllJourneyObjectiveNamesUsingContactPolicy(String contactPolicyID, JourneyObjectiveService journeyObjectiveService)
+  public List<String> getAllJourneyObjectiveNamesUsingContactPolicy(String contactPolicyID, JourneyObjectiveService journeyObjectiveService, int tenantID)
   {
     List<String> result = new ArrayList<String>(); 
-    for(GUIManagedObject guiManagedObject : journeyObjectiveService.getStoredGUIManagedObjects())
+    for(GUIManagedObject guiManagedObject : journeyObjectiveService.getStoredGUIManagedObjects(tenantID))
       {
         if(guiManagedObject instanceof JourneyObjective)
           {
@@ -215,10 +215,10 @@ public class ContactPolicyService extends GUIService
   *
   ***************************************/
   
-  public List<String> getAllSegmentIDsUsingContactPolicy(String contactPolicyID, SegmentContactPolicyService segmentContactPolicyService)
+  public List<String> getAllSegmentIDsUsingContactPolicy(String contactPolicyID, SegmentContactPolicyService segmentContactPolicyService, int tenantID)
   {
     List<String> result = new ArrayList<String>();
-    for(GUIManagedObject guiManagedObject : segmentContactPolicyService.getStoredGUIManagedObjects())
+    for(GUIManagedObject guiManagedObject : segmentContactPolicyService.getStoredGUIManagedObjects(tenantID))
       {
         if(guiManagedObject instanceof SegmentContactPolicy)
           {

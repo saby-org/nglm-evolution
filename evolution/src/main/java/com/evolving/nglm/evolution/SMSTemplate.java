@@ -84,9 +84,9 @@ public class SMSTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public SMSTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public SMSTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked, int tenantID) throws GUIManagerException
   {
-    super(jsonRoot, GUIManagedObjectType.SMSMessageTemplate, epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.SMSMessageTemplate, epoch, existingTemplateUnchecked, tenantID);
     
     /*****************************************
     *

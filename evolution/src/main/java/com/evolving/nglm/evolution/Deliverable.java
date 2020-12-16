@@ -162,7 +162,7 @@ public class Deliverable extends GUIManagedObject
   *
   *****************************************/
 
-  public Deliverable(JSONObject jsonRoot, long epoch, GUIManagedObject existingDeliverableUnchecked) throws GUIManagerException
+  public Deliverable(JSONObject jsonRoot, long epoch, GUIManagedObject existingDeliverableUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -170,7 +170,7 @@ public class Deliverable extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingDeliverableUnchecked != null) ? existingDeliverableUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingDeliverableUnchecked != null) ? existingDeliverableUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

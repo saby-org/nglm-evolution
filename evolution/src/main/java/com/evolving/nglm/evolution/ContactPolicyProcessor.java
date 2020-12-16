@@ -67,7 +67,7 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  public boolean ensureContactPolicy(INotificationRequest request) throws ContactPolityProcessorException
+  public boolean ensureContactPolicy(INotificationRequest request, int tenantID) throws ContactPolityProcessorException
   {
     Date now = SystemTime.getCurrentTime();
     try
@@ -75,7 +75,7 @@ public class ContactPolicyProcessor
         String channelId = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(request.getDeliveryType());
         MetricHistory requestMetricHistory = request.getNotificationHistory();
         //validate segment contact policy
-        if (request.getSegmentContactPolicyID() != null && isBlockedByContactPolicy(request.getSegmentContactPolicyID(), channelId, now, requestMetricHistory))
+        if (request.getSegmentContactPolicyID() != null && isBlockedByContactPolicy(request.getSegmentContactPolicyID(), channelId, now, requestMetricHistory, tenantID))
           {
             request.setDeliveryStatus(DeliveryManager.DeliveryStatus.Failed);
             return true;
@@ -89,7 +89,7 @@ public class ContactPolicyProcessor
         for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectivesInstances)
           {
             JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now);
-            if (this.evaluateChildParentsContactPolicies(channelId, journeyObjective, requestMetricHistory, now))
+            if (this.evaluateChildParentsContactPolicies(channelId, journeyObjective, requestMetricHistory, now, tenantID))
               {
                 return true;
               }
@@ -114,13 +114,13 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  private boolean evaluateChildParentsContactPolicies(String channelID, JourneyObjective journeyObjective, MetricHistory requestMetricHistory, Date evaluationDate)
+  private boolean evaluateChildParentsContactPolicies(String channelID, JourneyObjective journeyObjective, MetricHistory requestMetricHistory, Date evaluationDate, int tenantID)
   {
     boolean returnValue = false;
     while (!returnValue && journeyObjective != null)
       {
         String contactPolicyId = journeyObjective.getContactPolicyID();
-        if (returnValue = isBlockedByContactPolicy(contactPolicyId, channelID, evaluationDate, requestMetricHistory))
+        if (returnValue = isBlockedByContactPolicy(contactPolicyId, channelID, evaluationDate, requestMetricHistory, tenantID))
           break;
         journeyObjective = journeyObjective.getParentJourneyObjectiveID() != null ? journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), evaluationDate) : null;
       }
@@ -137,10 +137,10 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  private boolean isBlockedByContactPolicy(String contactPolicyId, String channelID, Date evaluationDate, MetricHistory requestMetricHistory)
+  private boolean isBlockedByContactPolicy(String contactPolicyId, String channelID, Date evaluationDate, MetricHistory requestMetricHistory, int tenantID)
   {
     boolean returnValue = false;
-    ContactPolicy journeyContactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyId, evaluationDate);
+    ContactPolicy journeyContactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyId, evaluationDate, tenantID);
     List<ContactPolicyCommunicationChannels> contactPolicyCommunicationChannels = journeyContactPolicy.getContactPolicyCommunicationChannels().stream().filter(p -> p.getCommunicationChannelID().equals(channelID)).collect(Collectors.toList());
     for (ContactPolicyCommunicationChannels channels : contactPolicyCommunicationChannels)
       {

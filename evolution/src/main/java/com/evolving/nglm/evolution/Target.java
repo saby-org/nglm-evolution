@@ -225,7 +225,7 @@ public class Target extends GUIManagedObject
   *
   *****************************************/
 
-  public Target(JSONObject jsonRoot, long epoch, GUIManagedObject existingTargetUnchecked) throws GUIManagerException
+  public Target(JSONObject jsonRoot, long epoch, GUIManagedObject existingTargetUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -233,7 +233,7 @@ public class Target extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingTargetUnchecked != null) ? existingTargetUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingTargetUnchecked != null) ? existingTargetUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

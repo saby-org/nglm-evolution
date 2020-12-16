@@ -118,7 +118,7 @@ public class PaymentMean extends GUIManagedObject
   *
   *****************************************/
 
-  public PaymentMean(JSONObject jsonRoot, long epoch, GUIManagedObject existingPaymentMeanUnchecked) throws GUIManagerException
+  public PaymentMean(JSONObject jsonRoot, long epoch, GUIManagedObject existingPaymentMeanUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -126,7 +126,7 @@ public class PaymentMean extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingPaymentMeanUnchecked != null) ? existingPaymentMeanUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingPaymentMeanUnchecked != null) ? existingPaymentMeanUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

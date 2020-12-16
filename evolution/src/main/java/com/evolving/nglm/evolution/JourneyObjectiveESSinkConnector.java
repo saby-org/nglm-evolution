@@ -146,7 +146,7 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
           documentMap.put("id",      jr.get("id"));
           documentMap.put("display", jr.get("display"));
           String contactPolicyID = (String) jr.get("contactPolicyID");
-          ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
+          ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now, ten);
           documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
           documentMap.put("timestamp",     RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
         }

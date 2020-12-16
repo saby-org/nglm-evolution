@@ -114,13 +114,13 @@ public class UploadedFile extends GUIManagedObject
   *
   *****************************************/
 
-  public UploadedFile(JSONObject jsonRoot, long epoch, GUIManagedObject existingUploadedFileUnchecked) throws GUIManagerException
+  public UploadedFile(JSONObject jsonRoot, long epoch, GUIManagedObject existingUploadedFileUnchecked, int tenantID) throws GUIManagerException
   {
     //
     //  standard
     //
 
-    super(jsonRoot, (existingUploadedFileUnchecked != null) ? existingUploadedFileUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingUploadedFileUnchecked != null) ? existingUploadedFileUnchecked.getEpoch() : epoch, tenantID);
     this.applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
     this.customerAlternateID = JSONUtilities.decodeString(jsonRoot, "customerAlternateID", false);
     this.sourceFilename = JSONUtilities.decodeString(jsonRoot, "sourceFilename", true);

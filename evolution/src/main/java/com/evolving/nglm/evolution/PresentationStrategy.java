@@ -223,7 +223,7 @@ public class PresentationStrategy extends GUIManagedObject
   *
   *****************************************/
 
-  public PresentationStrategy(JSONObject jsonRoot, long epoch, GUIManagedObject existingPresentationStrategyUnchecked) throws GUIManagerException
+  public PresentationStrategy(JSONObject jsonRoot, long epoch, GUIManagedObject existingPresentationStrategyUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -231,7 +231,7 @@ public class PresentationStrategy extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingPresentationStrategyUnchecked != null) ? existingPresentationStrategyUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingPresentationStrategyUnchecked != null) ? existingPresentationStrategyUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

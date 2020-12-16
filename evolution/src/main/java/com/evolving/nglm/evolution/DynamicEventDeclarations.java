@@ -87,9 +87,9 @@ public class DynamicEventDeclarations extends GUIManagedObject
   *
   *****************************************/
 
-  public DynamicEventDeclarations(JSONObject guiManagedObjectJson, Map<String, DynamicEventDeclaration> dynamicEventDeclarations)
+  public DynamicEventDeclarations(JSONObject guiManagedObjectJson, Map<String, DynamicEventDeclaration> dynamicEventDeclarations, int tenantID)
   {
-    super(guiManagedObjectJson, 1);
+    super(guiManagedObjectJson, 1, tenantID);
     this.dynamicEventDeclarations = dynamicEventDeclarations;
   }
 

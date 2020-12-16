@@ -209,7 +209,7 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionRanges(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs) throws GUIManagerException
+  public SegmentationDimensionRanges(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -217,7 +217,7 @@ public class SegmentationDimensionRanges extends SegmentationDimension
     *
     *****************************************/
 
-    super(jsonRoot, epoch, existingSegmentationDimensionUnchecked);
+    super(jsonRoot, epoch, existingSegmentationDimensionUnchecked, tenantID);
 
     /*****************************************
     *

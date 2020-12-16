@@ -83,9 +83,9 @@ public class VoucherPersonal extends Voucher {
     this.voucherFiles=voucherFiles;
   }
 
-  public VoucherPersonal(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, VoucherType voucherType) throws GUIManagerException {
+  public VoucherPersonal(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, VoucherType voucherType, int tenantID) throws GUIManagerException {
 
-    super(jsonRoot, epoch, existingVoucherUnchecked);
+    super(jsonRoot, epoch, existingVoucherUnchecked, tenantID);
 
     // not allow this type change
     if(existingVoucherUnchecked instanceof VoucherShared) throw new GUIManagerException("can not modify Shared to Personal Voucher type",existingVoucherUnchecked.getGUIManagedObjectDisplay());

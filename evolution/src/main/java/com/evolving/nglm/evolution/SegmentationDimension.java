@@ -191,7 +191,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
   *
   *****************************************/
 
-  public SegmentationDimension(JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked) throws GUIManagerException
+  public SegmentationDimension(JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -199,7 +199,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSegmentationDimensionUnchecked != null) ? existingSegmentationDimensionUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingSegmentationDimensionUnchecked != null) ? existingSegmentationDimensionUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

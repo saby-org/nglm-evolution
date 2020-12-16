@@ -256,7 +256,7 @@ public class ScoringStrategy extends GUIManagedObject
   *
   *****************************************/
 
-  public ScoringStrategy(JSONObject jsonRoot, long epoch, GUIManagedObject existingScoringStrategyUnchecked) throws GUIManagerException
+  public ScoringStrategy(JSONObject jsonRoot, long epoch, GUIManagedObject existingScoringStrategyUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -264,7 +264,7 @@ public class ScoringStrategy extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingScoringStrategyUnchecked != null) ? existingScoringStrategyUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingScoringStrategyUnchecked != null) ? existingScoringStrategyUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

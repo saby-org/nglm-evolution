@@ -385,9 +385,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID, String origin, String resellerID)
+    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID, String origin, String resellerID, int tenantID)
     {
-      super(context, "purchaseFulfillment", deliveryRequestSource);
+      super(context, "purchaseFulfillment", deliveryRequestSource, tenantID);
       this.offerID = offerID;
       this.quantity = quantity;
       this.salesChannelID = salesChannelID;
@@ -567,9 +567,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, OfferService offerService, PaymentMeanService paymentMeanService, ResellerService resellerService, ProductService productService, SupplierService supplierService, VoucherService voucherService, Date now)
+    public PurchaseFulfillmentRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, OfferService offerService, PaymentMeanService paymentMeanService, ResellerService resellerService, ProductService productService, SupplierService supplierService, VoucherService voucherService, Date now, int tenantID)
     {
-      super(subscriberProfile,subscriberGroupEpochReader,jsonRoot);
+      super(subscriberProfile,subscriberGroupEpochReader,jsonRoot, tenantID);
       this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
       this.quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
       this.salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
@@ -782,7 +782,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       //
       //  salesChannel
@@ -863,7 +863,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       //
       //  salesChannel
@@ -1149,7 +1149,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // check offer criteria (for the specific subscriber)
         //
 
-        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, offer.getTenantID());
         if(!offer.evaluateProfileCriteria(evaluationRequest)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
@@ -1779,7 +1779,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(offerProduct != null){
       Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
       if(product != null){
-        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now);
+        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now, product.getTenantID());
         if(deliverable != null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
@@ -1821,7 +1821,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(offerProductRollback != null){
       Product product = productService.getActiveProduct(offerProductRollback.getProductID(), now);
       if(product != null){
-        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now);
+        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now, product.getTenantID());
         if(deliverable != null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
@@ -2803,7 +2803,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
       request.setModuleID(newModuleID);
       request.setFeatureID(deliveryRequestSource);
 

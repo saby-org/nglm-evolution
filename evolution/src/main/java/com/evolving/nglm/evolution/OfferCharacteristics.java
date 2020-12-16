@@ -97,9 +97,9 @@ public class OfferCharacteristics
   *
   *****************************************/
 
-  OfferCharacteristics(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  OfferCharacteristics(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
-    properties = (jsonRoot != null) ? decodeOfferCharacteristicProperties(JSONUtilities.decodeJSONArray(jsonRoot, "languageProperties", false), catalogCharacteristicService) : new HashSet<OfferCharacteristicsLanguageProperty>();
+    properties = (jsonRoot != null) ? decodeOfferCharacteristicProperties(JSONUtilities.decodeJSONArray(jsonRoot, "languageProperties", false), catalogCharacteristicService, tenantID) : new HashSet<OfferCharacteristicsLanguageProperty>();
   }
 
   /*****************************************
@@ -108,14 +108,14 @@ public class OfferCharacteristics
   *
   *****************************************/
 
-  private Set<OfferCharacteristicsLanguageProperty> decodeOfferCharacteristicProperties(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  private Set<OfferCharacteristicsLanguageProperty> decodeOfferCharacteristicProperties(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     Set<OfferCharacteristicsLanguageProperty> result = new HashSet<OfferCharacteristicsLanguageProperty>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferCharacteristicsLanguageProperty((JSONObject) jsonArray.get(i), catalogCharacteristicService));
+            result.add(new OfferCharacteristicsLanguageProperty((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
           }
       }
     return result;
@@ -349,14 +349,14 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    OfferCharacteristicsLanguageProperty(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+    OfferCharacteristicsLanguageProperty(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
     {
       //
       //  basic fields
       //
 
       this.languageID = JSONUtilities.decodeString(jsonRoot, "languageID", false);
-      this.properties = decodeOfferCharacteristicsProperties(JSONUtilities.decodeJSONArray(jsonRoot, "properties", false), catalogCharacteristicService);
+      this.properties = decodeOfferCharacteristicsProperties(JSONUtilities.decodeJSONArray(jsonRoot, "properties", false), catalogCharacteristicService, tenantID);
 
       //
       //  validate 
@@ -370,14 +370,14 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    private Set<OfferCharacteristicsProperty> decodeOfferCharacteristicsProperties(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+    private Set<OfferCharacteristicsProperty> decodeOfferCharacteristicsProperties(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
     {
       Set<OfferCharacteristicsProperty> result = new HashSet<OfferCharacteristicsProperty>();
       if (jsonArray != null)
         {
           for (int i=0; i<jsonArray.size(); i++)
             {
-              result.add(new OfferCharacteristicsProperty((JSONObject) jsonArray.get(i), catalogCharacteristicService));
+              result.add(new OfferCharacteristicsProperty((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
             }
         }
       return result;
@@ -624,7 +624,7 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    OfferCharacteristicsProperty(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+    OfferCharacteristicsProperty(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
     {
       //
       //  basic fields
@@ -632,7 +632,7 @@ public class OfferCharacteristics
 
       this.catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", false);
       this.catalogCharacteristicName = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicName", false);
-      CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime());
+      CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime(), tenantID);
       CriterionDataType dataType = (catalogCharacteristic != null) ? catalogCharacteristic.getDataType() : CriterionDataType.Unknown;
 
       //

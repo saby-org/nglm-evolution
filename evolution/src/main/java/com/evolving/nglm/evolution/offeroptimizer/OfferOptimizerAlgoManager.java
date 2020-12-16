@@ -147,7 +147,7 @@ public class OfferOptimizerAlgoManager {
               {
                 if ((requestedSalesChannelId == null) || (salesChannelID.equals(requestedSalesChannelId))) 
                   {
-                    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+                    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), subscriberProfile.getTenantID());
                     ProposedOfferDetails scorePerChannel = algo.getOfferPropensityScore(algoParameters, o,
                         salesChannelID,
                         currentPropensity, salesChannelAndPrice.getPrice() != null
