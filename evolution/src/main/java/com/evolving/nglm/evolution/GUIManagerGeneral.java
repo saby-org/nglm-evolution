@@ -4556,7 +4556,7 @@ public class GUIManagerGeneral extends GUIManager
                             *
                             *****************************************/
 
-                            revalidateTargets(now);
+                            revalidateJourneys(now);
 
                             /*****************************************
                             *
