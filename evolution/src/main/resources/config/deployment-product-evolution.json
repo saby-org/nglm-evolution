@@ -533,8 +533,6 @@
 
   "allThoseFollowingAreComingFromNGLMQA": "this is not yet OK, just a first try",
 
-  "autoApproveGuiObjects" : false,
-
   "propensityRule"                                       :
   {
     "selectedDimensions": [],

@@ -220,7 +220,6 @@ public class Deployment
   private static int maxPollIntervalMs;
   private static String criterionFieldAvailableValuesTopic;
   private static String sourceAddressTopic;
-  private static boolean autoApproveGuiObjects;
   private static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
   private static int purchaseTimeoutMs;
   private static String voucherChangeRequestTopic;
@@ -467,7 +466,6 @@ public class Deployment
   public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
-  public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
   public static Map<String,CommunicationChannel> getCommunicationChannels(){ return communicationChannels; };
   public static Map<String,String> getDeliveryTypeCommunicationChannelIDMap(){ return deliveryTypeCommunicationChannelIDMap; };
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
@@ -3010,19 +3008,6 @@ public class Deployment
         {
           APIresponseDateFormat = JSONUtilities.decodeString(jsonRoot, "APIresponseDateFormat", false);
           if (null == APIresponseDateFormat) APIresponseDateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZ" ;
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  autoApproveGuiObjects
-      //
-
-      try
-        {
-          autoApproveGuiObjects = JSONUtilities.decodeBoolean(jsonRoot, "autoApproveGuiObjects", Boolean.TRUE);
         }
       catch (JSONUtilitiesException e)
         {
