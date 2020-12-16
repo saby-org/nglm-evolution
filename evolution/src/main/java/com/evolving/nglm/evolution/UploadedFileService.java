@@ -67,7 +67,7 @@ public class UploadedFileService extends GUIService
 
   private UploadedFileListener uploadedFileListener = null;
   public static final String basemanagementApplicationID = "101";
-  public static final String FILE_WITH_VARIABLES_APPLICATION_ID = "102";
+  public static final String FILE_WITH_VARIABLES_APPLICATION_ID = "201";
   public static final String DATATYPE_VRIABLE_PATTERN = "\\<(.*?)\\>";  // <String>Name, <Int>Years, <String>Gift
 
   /*****************************************
