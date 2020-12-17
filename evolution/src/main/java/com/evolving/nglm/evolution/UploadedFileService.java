@@ -753,7 +753,7 @@ public List<Map<String, Object>> getParsedFileContent(String fileID)
               boolean isFirstColumn = true;
               for (String header : headers)
                 {
-                  
+                  header = header.trim();
                   if (isFirstColumn)
                     {
                       headerMap.put(header, "string");
@@ -782,6 +782,7 @@ public List<Map<String, Object>> getParsedFileContent(String fileID)
               List<String> headers = headerMap.keySet().stream().collect(Collectors.toList());
               for (String value : values)
                 {
+                  value = value.trim();
                   String varName = headers.get(index);
                   String varDataType = headerMap.get(varName);
                   try
@@ -793,6 +794,7 @@ public List<Map<String, Object>> getParsedFileContent(String fileID)
                     {
                       e.printStackTrace();
                     }
+                  index++;
                 }
               result.add(keyValue);
             }
