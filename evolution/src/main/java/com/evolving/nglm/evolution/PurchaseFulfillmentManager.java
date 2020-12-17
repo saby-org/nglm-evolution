@@ -794,72 +794,79 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  offer
       //
 
-      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
+      guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
+      guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getGUIManagedObjectDisplay() : null);
+      guiPresentationMap.put(MODULEID, getModuleID());
+      guiPresentationMap.put(MODULENAME, getModule().toString());
+      guiPresentationMap.put(FEATUREID, getFeatureID());
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(ORIGIN, getOrigin());
+      guiPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
+      guiPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
+      guiPresentationMap.put(RETURNCODE, getReturnCode());
+      guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
+      guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
+      guiPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
+      guiPresentationMap.put(CUSTOMERID, getSubscriberID());
+      guiPresentationMap.put(OFFERID, getOfferID());
+      guiPresentationMap.put(OFFERQTY, getQuantity());
+
+      GUIManagedObject offerGMO = offerService.getStoredOffer(getOfferID(), true);
 
       //
       //  presentation
       //
       
-      if(offer != null)
+      if (offerGMO != null)
         {
-          guiPresentationMap.put(CUSTOMERID, getSubscriberID());
-          guiPresentationMap.put(OFFERID, getOfferID());
-          guiPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
-          guiPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
-          guiPresentationMap.put(OFFERQTY, getQuantity());
-          guiPresentationMap.put(OFFERSTOCK, offer.getStock());
-          if(offer.getOfferSalesChannelsAndPrices() != null){
-            for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
-              if(channel.getSalesChannelIDs() != null) {
-                for(String salesChannelID : channel.getSalesChannelIDs()) {
-                  if(salesChannelID.equals(getSalesChannelID())) {
-                    if(channel.getPrice() != null) {
-                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
-                      if(paymentMean != null) {
-                        guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
-                        guiPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
-                        guiPresentationMap.put(PAYMENTPROVIDERID, paymentMean.getFulfillmentProviderID());
+          guiPresentationMap.put(OFFERNAME, offerGMO.getJSONRepresentation().get("name"));
+          guiPresentationMap.put(OFFERDISPLAY, offerGMO.getJSONRepresentation().get("display"));
+
+          guiPresentationMap.put(OFFERSTOCK, offerGMO.getJSONRepresentation().get("presentationStock")); // in case we don't find the offer
+          
+          if (offerGMO instanceof Offer)
+            {
+              Offer offer = (Offer) offerGMO;
+              guiPresentationMap.put(OFFERSTOCK, offer.getStock());
+              if(offer.getOfferSalesChannelsAndPrices() != null){
+                for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
+                  if(channel.getSalesChannelIDs() != null) {
+                    for(String salesChannelID : channel.getSalesChannelIDs()) {
+                      if(salesChannelID.equals(getSalesChannelID())) {
+                        if(channel.getPrice() != null) {
+                          PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
+                          if(paymentMean != null) {
+                            guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+                            guiPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
+                            guiPresentationMap.put(PAYMENTPROVIDERID, paymentMean.getFulfillmentProviderID());
+                          }
+                        }
                       }
                     }
                   }
                 }
               }
-            }
-          }
 
-          StringBuilder sb = new StringBuilder();
-          if(offer.getOfferProducts() != null) {
-            for(OfferProduct offerProduct : offer.getOfferProducts()) {
-              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
+              StringBuilder sb = new StringBuilder();
+              if(offer.getOfferProducts() != null) {
+                for(OfferProduct offerProduct : offer.getOfferProducts()) {
+                  Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+                  sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
+                }
+              }
+              if(offer.getOfferVouchers() != null) {
+                for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
+                  Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
+                  sb.append(offerVoucher.getQuantity()+" ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(",");
+                }
+              }
+              String offerContent = null;
+              if(sb.length() >0){
+                offerContent = sb.toString().substring(0, sb.toString().length()-1);
+              }
+              guiPresentationMap.put(OFFERCONTENT, offerContent);
             }
-          }
-          if(offer.getOfferVouchers() != null) {
-            for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
-              Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
-              sb.append(offerVoucher.getQuantity()+" ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(",");
-            }
-          }
-          String offerContent = null;
-          if(sb.length() >0){
-            offerContent = sb.toString().substring(0, sb.toString().length()-1);
-          }
-          guiPresentationMap.put(OFFERCONTENT, offerContent);
-
-          guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
-          guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getGUIManagedObjectDisplay() : null);
-          guiPresentationMap.put(MODULEID, getModuleID());
-          guiPresentationMap.put(MODULENAME, getModule().toString());
-          guiPresentationMap.put(FEATUREID, getFeatureID());
-          guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(ORIGIN, getOrigin());
-          guiPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
-          guiPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
-          guiPresentationMap.put(RETURNCODE, getReturnCode());
-          guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
-          guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
-          guiPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
         }
     }
     
