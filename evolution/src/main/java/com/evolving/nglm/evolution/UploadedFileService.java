@@ -40,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -439,6 +440,12 @@ public class UploadedFileService extends GUIService
     putGUIManagedObject(guiManagedObject, now, newObject, userID);  
   }
   
+  /*****************************************
+  *
+  *  validateVaribaleName
+  *
+  *****************************************/
+  
   private void validateVaribaleName(String variableName, List<GUIManagerException> violations) throws GUIManagerException
   {
     if (variableName != null)
@@ -455,6 +462,12 @@ public class UploadedFileService extends GUIService
       }
   }
 
+  /*****************************************
+  *
+  *  getDataType
+  *
+  *****************************************/
+  
   private String getDataType(String variableName, ArrayList<JSONObject> valiablesJSON)
   {
     String result = null;
@@ -470,20 +483,28 @@ public class UploadedFileService extends GUIService
       }
     return result;
   }
+  
+  /*****************************************
+  *
+  *  validateValue
+  *
+  *****************************************/
 
-  private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue, int lineNumber, List<GUIManagerException> violations) throws GUIManagerException
+  private Object validateValue(String variableName, CriterionDataType criterionDataType, String rawValue, int lineNumber, List<GUIManagerException> violations) throws GUIManagerException
   {
     log.debug("validateValue {}, {}, {}", variableName, criterionDataType, rawValue);
     String dataType = criterionDataType.getExternalRepresentation();
+    Object result = null;
     switch (criterionDataType)
     {
       case StringCriterion:
+        result = rawValue;
         break;
         
       case IntegerCriterion:
         try
           {
-            Integer.parseInt(rawValue);
+            result = Integer.parseInt(rawValue);
           }
         catch(Exception ex)
           {
@@ -494,7 +515,7 @@ public class UploadedFileService extends GUIService
       case DoubleCriterion:
         try
           {
-            Double.parseDouble(rawValue);
+            result = Double.parseDouble(rawValue);
           }
       catch(Exception ex)
         {
@@ -505,7 +526,7 @@ public class UploadedFileService extends GUIService
       case DateCriterion:
         try 
         {
-          GUIManagedObject.parseDateField(rawValue);
+          result = GUIManagedObject.parseDateField(rawValue);
         }
       catch(JSONUtilitiesException ex)
         {
@@ -519,13 +540,21 @@ public class UploadedFileService extends GUIService
           {
             processViolations(violations, new GUIManagerException("badFieldValue", rawValue + "," + variableName + "," + lineNumber));
           }
+        result = rawValue;
         break;
 
       default:
         processViolations(violations, new GUIManagerException("datatype not supported", "invalid dataType " + dataType + " for variable " + variableName));
     }
+    return result;
   }
 
+  /*****************************************
+  *
+  *  getVaribaleName
+  *
+  *****************************************/
+  
   private String getVaribaleName(String header, List<GUIManagerException> violations) throws GUIManagerException
   {
     String result = null;
@@ -542,6 +571,12 @@ public class UploadedFileService extends GUIService
     return result;
   }
 
+  /*****************************************
+  *
+  *  getDatatype
+  *
+  *****************************************/
+  
   private String getDatatype(String header, List<GUIManagerException> violations) throws GUIManagerException
   {
     String result = null;
@@ -558,12 +593,24 @@ public class UploadedFileService extends GUIService
     return result;
   }
   
+  /*****************************************
+  *
+  *  processViolations
+  *
+  *****************************************/
+  
   private void processViolations(List<GUIManagerException> violations, GUIManagerException e) throws GUIManagerException
   {
     violations.add(e);
     if (violations.size() > 2) prepareAndThrowViolations(violations);
   }
 
+  /*****************************************
+  *
+  *  prepareAndThrowViolations
+  *
+  *****************************************/
+  
   private void prepareAndThrowViolations(List<GUIManagerException> violations) throws GUIManagerException
   {
     StringBuilder responseMessageBuilder = new StringBuilder();
@@ -645,6 +692,119 @@ public class UploadedFileService extends GUIService
       log.warn("UploadedFileService.changeFileApplicationId: File does not exist");
     }
   }
+  
+  /*****************************************
+  *
+  *  getRawFileContent
+  *
+  *****************************************/
+
+ public List<String> getRawFileContent(String fileID)
+ {
+   List<String> lines = new ArrayList<String>();
+   UploadedFile file = (UploadedFile) getStoredUploadedFile(fileID);
+   if (file != null)
+     {
+       //
+       //  read file
+       //
+       
+       try (Stream<String> stream = Files.lines(Paths.get(UploadedFile.OUTPUT_FOLDER + file.getDestinationFilename())))
+         {
+           lines = stream.filter(line -> (line != null && !line.trim().isEmpty())).map(String::trim).collect(Collectors.toList());
+         }
+       catch (IOException e)
+       {
+         log.warn("UploadedFileService.getFileContent(problem with file parsing)", e);
+       }
+     }
+   else
+     {
+       log.warn("UploadedFileService.getFileContent: File does not exist");
+     }
+   return lines;
+ }
+ 
+ /*****************************************
+ *
+ *  getParsedFileContent
+ *
+ *****************************************/
+
+public List<Map<String, Object>> getParsedFileContent(String fileID)
+{
+  List<Map<String, Object>> result = new ArrayList<Map<String,Object>>();
+  UploadedFile file = (UploadedFile) getStoredUploadedFile(fileID);
+  if (file != null)
+    {
+      //
+      //  read file
+      //
+      
+      boolean isHeader = true;
+      Map<String, String> headerMap = new LinkedHashMap<String, String>();
+      for (String line : getRawFileContent(fileID))
+        {
+          line = line.trim();
+          Map<String, Object> keyValue = new LinkedHashMap<String, Object>();
+          if (isHeader)
+            {
+              String headers[] = line.split(Deployment.getUploadedFileSeparator(), -1);
+              boolean isFirstColumn = true;
+              for (String header : headers)
+                {
+                  
+                  if (isFirstColumn)
+                    {
+                      headerMap.put(header, "string");
+                    }
+                  else
+                    {
+                      try
+                        {
+                          String dataType = getDatatype(header, new ArrayList<GUIManagerException>());
+                          String variableName = getVaribaleName(header, new ArrayList<GUIManagerException>());
+                          headerMap.put(variableName, dataType);
+                        } 
+                      catch (GUIManagerException e)
+                        {
+                          e.printStackTrace();
+                        }
+                      
+                    }
+                  isFirstColumn = false;
+                }
+            }
+          else
+            {
+              String values[] = line.split(Deployment.getUploadedFileSeparator(), -1);
+              int index = 0;
+              List<String> headers = headerMap.keySet().stream().collect(Collectors.toList());
+              for (String value : values)
+                {
+                  String varName = headers.get(index);
+                  String varDataType = headerMap.get(varName);
+                  try
+                    {
+                      Object val = validateValue(varName, EvaluationCriterion.CriterionDataType.fromExternalRepresentation(varDataType), value, -1, new ArrayList<GUIManagerException>());
+                      keyValue.put(varName, val);
+                    } 
+                  catch (GUIManagerException e)
+                    {
+                      e.printStackTrace();
+                    }
+                }
+              result.add(keyValue);
+            }
+          isHeader = false;
+        }
+    }
+  else
+    {
+      log.warn("UploadedFileService.getFileContent: File does not exist");
+    }
+  return result;
+}
   
 
   /*****************************************

@@ -881,7 +881,10 @@ public class GUIManager
       @Override public void journeyActivated(Journey journey) {
           log.debug("journeyActivated: " + journey.getJourneyID()+" "+journey.getJourneyName());
 
+          // 
           // send the evaluate target order to evolution engine
+          //
+          
           if (journey.getTargetID() != null)
           {
             EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(journey.getJourneyID()), journey.getTargetID());
@@ -889,6 +892,10 @@ public class GUIManager
                   .serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
           }
 
+          //
+          //  externalAPIMethodJourneyActivated
+          //
+          
           if (externalAPIMethodJourneyActivated != null)
             {
               try
@@ -917,6 +924,17 @@ public class GUIManager
               {
                 throw new RuntimeException(e);
               }
+            }
+          
+          if (TargetingType.FileVariables == journey.getTargetingType() && journey.getTargetingFileVariableID() != null)
+            {
+              String targetingFileID = journey.getTargetingFileVariableID();
+              UploadedFile targetingFile = uploadedFileService.getActiveUploadedFile(targetingFileID, SystemTime.getCurrentTime());
+              if (targetingFile != null)
+                {
+                  List<Map<String, Object>> lines = uploadedFileService.getParsedFileContent(targetingFileID);
+                  log.info("RAJ K File content with header {}", lines);
+                }
             }
         }
       @Override public void journeyDeactivated(String guiManagedObjectID)
