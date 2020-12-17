@@ -225,7 +225,7 @@ public class EvolutionEngine
   private String evolutionEngineKey;
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
   private static EvolutionEngineEventDeclaration voucherActionEventDeclaration = null;
-  private static EvolutionEngineEventDeclaration fileWithVariableEventDeclaration = null;
+  public static EvolutionEngineEventDeclaration fileWithVariableEventDeclaration = null;
   static
     {
       try

@@ -1212,6 +1212,61 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", recurrence);
     this.recurrenceActive = JSONUtilities.decodeBoolean(jsonRoot, "recurrenceActive", Boolean.FALSE);
     this.targetingFileVariableID = JSONUtilities.decodeString(jsonRoot, "targetingFileVariableID", targetingType == TargetingType.FileVariables);
+    if (targetingFileVariableID != null && targetingType == TargetingType.FileVariables)
+      {
+        EvolutionEngineEventDeclaration event = EvolutionEngine.fileWithVariableEventDeclaration;
+        JSONArray arrayEventNameCriterion = new JSONArray();
+        JSONArray arrayTargetingEventCriteria = new JSONArray();
+        
+        //
+        //  argument
+        //
+        
+        Map<String, Object> argumentMap = new HashMap<String, Object>();
+        argumentMap.put("expression", "'" + event.getName()+ "'");
+        
+        //
+        //  eventName
+        //
+        
+        Map<String, Object> eventNameCriterionMap = new HashMap<String, Object>();
+        eventNameCriterionMap.put("criterionField", "evaluation.eventname");
+        eventNameCriterionMap.put("criterionOperator", "==");
+        eventNameCriterionMap.put("argument", JSONUtilities.encodeObject(argumentMap));
+        arrayEventNameCriterion.add(JSONUtilities.encodeObject(eventNameCriterionMap));
+        
+        //
+        //  criterionContext
+        //
+        
+        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null);
+        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext);        
+        
+        //
+        //  fileID - argument
+        //
+        
+        Map<String, Object> argumentFileIDMap = new HashMap<String, Object>();
+        argumentFileIDMap.put("expression", "'" + targetingFileVariableID+ "'");
+        
+        //
+        //  fileID
+        //
+        
+        Map<String, Object> fileIDCriterionMap = new HashMap<String, Object>();
+        fileIDCriterionMap.put("criterionField", "event.fileID");
+        fileIDCriterionMap.put("criterionOperator", "==");
+        fileIDCriterionMap.put("argument", JSONUtilities.encodeObject(argumentFileIDMap));
+        arrayTargetingEventCriteria.add(JSONUtilities.encodeObject(fileIDCriterionMap));
+        log.info("RAJ K eventname criteria json {} ", JSONUtilities.encodeObject(eventNameCriterionMap).toString());
+        log.info("RAJ K fileID criteria json {} ", JSONUtilities.encodeObject(fileIDCriterionMap).toString());
+        
+        //
+        //  targetingEventCriteria
+        //
+        
+        this.targetingEventCriteria = decodeCriteria(arrayTargetingEventCriteria, eventNameCriteria, criterionContext);
+      }
 
 
     /*****************************************

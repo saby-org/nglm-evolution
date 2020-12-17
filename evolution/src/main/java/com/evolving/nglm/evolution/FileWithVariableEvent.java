@@ -126,7 +126,7 @@ public class FileWithVariableEvent implements EvolutionEngineEvent
    struct.put("subscriberID", event.getSubscriberID());
    struct.put("eventDate", event.getEventDate());
    struct.put("fileID", event.getFileID());
-   struct.put("parameterMap", event.getParameterMap());
+   struct.put("parameterMap", ParameterMap.pack(event.getParameterMap()));
    return struct;
  }
  
