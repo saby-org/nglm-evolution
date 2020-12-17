@@ -19,7 +19,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 
-public class FileWithVariableEvent implements SubscriberStreamEvent
+public class FileWithVariableEvent implements EvolutionEngineEvent
 {
   /*****************************************
   *
