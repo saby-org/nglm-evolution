@@ -84,7 +84,7 @@ public class FileWithVariableEvent implements EvolutionEngineEvent
 
   /*****************************************
   *
-  *  constructor -- JSON
+  *  constructor
   *
   *****************************************/
 
