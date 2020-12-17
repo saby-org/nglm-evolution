@@ -123,10 +123,15 @@ public class FileWithVariableEvent implements EvolutionEngineEvent
  {
    FileWithVariableEvent event = (FileWithVariableEvent) value;
    Struct struct = new Struct(schema);
+   log.info("RAJ K subscriberID {} ", event.getSubscriberID());
    struct.put("subscriberID", event.getSubscriberID());
+   log.info("RAJ K subscriberID ok, eventDate {} ", event.getEventDate());
    struct.put("eventDate", event.getEventDate());
+   log.info("RAJ K eventDate ok, fileID {} ", event.getFileID());
    struct.put("fileID", event.getFileID());
+   log.info("RAJ K fileID ok, parameterMap {} ", event.getParameterMap());
    struct.put("parameterMap", ParameterMap.pack(event.getParameterMap()));
+   log.info("RAJ K parameterMap ok");
    return struct;
  }
  

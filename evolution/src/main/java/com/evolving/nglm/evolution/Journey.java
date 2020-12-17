@@ -1211,6 +1211,11 @@ public class Journey extends GUIManagedObject implements StockableItem
     if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", recurrence);
     this.recurrenceActive = JSONUtilities.decodeBoolean(jsonRoot, "recurrenceActive", Boolean.FALSE);
+    
+    //
+    //  FileVariables
+    //
+    
     this.targetingFileVariableID = JSONUtilities.decodeString(jsonRoot, "targetingFileVariableID", targetingType == TargetingType.FileVariables);
     if (targetingFileVariableID != null && targetingType == TargetingType.FileVariables)
       {
