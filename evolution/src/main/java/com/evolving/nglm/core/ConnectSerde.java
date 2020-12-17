@@ -255,11 +255,6 @@ public class ConnectSerde<T> implements Serde<T>
       @Override public void close() { }
       @Override public byte[] serialize(String topic, T data)
       {
-        if ("filewithvariableevent".equalsIgnoreCase(topic))
-          {
-            log.info("RAJ K schema " + schema.fields());
-            log.info("RAJ K data " + data.toString());
-          }
         return converter.fromConnectData(topic, schema, pack(data));
       }
     };
