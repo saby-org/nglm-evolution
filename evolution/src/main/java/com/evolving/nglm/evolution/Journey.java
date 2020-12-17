@@ -1263,8 +1263,6 @@ public class Journey extends GUIManagedObject implements StockableItem
         fileIDCriterionMap.put("criterionOperator", "==");
         fileIDCriterionMap.put("argument", JSONUtilities.encodeObject(argumentFileIDMap));
         arrayTargetingEventCriteria.add(JSONUtilities.encodeObject(fileIDCriterionMap));
-        log.info("RAJ K eventname criteria json {} ", JSONUtilities.encodeObject(eventNameCriterionMap).toString());
-        log.info("RAJ K fileID criteria json {} ", JSONUtilities.encodeObject(fileIDCriterionMap).toString());
         
         //
         //  targetingEventCriteria

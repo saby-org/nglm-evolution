@@ -943,9 +943,11 @@ public class GUIManager
                   for (Map<String, Object> line : lines)
                     {
                       String subscriberID = resolveSubscriberID(targetingFile.getCustomerAlternateID(), (String) line.get(targetingFile.getCustomerAlternateID()));
-                      log.info("RAJ K sent subscriberID {}, eventTopic {}", subscriberID, eventTopic);
-                      FileWithVariableEvent fileWithVariableEvent = new FileWithVariableEvent(subscriberID, now, targetingFileID, line);
-                      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(fileWithVariableEvent.getSubscriberID())), FileWithVariableEvent.serde().serializer().serialize(eventTopic, fileWithVariableEvent)));
+                      if (subscriberID != null)
+                        {
+                          FileWithVariableEvent fileWithVariableEvent = new FileWithVariableEvent(subscriberID, now, targetingFileID, line);
+                          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(fileWithVariableEvent.getSubscriberID())), FileWithVariableEvent.serde().serializer().serialize(eventTopic, fileWithVariableEvent)));
+                        }
                     }
                 }
             }
