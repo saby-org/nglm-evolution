@@ -119,6 +119,20 @@ public class FileWithVariableEvent implements EvolutionEngineEvent
   
   /*****************************************
   *
+  *  constructor -- unpack
+  *
+  *****************************************/
+
+  public FileWithVariableEvent(String subscriberID, Date eventDate, String fileID, ParameterMap parameterMap)
+  {
+    this.subscriberID = subscriberID;
+    this.eventDate = eventDate;
+    this.fileID = fileID;
+    this.parameterMap = parameterMap;
+  }
+  
+  /*****************************************
+  *
   * pack
   *
   *****************************************/
