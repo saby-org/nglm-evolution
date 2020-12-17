@@ -181,6 +181,7 @@
   "sourceAddressTopic"                   				 : "${topic.sourceaddress}",
   "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
+  "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
 
   "supportedDataTypes" :
     [

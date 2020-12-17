@@ -932,15 +932,29 @@ public class GUIManager
           
           if (TargetingType.FileVariables == journey.getTargetingType() && journey.getTargetingFileVariableID() != null)
             {
+              Date now = SystemTime.getCurrentTime();
               String targetingFileID = journey.getTargetingFileVariableID();
               if (log.isDebugEnabled()) log.debug("fileVariable trigger will be generated from file {} for journey {}", targetingFileID, journey.getGUIManagedObjectDisplay());
-              UploadedFile targetingFile = uploadedFileService.getActiveUploadedFile(targetingFileID, SystemTime.getCurrentTime());
+              UploadedFile targetingFile = uploadedFileService.getActiveUploadedFile(targetingFileID, now);
               if (targetingFile != null)
                 {
                   List<Map<String, Object>> lines = uploadedFileService.getParsedFileContent(targetingFileID);
+                  String eventTopic = Deployment.getFileWithVariableEventTopic();
                   for (Map<String, Object> line : lines)
                     {
-                      log.info("RAJ K File content with header {}", line);
+                      String subscriberID = resolveSubscriberID(targetingFile.getCustomerAlternateID(), (String) line.get(targetingFile.getCustomerAlternateID()));
+                      ParameterMap parameterMap = new ParameterMap();
+                      for (String lineKey : line.keySet())
+                        {
+                          if (lineKey != targetingFile.getCustomerAlternateID())
+                            {
+                              parameterMap.put(lineKey, line.get(lineKey));
+                            }
+                          
+                        }
+                      FileWithVariableEvent event = new FileWithVariableEvent(subscriberID, now, targetingFileID, parameterMap);
+                      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(event.getSubscriberID())), FileWithVariableEvent.serde().serializer().serialize(eventTopic, event)));
+                      log.info("RAJ K sent event {}", event);
                     }
                 }
             }
@@ -26510,6 +26524,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     catch (SubscriberIDServiceException e)
       {
         log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());
+      }
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  resolveSubscriberID
+  *
+  ****************************************/
+
+  protected String resolveSubscriberID(String alternateID, String alternateIDValue)
+  {
+    String result = null;
+    try
+      {
+        result = subscriberIDService.getSubscriberID(alternateID, alternateIDValue);
+      }
+    catch (SubscriberIDServiceException e)
+      {
+        log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", alternateIDValue, e.getMessage());
       }
     return result;
   }

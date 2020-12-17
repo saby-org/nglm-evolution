@@ -580,7 +580,10 @@ java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.a
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> com.evolving.nglm.evolution.SubscriberProfileService 001
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> com.evolving.nglm.evolution.StockMonitor 001 1001
 
+cp $DEPLOY_ROOT/support/lifecycle.001.csv $NGLM_DATA/lifecycle/001.csv
+sleep 30
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"sourceFilename": "target-with-variables.001.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"201" }' -F 'file=@target-with-variables.001.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFileWithVariables; echo
 sleep 5
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/file-withvar-campaign.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCampaign; echo
+
 
