@@ -355,6 +355,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       {
         case Target:
         case Event:
+        case FileVariables:
           result = true;
           break;
         case Manual:
@@ -1262,6 +1263,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       {
         case Target:
         case Event:
+        case FileVariables:
           switch (journeyType) 
             {
               case Journey:
