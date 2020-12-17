@@ -81,6 +81,7 @@
    },
    "appendInclusionLists":true,
    "targetingType":"fileVariables",
+   "targetFileVariables":[{"dataType":"string","name":"name"},{"dataType":"integer","name":"years"},{"dataType":"string","name":"gift"},{"dataType":"double","name":"doubleval"},{"dataType":"date","name":"dateval"},{"dataType":"time","name":"timeval"}],
    "targetingFileVariableID":"1",
    "targetingEvent":null,
    "journeyParameters":[

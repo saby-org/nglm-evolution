@@ -96,6 +96,7 @@ import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
+import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
@@ -4898,6 +4899,26 @@ public class EvolutionEngine
                     boundParameters = journey.getBoundParameters();
                     // get the featureID from the CalledJourney computation
                     sourceFeatureID = sourceFeatureIDFromWorkflowTriggering;
+                  }
+                
+                //
+                //  bound file variables
+                //
+                
+                if (journey.getTargetingType() == TargetingType.FileVariables && evolutionEvent instanceof FileWithVariableEvent)
+                  {
+                    FileWithVariableEvent fileWithVariableEvent = (FileWithVariableEvent) evolutionEvent;
+                    Map<String, CriterionField> allContextVars = journey.getContextVariables();
+                    ParameterMap parameterMap = fileWithVariableEvent.getParameterMap();
+                    for (String key : parameterMap.keySet())
+                      {
+                        String id = "variable." + key;
+                        if (allContextVars.get(id) != null)
+                          {
+                            boundParameters.put(id, parameterMap.get(key));
+                          }
+                      }
+                    log.info("RAJ K boundParameters {}", boundParameters);
                   }
 
                 /*****************************************
