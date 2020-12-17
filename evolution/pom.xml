@@ -60,9 +60,6 @@
     <!-- dependencies - fake components -->
     <fake.smsc.version>0.0.7</fake.smsc.version>
 
-    <!-- lag exporter -->
-    <lagexporter.version>0.4.0</lagexporter.version>
-
     <!-- Prometheus -->
     <evolving.prometheus.version>2.14.0_04</evolving.prometheus.version>
     
@@ -282,15 +279,12 @@
                     <include>bin/upgrade-run-flyway.sh</include>
                     <include>bin/upgrade-run-postamble.sh</include>
                     <include>bin/fakein-run.sh</include>
-                    <include>bin/kafka-lag-exporter-run.sh</include>
                     <include>bin/kafka-multiple-topics.sh</include>
                     <include>bin/java-evolution-setup.sh</include>
                     <include>bin/prepare-curl.sh</include>
                     <include>config/deployment-*.json</include>
                     <include>config/grafana-*.json</include>
                     <include>config/grafana-*.yml</include>
-                    <include>config/kafka-lag-exporter.conf</include>
-                    <include>config/kafka-lag-exporter-logback.xml</include>
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
                     <include>config/ucgengine_jmx.yml</include>
@@ -472,35 +466,6 @@
             </configuration>
           </execution>
 
-          <execution>
-            <id>generate-kafka-lag-exporter-docker-stack</id>
-            <phase>package</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/assembled-docker/kafka-lag-exporter</outputDirectory>
-              <resources>          
-                <resource>
-                  <directory>src/main/resources/docker/kafka-lag-exporter</directory>
-                  <includes>
-                    <include>Dockerfile</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}/assembled-resources</directory>
-                  <includes>
-                    <include>config/kafka-lag-exporter.conf</include>
-                    <include>config/kafka-lag-exporter-logback.xml</include>
-                    <include>bin/kafka-lag-exporter-run.sh</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>                
-              </resources>              
-            </configuration>            
-          </execution>
-
         </executions>
       </plugin>
 
@@ -548,20 +513,6 @@
               <contextDirectory>${project.build.directory}/assembled-docker/fakesmtp</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-fakesmtp</repository>
               <classifier>docker-info-fakesmtp</classifier>
-              <tag>${project.name}-${project.version}</tag>
-            </configuration>
-          </execution>
-
-          <execution>
-            <id>docker-kafka-lag-exporter</id>
-            <goals>
-              <goal>build</goal>
-              <goal>push</goal>
-            </goals>
-            <configuration>              
-              <contextDirectory>${project.build.directory}/assembled-docker/kafka-lag-exporter</contextDirectory>
-              <repository>${env.DOCKER_REGISTRY}ev-kafkalagexporter</repository>
-              <classifier>docker-info-kafkalagexporter</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>
