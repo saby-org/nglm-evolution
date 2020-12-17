@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -104,13 +105,16 @@ public class FileWithVariableEvent implements EvolutionEngineEvent
   *
   *****************************************/
   
-  public FileWithVariableEvent(String subscriberID, Date eventDate, String fileID, ParameterMap parameterMap)
+  public FileWithVariableEvent(String subscriberID, Date eventDate, String fileID, Map<String, Object> params)
   {
-    super();
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.fileID = fileID;
-    this.parameterMap = parameterMap;
+    this.parameterMap = new ParameterMap();
+    for (String key : params.keySet())
+      {
+        this.parameterMap.put(key, params.get(key));
+      }
   }
   
   /*****************************************
@@ -123,15 +127,10 @@ public class FileWithVariableEvent implements EvolutionEngineEvent
  {
    FileWithVariableEvent event = (FileWithVariableEvent) value;
    Struct struct = new Struct(schema);
-   log.info("RAJ K subscriberID {} ", event.getSubscriberID());
    struct.put("subscriberID", event.getSubscriberID());
-   log.info("RAJ K subscriberID ok, eventDate {} ", event.getEventDate());
    struct.put("eventDate", event.getEventDate());
-   log.info("RAJ K eventDate ok, fileID {} ", event.getFileID());
    struct.put("fileID", event.getFileID());
-   log.info("RAJ K fileID ok, parameterMap {} ", event.getParameterMap());
    struct.put("parameterMap", ParameterMap.pack(event.getParameterMap()));
-   log.info("RAJ K parameterMap ok");
    return struct;
  }
  
