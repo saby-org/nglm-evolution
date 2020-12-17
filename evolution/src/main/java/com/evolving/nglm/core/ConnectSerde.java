@@ -18,6 +18,11 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.evolution.FileWithVariableEvent;
+
 import io.confluent.connect.avro.AvroConverter;
 import kafka.log.Log;
 
@@ -32,6 +37,12 @@ public class ConnectSerde<T> implements Serde<T>
   *  constructor
   *
   *****************************************/
+  
+  //
+  // logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(ConnectSerde.class);
 
   private boolean isKey;
   private boolean useWrapper;
@@ -244,10 +255,10 @@ public class ConnectSerde<T> implements Serde<T>
       @Override public void close() { }
       @Override public byte[] serialize(String topic, T data)
       {
-        if ("filewithvariableeventtopic".equalsIgnoreCase(topic))
+        if ("filewithvariableevent".equalsIgnoreCase(topic))
           {
-            System.out.println("RAJ K schema " + schema.fields());
-            System.out.println("RAJ K data " + data.toString());
+            log.info("RAJ K schema " + schema.fields());
+            log.info("RAJ K data " + data.toString());
           }
         return converter.fromConnectData(topic, schema, pack(data));
       }
