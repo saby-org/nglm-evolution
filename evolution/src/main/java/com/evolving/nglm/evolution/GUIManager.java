@@ -926,14 +926,22 @@ public class GUIManager
               }
             }
           
+          //
+          //  FileVariables
+          //
+          
           if (TargetingType.FileVariables == journey.getTargetingType() && journey.getTargetingFileVariableID() != null)
             {
               String targetingFileID = journey.getTargetingFileVariableID();
+              if (log.isDebugEnabled()) log.debug("fileVariable trigger will be generated from file {} for journey {}", targetingFileID, journey.getGUIManagedObjectDisplay());
               UploadedFile targetingFile = uploadedFileService.getActiveUploadedFile(targetingFileID, SystemTime.getCurrentTime());
               if (targetingFile != null)
                 {
                   List<Map<String, Object>> lines = uploadedFileService.getParsedFileContent(targetingFileID);
-                  log.info("RAJ K File content with header {}", lines);
+                  for (Map<String, Object> line : lines)
+                    {
+                      log.info("RAJ K File content with header {}", line);
+                    }
                 }
             }
         }

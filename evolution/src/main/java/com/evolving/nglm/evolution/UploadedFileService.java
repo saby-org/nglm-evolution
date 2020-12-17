@@ -492,7 +492,6 @@ public class UploadedFileService extends GUIService
 
   private Object validateValue(String variableName, CriterionDataType criterionDataType, String rawValue, int lineNumber, List<GUIManagerException> violations) throws GUIManagerException
   {
-    log.debug("validateValue {}, {}, {}", variableName, criterionDataType, rawValue);
     String dataType = criterionDataType.getExternalRepresentation();
     Object result = null;
     switch (criterionDataType)
