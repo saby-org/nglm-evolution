@@ -1,8 +1,8 @@
-/*****************************************************************************
+/*****************************************
 *
 *  FileWithVariableEvent.java
 *
-*****************************************************************************/
+*****************************************/
 
 package com.evolving.nglm.evolution;
 
@@ -14,15 +14,13 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamEvent;
 
-public class FileWithVariableEvent implements EvolutionEngineEvent
+public class FileWithVariableEvent implements SubscriberStreamEvent
 {
-
   /*****************************************
   *
   *  schema
@@ -45,152 +43,143 @@ public class FileWithVariableEvent implements EvolutionEngineEvent
     schemaBuilder.field("parameterMap", ParameterMap.schema());
     schema = schemaBuilder.build();
   };
-  
+
   //
-  // serde
+  //  serde
   //
 
   private static ConnectSerde<FileWithVariableEvent> serde = new ConnectSerde<FileWithVariableEvent>(schema, false, FileWithVariableEvent.class, FileWithVariableEvent::pack, FileWithVariableEvent::unpack);
 
   //
-  // accessor
+  //  accessor
   //
 
-  public static Schema schema()
-  {
-    return schema;
-  }
-
-  public static ConnectSerde<FileWithVariableEvent> serde()
-  {
-    return serde;
-  }
-
+  public static Schema schema() { return schema; }
+  public static ConnectSerde<FileWithVariableEvent> serde() { return serde; }
   public Schema subscriberStreamEventSchema() { return schema(); }
 
-  //
-  // logger
-  //
-
-  private static final Logger log = LoggerFactory.getLogger(FileWithVariableEvent.class);
-  
   /****************************************
   *
-  * data
-  *
-  ****************************************/
- 
- private String subscriberID;
- private Date eventDate;
- private String fileID;
- private ParameterMap parameterMap;
- 
- /*****************************************
- *
- *  accessors
- *
- *****************************************/
-
-  //TODO: this should probably extends SubscriberStreamOutput instead
-  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
-  @Override public String getEventName() { return "FileWithVariableEvent"; }
-  @Override public String getSubscriberID() { return subscriberID; }
-  @Override public Date getEventDate() { return eventDate; }
-  public String getFileID() { return fileID; }
-  public ParameterMap getParameterMap() { return parameterMap; }
-  
-  /*****************************************
-  *
-  * constructor
+  *  data
   *
   *****************************************/
-  
+
+  private String subscriberID;
+  private Date eventDate;
+  private ParameterMap parameterMap;
+  private String fileID;
+
+  /*****************************************
+  *
+  *  accessors
+  *
+  *****************************************/
+
+  public String getSubscriberID() { return subscriberID; }
+  public Date getEventDate() { return eventDate; }
+  public ParameterMap getParameterMap() { return parameterMap; }
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Standard; }
+  public String getFileID() { return fileID; }
+  public String getEventName() { return "FileWithVariableEvent"; }
+
+  /*****************************************
+  *
+  *  constructor -- JSON
+  *
+  *****************************************/
+
   public FileWithVariableEvent(String subscriberID, Date eventDate, String fileID, Map<String, Object> params)
   {
+    /*****************************************
+    *
+    *  simple attributes
+    *
+    *****************************************/
+
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.fileID = fileID;
+
+    /*****************************************
+    *
+    *  parameterMap
+    *
+    *****************************************/
+
     this.parameterMap = new ParameterMap();
     for (String key : params.keySet())
       {
         this.parameterMap.put(key, params.get(key));
       }
   }
-  
+
   /*****************************************
   *
   *  constructor -- unpack
   *
   *****************************************/
 
-  public FileWithVariableEvent(String subscriberID, Date eventDate, String fileID, ParameterMap parameterMap)
+  public FileWithVariableEvent(String subscriberID, Date eventDate, ParameterMap parameterMap, String fileID)
   {
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
-    this.fileID = fileID;
     this.parameterMap = parameterMap;
+    this.fileID = fileID;
   }
-  
+
   /*****************************************
   *
-  * pack
+  *  pack
   *
   *****************************************/
 
- public static Object pack(Object value)
- {
-   FileWithVariableEvent event = (FileWithVariableEvent) value;
-   Struct struct = new Struct(schema);
-   struct.put("subscriberID", event.getSubscriberID());
-   struct.put("eventDate", event.getEventDate());
-   struct.put("fileID", event.getFileID());
-   struct.put("parameterMap", ParameterMap.pack(event.getParameterMap()));
-   return struct;
- }
- 
- //
- // subscriberStreamEventPack
- //
+  public static Object pack(Object value)
+  {
+    FileWithVariableEvent fileWithVariableEvent = (FileWithVariableEvent) value;
+    Struct struct = new Struct(schema);
+    struct.put("subscriberID", fileWithVariableEvent.getSubscriberID());
+    struct.put("eventDate", fileWithVariableEvent.getEventDate());
+    struct.put("parameterMap", ParameterMap.pack(fileWithVariableEvent.getParameterMap()));
+    struct.put("fileID", fileWithVariableEvent.getFileID());
+    return struct;
+  }
 
- @Override public Object subscriberStreamEventPack(Object value) { return pack(value); }
- 
- /*****************************************
- *
- * unpack
- *
- *****************************************/
+  //
+  //  subscriberStreamEventPack
+  //
 
- public static FileWithVariableEvent unpack(SchemaAndValue schemaAndValue)
- {
-   //
-   // data
-   //
+  public Object subscriberStreamEventPack(Object value) { return pack(value); }
 
-   Schema schema = schemaAndValue.schema();
-   Object value = schemaAndValue.value();
-   Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+  /*****************************************
+  *
+  *  unpack
+  *
+  *****************************************/
 
-   //
-   // unpack
-   //
+  public static FileWithVariableEvent unpack(SchemaAndValue schemaAndValue)
+  {
+    //
+    //  data
+    //
 
-   Struct valueStruct = (Struct) value;
-   String subscriberID = valueStruct.getString("subscriberID");
-   Date eventDate = (Date) valueStruct.get("eventDate");
-   String fileID = valueStruct.getString("fileID");
-   ParameterMap parameterMap = ParameterMap.unpack(new SchemaAndValue(schema.field("parameterMap").schema(), valueStruct.get("parameterMap")));
+    Schema schema = schemaAndValue.schema();
+    Object value = schemaAndValue.value();
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
 
-   //
-   // return
-   //
+    //
+    //  unpack
+    //
 
-   return new FileWithVariableEvent(subscriberID, eventDate, fileID, parameterMap);
- }
- 
- @Override
- public String toString()
- {
-   return "FileWithVariableEvent [subscriberID=" + subscriberID + ", eventDate=" + eventDate + ", fileID=" + fileID + ", parameterMap=" + parameterMap + "]";
- }
+    Struct valueStruct = (Struct) value;
+    String subscriberID = valueStruct.getString("subscriberID");
+    Date eventDate = (Date) valueStruct.get("eventDate");
+    ParameterMap parameterMap = ParameterMap.unpack(new SchemaAndValue(schema.field("parameterMap").schema(), valueStruct.get("parameterMap")));
+    String fileID = valueStruct.getString("fileID");
+    
+    //
+    //  return
+    //
 
+    return new FileWithVariableEvent(subscriberID, eventDate, parameterMap, fileID);
+  }
 }
