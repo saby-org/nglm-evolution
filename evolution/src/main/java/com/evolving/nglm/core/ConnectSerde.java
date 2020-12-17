@@ -19,6 +19,7 @@ import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
 import io.confluent.connect.avro.AvroConverter;
+import kafka.log.Log;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -243,6 +244,11 @@ public class ConnectSerde<T> implements Serde<T>
       @Override public void close() { }
       @Override public byte[] serialize(String topic, T data)
       {
+        if (schema.name().equals("file_with_variable_event"))
+          {
+            System.out.println("RAJ K schema " + schema.fields());
+            System.out.println("RAJ K data " + data.toString());
+          }
         return converter.fromConnectData(topic, schema, pack(data));
       }
     };
