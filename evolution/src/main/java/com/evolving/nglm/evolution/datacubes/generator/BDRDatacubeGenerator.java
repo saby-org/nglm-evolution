@@ -86,7 +86,6 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("operation");
     this.filterFields.add("deliverableID");
     this.filterFields.add("returnCode");
-    this.filterFields.add("deliverableQty");
     
     //
     // Data Aggregations
@@ -143,8 +142,6 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     
     String deliverableID = (String) filters.remove("deliverableID");
     filters.put("deliverable", deliverablesMap.getDisplay(deliverableID, "deliverable"));
-
-    filters.remove("deliverableQty"); // TODO : check that the aggregation stays; Otherwise put it back
 
     DatacubeUtils.embelishReturnCode(filters);
   }
