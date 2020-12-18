@@ -3965,29 +3965,29 @@ public class Journey extends GUIManagedObject implements StockableItem
          if (this.boundParameters.containsKey("journey.deliverableID") && boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
         	 blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
              result.put("point", blkpointIDs);  
-             
-             for (JourneyNode offerNode : getJourneyNodes().values())
-             {
-               if (offerNode.getNodeType().getActionManager() != null)
-                 {
-            	   String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
-                   if (pushId != null) pushTemplateIDs.add(pushId);
-                   String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
-                   if (mailId != null) mailtemplateIDs.add(mailId);
-                   String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
-                   if (dialogID != null) dialogIDs.add(dialogID);
-            	   
-                 }
-               }
+//             
+//             for (JourneyNode offerNode : getJourneyNodes().values())
+//             {
+//               if (offerNode.getNodeType().getActionManager() != null)
+//                 {
+//            	   String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
+//                   if (pushId != null) pushTemplateIDs.add(pushId);
+//                   String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
+//                   if (mailId != null) mailtemplateIDs.add(mailId);
+//                   String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
+//                   if (dialogID != null) dialogIDs.add(dialogID);
+//            	   
+//                 }
+//               }
              
             targetIDs = getTargetID();
              result.put("target", targetIDs);
              
              List<String> jourObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
              result.put("journeyobjective", jourObjIDs);
-             result.put("pushtemplate", pushTemplateIDs);
-             result.put("mailtemplate", mailtemplateIDs);
-             result.put("dialogtemplate", dialogIDs);
+//             result.put("pushtemplate", pushTemplateIDs);
+//             result.put("mailtemplate", mailtemplateIDs);
+//             result.put("dialogtemplate", dialogIDs);
              
              
             break;
