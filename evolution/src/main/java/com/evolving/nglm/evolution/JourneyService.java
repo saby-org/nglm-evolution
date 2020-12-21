@@ -138,6 +138,7 @@ public class JourneyService extends GUIService
         numberOfOccurrences =  JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
         lastCompletedOccurrenceNumber =  allRecs.size();
       }
+    int priority = JSONUtilities.decodeInteger(fullJSON, "priority", Integer.MAX_VALUE);
     
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
@@ -145,6 +146,7 @@ public class JourneyService extends GUIService
     result.put("occurrenceNumber", occurrenceNumber);
     result.put("numberOfOccurrences", numberOfOccurrences);
     result.put("lastCompletedOccurrenceNumber", lastCompletedOccurrenceNumber);
+    result.put("priority", priority);
     
     if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign))
       {
