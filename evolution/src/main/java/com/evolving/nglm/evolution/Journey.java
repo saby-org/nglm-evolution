@@ -3961,12 +3961,16 @@ public class Journey extends GUIManagedObject implements StockableItem
           break;
 
         case BulkCampaign:
+        	boundParameters.keySet().forEach( a -> System.out.println(a));
             List<String> blkpointIDs = new ArrayList<String>();
         if (this.boundParameters!= null && this.boundParameters.containsKey("journey.deliverableID") &&  this.boundParameters.get("journey.deliverableID")!=null && this.boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
          blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
       
         if (this.boundParameters!= null && this.boundParameters.containsKey("journey.dialogtemplate") &&  this.boundParameters.get("journey.dialogtemplate")!=null)
+        {	System.out.println(boundParameters.get("journey.dialogtemplate").toString());
         	dialogIDs.add(boundParameters.get("journey.dialogtemplate").toString());
+        
+        }
 
         
          result.put("point", blkpointIDs);  
