@@ -3962,9 +3962,16 @@ public class Journey extends GUIManagedObject implements StockableItem
 
         case BulkCampaign:
             List<String> blkpointIDs = new ArrayList<String>();
-         if (this.boundParameters!= null && this.boundParameters.containsKey("journey.deliverableID") && boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
+            if(this.boundParameters== null)
+            	System.out.println("1");
+            if(this.boundParameters.get("journey.deliverableID")== null)
+            	System.out.println("2");
+          if (this.boundParameters!= null && this.boundParameters.containsKey("journey.deliverableID") &&  this.boundParameters.get("journey.deliverableID")!=null && this.boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
+         {System.out.println("inside the test");
         	 blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-             result.put("point", blkpointIDs);  
+         }
+         result.put("point", blkpointIDs);  
+             
 //             
 //             for (JourneyNode offerNode : getJourneyNodes().values())
 //             {
