@@ -3524,6 +3524,8 @@ public class EvolutionEngine
           evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(null);
 
           return true;
+        } else {
+          log.info("No action manager originatingSubscriberID : " + executeActionOtherSubscriber.getOriginatingSubscriberID() + " journeyID : " + executeActionOtherSubscriber.getOriginalJourneyID() + " nodeID : " + executeActionOtherSubscriber.getOriginatingNodeID());
         }
       }
     return false;
@@ -5810,10 +5812,12 @@ public class EvolutionEngine
 
   private static boolean addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
   {
-    boolean res = true; // success by default
+    boolean res = false; // fail by default
     String variableID = "variable." + variableName;
-    Object partnerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
-    if (partnerName instanceof String)
+    Object partnerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : null;
+    if (partnerName == null) {
+      log.info("Unable to find partner in variable " + variableName);
+    } else if (partnerName instanceof String)
       {
         String customerIDPartner = null;
         String partnerNameStr = (String) partnerName;
@@ -5826,22 +5830,18 @@ public class EvolutionEngine
                 break;
               }
           }
-        log.trace("Will do action for partner " + customerIDPartner);
-        if (customerIDPartner == null)
-          {
-            // The alternateID given when creating the partner does not exist, we should exit the node using the appropriate link.
-            res = false;
-          }
-        else
-          {
+        if (customerIDPartner != null) {
+            log.trace("Will do action for partner " + customerIDPartner);
             ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDPartner, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
             actions.add(action);
+            res = true;
+          } else {
+            log.info("Error : need to do action for " + partnerNameStr + " but found no associated customerID");
           }
       }
     else
       {
-        log.info("expecting partner, found " + partnerName + " " + ((partnerName != null) ? partnerName.getClass().getCanonicalName() : "null"));
-        res = false;
+        log.info("Expecting partner in variable " + variableName + " found " + partnerName + " " + ((partnerName != null) ? partnerName.getClass().getCanonicalName() : "null"));
       }
     return res;
   }
