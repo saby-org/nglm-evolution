@@ -74,8 +74,8 @@ public class GUIManagedObjectDependencyHelper
                  if (guiDependencies != null && !guiDependencies.isEmpty())
                   {
                     List<String> guiDependencyList = guiDependencies.get(guiDependencyModelTree.getGuiManagedObjectType().toLowerCase());
-                    guiDependencyList.forEach(dep->System.out.println("value for dependency"+dep));
-                    System.out.println("object id is"+ objectID);
+//                    guiDependencyList.forEach(dep->System.out.println("value for dependency"+dep));
+//                    System.out.println("object id is"+ objectID);
                     if (guiDependencyList != null && guiDependencyList.contains(objectID)) containerObjectList.add(guiManagedObject);
                   }
                 }
