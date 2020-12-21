@@ -7748,7 +7748,8 @@ public class EvolutionEngine
     @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
     {
       Map<String, String> result = new HashMap<String, String>();
-      String workflowID = (String) journeyNode.getNodeParameters().get("node.parameter.workflow");
+      WorkflowParameter workflowparam= (WorkflowParameter) journeyNode.getNodeParameters().get("node.parameter.workflow");
+      String workflowID =workflowparam.getWorkflowID();
       if (workflowID != null) result.put("workflow", workflowID);
       return result;
     }
