@@ -5225,8 +5225,7 @@ public class EvolutionEngine
         JourneyLink firedLink = null;
         String sample = null;
         do
-          { 
-            log.info("RAJ K do subscriberID {} , node {}", subscriberState.getSubscriberID(), journeyNode.getNodeName());
+          {
             /*****************************************
             *
             *  transition?
@@ -5250,7 +5249,6 @@ public class EvolutionEngine
                   {
                     firedLink = journeyLink;
                   }
-                log.info("RAJ K do () firedLink {} getNextEvaluationDates {}", firedLink, evaluationRequest.getNextEvaluationDates());
 
                 //
                 //  store data on evaluationRequest
@@ -5291,10 +5289,8 @@ public class EvolutionEngine
               {
                 for (Date nextEvaluationDate : nextEvaluationDates)
                   {
-                    log.info("RAJ K do nextEvaluationDate {}", nextEvaluationDate);
                     if(nextEvaluationDate.before(RLMDateUtils.addDays(SystemTime.getCurrentTime(), 2, Deployment.getBaseTimeZone())))
                       {
-                        log.info("RAJ K do subscriberStateUpdated {}", subscriberStateUpdated);
                         subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), nextEvaluationDate));
                         subscriberStateUpdated = true;
                       }
