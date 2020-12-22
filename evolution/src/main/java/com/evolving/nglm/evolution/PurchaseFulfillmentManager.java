@@ -2773,7 +2773,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       String offerID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.offerid");
       int quantity = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.quantity");
-      String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+      String origin = null;
+      if (subscriberEvaluationRequest.getJourneyNode() != null)
+        {
+          origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+        }
       /*****************************************
       *
       *  TEMP DEW HACK

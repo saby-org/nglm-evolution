@@ -5842,7 +5842,11 @@ public class EvolutionEngine
               subscriberState.getSubscriberProfile().getTokens().add(token);
               String featureID = journey.getJourneyID();
               token.setFeatureID(featureID);
-              String nodeName = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+              String nodeName = null;
+              if (subscriberEvaluationRequest.getJourneyNode() != null)
+                {
+                  nodeName = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+                }
               switch (token.getTokenStatus())
               {
                 case New:
