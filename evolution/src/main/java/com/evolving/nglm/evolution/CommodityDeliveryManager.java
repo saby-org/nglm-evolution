@@ -1656,7 +1656,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *****************************************/
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+      String origin = null;
+      if (subscriberEvaluationRequest.getJourneyNode() != null)
+        {
+          origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+        }
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
