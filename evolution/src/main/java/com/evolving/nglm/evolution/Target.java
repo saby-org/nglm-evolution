@@ -21,6 +21,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
 
 @GUIDependencyDef(objectType = "target", serviceClass = TargetService.class, dependencies = {})
 public class Target extends GUIManagedObject
@@ -42,6 +43,21 @@ public class Target extends GUIManagedObject
     public static TargetingType fromExternalRepresentation(String externalRepresentation) { for (TargetingType enumeratedValue : TargetingType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) { return enumeratedValue; } } return Unknown; }
   }
   
+  //
+  //  TargetStatus
+  //
+
+  public enum TargetStatus
+  {
+    NotValid("Not Valid"),
+    Running("Running"),
+    Complete("Complete"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private TargetStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static TargetStatus fromExternalRepresentation(String externalRepresentation) { for (TargetStatus enumeratedValue : TargetStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
   /*****************************************
   *
   *  schema

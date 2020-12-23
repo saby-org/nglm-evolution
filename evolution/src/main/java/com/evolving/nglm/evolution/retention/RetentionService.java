@@ -17,11 +17,15 @@ public class RetentionService {
 	private static final Logger log = LoggerFactory.getLogger(RetentionService.class);
 
 	private JourneyService journeyService;
+	private TargetService targetService;
 	public JourneyService getJourneyService() { return journeyService; }
+	public TargetService getTargetService() { return targetService; }
 
-	public RetentionService(JourneyService journeyService){
+	public RetentionService(JourneyService journeyService, TargetService targetService){
 		if(journeyService==null) throw new RuntimeException("journeyService dependency missing");
 		this.journeyService = journeyService;
+		if(targetService==null) throw new RuntimeException("targetService dependency missing");
+		this.targetService = targetService;
 	}
 
 	// the kafka subscriberState clean up
@@ -49,6 +53,17 @@ public class RetentionService {
 			if(journeyService.getStoredJourney(journeyId)==null){
 				iterator.remove();
 				subscriberProfile.getSubscriberJourneysEnded().remove(journeyId);
+			}
+		}
+		
+		iterator = subscriberProfile.getTargets().keySet().iterator();
+		while(iterator.hasNext()){
+			String targetId = iterator.next();
+			Target target=(Target)targetService.getStoredTarget(targetId);
+			if(target==null || isRetentionPeriodOverForTarget(target,RetentionType.KAFKA_DELETION)) {				
+				subscriberUpdated=true;
+				iterator.remove();
+				subscriberProfile.getTargets().remove(targetId);				
 			}
 		}
 
@@ -113,6 +128,12 @@ public class RetentionService {
 		Date cleanBeforeThisDate = EvolutionUtilities.removeTime(SystemTime.getCurrentTime(),cleanable.getRetention(retentionType,this));
 		return cleanable.getExpirationDate(this).before(cleanBeforeThisDate);
 	}
+	
+	private boolean isRetentionPeriodOverForTarget(Target target, RetentionType retentionType){
+		if(target==null||target.getEffectiveEndDate()==null||retentionType==null|| getTargetRetention(retentionType,target.getTargetID())==null) return false;
+		Date cleanBeforeThisDate = EvolutionUtilities.removeTime(SystemTime.getCurrentTime(),getTargetRetention(retentionType,target.getTargetID()));
+		return target.getEffectiveEndDate().before(cleanBeforeThisDate);
+	}
 
 	public boolean isExpired(Expirable expirable){
 		if(expirable==null||expirable.getExpirationDate(this)==null) return false;
@@ -135,5 +156,11 @@ public class RetentionService {
 		}
 		log.info("no retention applying for {} of type {}",journey.getGUIManagedObjectType(),type);
 		return null;
+	}
+	
+	public Duration getTargetRetention(RetentionType type, String targetID) {
+		GUIManagedObject target = targetService.getStoredTarget(targetID);
+		if(target==null) return java.time.Duration.ofDays(Integer.MIN_VALUE);//deleted journey clean now
+		return java.time.Duration.ofDays(Deployment.getKafkaRetentionDaysTargets());
 	}
 }
