@@ -170,6 +170,9 @@ public abstract class Expression
     FirstWordFunction("firstWord"),
     SecondWordFunction("secondWord"),
     ThirdWordFunction("thirdWord"),
+    IntFunction("int"),
+    StringFunction("string"),
+    DoubleFunction("double"),
     UnknownFunction("(unknown)");
     private String functionName;
     private ExpressionFunction(String functionName) { this.functionName = functionName; }
@@ -1270,6 +1273,12 @@ public abstract class Expression
           case ThirdWordFunction:
             typeCheckWordFunction(function);
             break;
+
+          case IntFunction:
+          case StringFunction:
+          case DoubleFunction:
+            typeCheckCastFunction(function);
+            break;
             
           default:
             throw new ExpressionTypeCheckException("type exception");
@@ -1593,6 +1602,149 @@ public abstract class Expression
       
       setType(ExpressionDataType.StringExpression);
 
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
+    }
+
+    private void typeCheckCastFunction(ExpressionFunction function)
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 1) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+
+      //
+      //  validate arg1
+      //
+      
+      switch (function)
+      {
+        case IntFunction:
+        case DoubleFunction:
+          switch (arg1.getType())
+          {
+            case StringExpression: // int('12') double('12.1')
+              break;
+
+            default:
+              throw new ExpressionTypeCheckException("type exception : string expected, got " + arg1.getType());
+          }
+          break;
+          
+        case StringFunction:
+          switch (arg1.getType())
+          {
+            case IntegerExpression: // string(12)
+            case DoubleExpression: // string(12.1)
+              break;
+
+            default:
+              throw new ExpressionTypeCheckException("type exception : int or double expected, got " + arg1.getType());
+          }
+          break;
+          
+        default:
+          throw new ExpressionTypeCheckException("type exception");
+      }
+            
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+      if (arg1.isConstant()) {
+        try {
+          Object res = arg1.evaluate(null, TimeUnit.Unknown);
+          if (res instanceof String) {
+            switch (function)
+            {
+              case IntFunction:
+                preevaluatedResult = Long.parseLong((String) res); // int('12')
+                break;
+
+              case DoubleFunction:
+                preevaluatedResult = Double.parseDouble((String) res); // double('12.3')
+                break;
+
+              default:
+                throw new ExpressionTypeCheckException("type exception, int or double function expected, got " + function);
+            }
+          } else if (res instanceof Double) { 
+            switch (function)
+            {
+              case StringFunction:
+                preevaluatedResult = Double.toString((Double) res); // string('3.14')
+                break;
+
+              default:
+                throw new ExpressionTypeCheckException("type exception, string function expected, got " + function);
+            }
+          } else if (res instanceof Integer) {
+            switch (function)
+            {
+              case StringFunction:
+                preevaluatedResult = Integer.toString((Integer) res); // string('12')
+                break;
+
+              default:
+                throw new ExpressionTypeCheckException("type exception, string function expected, got " + function);
+            }
+          } else if (res instanceof Long) {
+            switch (function)
+            {
+              case StringFunction:
+                preevaluatedResult = Long.toString((Long) res); // string('12')
+                break;
+
+              default:
+                throw new ExpressionTypeCheckException("type exception, string function expected, got " + function);
+            }
+          } else throw new ExpressionTypeCheckException("type exception, int double or string expected, got " + ((res==null)?"null":res.getClass().getSimpleName()));
+        } catch (NumberFormatException nfe) {
+          throw new ExpressionTypeCheckException("type exception when casting : " + nfe.getLocalizedMessage());
+        }
+      }
+
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+
+      switch (function)
+      {
+        case IntFunction:
+          setType(ExpressionDataType.IntegerExpression);
+          break;
+        case DoubleFunction:
+          setType(ExpressionDataType.DoubleExpression);
+          break;
+        case StringFunction:
+          setType(ExpressionDataType.StringExpression);
+          break;
+        default:
+          log.info("string int or double function expected, got " + function);
+      }
+      
       /*****************************************
       *
       *  tagFormat/tagMaxLength
@@ -2225,6 +2377,13 @@ public abstract class Expression
             if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateWordFunction((String) arg1Value, function);
             break;
+
+          case IntFunction:
+          case StringFunction:
+          case DoubleFunction:
+            if (expressionNullExceptionOccoured) throw expressionNullException;
+            result = evaluateCastFunction(arg1Value, function);
+            break;
             
           default:
             throw new ExpressionEvaluationException();
@@ -2770,6 +2929,69 @@ public abstract class Expression
           throw new ExpressionEvaluationException();
       }
       return res.trim();
+    }
+
+    private Object evaluateCastFunction(Object arg, ExpressionFunction function)
+    {
+      Object res;
+      try {
+        if (arg instanceof String) {
+          switch (function)
+          {
+            case IntFunction:
+              res = Long.parseLong((String) arg); // int('12')
+              break;
+
+            case DoubleFunction:
+              res = Double.parseDouble((String) arg); // double('12.3')
+              break;
+
+            default:
+              log.info("unexpected function : " + function);
+              throw new ExpressionEvaluationException();
+          }
+        } else if (arg instanceof Double) { 
+          switch (function)
+          {
+            case StringFunction:
+              res = Double.toString((Double) arg); // string('3.14')
+              break;
+
+            default:
+              log.info("unexpected function : " + function);
+              throw new ExpressionEvaluationException();
+          }
+        } else if (arg instanceof Integer) {
+          switch (function)
+          {
+            case StringFunction:
+              res = Integer.toString((Integer) arg); // string('12')
+              break;
+
+            default:
+              log.info("unexpected function : " + function);
+              throw new ExpressionEvaluationException();
+          }
+        } else if (arg instanceof Long) {
+          switch (function)
+          {
+            case StringFunction:
+              res = Long.toString((Long) arg); // string('12')
+              break;
+
+            default:
+              log.info("unexpected function : " + function);
+              throw new ExpressionEvaluationException();
+          }
+        } else {
+          log.info("unexpected type : " + ((arg == null)?"null":arg.getClass().getSimpleName()));
+          throw new ExpressionEvaluationException();
+        }
+      } catch (NumberFormatException nfe) {
+        log.info("Exception while casting : " + nfe.getLocalizedMessage());
+        throw new ExpressionEvaluationException();
+      }
+      return res;
     }
 
     /*****************************************
