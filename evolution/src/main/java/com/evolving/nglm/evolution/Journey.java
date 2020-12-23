@@ -3961,48 +3961,33 @@ public class Journey extends GUIManagedObject implements StockableItem
           break;
 
         case BulkCampaign:
-        	//boundParameters.keySet().forEach( a -> System.out.println(a));
-            List<String> blkpointIDs = new ArrayList<String>();
-        if (this.boundParameters!= null && this.boundParameters.containsKey("journey.deliverableID") &&  this.boundParameters.get("journey.deliverableID")!=null && this.boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
-         blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-      
-        if (this.boundParameters!= null && this.boundParameters.containsKey("journey.dialogtemplate") &&  this.boundParameters.get("journey.dialogtemplate")!=null)
-        {	String dialogId=((NotificationTemplateParameters)boundParameters.get("journey.dialogtemplate")).getSubscriberMessageTemplateID();
-        	System.out.println(dialogId);
-                dialogIDs.add(boundParameters.get("journey.dialogtemplate").toString());
-        
-        }
+			List<String> blkpointIDs = new ArrayList<String>();
+			if (this.boundParameters != null && this.boundParameters.containsKey("journey.deliverableID")
+					&& this.boundParameters.get("journey.deliverableID") != null && this.boundParameters
+							.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
+				blkpointIDs.add(boundParameters.get("journey.deliverableID").toString()
+						.replace(CommodityDeliveryManager.POINT_PREFIX, ""));
 
-        
-         result.put("point", blkpointIDs);  
-         result.put("dialogtemplate", dialogIDs);
-             
-//             
-//             for (JourneyNode offerNode : getJourneyNodes().values())
-//             {
-//               if (offerNode.getNodeType().getActionManager() != null)
-//                 {
-//            	   String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
-//                   if (pushId != null) pushTemplateIDs.add(pushId);
-//                   String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
-//                   if (mailId != null) mailtemplateIDs.add(mailId);
-//                   String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
-//                   if (dialogID != null) dialogIDs.add(dialogID);
-//            	   
-//                 }
-//               }
-             
-            targetIDs = getTargetID();
-             result.put("target", targetIDs);
-             
-             List<String> jourObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-             result.put("journeyobjective", jourObjIDs);
-//             result.put("pushtemplate", pushTemplateIDs);
-//             result.put("mailtemplate", mailtemplateIDs);
-//             result.put("dialogtemplate", dialogIDs);
-             
-             
-            break;
+			if (this.boundParameters != null && this.boundParameters.containsKey("journey.dialogtemplate")
+					&& this.boundParameters.get("journey.dialogtemplate") != null) {
+				String dialogId = ((NotificationTemplateParameters) boundParameters.get("journey.dialogtemplate"))
+						.getSubscriberMessageTemplateID();
+				System.out.println(dialogId);
+				dialogIDs.add(dialogId);
+
+			}
+
+			result.put("point", blkpointIDs);
+			result.put("dialogtemplate", dialogIDs);
+
+			targetIDs = getTargetID();
+			result.put("target", targetIDs);
+
+			List<String> jourObjIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", jourObjIDs);
+
+			break;
             
         case Workflow:
             

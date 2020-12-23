@@ -868,7 +868,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       , "node.parameter.dialog_template");
       String dialogueTemplateID = (String) templateParameters.getSubscriberMessageTemplateID();
       if (dialogueTemplateID != null) {
-    	  System.out.println("received value"+dialogueTemplateID);
     	  result.put("dialogtemplate", dialogueTemplateID);}
       return result;
     }

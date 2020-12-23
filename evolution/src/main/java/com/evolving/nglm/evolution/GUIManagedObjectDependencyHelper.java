@@ -67,15 +67,12 @@ public class GUIManagedObjectDependencyHelper
           {
             for (GUIManagedObject guiManagedObject : storedObjectList)
               {
-            	System.out.println("for dependency"+ dependency + "gui object is" + guiManagedObject.getGUIManagedObjectType());
             	if(guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Other || guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Unknown || guiManagedObject.getGUIManagedObjectType().name().toLowerCase().equals(dependency.toLowerCase())){
                 Map<String, List<String>> guiDependencies = guiManagedObject.getGUIDependencies();
                 
                  if (guiDependencies != null && !guiDependencies.isEmpty())
                   {
                     List<String> guiDependencyList = guiDependencies.get(guiDependencyModelTree.getGuiManagedObjectType().toLowerCase());
-//                    guiDependencyList.forEach(dep->System.out.println("value for dependency"+dep));
-//                    System.out.println("object id is"+ objectID);
                     if (guiDependencyList != null && guiDependencyList.contains(objectID)) containerObjectList.add(guiManagedObject);
                   }
                 }
