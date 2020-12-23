@@ -522,12 +522,19 @@ public class DatacubeManager
         Date now = SystemTime.getCurrentTime();
         Date truncatedHour = RLMDateUtils.truncate(now, Calendar.HOUR, Deployment.getBaseTimeZone());
         Date endOfLastHour = RLMDateUtils.addMilliseconds(truncatedHour, -1); // XX:59:59.999
-        
+       
         journeysMap.update();
+        
+        // Special: All those datacubes are still made sequentially, therefore we prevent any writing during it to optimize computation time.
+        datacubeWriter.pause();
+        
         for(String journeyID : journeysMap.keySet()) {
           trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
           rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
         }
+        
+        // Restart writing if allowed. Flush all data generated
+        datacubeWriter.restart();
       }
     };
     
