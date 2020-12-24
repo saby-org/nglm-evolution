@@ -155,8 +155,10 @@ public class TargetService extends GUIService
 
   @Override protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
   {
+	  System.out.println("2 start");
     JSONObject result = super.getJSONRepresentation(guiManagedObject);
     result.put("status", getTargetStatus(guiManagedObject).getExternalRepresentation());
+    System.out.println("2:"+ result.toJSONString());
     return result;
   }
   
@@ -166,10 +168,13 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  @Override 
+  protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
+	  System.out.println("in getSummaryJSONRepresentation TargetService");
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getTargetStatus(guiManagedObject).getExternalRepresentation());
+    System.out.println("TargetService:"+ result.toJSONString());
     return result;
   }
   
@@ -181,11 +186,13 @@ public class TargetService extends GUIService
 
   private TargetStatus getTargetStatus(GUIManagedObject guiManagedObject)
   {
+	  System.out.println("inside get Target status");
     Date now = SystemTime.getCurrentTime();
     TargetStatus status = TargetStatus.Unknown;
     status = (status == TargetStatus.Unknown && !guiManagedObject.getAccepted()) ? TargetStatus.NotValid : status;
     status = (status == TargetStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? TargetStatus.Running : status;
     status = (status == TargetStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? TargetStatus.Complete : status;
+ System.out.println("status is"+status);
     return status;
   }
 
