@@ -103,7 +103,7 @@ public class ResellerService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { resellerListener.resellerActivated((Reseller) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { resellerListener.resellerDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { resellerListener.resellerDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -116,13 +116,13 @@ public class ResellerService extends GUIService
   *****************************************/
 
   public String generateResellerID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredReseller(String resellerID) { return getStoredGUIManagedObject(resellerID); }
-  public GUIManagedObject getStoredReseller(String resellerID, boolean includeArchived) { return getStoredGUIManagedObject(resellerID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredResellers() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredResellers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredReseller(String resellerID, int tenantID) { return getStoredGUIManagedObject(resellerID, tenantID); }
+  public GUIManagedObject getStoredReseller(String resellerID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(resellerID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredResellers(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredResellers(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveReseller(GUIManagedObject resellerUnchecked, Date date) { return isActiveGUIManagedObject(resellerUnchecked, date); }
-  public Reseller getActiveReseller(String resellerID, Date date) { return (Reseller) getActiveGUIManagedObject(resellerID, date); }
-  public Collection<Reseller> getActiveResellers(Date date) { return (Collection<Reseller>) getActiveGUIManagedObjects(date); }
+  public Reseller getActiveReseller(String resellerID, Date date, int tenantID) { return (Reseller) getActiveGUIManagedObject(resellerID, date, tenantID); }
+  public Collection<Reseller> getActiveResellers(Date date, int tenantID) { return (Collection<Reseller>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -130,7 +130,7 @@ public class ResellerService extends GUIService
   *
   *****************************************/
 
-  public void putReseller(GUIManagedObject reseller, boolean newObject, String userID, ResellerService resellerService) throws GUIManagerException { 
+  public void putReseller(GUIManagedObject reseller, boolean newObject, String userID, ResellerService resellerService, int tenantID) throws GUIManagerException { 
     
     //
     //  now
@@ -151,7 +151,7 @@ public class ResellerService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(reseller, SystemTime.getCurrentTime(), newObject, userID); 
+    putGUIManagedObject(reseller, SystemTime.getCurrentTime(), newObject, userID, tenantID); 
     
   }
   
@@ -161,11 +161,11 @@ public class ResellerService extends GUIService
   *
   *****************************************/
 
-  public void putReseller(IncompleteObject reseller,  boolean newObject, String userID, ResellerService resellerService)
+  public void putReseller(IncompleteObject reseller,  boolean newObject, String userID, ResellerService resellerService, int tenantID)
   {
     try
       {
-        putReseller((GUIManagedObject) reseller, newObject, userID, resellerService);
+        putReseller((GUIManagedObject) reseller, newObject, userID, resellerService, tenantID);
       }
     catch (GUIManagerException e)
       {
@@ -179,7 +179,7 @@ public class ResellerService extends GUIService
   *
   *****************************************/
 
-  public void removeReseller(String resellerID, String userID) { removeGUIManagedObject(resellerID, SystemTime.getCurrentTime(), userID); }
+  public void removeReseller(String resellerID, String userID, int tenantID) { removeGUIManagedObject(resellerID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

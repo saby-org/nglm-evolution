@@ -61,7 +61,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
    ****************************************/
 
  
-  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
   {
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
     LinkedHashMap<String, Object> commonFields = new LinkedHashMap<>();
@@ -109,7 +109,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                         if (token.get("presentationStrategyID") != null)
                           {
                             presentationStrategy = presentationStrategyService
-                                .getStoredPresentationStrategy((String) token.get("presentationStrategyID"));
+                                .getStoredPresentationStrategy((String) token.get("presentationStrategyID"), tenantID);
                           }
                         if (presentationStrategy != null)
                           {
@@ -127,7 +127,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                             for (int j = 0; j < scoringStrategyArray.size(); j++)
                               {
                                 String ssID = (String) scoringStrategyArray.get(j);
-                                GUIManagedObject ss = scoringStrategyService.getStoredScoringStrategy(ssID);
+                                GUIManagedObject ss = scoringStrategyService.getStoredScoringStrategy(ssID, tenantID);
                                 if (ss != null)
                                   {
                                     scoringStrategy.add(ss.getGUIManagedObjectDisplay());

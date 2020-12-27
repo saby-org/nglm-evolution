@@ -75,7 +75,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
       }
   }
 
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> voucherPersonal = map;
@@ -85,7 +85,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
     
     if (voucherPersonal != null && !voucherPersonal.isEmpty())
       {
-        Voucher voucher = voucherService.getActiveVoucher(voucherPersonal.get("voucherId").toString(), SystemTime.getCurrentTime());
+        Voucher voucher = voucherService.getActiveVoucher(voucherPersonal.get("voucherId").toString(), SystemTime.getCurrentTime(), tenantID);
 
         if (voucherPersonal.get("_id") != null)
           {
@@ -99,7 +99,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
           {
             if (voucher.getSupplierID() != null)
               {
-                Supplier supplier = (Supplier) supplierService.getStoredSupplier(voucher.getSupplierID());
+                Supplier supplier = (Supplier) supplierService.getStoredSupplier(voucher.getSupplierID(), tenantID);
                 voucherInfo.put("supplier", supplier.getGUIManagedObjectDisplay());
               }
             else
@@ -157,7 +157,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
             if (voucher.getVoucherTypeId() != null)
               {
                 VoucherType voucherType = (VoucherType) voucherTypeService
-                    .getStoredVoucherType(voucher.getVoucherTypeId());
+                    .getStoredVoucherType(voucher.getVoucherTypeId(), tenantID);
                 voucherInfo.put("voucherType", voucherType.getGUIManagedObjectDisplay());
               }
             else
@@ -256,7 +256,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
     voucherService.start();
 
     try {
-      Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(reportGenerationDate);
+      Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(reportGenerationDate, ten);
       StringBuilder activeVoucherEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Voucher voucher : activeVouchers)

@@ -111,7 +111,7 @@ public class DialogMessage
   *
   *****************************************/
 
-  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext, boolean inlineTemplate) throws GUIManagerException
+  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext, boolean inlineTemplate, int tenantID) throws GUIManagerException
   {
     Map<CriterionField,String> tagReplacements = new HashMap<CriterionField,String>();
     for (int i=0; i<messagesJSON.size(); i++)
@@ -167,7 +167,7 @@ public class DialogMessage
 
               String rawTag = m.group();
               String criterionFieldName = m.group(1).trim();
-              CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
+              CriterionField criterionField = criterionContext.getCriterionFields(tenantID).get(criterionFieldName);
               boolean parameterTag = false;
               if (criterionField == null)
                 {
@@ -390,7 +390,7 @@ public class DialogMessage
     //  subscriber language
     //
 
-    CriterionField subscriberLanguage = CriterionContext.Profile.getCriterionFields(subscriberEvaluationRequest.getTenantID()).get("subscriber.language");
+    CriterionField subscriberLanguage = CriterionContext.Profile.get(subscriberEvaluationRequest.getTenantID()).getCriterionFields(subscriberEvaluationRequest.getTenantID()).get("subscriber.language");
     String languageID = (String) subscriberLanguage.retrieve(subscriberEvaluationRequest);
     String language = (languageID != null && Deployment.getSupportedLanguages().get(languageID) != null) ? Deployment.getSupportedLanguages().get(languageID).getName() : Deployment.getBaseLanguage();
 

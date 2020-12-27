@@ -151,7 +151,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
         for (String dialogMessageField : getDialogMessageFields().keySet())
           {
             boolean mandatory = getDialogMessageFields().get(dialogMessageField);
-            this.dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, CriterionContext.DynamicProfile, false));
+            this.dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, CriterionContext.DynamicProfile.get(tenantID), false, tenantID));
           }
       }
   }
@@ -498,12 +498,12 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public SubscriberMessageTemplate getReadOnlyCopy(EvolutionEventContext evolutionEventContext)
+  public SubscriberMessageTemplate getReadOnlyCopy(EvolutionEventContext evolutionEventContext, int tenantID)
   {
     SubscriberMessageTemplate result;
     if (! getReadOnly() && getReadOnlyCopyID() != null)
       {
-        result = evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getReadOnlyCopyID(), evolutionEventContext.now());
+        result = evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getReadOnlyCopyID(), evolutionEventContext.now(), tenantID);
       }
     else if (getReadOnly())
       {

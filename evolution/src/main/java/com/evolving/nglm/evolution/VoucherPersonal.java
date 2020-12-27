@@ -130,10 +130,10 @@ public class VoucherPersonal extends Voucher {
   }
 
   @Override
-  public void validate(VoucherTypeService voucherTypeService, UploadedFileService uploadedFileService, Date now) throws GUIManagerException {
-    commonValidate(voucherTypeService, now);
+  public void validate(VoucherTypeService voucherTypeService, UploadedFileService uploadedFileService, Date now, int tenantID) throws GUIManagerException {
+    commonValidate(voucherTypeService, now, tenantID);
     // check type id is Personal
-    if(!voucherTypeService.getActiveVoucherType(getVoucherTypeId(),now).getCodeType().equals(VoucherType.CodeType.Personal)) throw new GUIManagerException("wrong VoucherType for "+this.getClass().getSimpleName(),getVoucherTypeId());
+    if(!voucherTypeService.getActiveVoucherType(getVoucherTypeId(),now, tenantID).getCodeType().equals(VoucherType.CodeType.Personal)) throw new GUIManagerException("wrong VoucherType for "+this.getClass().getSimpleName(),getVoucherTypeId());
     // check files exists, and not twice there
     List<String> seenFileIds = new ArrayList<>();
     if(getVoucherFiles()!=null && !getVoucherFiles().isEmpty()){

@@ -147,6 +147,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private VoucherService voucherService;
   private VoucherTypeService voucherTypeService;
   private SalesChannelService salesChannelService;
+  private TenantService tenantService;
   private StockMonitor stockService;
   private DeliverableService deliverableService;
   private ResellerService resellerService;
@@ -208,8 +209,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "PurchaseMgr-salesChannelservice-"+deliveryManagerKey, Deployment.getSalesChannelTopic(), false);
     salesChannelService.start();
+    
+    tenantService = new TenantService(Deployment.getBrokerServers(), "PurchaseMgr-tenantservice-"+deliveryManagerKey, Deployment.getTenantTopic(), false);
+    tenantService.start();
 
-    stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, offerService, productService, voucherService);
+    stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, tenantService, offerService, productService, voucherService);
     stockService.start();
 
     deliverableService = new DeliverableService(Deployment.getBrokerServers(), "PurchaseMgr-deliverableservice-"+deliveryManagerKey, Deployment.getDeliverableTopic(), false);
@@ -395,7 +399,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
       this.origin = origin;       
       this.resellerID = resellerID;
-      updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.getResellerService(), context.getProductService(), context.getSupplierService(), context.getVoucherService(), context.now());
+      updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.getResellerService(), context.getProductService(), context.getSupplierService(), context.getVoucherService(), context.now(), tenantID);
     }
 
     /*****************************************
@@ -404,13 +408,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private void updatePurchaseFulfillmentRequest(OfferService offerService, PaymentMeanService paymentMeanService, ResellerService resellerService, ProductService productService, SupplierService supplierService, VoucherService voucherService, Date now)
+    private void updatePurchaseFulfillmentRequest(OfferService offerService, PaymentMeanService paymentMeanService, ResellerService resellerService, ProductService productService, SupplierService supplierService, VoucherService voucherService, Date now, int tenantID)
     {
       
       // resellerDisplay
       if (resellerID != null)
         {
-          Reseller reseller = resellerService.getActiveReseller(resellerID, now);
+          Reseller reseller = resellerService.getActiveReseller(resellerID, now, tenantID);
           this.resellerDisplay = (reseller == null || reseller.getGUIManagedObjectDisplay() == null) ? "" : reseller.getGUIManagedObjectDisplay();
         }
 
@@ -418,7 +422,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       // offerDisplay
       //
       
-      Offer offer = offerService.getActiveOffer(offerID, now);
+      Offer offer = offerService.getActiveOffer(offerID, now, tenantID);
       String offerDisplay = (offer == null || offer.getDisplay() == null) ? "" : offer.getDisplay();
       this.offerDisplay = offerDisplay;
 
@@ -478,13 +482,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 for (OfferProduct offerProduct : offerProducts)
                   {
                     String productID = offerProduct.getProductID();
-                    Product product = productService.getActiveProduct(productID, now);
+                    Product product = productService.getActiveProduct(productID, now, tenantID);
                     if (product != null)
                       {
                         String supplierID = product.getSupplierID();
                         if (supplierID != null)
                           {
-                            Supplier supplier = supplierService.getActiveSupplier(supplierID, now);
+                            Supplier supplier = supplierService.getActiveSupplier(supplierID, now, tenantID);
                             if (supplier != null)
                               {
                                 supplierDisplay = supplier.getGUIManagedObjectDisplay();
@@ -503,13 +507,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                     for (OfferVoucher offerVoucher : offerVouchers)
                       {
                         String voucherID = offerVoucher.getVoucherID();
-                        Voucher voucher = voucherService.getActiveVoucher(voucherID, now);
+                        Voucher voucher = voucherService.getActiveVoucher(voucherID, now, tenantID);
                         if (voucher != null)
                           {
                             String supplierID = voucher.getSupplierID();
                             if (supplierID != null)
                               {
-                                Supplier supplier = supplierService.getActiveSupplier(supplierID, now);
+                                Supplier supplier = supplierService.getActiveSupplier(supplierID, now, tenantID);
                                 if (supplier != null)
                                   {
                                     supplierDisplay = supplier.getGUIManagedObjectDisplay();
@@ -548,7 +552,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                         if (price != null) 
                           {
                             String meanOfPaymentID = price.getPaymentMeanID();
-                            PaymentMean paymentMean = paymentMeanService.getActivePaymentMean(meanOfPaymentID, now);
+                            PaymentMean paymentMean = paymentMeanService.getActivePaymentMean(meanOfPaymentID, now, tenantID);
                             meanOfPayment = (paymentMean == null) ? "" : paymentMean.getDisplay(); 
                             offerPrice =  price.getAmount();
                           }
@@ -580,7 +584,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerID = JSONUtilities.decodeString(jsonRoot, "resellerID", false);
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
-      updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now);
+      updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
     }
 
     /*****************************************
@@ -788,13 +792,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  salesChannel
       //
 
-      SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(getSalesChannelID(), SystemTime.getCurrentTime());
+      SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(getSalesChannelID(), SystemTime.getCurrentTime(), tenantID);
       
       //
       //  offer
       //
 
-      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
+      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime(), tenantID);
 
       //
       //  presentation
@@ -814,7 +818,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 for(String salesChannelID : channel.getSalesChannelIDs()) {
                   if(salesChannelID.equals(getSalesChannelID())) {
                     if(channel.getPrice() != null) {
-                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
+                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID(), tenantID);
                       if(paymentMean != null) {
                         guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
                         guiPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
@@ -830,13 +834,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           StringBuilder sb = new StringBuilder();
           if(offer.getOfferProducts() != null) {
             for(OfferProduct offerProduct : offer.getOfferProducts()) {
-              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID(), tenantID);
               sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
             }
           }
           if(offer.getOfferVouchers() != null) {
             for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
-              Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
+              Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID(), tenantID);
               sb.append(offerVoucher.getQuantity()+" ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(",");
             }
           }
@@ -851,8 +855,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(MODULEID, getModuleID());
           guiPresentationMap.put(MODULENAME, getModule().toString());
           guiPresentationMap.put(FEATUREID, getFeatureID());
-          guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+          guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
+          guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
           guiPresentationMap.put(ORIGIN, getOrigin());
           guiPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
           guiPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
@@ -869,13 +873,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  salesChannel
       //
 
-      SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(getSalesChannelID(), SystemTime.getCurrentTime());
+      SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(getSalesChannelID(), SystemTime.getCurrentTime(), tenantID);
       
       //
       //  offer
       //
 
-      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
+      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime(), tenantID);
 
       //
       //  presentation
@@ -893,7 +897,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 for(String salesChannelID : channel.getSalesChannelIDs()) {
                   if(salesChannelID.equals(getSalesChannelID())) {
                     if(channel.getPrice() != null) {
-                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
+                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID(), tenantID);
                       if(paymentMean != null) {
                         thirdPartyPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
                         thirdPartyPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
@@ -909,13 +913,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           StringBuilder sb = new StringBuilder();
           if(offer.getOfferProducts() != null) {
             for(OfferProduct offerProduct : offer.getOfferProducts()) {
-              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID(), tenantID);
               sb.append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
             }
           }
           if(offer.getOfferVouchers() != null) {
             for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
-              Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
+              Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID(), tenantID);
               sb.append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(";").append(offerVoucher.getQuantity()).append(",");
             }
           }
@@ -927,8 +931,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(MODULEID, getModuleID());
           thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
           thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-          thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+          thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
+          thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
           thirdPartyPresentationMap.put(ORIGIN, getOrigin());
           thirdPartyPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
           thirdPartyPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
@@ -1039,7 +1043,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
           continue mainLoop;
         }
-        Offer offer = offerService.getActiveOffer(offerID, now);
+        Offer offer = offerService.getActiveOffer(offerID, now, deliveryRequest.getTenantID()); 
         if(offer == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+now+")");
@@ -1052,7 +1056,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // Get sales channel
         //
 
-        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now);
+        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now, deliveryRequest.getTenantID());
         if(salesChannel == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
@@ -1109,7 +1113,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
         if(offer.getOfferProducts()!=null){
           for(OfferProduct offerProduct : offer.getOfferProducts()){
-            Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
+            Product product = productService.getActiveProduct(offerProduct.getProductID(), now, deliveryRequest.getTenantID());
             if(product == null){
               log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
               submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
@@ -1123,7 +1127,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
         if(offer.getOfferVouchers()!=null){
           for(OfferVoucher offerVoucher : offer.getOfferVouchers()){
-            Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+            Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now, deliveryRequest.getTenantID());
             if(voucher==null){
               log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + "not found or not active (date = "+now+")");
               submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "voucher with ID " + offerVoucher.getVoucherID() + " not found or not active (date = "+now+")");
@@ -1177,7 +1181,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         *****************************************/
 
         log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : proceedPurchase(...)");
-        proceedPurchase(purchaseRequest,purchaseStatus);
+        proceedPurchase(purchaseRequest,purchaseStatus, deliveryRequest.getTenantID());
         
       }
   }
@@ -1309,7 +1313,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  private void proceedPurchase(DeliveryRequest originatingDeliveryRequest, PurchaseRequestStatus purchaseStatus){
+  private void proceedPurchase(DeliveryRequest originatingDeliveryRequest, PurchaseRequestStatus purchaseStatus, int tenantID){
     //Change to return PurchaseManagerStatus? 
     
     //
@@ -1317,7 +1321,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
-      boolean debitOK = debitProductStock(purchaseStatus);
+      boolean debitOK = debitProductStock(purchaseStatus, tenantID);
       if(!debitOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of product "+purchaseStatus.getProductStockDebitFailed().getProductID());
         return;
@@ -1329,7 +1333,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     if(purchaseStatus.getVoucherSharedToBeAllocated() != null && !purchaseStatus.getVoucherSharedToBeAllocated().isEmpty()){
-      boolean allocatedOK = allocateVoucherShared(purchaseStatus);
+      boolean allocatedOK = allocateVoucherShared(purchaseStatus, tenantID);
       if(!allocatedOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of voucher "+purchaseStatus.getVoucherAllocateFailed().getVoucherID());
         return;
@@ -1341,7 +1345,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     if(purchaseStatus.getVoucherPersonalToBeAllocated() != null && !purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
-      boolean allocatedOK = allocateVoucherPersonal(purchaseStatus);
+      boolean allocatedOK = allocateVoucherPersonal(purchaseStatus, tenantID);
       if(!allocatedOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of voucher "+purchaseStatus.getVoucherAllocateFailed().getVoucherID());
         return;
@@ -1353,7 +1357,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     
     if(purchaseStatus.getOfferStockToBeDebited() != null && !purchaseStatus.getOfferStockToBeDebited().isEmpty()){
-      boolean debitOK = debitOfferStock(purchaseStatus);
+      boolean debitOK = debitOfferStock(purchaseStatus, tenantID);
       if(!debitOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of offer "+purchaseStatus.getOfferStockDebitFailed());
         return;
@@ -1392,7 +1396,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
       for(OfferProduct offerProduct : purchaseStatus.getProductStockDebited()){
-        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime(), tenantID);
         if(product == null){
           log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of product "+offerProduct.getProductID());
         }else{
@@ -1405,7 +1409,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       for(OfferVoucher offerVoucher : purchaseStatus.getVoucherSharedAllocated()){
         VoucherShared voucher = null;
         try{
-          voucher = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+          voucher = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime(), tenantID);
         }catch(ClassCastException ex){
           log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of bad voucher type "+offerVoucher.getVoucherID());
         }
@@ -1419,7 +1423,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     }
     if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
       for(String offerID : purchaseStatus.getOfferStockDebited()){
-        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime(), tenantID);
         if(offer == null){
           log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of offer "+offerID);
         }else{
@@ -1446,14 +1450,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  private boolean debitProductStock(PurchaseRequestStatus purchaseStatus){
+  private boolean debitProductStock(PurchaseRequestStatus purchaseStatus, int tenantID){
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     boolean allGood = true;
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
       while(!purchaseStatus.getProductStockToBeDebited().isEmpty() && allGood){
         OfferProduct offerProduct = purchaseStatus.getProductStockToBeDebited().remove(0);
         purchaseStatus.setProductStockBeingDebited(offerProduct);
-        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime(), tenantID);
         if(product == null){
           purchaseStatus.setProductStockDebitFailed(purchaseStatus.getProductStockBeingDebited());
           purchaseStatus.setProductStockBeingDebited(null);
@@ -1479,7 +1483,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     return allGood;
   }
 
-  private boolean allocateVoucherShared(PurchaseRequestStatus purchaseStatus){
+  private boolean allocateVoucherShared(PurchaseRequestStatus purchaseStatus, int tenantID){
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     if(purchaseStatus.getVoucherSharedToBeAllocated() != null && !purchaseStatus.getVoucherSharedToBeAllocated().isEmpty()){
       Date now = SystemTime.getCurrentTime();
@@ -1487,7 +1491,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedToBeAllocated().remove(0);
         VoucherShared voucherShared = null;
         try{
-          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now, tenantID);
         }catch(ClassCastException ex){
           log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + offerVoucher.getVoucherID() + " bad voucher type " + ex.getMessage());
           purchaseStatus.setVoucherAllocateFailed(offerVoucher);
@@ -1501,7 +1505,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared (offerID "+purchaseStatus.getOfferID()+", voucherID "+voucherShared.getVoucherID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
           boolean approved = stockService.reserve(voucherShared, offerVoucher.getQuantity());
           if(approved){
-            VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucherShared.getVoucherTypeId(),now);
+            VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucherShared.getVoucherTypeId(),now, tenantID);
             if(voucherType == null){
               log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher type for voucher ID " + offerVoucher.getVoucherID() + " does not exist");
               purchaseStatus.setVoucherAllocateFailed(offerVoucher);
@@ -1521,7 +1525,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     return true;
   }
 
-  private boolean allocateVoucherPersonal(PurchaseRequestStatus purchaseStatus){
+  private boolean allocateVoucherPersonal(PurchaseRequestStatus purchaseStatus, int tenantID){
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     if(purchaseStatus.getVoucherPersonalToBeAllocated() != null && !purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
       Date now = SystemTime.getCurrentTime();
@@ -1529,7 +1533,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalToBeAllocated().remove(0);
         VoucherPersonal voucherPersonal = null;
         try{
-          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now, tenantID);
         }catch(ClassCastException ex){
           log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + offerVoucher.getVoucherID() + " bad voucher type " + ex.getMessage());
           purchaseStatus.setVoucherAllocateFailed(offerVoucher);
@@ -1564,14 +1568,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     return true;
   }
 
-  private boolean debitOfferStock(PurchaseRequestStatus purchaseStatus){
+  private boolean debitOfferStock(PurchaseRequestStatus purchaseStatus, int tenantID){
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitOfferStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     boolean allGood = true;
     if(purchaseStatus.getOfferStockToBeDebited() != null && !purchaseStatus.getOfferStockToBeDebited().isEmpty()){
       while(!purchaseStatus.getOfferStockToBeDebited().isEmpty() && allGood){
         String offerID = purchaseStatus.getOfferStockToBeDebited().remove(0);
         purchaseStatus.setOfferStockBeingDebited(offerID);
-        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime(), tenantID);
         if(offer == null){
           purchaseStatus.setOfferStockDebitFailed(purchaseStatus.getOfferStockBeingDebited());
           purchaseStatus.setOfferStockBeingDebited(null);
@@ -1620,7 +1624,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
       while(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
         OfferProduct offerProduct = purchaseStatus.getProductStockDebited().remove(0);
-        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime(), originatingDeliveryRequest.getTenantID());
         if(product == null){
           log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of product "+offerProduct.getProductID());
           purchaseStatus.addProductStockRollbackFailed(offerProduct);
@@ -1642,7 +1646,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedAllocated().remove(0);
         VoucherShared voucherShared = null;
         try{
-          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime(), originatingDeliveryRequest.getTenantID());
         }catch(ClassCastException ex){
           log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type shared voucher "+offerVoucher.getVoucherID());
           purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
@@ -1667,7 +1671,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalAllocated().remove(0);
         VoucherPersonal voucherPersonal = null;
         try{
-          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime(), originatingDeliveryRequest.getTenantID());
         }catch(ClassCastException ex){
           log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type Personal voucher "+offerVoucher.getVoucherID());
           purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
@@ -1694,7 +1698,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
       while(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
         String offerID = purchaseStatus.getOfferStockDebited().remove(0);
-        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime(), originatingDeliveryRequest.getTenantID());
         if(offer == null){
           purchaseStatus.addOfferStockRollbackFailed(offerID);
           log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of offer "+offerID);
@@ -1777,7 +1781,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     OfferProduct offerProduct = purchaseStatus.getProductBeingCredited();
     if(offerProduct != null){
-      Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
+      Product product = productService.getActiveProduct(offerProduct.getProductID(), now, originatingRequest.getTenantID());
       if(product != null){
         Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now, product.getTenantID());
         if(deliverable != null){
@@ -1819,7 +1823,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     OfferProduct offerProductRollback = purchaseStatus.getProductBeingRollbacked();
     if(offerProductRollback != null){
-      Product product = productService.getActiveProduct(offerProductRollback.getProductID(), now);
+      Product product = productService.getActiveProduct(offerProductRollback.getProductID(), now, originatingRequest.getTenantID());
       if(product != null){
         Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now, product.getTenantID());
         if(deliverable != null){
@@ -1968,7 +1972,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       // continue purchase process
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : continue purchase process ...");
-      proceedPurchase(response,purchaseStatus);
+      proceedPurchase(response,purchaseStatus, response.getTenantID());
       
     }
 
@@ -2788,7 +2792,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
       String newModuleID = moduleID;
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {

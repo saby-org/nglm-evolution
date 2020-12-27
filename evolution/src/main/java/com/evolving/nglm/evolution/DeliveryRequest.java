@@ -371,8 +371,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public abstract void resetDeliveryRequestAfterReSchedule();
   public ActivityType getActivityType() { return ActivityType.Other; }
 
-  @Override public Date getExpirationDate(RetentionService retentionService) { return getDeliveryDate(); }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+  @Override public Date getExpirationDate(RetentionService retentionService, int tenantID) { return getDeliveryDate(); }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService, int tenantID) {
     switch (type){
       case KAFKA_DELETION:
         switch (getActivityType()){
@@ -459,7 +459,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.timeout = null;
     this.correlator = null;
     this.control = context.getSubscriberState().getSubscriberProfile().getUniversalControlGroup();
-    this.segmentContactPolicyID = context.getSubscriberState().getSubscriberProfile().getSegmentContactPolicyID(context.getSegmentContactPolicyService(), context.getSegmentationDimensionService(), context.getSubscriberGroupEpochReader());
+    this.segmentContactPolicyID = context.getSubscriberState().getSubscriberProfile().getSegmentContactPolicyID(context.getSegmentContactPolicyService(), context.getSegmentationDimensionService(), context.getSubscriberGroupEpochReader(), tenantID);
     this.deliveryType = deliveryType;
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
@@ -563,7 +563,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
      *
      *****************************************/
 
-    super(subscriberProfile,subscriberGroupEpochReader,DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", DeliveryPriority.Standard.getExternalRepresentation())));
+    super(subscriberProfile,subscriberGroupEpochReader,DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", DeliveryPriority.Standard.getExternalRepresentation())), tenantID);
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
     this.originatingDeliveryRequestID = JSONUtilities.decodeString(jsonRoot, "originatingDeliveryRequestID", false);
@@ -827,14 +827,14 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //  getFeatureName
   //
 
-  public static String getFeatureName(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
+  public static String getFeatureName(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, int tenantID)
   {
     String featureName = null;
 
     switch (module)
       {
         case Journey_Manager:
-          GUIManagedObject journey = journeyService.getStoredJourney(featureId);
+          GUIManagedObject journey = journeyService.getStoredJourney(featureId, tenantID);
           journey = (journey != null && (
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign ||
@@ -845,12 +845,12 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
           break;
 
         case Loyalty_Program:
-          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId);
+          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId, tenantID);
           featureName = loyaltyProgram == null ? null : loyaltyProgram.getGUIManagedObjectName();
           break;
 
         case Offer_Catalog:
-          featureName = offerService.getStoredOffer(featureId).getGUIManagedObjectName();
+          featureName = offerService.getStoredOffer(featureId, tenantID).getGUIManagedObjectName();
           break;
 
         case Delivery_Manager:
@@ -858,7 +858,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
           break;
 
         case REST_API:
-          featureName = getFeatureDisplay(module, featureId, journeyService, offerService, loyaltyProgramService);
+          featureName = getFeatureDisplay(module, featureId, journeyService, offerService, loyaltyProgramService, tenantID);
           break;
           
         case Customer_Care:
@@ -876,14 +876,14 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //  getFeatureDisplay
   //
 
-  public static String getFeatureDisplay(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
+  public static String getFeatureDisplay(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, int tenantID)
   {
     String featureDisplay = null;
 
     switch (module)
       {
         case Journey_Manager:
-          GUIManagedObject journey = journeyService.getStoredJourney(featureId);
+          GUIManagedObject journey = journeyService.getStoredJourney(featureId, tenantID);
           journey = (journey != null && (
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign ||
@@ -894,12 +894,12 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
           break;
 
         case Loyalty_Program:
-          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId);
+          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId, tenantID);
           featureDisplay = loyaltyProgram == null ? null : loyaltyProgram.getGUIManagedObjectDisplay();
           break;
 
         case Offer_Catalog:
-          featureDisplay = offerService.getStoredOffer(featureId).getGUIManagedObjectDisplay();
+          featureDisplay = offerService.getStoredOffer(featureId, tenantID).getGUIManagedObjectDisplay();
           break;
 
         case Delivery_Manager:

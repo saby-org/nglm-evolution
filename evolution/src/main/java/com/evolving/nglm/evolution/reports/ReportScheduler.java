@@ -59,7 +59,7 @@ public class ReportScheduler {
     reportScheduler = new JobScheduler("report");
     
     // EVPRO-266 process all existing reports
-    for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime()))
+    for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime(), 0)) // 0 will return for all tenants
       {
         scheduleReport(report);
       }

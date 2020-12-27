@@ -722,7 +722,7 @@ public class DNBOProxy
       ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
-      SegmentationDimensionService segmentationDimensionService, OfferService offerService) throws DNBOProxyException, SubscriberProfileServiceException
+      SegmentationDimensionService segmentationDimensionService, OfferService offerService, int tenantID) throws DNBOProxyException, SubscriberProfileServiceException
   {
     /*****************************************
     *
@@ -774,7 +774,7 @@ public class DNBOProxy
     *****************************************/
     
     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now); 
+    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now, tenantID); 
     
     /*****************************************
     *

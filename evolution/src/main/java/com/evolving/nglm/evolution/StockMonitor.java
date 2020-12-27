@@ -97,7 +97,7 @@ public class StockMonitor implements Runnable
   *
   *****************************************/
 
-  public StockMonitor(String stockMonitorKey, GUIService... stockItemServices)
+  public StockMonitor(String stockMonitorKey, TenantService tenantService, GUIService... stockItemServices)
   {
     //
     //  simple
@@ -119,7 +119,7 @@ public class StockMonitor implements Runnable
             //a bit hacky, but services might not have only StockableItem (ie VoucherService got VoucherPersonal which are not, but VoucherShared are)
             if (guiManagedObject instanceof StockableItem) monitorStockableItem((StockableItem) guiManagedObject);
           }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { }
         };
         guiService.registerListener(listener);
       }
@@ -129,12 +129,15 @@ public class StockMonitor implements Runnable
     //
 
     Date now = SystemTime.getCurrentTime();
-    for (GUIService guiService : this.stockItemServices)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        for (GUIManagedObject guiManagedObject : guiService.getActiveGUIManagedObjects(now))
+        for (GUIService guiService : this.stockItemServices)
           {
-            //a bit hacky, but services might not have only StockableItem (ie VoucherService got VoucherPersonal which are not, but VoucherShared are)
-            if (guiManagedObject instanceof StockableItem) monitorStockableItem((StockableItem) guiManagedObject);
+            for (GUIManagedObject guiManagedObject : guiService.getActiveGUIManagedObjects(now, tenant.getEffectiveTenantID()))
+              {
+                //a bit hacky, but services might not have only StockableItem (ie VoucherService got VoucherPersonal which are not, but VoucherShared are)
+                if (guiManagedObject instanceof StockableItem) monitorStockableItem((StockableItem) guiManagedObject);
+              }
           }
       }
   }
@@ -1328,12 +1331,18 @@ public class StockMonitor implements Runnable
 
     ProductService productService = new ProductService(Deployment.getBrokerServers(), "example-productservice-" + stockMonitorKey, Deployment.getProductTopic(), false);
     productService.start();
+    
+    //
+    //  tenantService
+    //
+    
+    TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "example-tenantservice-" + stockMonitorKey, Deployment.getTenantTopic(), false);
 
     //
     //  stockMonitor
     //
 
-    StockMonitor stockMonitor = new StockMonitor(stockMonitorKey, productService);
+    StockMonitor stockMonitor = new StockMonitor(stockMonitorKey, tenantService, productService);
     stockMonitor.start();
 
     //
@@ -1341,7 +1350,7 @@ public class StockMonitor implements Runnable
     //
 
     Date now = SystemTime.getCurrentTime();
-    Product product = productService.getActiveProduct(productID, now);
+    Product product = productService.getActiveProduct(productID, now, 1); // tenant 1 just for example
     if (product == null)
       {
         System.out.println("no active product: " + productID);

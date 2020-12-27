@@ -1031,7 +1031,7 @@ public class TimerService
                     //  (re-) evaluate rules based target lists
                     //
 
-                    for (Target target : targetService.getActiveTargets(now))
+                    for (Target target : targetService.getActiveTargets(now, 0)) // get targets whatever the tenant
                       {
                         if (evaluateTargetsJob.getTargetIDs().contains(target.getTargetID()))
                           {
@@ -1064,7 +1064,7 @@ public class TimerService
                       }
                     
                     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now, subscriberState.getSubscriberProfile().getTenantID());
-                    boolean inclusionList = subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now);
+                    boolean inclusionList = subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now, subscriberState.getSubscriberProfile().getTenantID());
                     if(inclusionList)
                       {
                         match = true;

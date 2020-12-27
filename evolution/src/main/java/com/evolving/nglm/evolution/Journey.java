@@ -386,7 +386,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   //  getAllCriteria
   //
 
-  public List<List<EvaluationCriterion>> getAllTargetsCriteria(TargetService targetService, Date now)
+  public List<List<EvaluationCriterion>> getAllTargetsCriteria(TargetService targetService, Date now, int tenantID)
   {
     try
       {
@@ -409,7 +409,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 // get the target
                 //
 
-                Target target = targetService.getActiveTarget(currentTargetID, now);
+                Target target = targetService.getActiveTarget(currentTargetID, now, tenantID);
 
                 //
                 // target not active -- automatic false criteria
@@ -424,7 +424,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     falseCriterionJSON.put("criterionOperator", "<>");
                     falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
                     List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile));
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile.get(tenantID)));
                     result.add(toAdd);
                   }
 
@@ -437,7 +437,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     targetCriterionJSON.put("criterionOperator", "contains");
                     targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
                     List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile));
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile.get(tenantID)));
                     result.add(toAdd);
                   }
               }
@@ -459,20 +459,20 @@ public class Journey extends GUIManagedObject implements StockableItem
   //  getAllObjectives
   //
 
-  public Set<JourneyObjective> getAllObjectives(JourneyObjectiveService journeyObjectiveService, Date now)
+  public Set<JourneyObjective> getAllObjectives(JourneyObjectiveService journeyObjectiveService, Date now, int tenantID)
   {
     Set<JourneyObjective> result = new HashSet<JourneyObjective>();
     for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectiveInstances)
       {
-        JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now);
+        JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now, tenantID);
         if (journeyObjective != null)
           {
             result.add(journeyObjective);
-            JourneyObjective walk = (journeyObjective.getParentJourneyObjectiveID() != null) ? journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), now) : null;
+            JourneyObjective walk = (journeyObjective.getParentJourneyObjectiveID() != null) ? journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), now, tenantID) : null;
             while (walk != null && ! result.contains(walk))
               {
                 result.add(walk);
-                walk = (walk.getParentJourneyObjectiveID() != null) ? journeyObjectiveService.getActiveJourneyObjective(walk.getParentJourneyObjectiveID(), now) : null;
+                walk = (walk.getParentJourneyObjectiveID() != null) ? journeyObjectiveService.getActiveJourneyObjective(walk.getParentJourneyObjectiveID(), now, tenantID) : null;
               }
           }
       }
@@ -1145,8 +1145,8 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
     this.templateParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "templateParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
-    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile);
-    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile);
+    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile.get(tenantID));
+    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile.get(tenantID));
     
     //
     // Targeting Event Criterion mgt
@@ -1162,8 +1162,8 @@ public class Journey extends GUIManagedObject implements StockableItem
         argumentJson.put("expression", "'" + targetingEvent + "'");
         eventNameCriterionJson.put("argument", argumentJson);
         arrayEventNameCriterion.add(eventNameCriterionJson);
-        EvolutionEngineEventDeclaration event = dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(targetingEvent);
-        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null);
+        EvolutionEngineEventDeclaration event = dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).get(targetingEvent);
+        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null, tenantID);
         List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext);        
         this.targetingEventCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingEventCriteria", false), eventNameCriteria, criterionContext);
       }
@@ -1758,10 +1758,10 @@ public class Journey extends GUIManagedObject implements StockableItem
       }
   }
   
-  public void createOrConsolidateHardcodedMessageTemplates(SubscriberMessageTemplateService subscriberMessageTemplateService, String journeyID, JourneyService journeyService) throws GUIManagerException
+  public void createOrConsolidateHardcodedMessageTemplates(SubscriberMessageTemplateService subscriberMessageTemplateService, String journeyID, JourneyService journeyService, int tenantID) throws GUIManagerException
   {
     
-    GUIManagedObject gmo = journeyService.getStoredJourney(journeyID);
+    GUIManagedObject gmo = journeyService.getStoredJourney(journeyID, tenantID);
     Journey existingJourney = null;
     if (gmo instanceof Journey)
       {
@@ -1810,9 +1810,9 @@ public class Journey extends GUIManagedObject implements StockableItem
 
         if (matchingSubscriberMessage == null)
           {
-            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessagePair.getSecondElement(), subscriberMessage, subscriberMessageTemplateService);
+            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessagePair.getSecondElement(), subscriberMessage, subscriberMessageTemplateService, tenantID);
             subscriberMessage.setSubscriberMessageTemplateID(internalSubscriberMessageTemplate.getSubscriberMessageTemplateID());
-            subscriberMessageTemplateService.putSubscriberMessageTemplate(internalSubscriberMessageTemplate, true, null);
+            subscriberMessageTemplateService.putSubscriberMessageTemplate(internalSubscriberMessageTemplate, true, null, tenantID);
           }
         else
           {

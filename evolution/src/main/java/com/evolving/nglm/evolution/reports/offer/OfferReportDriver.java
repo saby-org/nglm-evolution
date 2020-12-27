@@ -41,7 +41,7 @@ public class OfferReportDriver extends ReportDriver
    * 
    ****************************************/
 
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.info("Entered OfferReportDriver.produceReport");
 
@@ -77,8 +77,8 @@ public class OfferReportDriver extends ReportDriver
     ZipOutputStream writer = null;
     try
       {
-        log.info("no. of Offers :" + offerService.getStoredOffers().size());
-        if (offerService.getStoredOffers().size() == 0)
+        log.info("no. of Offers :" + offerService.getStoredOffers(tenantID).size());
+        if (offerService.getStoredOffers(tenantID).size() == 0)
           {
             log.info("No Offers ");
           }
@@ -89,7 +89,7 @@ public class OfferReportDriver extends ReportDriver
             // do not include tree structure in zipentry, just csv filename
             ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
             writer.putNextEntry(entry);
-            Collection<GUIManagedObject> offers = offerService.getStoredOffers();
+            Collection<GUIManagedObject> offers = offerService.getStoredOffers(tenantID);
             int nbOffers = offers.size();
             log.debug("offer list size : " + nbOffers);
 
@@ -98,7 +98,7 @@ public class OfferReportDriver extends ReportDriver
                 try
                   {
                     Offer offer = (guiManagedObject instanceof Offer) ? (Offer) guiManagedObject : null;
-                    dumpElementToCsv(offer, offerService.generateResponseJSON(guiManagedObject, true, reportGenerationDate), writer, header, (first == nbOffers - 1));
+                    dumpElementToCsv(offer, offerService.generateResponseJSON(guiManagedObject, true, reportGenerationDate), writer, header, (first == nbOffers - 1), tenantID);
                     if (first == 0)
                       {
                         header = false;
@@ -152,7 +152,7 @@ public class OfferReportDriver extends ReportDriver
    *
    ****************************************/
 
-  private void dumpElementToCsv(Offer offer, JSONObject recordJson, ZipOutputStream writer, Boolean addHeaders, boolean last)
+  private void dumpElementToCsv(Offer offer, JSONObject recordJson, ZipOutputStream writer, Boolean addHeaders, boolean last, int tenantID)
       throws IOException, InterruptedException
   {
     // log.info("offer Records : {}",recordJson);
@@ -173,7 +173,7 @@ public class OfferReportDriver extends ReportDriver
                   {
                     Map<String, Object> outputJSON = new HashMap<>();
                     String objectid = (String) (element.get("productID"));
-                    GUIManagedObject guiManagedObject = (GUIManagedObject) productService.getStoredProduct(objectid);
+                    GUIManagedObject guiManagedObject = (GUIManagedObject) productService.getStoredProduct(objectid, tenantID);
                     if (guiManagedObject != null && guiManagedObject instanceof Product)
                       {
                         Product product = (Product) guiManagedObject;
@@ -231,7 +231,7 @@ public class OfferReportDriver extends ReportDriver
                     if (element != null)
                       {
                         String objeciveID = (String) (element.get("offerObjectiveID"));
-                        GUIManagedObject guiManagedObject = (GUIManagedObject) offerObjectiveService.getStoredOfferObjective(objeciveID);
+                        GUIManagedObject guiManagedObject = (GUIManagedObject) offerObjectiveService.getStoredOfferObjective(objeciveID, tenantID);
                         if (guiManagedObject != null && guiManagedObject instanceof OfferObjective)
                           {
                             OfferObjective offerObjective = (OfferObjective) guiManagedObject;
@@ -245,7 +245,7 @@ public class OfferReportDriver extends ReportDriver
                                       {
                                         Object value = characteristicInstance.getValue();
                                         String catalogCharacteristicID = characteristicInstance.getCatalogCharacteristicID();
-                                        GUIManagedObject characteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+                                        GUIManagedObject characteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
                                         if (characteristic != null && characteristic instanceof CatalogCharacteristic)
                                           {
                                             Map<String, Object> characteristicJSON = new HashMap<>();
@@ -283,7 +283,7 @@ public class OfferReportDriver extends ReportDriver
                     for (Object obj2 : salesChannelIDs)
                       {
                         String salesChannelID = (String) obj2;
-                        GUIManagedObject guiManagedObject = (GUIManagedObject) salesChannelService.getStoredSalesChannel(salesChannelID);
+                        GUIManagedObject guiManagedObject = (GUIManagedObject) salesChannelService.getStoredSalesChannel(salesChannelID, tenantID);
                         if (guiManagedObject != null && guiManagedObject instanceof SalesChannel)
                           {
                             Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
@@ -304,7 +304,7 @@ public class OfferReportDriver extends ReportDriver
                                 if (id != null && meansOfPayment != null)
                                   {
                                     String currency = null;
-                                    GUIManagedObject meansOfPaymentObject = paymentmeanservice.getStoredPaymentMean(meansOfPayment);
+                                    GUIManagedObject meansOfPaymentObject = paymentmeanservice.getStoredPaymentMean(meansOfPayment, tenantID);
                                     if (meansOfPaymentObject != null)
                                       {
                                         meansOfPayment = "" + meansOfPaymentObject.getJSONRepresentation().get("display");

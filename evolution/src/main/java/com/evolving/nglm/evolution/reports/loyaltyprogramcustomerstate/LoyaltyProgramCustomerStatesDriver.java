@@ -11,7 +11,7 @@ public class LoyaltyProgramCustomerStatesDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(LoyaltyProgramCustomerStatesDriver.class);
 
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.debug("Processing LoyaltyProgramCustomerStates Report with "+report.getName());
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();

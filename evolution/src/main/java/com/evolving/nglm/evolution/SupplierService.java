@@ -144,7 +144,7 @@ public class SupplierService extends GUIService
 
     if (supplier instanceof Supplier)
       {
-        ((Supplier) supplier).validate(supplierService, now);
+        ((Supplier) supplier).validate(supplierService, now, tenantID);
       }
 
     //

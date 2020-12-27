@@ -93,7 +93,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
                   List<String> segmentIDs = contactPolicyService.getAllSegmentIDsUsingContactPolicy(contactPolicy.getContactPolicyID(), segmentContactPolicyService, tenantID);
                   List<String> segmentNames = new ArrayList<>();
                   for(String segmentID :segmentIDs) {
-                    Segment segment = segmentationDimensionService.getSegment(segmentID);
+                    Segment segment = segmentationDimensionService.getSegment(segmentID, tenantID);
                     segmentNames.add(segment.getName());
                   }
                   List<String> journeyObjectives = contactPolicyService.getAllJourneyObjectiveNamesUsingContactPolicy(contactPolicy.getContactPolicyID(), journeyObjectiveService, tenantID);

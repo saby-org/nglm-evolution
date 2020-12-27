@@ -98,7 +98,7 @@ public class UploadedFileService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { uploadedFileListener.fileActivated((UploadedFile) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { uploadedFileListener.fileDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { uploadedFileListener.fileDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -132,13 +132,13 @@ public class UploadedFileService extends GUIService
   *****************************************/
 
   public String generateFileID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredUploadedFile(String fileID) { return getStoredGUIManagedObject(fileID); }
-  public GUIManagedObject getStoredUploadedFile(String fileID, boolean includeArchived) { return getStoredGUIManagedObject(fileID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredUploadedFiles() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredUploadedFiles(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredUploadedFile(String fileID, int tenantID) { return getStoredGUIManagedObject(fileID, tenantID); }
+  public GUIManagedObject getStoredUploadedFile(String fileID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(fileID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredUploadedFiles(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredUploadedFiles(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveUploadedFile(GUIManagedObject uploadedFileUnchecked, Date date) { return isActiveGUIManagedObject(uploadedFileUnchecked, date); }
-  public UploadedFile getActiveUploadedFile(String uploadedFileID, Date date) { return (UploadedFile) getActiveGUIManagedObject(uploadedFileID, date); }
-  public Collection<UploadedFile> getActiveUploadedFiles(Date date) { return (Collection<UploadedFile>) getActiveGUIManagedObjects(date); }
+  public UploadedFile getActiveUploadedFile(String uploadedFileID, Date date, int tenantID) { return (UploadedFile) getActiveGUIManagedObject(uploadedFileID, date, tenantID); }
+  public Collection<UploadedFile> getActiveUploadedFiles(Date date, int tenantID) { return (Collection<UploadedFile>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -146,7 +146,7 @@ public class UploadedFileService extends GUIService
   *
   *****************************************/
 
-  public void putUploadedFile(GUIManagedObject guiManagedObject, InputStream inputStrm, String filename, boolean newObject, String userID) throws GUIManagerException, IOException
+  public void putUploadedFile(GUIManagedObject guiManagedObject, InputStream inputStrm, String filename, boolean newObject, String userID, int tenantID) throws GUIManagerException, IOException
   {
     //
     //  now
@@ -175,7 +175,7 @@ public class UploadedFileService extends GUIService
       StringWriter stackTraceWriter = new StringWriter();
       e.printStackTrace(new PrintWriter(stackTraceWriter, true));
       log.error("Exception saving file: putUploadedFile API: {}", stackTraceWriter.toString());
-      removeGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), now, userID);
+      removeGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), now, userID, tenantID);
     }finally {
       if(destFile != null) {
         destFile.flush();
@@ -253,7 +253,7 @@ public class UploadedFileService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(guiManagedObject, now, newObject, userID);   
+    putGUIManagedObject(guiManagedObject, now, newObject, userID, tenantID);   
   }
   
   /*****************************************
@@ -262,13 +262,13 @@ public class UploadedFileService extends GUIService
   *
   *****************************************/
 
-  public void deleteUploadedFile(String fileID, String userID, UploadedFile uploadedFile) {
+  public void deleteUploadedFile(String fileID, String userID, UploadedFile uploadedFile, int tenantID) {
     
     //
     // remove UploadedFile object
     //
 
-    removeGUIManagedObject(fileID, SystemTime.getCurrentTime(), userID); 
+    removeGUIManagedObject(fileID, SystemTime.getCurrentTime(), userID, tenantID); 
 
     //
     // remove file
@@ -293,9 +293,9 @@ public class UploadedFileService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteUploadedFile(IncompleteObject template, boolean newObject, String userID)
+  public void putIncompleteUploadedFile(IncompleteObject template, boolean newObject, String userID, int tenantID)
   {
-    putGUIManagedObject(template, SystemTime.getCurrentTime(), newObject, userID);
+    putGUIManagedObject(template, SystemTime.getCurrentTime(), newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -304,16 +304,16 @@ public class UploadedFileService extends GUIService
    *
    *****************************************/
 
-  public void changeFileApplicationId(String fileID, String newApplicationID)
+  public void changeFileApplicationId(String fileID, String newApplicationID, int tenantID)
   {
-    UploadedFile file = (UploadedFile) getStoredUploadedFile(fileID);
+    UploadedFile file = (UploadedFile) getStoredUploadedFile(fileID, tenantID);
     if(file!=null){
       // "change" applicationId, not "set"
       if(file.getApplicationID()!=null) file.setApplicationID(newApplicationID);
       // as any GUIManagedObject, same information is duplicated, and we use this following one seems to return GUIManager calls...
       if(file.getJSONRepresentation().get("applicationID")!=null) file.getJSONRepresentation().put("applicationID",newApplicationID);
       file.setEpoch(file.getEpoch()+1);//trigger "changes happened"
-      putGUIManagedObject(file,file.getUpdatedDate(),false,null);
+      putGUIManagedObject(file,file.getUpdatedDate(),false,null, tenantID);
     }else{
       log.warn("UploadedFileService.changeFileApplicationId: File does not exist");
     }

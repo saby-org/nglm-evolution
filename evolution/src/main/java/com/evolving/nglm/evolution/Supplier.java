@@ -277,7 +277,7 @@ public class Supplier extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(SupplierService supplierService, Date date) throws GUIManagerException
+  public void validate(SupplierService supplierService, Date date, int tenantID) throws GUIManagerException
   {
 
     /*****************************************
@@ -305,7 +305,7 @@ public class Supplier extends GUIManagedObject
         // 4) does not create a cycle
         //
 
-        GUIManagedObject uncheckedParent = supplierService.getStoredSupplier(walk.getParentSupplierID());
+        GUIManagedObject uncheckedParent = supplierService.getStoredSupplier(walk.getParentSupplierID(), tenantID);
         if (uncheckedParent == null)
           throw new GUIManagerException("unknown Supplier ancestor", walk.getParentSupplierID());
         if (uncheckedParent instanceof IncompleteObject)

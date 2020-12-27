@@ -24,7 +24,8 @@ public class JourneyCustomerStatisticsReportDriver extends ReportDriver {
         String kafka,
         String elasticSearch,
         String csvFilename,
-        String[] params) {
+        String[] params,
+        int tenantID) {
       
       log.debug("Processing Journey Customer Statistics Report with "+report+" and "+params);
       

@@ -31,11 +31,14 @@ import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Segment;
 import com.evolving.nglm.evolution.SegmentationDimension;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.Tenant;
+import com.evolving.nglm.evolution.TenantService;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
+import com.rii.utilities.SystemTime;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
 public class SubscriberReportMonoPhase implements ReportCsvFactory {
@@ -47,21 +50,21 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private final static String customerID = "customerID";
   private final static String segments = "segments";
   private final static String evolutionSubscriberStatusChangeDate = "evolutionSubscriberStatusChangeDate";
-  private static Map<String, String[]> segmentsNames = new HashMap<>(); // segmentID -> [dimensionName, segmentName]
+  private static Map<Integer, Map<String, String[]>> segmentsNamesPerTenant = new HashMap<>(); // TenantID -> [segmentID -> [dimensionName, segmentName]]
   private final static int INDEX_DIMENSION_NAME = 0;
   private final static int INDEX_SEGMENT_NAME = 1;
-  private Map<String, String> allDimensionsMap = new HashMap<>();
+  private Map<Integer, Map<String, String>> allDimensionsMapPerTenant = new HashMap<>();
   private List<String> allProfileFields = new ArrayList<>();
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
-  private Map<String, String> dimNameDisplayMapping = new HashMap<String, String>();
+  private Map<Integer, Map<String, String>> dimNameDisplayMappingPerTenant = new HashMap<>();
 
   /****************************************
   *
   *  dumpElementToCsv
   *
   ****************************************/
-  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
   {
 
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
@@ -130,7 +133,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
               }
           }
 
-        result.putAll(allDimensionsMap); // all dimensions have empty segments
+        result.putAll(allDimensionsMapPerTenant.get(tenantID)); // all dimensions have empty segments
         for (String field : allProfileFields)
           {
             if (field.equals(segments))
@@ -142,11 +145,11 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
                     String segmentIDs[] = removeBrackets.split(",");
                     Arrays.stream(segmentIDs).forEach(
                         segmentID -> {
-                          String[] couple = segmentsNames.get(segmentID.trim());
+                          String[] couple = segmentsNamesPerTenant.get(tenantID).get(segmentID.trim());
                           if (couple != null)
                             {
                               String dimName = couple[INDEX_DIMENSION_NAME];
-                              String dimDisplay = dimNameDisplayMapping.get(dimName);
+                              String dimDisplay = dimNameDisplayMappingPerTenant.get(tenantID).get(dimName);
                               if (dimDisplay == null || dimDisplay.isEmpty()) dimDisplay = dimName;
                               result.put(dimDisplay, couple[INDEX_SEGMENT_NAME]);
                             }
@@ -214,17 +217,20 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   *
   ****************************************/
   
-  private void initSegmentationData()
+  private void initSegmentationData(int tenantID)
   {
     // segmentID -> [dimensionName, segmentName]
-    for (GUIManagedObject dimension : segmentationDimensionService.getStoredSegmentationDimensions())
+    for (GUIManagedObject dimension : segmentationDimensionService.getStoredSegmentationDimensions(tenantID))
       {
         if (dimension instanceof SegmentationDimension)
           {
             SegmentationDimension segmentation = (SegmentationDimension) dimension;
             //allDimensions.add(segmentation.getSegmentationDimensionName());
-            allDimensionsMap.put(segmentation.getGUIManagedObjectDisplay(), "");
-            dimNameDisplayMapping.put(segmentation.getSegmentationDimensionName(), dimension.getGUIManagedObjectDisplay());
+            if(allDimensionsMapPerTenant.get(tenantID) == null) { allDimensionsMapPerTenant.put(tenantID, new HashMap<>()); }
+            allDimensionsMapPerTenant.get(tenantID).put(segmentation.getGUIManagedObjectDisplay(), "");
+            
+            if(dimNameDisplayMappingPerTenant.get(tenantID) == null) { dimNameDisplayMappingPerTenant.put(tenantID, new HashMap<>()); }
+            dimNameDisplayMappingPerTenant.get(tenantID).put(segmentation.getSegmentationDimensionName(), dimension.getGUIManagedObjectDisplay());
             if (segmentation.getSegments() != null)
               {
                 for (Segment segment : segmentation.getSegments())
@@ -232,7 +238,8 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
                     String[] segmentInfo = new String[2];
                     segmentInfo[INDEX_DIMENSION_NAME] = segmentation.getSegmentationDimensionName();
                     segmentInfo[INDEX_SEGMENT_NAME] = segment.getName();
-                    segmentsNames.put(segment.getID(), segmentInfo);
+                    if(segmentsNamesPerTenant.get(tenantID) == null) { segmentsNamesPerTenant.put(tenantID, new HashMap<>()); }
+                    segmentsNamesPerTenant.get(tenantID).put(segment.getID(), segmentInfo);
                   }
               }
           }
@@ -273,12 +280,12 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
         this,
         csvfile
         );
-
+    TenantService tenantService = new TenantService(kafkaNodeList, "repor-tenantservice-subscriberReportMonoPhase", Deployment.getTenantTopic(), false);
     synchronized (log) // why not, this is a static object that always exists
     {
       if (segmentationDimensionService == null) // do it only once, because we can't stop it fully
         {
-          segmentationDimensionService = new SegmentationDimensionService(kafkaNodeList, "report-segmentationDimensionservice-subscriberReportMonoPhase", Deployment.getSegmentationDimensionTopic(), false);
+          segmentationDimensionService = new SegmentationDimensionService(kafkaNodeList, "report-segmentationDimensionservice-subscriberReportMonoPhase", Deployment.getSegmentationDimensionTopic(), false, tenantService.getActiveTenants(SystemTime.getCurrentTime()));
           segmentationDimensionService.start(); // never stop it
         }
     }
@@ -288,12 +295,22 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
       // build map of segmentID -> [dimensionName, segmentName] once for all
       //
 
-      synchronized (allDimensionsMap)
+      synchronized (allDimensionsMapPerTenant)
       {
-        allDimensionsMap.clear();
-        segmentsNames.clear();
-        dimNameDisplayMapping.clear();
-        initSegmentationData();
+        for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+          {
+            if(allDimensionsMapPerTenant.get(t.getEffectiveTenantID()) == null) {  allDimensionsMapPerTenant.put(t.getEffectiveTenantID(), new HashMap<>()); }
+            allDimensionsMapPerTenant.get(t.getEffectiveTenantID()).clear();
+            
+            if(segmentsNamesPerTenant.get(t.getEffectiveTenantID()) == null) {  segmentsNamesPerTenant.put(t.getEffectiveTenantID(), new HashMap<>()); }
+            segmentsNamesPerTenant.get(t.getEffectiveTenantID()).clear();
+
+            if(dimNameDisplayMappingPerTenant.get(t.getEffectiveTenantID()) == null) {  dimNameDisplayMappingPerTenant.put(t.getEffectiveTenantID(), new HashMap<>()); }
+            dimNameDisplayMappingPerTenant.get(t.getEffectiveTenantID()).clear();
+            
+            initSegmentationData(t.getEffectiveTenantID());
+          }
+
       }
 
       synchronized (allProfileFields)

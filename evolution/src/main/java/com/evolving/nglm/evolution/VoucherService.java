@@ -103,7 +103,7 @@ public class VoucherService extends GUIService {
     if (voucherListener != null) {
       superListener = new GUIManagedObjectListener() {
         @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { voucherListener.voucherActivated((Voucher) guiManagedObject); }
-        @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { voucherListener.voucherDeactivated(guiManagedObjectID); }
+        @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { voucherListener.voucherDeactivated(guiManagedObjectID); }
       };
     }
     return superListener;
@@ -111,18 +111,18 @@ public class VoucherService extends GUIService {
 
 
   public String generateVoucherID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredVoucher(String voucherID) { return getStoredGUIManagedObject(voucherID); }
-  public GUIManagedObject getStoredVoucher(String voucherID, boolean includeArchived) { return getStoredGUIManagedObject(voucherID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredVouchers() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredVouchers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredVoucher(String voucherID, int tenantID) { return getStoredGUIManagedObject(voucherID, tenantID); }
+  public GUIManagedObject getStoredVoucher(String voucherID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(voucherID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredVouchers(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredVouchers(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveVoucher(GUIManagedObject voucherUnchecked, Date date) { return isActiveGUIManagedObject(voucherUnchecked, date); }
-  public Voucher getActiveVoucher(String voucherID, Date date) { return (Voucher) getActiveGUIManagedObject(voucherID, date); }
-  public Collection<Voucher> getActiveVouchers(Date date) { return (Collection<Voucher>) getActiveGUIManagedObjects(date); }
+  public Voucher getActiveVoucher(String voucherID, Date date, int tenantID) { return (Voucher) getActiveGUIManagedObject(voucherID, date, tenantID); }
+  public Collection<Voucher> getActiveVouchers(Date date, int tenantID) { return (Collection<Voucher>) getActiveGUIManagedObjects(date, tenantID); }
 
   //this call might trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls, hopefuly ES will manage to keep that call quick
-  public GUIManagedObject getStoredVoucherWithCurrentStocks(String voucherID, boolean includeArchived){
+  public GUIManagedObject getStoredVoucherWithCurrentStocks(String voucherID, boolean includeArchived, int tenantID){
 
-    GUIManagedObject uncheckedVoucher = getStoredVoucher(voucherID,includeArchived);
+    GUIManagedObject uncheckedVoucher = getStoredVoucher(voucherID,includeArchived, tenantID);
     if(!(uncheckedVoucher instanceof VoucherPersonal) && !(uncheckedVoucher instanceof VoucherShared)) return uncheckedVoucher;//cant do more than normal one
 
     // VoucherPersonal : get stock from ES and fill it per file
@@ -142,40 +142,40 @@ public class VoucherService extends GUIService {
 
   public VoucherPersonalESService getVoucherPersonalESService() {return voucherPersonalESService;}
 
-  public void putVoucher(GUIManagedObject voucher, boolean newObject, String userID) {
+  public void putVoucher(GUIManagedObject voucher, boolean newObject, String userID, int tenantID) {
     Date now = SystemTime.getCurrentTime();
     //save conf
-    putGUIManagedObject(voucher, now, newObject, userID);
+    putGUIManagedObject(voucher, now, newObject, userID, tenantID);
     //send process files order if voucher OK
     if(isActiveVoucher(voucher,now) && voucher instanceof VoucherPersonal){
       //changed the applicationId of the files, to make it unavailable to use any longer
       for(VoucherFile file:((VoucherPersonal) voucher).getVoucherFiles()){
-        UploadedFile uploadedFile=(UploadedFile)uploadedFileService.getStoredUploadedFile(file.getFileId());
+        UploadedFile uploadedFile=(UploadedFile)uploadedFileService.getStoredUploadedFile(file.getFileId(), tenantID);
         if(uploadedFile!=null && uploadedFile.getApplicationID()!=null && !uploadedFile.getApplicationID().equals(usedVoucherFileApplicationId)){
-          uploadedFileService.changeFileApplicationId(file.getFileId(),usedVoucherFileApplicationId);
+          uploadedFileService.changeFileApplicationId(file.getFileId(),usedVoucherFileApplicationId, tenantID);
         }
       }
       voucherPersonalESService.createSupplierVoucherIndexIfNotExist(((VoucherPersonal)voucher).getSupplierID());
-      checkForVoucherModificationToApplyOnVoucherPersonalStore((VoucherPersonal)voucher);
+      checkForVoucherModificationToApplyOnVoucherPersonalStore((VoucherPersonal)voucher, tenantID);
     }
   }
 
-  public void removeVoucher(String voucherID, String userID, UploadedFileService uploadedFileService) {
-    GUIManagedObject storedVoucher = getStoredVoucher(voucherID);
+  public void removeVoucher(String voucherID, String userID, UploadedFileService uploadedFileService, int tenantID) {
+    GUIManagedObject storedVoucher = getStoredVoucher(voucherID, tenantID);
     if(storedVoucher instanceof VoucherPersonal){
       VoucherPersonal voucher = (VoucherPersonal) storedVoucher;
       addVoucherJob(new VoucherJob(voucher.getSupplierID(),voucher.getVoucherID(),null,null,VoucherJobAction.DELETE_VOUCHER));
     }
-    removeGUIManagedObject(voucherID, SystemTime.getCurrentTime(), userID);
+    removeGUIManagedObject(voucherID, SystemTime.getCurrentTime(), userID, tenantID);
   }
   
-  public void cleanUpVouchersJob() {
+  public void cleanUpVouchersJob(int tenantID) {
     log.info("VoucherPersonalESService-cleanUpExpiredVouchers : start execution");
     Date now = SystemTime.getCurrentTime();
 
     // we delete the not allocated expired vouchers as soon as expired, per voucherId, fileId, to stored this stats
     // we delete as well change one, this is one is for now just for stats
-    for(Voucher untypedVoucher : getActiveVouchers(SystemTime.getCurrentTime())){
+    for(Voucher untypedVoucher : getActiveVouchers(SystemTime.getCurrentTime(), tenantID)){
       if(!(untypedVoucher instanceof VoucherPersonal)) continue;
       VoucherPersonal voucher = (VoucherPersonal) untypedVoucher;
       for(VoucherFile file:voucher.getVoucherFiles()){
@@ -223,7 +223,7 @@ public class VoucherService extends GUIService {
     super.stop();
   }
 
-  private void checkForVoucherModificationToApplyOnVoucherPersonalStore(VoucherPersonal voucher){
+  private void checkForVoucherModificationToApplyOnVoucherPersonalStore(VoucherPersonal voucher, int tenantID){
 
     // for all voucherFiles
     for(VoucherFile voucherFile:voucher.getVoucherFiles()){
@@ -277,7 +277,7 @@ public class VoucherService extends GUIService {
       }
 
       //get the uploaded file and check what we can do
-      UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(voucherFile.getFileId());
+      UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(voucherFile.getFileId(), tenantID);
       if(uploadedFile==null && newFile){
         // the worst error case, new file, but not found
         log.error("VoucherService.runProcessVoucherfile : no uploaded file found for id "+voucherFile.getFileId());
@@ -401,7 +401,7 @@ public class VoucherService extends GUIService {
 
           log.info("VoucherService.runProcessVoucherfile : need to import vouchers from fileId "+job.getFileId()+" and voucherId "+job.getVoucherId());
 
-          UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(job.getFileId());
+          UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(job.getFileId(), );
           if(uploadedFile==null){
             // we need to import a file, but file is not found
             log.error("VoucherService.runProcessVoucherfile : no uploaded file found for id "+job.getFileId());

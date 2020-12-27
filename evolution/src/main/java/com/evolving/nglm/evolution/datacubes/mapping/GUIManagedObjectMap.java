@@ -42,7 +42,7 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   * Implementation
   *
   *****************************************/
-  protected abstract Collection<GUIManagedObject> getCollection();
+  protected abstract Collection<GUIManagedObject> getCollection(int tenantID);
 
   /*****************************************
   *

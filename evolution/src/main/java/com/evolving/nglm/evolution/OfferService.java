@@ -81,7 +81,7 @@ public class OfferService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { offerListener.offerActivated((Offer) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { offerListener.offerDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { offerListener.offerDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -110,13 +110,13 @@ public class OfferService extends GUIService
   *****************************************/
 
   public String generateOfferID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredOffer(String offerID) { return getStoredGUIManagedObject(offerID); }
-  public GUIManagedObject getStoredOffer(String offerID, boolean includeArchived) { return getStoredGUIManagedObject(offerID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredOffers() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredOffers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredOffer(String offerID, int tenantID) { return getStoredGUIManagedObject(offerID, tenantID); }
+  public GUIManagedObject getStoredOffer(String offerID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(offerID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredOffers(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredOffers(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveOffer(GUIManagedObject offerUnchecked, Date date) { return isActiveGUIManagedObject(offerUnchecked, date); }
-  public Offer getActiveOffer(String offerID, Date date) { return (Offer) getActiveGUIManagedObject(offerID, date); }
-  public Collection<Offer> getActiveOffers(Date date) { return (Collection<Offer>) getActiveGUIManagedObjects(date); }
+  public Offer getActiveOffer(String offerID, Date date, int tenantID) { return (Offer) getActiveGUIManagedObject(offerID, date, tenantID); }
+  public Collection<Offer> getActiveOffers(Date date, int tenantID) { return (Collection<Offer>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -124,7 +124,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(GUIManagedObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID) throws GUIManagerException
+  public void putOffer(GUIManagedObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID, int tenantID) throws GUIManagerException
   {
     //
     //  now
@@ -145,7 +145,7 @@ public class OfferService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(offer, now, newObject, userID);
+    putGUIManagedObject(offer, now, newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -154,11 +154,11 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(IncompleteObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID)
+  public void putOffer(IncompleteObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID, int tenantID)
   {
     try
       {
-        putOffer((GUIManagedObject) offer, callingChannelService, salesChannelService, productService, voucherService, newObject, userID);
+        putOffer((GUIManagedObject) offer, callingChannelService, salesChannelService, productService, voucherService, newObject, userID, tenantID);
       }
     catch (GUIManagerException e)
       {
@@ -172,7 +172,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void removeOffer(String offerID, String userID) { removeGUIManagedObject(offerID, SystemTime.getCurrentTime(), userID); }
+  public void removeOffer(String offerID, String userID, int tenantID) { removeGUIManagedObject(offerID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

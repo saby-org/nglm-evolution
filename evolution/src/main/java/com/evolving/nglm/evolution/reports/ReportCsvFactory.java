@@ -37,9 +37,9 @@ public interface ReportCsvFactory
    * @throws IOException
    *           When an error related to filesystem access occurs.
    */
-  default boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeader) throws IOException {return false;}
-  default boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeader) throws IOException {return false;}
-  default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)  {}
-  default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement) {return null;}
-  default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map) {return null;}
+  default boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeader, int tenantID) throws IOException {return false;}
+  default boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeader, int tenantID) throws IOException {return false;}
+  default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders, int tenantID)  {}
+  default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement, int tenantID) {return null;}
+  default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map, int tenantID) {return null;}
 }

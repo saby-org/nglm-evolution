@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
@@ -66,7 +67,7 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
-  private Map<String,Segment> segmentsByID = new HashMap<String,Segment>();
+  private HashMap<Integer, Map<String,Segment>> segmentsByIDByTenant = new HashMap<>();
   private volatile boolean stopRequested = false;
   private BlockingQueue<SegmentationDimensionFileImport> listenerQueue = new LinkedBlockingQueue<SegmentationDimensionFileImport>();
   private Thread listenerThread = null;
@@ -75,6 +76,8 @@ public class SegmentationDimensionService extends GUIService
   private SubscriberIDService subscriberIDService = null;
   private String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
   private int lastGeneratedSegmentID = 0;
+  
+  private TenantService tenantService;
   
   /*****************************************
   *
@@ -91,26 +94,37 @@ public class SegmentationDimensionService extends GUIService
     super(bootstrapServers, "segmentationDimensionService", groupID, segmentationDimensionTopic, masterService, getSuperListener(segmentationDimensionListener), "putSegmentationDimension", "removeSegmentationDimension", notifyOnSignificantChange);
 
     //
-    //  (re-initialize lastGeneratedSegmentID)
+    // Service need tenantService
+    //
+    
+    TenantService tenantService = new TenantService(bootstrapServers, "SegmentationService-TenantService", Deployment.getTenantTopic(), false);
+        
+    //
+    //  (re-initialize lastGeneratedSegmentID) for all tenant
     //
 
-    for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions(true))
+    for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        SegmentationDimension segmentationDimension = (guiManagedObject != null && guiManagedObject.getAccepted()) ? (SegmentationDimension) guiManagedObject : null;
-        if (segmentationDimension != null)
+        for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions(true, t.getEffectiveTenantID()))
           {
-            for (Segment segment : segmentationDimension.getSegments())
+            SegmentationDimension segmentationDimension = (guiManagedObject != null && guiManagedObject.getAccepted()) ? (SegmentationDimension) guiManagedObject : null;
+            if (segmentationDimension != null)
               {
-                try
+                for (Segment segment : segmentationDimension.getSegments())
                   {
-                    int segmentID = Integer.parseInt(segment.getID());
-                    lastGeneratedSegmentID = (segmentID > lastGeneratedSegmentID) ? segmentID : lastGeneratedSegmentID;
-                  }
-                catch (NumberFormatException e)
-                  {
+                    try
+                      {
+                        int segmentID = Integer.parseInt(segment.getID());
+                        lastGeneratedSegmentID = (segmentID > lastGeneratedSegmentID) ? segmentID : lastGeneratedSegmentID;
+                      }
+                    catch (NumberFormatException e)
+                      {
+                      }
                   }
               }
           }
+        // init the 
+        segmentsByIDByTenant.put(t.getEffectiveTenantID(), new HashMap<>());
       }
 
     //
@@ -128,7 +142,7 @@ public class SegmentationDimensionService extends GUIService
         SegmentationDimension segmentationDimension = (SegmentationDimension) guiManagedObject;
         for (Segment segment : segmentationDimension.getSegments())
           {
-            segmentsByID.put(segment.getID(), segment);
+            segmentsByIDByTenant.get(guiManagedObject.getTenantID()).put(segment.getID(), segment);
           }
       }
 
@@ -136,7 +150,7 @@ public class SegmentationDimensionService extends GUIService
       //  guiManagedObjectDeactivated
       //
 
-      @Override public void guiManagedObjectDeactivated(String guiManagedObjectID)
+      @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID)
       {
         //
         //  ignore
@@ -151,15 +165,18 @@ public class SegmentationDimensionService extends GUIService
     registerListener(segmentListener);
 
     //
-    //  initialize segmentsByID
+    //  initialize segmentsByID for each tenant
     //
 
     Date now = SystemTime.getCurrentTime();
-    for (SegmentationDimension segmentationDimension : getActiveSegmentationDimensions(now))
+    for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()) )
       {
-        for (Segment segment : segmentationDimension.getSegments())
+        for (SegmentationDimension segmentationDimension : getActiveSegmentationDimensions(now, t.getEffectiveTenantID()))
           {
-            segmentsByID.put(segment.getID(), segment);
+            for (Segment segment : segmentationDimension.getSegments())
+              {
+                segmentsByIDByTenant.get(t.getEffectiveTenantID()).put(segment.getID(), segment);
+              }
           }
       }
     
@@ -215,7 +232,7 @@ public class SegmentationDimensionService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { segmentationDimensionListener.segmentationDimensionActivated((SegmentationDimension) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { segmentationDimensionListener.segmentationDimensionDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { segmentationDimensionListener.segmentationDimensionDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -258,7 +275,7 @@ public class SegmentationDimensionService extends GUIService
   //  getSegment
   //
 
-  public Segment getSegment(String segmentID) { synchronized (this) { return segmentsByID.get(segmentID); } }
+  public Segment getSegment(String segmentID, int tenantID) { synchronized (this) { return segmentsByIDByTenant.get(tenantID).get(segmentID); } }
 
   /*****************************************
   *
@@ -385,7 +402,7 @@ public class SegmentationDimensionService extends GUIService
             
             if(segmentationDimension.getDimensionFileID() != null)
               {
-                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(segmentationDimension.getDimensionFileID());
+                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(segmentationDimension.getDimensionFileID(), 0);
                 if (uploadedFile == null)
                   { 
                     log.warn("SegmentationDimensionService.run(uploaded file not found, processing done)");
@@ -471,7 +488,7 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
-  @Override protected void processGUIManagedObject(String guiManagedObjectID, GUIManagedObject guiManagedObject, Date date)
+  @Override protected void processGUIManagedObject(String guiManagedObjectID, GUIManagedObject guiManagedObject, Date date, int tenantID)
   {
     synchronized (this)
       {
@@ -481,7 +498,7 @@ public class SegmentationDimensionService extends GUIService
         *
         *****************************************/
 
-        super.processGUIManagedObject(guiManagedObjectID, guiManagedObject, date);
+        super.processGUIManagedObject(guiManagedObjectID, guiManagedObject, date, tenantID);
 
         /*****************************************
         *

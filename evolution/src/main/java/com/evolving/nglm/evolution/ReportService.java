@@ -118,7 +118,7 @@ public class ReportService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { reportListener.reportActivated((Report) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { reportListener.reportDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { reportListener.reportDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -144,13 +144,13 @@ public class ReportService extends GUIService
   *****************************************/
 
   public String generateReportID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredReport(String reportID) { return getStoredGUIManagedObject(reportID); }
-  public GUIManagedObject getStoredReport(String reportID, boolean includeArchived) { return getStoredGUIManagedObject(reportID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredReports() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredReports(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredReport(String reportID, int tenantID) { return getStoredGUIManagedObject(reportID, tenantID); }
+  public GUIManagedObject getStoredReport(String reportID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(reportID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredReports(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredReports(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveReport(GUIManagedObject reportUnchecked, Date date) { return isActiveGUIManagedObject(reportUnchecked, date); }
-  public Report getActiveReport(String reportID, Date date) { return (Report) getActiveGUIManagedObject(reportID, date); }
-  public Collection<Report> getActiveReports(Date date) { return (Collection<Report>) getActiveGUIManagedObjects(date); }
+  public Report getActiveReport(String reportID, Date date, int tenantID) { return (Report) getActiveGUIManagedObject(reportID, date, tenantID); }
+  public Collection<Report> getActiveReports(Date date, int tenantID) { return (Collection<Report>) getActiveGUIManagedObjects(date, tenantID); }
   
   /*****************************************
   *
@@ -158,10 +158,10 @@ public class ReportService extends GUIService
   *
   *****************************************/
 
-  public void putReport(Report report, boolean newObject, String userID) throws GUIManagerException
+  public void putReport(Report report, boolean newObject, String userID, int tenantID) throws GUIManagerException
   {
     Date now = SystemTime.getCurrentTime();
-    putGUIManagedObject(report, now, newObject, userID);
+    putGUIManagedObject(report, now, newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -185,7 +185,7 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  public void launchReport(String reportName, Boolean backendSimulator)
+  public void launchReport(String reportName, Boolean backendSimulator, int tenantID)
   {
     if (!backendSimulator)
       {
@@ -194,7 +194,7 @@ public class ReportService extends GUIService
       }
     else
       {
-        Collection<Report> activeReports = getActiveReports(SystemTime.getCurrentTime());
+        Collection<Report> activeReports = getActiveReports(SystemTime.getCurrentTime(), tenantID);
         Report report = null;
         for (Report activeReport : activeReports)
           {

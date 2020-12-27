@@ -48,7 +48,7 @@ public class JourneyImpactReportDriver extends ReportDriver
    *
    ****************************************/
 
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.debug("Processing Journey Impact Report with "+report+" and "+params);
 

@@ -286,7 +286,7 @@ public class ReportManager implements Watcher
         try 
         {
           List<String> children = zk.getChildren(serviceControlDir, this); // get the children and renew watch
-          processChildren(children);
+          processChildren(children, ten);
         }
         catch (KeeperException e) { handleSessionExpired(e, "Error processing report"); }
         catch (InterruptedException e)
@@ -307,24 +307,24 @@ public class ReportManager implements Watcher
    *
    *****************************************/
 
-  protected void processChildren(List<String> children) throws InterruptedException
+  protected void processChildren(List<String> children, int tenantID) throws InterruptedException
   {
     if (children != null && !children.isEmpty())
       {
         Collections.sort(children); // we are getting an unsorted list
         for (String child : children)
           {
-            processChild(child);
+            processChild(child, tenantID);
           }
       }
   }
-  protected void processChild(String child) throws InterruptedException
+  protected void processChild(String child, int tenantID) throws InterruptedException
   {
     // Generate report in separate thread
     Thread thread = new Thread( () -> { 
       try
       {
-        processChild2(child);
+        processChild2(child, tenantID);
       }
       catch (InterruptedException e)
       {
@@ -341,8 +341,9 @@ public class ReportManager implements Watcher
   }
 
   // Called when a control file is created or deleted
-  public void processChild2(String child) throws InterruptedException
+  public void processChild2(String child, int tenantID) throws InterruptedException
   {
+    // TODO EVPRO-99 take in account tenantID in the name of the file and zk lock
     String controlFile = controlDir + File.separator + child;
     String lockFile = lockDir + File.separator + child;
     log.trace("Checking if control exists : "+controlFile); // We might have been called for the suppression of the control node
@@ -404,7 +405,7 @@ public class ReportManager implements Watcher
                         {
                           log.debug("report = "+report);
                           log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
-                          allOK = handleReport(reportName, reportGenerationDate, report, restOfLine);
+                          allOK = handleReport(reportName, reportGenerationDate, report, restOfLine, tenantID);
                           reportManagerStatistics.incrementReportCount();
                           if (!allOK)
                             {
@@ -540,7 +541,7 @@ public class ReportManager implements Watcher
   *
   *****************************************/
   
-  private boolean handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine)
+  private boolean handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine, int tenantID)
   {
     log.trace("---> Starting report " + reportName + " " + restOfLine);
     boolean allOK = true;
@@ -585,7 +586,7 @@ public class ReportManager implements Watcher
         ReportDriver rd = cons.newInstance((Object[]) null);
         try
           {
-            rd.produceReport(report, reportGenerationDate, zkHostList, brokerServers, esNode, csvFilename, params);
+            rd.produceReport(report, reportGenerationDate, zkHostList, brokerServers, esNode, csvFilename, params, tenantID);
           } 
         catch (Exception e)
           {

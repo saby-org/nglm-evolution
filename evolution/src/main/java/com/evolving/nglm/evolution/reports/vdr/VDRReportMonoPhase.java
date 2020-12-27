@@ -98,7 +98,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     }
 
   @Override
-  public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
+  public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders, int tenantID)
   {
     try
       {
@@ -116,7 +116,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       }
   }
 
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> VDRFields = map;
@@ -246,7 +246,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
         String voucherTypeID = null;
         if (voucherID != null)
           {
-            voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
+            voucher = (Voucher) voucherService.getStoredVoucher(voucherID, tenantID);
           }
         String supplierID = null;
         if (voucher != null && voucher instanceof Voucher)
@@ -257,7 +257,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
 
         if (supplierID != null && !(supplierID.isEmpty()))
           {
-            Supplier currentSupplier = (Supplier) (supplierService.getStoredSupplier(supplierID));
+            Supplier currentSupplier = (Supplier) (supplierService.getStoredSupplier(supplierID, tenantID));
             if (currentSupplier != null && currentSupplier instanceof Supplier)
               {
                 vdrRecs.put(supplier, currentSupplier.getGUIManagedObjectDisplay());
@@ -273,7 +273,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           }
         if (voucherTypeID != null && !(voucherTypeID.isEmpty()))
           {
-            VoucherType currentVoucherType = (VoucherType) (voucherTypeService.getStoredVoucherType(voucherTypeID));
+            VoucherType currentVoucherType = (VoucherType) (voucherTypeService.getStoredVoucherType(voucherTypeID, tenantID));
             if (currentVoucherType != null && currentVoucherType instanceof VoucherType)
               {
                 vdrRecs.put(voucherType, currentVoucherType.getGUIManagedObjectDisplay());

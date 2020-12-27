@@ -44,7 +44,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
   private SalesChannelService salesChannelService;
   private OfferService offerService = null;
 
-  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
   {
 
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
@@ -76,9 +76,9 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                     String tokenStatus = (String) token.get("tokenStatus");
                     result.put("tokenCode", token.get("tokenCode"));
                     String salesChannel = (String) token.get("presentedOffersSalesChannel");
-                    if (salesChannel != null && salesChannelService.getStoredSalesChannel(salesChannel) != null)
+                    if (salesChannel != null && salesChannelService.getStoredSalesChannel(salesChannel, tenantID) != null)
                       {
-                        result.put("salesChannel", salesChannelService.getStoredSalesChannel(salesChannel).getGUIManagedObjectDisplay());
+                        result.put("salesChannel", salesChannelService.getStoredSalesChannel(salesChannel, tenantID).getGUIManagedObjectDisplay());
                       }
                     else
                       {

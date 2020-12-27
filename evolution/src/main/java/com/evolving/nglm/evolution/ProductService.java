@@ -80,7 +80,7 @@ public class ProductService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { productListener.productActivated((Product) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { productListener.productDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { productListener.productDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -107,14 +107,14 @@ public class ProductService extends GUIService
   *****************************************/
 
   public String generateProductID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredProduct(String productID) { return getStoredGUIManagedObject(productID); }
-  public GUIManagedObject getStoredProduct(String productID, boolean includeArchived) { return getStoredGUIManagedObject(productID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredProducts() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredProducts(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredProduct(String productID, int tenantID) { return getStoredGUIManagedObject(productID, tenantID); }
+  public GUIManagedObject getStoredProduct(String productID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(productID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredProducts(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredProducts(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveProductThroughInterval(GUIManagedObject productUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(productUnchecked, startDate, endDate); }
   public boolean isActiveProduct(GUIManagedObject productUnchecked, Date date) { return isActiveGUIManagedObject(productUnchecked, date); }
-  public Product getActiveProduct(String productID, Date date) { return (Product) getActiveGUIManagedObject(productID, date); }
-  public Collection<Product> getActiveProducts(Date date) { return (Collection<Product>) getActiveGUIManagedObjects(date); }
+  public Product getActiveProduct(String productID, Date date, int tenantID) { return (Product) getActiveGUIManagedObject(productID, date, tenantID); }
+  public Collection<Product> getActiveProducts(Date date, int tenantID) { return (Collection<Product>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -122,7 +122,7 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void putProduct(GUIManagedObject product, SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, boolean newObject, String userID) throws GUIManagerException
+  public void putProduct(GUIManagedObject product, SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, boolean newObject, String userID, int tenantID) throws GUIManagerException
   {
     //
     //  now
@@ -143,7 +143,7 @@ public class ProductService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(product, now, newObject, userID);
+    putGUIManagedObject(product, now, newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -152,11 +152,11 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void putProduct(IncompleteObject product, SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, boolean newObject, String userID)
+  public void putProduct(IncompleteObject product, SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, boolean newObject, String userID, int tenantID)
   {
     try
       {
-        putProduct((GUIManagedObject) product, supplierService, productTypeService, deliverableService, newObject, userID);
+        putProduct((GUIManagedObject) product, supplierService, productTypeService, deliverableService, newObject, userID, tenantID);
       }
     catch (GUIManagerException e)
       {
@@ -170,7 +170,7 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void removeProduct(String productID, String userID) { removeGUIManagedObject(productID, SystemTime.getCurrentTime(), userID); }
+  public void removeProduct(String productID, String userID, int tenantID) { removeGUIManagedObject(productID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

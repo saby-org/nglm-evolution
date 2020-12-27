@@ -60,7 +60,7 @@ public class JourneysReportDriver extends ReportDriver
   *
   ****************************************/
 
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.info("Entered JourneysReportDriver.produceReport");
 
@@ -181,8 +181,8 @@ public class JourneysReportDriver extends ReportDriver
 
                   Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID);
                   for (String rewards : distributedRewards.keySet()) {
-                    if (pointService.getStoredPoint(rewards) != null) {
-                      String rewardName = pointService.getStoredPoint(rewards).getGUIManagedObjectDisplay();
+                    if (pointService.getStoredPoint(rewards, tenantID) != null) {
+                      String rewardName = pointService.getStoredPoint(rewards, tenantID).getGUIManagedObjectDisplay();
                       sbRewards.append(rewardName).append(",");
                     }
                     else {

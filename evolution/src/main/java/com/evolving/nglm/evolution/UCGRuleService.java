@@ -79,7 +79,7 @@ public class UCGRuleService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { ucgRuleListener.ucgRuleActivated((UCGRule) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { ucgRuleListener.ucgRuleDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { ucgRuleListener.ucgRuleDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -106,13 +106,13 @@ public class UCGRuleService extends GUIService
   *****************************************/
 
   public String generateUCGRuleID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredUCGRule(String ucgRuleId) { return getStoredGUIManagedObject(ucgRuleId); }
-  public GUIManagedObject getStoredUCGRule(String ucgRuleId, boolean includeArchived) { return getStoredGUIManagedObject(ucgRuleId, includeArchived); }
-  public Collection<GUIManagedObject> getStoredUCGRules() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredUCGRules(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredUCGRule(String ucgRuleId, int tenantID) { return getStoredGUIManagedObject(ucgRuleId, tenantID); }
+  public GUIManagedObject getStoredUCGRule(String ucgRuleId, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(ucgRuleId, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredUCGRules(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredUCGRules(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveUCGRule(GUIManagedObject ucgRuleUnchecked, Date date) { return isActiveGUIManagedObject(ucgRuleUnchecked, date); }
-  public UCGRule getActiveUCGRule(String ucgRuleID, Date date) { return (UCGRule) getActiveGUIManagedObject(ucgRuleID, date); }
-  public Collection<UCGRule> getActiveUCGRules(Date date) { return (Collection<UCGRule>) getActiveGUIManagedObjects(date); }
+  public UCGRule getActiveUCGRule(String ucgRuleID, Date date, int tenantID) { return (UCGRule) getActiveGUIManagedObject(ucgRuleID, date, tenantID); }
+  public Collection<UCGRule> getActiveUCGRules(Date date, int tenantID) { return (Collection<UCGRule>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -120,7 +120,7 @@ public class UCGRuleService extends GUIService
   *
   *****************************************/
 
-  public void putUCGRule(GUIManagedObject ucgRule, SegmentationDimensionService segmentationDimensionService, boolean newObject, String userID) throws GUIManagerException
+  public void putUCGRule(GUIManagedObject ucgRule, SegmentationDimensionService segmentationDimensionService, boolean newObject, String userID, int tenantID) throws GUIManagerException
   {
     //
     //  now
@@ -134,14 +134,14 @@ public class UCGRuleService extends GUIService
 
     if (ucgRule instanceof UCGRule)
       {
-        ((UCGRule) ucgRule).validate(this, segmentationDimensionService, now);
+        ((UCGRule) ucgRule).validate(this, segmentationDimensionService, now, tenantID);
       }
 
     //
     //  put
     //
 
-    putGUIManagedObject(ucgRule, now, newObject, userID);
+    putGUIManagedObject(ucgRule, now, newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -150,11 +150,11 @@ public class UCGRuleService extends GUIService
   *
   *****************************************/
 
-  public void putUCGRule(IncompleteObject ucgRule, SegmentationDimensionService segmentationDimensionService, boolean newObject, String userID)
+  public void putUCGRule(IncompleteObject ucgRule, SegmentationDimensionService segmentationDimensionService, boolean newObject, String userID, int tenantID)
   {
     try
       {
-        putUCGRule((GUIManagedObject) ucgRule, segmentationDimensionService, newObject, userID);
+        putUCGRule((GUIManagedObject) ucgRule, segmentationDimensionService, newObject, userID, tenantID);
       }
     catch (GUIManagerException e)
       {
@@ -168,7 +168,7 @@ public class UCGRuleService extends GUIService
   *
   *****************************************/
 
-  public void removeUCGRule(String ucgRule, String userID) { removeGUIManagedObject(ucgRule, SystemTime.getCurrentTime(), userID); }
+  public void removeUCGRule(String ucgRule, String userID, int tenantID) { removeGUIManagedObject(ucgRule, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

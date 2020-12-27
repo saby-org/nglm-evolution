@@ -592,7 +592,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.initialPropensity = getValidPropensity(JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", false));
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
+    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true), tenantID);
     this.offerOfferObjectives = decodeOfferObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectives", true), catalogCharacteristicService, tenantID);
     this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
     this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
@@ -622,12 +622,12 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray) throws GUIManagerException
+  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.DynamicProfile));
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.DynamicProfile.get(tenantID)));
       }
     return result;
   }
@@ -768,7 +768,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public void validate(CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, Date date) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, Date date, int tenantID) throws GUIManagerException
   {
     // TODO validate offerCharacteristics
     
@@ -787,7 +787,7 @@ public class Offer extends GUIManagedObject implements StockableItem
             //  retrieve salesChannel
             //
 
-            SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, date);
+            SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, date, tenantID);
 
             //
             //  validate the salesChannel exists and is active
@@ -832,7 +832,7 @@ public class Offer extends GUIManagedObject implements StockableItem
           //  retrieve product
           //
 
-          GUIManagedObject product = productService.getStoredProduct(offerProduct.getProductID());
+          GUIManagedObject product = productService.getStoredProduct(offerProduct.getProductID(), tenantID);
 
           //
           //  validate the product exists
@@ -862,7 +862,7 @@ public class Offer extends GUIManagedObject implements StockableItem
           //  retrieve voucher
           //
 
-          GUIManagedObject voucher = voucherService.getStoredVoucher(offerVoucher.getVoucherID());
+          GUIManagedObject voucher = voucherService.getStoredVoucher(offerVoucher.getVoucherID(), tenantID);
 
           //
           //  validate the voucher exists

@@ -96,7 +96,7 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  protected SubscriberMessage(Object subscriberMessageJSON, String communicationChannelID, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  protected SubscriberMessage(Object subscriberMessageJSON, String communicationChannelID, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     this.communicationChannelID = communicationChannelID;
     
@@ -119,14 +119,14 @@ public abstract class SubscriberMessage
         //
 
         subscriberMessageTemplateID = JSONUtilities.decodeString(messageJSON, "templateID", true);
-        SubscriberMessageTemplate subscriberMessageTemplate = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(subscriberMessageTemplateID, SystemTime.getCurrentTime());
+        SubscriberMessageTemplate subscriberMessageTemplate = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(subscriberMessageTemplateID, SystemTime.getCurrentTime(), tenantID);
         if (subscriberMessageTemplate == null) throw new GUIManagerException("unknown subscriberMessageTemplate", subscriberMessageTemplateID);
 
         //
         //  parameterTags
         //
         
-        parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "macros", new JSONArray()), subscriberMessageTemplate, criterionContext);
+        parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "macros", new JSONArray()), subscriberMessageTemplate, criterionContext, tenantID);
       }
     
     /*****************************************
@@ -152,7 +152,7 @@ public abstract class SubscriberMessage
         for (String dialogMessageField : dialogMessageFields.keySet())
           {
             boolean mandatory = dialogMessageFields.get(dialogMessageField);
-            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext, true));
+            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext, true, tenantID));
           }
       }
   }
@@ -164,7 +164,7 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  private SimpleParameterMap decodeParameterTags(JSONArray jsonArray, SubscriberMessageTemplate subscriberMessageTemplate, CriterionContext criterionContext) throws GUIManagerException
+  private SimpleParameterMap decodeParameterTags(JSONArray jsonArray, SubscriberMessageTemplate subscriberMessageTemplate, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -213,7 +213,7 @@ public abstract class SubscriberMessage
                   String parameterValue = JSONUtilities.decodeString(parameterJSON, "campaignValue", false);
                   
                   // check if the value refers a criterion or a simple String...
-                  CriterionField tagCriterionField = criterionContext.getCriterionFields().get(parameterValue);
+                  CriterionField tagCriterionField = criterionContext.getCriterionFields(tenantID).get(parameterValue);
                   
                   if(tagCriterionField != null) {
                     ParameterExpression parameterExpression = new ParameterExpression(parameterValue, null, criterionContext);
@@ -364,8 +364,8 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  protected SubscriberMessageTemplate resolveTemplate(EvolutionEventContext evolutionEventContext)
+  protected SubscriberMessageTemplate resolveTemplate(EvolutionEventContext evolutionEventContext, int tenantID)
   {
-    return evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getSubscriberMessageTemplateID(), evolutionEventContext.now());
+    return evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getSubscriberMessageTemplateID(), evolutionEventContext.now(), tenantID);
   }
 }

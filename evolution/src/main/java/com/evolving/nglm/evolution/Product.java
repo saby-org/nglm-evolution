@@ -268,7 +268,7 @@ public class Product extends GUIManagedObject implements StockableItem
     if (deliverableID == null)
       {
         String deliverableName = JSONUtilities.decodeString(jsonRoot, "deliverableName", true);
-        GUIManagedObject deliverableUnchecked = deliverableService.getStoredDeliverableByName(deliverableName);
+        GUIManagedObject deliverableUnchecked = deliverableService.getStoredDeliverableByName(deliverableName, tenantID);
         Deliverable deliverable = (deliverableUnchecked != null && deliverableUnchecked.getAccepted()) ? (Deliverable) deliverableUnchecked : null;
         if (deliverable == null) JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
         this.deliverableID = deliverable.getDeliverableID();
@@ -336,7 +336,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public void validate(SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, Date date) throws GUIManagerException
+  public void validate(SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, Date date, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -344,7 +344,7 @@ public class Product extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    if (supplierService.getActiveSupplier(supplierID, date) == null) throw new GUIManagerException("unknown supplier", supplierID);
+    if (supplierService.getActiveSupplier(supplierID, date, tenantID) == null) throw new GUIManagerException("unknown supplier", supplierID);
     
     /*****************************************
     *
@@ -354,7 +354,7 @@ public class Product extends GUIManagedObject implements StockableItem
 
     for (ProductTypeInstance productTypeInstance : productTypes)
       {
-        if (productTypeService.getActiveProductType(productTypeInstance.getProductTypeID(), date) == null) throw new GUIManagerException("unknown product type", productTypeInstance.getProductTypeID());
+        if (productTypeService.getActiveProductType(productTypeInstance.getProductTypeID(), date, tenantID) == null) throw new GUIManagerException("unknown product type", productTypeInstance.getProductTypeID());
       }
 
     /****************************************
@@ -367,7 +367,7 @@ public class Product extends GUIManagedObject implements StockableItem
     //  retrieve deliverable
     //
     
-    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
 
     //
     //  validate the deliverable exists

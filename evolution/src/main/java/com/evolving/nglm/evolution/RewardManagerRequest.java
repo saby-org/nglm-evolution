@@ -452,7 +452,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       *****************************************/
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
       String newModuleID = moduleID;
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {
@@ -479,7 +479,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
           // Debit => check in paymentMean list
           //
           
-          paymentMean = evolutionEventContext.getPaymentMeanService().getActivePaymentMean(commodityID, SystemTime.getCurrentTime());
+          paymentMean = evolutionEventContext.getPaymentMeanService().getActivePaymentMean(commodityID, SystemTime.getCurrentTime(), subscriberEvaluationRequest.getTenantID());
           if(paymentMean == null){
             log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
             return new ArrayList<ActionManager.Action>();

@@ -15,7 +15,7 @@ public class CustomerPointDetailsDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(CustomerPointDetailsDriver.class);
 
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.debug("Processing CustomerPointDetails Report with "+report.getName());
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();

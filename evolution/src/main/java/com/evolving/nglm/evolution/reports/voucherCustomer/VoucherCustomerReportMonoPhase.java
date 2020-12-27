@@ -57,7 +57,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
    ****************************************/
 
  
-  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
   {
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
     LinkedHashMap<String, Object> commonFields = new LinkedHashMap<>();
@@ -104,7 +104,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                         if (voucher.containsKey("voucherID") && voucher.get("voucherID") != null)
                           {
                             GUIManagedObject voucherObject = voucherService
-                                .getStoredVoucher((String) voucher.get("voucherID"));
+                                .getStoredVoucher((String) voucher.get("voucherID"), tenantID);
                             if (voucherObject != null && voucherObject instanceof Voucher)
                               {
                                 currentVoucher = (Voucher) voucherObject;
@@ -116,7 +116,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           }
                         if (supplierID != null)
                           {
-                            GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+                            GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID, tenantID);
 
                             if (supplierObject != null && supplierObject instanceof Supplier)
                               {
@@ -158,7 +158,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                         if (currentVoucher != null && currentVoucher instanceof Voucher)
                           {
                             GUIManagedObject voucherTypeObject = voucherTypeService
-                                .getStoredVoucherType(currentVoucher.getVoucherTypeId());
+                                .getStoredVoucherType(currentVoucher.getVoucherTypeId(), tenantID);
                             if (voucherTypeObject != null && voucherTypeObject instanceof VoucherType)
                               {
                                 result.put("voucherType",

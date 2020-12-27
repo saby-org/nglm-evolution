@@ -122,7 +122,7 @@ public class TargetService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { targetListener.targetActivated((Target) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { targetListener.targetDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { targetListener.targetDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -135,13 +135,13 @@ public class TargetService extends GUIService
   *****************************************/
 
   public String generateTargetID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredTarget(String targetID) { return getStoredGUIManagedObject(targetID); }
-  public GUIManagedObject getStoredTarget(String targetID, boolean includeArchived) { return getStoredGUIManagedObject(targetID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredTargets() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredTargets(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredTarget(String targetID, int tenantID) { return getStoredGUIManagedObject(targetID, tenantID); }
+  public GUIManagedObject getStoredTarget(String targetID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(targetID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredTargets(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredTargets(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveTarget(GUIManagedObject targetUnchecked, Date date) { return isActiveGUIManagedObject(targetUnchecked, date); }
-  public Target getActiveTarget(String targetID, Date date) { return (Target) getActiveGUIManagedObject(targetID, date); }
-  public Collection<Target> getActiveTargets(Date date) { return (Collection<Target>) getActiveGUIManagedObjects(date); }
+  public Target getActiveTarget(String targetID, Date date, int tenantID) { return (Target) getActiveGUIManagedObject(targetID, date, tenantID); }
+  public Collection<Target> getActiveTargets(Date date, int tenantID) { return (Collection<Target>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -149,7 +149,7 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public void putTarget(GUIManagedObject target, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID) throws GUIManagerException
+  public void putTarget(GUIManagedObject target, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID, int tenantID) throws GUIManagerException
   {
     this.uploadedFileService = uploadedFileService;
     this.subscriberIDService = subscriberIDService;
@@ -166,14 +166,14 @@ public class TargetService extends GUIService
 
     if (target instanceof Target)
       {
-        ((Target) target).validate(uploadedFileService, now);
+        ((Target) target).validate(uploadedFileService, now, tenantID);
       }
     
     //
     //  put
     //
 
-    putGUIManagedObject(target, now, newObject, userID);
+    putGUIManagedObject(target, now, newObject, userID, tenantID);
 
     //
     //  process file
@@ -191,11 +191,11 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public void putTarget(IncompleteObject target, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID)
+  public void putTarget(IncompleteObject target, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID, int tenantID)
   {
     try
       {
-        putTarget((GUIManagedObject) target, uploadedFileService, subscriberIDService, newObject, userID);
+        putTarget((GUIManagedObject) target, uploadedFileService, subscriberIDService, newObject, userID, tenantID);
       }
     catch (GUIManagerException e)
       {
@@ -209,7 +209,7 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public void removeTarget(String targetID, String userID) { removeGUIManagedObject(targetID, SystemTime.getCurrentTime(), userID); }
+  public void removeTarget(String targetID, String userID, int tenantID) { removeGUIManagedObject(targetID, SystemTime.getCurrentTime(), userID, tenantID); }
   
   /*****************************************
   *
@@ -303,7 +303,7 @@ public class TargetService extends GUIService
             
             if(target.getTargetFileID() != null)
               {
-                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(target.getTargetFileID());
+                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(target.getTargetFileID(), target.getTenantID());
                 if (uploadedFile == null)
                   { 
                     log.warn("TargetService.run(uploaded file not found, processing done)");

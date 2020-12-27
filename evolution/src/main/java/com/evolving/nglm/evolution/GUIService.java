@@ -493,20 +493,6 @@ public class GUIService
 
   public void putGUIManagedObject(GUIManagedObject guiManagedObject, Date date, boolean newObject, String userID, int tenantID)
   {
-    ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
-    if(storedGUIManagedObjects == null)
-      {
-        synchronized (this)
-          {
-            storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
-            if(storedGUIManagedObjects == null) 
-              { 
-                storedGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
-                storedPerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
-              }
-          }
-      }
-    
     //
     //  created/updated date
     //
@@ -621,20 +607,6 @@ public class GUIService
         //  created/updated dates
         //
 
-        ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
-        if(storedGUIManagedObjects == null)
-          {
-            synchronized (this)
-              {
-                storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
-                if(storedGUIManagedObjects == null) 
-                  { 
-                    storedGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
-                    storedPerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
-                  }
-              }
-          }
-        
         GUIManagedObject existingStoredGUIManagedObject = storedGUIManagedObjects.get(guiManagedObjectID);
         guiManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
         guiManagedObject.setUpdatedDate(date);
@@ -675,58 +647,16 @@ public class GUIService
         //
         //  existingActiveGUIManagedObject
         //
-        
-        ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(tenantID);
-        if(activeGUIManagedObjects == null)
-          {
-            synchronized (this)
-              {
-                activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(tenantID);
-                if(activeGUIManagedObjects == null) 
-                  { 
-                    activeGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
-                    activePerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
-                  }
-              }
-          }
 
         GUIManagedObject existingActiveGUIManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
 
         //
         //  clear
         //
-        
-        ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(tenantID);
-        if(interruptedGUIManagedObjects == null)
-          {
-            synchronized (this)
-              {
-                interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(tenantID);
-                if(interruptedGUIManagedObjects == null) 
-                  { 
-                    interruptedGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
-                    interruptedPerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
-                  }
-              }
-          }
 
         if (!inActivePeriod || active || future)
           {
             interruptedGUIManagedObjects.remove(guiManagedObjectID);
-          }
-        
-        ConcurrentHashMap<String,GUIManagedObject> availableGUIManagedObjects = availablePerTenantGUIManagedObjects.get(tenantID);
-        if(availableGUIManagedObjects == null)
-          {
-            synchronized (this)
-              {
-                availableGUIManagedObjects = availablePerTenantGUIManagedObjects.get(tenantID);
-                if(availableGUIManagedObjects == null) 
-                  { 
-                    availableGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>();
-                    availablePerTenantGUIManagedObjects.put(tenantID, storedGUIManagedObjects);
-                  }
-              }
           }
 
         if (!active)
@@ -735,7 +665,7 @@ public class GUIService
             activeGUIManagedObjects.remove(guiManagedObjectID);
             if (existingActiveGUIManagedObject != null){
               if(inActivePeriod) interruptedGUIManagedObjects.put(guiManagedObjectID,existingActiveGUIManagedObject);
-              notifyListener(new IncompleteObject(guiManagedObjectID, tenantID));
+              notifyListener(new IncompleteObject(guiManagedObjectID));
             }
           }
 
@@ -1033,18 +963,7 @@ public class GUIService
             //
 
             ScheduleEntry entry = schedule.pollFirst();
-            GUIManagedObject guiManagedObject = null;
-            ConcurrentHashMap<String,GUIManagedObject> availableGUIManagedObjects = availablePerTenantGUIManagedObjects.get(entry.getTenantID());
-            if(availableGUIManagedObjects == null) { availableGUIManagedObjects = new ConcurrentHashMap<String, GUIManagedObject>(); }           
-            
-            ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(entry.getTenantID());
-            if(activeGUIManagedObjects == null) { activeGUIManagedObjects = new ConcurrentHashMap<>(); }
-            
-            ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(entry.getTenantID());
-            if(interruptedGUIManagedObjects == null) { interruptedGUIManagedObjects = new ConcurrentHashMap<>(); }
-            
-            guiManagedObject = availableGUIManagedObjects.get(entry.getGUIManagedObjectID());
-            
+            GUIManagedObject guiManagedObject = availableGUIManagedObjects.get(entry.getGUIManagedObjectID());
             if (guiManagedObject != null)
               {
 

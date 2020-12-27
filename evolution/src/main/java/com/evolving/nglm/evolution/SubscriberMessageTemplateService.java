@@ -93,7 +93,7 @@ public class SubscriberMessageTemplateService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { templateListener.messageTemplateActivated((SubscriberMessageTemplate) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { templateListener.messageTemplateDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { templateListener.messageTemplateDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -122,12 +122,12 @@ public class SubscriberMessageTemplateService extends GUIService
 
   public String generateSubscriberMessageTemplateID() { return generateGUIManagedObjectID(); }
   public boolean isActiveSubscriberMessageTemplate(GUIManagedObject templateUnchecked, Date date) { return isActiveGUIManagedObject(templateUnchecked, date); }
-  public GUIManagedObject getStoredSubscriberMessageTemplate(String templateID) { return getStoredGUIManagedObject(templateID); }
-  public GUIManagedObject getStoredSubscriberMessageTemplate(String templateID, boolean includeArchived) { return getStoredGUIManagedObject(templateID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredSubscriberMessageTemplates() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredSubscriberMessageTemplates(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
-  public SubscriberMessageTemplate getActiveSubscriberMessageTemplate(String templateID, Date date) { return (SubscriberMessageTemplate) getActiveGUIManagedObject(templateID, date); }
-  public Collection<SubscriberMessageTemplate> getActiveSubscriberMessageTemplates(Date date) { return (Collection<SubscriberMessageTemplate>) getActiveGUIManagedObjects(date); }
+  public GUIManagedObject getStoredSubscriberMessageTemplate(String templateID, int tenantID) { return getStoredGUIManagedObject(templateID, tenantID); }
+  public GUIManagedObject getStoredSubscriberMessageTemplate(String templateID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(templateID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredSubscriberMessageTemplates(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredSubscriberMessageTemplates(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
+  public SubscriberMessageTemplate getActiveSubscriberMessageTemplate(String templateID, Date date, int tenantID) { return (SubscriberMessageTemplate) getActiveGUIManagedObject(templateID, date, tenantID); }
+  public Collection<SubscriberMessageTemplate> getActiveSubscriberMessageTemplates(Date date, int tenantID) { return (Collection<SubscriberMessageTemplate>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -135,7 +135,7 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public void putSubscriberMessageTemplate(SubscriberMessageTemplate template, boolean newObject, String userID) throws GUIManagerException
+  public void putSubscriberMessageTemplate(SubscriberMessageTemplate template, boolean newObject, String userID, int tenantID) throws GUIManagerException
   {
     //
     //  now
@@ -147,7 +147,7 @@ public class SubscriberMessageTemplateService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(template, now, newObject, userID);
+    putGUIManagedObject(template, now, newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -156,9 +156,9 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteSubscriberMessageTemplate(IncompleteObject template, boolean newObject, String userID)
+  public void putIncompleteSubscriberMessageTemplate(IncompleteObject template, boolean newObject, String userID, int tenantID)
   {
-    putGUIManagedObject(template, SystemTime.getCurrentTime(), newObject, userID);
+    putGUIManagedObject(template, SystemTime.getCurrentTime(), newObject, userID, tenantID);
   }
 
   /*****************************************
@@ -167,7 +167,7 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public void removeSubscriberMessageTemplate(String templateID, String userID) { removeGUIManagedObject(templateID, SystemTime.getCurrentTime(), userID); }
+  public void removeSubscriberMessageTemplate(String templateID, String userID, int tenantID) { removeGUIManagedObject(templateID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *
@@ -175,10 +175,10 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public Collection<GUIManagedObject> getStoredMailTemplates(boolean externalOnly, boolean includeArchived)
+  public Collection<GUIManagedObject> getStoredMailTemplates(boolean externalOnly, boolean includeArchived, int tenantID)
   {
     Set<GUIManagedObject> result = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived))
+    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived, tenantID))
       {
         switch (template.getGUIManagedObjectType())
           {
@@ -199,10 +199,10 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public Collection<GUIManagedObject> getStoredSMSTemplates(boolean externalOnly, boolean includeArchived)
+  public Collection<GUIManagedObject> getStoredSMSTemplates(boolean externalOnly, boolean includeArchived, int tenantID)
   {
     Set<GUIManagedObject> result = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived))
+    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived, tenantID))
       {
         switch (template.getGUIManagedObjectType())
           {
@@ -223,10 +223,10 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public Collection<GUIManagedObject> getStoredPushTemplates(boolean externalOnly, boolean includeArchived)
+  public Collection<GUIManagedObject> getStoredPushTemplates(boolean externalOnly, boolean includeArchived, int tenantID)
   {
     Set<GUIManagedObject> result = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived))
+    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived, tenantID))
       {
         switch (template.getGUIManagedObjectType())
           {
@@ -247,10 +247,10 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public Collection<GUIManagedObject> getStoredDialogTemplates(boolean externalOnly, boolean includeArchived)
+  public Collection<GUIManagedObject> getStoredDialogTemplates(boolean externalOnly, boolean includeArchived, int tenantID)
   {
     Set<GUIManagedObject> result = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived))
+    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived, tenantID))
       {
         switch (template.getGUIManagedObjectType())
           {

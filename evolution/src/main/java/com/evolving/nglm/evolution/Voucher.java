@@ -109,9 +109,9 @@ public abstract class Voucher extends GUIManagedObject {
   }
 
   // trying to enforce commonValidate usage in subclasses, no perfect way Im aware of...
-  abstract void validate(VoucherTypeService voucherService, UploadedFileService uploadedFileService, Date now) throws GUIManagerException;
-  public void commonValidate(VoucherTypeService voucherTypeService, Date date) throws GUIManagerException {
-    VoucherType voucherType = voucherTypeService.getActiveVoucherType(getVoucherTypeId(), date);
+  abstract void validate(VoucherTypeService voucherService, UploadedFileService uploadedFileService, Date now, int tenantID) throws GUIManagerException;
+  public void commonValidate(VoucherTypeService voucherTypeService, Date date, int tenantID) throws GUIManagerException {
+    VoucherType voucherType = voucherTypeService.getActiveVoucherType(getVoucherTypeId(), date, tenantID);
     if(voucherType==null || voucherType.getCodeType().equals(VoucherType.CodeType.Unknown)) throw new GUIManagerException("unknown voucherType", getVoucherTypeId());
   }
   @Override public Map<String, List<String>> getGUIDependencies()

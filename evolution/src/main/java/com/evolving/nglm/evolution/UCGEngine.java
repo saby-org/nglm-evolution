@@ -207,7 +207,7 @@ public class UCGEngine
     try
       {
         elasticsearchRestClient = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
-        subscriberGroupField = CriterionContext.Profile.getCriterionFields().get("subscriber.segments").getESField();
+        subscriberGroupField = CriterionContext.Profile.get(0).getCriterionFields(0).get("subscriber.segments").getESField(); // EVPRO-99 groupe field subscriber.segment is the same for all tenant, no need to make a special case for each tenant
       }
     catch (ElasticsearchException e)
       {
@@ -329,7 +329,7 @@ public class UCGEngine
         //
 
         UCGRule activeUCGRule = null;
-        for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now))
+        for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now, 0)) // for all tenant // TODO EVPRO-99 seems only one rule is expected by tenant, here only one tenant...
           {
             activeUCGRule = ucgRule;
           }
@@ -428,7 +428,7 @@ public class UCGEngine
         for (String dimensionID : ucgRule.getSelectedDimensions())
           {
             Set<String> segmentIDs = new HashSet<String>();
-            SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now);
+            SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now, 0); // let do it for all tenant
             if (dimension != null)
               {
                 for (Segment segment : dimension.getSegments())

@@ -32,13 +32,13 @@ public class RetentionService {
 		SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
 
 		//journeys
-		boolean subscriberUpdated = !filterOutRetentionOver(subscriberState.getRecentJourneyStates().iterator(), RetentionType.KAFKA_DELETION).isEmpty();
+		boolean subscriberUpdated = !filterOutRetentionOver(subscriberState.getRecentJourneyStates().iterator(), RetentionType.KAFKA_DELETION, subscriberProfile.getTenantID()).isEmpty();
 
 		// those for journeys are kept forever till campaign is deleted
 		Iterator<String> iterator = subscriberProfile.getSubscriberJourneys().keySet().iterator();
 		while(iterator.hasNext()){
 			String journeyId = iterator.next();
-			if(journeyService.getStoredJourney(journeyId)==null){
+			if(journeyService.getStoredJourney(journeyId, subscriberProfile.getTenantID())==null){
 				iterator.remove();
 				subscriberProfile.getSubscriberJourneysEnded().remove(journeyId);// they should all be in as well
 			}
@@ -46,7 +46,7 @@ public class RetentionService {
 		iterator = subscriberProfile.getSubscriberJourneysEnded().keySet().iterator();
 		while(iterator.hasNext()){
 			String journeyId = iterator.next();
-			if(journeyService.getStoredJourney(journeyId)==null){
+			if(journeyService.getStoredJourney(journeyId, subscriberProfile.getTenantID())==null){
 				iterator.remove();
 				subscriberProfile.getSubscriberJourneysEnded().remove(journeyId);
 			}
@@ -55,17 +55,17 @@ public class RetentionService {
 		//TODO tokens (yet there are cleaned as soon as "burned", and logic rely on that, so more complicated to apply EVPRO-325 retention)
 
 		// loyalties
-		subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getLoyaltyPrograms().values().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
+		subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getLoyaltyPrograms().values().iterator(), Cleanable.RetentionType.KAFKA_DELETION, subscriberProfile.getTenantID()).isEmpty() || subscriberUpdated;
 
 		// vouchers
-		subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getVouchers().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
+		subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getVouchers().iterator(), Cleanable.RetentionType.KAFKA_DELETION, subscriberProfile.getTenantID()).isEmpty() || subscriberUpdated;
 
 		return subscriberUpdated;
 
 	}
 
 	// the kafka subscriberHistory clean up
-	public boolean cleanSubscriberHistory(SubscriberHistory subscriberHistory){
+	public boolean cleanSubscriberHistory(SubscriberHistory subscriberHistory, int tenantID){
 
 		if(log.isTraceEnabled()) log.trace("cleanSubscriberHistory called for "+subscriberHistory.getSubscriberID());
 
@@ -85,22 +85,22 @@ public class RetentionService {
 		// ------ END CLEANING COULD BE REMOVED
 
 		// deliveryRequest
-		subscriberUpdated = !filterOutRetentionOver(subscriberHistory.getDeliveryRequests().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
+		subscriberUpdated = !filterOutRetentionOver(subscriberHistory.getDeliveryRequests().iterator(), Cleanable.RetentionType.KAFKA_DELETION, tenantID).isEmpty() || subscriberUpdated;
 
 		// journeyStatistics
-		subscriberUpdated = !filterOutRetentionOver(subscriberHistory.getJourneyHistory().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
+		subscriberUpdated = !filterOutRetentionOver(subscriberHistory.getJourneyHistory().iterator(), Cleanable.RetentionType.KAFKA_DELETION, tenantID).isEmpty() || subscriberUpdated;
 
 		return subscriberUpdated;
 
 	}
 
-	private <T extends Cleanable> Collection<T> filterOutRetentionOver(Iterator<T> cleanableIterator, RetentionType retentionType){
+	private <T extends Cleanable> Collection<T> filterOutRetentionOver(Iterator<T> cleanableIterator, RetentionType retentionType, int tenantID){
 		Collection<T> toRet=new ArrayList<>();
 		if(cleanableIterator==null || retentionType==null) return toRet;
 		while(cleanableIterator.hasNext()){
 			T toCheck = cleanableIterator.next();
-			if(isRetentionPeriodOver(toCheck,retentionType)){
-				if(log.isTraceEnabled()) log.trace("RetentionService.filterOutRetentionOver : filtering out "+toCheck.getClass().getSimpleName()+" for "+retentionType+", expirationDate : "+toCheck.getExpirationDate(this)+", now : "+SystemTime.getCurrentTime());
+			if(isRetentionPeriodOver(toCheck,retentionType, tenantID)){
+				if(log.isTraceEnabled()) log.trace("RetentionService.filterOutRetentionOver : filtering out "+toCheck.getClass().getSimpleName()+" for "+retentionType+", expirationDate : "+toCheck.getExpirationDate(this, tenantID)+", now : "+SystemTime.getCurrentTime());
 				cleanableIterator.remove();
 				toRet.add(toCheck);
 			}
@@ -108,20 +108,20 @@ public class RetentionService {
 		return toRet;
 	}
 
-	private boolean isRetentionPeriodOver(Cleanable cleanable, RetentionType retentionType){
-		if(cleanable==null||cleanable.getExpirationDate(this)==null||retentionType==null||cleanable.getRetention(retentionType,this)==null) return false;
-		Date cleanBeforeThisDate = EvolutionUtilities.removeTime(SystemTime.getCurrentTime(),cleanable.getRetention(retentionType,this));
-		return cleanable.getExpirationDate(this).before(cleanBeforeThisDate);
+	private boolean isRetentionPeriodOver(Cleanable cleanable, RetentionType retentionType, int tenantID){
+		if(cleanable==null||cleanable.getExpirationDate(this, tenantID)==null||retentionType==null||cleanable.getRetention(retentionType,this, tenantID)==null) return false;
+		Date cleanBeforeThisDate = EvolutionUtilities.removeTime(SystemTime.getCurrentTime(),cleanable.getRetention(retentionType,this, tenantID));
+		return cleanable.getExpirationDate(this, tenantID).before(cleanBeforeThisDate);
 	}
 
-	public boolean isExpired(Expirable expirable){
-		if(expirable==null||expirable.getExpirationDate(this)==null) return false;
-		return SystemTime.getCurrentTime().after(expirable.getExpirationDate(this));
+	public boolean isExpired(Expirable expirable, int tenantID){
+		if(expirable==null||expirable.getExpirationDate(this, tenantID)==null) return false;
+		return SystemTime.getCurrentTime().after(expirable.getExpirationDate(this, tenantID));
 	}
 
 	// this is shared code hence grouped
-	public Duration getJourneyRetention(RetentionType type, String journeyID) {
-		GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+	public Duration getJourneyRetention(RetentionType type, String journeyID, int tenantID) {
+		GUIManagedObject journey = journeyService.getStoredJourney(journeyID, tenantID);
 		if(journey==null) return java.time.Duration.ofDays(Integer.MIN_VALUE);//deleted journey clean now
 		switch (type){
 			case KAFKA_DELETION:

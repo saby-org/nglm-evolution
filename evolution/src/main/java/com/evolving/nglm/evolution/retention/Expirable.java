@@ -4,6 +4,6 @@ import java.util.Date;
 
 public interface Expirable {
 
-	Date getExpirationDate(RetentionService retentionService);
+	Date getExpirationDate(RetentionService retentionService, int tenantID);
 
 }

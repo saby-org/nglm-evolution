@@ -88,7 +88,7 @@ public class ContactPolicyProcessor
         Set<JourneyObjectiveInstance> journeyObjectivesInstances = journey.getJourneyObjectiveInstances();
         for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectivesInstances)
           {
-            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now);
+            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now, tenantID);
             if (this.evaluateChildParentsContactPolicies(channelId, journeyObjective, requestMetricHistory, now, tenantID))
               {
                 return true;
@@ -122,7 +122,7 @@ public class ContactPolicyProcessor
         String contactPolicyId = journeyObjective.getContactPolicyID();
         if (returnValue = isBlockedByContactPolicy(contactPolicyId, channelID, evaluationDate, requestMetricHistory, tenantID))
           break;
-        journeyObjective = journeyObjective.getParentJourneyObjectiveID() != null ? journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), evaluationDate) : null;
+        journeyObjective = journeyObjective.getParentJourneyObjectiveID() != null ? journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), evaluationDate, tenantID) : null;
       }
     return returnValue;
   }
@@ -183,7 +183,7 @@ public class ContactPolicyProcessor
     returnObjectives.add(journeyObjective);
     if (journeyObjective.getParentJourneyObjectiveID() != null)
       {
-        returnObjectives.addAll(getParentChildObjectives(journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), date), date));
+        returnObjectives.addAll(getParentChildObjectives(journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), date, journeyObjective.getTenantID()), date));
       }
     return returnObjectives;
   }

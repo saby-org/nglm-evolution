@@ -251,7 +251,7 @@ public class SubscriberGroupLoader
       {
         case SegmentationDimension:
           SegmentationDimensionService segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "subscribergrouploader-segmentationdimension-" + Long.toString(uniqueKeyServer.getKey()), Deployment.getSegmentationDimensionTopic(), false);
-          for (SegmentationDimension candidateDimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
+          for (SegmentationDimension candidateDimension : segmentationDimensionService.getActiveSegmentationDimensions(now, 0))
             {
               if (Objects.equals(candidateDimension.getSegmentationDimensionName(), groupName))
                 {
@@ -269,7 +269,7 @@ public class SubscriberGroupLoader
 
         case Target:
           TargetService targetService = new TargetService(bootstrapServers, "subscribergrouploader-target-" + Long.toString(uniqueKeyServer.getKey()), Deployment.getTargetTopic(), false);
-          for (Target candidateTarget : targetService.getActiveTargets(now))
+          for (Target candidateTarget : targetService.getActiveTargets(now, 0))
             {
               if (Objects.equals(candidateTarget.getTargetName(), groupName))
                 {

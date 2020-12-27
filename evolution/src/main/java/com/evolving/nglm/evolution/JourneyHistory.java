@@ -105,11 +105,11 @@ public class JourneyHistory implements Cleanable
     return result;
   }
 
-  @Override public Date getExpirationDate(RetentionService retentionService) {
-    return getJourneyExitDate(retentionService.getJourneyService());
+  @Override public Date getExpirationDate(RetentionService retentionService, int tenantID) {
+    return getJourneyExitDate(retentionService.getJourneyService(), tenantID);
   }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
-    return retentionService.getJourneyRetention(type,getJourneyID());
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService, int tenantID) {
+    return retentionService.getJourneyRetention(type,getJourneyID(), tenantID);
   }
   
   /*****************************************
@@ -373,14 +373,14 @@ public class JourneyHistory implements Cleanable
    * 
    * @return RewardHistory if a reward has been added in reward history, null otherwise
    */
-  public RewardHistory addRewardInformation(DeliveryRequest deliveryRequest, DeliverableService deliverableService, Date now)
+  public RewardHistory addRewardInformation(DeliveryRequest deliveryRequest, DeliverableService deliverableService, Date now, int tenantID)
   {
     RewardHistory history = null;
     if(deliveryRequest instanceof CommodityDeliveryRequest) {
       CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
       
       // This part was based on addFieldsForGUIPresentation of CommodityDeliveryManager class, this could be factorized.
-      Deliverable deliverable = deliverableService.getActiveDeliverable(request.getCommodityID(), now);
+      Deliverable deliverable = deliverableService.getActiveDeliverable(request.getCommodityID(), now, tenantID);
       String deliverableDisplay = deliverable != null ? deliverable.getGUIManagedObjectDisplay() : request.getCommodityID();
       
       history = new RewardHistory(deliverableDisplay, request.getAmount(), request.getDeliveryDate());
@@ -389,7 +389,7 @@ public class JourneyHistory implements Cleanable
       RewardManagerRequest request = (RewardManagerRequest) deliveryRequest;
       // THIS IS SHITTY a FUCKING hack for the RewardManager
       // This part was based on addFieldsForGUIPresentation of CommodityDeliveryManager class, this could be factorized.
-      Deliverable deliverable = deliverableService.getActiveDeliverable(request.getDeliverableID(), now);
+      Deliverable deliverable = deliverableService.getActiveDeliverable(request.getDeliverableID(), now, tenantID);
       String deliverableDisplay = deliverable != null ? deliverable.getGUIManagedObjectDisplay() : request.getDeliverableID();
       
       history = new RewardHistory(deliverableDisplay, (int)request.getAmount(), request.getDeliveryDate());
@@ -553,14 +553,14 @@ public class JourneyHistory implements Cleanable
   }
   */
   //TODO: this is probably a bad workarround but I can not modify status without checking all reporting and so
-  public Date getJourneyExitDate(JourneyService journeyService)
+  public Date getJourneyExitDate(JourneyService journeyService, int tenantID)
   {
     NodeHistory latestNodeEntered = getLastNodeEntered();
     if(log.isTraceEnabled()) log.trace("JourneyHistory.getJourneyExitDate : "+getJourneyID()+" latestNodeEntered "+latestNodeEntered+getJourneyID());
     if(latestNodeEntered==null) return null;
     if(log.isTraceEnabled()) log.trace("JourneyHistory.getJourneyExitDate : "+getJourneyID()+" latestNodeEntered.getToNodeID() "+latestNodeEntered.getToNodeID());
     if(latestNodeEntered.getToNodeID()==null) return null;
-    GUIManagedObject guiManagedObject = journeyService.getStoredJourney(getJourneyID());
+    GUIManagedObject guiManagedObject = journeyService.getStoredJourney(getJourneyID(), tenantID);
     if(guiManagedObject==null){
       if(log.isDebugEnabled()) log.debug("JourneyHistory.getJourneyExitDate : "+getJourneyID()+" deleted campaign, returning current date");
       return SystemTime.getCurrentTime();

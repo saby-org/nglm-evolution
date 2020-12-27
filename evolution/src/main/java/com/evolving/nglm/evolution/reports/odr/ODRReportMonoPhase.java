@@ -143,9 +143,9 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   * dumpElementToCsv
   *
   ****************************************/
- public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
  {
-   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map, tenantID);  
    if(mapLocal.size() != 1) {
 	   log.debug("We have multiple dates in the same index " + mapLocal.size());
    } else {
@@ -164,7 +164,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
 					   log.debug("We have multiple reports in this folder " + list.size());
 				   } else {
 					   Map<String, Object> reportMap = list.get(0);
-					   dumpLineToCsv(reportMap, writer, addHeaders);
+					   dumpLineToCsv(reportMap, writer, addHeaders, tenantID);
 					   return false;
 				   }
 			   }
@@ -175,7 +175,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
  }
  
  
-  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
+  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders, int tenantID)
   {
     try
       {
@@ -193,7 +193,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       }
   }
   
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> odrFields = map;
@@ -355,7 +355,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
             if (odrFields.get(salesChannelID) != null)
               {
                 GUIManagedObject salesChannelObject = salesChannelService
-                    .getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
+                    .getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)), tenantID);
                 if (salesChannelObject != null && salesChannelObject instanceof SalesChannel)
                   {
                     oderRecs.put(salesChannelDisplay, ((SalesChannel) salesChannelObject).getGUIManagedObjectDisplay());
@@ -416,7 +416,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
                   if (voucher.get("supplierID") != null)
                     {
                       String supplierID = voucher.get("supplierID").toString();
-                      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+                      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID, tenantID);
                       if (supplierObject != null && supplierObject instanceof Supplier)
                         {
                           supplierDisplay = ((Supplier) supplierObject).getGUIManagedObjectDisplay();

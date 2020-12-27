@@ -248,9 +248,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public String getSubject(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    public String getSubject(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
     {
-      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
       DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getSubject() : null;
       String text = (dialogMessage != null) ? dialogMessage.resolve(language, subjectTags) : null;
       return text;
@@ -262,9 +262,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public String getHtmlBody(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    public String getHtmlBody(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
     {
-      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
       DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getHTMLBody() : null;
       String text = (dialogMessage != null) ? dialogMessage.resolve(language, htmlBodyTags) : null;
       return text;
@@ -276,9 +276,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public String getTextBody(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    public String getTextBody(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
     {
-      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
       DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getTextBody() : null;
       String text = (dialogMessage != null) ? dialogMessage.resolve(language, textBodyTags) : null;
       return text;
@@ -487,9 +487,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       guiPresentationMap.put(SOURCE, getFromAddress());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
-      guiPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
-      guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
-      guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
+      guiPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService, tenantID));
+      guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService, tenantID));
+      guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService, tenantID));
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -511,9 +511,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
-      thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
-      thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
+      thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService, tenantID));
+      thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService, tenantID));
+      thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService, tenantID));
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -594,8 +594,8 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
       String language = subscriberEvaluationRequest.getLanguage();
-      MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext);
-      MailTemplate template = (baseTemplate != null) ? (MailTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext) : null;
+      MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext, subscriberEvaluationRequest.getTenantID());
+      MailTemplate template = (baseTemplate != null) ? (MailTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext, subscriberEvaluationRequest.getTenantID()) : null;
 
       //
       //  subject

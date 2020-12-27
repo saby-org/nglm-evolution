@@ -39,7 +39,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
   private final static String customerID = "customerID";
 
   @Override
-  public boolean dumpElementToCsvMono(Map<String, Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsvMono(Map<String, Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
   {
     List<Map<String, Object>> records = new ArrayList<Map<String, Object>>();
     Map<String, Object> subscriberFields = map;    

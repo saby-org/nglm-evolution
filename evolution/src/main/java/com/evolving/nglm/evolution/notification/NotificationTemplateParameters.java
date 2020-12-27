@@ -22,6 +22,7 @@ import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberMessage;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
+import com.evolving.nglm.evolution.Tenant;
 
 public class NotificationTemplateParameters extends SubscriberMessage
 {
@@ -67,9 +68,9 @@ public class NotificationTemplateParameters extends SubscriberMessage
   *
   *****************************************/
 
-  public NotificationTemplateParameters(Object pushMessageJSON, String communicationChannelID,  Map<String, Boolean> dialogMessageFieldsMandatory, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  public NotificationTemplateParameters(Object pushMessageJSON, String communicationChannelID,  Map<String, Boolean> dialogMessageFieldsMandatory, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
-    super(pushMessageJSON, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+    super(pushMessageJSON, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, tenantID);
     
   }
   /*****************************************

@@ -115,9 +115,9 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   * dumpElementToCsv
   *
   ****************************************/
- public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
  {
-   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map, tenantID);  
    if(mapLocal.size() != 1) {
 	   log.debug("We have multiple dates in the same index " + mapLocal.size());
    } else {
@@ -136,7 +136,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
 					   log.debug("We have multiple reports in this folder " + list.size());
 				   } else {
 					   Map<String, Object> reportMap = list.get(0);
-					   dumpLineToCsv(reportMap, writer, addHeaders);
+					   dumpLineToCsv(reportMap, writer, addHeaders, tenantID);
 					   return false;
 				   }
 			   }
@@ -146,7 +146,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
    return true;
  }
   
-  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
+  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders, int tenantID)
   {
     try
       {

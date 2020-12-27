@@ -39,5 +39,5 @@ public class SubscriberMessageTemplatesMap extends GUIManagedObjectMap<Subscribe
   *
   *****************************************/
   // TODO: for the moment, we also retrieve archived objects
-  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredSubscriberMessageTemplates(true); }
+  protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredSubscriberMessageTemplates(true, tenantID); }
 }

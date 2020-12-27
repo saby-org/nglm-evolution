@@ -79,7 +79,7 @@ public class TokenTypeService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { tokenTypeListener.tokenTypeActivated((TokenType) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { tokenTypeListener.tokenTypeDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { tokenTypeListener.tokenTypeDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -92,13 +92,13 @@ public class TokenTypeService extends GUIService
   *****************************************/
 
   public String generateTokenTypeID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredTokenType(String tokenTypeID) { return getStoredGUIManagedObject(tokenTypeID); }
-  public GUIManagedObject getStoredTokenType(String tokenTypeID, boolean includeArchived) { return getStoredGUIManagedObject(tokenTypeID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredTokenTypes() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredTokenTypes(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredTokenType(String tokenTypeID, int tenantID) { return getStoredGUIManagedObject(tokenTypeID, tenantID); }
+  public GUIManagedObject getStoredTokenType(String tokenTypeID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(tokenTypeID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredTokenTypes(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredTokenTypes(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveTokenType(GUIManagedObject tokenTypeUnchecked, Date date) { return isActiveGUIManagedObject(tokenTypeUnchecked, date); }
-  public TokenType getActiveTokenType(String tokenTypeID, Date date) { return (TokenType) getActiveGUIManagedObject(tokenTypeID, date); }
-  public Collection<TokenType> getActiveTokenTypes(Date date) { return (Collection<TokenType>) getActiveGUIManagedObjects(date); }
+  public TokenType getActiveTokenType(String tokenTypeID, Date date, int tenantID) { return (TokenType) getActiveGUIManagedObject(tokenTypeID, date, tenantID); }
+  public Collection<TokenType> getActiveTokenTypes(Date date, int tenantID) { return (Collection<TokenType>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -106,7 +106,7 @@ public class TokenTypeService extends GUIService
   *
   *****************************************/
 
-  public void putTokenType(GUIManagedObject tokenType, boolean newObject, String userID) { putGUIManagedObject(tokenType, SystemTime.getCurrentTime(), newObject, userID); }
+  public void putTokenType(GUIManagedObject tokenType, boolean newObject, String userID, int tenantID) { putGUIManagedObject(tokenType, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
 
   /*****************************************
   *
@@ -114,7 +114,7 @@ public class TokenTypeService extends GUIService
   *
   *****************************************/
 
-  public void removeTokenType(String tokenTypeID, String userID) { removeGUIManagedObject(tokenTypeID, SystemTime.getCurrentTime(), userID); }
+  public void removeTokenType(String tokenTypeID, String userID, int tenantID) { removeGUIManagedObject(tokenTypeID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

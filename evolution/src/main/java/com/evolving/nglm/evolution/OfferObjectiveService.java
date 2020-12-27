@@ -102,7 +102,7 @@ public class OfferObjectiveService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { offerObjectiveListener.offerObjectiveActivated((OfferObjective) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { offerObjectiveListener.offerObjectiveDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { offerObjectiveListener.offerObjectiveDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -115,13 +115,13 @@ public class OfferObjectiveService extends GUIService
   *****************************************/
 
   public String generateOfferObjectiveID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredOfferObjective(String offerObjectiveID) { return getStoredGUIManagedObject(offerObjectiveID); }
-  public GUIManagedObject getStoredOfferObjective(String offerObjectiveID, boolean includeArchived) { return getStoredGUIManagedObject(offerObjectiveID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredOfferObjectives() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredOfferObjectives(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public GUIManagedObject getStoredOfferObjective(String offerObjectiveID, int tenantID) { return getStoredGUIManagedObject(offerObjectiveID, tenantID); }
+  public GUIManagedObject getStoredOfferObjective(String offerObjectiveID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(offerObjectiveID, includeArchived, tenantID); }
+  public Collection<GUIManagedObject> getStoredOfferObjectives(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredOfferObjectives(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveOfferObjective(GUIManagedObject offerObjectiveUnchecked, Date date) { return isActiveGUIManagedObject(offerObjectiveUnchecked, date); }
-  public OfferObjective getActiveOfferObjective(String offerObjectiveID, Date date) { return (OfferObjective) getActiveGUIManagedObject(offerObjectiveID, date); }
-  public Collection<OfferObjective> getActiveOfferObjectives(Date date) { return (Collection<OfferObjective>) getActiveGUIManagedObjects(date); }
+  public OfferObjective getActiveOfferObjective(String offerObjectiveID, Date date, int tenantID) { return (OfferObjective) getActiveGUIManagedObject(offerObjectiveID, date, tenantID); }
+  public Collection<OfferObjective> getActiveOfferObjectives(Date date, int tenantID) { return (Collection<OfferObjective>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -129,7 +129,7 @@ public class OfferObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void putOfferObjective(GUIManagedObject offerObjective, boolean newObject, String userID) { putGUIManagedObject(offerObjective, SystemTime.getCurrentTime(), newObject, userID); }
+  public void putOfferObjective(GUIManagedObject offerObjective, boolean newObject, String userID, int tenantID) { putGUIManagedObject(offerObjective, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
 
   /*****************************************
   *
@@ -137,7 +137,7 @@ public class OfferObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void removeOfferObjective(String offerObjectiveID, String userID) { removeGUIManagedObject(offerObjectiveID, SystemTime.getCurrentTime(), userID); }
+  public void removeOfferObjective(String offerObjectiveID, String userID, int tenantID) { removeGUIManagedObject(offerObjectiveID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

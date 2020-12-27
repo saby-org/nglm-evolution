@@ -106,10 +106,10 @@ public class VoucherShared extends Voucher implements StockableItem {
   }
 
   @Override
-  public void validate(VoucherTypeService voucherTypeService, UploadedFileService uploadedFileService, Date now) throws GUIManagerException {
-    commonValidate(voucherTypeService, now);
+  public void validate(VoucherTypeService voucherTypeService, UploadedFileService uploadedFileService, Date now, int tenantID) throws GUIManagerException {
+    commonValidate(voucherTypeService, now, tenantID);
     // check type id is Shared
-    if(!voucherTypeService.getActiveVoucherType(getVoucherTypeId(),now).getCodeType().equals(VoucherType.CodeType.Shared)) throw new GUIManagerException("wrong VoucherType for "+this.getClass().getSimpleName(),getVoucherTypeId());
+    if(!voucherTypeService.getActiveVoucherType(getVoucherTypeId(),now, tenantID).getCodeType().equals(VoucherType.CodeType.Shared)) throw new GUIManagerException("wrong VoucherType for "+this.getClass().getSimpleName(),getVoucherTypeId());
   }
 
 }

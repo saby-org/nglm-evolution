@@ -80,7 +80,7 @@ public class SegmentContactPolicyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { segmentContactPolicyListener.segmentContactPolicyActivated((SegmentContactPolicy) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { segmentContactPolicyListener.segmentContactPolicyDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { segmentContactPolicyListener.segmentContactPolicyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -122,7 +122,7 @@ public class SegmentContactPolicyService extends GUIService
 
     if (segmentContactPolicy instanceof SegmentContactPolicy)
       {
-        ((SegmentContactPolicy) segmentContactPolicy).validate(contactPolicyService, dimensionService, now);
+        ((SegmentContactPolicy) segmentContactPolicy).validate(contactPolicyService, dimensionService, now, tenantID);
       }
 
     //

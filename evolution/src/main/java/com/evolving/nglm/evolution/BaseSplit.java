@@ -103,7 +103,7 @@ public class BaseSplit
   *
   *****************************************/
 
-  BaseSplit(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, boolean resetSegmentIDs) throws GUIManagerException
+  BaseSplit(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, boolean resetSegmentIDs, int tenantID) throws GUIManagerException
   {
     this.splitName = JSONUtilities.decodeString(jsonRoot, "splitName", true);
 
@@ -116,14 +116,14 @@ public class BaseSplit
     if(variableName != null && !variableName.isEmpty())
       {
         CriterionField rangeVariable = null;
-        if (CriterionContext.DynamicProfile.getCriterionFields().get(variableName) != null)
+        if (CriterionContext.DynamicProfile.get(tenantID).getCriterionFields(tenantID).get(variableName) != null)
           {
-            rangeVariable = CriterionContext.DynamicProfile.getCriterionFields().get(variableName);
+            rangeVariable = CriterionContext.DynamicProfile.get(tenantID).getCriterionFields(tenantID).get(variableName);
             rangeVariableDependentOnExtendedSubscriberProfile = false;
           }
-        else if (CriterionContext.FullProfile.getCriterionFields().get(variableName) != null)
+        else if (CriterionContext.FullProfile.get(tenantID).getCriterionFields(tenantID).get(variableName) != null)
           {
-            rangeVariable = CriterionContext.FullProfile.getCriterionFields().get(variableName);
+            rangeVariable = CriterionContext.FullProfile.get(tenantID).getCriterionFields(tenantID).get(variableName);
             rangeVariableDependentOnExtendedSubscriberProfile = true;        
           }
         else
@@ -153,12 +153,12 @@ public class BaseSplit
     boolean profileCriteriaDependentOnExtendedSubscriberProfile = false;
     try
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile.get(tenantID));
         profileCriteriaDependentOnExtendedSubscriberProfile = false;
       }
     catch (GUIManagerException e)
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile.get(tenantID));
         profileCriteriaDependentOnExtendedSubscriberProfile = true;
       }
 

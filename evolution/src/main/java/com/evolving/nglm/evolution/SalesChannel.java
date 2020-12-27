@@ -293,7 +293,7 @@ public class SalesChannel extends GUIManagedObject
       {
         for (String resellerID : resellerIDs)
           {
-            if (resellerService.getActiveReseller(resellerID, date) == null) throw new GUIManagerException("unknown reseller", resellerID);
+            if (resellerService.getActiveReseller(resellerID, date, tenantID) == null) throw new GUIManagerException("unknown reseller", resellerID);
           }
     }
   }

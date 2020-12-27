@@ -511,7 +511,7 @@ public abstract class SubscriberProfileService
                     //  evaluationRequest
                     //
 
-                    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
+                    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, subscriberProfile.getTenantID());
 
                     //
                     //  print subscriberProfile
@@ -523,7 +523,7 @@ public abstract class SubscriberProfileService
                     //  active offers
                     //
 
-                    for (Offer offer : offerService.getActiveOffers(now))
+                    for (Offer offer : offerService.getActiveOffers(now, 1)) // tenant id 1 for this example
                       {
                         boolean qualifiedOffer = offer.evaluateProfileCriteria(evaluationRequest);
                         System.out.println("  offer: " + offer.getOfferID() + " " + (qualifiedOffer ? "true" : "false"));

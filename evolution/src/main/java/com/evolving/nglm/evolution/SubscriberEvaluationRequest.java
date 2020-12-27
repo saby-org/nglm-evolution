@@ -129,7 +129,7 @@ public class SubscriberEvaluationRequest
 
   public String getLanguage()
   {
-    String languageID = (String) CriterionContext.Profile.getCriterionFields().get("subscriber.language").retrieve(this);
+    String languageID = (String) CriterionContext.Profile.get(tenantID).getCriterionFields(tenantID).get("subscriber.language").retrieve(this);
     String language = (languageID != null && Deployment.getSupportedLanguages().get(languageID) != null) ? Deployment.getSupportedLanguages().get(languageID).getName() : Deployment.getBaseLanguage();
     return language;
   }

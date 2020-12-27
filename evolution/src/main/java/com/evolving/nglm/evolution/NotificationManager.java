@@ -216,10 +216,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
     // this resolved the source address
     // populating a param "node.parameter.sourceaddress" with a SourceaAddress "display" field from received param "node.parameter.fromaddress" which contains the "id"
-    public void resolveFromAddressToSourceAddress(SourceAddressService sourceAddressService){
+    public void resolveFromAddressToSourceAddress(SourceAddressService sourceAddressService, int tenantID){
       String sourceAddressId = getFromAddressParam();
       if(sourceAddressId==null) return;
-      GUIManagedObject sourceAddressObject = sourceAddressService.getStoredSourceAddress(sourceAddressId);
+      GUIManagedObject sourceAddressObject = sourceAddressService.getStoredSourceAddress(sourceAddressId, tenantID);
       if(sourceAddressObject==null) return;
       String sourceAddress = sourceAddressObject.getGUIManagedObjectDisplay();
       if(sourceAddress==null) return;
@@ -247,10 +247,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     *
     *****************************************/
 
-    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
       if(template.getDialogMessages() != null)
         {
           for(Map.Entry<String, DialogMessage> dialogMessageEntry : template.getDialogMessages().entrySet())
@@ -609,7 +609,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
-      guiPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
+      guiPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService, tenantID));
       
     }
 
@@ -634,13 +634,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
-      thirdPartyPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
+      thirdPartyPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService, tenantID));
     }
 
-    public Map<String, Object> gatherChannelParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    public Map<String, Object> gatherChannelParameters(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
     {
       Map<String, Object> messageContent = new HashMap<>();
-      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService, tenantID);
       Map<String, CriterionField> comChannelParams = Deployment.getCommunicationChannels().get(getChannelID()).getParameters();
       for (Entry<String, String> entry : resolvedParameters.entrySet())
         {
@@ -751,8 +751,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
-      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now);
-      DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
+      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now, subscriberEvaluationRequest.getTenantID());
+      DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext, subscriberEvaluationRequest.getTenantID())) : null;
 
       String destAddress = null;
 
@@ -885,8 +885,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
         incrementStats(dialogRequest);
-        dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService());
-        DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
+        dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService(), dialogRequest.getTenantID());
+        DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now, dialogRequest.getTenantID());
         
         if (dialogTemplate != null) 
           {
@@ -928,7 +928,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
               if(log.isDebugEnabled())
                 {
                   log.debug("subscriberMessageTemplateService contains :");
-                  for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now))
+                  for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now, deliveryRequest.getTenantID()))
                     {
                       log.debug("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
                     }

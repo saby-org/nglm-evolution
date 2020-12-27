@@ -105,7 +105,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService, ProductService productService, VoucherService voucherService, SalesChannelService salesChannelService)
+  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService, ProductService productService, VoucherService voucherService, SalesChannelService salesChannelService, int tenantID)
   {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     if ( null == offer ) return JSONUtilities.encodeObject(offerMap);
@@ -120,14 +120,14 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerAvailableStock", offer.getJSONRepresentation().get("presentationStock")!=null?offer.getJSONRepresentation().get("presentationStock"):"");
     offerMap.put("offerAvailableStockAlertThreshold", offer.getJSONRepresentation().get("presentationStockAlertThreshold")!=null?offer.getJSONRepresentation().get("presentationStockAlertThreshold"):"");
     offerMap.put("offerImageURL", offer.getJSONRepresentation().get("imageURL")!=null?offer.getJSONRepresentation().get("imageURL"):"");
-    offerMap.put("offerObjectives", getOfferObjectivesJson(offer, offerObjectiveService));
+    offerMap.put("offerObjectives", getOfferObjectivesJson(offer, offerObjectiveService, tenantID));
     offerMap.put("offerCharacteristics", offer.getOfferCharacteristics().toJSONObject()!=null?offer.getOfferCharacteristics().toJSONObject():"");
-    offerMap.put("offerSalesChannels", getOfferSalesChannelsJson(offer, salesChannelService));
+    offerMap.put("offerSalesChannels", getOfferSalesChannelsJson(offer, salesChannelService, tenantID));
     offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
     offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
-    List<JSONObject> products = offer.getOfferProducts()==null?null:offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product, productService)).collect(Collectors.toList());
+    List<JSONObject> products = offer.getOfferProducts()==null?null:offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product, productService, tenantID)).collect(Collectors.toList());
     offerMap.put("products", products);
-    List<JSONObject> vouchers = offer.getOfferVouchers()==null?null:offer.getOfferVouchers().stream().map(voucher -> ThirdPartyJSONGenerator.generateVoucherJSONForThirdParty(voucher, voucherService)).collect(Collectors.toList());
+    List<JSONObject> vouchers = offer.getOfferVouchers()==null?null:offer.getOfferVouchers().stream().map(voucher -> ThirdPartyJSONGenerator.generateVoucherJSONForThirdParty(voucher, voucherService, tenantID)).collect(Collectors.toList());
     offerMap.put("vouchers", vouchers);
     return JSONUtilities.encodeObject(offerMap);
   }
@@ -138,14 +138,14 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  private static JSONArray  getOfferObjectivesJson(Offer offer, OfferObjectiveService offerObjectiveService)
+  private static JSONArray  getOfferObjectivesJson(Offer offer, OfferObjectiveService offerObjectiveService, int tenantID)
   {
     List<JSONObject> offerObjectives = new ArrayList<JSONObject>();
     if (offer != null && offer.getOfferObjectives() != null)
       {
         for (OfferObjectiveInstance instance : offer.getOfferObjectives())
           {
-            GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(instance.getOfferObjectiveID());
+            GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(instance.getOfferObjectiveID(), tenantID);
             if (offerObjective != null)
               {
                 offerObjectives.add(offerObjective.getJSONRepresentation());
@@ -161,7 +161,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  private static JSONArray  getOfferSalesChannelsJson(Offer offer, SalesChannelService salesChannelService)
+  private static JSONArray  getOfferSalesChannelsJson(Offer offer, SalesChannelService salesChannelService, int tenantID)
   {
     List<JSONObject> offerSalesChannels = new ArrayList<JSONObject>();
     OfferPrice offerPrice = new OfferPrice();
@@ -178,7 +178,7 @@ public class ThirdPartyJSONGenerator
               {
                 for(String salesChannelID : channel.getSalesChannelIDs()) 
                   {
-                    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, SystemTime.getCurrentTime());
+                    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, SystemTime.getCurrentTime(), tenantID);
                     if(salesChannel != null)
                       {
                         JSONObject channelObject = new JSONObject();
@@ -205,12 +205,12 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateProductJSONForThirdParty(OfferProduct offerProduct, ProductService productService) 
+  protected static JSONObject generateProductJSONForThirdParty(OfferProduct offerProduct, ProductService productService, int tenantID) 
   {
     HashMap<String, Object> productMap = new HashMap<String, Object>();
     if ( null == offerProduct ) return JSONUtilities.encodeObject(productMap);
     productMap.put("productID", offerProduct.getProductID());
-    Product product = (Product) productService.getStoredGUIManagedObject(offerProduct.getProductID());
+    Product product = (Product) productService.getStoredGUIManagedObject(offerProduct.getProductID(), tenantID);
     if(product != null)
       {
         productMap.put("productName", product.getJSONRepresentation().get("display"));
@@ -225,12 +225,12 @@ public class ThirdPartyJSONGenerator
    *
    *****************************************/
 
-  protected static JSONObject generateVoucherJSONForThirdParty(OfferVoucher offerVoucher, VoucherService voucherService)
+  protected static JSONObject generateVoucherJSONForThirdParty(OfferVoucher offerVoucher, VoucherService voucherService, int tenantID)
   {
     HashMap<String, Object> voucherMap = new HashMap<String, Object>();
     if ( null == offerVoucher ) return JSONUtilities.encodeObject(voucherMap);
     voucherMap.put("voucherID", offerVoucher.getVoucherID());
-    Voucher voucher = (Voucher) voucherService.getStoredGUIManagedObject(offerVoucher.getVoucherID());
+    Voucher voucher = (Voucher) voucherService.getStoredGUIManagedObject(offerVoucher.getVoucherID(), tenantID);
     if(voucher != null)
     {
       voucherMap.put("voucherName", voucher.getJSONRepresentation().get("display"));
@@ -287,16 +287,16 @@ public class ThirdPartyJSONGenerator
    * @param offerObjectiveService 
   *
   *****************************************/
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService)
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, int tenantID)
   {
-    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null, null, null, null);
+    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null, null, null, null, tenantID);
   }
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService)
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, int tenantID)
   {
-    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, null, null, null);
+    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, null, null, null, tenantID);
   }
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, PaymentMeanService paymentMeanService) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, PaymentMeanService paymentMeanService, int tenantID) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
@@ -311,7 +311,7 @@ public class ThirdPartyJSONGenerator
     //tokenMap.put("subscriberID", token.getSubscriberID());
     String tokenTypeID = token.getTokenTypeID();
     tokenMap.put("tokenTypeID", tokenTypeID);
-    TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now);
+    TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now, tenantID);
     tokenMap.put("tokenTypeDisplay", tokenType != null ? tokenType.getGUIManagedObjectDisplay() : "unknownTokenType");
     Module module = Module.fromExternalRepresentation(token.getModuleID());
     tokenMap.put("moduleName", module.toString());
@@ -328,17 +328,17 @@ public class ThirdPartyJSONGenerator
         ArrayList<Object> scoringStrategiesList = new ArrayList<>();
         for (String scoringStrategyID : dnboToken.getScoringStrategyIDs())
           {
-            scoringStrategiesList.add(JSONUtilities.encodeObject(buildScoringStrategyElement(scoringStrategyID, scoringStrategyService, now)));
+            scoringStrategiesList.add(JSONUtilities.encodeObject(buildScoringStrategyElement(scoringStrategyID, scoringStrategyService, now, tenantID)));
           }
         tokenMap.put("scoringStrategies", JSONUtilities.encodeArray(scoringStrategiesList));        
         
         String presentationStrategyID = dnboToken.getPresentationStrategyID();
-        tokenMap.put("presentationStrategy", JSONUtilities.encodeObject(buildPresentationStrategyElement(presentationStrategyID, presentationStrategyService, now)));
+        tokenMap.put("presentationStrategy", JSONUtilities.encodeObject(buildPresentationStrategyElement(presentationStrategyID, presentationStrategyService, now, tenantID)));
         
         ArrayList<Object> presentedOffersList = new ArrayList<>();
         for (String offerID : dnboToken.getPresentedOfferIDs())
           {
-            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService)));
+            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService, tenantID)));
           }
         tokenMap.put("presentedOffers", JSONUtilities.encodeArray(presentedOffersList));
         tokenMap.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
@@ -350,13 +350,13 @@ public class ThirdPartyJSONGenerator
           }
         else
           {
-            tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService)));
+            tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService, tenantID)));
           }
       }
     return JSONUtilities.encodeObject(tokenMap);
   }
   
-  private static HashMap<String, Object> buildPresentationStrategyElement(String presentationStrategyID, PresentationStrategyService presentationStrategyService, Date now) {
+  private static HashMap<String, Object> buildPresentationStrategyElement(String presentationStrategyID, PresentationStrategyService presentationStrategyService, Date now, int tenantID) {
     HashMap<String, Object> presentationStrategyMap = new HashMap<String, Object>();
     presentationStrategyMap.put("id", presentationStrategyID);
     if (presentationStrategyID == null)
@@ -365,13 +365,13 @@ public class ThirdPartyJSONGenerator
       }
     else
       {
-        PresentationStrategy scoringStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now);
+        PresentationStrategy scoringStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now, tenantID);
         presentationStrategyMap.put("name", (scoringStrategy == null) ? "unknown presentation strategy" : scoringStrategy.getGUIManagedObjectDisplay());
       }
     return presentationStrategyMap;
   }
   
-  private static HashMap<String, Object> buildScoringStrategyElement(String scoringStrategyID, ScoringStrategyService scoringStrategyService, Date now) {
+  private static HashMap<String, Object> buildScoringStrategyElement(String scoringStrategyID, ScoringStrategyService scoringStrategyService, Date now, int tenantID) {
     HashMap<String, Object> scoringStrategyMap = new HashMap<String, Object>();
     scoringStrategyMap.put("id", scoringStrategyID);
     if (scoringStrategyID == null)
@@ -380,13 +380,13 @@ public class ThirdPartyJSONGenerator
       }
     else
       {
-        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
+        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now, tenantID);
         scoringStrategyMap.put("name", (scoringStrategy == null) ? "unknown scoring strategy" : scoringStrategy.getGUIManagedObjectName());
       }
     return scoringStrategyMap;
   }
   
-  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, DNBOToken dnboToken, PaymentMeanService paymentMeanService) {
+  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, DNBOToken dnboToken, PaymentMeanService paymentMeanService, int tenantID) {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     offerMap.put("id", offerID);
     if (offerID == null)
@@ -395,7 +395,7 @@ public class ThirdPartyJSONGenerator
       }
     else
       {
-        Offer offer = offerService.getActiveOffer(offerID, now);
+        Offer offer = offerService.getActiveOffer(offerID, now, tenantID);
         if (offer == null)
           {
             offerMap.put("name", UNKNOWN_OFFER); 
@@ -465,7 +465,7 @@ public class ThirdPartyJSONGenerator
                                                         amount = offerPrice.getAmount();
                                                         String paymentMeanID = offerPrice.getPaymentMeanID();
                                                         String currencyID = offerPrice.getSupportedCurrencyID();
-                                                        GUIManagedObject paymentMeanObject = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+                                                        GUIManagedObject paymentMeanObject = paymentMeanService.getStoredPaymentMean(paymentMeanID, tenantID);
                                                         if (paymentMeanObject != null && (paymentMeanObject instanceof PaymentMean))
                                                           {
                                                             paymentMean = ((PaymentMean) paymentMeanObject).getDisplay();

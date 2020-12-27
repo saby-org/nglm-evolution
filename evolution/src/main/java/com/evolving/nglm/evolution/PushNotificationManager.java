@@ -213,10 +213,10 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
       if(template.getDialogMessages() != null)
         {
           for(Map.Entry<String, DialogMessage> dialogMessageEntry : template.getDialogMessages().entrySet())
@@ -470,10 +470,10 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
-      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
-      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService, tenantID);
       guiPresentationMap.putAll(resolvedParameters);
     }
     
@@ -495,10 +495,10 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
-      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
-      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService, tenantID);
       thirdPartyPresentationMap.putAll(resolvedParameters);
     }
     
@@ -577,8 +577,8 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
-      PushTemplate baseTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushTemplateID, now);
-      PushTemplate template = (baseTemplate != null) ? ((PushTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
+      PushTemplate baseTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushTemplateID, now, subscriberEvaluationRequest.getTenantID());
+      PushTemplate template = (baseTemplate != null) ? ((PushTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext, subscriberEvaluationRequest.getTenantID())) : null;
 
       String destAddress = null;
 
@@ -689,7 +689,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
         log.info("PushNotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         PushNotificationManagerRequest pushRequest = (PushNotificationManagerRequest)deliveryRequest;
-        PushTemplate pushTemplate = (PushTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(pushRequest.getTemplateID(), now);
+        PushTemplate pushTemplate = (PushTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(pushRequest.getTemplateID(), now, pushRequest.getTenantID());
         
         if (pushTemplate != null) 
           {
@@ -729,7 +729,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
           {
             log.info("PushNotificationManagerRequest run deliveryRequest : ERROR : template with id '"+pushRequest.getTemplateID()+"' not found");
             log.info("subscriberMessageTemplateService contains :");
-            for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now)){
+            for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now, pushRequest.getTenantID())){
               log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
             }
             pushRequest.setDeliveryStatus(DeliveryStatus.Failed);
