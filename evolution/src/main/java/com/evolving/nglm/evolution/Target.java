@@ -19,9 +19,11 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
+import com.evolving.nglm.evolution.Target.TargetStatus;
 
 @GUIDependencyDef(objectType = "target", serviceClass = TargetService.class, dependencies = {})
 public class Target extends GUIManagedObject
@@ -57,6 +59,24 @@ public class Target extends GUIManagedObject
     private TargetStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public static TargetStatus fromExternalRepresentation(String externalRepresentation) { for (TargetStatus enumeratedValue : TargetStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
+  /*****************************************
+  *
+  *  getTargetStatus
+  *
+  *****************************************/
+
+  private TargetStatus getTargetStatus(GUIManagedObject guiManagedObject)
+  {
+	  System.out.println("inside get Target status");
+    Date now = SystemTime.getCurrentTime();
+    TargetStatus status = TargetStatus.Unknown;
+    status = (status == TargetStatus.Unknown && !guiManagedObject.getAccepted()) ? TargetStatus.NotValid : status;
+    status = (status == TargetStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? TargetStatus.Running : status;
+    status = (status == TargetStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? TargetStatus.Complete : status;
+ System.out.println("status is"+status);
+    return status;
   }
   /*****************************************
   *

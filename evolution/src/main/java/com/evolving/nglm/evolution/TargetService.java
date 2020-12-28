@@ -173,28 +173,12 @@ public class TargetService extends GUIService
   {
 	  System.out.println("in getSummaryJSONRepresentation TargetService");
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    result.put("status", getTargetStatus(guiManagedObject).getExternalRepresentation());
+    result.put("status", ((Target)guiManagedObject).getTargetStatus().getExternalRepresentation());
     System.out.println("TargetService:"+ result.toJSONString());
     return result;
   }
   
-  /*****************************************
-  *
-  *  getJourneyStatus
-  *
-  *****************************************/
-
-  private TargetStatus getTargetStatus(GUIManagedObject guiManagedObject)
-  {
-	  System.out.println("inside get Target status");
-    Date now = SystemTime.getCurrentTime();
-    TargetStatus status = TargetStatus.Unknown;
-    status = (status == TargetStatus.Unknown && !guiManagedObject.getAccepted()) ? TargetStatus.NotValid : status;
-    status = (status == TargetStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? TargetStatus.Running : status;
-    status = (status == TargetStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? TargetStatus.Complete : status;
- System.out.println("status is"+status);
-    return status;
-  }
+  
 
   
   

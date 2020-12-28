@@ -56,11 +56,13 @@ public class RetentionService {
 			}
 		}
 		
+		//EVPRO-574
 		iterator = subscriberProfile.getTargets().keySet().iterator();
 		while(iterator.hasNext()){
 			String targetId = iterator.next();
 			Target target=(Target)targetService.getStoredTarget(targetId);
-			if(target==null || isRetentionPeriodOverForTarget(target,RetentionType.KAFKA_DELETION)) {				
+			if(target==null || isRetentionPeriodOverForTarget(target,RetentionType.KAFKA_DELETION)) {	
+				System.out.println("retention period is over for target");
 				subscriberUpdated=true;
 				iterator.remove();
 				subscriberProfile.getTargets().remove(targetId);				
@@ -130,7 +132,10 @@ public class RetentionService {
 	}
 	
 	private boolean isRetentionPeriodOverForTarget(Target target, RetentionType retentionType){
-		if(target==null||target.getEffectiveEndDate()==null||retentionType==null|| getTargetRetention(retentionType,target.getTargetID())==null) return false;
+		if(target==null||target.getEffectiveEndDate()==null||retentionType==null|| getTargetRetention(retentionType,target.getTargetID())==null) {
+			System.out.println("null received");
+			return false;
+					}
 		Date cleanBeforeThisDate = EvolutionUtilities.removeTime(SystemTime.getCurrentTime(),getTargetRetention(retentionType,target.getTargetID()));
 		return target.getEffectiveEndDate().before(cleanBeforeThisDate);
 	}
@@ -159,8 +164,14 @@ public class RetentionService {
 	}
 	
 	public Duration getTargetRetention(RetentionType type, String targetID) {
+		System.out.println("start Target Retention days");
+		Duration duration;
 		GUIManagedObject target = targetService.getStoredTarget(targetID);
-		if(target==null) return java.time.Duration.ofDays(Integer.MIN_VALUE);//deleted journey clean now
-		return java.time.Duration.ofDays(Deployment.getKafkaRetentionDaysTargets());
+		if(target==null) duration= java.time.Duration.ofDays(Integer.MIN_VALUE);//deleted journey clean now
+		else
+		duration= java.time.Duration.ofDays(Deployment.getKafkaRetentionDaysTargets());
+		System.out.println("configured:"+Deployment.getKafkaRetentionDaysTargets());		
+		System.out.println("duration:"+duration);
+		return duration;
 	}
 }
