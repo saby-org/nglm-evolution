@@ -67,16 +67,30 @@ public class Target extends GUIManagedObject
   *
   *****************************************/
 
-  private TargetStatus getTargetStatus(GUIManagedObject guiManagedObject)
+  TargetStatus getTargetStatus()
   {
 	  System.out.println("inside get Target status");
     Date now = SystemTime.getCurrentTime();
     TargetStatus status = TargetStatus.Unknown;
-    status = (status == TargetStatus.Unknown && !guiManagedObject.getAccepted()) ? TargetStatus.NotValid : status;
-    status = (status == TargetStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? TargetStatus.Running : status;
-    status = (status == TargetStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? TargetStatus.Complete : status;
+    status = (status == TargetStatus.Unknown && !this.getAccepted()) ? TargetStatus.NotValid : status;
+    status = (status == TargetStatus.Unknown && isActiveGUIManagedObject(this, now)) ? TargetStatus.Running : status;
+    status = (status == TargetStatus.Unknown && this.getEffectiveEndDate().before(now)) ? TargetStatus.Complete : status;
  System.out.println("status is"+status);
     return status;
+  }
+  
+  /*****************************************
+  *
+  *  isActiveGUIManagedObject
+  *
+  *****************************************/
+
+  protected boolean isActiveGUIManagedObject(GUIManagedObject guiManagedObject, Date date) {
+    if(guiManagedObject==null) return false;
+    if(!guiManagedObject.getAccepted()) return false;
+    if(guiManagedObject.getEffectiveStartDate().after(date)) return false;
+    if(guiManagedObject.getEffectiveEndDate().before(date)) return false;
+    return true;
   }
   /*****************************************
   *

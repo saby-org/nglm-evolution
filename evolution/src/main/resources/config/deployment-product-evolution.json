@@ -21,6 +21,7 @@
   "kafkaRetentionDaysODR"             : 91,
   "kafkaRetentionDaysBDR"             : 91,
   "kafkaRetentionDaysMDR"             : 91,
+  "kafkaRetentionDaysTargets"         : 1,
 
   "CronFormat_comment": "minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
 
