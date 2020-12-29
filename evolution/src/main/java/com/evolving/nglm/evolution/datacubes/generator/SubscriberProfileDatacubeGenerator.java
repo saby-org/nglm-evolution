@@ -44,7 +44,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   private List<String> filterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
 
-  private boolean previewMode;
   private String metricTargetDay;
   private long metricTargetDayStartTime;
   private long metricTargetDayDuration;
@@ -200,9 +199,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   /**
-   * In order to keep only one document per day (for each combination of filters), we use the following trick:
-   * We only use the target day as a timestamp (without the hour) in the document ID definition.
-   * This way, preview documents will override each other till be overriden by the definitive one at 23:59:59.999 
+   * In order to override preview documents, we use the following trick: the timestamp used in the document ID must be 
+   * the timestamp of the definitive push (and not the time we publish it).
+   * This way, preview documents will override each other till be overriden by the definitive one running the day after.
    * 
    * Be careful, it only works if we ensure to publish the definitive one. 
    * Already existing combination of filters must be published even if there is 0 count inside, in order to 
@@ -210,17 +209,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
    */
   @Override
   protected String getDocumentID(Map<String,Object> filters, String timestamp) {
-    return this.extractDocumentIDFromFilter(filters, this.metricTargetDay);
-  }
-  
-  /*****************************************
-  *
-  * Datacube name for logs
-  *
-  *****************************************/
-  @Override
-  protected String getDatacubeName() {
-    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
+    return this.extractDocumentIDFromFilter(filters, this.metricTargetDay, "default");
   }
 
   /*****************************************
@@ -244,7 +233,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
 
-    this.previewMode = false;
     this.metricTargetDay = RLMDateUtils.printDay(yesterday);
     this.metricTargetDayStartTime = beginningOfYesterday.getTime();
     this.metricTargetDayDuration = beginningOfToday.getTime() - beginningOfYesterday.getTime();
@@ -277,7 +265,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
     Date beginningOfTwodaysafter = RLMDateUtils.truncate(twodaysafter, Calendar.DATE, Deployment.getBaseTimeZone());
 
-    this.previewMode = true;
     this.metricTargetDay = RLMDateUtils.printDay(now);
     this.metricTargetDayStartTime = beginningOfToday.getTime();
     this.metricTargetDayDuration = beginningOfTomorrow.getTime() - beginningOfToday.getTime();

@@ -130,7 +130,8 @@ public abstract class DatacubeGenerator
   
   protected String getDocumentID(Map<String,Object> filters, String timestamp) 
   {
-    return this.extractDocumentIDFromFilter(filters, timestamp);
+    // @param mode can be used to distinguish several type of publishing mode (hourly, daily)
+    return this.extractDocumentIDFromFilter(filters, timestamp, "default");
   }
   
   /*****************************************
@@ -146,14 +147,15 @@ public abstract class DatacubeGenerator
   *  
   *  rl: There is a potential bug with dynamic filters. Two rows could have different
   *  filters with same value and be considered equal (with the same ID).
+  *  rl: Also, hash could create collisions resulting in a bug hard to understand.
   *
   *****************************************/
-  protected String extractDocumentIDFromFilter(Map<String,Object> filters, String timestamp) 
+  protected String extractDocumentIDFromFilter(Map<String,Object> filters, String timestamp, String mode) 
   {
     List<String> sortedkeys = new ArrayList<String>(filters.keySet());
     Collections.sort(sortedkeys);
     
-    int bufferCapacity = Integer.BYTES * (sortedkeys.size() + 1);
+    int bufferCapacity = Integer.BYTES * (sortedkeys.size() + 2);
     if(tmpBuffer == null || tmpBuffer.capacity() != bufferCapacity) {
       tmpBuffer = ByteBuffer.allocate(bufferCapacity);
     } else {
@@ -161,6 +163,7 @@ public abstract class DatacubeGenerator
     }
     
     tmpBuffer.putInt(timestamp.hashCode());
+    tmpBuffer.putInt(mode.hashCode());
     for(String key: sortedkeys) {
       tmpBuffer.putInt(filters.get(key).toString().hashCode());
     }
@@ -212,7 +215,7 @@ public abstract class DatacubeGenerator
     addStaticFilters(filters);
     
     //
-    // Extract documentID from filters & timestamp (before calling embellish)
+    // Extract documentID from filters, timestamp
     //
     String documentID = getDocumentID(filters, timestamp);
     
@@ -220,6 +223,18 @@ public abstract class DatacubeGenerator
     // Embellish filters for Kibana/Grafana (display names), they won't be taken into account for documentID
     //
     embellishFilters(filters);
+    
+    //
+    // Extract special filters (timestamp and period)
+    //
+    Object timestampOverride = filters.remove("timestamp");
+    Object periodOverride = filters.remove("period");
+    if(timestampOverride != null) {
+      timestamp = (String) timestampOverride;
+    }
+    if(periodOverride != null) {
+      period = (Long) period;
+    }
     
     //
     // Build row

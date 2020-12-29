@@ -96,12 +96,18 @@ public class DatacubeManager
   private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubeDefinitive;
   private static ProgramsChangesDatacubeGenerator tierChangesDatacubePreview;
   private static ProgramsChangesDatacubeGenerator tierChangesDatacubeDefinitive;
-  private static ODRDatacubeGenerator odrDatacubePreview;
-  private static ODRDatacubeGenerator odrDatacubeDefinitive;
-  private static BDRDatacubeGenerator bdrDatacubePreview;
-  private static BDRDatacubeGenerator bdrDatacubeDefinitive;
-  private static MDRDatacubeGenerator mdrDatacubePreview;
-  private static MDRDatacubeGenerator mdrDatacubeDefinitive;
+  private static ODRDatacubeGenerator dailyOdrDatacubePreview;
+  private static ODRDatacubeGenerator dailyOdrDatacubeDefinitive;
+  private static ODRDatacubeGenerator hourlyOdrDatacubePreview;
+  private static ODRDatacubeGenerator hourlyOdrDatacubeDefinitive;
+  private static BDRDatacubeGenerator dailyBdrDatacubePreview;
+  private static BDRDatacubeGenerator dailyBdrDatacubeDefinitive;
+  private static BDRDatacubeGenerator hourlyBdrDatacubePreview;
+  private static BDRDatacubeGenerator hourlyBdrDatacubeDefinitive;
+  private static MDRDatacubeGenerator dailyMdrDatacubePreview;
+  private static MDRDatacubeGenerator dailyMdrDatacubeDefinitive;
+  private static MDRDatacubeGenerator hourlyMdrDatacubePreview;
+  private static MDRDatacubeGenerator hourlyMdrDatacubeDefinitive;
   private static SubscriberProfileDatacubeGenerator subscriberProfileDatacubePreview;
   private static SubscriberProfileDatacubeGenerator subscriberProfileDatacubeDefinitive;
   
@@ -182,18 +188,24 @@ public class DatacubeManager
     //
     trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, datacubeWriter, segmentationDimensionService, journeyService);
     rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, datacubeWriter, segmentationDimensionService, journeyService);
-    loyaltyHistoryDatacubePreview = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
-    loyaltyHistoryDatacubeDefinitive = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
-    tierChangesDatacubePreview = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
-    tierChangesDatacubeDefinitive = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
-    odrDatacubePreview = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    odrDatacubeDefinitive = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    bdrDatacubePreview = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
-    bdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
-    mdrDatacubePreview = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
-    mdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
-    subscriberProfileDatacubePreview = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
-    subscriberProfileDatacubeDefinitive = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
+    loyaltyHistoryDatacubePreview = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History(Preview)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    loyaltyHistoryDatacubeDefinitive = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History(Definitive)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    tierChangesDatacubePreview = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes(Preview)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    tierChangesDatacubeDefinitive = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes(Definitive)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    dailyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    hourlyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    hourlyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyBdrDatacubePreview = new BDRDatacubeGenerator("BDR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyBdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    hourlyBdrDatacubePreview = new BDRDatacubeGenerator("BDR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    hourlyBdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyMdrDatacubePreview = new MDRDatacubeGenerator("MDR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    dailyMdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    hourlyMdrDatacubePreview = new MDRDatacubeGenerator("MDR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    hourlyMdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    subscriberProfileDatacubePreview = new SubscriberProfileDatacubeGenerator("SubscriberProfile(Preview)", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
+    subscriberProfileDatacubeDefinitive = new SubscriberProfileDatacubeGenerator("SubscriberProfile(Definitive)", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
   }
 
   /*****************************************
@@ -326,13 +338,13 @@ public class DatacubeManager
   }
   
   /*
-   * ODR preview
+   * ODR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the day
+   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new ODR can still be added.
    */
-  private static long scheduleODRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String jobName = "ODR-preview";
+  private static long scheduleODRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "ODR-daily-preview";
     
     AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
@@ -343,7 +355,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        odrDatacubePreview.preview();
+        dailyOdrDatacubePreview.dailyPreview();
       }
     };
     
@@ -357,12 +369,12 @@ public class DatacubeManager
   }
   
   /*
-   * ODR definitive
+   * ODR daily definitive
    *
    * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
    */
-  private static long scheduleODRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String jobName = "ODR-definitive";
+  private static long scheduleODRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "ODR-daily-definitive";
     
     AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
@@ -373,7 +385,69 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        odrDatacubeDefinitive.definitive();
+        dailyOdrDatacubeDefinitive.dailyDefinitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  
+  /*
+   * ODR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new ODR can still be added.
+   */
+  private static long scheduleODRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "ODR-hourly-preview";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyOdrDatacubePreview.hourlyPreview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * ODR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleODRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "ODR-hourly-definitive";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyOdrDatacubeDefinitive.hourlyDefinitive();
       }
     };
     
@@ -387,13 +461,13 @@ public class DatacubeManager
   }
 
   /*
-   * BDR preview
+   * BDR daily preview
    *
    * This will generated a datacube preview of the day from the detailedrecords_bonuses-YYYY-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new BDR can still be added.
    */
-  private static long scheduleBDRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String jobName = "BDR-preview";
+  private static long scheduleBDRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "BDR-daily-preview";
     
     AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
@@ -404,7 +478,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        bdrDatacubePreview.preview();
+        dailyBdrDatacubePreview.dailyPreview();
       }
     };
     
@@ -418,12 +492,12 @@ public class DatacubeManager
   }
   
   /*
-   * BDR definitive
+   * BDR daily definitive
    *
    * This will generated a datacube every day from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
    */
-  private static long scheduleBDRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String jobName = "BDR-definitive";
+  private static long scheduleBDRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "BDR-daily-definitive";
     
     AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
@@ -434,7 +508,68 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        bdrDatacubeDefinitive.definitive();
+        dailyBdrDatacubeDefinitive.dailyDefinitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * BDR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_bonuses-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new BDR can still be added.
+   */
+  private static long scheduleBDRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "BDR-hourly-preview";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyBdrDatacubePreview.hourlyPreview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * BDR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleBDRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "BDR-hourly-definitive";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyBdrDatacubeDefinitive.hourlyDefinitive();
       }
     };
     
@@ -448,13 +583,13 @@ public class DatacubeManager
   }
 
   /*
-   * MDR preview
+   * MDR daily preview
    *
    * This will generated a datacube preview of the day from the detailedrecords_messages-YYYY-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new MDR can still be added.
    */
-  private static long scheduleMDRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String jobName = "MDR-preview";
+  private static long scheduleMDRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "MDR-daily-preview";
     
     AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
@@ -465,7 +600,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        mdrDatacubePreview.preview();
+        dailyMdrDatacubePreview.dailyPreview();
       }
     };
     
@@ -479,12 +614,12 @@ public class DatacubeManager
   }
   
   /*
-   * MDR definitive
+   * MDR daily definitive
    *
    * This will generated a datacube every day from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
    */
-  private static long scheduleMDRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String jobName = "MDR-definitive";
+  private static long scheduleMDRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "MDR-daily-definitive";
     
     AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
@@ -495,7 +630,68 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        mdrDatacubeDefinitive.definitive();
+        dailyMdrDatacubeDefinitive.dailyDefinitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * MDR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_messages-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new MDR can still be added.
+   */
+  private static long scheduleMDRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "MDR-hourly-preview";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyMdrDatacubePreview.hourlyPreview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * MDR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleMDRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "MDR-hourly-definitive";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyMdrDatacubeDefinitive.hourlyDefinitive();
       }
     };
     
@@ -578,18 +774,24 @@ public class DatacubeManager
     //
     uniqueID = scheduleLoyaltyProgramsPreview(datacubeScheduler, uniqueID);
     uniqueID = scheduleSubscriberProfilePreview(datacubeScheduler, uniqueID);
-    uniqueID = scheduleODRPreview(datacubeScheduler, uniqueID);
-    uniqueID = scheduleBDRPreview(datacubeScheduler, uniqueID);
-    uniqueID = scheduleMDRPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRDailyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRHourlyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRDailyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRHourlyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRDailyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRHourlyPreview(datacubeScheduler, uniqueID);
     
     //
     // Definitives datacubes 
     //
     uniqueID = scheduleLoyaltyProgramsDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleSubscriberProfileDefinitive(datacubeScheduler, uniqueID);
-    uniqueID = scheduleODRDefinitive(datacubeScheduler, uniqueID);
-    uniqueID = scheduleBDRDefinitive(datacubeScheduler, uniqueID);
-    uniqueID = scheduleMDRDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRDailyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRHourlyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRDailyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRHourlyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRDailyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRHourlyDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleJourneyDatacubeDefinitive(datacubeScheduler, uniqueID);
 
     log.info("Starting scheduler");

@@ -11,7 +11,10 @@ import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
+import org.elasticsearch.search.aggregations.bucket.composite.DateHistogramValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.core.Deployment;
@@ -54,8 +57,9 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   private JourneysMap journeysMap;
   private SubscriberMessageTemplatesMap subscriberMessageTemplatesMap;
 
-  private boolean previewMode;
+  private boolean hourlyMode;
   private String targetDay;
+  private String targetTimestamp;
 
   /*****************************************
   *
@@ -102,6 +106,15 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   @Override protected List<String> getFilterFields() { return filterFields; }
   
   @Override
+  protected CompositeValuesSourceBuilder<?> getSpecialSourceFilter() {
+    if(this.hourlyMode) {
+      return new DateHistogramValuesSourceBuilder("timestamp").field("eventDatetime").calendarInterval(DateHistogramInterval.HOUR);
+    } else {
+      return null;
+    }
+  }
+  
+  @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
     if(!isESIndexAvailable(getDataESIndex())) {
@@ -134,6 +147,15 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     filters.put("channel", com.evolving.nglm.evolution.Deployment.getCommunicationChannels().get(channelID).getDisplay());
     
     DatacubeUtils.embelishReturnCode(filters);
+    
+    // Specials for timestamp (will not be display in filter but extracted later in DatacubeGenerator)
+    if(this.hourlyMode) {
+      Long time = (Long) filters.remove("timestamp");
+      // The timestamp retrieve from the Date Histogram is the START of the interval. 
+      // But here we want to timestamp at the END (+ 1hour -1ms)
+      Date date = new Date(time + 3600*1000 - 1);
+      filters.put("timestamp", RLMDateUtils.printTimestamp(date));
+    }
   }
 
   /*****************************************
@@ -150,10 +172,9 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   /**
-   * For the moment, we only publish with a period of the day (except for preview)
-   * In order to keep only one document per day (for each combination of filters), we use the following trick:
-   * We only use the day as a timestamp (without the hour) in the document ID definition.
-   * This way, preview documents will override each other till be overriden by the definitive one at 23:59:59.999 
+   * In order to override preview documents, we use the following trick: the timestamp used in the document ID must be 
+   * the timestamp of the definitive push (and not the time we publish it).
+   * This way, preview documents will override each other till be overriden by the definitive one running the day after.
    * 
    * Be careful, it only works if we ensure to publish the definitive one. 
    * Already existing combination of filters must be published even if there is 0 count inside, in order to 
@@ -161,17 +182,12 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
    */
   @Override
   protected String getDocumentID(Map<String,Object> filters, String timestamp) {
-    return this.extractDocumentIDFromFilter(filters, this.targetDay);
-  }
-  
-  /*****************************************
-  *
-  * Datacube name for logs
-  *
-  *****************************************/
-  @Override
-  protected String getDatacubeName() {
-    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
+    if(this.hourlyMode) {
+      // @rl: It also works in hourly mode because there is the real timestamp in filters !
+      return this.extractDocumentIDFromFilter(filters, this.targetTimestamp, "HOURLY");
+    } else {
+      return this.extractDocumentIDFromFilter(filters, this.targetTimestamp, "DAILY");
+    }
   }
   
   /*****************************************
@@ -185,16 +201,20 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
    * Timestamp is the last millisecond of the period (therefore included).
    * This way it shows that *count* is computed for this day (yesterday) but at the very end of the day.
    */
-  public void definitive()
+  public void dailyDefinitive()
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
     Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getBaseTimeZone());
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
-
-    this.previewMode = false;
+    
+    //
+    // Run configurations
+    //
+    this.hourlyMode = false;
     this.targetDay = RLMDateUtils.printDay(yesterday);
+    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
 
     //
     // Timestamp & period
@@ -210,19 +230,84 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
    * Timestamp is the last millisecond of the period (therefore included).
    * Because the day is still not ended, it won't be the definitive value of *count*.
    */
-  public void preview()
+  public void dailyPreview()
   {
     Date now = SystemTime.getCurrentTime();
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
-
-    this.previewMode = true;
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
+    
+    //
+    // Run configurations
+    //
+    this.hourlyMode = false;
     this.targetDay = RLMDateUtils.printDay(now);
+    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
 
     //
     // Timestamp & period
     //
     String timestamp = RLMDateUtils.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
+    
+    this.run(timestamp, targetPeriod);
+  }
+
+  /**
+   * The definitive datacube is generated on yesterday, for 24 periods of 1 hour (except for some special days)
+   * Rows will be timestamped at yesterday_XX:59:59.999+ZZZZ
+   * Timestamp is the last millisecond of the period (therefore included).
+   * This way it shows that *count* is computed for this hour but at the very end of it.
+   */
+  public void hourlyDefinitive()
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
+    
+    //
+    // Run configurations
+    //
+    this.hourlyMode = true;
+    this.targetDay = RLMDateUtils.printDay(yesterday);
+    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+
+    //
+    // Timestamp & period
+    //
+    String timestamp = null; // Should not be used, will be override.
+    long targetPeriod = 3600*1000; // 1 hour
+    
+    this.run(timestamp, targetPeriod);
+  }
+  
+  /**
+   * A preview is a datacube generation on the today's day. 
+   * Timestamp is the last millisecond of the period (therefore included).
+   * Because the day is still not ended, it won't be the definitive value of *count*.
+   * Even for hour periods that had already ended, because ODR can still be added with timestamp of previous hours.
+   */
+  public void hourlyPreview()
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
+    
+    //
+    // Run configurations
+    //
+    this.hourlyMode = true;
+    this.targetDay = RLMDateUtils.printDay(now);
+    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
+
+    //
+    // Timestamp & period
+    //
+    String timestamp = null; // Should not be used, will be override.
+    long targetPeriod = 3600*1000; // 1 hour
     
     this.run(timestamp, targetPeriod);
   }

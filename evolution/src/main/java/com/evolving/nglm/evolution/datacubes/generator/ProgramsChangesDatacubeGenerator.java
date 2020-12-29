@@ -47,7 +47,6 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   *****************************************/
   private LoyaltyProgramsMap loyaltyProgramsMap;
 
-  private boolean previewMode;
   private long targetPeriod;
   private long targetPeriodStartIncluded;
   private String targetDay;
@@ -223,10 +222,9 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   *
   *****************************************/
   /**
-   * For the moment, we only publish with a period of the day (except for preview)
-   * In order to keep only one document per day (for each combination of filters), we use the following trick:
-   * We only use the day as a timestamp (without the hour) in the document ID definition.
-   * This way, preview documents will override each other till be overriden by the definitive one at 23:59:59.999 
+   * In order to override preview documents, we use the following trick: the timestamp used in the document ID must be 
+   * the timestamp of the definitive push (and not the time we publish it).
+   * This way, preview documents will override each other till be overriden by the definitive one running the day after.
    * 
    * Be careful, it only works if we ensure to publish the definitive one. 
    * Already existing combination of filters must be published even if there is 0 count inside, in order to 
@@ -234,17 +232,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
    */
   @Override
   protected String getDocumentID(Map<String,Object> filters, String timestamp) {
-    return this.extractDocumentIDFromFilter(filters, this.targetDay);
-  }
-  
-  /*****************************************
-  *
-  * Datacube name for logs
-  *
-  *****************************************/
-  @Override
-  protected String getDatacubeName() {
-    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
+    return this.extractDocumentIDFromFilter(filters, this.targetDay, "default");
   }
   
   /*****************************************
@@ -268,7 +256,6 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     this.targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     this.targetPeriodStartIncluded = beginningOfYesterday.getTime();
 
-    this.previewMode = false;
     this.targetDay = RLMDateUtils.printDay(yesterday);
 
     //
@@ -291,7 +278,6 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     this.targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     this.targetPeriodStartIncluded = beginningOfToday.getTime();
 
-    this.previewMode = true;
     this.targetDay = RLMDateUtils.printDay(now);
 
     //

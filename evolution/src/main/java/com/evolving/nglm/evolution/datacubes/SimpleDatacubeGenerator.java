@@ -59,6 +59,9 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   // Filters settings
   //
   protected abstract List<String> getFilterFields();
+  protected CompositeValuesSourceBuilder<?> getSpecialSourceFilter() { // To be override only if needed
+    return null;
+  }
 
   //
   // Metrics settings
@@ -97,6 +100,10 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
     for(String datacubeFilter: datacubeFilterFields) {
       TermsValuesSourceBuilder sourceTerms = new TermsValuesSourceBuilder(datacubeFilter).field(datacubeFilter).missingBucket(true);
       sources.add(sourceTerms);
+    }
+    CompositeValuesSourceBuilder<?> special = getSpecialSourceFilter();
+    if(special != null) {
+      sources.add(special);
     }
     CompositeAggregationBuilder compositeAggregation = AggregationBuilders.composite(compositeAggregationName, sources).size(ElasticsearchClientAPI.MAX_BUCKETS);
 
