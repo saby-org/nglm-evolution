@@ -90,14 +90,20 @@ public class DatacubeManager
   //
   // Datacube generators - Those classes are NOT thread-safe and must be used by only one thread.
   //
-  private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacube;
-  private static ProgramsChangesDatacubeGenerator tierChangesDatacube;
   private static JourneyTrafficDatacubeGenerator trafficDatacube;
   private static JourneyRewardsDatacubeGenerator rewardsDatacube;
-  private static ODRDatacubeGenerator odrDatacube;
-  private static BDRDatacubeGenerator bdrDatacube;
-  private static MDRDatacubeGenerator mdrDatacube;
-  private static SubscriberProfileDatacubeGenerator subscriberProfileDatacube;
+  private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubePreview;
+  private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubeDefinitive;
+  private static ProgramsChangesDatacubeGenerator tierChangesDatacubePreview;
+  private static ProgramsChangesDatacubeGenerator tierChangesDatacubeDefinitive;
+  private static ODRDatacubeGenerator odrDatacubePreview;
+  private static ODRDatacubeGenerator odrDatacubeDefinitive;
+  private static BDRDatacubeGenerator bdrDatacubePreview;
+  private static BDRDatacubeGenerator bdrDatacubeDefinitive;
+  private static MDRDatacubeGenerator mdrDatacubePreview;
+  private static MDRDatacubeGenerator mdrDatacubeDefinitive;
+  private static SubscriberProfileDatacubeGenerator subscriberProfileDatacubePreview;
+  private static SubscriberProfileDatacubeGenerator subscriberProfileDatacubeDefinitive;
   
   /*****************************************
   *
@@ -172,16 +178,22 @@ public class DatacubeManager
     journeysMap = new JourneysMap(journeyService);
     
     //
-    // Datacube generators
+    // Datacube generators - one instance per usage (because it is not thread safe)
     //
-    loyaltyHistoryDatacube = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
-    tierChangesDatacube = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
     trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, datacubeWriter, segmentationDimensionService, journeyService);
     rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, datacubeWriter, segmentationDimensionService, journeyService);
-    odrDatacube = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    bdrDatacube = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
-    mdrDatacube = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
-    subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
+    loyaltyHistoryDatacubePreview = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    loyaltyHistoryDatacubeDefinitive = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    tierChangesDatacubePreview = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    tierChangesDatacubeDefinitive = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    odrDatacubePreview = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    odrDatacubeDefinitive = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    bdrDatacubePreview = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    bdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    mdrDatacubePreview = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    mdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    subscriberProfileDatacubePreview = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
+    subscriberProfileDatacubeDefinitive = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
   }
 
   /*****************************************
@@ -207,8 +219,8 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        loyaltyHistoryDatacube.preview();
-        tierChangesDatacube.preview();
+        loyaltyHistoryDatacubePreview.preview();
+        tierChangesDatacubePreview.preview();
       }
     };
     
@@ -238,8 +250,8 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        loyaltyHistoryDatacube.definitive();
-        tierChangesDatacube.definitive();
+        loyaltyHistoryDatacubeDefinitive.definitive();
+        tierChangesDatacubeDefinitive.definitive();
       }
     };
     
@@ -270,7 +282,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        subscriberProfileDatacube.preview();
+        subscriberProfileDatacubePreview.preview();
       }
     };
     
@@ -300,7 +312,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        subscriberProfileDatacube.definitive();
+        subscriberProfileDatacubeDefinitive.definitive();
       }
     };
     
@@ -331,7 +343,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        odrDatacube.preview();
+        odrDatacubePreview.preview();
       }
     };
     
@@ -361,7 +373,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        odrDatacube.definitive();
+        odrDatacubeDefinitive.definitive();
       }
     };
     
@@ -392,7 +404,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        bdrDatacube.preview();
+        bdrDatacubePreview.preview();
       }
     };
     
@@ -422,7 +434,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        bdrDatacube.definitive();
+        bdrDatacubeDefinitive.definitive();
       }
     };
     
@@ -453,7 +465,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        mdrDatacube.preview();
+        mdrDatacubePreview.preview();
       }
     };
     
@@ -483,7 +495,7 @@ public class DatacubeManager
       @Override
       protected void asyncRun()
       {
-        mdrDatacube.definitive();
+        mdrDatacubeDefinitive.definitive();
       }
     };
     
