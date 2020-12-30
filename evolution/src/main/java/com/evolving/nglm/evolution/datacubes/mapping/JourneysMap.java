@@ -37,7 +37,7 @@ public class JourneysMap extends GUIManagedObjectMap<Journey>
   *
   *****************************************/
   // TODO: for the moment, we also retrieve archived objects
-  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredJourneys(true); }
+  protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredJourneys(true, tenantID); }
   
   /*****************************************
   *

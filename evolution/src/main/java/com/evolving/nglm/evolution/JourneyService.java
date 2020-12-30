@@ -279,7 +279,7 @@ public class JourneyService extends GUIService
     if (journey instanceof Journey)
       {
         ((Journey) journey).validate(journeyObjectiveService, catalogCharacteristicService, targetService, now);
-        ((Journey) journey).createOrConsolidateHardcodedMessageTemplates(subscriberMessageTemplateService, journey.getGUIManagedObjectID(), this);
+        ((Journey) journey).createOrConsolidateHardcodedMessageTemplates(subscriberMessageTemplateService, journey.getGUIManagedObjectID(), this, tenantID);
       }
 
 

@@ -210,7 +210,7 @@ public abstract class DeliveryManager
             if(Deployment.getEnableContactPolicyProcessing())
               {
                 //if DeliveryStatus is BlockedByContactPolicy make result null and the next request from queue will be taken
-                if (processRequestBlockedByContactPolicy(result)) result = null;
+                if (processRequestBlockedByContactPolicy(result, result.getTenantID())) result = null;
               }
           }
         catch (InterruptedException e)

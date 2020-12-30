@@ -799,7 +799,7 @@ public class DNBOProxy
           {
             log.debug("DNBOproxy.processGetSubscriberOffers Processing "+scoringStrategyID+" ...");
           }
-        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
+        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now, tenantID);
         if (scoringStrategy == null)
           {
             log.info("DNBOproxy.processGetSubscriberOffers Unknown scoring strategy in list : " + scoringStrategyID);
@@ -811,7 +811,7 @@ public class DNBOProxy
           JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy,
               productService, productTypeService, voucherService, voucherTypeService,
               catalogCharacteristicService, subscriberGroupEpochReader,
-              segmentationDimensionService, offerService,rangeValue.doubleValue());
+              segmentationDimensionService, offerService,rangeValue.doubleValue(), tenantID);
           resArray.add(valueRes);
           allScoringStrategiesBad = false;
         }
@@ -887,7 +887,7 @@ public class DNBOProxy
       VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
-      SegmentationDimensionService segmentationDimensionService, OfferService offerService, double rangeValue)
+      SegmentationDimensionService segmentationDimensionService, OfferService offerService, double rangeValue, int tenantID)
       throws DNBOProxyException
   {
 
@@ -914,7 +914,7 @@ public class DNBOProxy
           now, salesChannelID, subscriberProfile, scoringStrategy,
           productService, productTypeService, voucherService, voucherTypeService,
           catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService,
-          returnedLog, msisdn, null);
+          returnedLog, msisdn, null, tenantID);
       if (offerAvailabilityFromPropensityAlgo == null)
         {
           log.warn("DNBOProxy.getOffers Exception "+returnedLog);

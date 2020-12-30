@@ -37,10 +37,11 @@ public class SubscriberHistory implements StateStore
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_history");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyHistory", SchemaBuilder.array(JourneyHistory.schema()).schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -66,6 +67,7 @@ public class SubscriberHistory implements StateStore
   *****************************************/
 
   private String subscriberID;
+  private int tenantID;
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyHistory> journeyHistory;
 
@@ -82,6 +84,7 @@ public class SubscriberHistory implements StateStore
   *****************************************/
 
   public String getSubscriberID() { return subscriberID; }
+  public int getTenantID() { return tenantID; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyHistory> getJourneyHistory() { return journeyHistory; }
 
@@ -98,9 +101,10 @@ public class SubscriberHistory implements StateStore
   *
   *****************************************/
 
-  public SubscriberHistory(String subscriberID)
+  public SubscriberHistory(String subscriberID, int tenantID)
   {
     this.subscriberID = subscriberID;
+    this.tenantID = tenantID;
     this.deliveryRequests = new ArrayList<DeliveryRequest>();
     this.journeyHistory = new ArrayList<JourneyHistory>();
     this.kafkaRepresentation = null;
@@ -112,9 +116,10 @@ public class SubscriberHistory implements StateStore
   *
   *****************************************/
 
-  private SubscriberHistory(String subscriberID, List<DeliveryRequest> deliveryRequests, List<JourneyHistory> journeyHistory)
+  private SubscriberHistory(String subscriberID, int tenantID, List<DeliveryRequest> deliveryRequests, List<JourneyHistory> journeyHistory)
   {
     this.subscriberID = subscriberID;
+    this.tenantID = tenantID;
     this.deliveryRequests = deliveryRequests;
     this.journeyHistory = journeyHistory;
     this.kafkaRepresentation = null;
@@ -129,6 +134,7 @@ public class SubscriberHistory implements StateStore
   public SubscriberHistory(SubscriberHistory subscriberHistory)
   {
     this.subscriberID = subscriberHistory.getSubscriberID();
+    this.tenantID = subscriberHistory.getTenantID();
     this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberHistory.getDeliveryRequests());
     this.kafkaRepresentation = null;
     
@@ -154,6 +160,7 @@ public class SubscriberHistory implements StateStore
     SubscriberHistory subscriberHistory = (SubscriberHistory) value;
     Struct struct = new Struct(schema);
     struct.put("subscriberID", subscriberHistory.getSubscriberID());
+    struct.put("tenantID", subscriberHistory.getTenantID());
     struct.put("deliveryRequests", packDeliveryRequests(subscriberHistory.getDeliveryRequests()));
     struct.put("journeyHistory", packJourneyHistory(subscriberHistory.getJourneyHistory()));
     return struct;
@@ -213,6 +220,7 @@ public class SubscriberHistory implements StateStore
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
+    int tenantID = (schema.field("tenantID") != null) ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyHistory> journeyHistory = unpackJourneyHistory(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory"));
 
@@ -220,7 +228,7 @@ public class SubscriberHistory implements StateStore
     //  return
     //
 
-    return new SubscriberHistory(subscriberID, deliveryRequests, journeyHistory);
+    return new SubscriberHistory(subscriberID, tenantID, deliveryRequests, journeyHistory);
   }
     
   /*****************************************
@@ -292,7 +300,6 @@ public class SubscriberHistory implements StateStore
   @Override
   public String toString()
   {
-    return "SubscriberHistory [" + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyHistory != null ? "journeyHistory=" + journeyHistory + ", " : "") + "]";
+    return "SubscriberHistory [" + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") + "tenantID=" + tenantID + ", " + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyHistory != null ? "journeyHistory=" + journeyHistory + ", " : "") + "]";
   }
-
 }

@@ -72,7 +72,7 @@ public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
                 else
                   {
                     UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
-                    request.doc(getDocumentMap(item, guiManagedObject.getTenantID()));
+                    request.doc(getDocumentMap(item));
                     request.docAsUpsert(true);
                     request.retryOnConflict(4);
                     return Collections.<DocWriteRequest>singletonList(request);

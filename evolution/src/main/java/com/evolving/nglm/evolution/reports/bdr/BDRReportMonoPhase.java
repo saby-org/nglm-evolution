@@ -288,7 +288,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         if (bdrFields.containsKey(moduleId) && bdrFields.containsKey(featureId))
           {
             Module module = Module.fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
-            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
+            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService, tenantID);                
             bdrRecs.put(featureDisplay, featureDis);
             bdrRecs.put(moduleName, module.toString());
             bdrRecs.put(featureId, bdrFields.get(featureId));

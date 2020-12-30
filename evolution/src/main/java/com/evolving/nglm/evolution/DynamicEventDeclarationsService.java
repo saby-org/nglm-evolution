@@ -136,7 +136,7 @@ public class DynamicEventDeclarationsService extends GUIService
     DynamicEventDeclaration loyaltyProgramPointChangeEventDeclaration;
     try
       {
-        loyaltyProgramPointChangeEventDeclaration = new DynamicEventDeclaration("tier update in loyalty program", ProfileLoyaltyProgramChangeEvent.class.getName(), Deployment.getProfileLoyaltyProgramChangeEventTopic(), EventRule.Standard, getProfileLoyaltyProgramChangeCriterionFields(loyaltyProgramService));
+        loyaltyProgramPointChangeEventDeclaration = new DynamicEventDeclaration("tier update in loyalty program", ProfileLoyaltyProgramChangeEvent.class.getName(), Deployment.getProfileLoyaltyProgramChangeEventTopic(), EventRule.Standard, getProfileLoyaltyProgramChangeCriterionFields(loyaltyProgramService, tenantID));
       }
     catch (GUIManagerException e)
       {
@@ -186,7 +186,7 @@ public class DynamicEventDeclarationsService extends GUIService
     DynamicEventDeclaration segmentChangeEventDeclaration;
     try
       {
-        segmentChangeEventDeclaration = new DynamicEventDeclaration("segment update", ProfileSegmentChangeEvent.class.getName(), Deployment.getProfileSegmentChangeEventTopic(), EventRule.Standard, getProfileSegmentChangeCriterionFields(segmentationDimensionService));
+        segmentChangeEventDeclaration = new DynamicEventDeclaration("segment update", ProfileSegmentChangeEvent.class.getName(), Deployment.getProfileSegmentChangeEventTopic(), EventRule.Standard, getProfileSegmentChangeCriterionFields(segmentationDimensionService, tenantID));
       }
     catch (GUIManagerException e)
       {
@@ -225,11 +225,11 @@ public class DynamicEventDeclarationsService extends GUIService
   *  getProfileLoyaltyProgramChangeCriterionFields
   *
   *****************************************/
-  private Map<String, CriterionField> getProfileLoyaltyProgramChangeCriterionFields(LoyaltyProgramService loyaltyProgramService) throws GUIManagerException
+  private Map<String, CriterionField> getProfileLoyaltyProgramChangeCriterionFields(LoyaltyProgramService loyaltyProgramService, int tenantID) throws GUIManagerException
   {
 
     Map<String, CriterionField> result = new HashMap<>();
-    for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(SystemTime.getCurrentTime()))
+    for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(SystemTime.getCurrentTime(), tenantID))
       {
         switch (loyaltyProgram.getLoyaltyProgramType())
           {
@@ -349,11 +349,11 @@ public class DynamicEventDeclarationsService extends GUIService
   *  getProfileSegmentChangeCriterionFields
   *
   *****************************************/
-  private Map<String, CriterionField> getProfileSegmentChangeCriterionFields(SegmentationDimensionService segmentationDimensionService) throws GUIManagerException
+  private Map<String, CriterionField> getProfileSegmentChangeCriterionFields(SegmentationDimensionService segmentationDimensionService, int tenantID) throws GUIManagerException
   {
 
     Map<String, CriterionField> result = new HashMap<>();
-    for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime()))
+    for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime(), tenantID))
       {
         // for each dimension, generate Old, New and isUpdated dimension criterion
         JSONObject criterionFieldOLDJSON = new JSONObject();

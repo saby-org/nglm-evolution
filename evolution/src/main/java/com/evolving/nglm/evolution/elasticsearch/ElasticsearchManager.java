@@ -103,7 +103,7 @@ public class ElasticsearchManager
       @Override
       protected void run()
       {
-        voucherService.cleanUpVouchersJob();
+        voucherService.cleanUpVouchersJob(0); // TODO EVPRO-99 check this 0 value maybe need to split per tenant ??
       }
     };
     

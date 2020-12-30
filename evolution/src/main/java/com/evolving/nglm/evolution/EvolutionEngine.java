@@ -2179,7 +2179,7 @@ public class EvolutionEngine
   {
     ParameterMap profileChangeOldValues = new ParameterMap();
     for(String criterionFieldID: Deployment.getProfileChangeDetectionCriterionFields().keySet()) {
-      Object value = CriterionContext.Profile.getCriterionFields().get(criterionFieldID).retrieve(changeEventEvaluationRequest);
+      Object value = CriterionContext.Profile.get(changeEventEvaluationRequest.getTenantID()).getCriterionFields(changeEventEvaluationRequest.getTenantID()).get(criterionFieldID).retrieve(changeEventEvaluationRequest);
       profileChangeOldValues.put(criterionFieldID, value);      
     }
     return profileChangeOldValues;
@@ -2201,7 +2201,7 @@ public class EvolutionEngine
     ParameterMap oldSubscriberSegmentPerDimension = new ParameterMap();
     Map<String, String> segmentsMap = changeEventEvaluationRequest.getSubscriberProfile().getSegmentsMap(changeEventEvaluationRequest.getSubscriberGroupEpochReader());
     for(String dimensionId : segmentsMap.keySet()){
-      SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionId, SystemTime.getCurrentTime());
+      SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionId, SystemTime.getCurrentTime(), changeEventEvaluationRequest.getTenantID());
       if(dimension != null) {
         oldSubscriberSegmentPerDimension.put(dimension.getSegmentationDimensionName(), segmentsMap.get(dimensionId));
       }
@@ -2209,7 +2209,7 @@ public class EvolutionEngine
     
     // complete list with dimension not set so segment null
     
-    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime())){
+    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime(), changeEventEvaluationRequest.getTenantID())){
       if(!oldSubscriberSegmentPerDimension.containsKey(dimension.getSegmentationDimensionName())) {
         oldSubscriberSegmentPerDimension.put(dimension.getSegmentationDimensionName(), null);
       }   
@@ -2228,7 +2228,7 @@ public class EvolutionEngine
     Map<String, PointBalance> pointBalances = subscriberState.getSubscriberProfile().getPointBalances() != null ? subscriberState.getSubscriberProfile().getPointBalances() : Collections.<String,PointBalance>emptyMap();
     for(String pointID: pointBalances.keySet())
       {
-        Point point = pointService.getActivePoint(pointID, now);
+        Point point = pointService.getActivePoint(pointID, now, tenantID);
         if(point != null)
           {
             //TODO : what module is best here ?
@@ -2262,8 +2262,8 @@ public class EvolutionEngine
         if(log.isDebugEnabled()) log.debug("purchase request contains voucher deliveries to process");
 
         for(VoucherDelivery voucherDelivery:purchaseFulfillmentRequest.getVoucherDeliveries()){
-          Voucher voucher = voucherService.getActiveVoucher(voucherDelivery.getVoucherID(),now);
-          VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now);
+          Voucher voucher = voucherService.getActiveVoucher(voucherDelivery.getVoucherID(),now, subscriberProfile.getTenantID());
+          VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now, subscriberProfile.getTenantID());
           if(voucherType==null){
             log.warn("no more voucher type for voucherId "+voucherDelivery.getVoucherID()+", skipping "+voucherDelivery.getVoucherCode()+" for "+context.getSubscriberState().getSubscriberID());
           }else{
@@ -2348,7 +2348,7 @@ public class EvolutionEngine
         // change status to expired
         if(voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired
                 && voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed
-                && retentionService.isExpired(voucherStored)){
+                && retentionService.isExpired(voucherStored, subscriberProfile.getTenantID())){
           voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired); 
           VoucherChange voucherChange = new VoucherChange(
               subscriberProfile.getSubscriberID(),              
@@ -2507,7 +2507,7 @@ public class EvolutionEngine
   {
     ParameterMap profileChangeNewValues = new ParameterMap();
     for(String criterionFieldID: Deployment.getProfileChangeDetectionCriterionFields().keySet()) {
-      Object value = CriterionContext.Profile.getCriterionFields().get(criterionFieldID).retrieve(changeEventEvaluationRequest);
+      Object value = CriterionContext.Profile.get(changeEventEvaluationRequest.getTenantID()).getCriterionFields(changeEventEvaluationRequest.getTenantID()).get(criterionFieldID).retrieve(changeEventEvaluationRequest);
       if(!Objects.equals(profileChangeOldValues.get(criterionFieldID), value)) {
         profileChangeNewValues.put(criterionFieldID, value);
       }
@@ -2538,7 +2538,7 @@ public class EvolutionEngine
     Map<String, String> segmentsMap = changeEventEvaluationRequest.getSubscriberProfile().getSegmentsMap(changeEventEvaluationRequest.getSubscriberGroupEpochReader());
     for(String dimensionId : segmentsMap.keySet())
       {
-        SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionId, SystemTime.getCurrentTime());
+        SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionId, SystemTime.getCurrentTime(), changeEventEvaluationRequest.getTenantID());
         if (dimension == null)
           {
             log.warn("unknown dimensionID " + dimensionId + " from keyset " + segmentsMap.keySet());
@@ -2551,7 +2551,7 @@ public class EvolutionEngine
     
     // complete list with dimension not set so segment null
     
-    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime()))
+    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime(), changeEventEvaluationRequest.getTenantID()))
       {
         if(!profileSegmentChangeNewValues.containsKey(dimension.getSegmentationDimensionName())) 
           {
@@ -2561,7 +2561,7 @@ public class EvolutionEngine
     
     // now compare entering, leaving, updating
     
-    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime()))
+    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime(), changeEventEvaluationRequest.getTenantID()))
       {
         if(profileSegmentChangeOldValues.get(dimension.getSegmentationDimensionName()) == null)
           {
@@ -2843,7 +2843,7 @@ public class EvolutionEngine
       {
         for (String lpID : subscriberProfile.getLoyaltyPrograms().keySet())
           {
-            LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(lpID, now);
+            LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(lpID, now, tenantID);
             if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramPoints)
               {
                 LoyaltyProgramState lps = subscriberProfile.getLoyaltyPrograms().get(lpID);
@@ -3054,7 +3054,7 @@ public class EvolutionEngine
         //  point
         //
 
-        Point point = pointService.getActivePoint(pointFulfillmentRequest.getPointID(), now);
+        Point point = pointService.getActivePoint(pointFulfillmentRequest.getPointID(), now, tenantID);
         if (point == null)
           {
             log.info("pointFulfillmentRequest failed (no such point): {}", pointFulfillmentRequest.getPointID());
@@ -3126,7 +3126,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    for (SegmentationDimension segmentationDimension :  segmentationDimensionService.getActiveSegmentationDimensions(now))
+    for (SegmentationDimension segmentationDimension :  segmentationDimensionService.getActiveSegmentationDimensions(now, tenantID))
       {
         /*****************************************
         *
@@ -3180,7 +3180,7 @@ public class EvolutionEngine
                           //
 
                           String variableName = baseSplit.getVariableName();
-                          CriterionField baseMetric = CriterionContext.FullProfile.getCriterionFields().get(variableName);
+                          CriterionField baseMetric = CriterionContext.FullProfile.get(tenantID).getCriterionFields(tenantID).get(variableName);
                           Object normalized = baseMetric == null ? null : baseMetric.retrieveNormalized(evaluationRequest);
 
                           //
@@ -3248,7 +3248,7 @@ public class EvolutionEngine
     *****************************************/
 
     Map<String, String> segmentsMap = subscriberProfile.getSegmentsMap(subscriberGroupEpochReader);
-    for (SegmentationDimension segmentationDimension :  segmentationDimensionService.getActiveSegmentationDimensions(now))
+    for (SegmentationDimension segmentationDimension :  segmentationDimensionService.getActiveSegmentationDimensions(now, tenantID))
       {
         if (segmentsMap.get(segmentationDimension.getSegmentationDimensionID()) == null && segmentationDimension.getDefaultSegmentID() != null)
           {
@@ -3263,7 +3263,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    for(Target target : targetService.getActiveTargets(now))
+    for(Target target : targetService.getActiveTargets(now, tenantID))
       {
         SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
         if (target.getTargetingType().equals(Target.TargetingType.Eligibility))
@@ -3310,7 +3310,7 @@ public class EvolutionEngine
       {
         PurchaseFulfillmentRequest purchaseFulfillmentRequest = (PurchaseFulfillmentRequest) evolutionEvent;
         String offerID = purchaseFulfillmentRequest.getOfferID();
-        Offer offer = offerService.getActiveOffer(offerID, now);
+        Offer offer = offerService.getActiveOffer(offerID, now, tenantID);
         if (offer == null)
           {
             log.info("Got a purchase for inexistent offer " + offerID);
@@ -3474,7 +3474,7 @@ public class EvolutionEngine
         evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
 
         JourneyState originalJourneyState = executeActionOtherSubscriber.getOriginatedJourneyState();
-        Journey originalJourney = evolutionEventContext.getJourneyService().getActiveJourney(executeActionOtherSubscriber.getOriginalJourneyID(), evolutionEventContext.now());
+        Journey originalJourney = evolutionEventContext.getJourneyService().getActiveJourney(executeActionOtherSubscriber.getOriginalJourneyID(), evolutionEventContext.now(), tenantID);
         ActionManager actionManager = null;
         JourneyNode originalJourneyNode = null;
         if(executeActionOtherSubscriber.getOriginatingNodeID() != null)
@@ -3530,7 +3530,7 @@ public class EvolutionEngine
             //  get point loyalty program 
             //
             
-            LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
+            LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now, subscriberProfile.getTenantID());
             if(loyaltyProgram != null){ // may be suspended
 
 
@@ -3655,7 +3655,7 @@ public class EvolutionEngine
 
     for (LoyaltyProgramState loyaltyProgramState : subscriberProfile.getLoyaltyPrograms().values())
       {
-        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
+        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now, subscriberProfile.getTenantID());
         if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramPoints)
           {
             LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
@@ -3720,7 +3720,7 @@ public class EvolutionEngine
         //  get loyaltyProgram
         //
 
-        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramRequest.getLoyaltyProgramID(), now);
+        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramRequest.getLoyaltyProgramID(), now, subscriberProfile.getTenantID());
         if (loyaltyProgram == null)
           {
             log.info("loyaltyProgramRequest failed (no such loyalty program): {}", loyaltyProgramRequest.getLoyaltyProgramID());
@@ -3965,7 +3965,7 @@ public class EvolutionEngine
           //  get loyalty program definition
           //
           
-          LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
+          LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now, subscriberProfile.getTenantID());
                     
           //
           //  check that the subscriber is still in the program (no LoyaltyProgramExitDate)
@@ -4002,7 +4002,7 @@ public class EvolutionEngine
                       //  update status points
                       //
 
-                      Point point = pointService.getActivePoint(loyaltyProgramPoints.getStatusPointsID(), now);
+                      Point point = pointService.getActivePoint(loyaltyProgramPoints.getStatusPointsID(), now, subscriberProfile.getTenantID());
                       if(point != null)
                         {
 
@@ -4050,7 +4050,7 @@ public class EvolutionEngine
 
                       //  update reward points
                       
-                      Point point = pointService.getActivePoint(loyaltyProgramPoints.getRewardPointsID(), now);
+                      Point point = pointService.getActivePoint(loyaltyProgramPoints.getRewardPointsID(), now, subscriberProfile.getTenantID());
                       if(point != null)
                         {
                           if(log.isDebugEnabled()) log.debug("update loyalty program REWARD => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit()+" of point with ID "+loyaltyProgramPoints.getRewardPointsID());
@@ -4082,7 +4082,7 @@ public class EvolutionEngine
           // if loyalty got deleted (NOT JUST "suspended"), we need to optout to clean it from profile after a while
           }else if(loyaltyProgram == null && subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramID).getLoyaltyProgramExitDate() == null){
 
-            if(loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID)==null){
+            if(loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, subscriberProfile.getTenantID())==null){
               if(log.isDebugEnabled()) log.debug("exiting deleted from conf loyalty program "+loyaltyProgramID+" for subscriber "+subscriberProfile.getSubscriberID());
               loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramID);
               ((LoyaltyProgramPointsState)loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService);
@@ -4186,7 +4186,7 @@ public class EvolutionEngine
           {
             tokenTypeID = "external"; // predefined tokenTypeID for tokens created externally
           }
-        TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType(tokenTypeID, SystemTime.getCurrentTime());
+        TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType(tokenTypeID, SystemTime.getCurrentTime(), subscriberProfile.getTenantID());
         if (defaultDNBOTokenType == null)
           {
             log.error("Could not find token type with ID " + tokenTypeID + " Check your configuration.");
@@ -4422,7 +4422,7 @@ public class EvolutionEngine
     // ------ START DATA MIGRATION COULD BE REMOVED
     for(JourneyState recentJourneyState:subscriberState.getRecentJourneyStates()){
       if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(recentJourneyState.getJourneyID())==null && !recentJourneyState.isSpecialExit()){
-        subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(recentJourneyState.getJourneyID(),recentJourneyState.getExpirationDate(retentionService)!=null?recentJourneyState.getExpirationDate(retentionService):now);
+        subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(recentJourneyState.getJourneyID(),recentJourneyState.getExpirationDate(retentionService, tenantID)!=null?recentJourneyState.getExpirationDate(retentionService, tenantID):now);
       }
     }
     // ------ END DATA MIGRATION COULD BE REMOVED
@@ -4450,7 +4450,7 @@ public class EvolutionEngine
         //  candidate journey
         //
 
-        Journey candidateJourney = journeyService.getActiveJourney(journeyID, now);
+        Journey candidateJourney = journeyService.getActiveJourney(journeyID, now, tenantID);
         if (candidateJourney == null) continue;
         boolean activeJourney = subscriberState.getJourneyStates().stream().anyMatch(state->state.getJourneyID().equals(journeyID));
         Date oldJourneyEndDate = null;//should never be used if journey is active!
@@ -4460,7 +4460,7 @@ public class EvolutionEngine
         //  process journey objectives
         //
 
-        Set<JourneyObjective> journeyObjectives = candidateJourney.getAllObjectives(journeyObjectiveService, now);
+        Set<JourneyObjective> journeyObjectives = candidateJourney.getAllObjectives(journeyObjectiveService, now, tenantID);
         for (JourneyObjective journeyObjective : journeyObjectives)
           {
             //
@@ -4528,7 +4528,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now));
+    List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now, tenantID));
     Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
     
     /*****************************************
@@ -4538,8 +4538,8 @@ public class EvolutionEngine
     *****************************************/
 
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now, tenantID);
-    boolean inclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
-    boolean exclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
+    boolean inclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now, tenantID) : false;
+    boolean exclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now, tenantID) : false;
     context.getSubscriberTraceDetails().addAll(inclusionExclusionEvaluationRequest.getTraceDetails());
     
     /*****************************************
@@ -4633,7 +4633,7 @@ public class EvolutionEngine
             *
             *****************************************/
 
-            Set<JourneyObjective> allObjectives = journey.getAllObjectives(journeyObjectiveService, now);
+            Set<JourneyObjective> allObjectives = journey.getAllObjectives(journeyObjectiveService, now, tenantID);
             for (JourneyObjective journeyObjective : allObjectives)
               {
                 if (! permittedJourneys.containsKey(journeyObjective))
@@ -4710,7 +4710,7 @@ public class EvolutionEngine
                     // - All Subscribers is considered as Target with no target specified, so this case is handled by Target case                   
                     
                     // 1- Compute inAnyTargetOrTrigger: if no trigger or no target, then this boolean is set to true 
-                    List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now);
+                    List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now, tenantID);
                     if(journey.getTargetingEventCriteria() != null && !journey.getTargetingEventCriteria().isEmpty()) { targetsAndTriggerCriteria.add(journey.getTargetingEventCriteria()); }
                     boolean inAnyTargetOrTrigger = targetsAndTriggerCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
                     List<EvaluationCriterion> targets = new ArrayList<>();
@@ -5053,7 +5053,7 @@ public class EvolutionEngine
         *
         *****************************************/
 
-        Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
+        Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now, tenantID);
         JourneyNode journeyNode = (journey != null) ? journey.getJourneyNodes().get(journeyState.getJourneyNodeID()) : null;
 
         /*****************************************
@@ -5184,7 +5184,7 @@ public class EvolutionEngine
                 // this history is not taken in account for a response to the original subscriber as this response is only here to unlock the Journey
                 if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
                   {
-                    journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
+                    journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now, tenantID);
                   }
               }
           }
@@ -5663,7 +5663,7 @@ public class EvolutionEngine
             //
 
             SimpleParameterMap journeyResults = new SimpleParameterMap();
-            Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
+            Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now, tenantID);
             if(journey != null) 
               {
                            
@@ -5726,7 +5726,7 @@ public class EvolutionEngine
       {
         if (journeyState.getJourneyCloseDate() == null)
           {
-            Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
+            Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now, tenantID);
             
             //
             // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
@@ -5784,7 +5784,7 @@ public class EvolutionEngine
       {
         String customerIDPartner = null;
         String partnerNameStr = (String) partnerName;
-        for (GUIManagedObject partner : guiService.getActiveGUIManagedObjects(context.now()))
+        for (GUIManagedObject partner : guiService.getActiveGUIManagedObjects(context.now(), context.getSubscriberState().getSubscriberProfile().getTenantID()))
           {
             if (partnerNameStr.equals(partner.getGUIManagedObjectDisplay()))
               {
@@ -6094,7 +6094,7 @@ public class EvolutionEngine
 
     if(log.isTraceEnabled()) log.trace("updateSubscriberHistory for "+subscriberStateOutputWrapper.getSubscriberState().getSubscriberID()+" on event "+subscriberStateOutputWrapper.getOriginalEvent().getClass().getSimpleName());
 
-    SubscriberHistory subscriberHistory = (currentSubscriberHistory != null) ? new SubscriberHistory(currentSubscriberHistory) : new SubscriberHistory(subscriberStateOutputWrapper.getSubscriberState().getSubscriberID());
+    SubscriberHistory subscriberHistory = (currentSubscriberHistory != null) ? new SubscriberHistory(currentSubscriberHistory) : new SubscriberHistory(subscriberStateOutputWrapper.getSubscriberState().getSubscriberID(), subscriberStateOutputWrapper.getSubscriberState().getSubscriberProfile().getTenantID());
     boolean subscriberHistoryUpdated = currentSubscriberHistory==null;
 
     switch (subscriberStateOutputWrapper.getOriginalEvent().getSubscriberAction())
@@ -6109,7 +6109,7 @@ public class EvolutionEngine
 
     if (subscriberStateOutputWrapper.getOriginalEvent() instanceof TimedEvaluation && ((TimedEvaluation)subscriberStateOutputWrapper.getOriginalEvent()).getPeriodicEvaluation())
       {
-        subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory) || subscriberHistoryUpdated;
+        subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory, subscriberStateOutputWrapper.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberHistoryUpdated;
       }
 
     if (subscriberStateOutputWrapper.getSubscriberState().getDeliveryResponse()!=null)
@@ -6294,7 +6294,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
       }
     // enrich with alternateIds all here
-    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
+    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader, subscriberState.getSubscriberProfile().getTenantID()));
     return result;
   }
 
@@ -8176,7 +8176,7 @@ public class EvolutionEngine
   {
     Date now = SystemTime.getCurrentTime();
     Supplier supplier = null;
-    for (Supplier supplierConf : supplierService.getActiveSuppliers(now))
+    for (Supplier supplierConf : supplierService.getActiveSuppliers(now, subscriberProfile.getTenantID()))
       {
         if (supplierConf.getGUIManagedObjectDisplay().equals(supplierDisplay))
           {
@@ -8193,7 +8193,7 @@ public class EvolutionEngine
     VoucherProfileStored voucherStored = null;
     for (VoucherProfileStored profileVoucher : subscriberProfile.getVouchers())
       {
-        Voucher voucher = voucherService.getActiveVoucher(profileVoucher.getVoucherID(), now);
+        Voucher voucher = voucherService.getActiveVoucher(profileVoucher.getVoucherID(), now, subscriberProfile.getTenantID());
         // a voucher in subscriber profile with no more voucher conf associated, very
         // likely to happen
         if (voucher == null)

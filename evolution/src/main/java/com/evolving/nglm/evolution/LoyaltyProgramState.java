@@ -96,8 +96,8 @@ public class LoyaltyProgramState implements Cleanable
   public Date getLoyaltyProgramEnrollmentDate() { return loyaltyProgramEnrollmentDate; }
   public Date getLoyaltyProgramExitDate() { return loyaltyProgramExitDate; }
 
-  @Override public Date getExpirationDate(RetentionService retentionService) { return getLoyaltyProgramExitDate(); }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+  @Override public Date getExpirationDate(RetentionService retentionService, int tenantID) { return getLoyaltyProgramExitDate(); }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService, int tenantID) {
     switch (type){
       case KAFKA_DELETION:
         return Duration.ofDays(Deployment.getKafkaRetentionDaysLoyaltyPrograms());

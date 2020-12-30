@@ -120,7 +120,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID, tenantID);
     JSONObject segmentationDimensionJSON = segmentationDimensionService.generateResponseJSON(segmentationDimension, true, SystemTime.getCurrentTime());
 
     //
@@ -491,7 +491,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID, includeArchived);
+    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID, includeArchived, tenantID);
     JSONObject segmentationDimensionJSON = segmentationDimensionService.generateResponseJSON(segmentationDimension, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -554,7 +554,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingSegmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+    GUIManagedObject existingSegmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID, tenantID);
 
     /*****************************************
     *
@@ -650,7 +650,7 @@ public class GUIManagerBaseManagement extends GUIManager
         if (!dryRun)
           {
 
-            segmentationDimensionService.putSegmentationDimension(segmentationDimension, uploadedFileService, subscriberIDService, (existingSegmentationDimension == null), userID);
+            segmentationDimensionService.putSegmentationDimension(segmentationDimension, uploadedFileService, subscriberIDService, (existingSegmentationDimension == null), userID, tenantID);
 
             /*****************************************
              *
@@ -688,7 +688,7 @@ public class GUIManagerBaseManagement extends GUIManager
         if (!dryRun)
           {
             segmentationDimensionService.putIncompleteSegmentationDimension(incompleteObject,
-                (existingSegmentationDimension == null), userID);
+                (existingSegmentationDimension == null), userID, tenantID);
 
             //
             // revalidate
@@ -761,7 +761,7 @@ public class GUIManagerBaseManagement extends GUIManager
         String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", false);
         segmentationDimensionIDs.add(segmentationDimensionID);
         GUIManagedObject segmentationDimension = segmentationDimensionService
-            .getStoredSegmentationDimension(segmentationDimensionID);
+            .getStoredSegmentationDimension(segmentationDimensionID, tenantID);
 
         if (segmentationDimension != null && (force || !segmentationDimension.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -786,7 +786,7 @@ public class GUIManagerBaseManagement extends GUIManager
     for (int i = 0; i < segmentationDimensionIDs.size(); i++)
       {
         String segmentationDimensionID = segmentationDimensionIDs.get(i).toString();
-        GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+        GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID, tenantID);
         
         if (segmentationDimension != null && (force || !segmentationDimension.getReadOnly()))
           {
@@ -857,7 +857,7 @@ public class GUIManagerBaseManagement extends GUIManager
          *****************************************/
 
         segmentationDimensionService.removeSegmentationDimension(segmentationDimensionUnchecked.getGUIManagedObjectID(),
-            userID);
+            userID, tenantID);
 
         /*****************************************
          *
@@ -919,7 +919,7 @@ public class GUIManagerBaseManagement extends GUIManager
       {
 
         String segmentationDimensionID = segmentationDimensionIDs.get(i).toString();
-        GUIManagedObject existingElement = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+        GUIManagedObject existingElement = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID, tenantID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(segmentationDimensionID);
@@ -1005,7 +1005,7 @@ public class GUIManagerBaseManagement extends GUIManager
                  *****************************************/
 
                 segmentationDimensionService.putSegmentationDimension(segmentationDimension, uploadedFileService,
-                    subscriberIDService, (existingElement == null), userID);
+                    subscriberIDService, (existingElement == null), userID, tenantID);
 
                 /*****************************************
                  *
@@ -1029,7 +1029,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 //
 
                 segmentationDimensionService.putIncompleteSegmentationDimension(incompleteObject,
-                    (existingElement == null), userID);
+                    (existingElement == null), userID, tenantID);
 
                 //
                 // revalidate
@@ -1073,7 +1073,7 @@ public class GUIManagerBaseManagement extends GUIManager
     ****************************************/
 
     Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
+    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules(tenantID))
       {
         //
         //  modifiedUCGRule
@@ -1084,7 +1084,7 @@ public class GUIManagerBaseManagement extends GUIManager
         try
           {
             UCGRule ucgRule = new UCGRule(existingUCGRule.getJSONRepresentation(), epoch, existingUCGRule, tenantID);
-            ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
+            ucgRule.validate(ucgRuleService, segmentationDimensionService, date, tenantID);
             modifiedUCGRule = ucgRule;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -1145,7 +1145,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject target = targetService.getStoredTarget(targetID, includeArchived);
+    GUIManagedObject target = targetService.getStoredTarget(targetID, includeArchived, tenantID);
     JSONObject targetJSON = targetService.generateResponseJSON(target, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -1206,7 +1206,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
+    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID, tenantID);
 
     /*****************************************
     *
@@ -1249,7 +1249,7 @@ public class GUIManagerBaseManagement extends GUIManager
         if (!dryRun)
           {
 
-            targetService.putTarget(target, uploadedFileService, subscriberIDService, (existingTarget == null), userID);
+            targetService.putTarget(target, uploadedFileService, subscriberIDService, (existingTarget == null), userID, tenantID);
 
             /*****************************************
              *
@@ -1287,7 +1287,7 @@ public class GUIManagerBaseManagement extends GUIManager
         if (!dryRun)
           {
             targetService.putTarget(incompleteObject, uploadedFileService, subscriberIDService,
-                (existingTarget == null), userID);
+                (existingTarget == null), userID, tenantID);
 
             //
             // revalidate dependent objects
@@ -1351,7 +1351,7 @@ public class GUIManagerBaseManagement extends GUIManager
       {
         String targetID = JSONUtilities.decodeString(jsonRoot, "id", false);
         targetIDs.add(targetID);
-        GUIManagedObject target = targetService.getStoredTarget(targetID);
+        GUIManagedObject target = targetService.getStoredTarget(targetID, tenantID);
         if (target != null && (force || !target.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (target != null)
@@ -1370,7 +1370,7 @@ public class GUIManagerBaseManagement extends GUIManager
     for (int i = 0; i < targetIDs.size(); i++)
       {
         String targetID = targetIDs.get(i).toString();
-        GUIManagedObject target = targetService.getStoredTarget(targetID);
+        GUIManagedObject target = targetService.getStoredTarget(targetID, tenantID);
         if (target != null && (force || !target.getReadOnly()))
           {
             targets.add(target);
@@ -1389,7 +1389,7 @@ public class GUIManagerBaseManagement extends GUIManager
       {
 
         GUIManagedObject existingTarget = targets.get(0);
-        targetService.removeTarget(existingTarget.getGUIManagedObjectID(), userID);
+        targetService.removeTarget(existingTarget.getGUIManagedObjectID(), userID, tenantID);
       }
 
     /*****************************************
@@ -1444,7 +1444,7 @@ public class GUIManagerBaseManagement extends GUIManager
       {
 
         String targetID = targetIDs.get(i).toString();
-        GUIManagedObject existingElement = targetService.getStoredTarget(targetID);
+        GUIManagedObject existingElement = targetService.getStoredTarget(targetID, tenantID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(targetID);
@@ -1466,7 +1466,7 @@ public class GUIManagerBaseManagement extends GUIManager
                  *
                  *****************************************/
                 targetService.putTarget(target, uploadedFileService, subscriberIDService, (existingElement == null),
-                    userID);
+                    userID, tenantID);
 
                 /*****************************************
                  *
@@ -1490,7 +1490,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 //
 
                 targetService.putTarget(incompleteObject, uploadedFileService, subscriberIDService,
-                    (existingElement == null), userID);
+                    (existingElement == null), userID, tenantID);
 
                 //
                 // revalidate dependent objects
@@ -1542,7 +1542,7 @@ public class GUIManagerBaseManagement extends GUIManager
           {
             String segmentationDimensionID = segmentationDimensionIDs.get(i).toString();
             GUIManagedObject segmentationDimension = segmentationDimensionService
-                .getStoredSegmentationDimension(segmentationDimensionID, includeArchived);
+                .getStoredSegmentationDimension(segmentationDimensionID, includeArchived, tenantID);
             if (segmentationDimension != null)
               {
                 segmentationDimensionObjects.add(segmentationDimension);
@@ -1551,7 +1551,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-  segmentationDimensionObjects = segmentationDimensionService.getStoredSegmentationDimensions(includeArchived);
+  segmentationDimensionObjects = segmentationDimensionService.getStoredSegmentationDimensions(includeArchived, tenantID);
       }
     for (GUIManagedObject segmentationDimension : segmentationDimensionObjects)
       {
@@ -1604,7 +1604,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID, includeArchived);
+    GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID, includeArchived, tenantID);
     JSONObject productJSON = ucgRuleService.generateResponseJSON(ucgRule, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -1665,7 +1665,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingUCGRule = ucgRuleService.getStoredUCGRule(ucgRuleID);
+    GUIManagedObject existingUCGRule = ucgRuleService.getStoredUCGRule(ucgRuleID, tenantID);
 
     /*****************************************
     *
@@ -1707,7 +1707,7 @@ public class GUIManagerBaseManagement extends GUIManager
          *****************************************/
         if (!dryRun)
           {
-            ucgRuleService.putUCGRule(ucgRule, segmentationDimensionService, (existingUCGRule == null), userID);
+            ucgRuleService.putUCGRule(ucgRule, segmentationDimensionService, (existingUCGRule == null), userID, tenantID);
 
             /*****************************************
              *
@@ -1749,7 +1749,7 @@ public class GUIManagerBaseManagement extends GUIManager
         if (!dryRun)
           {
             ucgRuleService.putUCGRule(incompleteObject, segmentationDimensionService, (existingUCGRule == null),
-                userID);
+                userID, tenantID);
           }
         //
         //  log
@@ -1815,7 +1815,7 @@ public class GUIManagerBaseManagement extends GUIManager
       {
         String UCGRuleID = JSONUtilities.decodeString(jsonRoot, "id", false);
         UCGRuleIDs.add(UCGRuleID);
-        GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(UCGRuleID);
+        GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(UCGRuleID, tenantID);
         if (ucgRule != null && (force || !ucgRule.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (ucgRule != null)
@@ -1835,7 +1835,7 @@ public class GUIManagerBaseManagement extends GUIManager
     for (int i = 0; i < UCGRuleIDs.size(); i++)
       {
         String UCGRuleID = UCGRuleIDs.get(i).toString();
-        GUIManagedObject UCGRule = ucgRuleService.getStoredUCGRule(UCGRuleID);
+        GUIManagedObject UCGRule = ucgRuleService.getStoredUCGRule(UCGRuleID, tenantID);
 
         if (UCGRule != null && (force || !UCGRule.getReadOnly()))
           {
@@ -1855,7 +1855,7 @@ public class GUIManagerBaseManagement extends GUIManager
 
         GUIManagedObject ucgRule = UCGRules.get(i);
 
-        ucgRuleService.removeUCGRule(ucgRule.getGUIManagedObjectID(), userID);
+        ucgRuleService.removeUCGRule(ucgRule.getGUIManagedObjectID(), userID, tenantID);
       }
 
     /*****************************************
@@ -1909,7 +1909,7 @@ public class GUIManagerBaseManagement extends GUIManager
       {
 
         String ucgRuleID = ucgRuleIDs.get(i).toString();
-        GUIManagedObject existingElement = ucgRuleService.getStoredUCGRule(ucgRuleID);
+        GUIManagedObject existingElement = ucgRuleService.getStoredUCGRule(ucgRuleID, tenantID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(ucgRuleID);
@@ -1930,7 +1930,7 @@ public class GUIManagerBaseManagement extends GUIManager
                  * store
                  *
                  *****************************************/
-                ucgRuleService.putUCGRule(ucgRule, segmentationDimensionService, (existingElement == null), userID);
+                ucgRuleService.putUCGRule(ucgRule, segmentationDimensionService, (existingElement == null), userID, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -1946,7 +1946,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 //
 
                 ucgRuleService.putUCGRule(incompleteObject, segmentationDimensionService, (existingElement == null),
-                    userID);
+                    userID, tenantID);
                 //
                 // log
                 //
@@ -1991,7 +1991,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *****************************************/
 
     UCGRule activeUCGRule = null;
-    for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now))
+    for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now, tenantID))
       {
         activeUCGRule = ucgRule;
       }
@@ -2005,7 +2005,7 @@ public class GUIManagerBaseManagement extends GUIManager
     if (activeUCGRule != null)
       {
         activeUCGRule.setRefreshEpoch(activeUCGRule.getRefreshEpoch() != null ? activeUCGRule.getRefreshEpoch() + 1 : 1);
-        ucgRuleService.putUCGRule(activeUCGRule,segmentationDimensionService,false, userID);
+        ucgRuleService.putUCGRule(activeUCGRule,segmentationDimensionService,false, userID, tenantID);
       }
 
     /*****************************************
@@ -2033,7 +2033,7 @@ public class GUIManagerBaseManagement extends GUIManager
     ****************************************/
 
     Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
+    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules(tenantID))
       {
         //
         //  modifiedUCGRule
@@ -2102,7 +2102,7 @@ public class GUIManagerBaseManagement extends GUIManager
   for (int i = 0; i < ucgRuleIDs.size(); i++)
     {
       String ucgRuleID = ucgRuleIDs.get(i).toString();
-      GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID, includeArchived);
+      GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID, includeArchived, tenantID);
       if (ucgRule == null)
         {
           HashMap<String, Object> response = new HashMap<String, Object>();
@@ -2116,7 +2116,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-        ucgRuleObjects = ucgRuleService.getStoredUCGRules(includeArchived);
+        ucgRuleObjects = ucgRuleService.getStoredUCGRules(includeArchived, tenantID);
       }
     for (GUIManagedObject ucgRule : ucgRuleObjects)
       {
@@ -2160,7 +2160,7 @@ public class GUIManagerBaseManagement extends GUIManager
           {
             String segmentationDimensionID = segmentationDimensionIDs.get(i).toString();
             GUIManagedObject segmentationDimension = segmentationDimensionService
-                .getStoredSegmentationDimension(segmentationDimensionID, includeArchived);
+                .getStoredSegmentationDimension(segmentationDimensionID, includeArchived, tenantID);
             if (segmentationDimension != null)
               {
                 segmentationDimensionObjects.add(segmentationDimension);
@@ -2169,7 +2169,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-        segmentationDimensionObjects = segmentationDimensionService.getStoredSegmentationDimensions(includeArchived);
+        segmentationDimensionObjects = segmentationDimensionService.getStoredSegmentationDimensions(includeArchived, tenantID);
       }
     for (GUIManagedObject segmentationDimension : segmentationDimensionObjects)
       {
@@ -2231,7 +2231,7 @@ public class GUIManagerBaseManagement extends GUIManager
         for (int i = 0; i < targetIDs.size(); i++)
           {
             String targetID = targetIDs.get(i).toString();
-            GUIManagedObject target = targetService.getStoredTarget(targetID, includeArchived);
+            GUIManagedObject target = targetService.getStoredTarget(targetID, includeArchived, tenantID);
             if (target != null)
               {
                 targetObjects.add(target);
@@ -2240,7 +2240,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-        targetObjects = targetService.getStoredTargets(includeArchived);
+        targetObjects = targetService.getStoredTargets(includeArchived, tenantID);
       }
     for (GUIManagedObject targetList : targetObjects)
       {
@@ -2401,7 +2401,7 @@ public class GUIManagerBaseManagement extends GUIManager
     String responseCode = "";
     try
     {
-      ExtractItem extractItem = new ExtractItem(jsonRoot);
+      ExtractItem extractItem = new ExtractItem(jsonRoot, tenantID);
       if (ExtractService.isExtractRunning(extractItem.getExtractName() + "-" + extractItem.getUserId()))
       {
         responseCode = "targetIsAlreadyRunning";

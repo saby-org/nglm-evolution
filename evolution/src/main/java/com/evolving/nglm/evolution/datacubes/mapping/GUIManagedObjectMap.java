@@ -86,7 +86,7 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   {
     this.reset();
     
-    for(GUIManagedObject object : getCollection())
+    for(GUIManagedObject object : getCollection(0)) // TODO EVPRO-99 do we need to split per tenant ?? ??
       {
         if(this.typeOfT.isInstance(object))
           {

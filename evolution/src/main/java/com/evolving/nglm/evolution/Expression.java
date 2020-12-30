@@ -3267,7 +3267,7 @@ public abstract class Expression
       switch (functionCall)
         {
           case UnknownFunction:
-            CriterionField criterionField = criterionContext.getCriterionFields().get(identifier);
+            CriterionField criterionField = criterionContext.getCriterionFields(0).get(identifier); // TODO EVPRO-99 check if tenant 0 here, not sure at all...
             if (criterionField != null)
               {
                 lookaheadTokenValue = criterionField;

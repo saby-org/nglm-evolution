@@ -75,7 +75,7 @@ public class ExtractDriver extends ReportDriver
    * @param csvFilename   filename of report to produce
    * @param params        from reportmanager-run.sh
    */
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     //do nothing because this method will not be used
   }

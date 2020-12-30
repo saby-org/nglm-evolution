@@ -348,7 +348,7 @@ public class ExclusionInclusionTargetService extends GUIService
             
             if(exclusionInclusionTarget.getFileID() != null)
               {
-                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(exclusionInclusionTarget.getFileID());
+                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(exclusionInclusionTarget.getFileID(), 0);
                 if (uploadedFile == null)
                   { 
                     log.warn("ExclusionInclusionTargetService.run(uploaded file not found, processing done)");

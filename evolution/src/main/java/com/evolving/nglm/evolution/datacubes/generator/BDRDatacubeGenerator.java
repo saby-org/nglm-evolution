@@ -125,6 +125,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
       return false;
     }
     
+    // TODO EVPRO-99 check if the update must be splitt per tenant... ??? ...???
     offersMap.update();
     modulesMap.updateFromElasticsearch(elasticsearch);
     salesChannelsMap.update();

@@ -84,7 +84,7 @@ public class ContactPolicyProcessor
         // if not a campaign, don't check for journey objectives
         if(!request.getModule().equals(DeliveryRequest.Module.Journey_Manager)) return false;
 
-        Journey journey = journeyService.getActiveJourney(request.getFeatureID(), now);
+        Journey journey = journeyService.getActiveJourney(request.getFeatureID(), now, tenantID);
         Set<JourneyObjectiveInstance> journeyObjectivesInstances = journey.getJourneyObjectiveInstances();
         for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectivesInstances)
           {

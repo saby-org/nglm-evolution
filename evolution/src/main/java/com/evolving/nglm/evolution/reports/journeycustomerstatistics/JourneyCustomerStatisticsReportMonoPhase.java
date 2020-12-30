@@ -54,14 +54,14 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
       }
   }
   
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map, int tenantID)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> journeyStats = map;
     Map<String, Object> journeyMetric = map;
         if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
           {
-            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime(), tenantID);
             if (journey != null)
               {
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
@@ -157,7 +157,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     journeyCustomerStatisticsReportMonoPhase.start(args, reportGenerationDate);
   }
   
-  private void start(String[] args, final Date reportGenerationDate)
+  private void start(String[] args, final Date reportGenerationDate, int tenantID)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -178,7 +178,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     journeyService.start();
 
     try {
-      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
+      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate, tenantID);
       StringBuilder activeJourneyEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Journey journey : activeJourneys)

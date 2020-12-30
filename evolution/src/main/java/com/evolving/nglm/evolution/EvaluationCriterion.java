@@ -316,7 +316,7 @@ public class EvaluationCriterion
     //
 
     this.criterionContext = criterionContext;
-    this.criterionField = criterionContext.getCriterionFields().get(JSONUtilities.decodeString(jsonRoot, "criterionField", true));
+    this.criterionField = criterionContext.getCriterionFields(criterionContext.getTenantID()).get(JSONUtilities.decodeString(jsonRoot, "criterionField", true));
     this.criterionOperator = CriterionOperator.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "criterionOperator", true));
     this.storyReference = JSONUtilities.decodeString(jsonRoot, "storyReference", false);
     this.criterionDefault = JSONUtilities.decodeBoolean(jsonRoot, "criterionDefault", Boolean.FALSE);
@@ -704,7 +704,7 @@ public class EvaluationCriterion
 
     Struct valueStruct = (Struct) value;
     CriterionContext criterionContext = CriterionContext.unpack(new SchemaAndValue(schema.field("criterionContext").schema(), valueStruct.get("criterionContext")));
-    CriterionField criterionField = criterionContext.getCriterionFields().get(valueStruct.getString("criterionField"));
+    CriterionField criterionField = criterionContext.getCriterionFields(criterionContext.getTenantID()).get(valueStruct.getString("criterionField"));
     CriterionOperator criterionOperator = CriterionOperator.fromExternalRepresentation(valueStruct.getString("criterionOperator"));
     String argumentExpression = valueStruct.getString("argumentExpression");
     TimeUnit argumentBaseTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("argumentBaseTimeUnit"));

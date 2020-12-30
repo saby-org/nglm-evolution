@@ -138,7 +138,7 @@ public abstract class ActionManager
   
   public static String extractWorkflowFeatureID(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource)
   {
-    Journey sourceJourney = (Journey) evolutionEventContext.getJourneyService().getStoredJourney(deliveryRequestSource);
+    Journey sourceJourney = (Journey) evolutionEventContext.getJourneyService().getStoredJourney(deliveryRequestSource, subscriberEvaluationRequest.getTenantID());
     if(sourceJourney != null && (sourceJourney.getGUIManagedObjectType() == GUIManagedObjectType.Workflow || sourceJourney.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow))
       {
         if(subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceFeatureID() != null)
