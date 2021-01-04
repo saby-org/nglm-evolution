@@ -58,6 +58,9 @@ public class ContextVariable
     FirstWord("firstWord"),
     SecondWord("secondWord"),
     ThirdWord("thirdWord"),
+    Int("int"),
+    String("string"),
+    Double("double"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private Assignment(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -435,6 +438,9 @@ public class ContextVariable
                   case FirstWord:
                   case SecondWord:
                   case ThirdWord:
+                  case Int:
+                  case String:
+                  case Double:
                     break;
                   default:
                     // NO-OP
