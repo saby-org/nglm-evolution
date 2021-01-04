@@ -141,6 +141,7 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
         || response.getSkippedShards() > 0
         || response.status() != RestStatus.OK) {
       log.error("Elasticsearch search response return with bad status.");
+      log.error(response.toString());
       return result;
     }
     
