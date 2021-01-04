@@ -991,8 +991,7 @@ public class GUIService
 
   public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
-	  System.out.println("1:"+ fullDetails);
-    JSONObject responseJSON = new JSONObject();
+	JSONObject responseJSON = new JSONObject();
     if (guiManagedObject != null)
       {
         responseJSON.putAll(fullDetails ? getJSONRepresentation(guiManagedObject) : getSummaryJSONRepresentation(guiManagedObject));
@@ -1001,8 +1000,7 @@ public class GUIService
         responseJSON.put("valid", guiManagedObject.getAccepted());
         responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
         responseJSON.put("readOnly", guiManagedObject.getReadOnly());
-        
-        System.out.println("3:"+ responseJSON);
+       
       }
     return responseJSON;
   }
@@ -1015,8 +1013,7 @@ public class GUIService
 
   protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
   {
-	  System.out.println("test here");
-    JSONObject result = new JSONObject();
+	JSONObject result = new JSONObject();
     result.putAll(guiManagedObject.getJSONRepresentation());
     return result;
   }
@@ -1029,8 +1026,7 @@ public class GUIService
 
   protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
-	  System.out.println("test in summaryjson rep guiservice");
-    JSONObject result = new JSONObject();
+	JSONObject result = new JSONObject();
     result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
     result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
     result.put("description", guiManagedObject.getJSONRepresentation().get("description"));

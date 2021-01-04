@@ -69,13 +69,11 @@ public class Target extends GUIManagedObject
 
   TargetStatus getTargetStatus()
   {
-	  System.out.println("inside get Target status");
-    Date now = SystemTime.getCurrentTime();
+	Date now = SystemTime.getCurrentTime();
     TargetStatus status = TargetStatus.Unknown;
     status = (status == TargetStatus.Unknown && !this.getAccepted()) ? TargetStatus.NotValid : status;
     status = (status == TargetStatus.Unknown && isActiveGUIManagedObject(this, now)) ? TargetStatus.Running : status;
     status = (status == TargetStatus.Unknown && this.getEffectiveEndDate().before(now)) ? TargetStatus.Complete : status;
- System.out.println("status is"+status);
     return status;
   }
   
