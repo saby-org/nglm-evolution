@@ -8217,22 +8217,15 @@ public class EvolutionEngine
               voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", (operation == Operation.Redeem)?VoucherChangeAction.Redeem:VoucherChangeAction.Unknown, voucherCode, "unknownVoucherID", null, moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
             } else {
               log.debug("Found voucher " + voucherES + " for supplier " + supplierDisplay + " and voucherCode " + voucherCode);
-              String supplierSubscriberID = subscriberProfile.getSubscriberID();
-              String alternateIDSupplier = (String) supplier.getJSONRepresentation().get("customerIDfromAlternateID");
-              if (alternateIDSupplier != null && alternateIDSupplier.equals(supplierSubscriberID)) {
-                String subscriberID = voucherES.getSubscriberId();
-                log.debug("Found subscriberID " + subscriberID + " for supplier " + supplierDisplay + " (id " + supplierID + ") and voucherCode " + voucherCode);
-                try {
-                  log.debug("Trying to retrieve subscriber profile for " + subscriberID);
-                  subscriberProfile = evolutionEventContext.getSubscriberProfileService().getSubscriberProfile(subscriberID, false, false);
-                  log.debug("Got subscriber profile " + subscriberProfile);
-                } catch (SubscriberProfileServiceException e) {
-                  log.warn("Unable to find voucher owner profile " + subscriberID + " " + e.getLocalizedMessage());
-                  voucherChange = new VoucherChange(subscriberID, now, null, "", (operation == Operation.Redeem)?VoucherChangeAction.Redeem:VoucherChangeAction.Unknown, voucherCode, voucherES.getVoucherId(), null, moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
-                }
-              } else {
-                log.error("Subscriber " + supplierSubscriberID + " trying to redeem or validate voucher " + voucherCode + " but is not the supplier of the voucher " + alternateIDSupplier + " " + supplierDisplay + " (id " + supplierID + ")");
-                voucherChange = new VoucherChange(supplierSubscriberID, now, null, "", (operation == Operation.Redeem)?VoucherChangeAction.Redeem:VoucherChangeAction.Unknown, voucherCode, voucherES.getVoucherId(), null, moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
+              String subscriberID = voucherES.getSubscriberId();
+              log.debug("Found subscriberID " + subscriberID + " for supplier " + supplierDisplay + " (id " + supplierID + ") and voucherCode " + voucherCode);
+              try {
+                log.debug("Trying to retrieve subscriber profile for " + subscriberID);
+                subscriberProfile = evolutionEventContext.getSubscriberProfileService().getSubscriberProfile(subscriberID, false, false);
+                log.debug("Got subscriber profile " + subscriberProfile);
+              } catch (SubscriberProfileServiceException e) {
+                log.warn("Unable to find voucher owner profile " + subscriberID + " " + e.getLocalizedMessage());
+                voucherChange = new VoucherChange(subscriberID, now, null, "", (operation == Operation.Redeem)?VoucherChangeAction.Redeem:VoucherChangeAction.Unknown, voucherCode, voucherES.getVoucherId(), null, moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
               }
             }
           }
