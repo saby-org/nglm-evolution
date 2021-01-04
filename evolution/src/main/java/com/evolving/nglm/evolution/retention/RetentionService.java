@@ -60,12 +60,14 @@ public class RetentionService {
 		iterator = subscriberProfile.getTargets().keySet().iterator();
 		while(iterator.hasNext()){
 			String targetId = iterator.next();
+			if(targetId!=null) {
 			Target target=(Target)targetService.getStoredTarget(targetId);
-			if(target==null || isRetentionPeriodOverForTarget(target,RetentionType.KAFKA_DELETION)) {	
-				System.out.println("retention period is over for target");
-				subscriberUpdated=true;
-				iterator.remove();
-				subscriberProfile.getTargets().remove(targetId);				
+			if(target==null || isRetentionPeriodOverForTarget(target,RetentionType.KAFKA_DELETION)) {
+			   log.info("retention period is over for target {} and removing for subscriber {}",targetId,subscriberProfile.getSubscriberID());
+			   subscriberUpdated=true;
+			   iterator.remove();
+			   subscriberProfile.getTargets().remove(targetId);	
+			}
 			}
 		}
 
@@ -133,7 +135,6 @@ public class RetentionService {
 	
 	private boolean isRetentionPeriodOverForTarget(Target target, RetentionType retentionType){
 		if(target==null||target.getEffectiveEndDate()==null||retentionType==null|| getTargetRetention(retentionType,target.getTargetID())==null) {
-			System.out.println("null received");
 			return false;
 					}
 		Date cleanBeforeThisDate = EvolutionUtilities.removeTime(SystemTime.getCurrentTime(),getTargetRetention(retentionType,target.getTargetID()));
@@ -164,14 +165,11 @@ public class RetentionService {
 	}
 	
 	public Duration getTargetRetention(RetentionType type, String targetID) {
-		System.out.println("start Target Retention days");
 		Duration duration;
 		GUIManagedObject target = targetService.getStoredTarget(targetID);
 		if(target==null) duration= java.time.Duration.ofDays(Integer.MIN_VALUE);//deleted journey clean now
 		else
 		duration= java.time.Duration.ofDays(Deployment.getKafkaRetentionDaysTargets());
-		System.out.println("configured:"+Deployment.getKafkaRetentionDaysTargets());		
-		System.out.println("duration:"+duration);
 		return duration;
 	}
 }
