@@ -120,14 +120,6 @@ public abstract class DatacubeGenerator
     return this.datacubeName;
   }
   
-  //
-  // DocumentID settings
-  //
-  protected void addStaticFilters(Map<String, Object> filters) 
-  { 
-    return; 
-  }
-  
   protected String getDocumentID(Map<String,Object> filters, String timestamp) 
   {
     // @param mode can be used to distinguish several type of publishing mode (hourly, daily)
@@ -209,11 +201,6 @@ public abstract class DatacubeGenerator
   *****************************************/
   protected Map<String,Object> extractRow(Map<String, Object> filters, long count, String timestamp, long period, Map<String, Object> metrics) 
   {
-    //
-    // Add static filters that will be used for ID generation (such as date for instance)
-    //
-    addStaticFilters(filters);
-    
     //
     // Extract documentID from filters, timestamp
     //
