@@ -15,8 +15,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,7 +57,18 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serializer;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.Scroll;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -89,6 +102,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -96,10 +111,10 @@ import com.sun.net.httpserver.HttpServer;
 public class ThirdPartyManager 
 {
   private static final String DEFAULT_FEATURE_ID = "<anonymous>";
-
   private static final String CUSTOMER_ID = "customerID";
-
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
+  private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
+  private static DateFormat esDateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
   /*****************************************
    *
@@ -1236,6 +1251,9 @@ public class ThirdPartyManager
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
     JSONArray deliverableIDs = JSONUtilities.decodeJSONArray(jsonRoot, "deliverableIDs", false);
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
+    if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
 
     String subscriberID = resolveSubscriberID(jsonRoot);
 
@@ -1264,6 +1282,7 @@ public class ThirdPartyManager
 
           SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
           List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
+          List<JSONObject> ESBDRsJson = new ArrayList<JSONObject>();
           if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null) 
             {
               List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
@@ -1273,7 +1292,35 @@ public class ThirdPartyManager
               //
 
               List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.BDR).collect(Collectors.toList()); 
-
+             
+              SearchRequest searchRequest = getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
+              List<SearchHit> hits = getESHits(searchRequest);
+              for (SearchHit hit : hits)
+                {
+                  Map<String, Object> esFields = hit.getSourceAsMap();
+                  CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
+                  
+                  Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+                  ESBDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
+                }
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
               //
               // prepare dates
               //
@@ -1366,6 +1413,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
+          response.put("ESBDRs", JSONUtilities.encodeArray(ESBDRsJson));
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -1376,6 +1424,55 @@ public class ThirdPartyManager
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
     }
     return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getESHits
+  *
+  *****************************************/
+  
+  private List<SearchHit> getESHits(SearchRequest searchRequest) throws ThirdPartyManagerException
+  {
+    List<SearchHit> hits = new ArrayList<SearchHit>();
+    Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+    searchRequest.scroll(scroll);
+    searchRequest.source().size(1000);
+    try
+      {
+        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId(); // always null
+        SearchHit[] searchHits = searchResponse.getHits().getHits();
+        while (searchHits != null && searchHits.length > 0)
+          {
+            //
+            //  add
+            //
+            
+            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
+            
+            //
+            //  scroll
+            //
+            
+            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
+            scrollRequest.scroll(scroll);
+            searchResponse = elasticsearch.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+            scrollId = searchResponse.getScrollId();
+            searchHits = searchResponse.getHits().getHits();
+          }
+      } 
+    catch (IOException e)
+      {
+        log.error("IOException in ES qurery {}", e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+      }
+    
+    //
+    //  return
+    //
+    
+    return hits;
   }
 
   /*****************************************
@@ -6681,6 +6778,49 @@ public class ThirdPartyManager
     statsDuration.withLabel(StatsBuilders.LABEL.name.name(),apiName)
          .withLabel(StatsBuilders.LABEL.status.name(),status.name())
          .getStats().add(startTime);
+  }
+  
+  /*********************************
+   * 
+   * getSearchRequest
+   * 
+   ********************************/
+  
+  private SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters)
+  {
+    SearchRequest searchRequest = null;
+    BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("subscriberID", subscriberId));
+    
+    //
+    //  filters
+    //
+    
+    for (QueryBuilder filter : filters)
+      {
+        query = query.filter(filter);
+      }
+    
+    switch (api)
+    {
+      case getCustomerBDRs:
+        String index = null;
+        if (startDate != null)
+          {
+            List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
+            index = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(esDateFormat.format(startDate)));
+          }
+        else
+          {
+            index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
+          }
+        searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
+        break;
+
+      default:
+        break;
+    }
+    return searchRequest;
   }
 
 

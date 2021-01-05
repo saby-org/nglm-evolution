@@ -6,6 +6,8 @@
 
 package com.evolving.nglm.evolution;
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
@@ -39,6 +41,9 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryRequest.class);
+  
+  protected static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
+  protected static DateFormat esDateFormat = new SimpleDateFormat(elasticSearchDateFormat);
   
   //
   // this
@@ -764,6 +769,30 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.notificationHistory = notificationHistory;
     this.subscriberFields = subscriberFields;
 	this.topicPartition = new TopicPartition("unknown",-1);
+  }
+
+  /*****************************************
+  *
+  *  constructor -- esFields - minimal
+  *
+  *****************************************/
+  
+  public DeliveryRequest(Map<String, Object> esFields)
+  {
+    this.deliveryRequestID = (String) esFields.get("deliveryRequestID");
+    this.originatingDeliveryRequestID = (String) esFields.get("originatingDeliveryRequestID");
+    String eventDatetimeStr = (String) esFields.get("eventDatetime");
+    try
+      {
+        this.creationDate = esDateFormat.parse(eventDatetimeStr);
+      } 
+    catch (ParseException e)
+      {
+        if (log.isWarnEnabled()) log.warn("invalid eventDatetime {} format should be ", eventDatetimeStr, elasticSearchDateFormat);
+      }
+    this.eventID = (String) esFields.get("eventID");
+    this.moduleID = (String) esFields.get("moduleID");
+    this.featureID = (String) esFields.get("featureID");
   }
 
   /****************************************

@@ -587,6 +587,34 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
     /*****************************************
     *
+    *  constructor -- esFields
+    *
+    *****************************************/
+    
+    public CommodityDeliveryRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+      this.providerID = (String) esFields.get("providerID");
+      this.commodityID = (String) esFields.get("deliverableID");
+      this.operation = (CommodityDeliveryOperation) esFields.get("operation");
+      this.amount = (int) esFields.get("deliverableQty");
+      // not in ES this.validityPeriodType = esFields.get("");
+      // not in ES this.validityPeriodQuantity = esFields.get("");
+      String deliverableExpirationDateStr = (String) esFields.get("deliverableExpirationDate");
+      try
+        {
+          this.deliverableExpirationDate = esDateFormat.parse(deliverableExpirationDateStr);
+        } 
+      catch (java.text.ParseException e)
+        {
+          if (log.isWarnEnabled()) log.warn("invalid eventDatetime {} format should be ", deliverableExpirationDateStr, elasticSearchDateFormat);
+        }
+      CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
+      this.commodityDeliveryStatus = commodityDeliveryStatus;
+      this.statusMessage = (String) esFields.get("returnCodeDetails");
+    }
+    /*****************************************
+    *
     *  copy
     *
     *****************************************/
