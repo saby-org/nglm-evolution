@@ -32,6 +32,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -718,8 +720,25 @@ public class ThirdPartyManager
     // save start time for call latency stats
     long startTime = DurationStat.startTime();
 
+    /*****************************************
+     *
+     * get the user
+     *
+     *****************************************/
+
+    String userID = null;
+    if (exchange.getRequestURI().getQuery() != null)
+      {
+        Pattern pattern = Pattern.compile("^(.*\\&user_id|user_id)=(.*?)(\\&.*$|$)");
+        Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
+        if (matcher.matches())
+          {
+            userID = matcher.group(2);
+          }
+      }
+
     try
-    {
+      {
       /*****************************************
       *
       *  validateURIandContext
@@ -6366,7 +6385,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private class ThirdPartyCredential
+  public static class ThirdPartyCredential
   {
 
     //
@@ -6434,7 +6453,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private class AuthenticatedResponse
+  public static class AuthenticatedResponse
   {
     //
     // data
@@ -6472,7 +6491,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    private AuthenticatedResponse(JSONObject jsonRoot)
+    public AuthenticatedResponse(JSONObject jsonRoot)
     {
       this.userId = JSONUtilities.decodeInteger(jsonRoot, "UserId", true);
       this.loginName = JSONUtilities.decodeString(jsonRoot, "LoginName", true);
@@ -6597,7 +6616,7 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private String readString(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ThirdPartyManagerException
+  private static String readString(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ThirdPartyManagerException
   {
     String result = readString(jsonRoot, key);
     if (validateNotEmpty && (result == null || result.trim().isEmpty()))
@@ -6614,7 +6633,7 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private String readString(JSONObject jsonRoot, String key) throws ThirdPartyManagerException
+  private static String readString(JSONObject jsonRoot, String key) throws ThirdPartyManagerException
   {
     String result = null;
     try 

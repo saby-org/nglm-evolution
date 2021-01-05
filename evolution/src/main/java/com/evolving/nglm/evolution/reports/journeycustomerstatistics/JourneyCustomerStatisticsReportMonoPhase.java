@@ -157,7 +157,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     journeyCustomerStatisticsReportMonoPhase.start(args, reportGenerationDate);
   }
   
-  private void start(String[] args, final Date reportGenerationDate, int tenantID)
+  private void start(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -178,7 +178,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     journeyService.start();
 
     try {
-      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate, tenantID);
+      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate, 0); // TODO EVPRO-99 is all tenant (0) ok here ?
       StringBuilder activeJourneyEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Journey journey : activeJourneys)

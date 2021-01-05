@@ -286,7 +286,7 @@ public class ReportManager implements Watcher
         try 
         {
           List<String> children = zk.getChildren(serviceControlDir, this); // get the children and renew watch
-          processChildren(children, ten);
+          processChildren(children);
         }
         catch (KeeperException e) { handleSessionExpired(e, "Error processing report"); }
         catch (InterruptedException e)
@@ -307,24 +307,24 @@ public class ReportManager implements Watcher
    *
    *****************************************/
 
-  protected void processChildren(List<String> children, int tenantID) throws InterruptedException
+  protected void processChildren(List<String> children) throws InterruptedException
   {
     if (children != null && !children.isEmpty())
       {
         Collections.sort(children); // we are getting an unsorted list
         for (String child : children)
           {
-            processChild(child, tenantID);
+            processChild(child);
           }
       }
   }
-  protected void processChild(String child, int tenantID) throws InterruptedException
+  protected void processChild(String child) throws InterruptedException
   {
     // Generate report in separate thread
     Thread thread = new Thread( () -> { 
       try
       {
-        processChild2(child, tenantID);
+        processChild2(child);
       }
       catch (InterruptedException e)
       {
@@ -341,9 +341,12 @@ public class ReportManager implements Watcher
   }
 
   // Called when a control file is created or deleted
-  public void processChild2(String child, int tenantID) throws InterruptedException
+  public void processChild2(String child) throws InterruptedException
   {
-    // TODO EVPRO-99 take in account tenantID in the name of the file and zk lock
+    // TODO EVPRO-99 extract tenantID from child and take in account tenantID in the name of the file and zk lock
+    // TODO
+    // TODO !!!!
+    int tenantID = 1;
     String controlFile = controlDir + File.separator + child;
     String lockFile = lockDir + File.separator + child;
     log.trace("Checking if control exists : "+controlFile); // We might have been called for the suppression of the control node
@@ -374,7 +377,7 @@ public class ReportManager implements Watcher
                   final Date reportGenerationDate = new Date(JSONUtilities.decodeLong(jsonRoot, "reportGenerationDate", true));
                   String restOfLine = s.nextLine().trim();
                   s.close();
-                  Collection<GUIManagedObject> reports = reportService.getStoredReports();
+                  Collection<GUIManagedObject> reports = reportService.getStoredReports(tenantID);
                   Report report = null;
                   if (reportName != null)
                     {

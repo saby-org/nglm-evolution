@@ -263,10 +263,10 @@ public class ScoringGroup
   *
   *****************************************/
 
-  public ScoringGroup(JSONObject jsonRoot, String name) throws GUIManagerException
+  public ScoringGroup(JSONObject jsonRoot, String name, int tenantID) throws GUIManagerException
   {
     this.name = name;
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", false));
+    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", false), tenantID);
     this.scoringSplits = decodeScoringSplits(JSONUtilities.decodeJSONArray(jsonRoot, "scoringSplits", false));
   }
 
@@ -276,14 +276,14 @@ public class ScoringGroup
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray)  throws GUIManagerException, JSONUtilitiesException
+  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, int tenantID)  throws GUIManagerException, JSONUtilitiesException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
+            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile.get(tenantID)));
           }
       }
     return result;

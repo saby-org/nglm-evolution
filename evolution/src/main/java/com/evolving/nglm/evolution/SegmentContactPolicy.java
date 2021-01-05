@@ -254,7 +254,7 @@ public class SegmentContactPolicy extends GUIManagedObject
 
     if (dimensionID != null)
       {
-        SegmentationDimension segmentationDimension = dimensionService.getActiveSegmentationDimension(dimensionID, date);
+        SegmentationDimension segmentationDimension = dimensionService.getActiveSegmentationDimension(dimensionID, date, tenantID);
         if (segmentationDimension == null) throw new GUIManagerException("unknown segmentation dimension", dimensionID);
       }
 

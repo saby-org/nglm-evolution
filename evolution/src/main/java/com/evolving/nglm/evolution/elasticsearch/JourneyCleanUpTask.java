@@ -72,7 +72,7 @@ public class JourneyCleanUpTask
       String journeyID = getJourneyID.get(lowerCaseJourneyID);
       
       if(journeyID != null) { // if journeyID can't be found, it will be deleted
-        GUIManagedObject object = journeyService.getStoredJourney(journeyID, true);
+        GUIManagedObject object = journeyService.getStoredJourney(journeyID, true, 0); // EVPRO-99 check this
         
         if(object.getGUIManagedObjectType() == GUIManagedObjectType.Journey) {
           if(journeyExpirationDate.before(object.getEffectiveEndDate())) {
@@ -109,7 +109,7 @@ public class JourneyCleanUpTask
   *****************************************/
   /**
    * Build the map of <lowerCaseJourneyID, journeyID> of all active journeys 
-   * in the system. The goal is to be able to retrive the "real" journeyID 
+   * in the system. The goal is to be able to retrieve the "real" journeyID 
    * from the lowerCase one extracted from Elasticsearch.
    * 
    * We do not retrieve archived journeys. Therefore, if a journey has been
@@ -120,7 +120,7 @@ public class JourneyCleanUpTask
   {
     Map<String, String> result = new HashMap<String, String>();
     
-    for(GUIManagedObject object : this.journeyService.getStoredJourneys(false)) {
+    for(GUIManagedObject object : this.journeyService.getStoredJourneys(false, 0)) { // TODO EVPRO-99 check
       result.put(JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(object.getGUIManagedObjectID()), object.getGUIManagedObjectID());
     }
     

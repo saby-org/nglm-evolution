@@ -792,6 +792,7 @@ public class GUIManager
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
+    String tenantTopic = Deployment.getTenantTopic();
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
@@ -996,8 +997,10 @@ public class GUIManager
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
+    TenantService tenantService  = new TenantService(bootstrapServers, "guimanager-tenantservice-"+apiProcessKey, tenantTopic, true);
     elasticsearchManager = new ElasticsearchManager(elasticsearch, voucherService, journeyService);
 
+    
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
@@ -1089,7 +1092,7 @@ public class GUIManager
                 //  find existing deliverable (by name) and use/generate deliverableID
                 //
 
-                GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverableByName(account.getName()); // TODO EVPRO-99
+                GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverableByName(account.getName(), account.getTenantID()); // TODO EVPRO-99
                 String deliverableID = (existingDeliverable != null) ? existingDeliverable.getGUIManagedObjectID() : deliverableService.generateDeliverableID();
                 configuredDeliverableIDs.add(deliverableID);
 
@@ -1111,7 +1114,7 @@ public class GUIManager
                     deliverableMap.put("readOnly", true);
                     deliverableMap.put("generatedFromAccount", true);
                     deliverableMap.put("label", account.getLabel());
-                    deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), providerEpoch, null);
+                    deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), providerEpoch, null, account.getTenantID());
                   }
                 catch (GUIManagerException e)
                   {
@@ -1134,7 +1137,7 @@ public class GUIManager
                     //  create/update deliverable
                     //
 
-                    deliverableService.putDeliverable(deliverable, (existingDeliverable == null), "0");
+                    deliverableService.putDeliverable(deliverable, (existingDeliverable == null), "0", account.getTenantID());
                   }
               }
 
@@ -1150,7 +1153,7 @@ public class GUIManager
                 //  find existing paymentMean (by name) and use/generate paymentMeanID
                 //
 
-                GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMeanByName(account.getName());
+                GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMeanByName(account.getName(), account.getTenantID());
                 String paymentMeanID = (existingPaymentMean != null) ? existingPaymentMean.getGUIManagedObjectID() : paymentMeanService.generatePaymentMeanID();
                 configuredPaymentMeanIDs.add(paymentMeanID);
 
@@ -1171,7 +1174,7 @@ public class GUIManager
                     paymentMeanMap.put("readOnly", true);
                     paymentMeanMap.put("generatedFromAccount", true);
                     paymentMeanMap.put("label", account.getLabel());
-                    paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), providerEpoch, null);
+                    paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), providerEpoch, null, account.getTenantID());
                   }
                 catch (GUIManagerException e)
                   {
@@ -1194,7 +1197,7 @@ public class GUIManager
                     //  create/update paymentMean
                     //
 
-                    paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), "0");
+                    paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), "0", account.getTenantID());
                   }
               }
           }
@@ -1204,30 +1207,34 @@ public class GUIManager
         *  remove unused deliverables
         *
         *****************************************/
-
-        for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime()))
+        for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
           {
-            if (Objects.equals(providerID, deliverable.getFulfillmentProviderID()) && deliverable.getGeneratedFromAccount() && ! configuredDeliverableIDs.contains(deliverable.getDeliverableID()))
-              {
-                deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
-                log.info("provider deliverable {} {}", deliverable.getDeliverableID(), "remove");
-              }
-          }
         
-        /*****************************************
-        *
-        *  remove unused paymentMeans
-        *
-        *****************************************/
+          for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime(), tenant.getEffectiveTenantID()))
+            {
+              if (Objects.equals(providerID, deliverable.getFulfillmentProviderID()) && deliverable.getGeneratedFromAccount() && ! configuredDeliverableIDs.contains(deliverable.getDeliverableID()))
+                {
+                  deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0", tenant.getEffectiveTenantID());
+                  log.info("provider deliverable {} {}", deliverable.getDeliverableID(), "remove");
+                }
+            }
+          
+        
+          /*****************************************
+          *
+          *  remove unused paymentMeans
+          *
+          *****************************************/
 
-        for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime()))
-          {
-            if (Objects.equals(providerID, paymentMean.getFulfillmentProviderID()) && paymentMean.getGeneratedFromAccount() && ! configuredPaymentMeanIDs.contains(paymentMean.getPaymentMeanID()))
-              {
-                paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
-                log.info("provider paymentMean {} {}", paymentMean.getPaymentMeanID(), "remove");
-              }
-          }
+          for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime(), tenant.getEffectiveTenantID()))
+            {
+              if (Objects.equals(providerID, paymentMean.getFulfillmentProviderID()) && paymentMean.getGeneratedFromAccount() && ! configuredPaymentMeanIDs.contains(paymentMean.getPaymentMeanID()))
+                {
+                  paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0", tenant.getEffectiveTenantID());
+                  log.info("provider paymentMean {} {}", paymentMean.getPaymentMeanID(), "remove");
+                }
+            }
+        }
       }
 
     /*****************************************
@@ -1240,62 +1247,70 @@ public class GUIManager
     //  catalogCharacteristics
     //
 
-    if (catalogCharacteristicService.getStoredCatalogCharacteristics().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (catalogCharacteristicService.getStoredCatalogCharacteristics(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getInitialCatalogCharacteristicsJSONArray();
-            for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
+            try
               {
-                JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
-                guiManagerGeneral.processPutCatalogCharacteristic("0", catalogCharacteristicJSON, JSONUtilities.decodeInteger(catalogCharacteristicJSON, "tenantID", true));
+                JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getInitialCatalogCharacteristicsJSONArray();
+                for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
+                  {
+                    JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
+                    guiManagerGeneral.processPutCatalogCharacteristic("0", catalogCharacteristicJSON, JSONUtilities.decodeInteger(catalogCharacteristicJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
     //
     //  tokenTypes
     //
-
-    if (tokenTypeService.getStoredTokenTypes().size() == 0)
+    
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (tokenTypeService.getStoredTokenTypes(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialTokenTypesJSONArray = Deployment.getInitialTokenTypesJSONArray();
-            for (int i=0; i<initialTokenTypesJSONArray.size(); i++)
+            try
               {
-                JSONObject tokenTypeJSON = (JSONObject) initialTokenTypesJSONArray.get(i);
-                guiManagerGeneral.processPutTokenType("0", tokenTypeJSON, JSONUtilities.decodeInteger(tokenTypeJSON, "tenantID", true));
+                JSONArray initialTokenTypesJSONArray = Deployment.getInitialTokenTypesJSONArray();
+                for (int i=0; i<initialTokenTypesJSONArray.size(); i++)
+                  {
+                    JSONObject tokenTypeJSON = (JSONObject) initialTokenTypesJSONArray.get(i);
+                    guiManagerGeneral.processPutTokenType("0", tokenTypeJSON, JSONUtilities.decodeInteger(tokenTypeJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
     //
     //  productTypes
     //
-
-    if (productTypeService.getStoredProductTypes().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (productTypeService.getStoredProductTypes(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialProductTypesJSONArray = Deployment.getInitialProductTypesJSONArray();
-            for (int i=0; i<initialProductTypesJSONArray.size(); i++)
+            try
               {
-                JSONObject productTypeJSON = (JSONObject) initialProductTypesJSONArray.get(i);
-                processPutProductType("0", productTypeJSON, JSONUtilities.decodeInteger(productTypeJSON, "tenantID", true));
+                JSONArray initialProductTypesJSONArray = Deployment.getInitialProductTypesJSONArray();
+                for (int i=0; i<initialProductTypesJSONArray.size(); i++)
+                  {
+                    JSONObject productTypeJSON = (JSONObject) initialProductTypesJSONArray.get(i);
+                    processPutProductType("0", productTypeJSON, JSONUtilities.decodeInteger(productTypeJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
@@ -1304,59 +1319,64 @@ public class GUIManager
     //
 
     // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
-    try
-    {
-      Date now = SystemTime.getCurrentTime();
-      Collection<Report> existingReports = reportService.getActiveReports(now);
-      JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
-      for (int i=0; i<initialReportsJSONArray.size(); i++)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+      {    
+        try
         {
-          JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-          String name = JSONUtilities.decodeString(reportJSON, "name", false);
-          boolean create = true;
-          if (name != null)
+          Date now = SystemTime.getCurrentTime();
+          Collection<Report> existingReports = reportService.getActiveReports(now, tenant.getEffectiveTenantID());
+          JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
+          for (int i=0; i<initialReportsJSONArray.size(); i++)
             {
-              for (Report report : existingReports)
+              JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
+              String name = JSONUtilities.decodeString(reportJSON, "name", false);
+              boolean create = true;
+              if (name != null)
                 {
-                  if (name.equals(report.getGUIManagedObjectName()))
+                  for (Report report : existingReports)
                     {
-                      // this report already exists (same name), do not create it
-                      create = false;
-                      log.info("Report " + name + " (id " + report.getReportID() + " ) already exists, do not create");
-                      break;
+                      if (name.equals(report.getGUIManagedObjectName()))
+                        {
+                          // this report already exists (same name), do not create it
+                          create = false;
+                          log.info("Report " + name + " (id " + report.getReportID() + " ) already exists, do not create");
+                          break;
+                        }
                     }
                 }
+              if (create)
+              {
+                guiManagerLoyaltyReporting.processPutReport("0", reportJSON, JSONUtilities.decodeInteger(reportJSON, "tenantID", true)); // this will patch the report, if it already exists
+              }
             }
-          if (create)
-          {
-            guiManagerLoyaltyReporting.processPutReport("0", reportJSON, JSONUtilities.decodeInteger(reportJSON, "tenantID", true)); // this will patch the report, if it already exists
-          }
         }
-    }
-    catch (JSONUtilitiesException e)
-    {
-      throw new ServerRuntimeException("deployment", e);
-    }
+        catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      }
 
 
     //
     //  calling channels
     //
-
-    if (callingChannelService.getStoredCallingChannels().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (callingChannelService.getStoredCallingChannels(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialCallingChannelsJSONArray = Deployment.getInitialCallingChannelsJSONArray();
-            for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
+            try
               {
-                JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
-                processPutCallingChannel("0", callingChannelJSON, JSONUtilities.decodeInteger(callingChannelJSON, "tenantID", true));
+                JSONArray initialCallingChannelsJSONArray = Deployment.getInitialCallingChannelsJSONArray();
+                for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
+                  {
+                    JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
+                    processPutCallingChannel("0", callingChannelJSON, JSONUtilities.decodeInteger(callingChannelJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
@@ -1364,62 +1384,70 @@ public class GUIManager
     //  sales channels
     //
 
-    if (salesChannelService.getStoredSalesChannels().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (salesChannelService.getStoredSalesChannels(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialSalesChannelsJSONArray = Deployment.getInitialSalesChannelsJSONArray();
-            for (int i=0; i<initialSalesChannelsJSONArray.size(); i++)
+            try
               {
-                JSONObject  salesChannelJSON = (JSONObject) initialSalesChannelsJSONArray.get(i);
-                processPutSalesChannel("0", salesChannelJSON, JSONUtilities.decodeInteger(salesChannelJSON, "tenantID", true));
+                JSONArray initialSalesChannelsJSONArray = Deployment.getInitialSalesChannelsJSONArray();
+                for (int i=0; i<initialSalesChannelsJSONArray.size(); i++)
+                  {
+                    JSONObject  salesChannelJSON = (JSONObject) initialSalesChannelsJSONArray.get(i);
+                    processPutSalesChannel("0", salesChannelJSON, JSONUtilities.decodeInteger(salesChannelJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
     
     //
     //  suppliers
     //
-
-    if (supplierService.getStoredSuppliers().size() == 0)
+    
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (supplierService.getStoredSuppliers(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialSuppliersJSONArray = Deployment.getInitialSuppliersJSONArray();
-            for (int i=0; i<initialSuppliersJSONArray.size(); i++)
+            try
               {
-                JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
-                processPutSupplier("0", supplierJSON, JSONUtilities.decodeInteger(supplierJSON, "tenantID", true));
+                JSONArray initialSuppliersJSONArray = Deployment.getInitialSuppliersJSONArray();
+                for (int i=0; i<initialSuppliersJSONArray.size(); i++)
+                  {
+                    JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
+                    processPutSupplier("0", supplierJSON, JSONUtilities.decodeInteger(supplierJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
     //
     //  products
     //
-
-    if (productService.getStoredProducts().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (productService.getStoredProducts(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialProductsJSONArray = Deployment.getInitialProductsJSONArray();
-            for (int i=0; i<initialProductsJSONArray.size(); i++)
+            try
               {
-                JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
-                processPutProduct("0", productJSON, JSONUtilities.decodeInteger(productJSON, "tenantID", true));
+                JSONArray initialProductsJSONArray = Deployment.getInitialProductsJSONArray();
+                for (int i=0; i<initialProductsJSONArray.size(); i++)
+                  {
+                    JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
+                    processPutProduct("0", productJSON, JSONUtilities.decodeInteger(productJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
@@ -1427,63 +1455,71 @@ public class GUIManager
     //  Source Addresses not before communicationChannels
     //
     
-    if (sourceAddressService.getStoredSourceAddresss().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (sourceAddressService.getStoredSourceAddresss(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialSourceAddressesJSONArray = Deployment.getInitialSourceAddressesJSONArray();
-            for (int i=0; i<initialSourceAddressesJSONArray.size(); i++)
+            try
               {
-                JSONObject  sourceAddresslJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
-                processPutSourceAddress("0", sourceAddresslJSON, JSONUtilities.decodeInteger(sourceAddresslJSON, "tenantID", true));
+                JSONArray initialSourceAddressesJSONArray = Deployment.getInitialSourceAddressesJSONArray();
+                for (int i=0; i<initialSourceAddressesJSONArray.size(); i++)
+                  {
+                    JSONObject  sourceAddresslJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
+                    processPutSourceAddress("0", sourceAddresslJSON, JSONUtilities.decodeInteger(sourceAddresslJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
     //
     //  contactPolicies
     //
-
-    if (contactPolicyService.getStoredContactPolicies().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (contactPolicyService.getStoredContactPolicies(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialContactPoliciesJSONArray = Deployment.getInitialContactPoliciesJSONArray();
-            for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
+            try
               {
-                JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
-                processPutContactPolicy("0", contactPolicyJSON, JSONUtilities.decodeInteger(contactPolicyJSON, "tenantID", true));
+                JSONArray initialContactPoliciesJSONArray = Deployment.getInitialContactPoliciesJSONArray();
+                for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
+                  {
+                    JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
+                    processPutContactPolicy("0", contactPolicyJSON, JSONUtilities.decodeInteger(contactPolicyJSON, "tenantID", true));
+                  }
+              }
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
               }
           }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
       }
-
+        
     //
     //  journeyTemplates
     //
     
-    if (journeyTemplateService.getStoredJourneyTemplates().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
-        {
-          JSONArray initialJourneyTemplatesJSONArray = Deployment.getInitialJourneyTemplatesJSONArray();
-          for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
+        if (journeyTemplateService.getStoredJourneyTemplates(tenant.getEffectiveTenantID()).size() == 0)
+          {
+            try
             {
-              JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
-              processPutJourneyTemplate("0", journeyTemplateJSON, JSONUtilities.decodeInteger(journeyTemplateJSON, "tenantID", true));
+              JSONArray initialJourneyTemplatesJSONArray = Deployment.getInitialJourneyTemplatesJSONArray();
+              for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
+                {
+                  JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
+                  processPutJourneyTemplate("0", journeyTemplateJSON, JSONUtilities.decodeInteger(journeyTemplateJSON, "tenantID", true));
+                }
             }
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
+          catch (JSONUtilitiesException e)
+            {
+              throw new ServerRuntimeException("deployment", e);
+            }
+          }
       }
     
     
@@ -1491,20 +1527,23 @@ public class GUIManager
     //  journeyObjectives
     //
 
-    if (journeyObjectiveService.getStoredJourneyObjectives().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (journeyObjectiveService.getStoredJourneyObjectives(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialJourneyObjectivesJSONArray = Deployment.getInitialJourneyObjectivesJSONArray();
-            for (int i=0; i<initialJourneyObjectivesJSONArray.size(); i++)
+            try
               {
-                JSONObject journeyObjectiveJSON = (JSONObject) initialJourneyObjectivesJSONArray.get(i);
-                processPutJourneyObjective("0", journeyObjectiveJSON, JSONUtilities.decodeInteger(journeyObjectiveJSON, "tenantID", true));
+                JSONArray initialJourneyObjectivesJSONArray = Deployment.getInitialJourneyObjectivesJSONArray();
+                for (int i=0; i<initialJourneyObjectivesJSONArray.size(); i++)
+                  {
+                    JSONObject journeyObjectiveJSON = (JSONObject) initialJourneyObjectivesJSONArray.get(i);
+                    processPutJourneyObjective("0", journeyObjectiveJSON, JSONUtilities.decodeInteger(journeyObjectiveJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
@@ -1512,42 +1551,47 @@ public class GUIManager
     //  offerObjectives
     //
 
-    if (offerObjectiveService.getStoredOfferObjectives().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (offerObjectiveService.getStoredOfferObjectives(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialOfferObjectivesJSONArray = Deployment.getInitialOfferObjectivesJSONArray();
-            for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
+            try
               {
-                JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
-                processPutOfferObjective("0", offerObjectiveJSON, JSONUtilities.decodeInteger(offerObjectiveJSON, "tenantID", true));
+                JSONArray initialOfferObjectivesJSONArray = Deployment.getInitialOfferObjectivesJSONArray();
+                for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
+                  {
+                    JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
+                    processPutOfferObjective("0", offerObjectiveJSON, JSONUtilities.decodeInteger(offerObjectiveJSON, "tenantID", true));
+                  }
+              }
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
               }
           }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-
       }
+    
 
     //
     //  segmentationDimensions
     //
-
-    if (segmentationDimensionService.getStoredSegmentationDimensions().size() == 0)
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        try
+        if (segmentationDimensionService.getStoredSegmentationDimensions(tenant.getEffectiveTenantID()).size() == 0)
           {
-            JSONArray initialSegmentationDimensionsJSONArray = Deployment.getInitialSegmentationDimensionsJSONArray();
-            for (int i=0; i<initialSegmentationDimensionsJSONArray.size(); i++)
+            try
               {
-                JSONObject segmentationDimensionJSON = (JSONObject) initialSegmentationDimensionsJSONArray.get(i);
-                guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimensionJSON, JSONUtilities.decodeInteger(segmentationDimensionJSON, "tenantID", true));
+                JSONArray initialSegmentationDimensionsJSONArray = Deployment.getInitialSegmentationDimensionsJSONArray();
+                for (int i=0; i<initialSegmentationDimensionsJSONArray.size(); i++)
+                  {
+                    JSONObject segmentationDimensionJSON = (JSONObject) initialSegmentationDimensionsJSONArray.get(i);
+                    guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimensionJSON, JSONUtilities.decodeInteger(segmentationDimensionJSON, "tenantID", true));
+                  }
               }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
+            catch (JSONUtilitiesException e)
+              {
+                throw new ServerRuntimeException("deployment", e);
+              }
           }
       }
 
@@ -1560,15 +1604,17 @@ public class GUIManager
     //
     // remove all existing simple profile dimensions
     //
-
-    for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions())
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        if (dimensionObject instanceof SegmentationDimension)
+        for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions(tenant.getEffectiveTenantID()))
           {
-            SegmentationDimension dimension = (SegmentationDimension)dimensionObject;
-            if (dimension.getIsSimpleProfileDimension())
+            if (dimensionObject instanceof SegmentationDimension)
               {
-                segmentationDimensionService.removeSegmentationDimension(dimension.getSegmentationDimensionID(), "0");
+                SegmentationDimension dimension = (SegmentationDimension)dimensionObject;
+                if (dimension.getIsSimpleProfileDimension())
+                  {
+                    segmentationDimensionService.removeSegmentationDimension(dimension.getSegmentationDimensionID(), "0", tenant.getEffectiveTenantID());
+                  }
               }
           }
       }
@@ -1578,125 +1624,130 @@ public class GUIManager
     //
 
     Date now = SystemTime.getCurrentTime();
-    Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile.getCriterionFields();
-    for (CriterionField criterion : profileCriterionFields.values())
+
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
-        if (Deployment.getGenerateSimpleProfileDimensions() || criterion.getGenerateDimension())
+        Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile.get(tenant.getEffectiveTenantID()).getCriterionFields(tenant.getEffectiveTenantID());
+        for (CriterionField criterion : profileCriterionFields.values())
           {
-            List<JSONObject> availableValues = evaluateAvailableValues(criterion, now, false, tenantID);
-            if (availableValues != null && availableValues.size() > 0)
+            if (Deployment.getGenerateSimpleProfileDimensions() || criterion.getGenerateDimension())
               {
-                //
-                // create dimension
-                //
-
-                String dimensionID = "simple.subscriber." + criterion.getID();
-                HashMap<String,Object> newSimpleProfileDimensionJSON = new HashMap<String,Object>();
-                newSimpleProfileDimensionJSON.put("isSimpleProfileDimension", true);
-                newSimpleProfileDimensionJSON.put("id", dimensionID);
-                newSimpleProfileDimensionJSON.put("name", normalizeSegmentName(criterion.getName()));
-                newSimpleProfileDimensionJSON.put("display", criterion.getDisplay());
-                newSimpleProfileDimensionJSON.put("description", "Simple profile criteria (from "+criterion.getName()+")");
-                newSimpleProfileDimensionJSON.put("targetingType", SegmentationDimensionTargetingType.ELIGIBILITY.getExternalRepresentation());
-                newSimpleProfileDimensionJSON.put("active", Boolean.TRUE);
-                newSimpleProfileDimensionJSON.put("readOnly", Boolean.TRUE);
-
-                //
-                // create all segments of this dimension
-                //
-
-                ArrayList<Object> newSimpleProfileDimensionSegments = new ArrayList<Object>();
-                for (JSONObject availableValue : availableValues)
+                List<JSONObject> availableValues = evaluateAvailableValues(criterion, now, false, tenant.getEffectiveTenantID());
+                if (availableValues != null && availableValues.size() > 0)
                   {
-                    HashMap<String,Object> segmentJSON = new HashMap<String,Object>();
-                    ArrayList<Object> segmentProfileCriteriaList = new ArrayList<Object>();
-                    switch (criterion.getFieldDataType())
+                    //
+                    // create dimension
+                    //
+    
+                    String dimensionID = "simple.subscriber." + criterion.getID();
+                    HashMap<String,Object> newSimpleProfileDimensionJSON = new HashMap<String,Object>();
+                    newSimpleProfileDimensionJSON.put("isSimpleProfileDimension", true);
+                    newSimpleProfileDimensionJSON.put("id", dimensionID);
+                    newSimpleProfileDimensionJSON.put("name", normalizeSegmentName(criterion.getName()));
+                    newSimpleProfileDimensionJSON.put("display", criterion.getDisplay());
+                    newSimpleProfileDimensionJSON.put("description", "Simple profile criteria (from "+criterion.getName()+")");
+                    newSimpleProfileDimensionJSON.put("targetingType", SegmentationDimensionTargetingType.ELIGIBILITY.getExternalRepresentation());
+                    newSimpleProfileDimensionJSON.put("active", Boolean.TRUE);
+                    newSimpleProfileDimensionJSON.put("readOnly", Boolean.TRUE);
+    
+                    //
+                    // create all segments of this dimension
+                    //
+    
+                    ArrayList<Object> newSimpleProfileDimensionSegments = new ArrayList<Object>();
+                    for (JSONObject availableValue : availableValues)
                       {
-                        case StringCriterion:
-
-                          //
-                          // create a segment
-                          //
-
-                          String stringValueID = JSONUtilities.decodeString(availableValue, "id", true);
-                          String stringValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
-                          segmentJSON.put("id", dimensionID + "." + stringValueID);
-                          segmentJSON.put("name", normalizeSegmentName(stringValueDisplay));
-                          if (!newSimpleProfileDimensionSegments.isEmpty())
-                            {
-                              // first element is the default value => fill criteria for all values except the first
-                              HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
-                              segmentProfileCriteria.put("criterionField", criterion.getName());
-                              segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
-                              HashMap<String,Object> argument = new HashMap<String,Object> ();
-                              argument.put("expression", "'"+stringValueID+"'");
-                              segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
-                              segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
-                            }
-                          segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
-                          newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
-                          break;
-
-                        case BooleanCriterion:
-
-                          //
-                          // create a segment
-                          //
-
-                          boolean booleanValueID = JSONUtilities.decodeBoolean(availableValue, "id", true);
-                          String booleanValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
-                          segmentJSON.put("id", dimensionID + "." + booleanValueID);
-                          segmentJSON.put("name", normalizeSegmentName(booleanValueDisplay));
-                          if (!newSimpleProfileDimensionSegments.isEmpty())
-                            {
-                              // first element is the default value => fill criteria for all values except the first
-                              HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
-                              segmentProfileCriteria.put("criterionField", criterion.getName());
-                              segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
-                              HashMap<String,Object> argument = new HashMap<String,Object> ();
-                              argument.put("expression", Boolean.toString(booleanValueID));
-                              segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
-                              segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
-                            }
-                          segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
-                          newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
-                          break;
-
-                        case IntegerCriterion:
-
-                          //
-                          // create a segment
-                          //
-
-                          int intValueID = JSONUtilities.decodeInteger(availableValue, "id", true);
-                          String intValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
-                          segmentJSON.put("id", dimensionID + "." + intValueID);
-                          segmentJSON.put("name", normalizeSegmentName(intValueDisplay));
-                          if (!newSimpleProfileDimensionSegments.isEmpty())
-                            {
-                              // first element is the default value => fill criteria for all values except the first
-                              HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
-                              segmentProfileCriteria.put("criterionField", criterion.getName());
-                              segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
-                              HashMap<String,Object> argument = new HashMap<String,Object> ();
-                              argument.put("expression", ""+intValueID);
-                              segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
-                              segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
-                            }
-                          segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
-                          newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
-                          break;
-
-                        default:
-                          //DoubleCriterion
-                          //DateCriterion
-                          break;
+                        HashMap<String,Object> segmentJSON = new HashMap<String,Object>();
+                        ArrayList<Object> segmentProfileCriteriaList = new ArrayList<Object>();
+                        switch (criterion.getFieldDataType())
+                          {
+                            case StringCriterion:
+    
+                              //
+                              // create a segment
+                              //
+    
+                              String stringValueID = JSONUtilities.decodeString(availableValue, "id", true);
+                              String stringValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
+                              segmentJSON.put("id", dimensionID + "." + stringValueID);
+                              segmentJSON.put("name", normalizeSegmentName(stringValueDisplay));
+                              if (!newSimpleProfileDimensionSegments.isEmpty())
+                                {
+                                  // first element is the default value => fill criteria for all values except the first
+                                  HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
+                                  segmentProfileCriteria.put("criterionField", criterion.getName());
+                                  segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
+                                  HashMap<String,Object> argument = new HashMap<String,Object> ();
+                                  argument.put("expression", "'"+stringValueID+"'");
+                                  segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
+                                  segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
+                                }
+                              segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
+                              newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
+                              break;
+    
+                            case BooleanCriterion:
+    
+                              //
+                              // create a segment
+                              //
+    
+                              boolean booleanValueID = JSONUtilities.decodeBoolean(availableValue, "id", true);
+                              String booleanValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
+                              segmentJSON.put("id", dimensionID + "." + booleanValueID);
+                              segmentJSON.put("name", normalizeSegmentName(booleanValueDisplay));
+                              if (!newSimpleProfileDimensionSegments.isEmpty())
+                                {
+                                  // first element is the default value => fill criteria for all values except the first
+                                  HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
+                                  segmentProfileCriteria.put("criterionField", criterion.getName());
+                                  segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
+                                  HashMap<String,Object> argument = new HashMap<String,Object> ();
+                                  argument.put("expression", Boolean.toString(booleanValueID));
+                                  segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
+                                  segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
+                                }
+                              segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
+                              newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
+                              break;
+    
+                            case IntegerCriterion:
+    
+                              //
+                              // create a segment
+                              //
+    
+                              int intValueID = JSONUtilities.decodeInteger(availableValue, "id", true);
+                              String intValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
+                              segmentJSON.put("id", dimensionID + "." + intValueID);
+                              segmentJSON.put("name", normalizeSegmentName(intValueDisplay));
+                              if (!newSimpleProfileDimensionSegments.isEmpty())
+                                {
+                                  // first element is the default value => fill criteria for all values except the first
+                                  HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
+                                  segmentProfileCriteria.put("criterionField", criterion.getName());
+                                  segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
+                                  HashMap<String,Object> argument = new HashMap<String,Object> ();
+                                  argument.put("expression", ""+intValueID);
+                                  segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
+                                  segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
+                                }
+                              segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
+                              newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
+                              break;
+    
+                            default:
+                              //DoubleCriterion
+                              //DateCriterion
+                              break;
+                          }
                       }
+    
+                    newSimpleProfileDimensionJSON.put("segments", JSONUtilities.encodeArray(newSimpleProfileDimensionSegments));
+                    newSimpleProfileDimensionJSON.put("tenantID", tenant.getEffectiveTenantID());
+                    JSONObject newSimpleProfileDimension = JSONUtilities.encodeObject(newSimpleProfileDimensionJSON);
+                    guiManagerBaseManagement.processPutSegmentationDimension("0", newSimpleProfileDimension, JSONUtilities.decodeInteger(newSimpleProfileDimension, "tenantID", true));
                   }
-
-                newSimpleProfileDimensionJSON.put("segments", JSONUtilities.encodeArray(newSimpleProfileDimensionSegments));
-                JSONObject newSimpleProfileDimension = JSONUtilities.encodeObject(newSimpleProfileDimensionJSON);
-                guiManagerBaseManagement.processPutSegmentationDimension("0", newSimpleProfileDimension, JSONUtilities.decodeInteger(newSimpleProfileDimension, "tenantID", true));
               }
           }
       }
@@ -1743,8 +1794,12 @@ public class GUIManager
     resellerService.start();
     segmentContactPolicyService.start();
     dynamicEventDeclarationsService.start();
-    dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService);
-    dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+      {
+        dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService, tenant.getEffectiveTenantID());
+        dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService, tenant.getEffectiveTenantID());
+      }
+
     criterionFieldAvailableValuesService.start();
     elasticsearchManager.start();
 

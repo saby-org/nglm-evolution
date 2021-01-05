@@ -173,7 +173,7 @@ public class SMPPPlugin implements SMSNotificationInterface
 
   public void send(SMSNotificationManagerRequest deliveryRequest)
   {
-    String text = deliveryRequest.getText(smsNotificationManager.getSubscriberMessageTemplateService());
+    String text = deliveryRequest.getText(smsNotificationManager.getSubscriberMessageTemplateService(), deliveryRequest.getTenantID());
     String destination = deliveryRequest.getDestination();
     String source = deliveryRequest.getSource();
     boolean flashSMS = ((SMSNotificationManagerRequest)deliveryRequest).getFlashSMS();

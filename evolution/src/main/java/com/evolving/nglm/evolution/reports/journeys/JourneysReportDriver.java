@@ -128,7 +128,7 @@ public class JourneysReportDriver extends ReportDriver
         // do not include tree structure in zipentry, just csv filename
         ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
         writer.putNextEntry(entry);
-        Collection<GUIManagedObject> journeys = journeyService.getStoredJourneys();
+        Collection<GUIManagedObject> journeys = journeyService.getStoredJourneys(tenantID);
         int nbJourneys = journeys.size();
         log.info("journeys list size : " + nbJourneys);
 
@@ -149,7 +149,7 @@ public class JourneysReportDriver extends ReportDriver
                   journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                   journeyInfo.put("journeyDescription", journey.getJSONRepresentation().get("description"));
                   journeyInfo.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation()); 
-                  Set<JourneyObjective> activejourneyObjectives = journey.getAllObjectives(journeyObjectiveService, SystemTime.getCurrentTime());                 
+                  Set<JourneyObjective> activejourneyObjectives = journey.getAllObjectives(journeyObjectiveService, SystemTime.getCurrentTime(), tenantID);                 
                   for (JourneyObjective journeyObjective : activejourneyObjectives) {
                     sbJourneyObjectives.append(journeyObjective.getGUIManagedObjectDisplay()).append(",");            
                   }   

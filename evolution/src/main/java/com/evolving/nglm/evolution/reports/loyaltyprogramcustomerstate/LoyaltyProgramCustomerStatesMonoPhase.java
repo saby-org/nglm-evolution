@@ -80,7 +80,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                     Object programID = obj.get("programID");
                     if (programID != null && programID instanceof String)
                       {
-                        GUIManagedObject guiManagedObject = loyaltyProgramService.getStoredLoyaltyProgram((String) programID);
+                        GUIManagedObject guiManagedObject = loyaltyProgramService.getStoredLoyaltyProgram((String) programID, tenantID);
                         if (guiManagedObject instanceof LoyaltyProgram)
                           {
                             LoyaltyProgram loyaltyProgram = (LoyaltyProgram) guiManagedObject;

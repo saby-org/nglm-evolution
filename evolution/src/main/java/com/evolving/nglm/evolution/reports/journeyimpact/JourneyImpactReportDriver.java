@@ -114,7 +114,7 @@ public class JourneyImpactReportDriver extends ReportDriver
 
     try
     {
-      Collection<GUIManagedObject> journeys = journeyService.getStoredJourneys();
+      Collection<GUIManagedObject> journeys = journeyService.getStoredJourneys(tenantID);
       int nbJourneys = journeys.size();
       log.info("journeys list size : " + nbJourneys);
 

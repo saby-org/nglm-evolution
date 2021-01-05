@@ -138,7 +138,7 @@ public class OfferService extends GUIService
 
     if (offer instanceof Offer)
       {
-        ((Offer) offer).validate(callingChannelService, salesChannelService, productService, voucherService, now);
+        ((Offer) offer).validate(callingChannelService, salesChannelService, productService, voucherService, now, tenantID);
       }
 
     //

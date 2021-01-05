@@ -487,6 +487,48 @@ public class GUIService
 
   /*****************************************
   *
+  *  per tenant Map utilities
+  *
+  *****************************************/
+  
+  private Map<String,GUIManagedObject> createAndGetTenantSpecificMap(HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> currentTenantMap, int tenantID)
+  {
+    Map<String,GUIManagedObject> result = currentTenantMap.get(tenantID);
+    if(result == null)
+      {
+        synchronized (currentTenantMap)
+          {
+            result = currentTenantMap.get(tenantID);
+            if(result == null)
+              {
+                result = new ConcurrentHashMap<>();
+                currentTenantMap.put(tenantID, (ConcurrentHashMap<String, GUIManagedObject>) result);
+              }
+          }
+      }
+    return result;
+  }
+  
+  private void putSpecificAndAllTenants(HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>>  currentTenantMap, GUIManagedObject guiManagedObject, int tenantID)
+  {
+    Map<String,GUIManagedObject> tenantMap = createAndGetTenantSpecificMap(currentTenantMap, tenantID);
+    tenantMap.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
+    // add also in the map related to tenant 0 i.e All tenants..
+    Map<String,GUIManagedObject> allTenantMap = createAndGetTenantSpecificMap(currentTenantMap, 0);
+    allTenantMap.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);   
+  }
+  
+  private void removeSpecificAndAllTenants(HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>>  currentTenantMap, String guiManagedObjectID, int tenantID)
+  {
+    Map<String,GUIManagedObject> tenantMap = createAndGetTenantSpecificMap(currentTenantMap, tenantID);
+    tenantMap.remove(guiManagedObjectID);
+    // add also in the map related to tenant 0 i.e All tenants..
+    Map<String,GUIManagedObject> allTenantMap = createAndGetTenantSpecificMap(currentTenantMap, 0);
+    allTenantMap.remove(guiManagedObjectID);   
+  }
+
+  /*****************************************
+  *
   *  putGUIManagedObject
   *
   *****************************************/
@@ -497,7 +539,7 @@ public class GUIService
     //  created/updated date
     //
 
-    GUIManagedObject existingStoredGUIManagedObject = storedGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID());
+    GUIManagedObject existingStoredGUIManagedObject = createAndGetTenantSpecificMap(storedPerTenantGUIManagedObjects, tenantID).get(guiManagedObject.getGUIManagedObjectID());
     guiManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
     guiManagedObject.setUpdatedDate(date);
 
@@ -547,14 +589,11 @@ public class GUIService
 
     if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID " + guiManagedObjectID + " " + tenantID);
     
-    ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
-    if(storedGUIManagedObjects == null) throw new RuntimeException("null storedGUIManagedObjects " + guiManagedObjectID + " " + tenantID);
-
     //
     //  created/updated date
     //
 
-    GUIManagedObject existingStoredGUIManagedObject = storedGUIManagedObjects.get(guiManagedObjectID);
+    GUIManagedObject existingStoredGUIManagedObject = createAndGetTenantSpecificMap(storedPerTenantGUIManagedObjects, tenantID).get(guiManagedObjectID);
     existingStoredGUIManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
     existingStoredGUIManagedObject.setUpdatedDate(date);
 
@@ -607,7 +646,7 @@ public class GUIService
         //  created/updated dates
         //
 
-        GUIManagedObject existingStoredGUIManagedObject = storedGUIManagedObjects.get(guiManagedObjectID);
+        GUIManagedObject existingStoredGUIManagedObject = createAndGetTenantSpecificMap(storedPerTenantGUIManagedObjects, tenantID).get(guiManagedObjectID);
         guiManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
         guiManagedObject.setUpdatedDate(date);
 
@@ -626,7 +665,7 @@ public class GUIService
 
         if (guiManagedObject != null)
           {
-            storedGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
+            putSpecificAndAllTenants(storedPerTenantGUIManagedObjects, guiManagedObject, tenantID);
             if (serviceStatistics != null)
               {
                 if (! deleted)
@@ -637,7 +676,7 @@ public class GUIService
           }
         else
           {
-            storedGUIManagedObjects.remove(guiManagedObjectID);
+            removeSpecificAndAllTenants(storedPerTenantGUIManagedObjects, guiManagedObjectID, tenantID);
             if (serviceStatistics != null)
               {
                 serviceStatistics.updateRemoveCount(guiManagedObjectID);
@@ -648,7 +687,7 @@ public class GUIService
         //  existingActiveGUIManagedObject
         //
 
-        GUIManagedObject existingActiveGUIManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
+        GUIManagedObject existingActiveGUIManagedObject = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, tenantID).get(guiManagedObjectID);
 
         //
         //  clear
@@ -656,16 +695,16 @@ public class GUIService
 
         if (!inActivePeriod || active || future)
           {
-            interruptedGUIManagedObjects.remove(guiManagedObjectID);
+            removeSpecificAndAllTenants(interruptedPerTenantGUIManagedObjects, guiManagedObjectID, tenantID);
           }
 
         if (!active)
           {
-            availableGUIManagedObjects.remove(guiManagedObjectID);
-            activeGUIManagedObjects.remove(guiManagedObjectID);
+            removeSpecificAndAllTenants(availablePerTenantGUIManagedObjects, guiManagedObjectID, tenantID);
+            removeSpecificAndAllTenants(activePerTenantGUIManagedObjects, guiManagedObjectID, tenantID);
             if (existingActiveGUIManagedObject != null){
-              if(inActivePeriod) interruptedGUIManagedObjects.put(guiManagedObjectID,existingActiveGUIManagedObject);
-              notifyListener(new IncompleteObject(guiManagedObjectID));
+              if(inActivePeriod) putSpecificAndAllTenants(interruptedPerTenantGUIManagedObjects, existingActiveGUIManagedObject, tenantID);
+              notifyListener(new IncompleteObject(guiManagedObjectID, tenantID));
             }
           }
 
@@ -675,7 +714,7 @@ public class GUIService
 
         if (active || future)
           {
-            availableGUIManagedObjects.put(guiManagedObjectID, (GUIManagedObject) guiManagedObject);
+            putSpecificAndAllTenants(availablePerTenantGUIManagedObjects, (GUIManagedObject) guiManagedObject, tenantID);
             if (guiManagedObject.getEffectiveEndDate().compareTo(NGLMRuntime.END_OF_TIME) < 0)
               {
                 ScheduleEntry scheduleEntry = new ScheduleEntry(guiManagedObject.getEffectiveEndDate(), guiManagedObject.getGUIManagedObjectID(), tenantID);
@@ -690,7 +729,7 @@ public class GUIService
 
         if (active)
           {
-            activeGUIManagedObjects.put(guiManagedObjectID, (GUIManagedObject) guiManagedObject);
+            putSpecificAndAllTenants(activePerTenantGUIManagedObjects, (GUIManagedObject) guiManagedObject, tenantID);
             if (existingActiveGUIManagedObject == null || existingActiveGUIManagedObject.getEpoch() != guiManagedObject.getEpoch() || !notifyOnSignificantChange) notifyListener(guiManagedObject);
           }
 
@@ -720,8 +759,8 @@ public class GUIService
 
         if (serviceStatistics != null)
           {
-            serviceStatistics.setActiveCount(activeGUIManagedObjects.size());
-            serviceStatistics.setObjectCount(availableGUIManagedObjects.size());
+            serviceStatistics.setActiveCount(createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, tenantID).size());
+            serviceStatistics.setObjectCount(createAndGetTenantSpecificMap(availablePerTenantGUIManagedObjects, tenantID).size());
           }
 
         //
@@ -963,7 +1002,7 @@ public class GUIService
             //
 
             ScheduleEntry entry = schedule.pollFirst();
-            GUIManagedObject guiManagedObject = availableGUIManagedObjects.get(entry.getGUIManagedObjectID());
+            GUIManagedObject guiManagedObject = createAndGetTenantSpecificMap(availablePerTenantGUIManagedObjects, 0).get(entry.getGUIManagedObjectID());
             if (guiManagedObject != null)
               {
 
@@ -971,7 +1010,7 @@ public class GUIService
                 //  existingActiveGUIManagedObject
                 //
 
-                GUIManagedObject existingActiveGUIManagedObject = activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID());
+                GUIManagedObject existingActiveGUIManagedObject = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, guiManagedObject.getTenantID()).get(guiManagedObject.getGUIManagedObjectID());
 
                 //
                 //  active window
@@ -979,8 +1018,8 @@ public class GUIService
 
                 if (guiManagedObject.getEffectiveStartDate().compareTo(now) <= 0 && now.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
                   {
-                    activeGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
-                    interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
+                    putSpecificAndAllTenants(activePerTenantGUIManagedObjects, guiManagedObject, guiManagedObject.getTenantID());
+                    removeSpecificAndAllTenants(interruptedPerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID());
                     notifyListener(guiManagedObject);
                   }
 
@@ -990,9 +1029,9 @@ public class GUIService
 
                 if (now.compareTo(guiManagedObject.getEffectiveEndDate()) >= 0)
                   {
-                    availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
-                    activeGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
-                    interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
+                    removeSpecificAndAllTenants(availablePerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID());
+                    removeSpecificAndAllTenants(activePerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID());
+                    removeSpecificAndAllTenants(interruptedPerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID());
                     if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID()));
                   }
 
@@ -1210,7 +1249,7 @@ public class GUIService
                 if (isActiveGUIManagedObject(guiManagedObject, now))
                   guiManagedObjectListener.guiManagedObjectActivated(guiManagedObject);
                 else
-                  guiManagedObjectListener.guiManagedObjectDeactivated(guiManagedObject.getGUIManagedObjectID());
+                  guiManagedObjectListener.guiManagedObjectDeactivated(guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID());
               }
           }
         catch (InterruptedException e)

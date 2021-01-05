@@ -52,6 +52,8 @@ public class ExtractManager extends ReportManager
 
   public ExtractManager() throws Exception
   {
+    // TODO EVPRO-99 check with Stefan what to do with tenants
+    
     log.debug("controlDir = " + controlDir + " , lockDir = " + lockDir);
 
     //override the serviceCOntrol dir used in watcher.

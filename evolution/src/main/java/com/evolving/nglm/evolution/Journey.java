@@ -1234,7 +1234,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), JSONUtilities.decodeString(jsonRoot,  "journeyTemplateID"), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService, journeyTemplateService);
+    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), JSONUtilities.decodeString(jsonRoot,  "journeyTemplateID"), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService, journeyTemplateService, tenantID);
 
     /*****************************************
     *
@@ -1979,7 +1979,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private ParameterMap decodeBoundParameters(JSONArray jsonArray, String journeyTemplateID, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, JourneyTemplateService journeyTemplateService) throws GUIManagerException
+  private ParameterMap decodeBoundParameters(JSONArray jsonArray, String journeyTemplateID, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, JourneyTemplateService journeyTemplateService, int tenantID) throws GUIManagerException
   {
     CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, this.getTenantID());
     ParameterMap boundParameters = new ParameterMap();
@@ -2039,12 +2039,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 boundParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 boundParameters.put(parameterName, emailMessageValue);
                 break;
 
@@ -2966,12 +2966,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 nodeParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 nodeParameters.put(parameterName, emailMessageValue);
                 break;
 
@@ -3305,7 +3305,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       //  additional parameters
       //
 
-      this.outputConnectorParameters.putAll(decodeDependentOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext, journeyService, subscriberMessageTemplateService));
+      this.outputConnectorParameters.putAll(decodeDependentOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext, journeyService, subscriberMessageTemplateService, tenantID));
       this.outputConnectorParameters.putAll(decodeExpressionValuedOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext));
 
       //
@@ -3378,7 +3378,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    private ParameterMap decodeDependentOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private ParameterMap decodeDependentOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID) throws GUIManagerException
     {
       ParameterMap outputConnectorParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -3414,12 +3414,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 outputConnectorParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 outputConnectorParameters.put(parameterName, emailMessageValue);
                 break;
 

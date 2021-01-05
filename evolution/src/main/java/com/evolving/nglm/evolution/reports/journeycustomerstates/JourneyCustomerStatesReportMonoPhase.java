@@ -69,7 +69,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     Map<String, Object> journeyStats = map;
     if (journeyStats != null && !journeyStats.isEmpty())
       {
-        Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+        Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime(), 0); // TODO check EVPRO-99
         if (journey != null)
           {
             Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
@@ -296,7 +296,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     journeyService.start();
     
     try {
-      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
+      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate, 0); // TODO EVPRO-99 check this....
       StringBuilder activeJourneyEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Journey journey : activeJourneys)

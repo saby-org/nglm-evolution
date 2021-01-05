@@ -367,7 +367,7 @@ public class JourneyObjective extends GUIManagedObject
         //   4) does not create a cycle
         //
         
-        GUIManagedObject uncheckedParent = journeyObjectiveService.getStoredJourneyObjective(walk.getParentJourneyObjectiveID());
+        GUIManagedObject uncheckedParent = journeyObjectiveService.getStoredJourneyObjective(walk.getParentJourneyObjectiveID(), tenantID);
         if (uncheckedParent == null) throw new GUIManagerException("unknown journey objective ancestor", walk.getParentJourneyObjectiveID());
         if (uncheckedParent instanceof IncompleteObject) throw new GUIManagerException("invalid journey objective ancestor", walk.getParentJourneyObjectiveID());
         JourneyObjective parent = (JourneyObjective) uncheckedParent;

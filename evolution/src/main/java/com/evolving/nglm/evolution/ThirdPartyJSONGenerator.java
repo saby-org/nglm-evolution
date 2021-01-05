@@ -316,7 +316,7 @@ public class ThirdPartyJSONGenerator
     Module module = Module.fromExternalRepresentation(token.getModuleID());
     tokenMap.put("moduleName", module.toString());
     String featureID = token.getFeatureID();
-    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService));
+    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService, tenantID));
     tokenMap.put("tokenCode", token.getTokenCode());
     if (token instanceof DNBOToken)
       {

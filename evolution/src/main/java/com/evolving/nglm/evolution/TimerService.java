@@ -838,7 +838,7 @@ public class TimerService
                 activeCampaignIDs = new HashSet<>();
                 for (String campaignID : campaignIDs)
                   {
-                    Journey campaign = journeyService.getActiveJourney(campaignID, now);
+                    Journey campaign = journeyService.getActiveJourney(campaignID, now, 0);
                     if (campaign != null)
                       {
                         activeCampaignIDs.add(campaignID);

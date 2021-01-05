@@ -440,7 +440,7 @@ public abstract class SubscriberProfile
         for(Entry<String, LoyaltyProgramState> program : loyaltyPrograms.entrySet())
           {
             // Add archives for datacubes & reports on terminated loyalty programs.
-            LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey(), true);
+            LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey(), true, tenantID);
             Map<String, Object> loyalty = new HashMap<String, Object>();
             
             if(loyaltyProgram != null)
@@ -914,7 +914,7 @@ public abstract class SubscriberProfile
     ArrayList<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
     for (String loyaltyProgramID : loyaltyPrograms.keySet())
       {
-        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
+        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now, tenantID);
         if (loyaltyProgram != null)
           {
             

@@ -218,6 +218,7 @@ public class EvolutionEngine
   private static HttpServer internalServer;
   private static HttpClient httpClient;
   private static ExclusionInclusionTargetService exclusionInclusionTargetService;
+  private static TenantService tenantService;
   private static StockMonitor stockService;
   private static PropensityService propensityService;
   private static RetentionService retentionService;
@@ -525,10 +526,18 @@ public class EvolutionEngine
     exclusionInclusionTargetService.start();
     
     //
+    // tenancyService
+    //
+    
+    tenantService = new TenantService(bootstrapServers, "evolutionengine-tenancyservice-" + evolutionEngineKey, Deployment.getTenantTopic(), false);
+    tenantService.start();
+
+    
+    //
     // stockService, used to apply campaign max number of customers limit
     //
 
-    stockService = new StockMonitor("evolutionengine-stockservice-" + evolutionEngineKey, journeyService);
+    stockService = new StockMonitor("evolutionengine-stockservice-" + evolutionEngineKey, tenantService, journeyService);
     stockService.start();
 
     //

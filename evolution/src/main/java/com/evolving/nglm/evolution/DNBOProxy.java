@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,8 +38,17 @@ import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -66,6 +76,9 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.ThirdPartyManager.AuthenticatedResponse;
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyCredential;
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.OfferOptimizerAlgoManager;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
@@ -124,6 +137,9 @@ public class DNBOProxy
   //
 
   private static final int RESTAPIVersion = 1;
+  
+  private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
+  private static Integer authResponseCacheLifetimeInMinutes = null;
 
   //
   //  instance
@@ -149,6 +165,36 @@ public class DNBOProxy
   private Map<AssignSubscriberIDs,LinkedBlockingQueue<String>> outstandingRequests = new HashMap<>();
   private Thread subscriberManagerTopicReaderThread = null;
   private volatile boolean stopRequested = false;
+  
+   
+  /*****************************************
+  *
+  *  configuration
+  *
+  *****************************************/
+
+ private static final String ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS = "DNBOPROXY_HTTP_CLIENT_TIMEOUT_MS";
+ private static int httpTimeout = 10000;
+ private String fwkServer = null; 
+ static{
+   String timeoutConf = System.getenv().get(ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS);
+   if(timeoutConf!=null && !timeoutConf.isEmpty()){
+     try{
+       httpTimeout=Integer.parseInt(timeoutConf);
+       log.info("loading env conf "+ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS+" "+httpTimeout);
+     }catch (NumberFormatException e){
+       log.warn("bad env conf "+ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS, e);
+     }
+   }
+ }
+  RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
+  
+  //
+  //  authCache
+  //
+
+  TimebasedCache<ThirdPartyCredential, AuthenticatedResponse> authCache = null;
+
 
   /*****************************************
   *
@@ -180,12 +226,17 @@ public class DNBOProxy
     String apiProcessKey = args[0];
     int apiRestPort = parseInteger("apiRestPort", args[1]);
     int dnboProxyThread = parseInteger("DNBOPROXY_THREADS", args[2]);
+    this.fwkServer = args[3];
 
     //
     //  log
     //
 
     log.info("main START: {} {}", apiProcessKey, apiRestPort);
+    
+    methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
+    authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
+
 
     /*****************************************
     *
@@ -431,6 +482,201 @@ public class DNBOProxy
       }
     return result;
   }
+  /*****************************************
+  *
+  *  authenticateAndCheckAccess
+  *
+  *****************************************/
+
+ private int authenticateAndCheckAccess(JSONObject jsonRoot, String api) throws ThirdPartyManagerException, ParseException, IOException
+ {
+
+   ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+
+   //
+   // confirm thirdPartyCredential format is ok
+   //
+
+   if (thirdPartyCredential.getLoginName() == null || thirdPartyCredential.getPassword() == null || thirdPartyCredential.getLoginName().isEmpty() || thirdPartyCredential.getPassword().isEmpty())
+     {
+       log.error("invalid request {}", "credential is missing");
+       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{credential is missing}", RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+     }
+
+   //
+   // look up methodAccess configuration from deployment
+   //
+
+   ThirdPartyMethodAccessLevel methodAccessLevel = methodPermissionsMapper.get(api);
+
+   //
+   // access hack(dev purpose) return by default tenant 1
+   //
+
+   if (methodAccessLevel != null && methodAccessLevel.isByPassAuth()) return 1;
+
+   //
+   // lookup from authCache
+   //
+
+   AuthenticatedResponse authResponse = authCache.get(thirdPartyCredential);
+   if(authResponse == null)
+     {
+       synchronized (authCache)
+       {
+         authResponse = authCache.get(thirdPartyCredential);
+         
+         //
+         //  cache miss - reauthenticate
+         //
+   
+         if (authResponse == null)
+           {
+             authResponse = authenticate(thirdPartyCredential);
+             log.info("(Re)Authenticated: credential {} response {}", thirdPartyCredential, authResponse);
+           }
+       }
+   }
+
+
+
+   //
+   //  hasAccess
+   //
+
+   if (! hasAccess(authResponse, methodAccessLevel, api))
+     {
+       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS);
+     }
+   
+   return authResponse.getTenantID();
+
+ }
+
+ /*****************************************
+  *
+  *  authenticate
+  *
+  *****************************************/
+
+ private AuthenticatedResponse authenticate(ThirdPartyCredential thirdPartyCredential) throws IOException, ParseException, ThirdPartyManagerException
+ {
+   try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
+   {
+     //
+     // create request
+     //
+
+     StringEntity stringEntity = new StringEntity(thirdPartyCredential.getJSONString(), ContentType.create("application/json"));
+     HttpPost httpPost = new HttpPost("http://" + fwkServer + "/api/account/login");
+     httpPost.setEntity(stringEntity);
+
+     //
+     // submit request
+     //
+
+     HttpResponse httpResponse = httpClient.execute(httpPost);
+
+     //
+     // process response
+     //
+
+     if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 200)
+       {
+         String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+         log.info("FWK raw response : {}", jsonResponse);
+
+         //
+         // parse JSON response from FWK
+         //
+
+         JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(jsonResponse);
+
+         //
+         // prepare response
+         //
+
+         AuthenticatedResponse authResponse = new AuthenticatedResponse(jsonRoot);
+
+
+         //
+         // update cache
+         //
+
+         synchronized (authCache)
+         {
+           authCache.put(thirdPartyCredential, authResponse);
+         }
+
+         //
+         // return
+         //
+
+         return authResponse;
+       }
+     else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
+       {
+         log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
+         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
+       }
+     else if (httpResponse != null && httpResponse.getStatusLine() != null)
+       {
+         log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
+         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
+       }
+     else
+       {
+         log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
+         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
+       }
+   }
+   catch(ParseException pe) 
+   {
+     log.error("failed to Parse ParseException {} ", pe.getMessage());
+     throw pe;
+   }
+   catch(IOException e) 
+   {
+     log.error("failed to authenticate in FWK server");
+     log.error("IOException: {}", e.getMessage());
+     throw e;
+   }
+ }
+
+ /*****************************************
+  *
+  *  hasAccess
+  *
+  *****************************************/
+
+ private boolean hasAccess(AuthenticatedResponse authResponse, ThirdPartyMethodAccessLevel methodAccessLevel, String api)
+ {
+
+   //
+   // check method access
+   //
+
+   if (methodAccessLevel == null || (methodAccessLevel.getPermissions().isEmpty()))
+     {
+       log.warn("No permission/workgroup is configured for method {} ", api);
+       return false;
+     }
+
+   //
+   // check permissions
+   //
+   for (String userPermission : authResponse.getPermissions())
+     {
+       if (methodAccessLevel.getPermissions().contains(userPermission))
+         {
+           return true;
+         }
+
+     }
+   return false;
+
+ }
+
 
   /*****************************************
   *
@@ -477,6 +723,18 @@ public class DNBOProxy
         log.debug("API (raw request): {} {}",api,requestBodyStringBuilder.toString());
         JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse((requestBodyStringBuilder.length()) > 0 ? requestBodyStringBuilder.toString() : "{ }");
 
+        /*****************************************
+         *
+         *  authenticate and accessCheck
+         *
+         *****************************************/
+
+        int tenantID = 1; // by default... TODO EVPRO-99 do we need to remove this check ? Deployment.getRegressionMode
+        if (! Deployment.getRegressionMode())
+          {
+            tenantID = authenticateAndCheckAccess(jsonRoot, api.name());
+          }
+        
         /*****************************************
         *
         *  backward compatibility (move arguments from the URI to the body)
@@ -638,7 +896,7 @@ public class DNBOProxy
               jsonResponse = processGetSubscriberOffers(userID, jsonRoot,
                   productService, productTypeService, voucherService, voucherTypeService,
                   catalogCharacteristicService, subscriberGroupEpochReader,
-                  segmentationDimensionService, offerService);
+                  segmentationDimensionService, offerService, tenantID);
               break;
               
             case provisionSubscriber:
@@ -683,7 +941,7 @@ public class DNBOProxy
         writer.close();
         exchange.close();
       }
-    catch (org.json.simple.parser.ParseException | DNBOProxyException | SubscriberProfileServiceException | IOException | ServerException | RuntimeException e )
+    catch (org.json.simple.parser.ParseException | DNBOProxyException | SubscriberProfileServiceException | IOException | ServerException | RuntimeException | ThirdPartyManagerException e )
       {
         //
         //  log
