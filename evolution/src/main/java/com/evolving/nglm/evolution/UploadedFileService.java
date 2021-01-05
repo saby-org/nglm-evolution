@@ -11,11 +11,15 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
+import com.rii.utilities.FileUtilities;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.LineIterator;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -334,22 +338,17 @@ public class UploadedFileService extends GUIService
         ArrayList<JSONObject> valiablesJSON = new ArrayList<JSONObject>();
         
         //
-        //  scan and validate
-        //
-        
-        List<String> lines = new ArrayList<String>();
-        
-        //
         //  read file
         //
         
-        try (Stream<String> stream = Files.lines(Paths.get(UploadedFile.OUTPUT_FOLDER + filename)))
+        try
           {
-            lines = stream.filter(line -> (line != null && !line.trim().isEmpty())).map(String::trim).collect(Collectors.toList());
             boolean isHeader = true;
             int lineNumber = 0;
-            for (String line : lines)
+            LineIterator lineIterator = FileUtils.lineIterator(new File(UploadedFile.OUTPUT_FOLDER + filename));
+            while (lineIterator.hasNext())
               {
+                String line = lineIterator.nextLine();
                 lineNumber++;
                 line = line.trim();
                 if (isHeader)
