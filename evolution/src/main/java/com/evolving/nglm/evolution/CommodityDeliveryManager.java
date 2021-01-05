@@ -596,7 +596,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       super(esFields);
       this.providerID = (String) esFields.get("providerID");
       this.commodityID = (String) esFields.get("deliverableID");
-      this.operation = (CommodityDeliveryOperation) esFields.get("operation");
+      this.operation = CommodityDeliveryOperation.fromExternalRepresentation((String) esFields.get("operation"));
       this.amount = (int) esFields.get("deliverableQty");
       // not in ES this.validityPeriodType = esFields.get("");
       // not in ES this.validityPeriodQuantity = esFields.get("");
