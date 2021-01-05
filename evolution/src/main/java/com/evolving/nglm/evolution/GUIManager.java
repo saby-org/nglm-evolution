@@ -936,22 +936,10 @@ public class GUIManager
               String targetingFileID = journey.getTargetingFileVariableID();
               if (log.isDebugEnabled()) log.debug("fileVariable trigger will be generated from file {} for journey {}", targetingFileID, journey.getGUIManagedObjectDisplay());
               UploadedFile targetingFile = uploadedFileService.getActiveUploadedFile(targetingFileID, now);
-              if (targetingFile != null)
-                {
-                  List<Map<String, Object>> lines = uploadedFileService.getParsedFileContent(targetingFileID);
-                  String eventTopic = Deployment.getFileWithVariableEventTopic();
-                  for (Map<String, Object> line : lines)
-                    {
-                      String subscriberID = resolveSubscriberID(targetingFile.getCustomerAlternateID(), (String) line.get(targetingFile.getCustomerAlternateID()));
-                      if (subscriberID != null)
-                        {
-                          FileWithVariableEvent fileWithVariableEvent = new FileWithVariableEvent(subscriberID, now, targetingFileID, line);
-                          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(fileWithVariableEvent.getSubscriberID())), FileWithVariableEvent.serde().serializer().serialize(eventTopic, fileWithVariableEvent)));
-                        }
-                    }
-                }
+              if (targetingFile != null) uploadedFileService.createFileWithVariableEvents(targetingFile, subscriberIDService, kafkaProducer);
             }
         }
+      
       @Override public void journeyDeactivated(String guiManagedObjectID)
       {
         log.debug("journeyDeactivated: " + guiManagedObjectID);

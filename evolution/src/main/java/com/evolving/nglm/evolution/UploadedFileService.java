@@ -14,12 +14,17 @@ import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileReques
 import com.rii.utilities.FileUtilities;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SubscriberIDService;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.LineIterator;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -691,121 +696,126 @@ public class UploadedFileService extends GUIService
     }
   }
   
-  /*****************************************
-  *
-  *  getRawFileContent
-  *
-  *****************************************/
-
- public List<String> getRawFileContent(String fileID)
- {
-   List<String> lines = new ArrayList<String>();
-   UploadedFile file = (UploadedFile) getStoredUploadedFile(fileID);
-   if (file != null)
-     {
-       //
-       //  read file
-       //
-       
-       try (Stream<String> stream = Files.lines(Paths.get(UploadedFile.OUTPUT_FOLDER + file.getDestinationFilename())))
-         {
-           lines = stream.filter(line -> (line != null && !line.trim().isEmpty())).map(String::trim).collect(Collectors.toList());
-         }
-       catch (IOException e)
-       {
-         log.warn("UploadedFileService.getFileContent(problem with file parsing)", e);
-       }
-     }
-   else
-     {
-       log.warn("UploadedFileService.getFileContent: File does not exist");
-     }
-   return lines;
- }
- 
  /*****************************************
  *
- *  getParsedFileContent
+ *  createFileWithVariableEvents
  *
  *****************************************/
 
-public List<Map<String, Object>> getParsedFileContent(String fileID)
+public void createFileWithVariableEvents(UploadedFile file, SubscriberIDService subscriberIDService, KafkaProducer<byte[], byte[]> kafkaProducer)
 {
-  List<Map<String, Object>> result = new ArrayList<Map<String,Object>>();
-  UploadedFile file = (UploadedFile) getStoredUploadedFile(fileID);
   if (file != null)
     {
-      //
-      //  read file
-      //
+      Date now = SystemTime.getCurrentTime();
+      String eventTopic = Deployment.getFileWithVariableEventTopic();
       
+      //
+      // read file
+      //
+
       boolean isHeader = true;
       Map<String, String> headerMap = new LinkedHashMap<String, String>();
-      for (String line : getRawFileContent(fileID))
+      try
         {
-          line = line.trim();
-          Map<String, Object> keyValue = new LinkedHashMap<String, Object>();
-          if (isHeader)
+          LineIterator lineIterator = FileUtils.lineIterator(new File(UploadedFile.OUTPUT_FOLDER + file.getDestinationFilename()));
+          while (lineIterator.hasNext())
             {
-              String headers[] = line.split(Deployment.getUploadedFileSeparator(), -1);
-              boolean isFirstColumn = true;
-              for (String header : headers)
+              String line = lineIterator.nextLine().trim();
+              Map<String, Object> keyValue = new LinkedHashMap<String, Object>();
+              if (isHeader)
                 {
-                  header = header.trim();
-                  if (isFirstColumn)
+                  String headers[] = line.split(Deployment.getUploadedFileSeparator(), -1);
+                  boolean isFirstColumn = true;
+                  for (String header : headers)
                     {
-                      headerMap.put(header, "string");
+                      header = header.trim();
+                      if (isFirstColumn)
+                        {
+                          headerMap.put(header, "string");
+                        } 
+                      else
+                        {
+                          try
+                            {
+                              String dataType = getDatatype(header, new ArrayList<GUIManagerException>());
+                              String variableName = getVaribaleName(header, new ArrayList<GUIManagerException>());
+                              headerMap.put(variableName, dataType);
+                            } 
+                          catch (GUIManagerException e)
+                            {
+                              e.printStackTrace();
+                            }
+                        }
+                      isFirstColumn = false;
                     }
-                  else
+                } 
+              else
+                {
+                  String values[] = line.split(Deployment.getUploadedFileSeparator(), -1);
+                  int index = 0;
+                  List<String> headers = headerMap.keySet().stream().collect(Collectors.toList());
+                  for (String value : values)
                     {
+                      value = value.trim();
+                      String varName = headers.get(index);
+                      String varDataType = headerMap.get(varName);
                       try
                         {
-                          String dataType = getDatatype(header, new ArrayList<GUIManagerException>());
-                          String variableName = getVaribaleName(header, new ArrayList<GUIManagerException>());
-                          headerMap.put(variableName, dataType);
+                          Object val = validateValue(varName, EvaluationCriterion.CriterionDataType.fromExternalRepresentation(varDataType), value, -1, new ArrayList<GUIManagerException>());
+                          keyValue.put(varName, val);
                         } 
                       catch (GUIManagerException e)
                         {
                           e.printStackTrace();
                         }
-                      
+                      index++;
                     }
-                  isFirstColumn = false;
-                }
-            }
-          else
-            {
-              String values[] = line.split(Deployment.getUploadedFileSeparator(), -1);
-              int index = 0;
-              List<String> headers = headerMap.keySet().stream().collect(Collectors.toList());
-              for (String value : values)
-                {
-                  value = value.trim();
-                  String varName = headers.get(index);
-                  String varDataType = headerMap.get(varName);
-                  try
+                  
+                  //
+                  //  send
+                  //
+                  
+                  String subscriberID = resolveSubscriberID(subscriberIDService, file.getCustomerAlternateID(), (String) keyValue.get(file.getCustomerAlternateID()));
+                  if (subscriberID != null)
                     {
-                      Object val = validateValue(varName, EvaluationCriterion.CriterionDataType.fromExternalRepresentation(varDataType), value, -1, new ArrayList<GUIManagerException>());
-                      keyValue.put(varName, val);
-                    } 
-                  catch (GUIManagerException e)
-                    {
-                      e.printStackTrace();
+                      FileWithVariableEvent fileWithVariableEvent = new FileWithVariableEvent(subscriberID, now, file.getGUIManagedObjectID(), keyValue);
+                      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(fileWithVariableEvent.getSubscriberID())), FileWithVariableEvent.serde().serializer().serialize(eventTopic, fileWithVariableEvent)));
                     }
-                  index++;
                 }
-              result.add(keyValue);
+              isHeader = false;
             }
-          isHeader = false;
+        } 
+      catch (IOException e1)
+        {
+          e1.printStackTrace();
         }
     }
   else
     {
       log.warn("UploadedFileService.getFileContent: File does not exist");
     }
-  return result;
 }
   
+/*****************************************
+*
+*  resolveSubscriberID
+*
+*****************************************/
+
+private String resolveSubscriberID(SubscriberIDService subscriberIDService, String alternateID, String alternateIDValue)
+{
+  String result = null;
+  try
+    {
+      result = subscriberIDService.getSubscriberID(alternateID, alternateIDValue);
+    }
+  catch (SubscriberIDServiceException e)
+    {
+      log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", alternateIDValue, e.getMessage());
+    }
+  return result;
+}
+
 
   /*****************************************
   *
