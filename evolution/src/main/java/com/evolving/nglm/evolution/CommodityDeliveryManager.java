@@ -603,11 +603,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       String deliverableExpirationDateStr = (String) esFields.get("deliverableExpirationDate");
       try
         {
-          this.deliverableExpirationDate = esDateFormat.parse(deliverableExpirationDateStr);
+          this.deliverableExpirationDate = esDefaultDateFormat.parse(deliverableExpirationDateStr);
         } 
       catch (java.text.ParseException e)
         {
-          if (log.isWarnEnabled()) log.warn("invalid eventDatetime {} format should be ", deliverableExpirationDateStr, elasticSearchDateFormat);
+          if (log.isWarnEnabled()) log.warn("invalid deliverableExpirationDate {} format should be {} ", deliverableExpirationDateStr, elasticSearchDefaultDateFormat);
         }
       CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
       this.commodityDeliveryStatus = commodityDeliveryStatus;

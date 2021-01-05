@@ -44,6 +44,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   
   protected static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
   protected static DateFormat esDateFormat = new SimpleDateFormat(elasticSearchDateFormat);
+  protected static final String elasticSearchDefaultDateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+  protected static DateFormat esDefaultDateFormat = new SimpleDateFormat(elasticSearchDefaultDateFormat);
   
   //
   // this
@@ -788,11 +790,12 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
       } 
     catch (ParseException e)
       {
-        if (log.isWarnEnabled()) log.warn("invalid eventDatetime {} format should be ", eventDatetimeStr, elasticSearchDateFormat);
+        if (log.isWarnEnabled()) log.warn("invalid creationDate {} format should be {}", eventDatetimeStr, elasticSearchDateFormat);
       }
     this.eventID = (String) esFields.get("eventID");
     this.moduleID = (String) esFields.get("moduleID");
     this.featureID = (String) esFields.get("featureID");
+    this.originatingRequest = true;
   }
 
   /****************************************
