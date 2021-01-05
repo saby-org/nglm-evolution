@@ -377,7 +377,6 @@ public class ThirdPartyManager
     // elasticsearch
     //
 
-    ElasticsearchClientAPI elasticsearch;
     try
     {
       elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
