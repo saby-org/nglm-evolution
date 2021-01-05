@@ -450,7 +450,7 @@ public class TokenUtils
     // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
     //
     Set<String> offerObjectiveIds = selectedScoringSegment.getAlwaysAppendOfferObjectiveIDs();
-    for(Offer offer : offerService.getActiveOffers(now))
+    for(Offer offer : offerService.getActiveOffers(now, tenantID))
       {
         boolean inList = true;
         for (OfferObjectiveInstance offerObjective : offer.getOfferObjectives()) 
@@ -517,7 +517,7 @@ public class TokenUtils
     // - filter by offer objective coming from the split strategy
     // - filter by profile of subscriber
     // Return a set of offers that can be optimised
-    Collection<Offer> offers = offerService.getActiveOffers(Calendar.getInstance().getTime());
+    Collection<Offer> offers = offerService.getActiveOffers(Calendar.getInstance().getTime(), tenantID);
     Set<Offer> result = new HashSet<>();
     List<Token> tokens = subscriberProfile.getTokens();
     Collection<Offer>filteredOffers = new ArrayList<>(); 

@@ -99,8 +99,8 @@ public class VoucherProfileStored implements Cleanable {
   public void setVoucherExpiryDate(Date voucherExpiryDate) { this.voucherExpiryDate = voucherExpiryDate; }
   public void setVoucherRedeemDate(Date voucherRedeemDate) { this.voucherRedeemDate = voucherRedeemDate; }
 
-  @Override public Date getExpirationDate(RetentionService retentionService) { return getVoucherExpiryDate(); }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+  @Override public Date getExpirationDate(RetentionService retentionService, int tenantID) { return getVoucherExpiryDate(); }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService, int tenantID) {
     switch (type){
       case KAFKA_DELETION:
         return Duration.ofDays(Deployment.getKafkaRetentionDaysExpiredVouchers());

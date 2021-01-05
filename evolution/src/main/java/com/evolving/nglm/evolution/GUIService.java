@@ -354,8 +354,7 @@ public class GUIService
   protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID, boolean includeArchived, int tenantID)
   {
     if(guiManagedObjectID==null) return null;
-    ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
-    if(storedGUIManagedObjects == null) return null;    
+    Map<String,GUIManagedObject> storedGUIManagedObjects = createAndGetTenantSpecificMap(storedPerTenantGUIManagedObjects, tenantID);
     GUIManagedObject result = storedGUIManagedObjects.get(guiManagedObjectID);
     result = (result != null && (includeArchived || ! result.getDeleted())) ? result : null;
       return result;
@@ -376,8 +375,7 @@ public class GUIService
   protected Collection<GUIManagedObject> getStoredGUIManagedObjects(boolean includeArchived, int tenantID)
   {
     List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
-    ConcurrentHashMap<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(tenantID);
-    if(storedGUIManagedObjects == null) storedGUIManagedObjects = new ConcurrentHashMap<>();
+    Map<String,GUIManagedObject> storedGUIManagedObjects = createAndGetTenantSpecificMap(storedPerTenantGUIManagedObjects, tenantID);
     for (GUIManagedObject guiManagedObject : storedGUIManagedObjects.values())
       {
         if (includeArchived || ! guiManagedObject.getDeleted())
@@ -416,7 +414,7 @@ public class GUIService
   protected boolean isActiveGUIManagedObject(GUIManagedObject guiManagedObject, Date date) {
     if(guiManagedObject==null) return false;
     if(!guiManagedObject.getAccepted()) return false;
-    ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(guiManagedObject.getTenantID());
+    Map<String,GUIManagedObject> activeGUIManagedObjects = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, guiManagedObject.getTenantID());
     if(activeGUIManagedObjects == null) return false;   
     if(activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID())==null) return false;
     if(guiManagedObject.getEffectiveStartDate().after(date)) return false;
@@ -426,7 +424,7 @@ public class GUIService
 
   protected boolean isInterruptedGUIManagedObject(GUIManagedObject guiManagedObject, Date date, int tenantID) {
     if(guiManagedObject==null) return false;
-    ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(tenantID);
+    Map<String,GUIManagedObject> interruptedGUIManagedObjects = createAndGetTenantSpecificMap(interruptedPerTenantGUIManagedObjects, tenantID);
     if(interruptedGUIManagedObjects == null) return false;
     if(interruptedGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID())==null) return false;
     if(guiManagedObject.getEffectiveStartDate()!=null && guiManagedObject.getEffectiveStartDate().after(date)) return false;
@@ -443,7 +441,7 @@ public class GUIService
   protected GUIManagedObject getActiveGUIManagedObject(String guiManagedObjectID, Date date, int tenantID)
   {
     if(guiManagedObjectID==null) return null;
-    ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(tenantID);
+    Map<String,GUIManagedObject> activeGUIManagedObjects = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, tenantID);
     if(activeGUIManagedObjects == null)  activeGUIManagedObjects = new ConcurrentHashMap<>();      
     GUIManagedObject guiManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
     if (isActiveGUIManagedObject(guiManagedObject, date))
@@ -455,7 +453,7 @@ public class GUIService
   protected GUIManagedObject getInterruptedGUIManagedObject(String guiManagedObjectID, Date date, int tenantID)
   {
     if(guiManagedObjectID==null) return null;
-    ConcurrentHashMap<String,GUIManagedObject> interruptedGUIManagedObjects = interruptedPerTenantGUIManagedObjects.get(tenantID);
+    Map<String,GUIManagedObject> interruptedGUIManagedObjects = createAndGetTenantSpecificMap(interruptedPerTenantGUIManagedObjects, tenantID);
     if(interruptedGUIManagedObjects == null)  interruptedGUIManagedObjects = new ConcurrentHashMap<>();   
     GUIManagedObject guiManagedObject = interruptedGUIManagedObjects.get(guiManagedObjectID);
     if (isInterruptedGUIManagedObject(guiManagedObject, date, tenantID))
@@ -473,7 +471,7 @@ public class GUIService
   protected Collection<? extends GUIManagedObject> getActiveGUIManagedObjects(Date date, int tenantID)
   {
     Collection<GUIManagedObject> result = new HashSet<GUIManagedObject>();
-    ConcurrentHashMap<String,GUIManagedObject> activeGUIManagedObjects = activePerTenantGUIManagedObjects.get(tenantID);
+    Map<String,GUIManagedObject> activeGUIManagedObjects = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, tenantID);
     if(activeGUIManagedObjects == null)  activeGUIManagedObjects = new ConcurrentHashMap<>();    
     for (GUIManagedObject guiManagedObject : activeGUIManagedObjects.values())
 	  {

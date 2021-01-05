@@ -27685,9 +27685,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      *
      ************************************/
 
-    public RecurrentCampaignCreationJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    public RecurrentCampaignCreationJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart, int tenantID)
     {
-      super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
+      super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart, tenantID);
     }
 
     /***********************************

@@ -401,7 +401,7 @@ public class VoucherService extends GUIService {
 
           log.info("VoucherService.runProcessVoucherfile : need to import vouchers from fileId "+job.getFileId()+" and voucherId "+job.getVoucherId());
 
-          UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(job.getFileId(), );
+          UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(job.getFileId(), 0);
           if(uploadedFile==null){
             // we need to import a file, but file is not found
             log.error("VoucherService.runProcessVoucherfile : no uploaded file found for id "+job.getFileId());

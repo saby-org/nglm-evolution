@@ -157,7 +157,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                           }
                         else
                           {
-                            GUIManagedObject acceptedOffer = offerService.getStoredOffer(acceptedOfferId);
+                            GUIManagedObject acceptedOffer = offerService.getStoredOffer(acceptedOfferId, 0);
                             if (acceptedOffer != null)
                               {
                                 result.put("offerName", acceptedOffer.getGUIManagedObjectDisplay());
