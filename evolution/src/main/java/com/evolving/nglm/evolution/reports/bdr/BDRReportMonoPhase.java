@@ -407,7 +407,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       {
         return getEsIndexDates(fromDate, toDate);
       }
-    
   }
   
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)

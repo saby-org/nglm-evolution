@@ -28,8 +28,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -645,6 +647,24 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public PurchaseFulfillmentRequest copy()
     {
       return new PurchaseFulfillmentRequest(this);
+    }
+    
+    /*****************************************
+    *
+    *  PurchaseFulfillmentRequest - esFields - minimal
+    *
+    *****************************************/
+    
+    public PurchaseFulfillmentRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+      this.offerID = (String) esFields.get("offerID");
+      this.salesChannelID = (String) esFields.get("salesChannelID");
+      this.meanOfPayment = (String) esFields.get("meanOfPayment");
+      this.offerPrice = (long) esFields.get("offerPrice");
+      this.origin = (String) esFields.get("origin");
+      this.resellerID = (String) esFields.get("resellerID");
+      this.quantity = (int) esFields.get("offerQty");
     }
 
     /*****************************************

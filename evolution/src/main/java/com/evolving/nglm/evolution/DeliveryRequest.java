@@ -796,7 +796,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.moduleID = (String) esFields.get("moduleID");
     this.featureID = (String) esFields.get("featureID");
     this.originatingRequest = true;
-    this.deliveryStatus = DeliveryStatus.Delivered; //RAJ K 
+    this.deliveryStatus = DeliveryStatus.Delivered; //RAJ K not in ES
   }
 
   /****************************************

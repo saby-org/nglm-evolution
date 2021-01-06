@@ -104,6 +104,8 @@ import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
+import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
+import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -1503,8 +1505,11 @@ public class ThirdPartyManager
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
     String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", false);
     String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", false);
-
     String subscriberID = resolveSubscriberID(jsonRoot);
+    
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
+    if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
 
     //
     // process
@@ -1531,6 +1536,7 @@ public class ThirdPartyManager
 
           SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
           List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
+          List<JSONObject> ESODRsJson = new ArrayList<JSONObject>();
           if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null) 
             {
               List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
@@ -1539,7 +1545,32 @@ public class ThirdPartyManager
               // filter ODRs
               //
 
-              List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.ODR).collect(Collectors.toList()); 
+              List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.ODR).collect(Collectors.toList());
+              
+              SearchRequest searchRequest = getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
+              List<SearchHit> hits = getESHits(searchRequest);
+              for (SearchHit hit : hits)
+                {
+                  Map<String, Object> esFields = hit.getSourceAsMap();
+                  PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(esFields);
+                  
+                  Map<String, Object> esOdrMap = purchaseFulfillmentRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+                  ESODRsJson.add(JSONUtilities.encodeObject(esOdrMap));
+                }
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
 
               //
               // prepare dates
@@ -1659,6 +1690,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
+          response.put("ESODRs", JSONUtilities.encodeArray(ESODRsJson));
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -6788,6 +6820,7 @@ public class ThirdPartyManager
   private SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters)
   {
     SearchRequest searchRequest = null;
+    String index = null;
     BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("subscriberID", subscriberId));
     
     //
@@ -6802,7 +6835,6 @@ public class ThirdPartyManager
     switch (api)
     {
       case getCustomerBDRs:
-        String index = null;
         if (startDate != null)
           {
             List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
@@ -6813,12 +6845,35 @@ public class ThirdPartyManager
           {
             index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
           }
-        searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
+        break;
+        
+      case getCustomerODRs:
+        if (startDate != null)
+          {
+            List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
+            index = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(esDateFormat.format(startDate)));
+          }
+        else
+          {
+            index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
+          }
         break;
 
       default:
         break;
     }
+    
+    //
+    //  searchRequest
+    //
+    
+    searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
+    
+    //
+    //  return
+    //
+    
     return searchRequest;
   }
 
