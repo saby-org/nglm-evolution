@@ -138,7 +138,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *
     ***************************************************************/
 
-    GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived, tenantID);
+    GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived);
     JSONObject loyaltyProgramJSON = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -199,7 +199,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID, tenantID);
+    GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
 
     /*****************************************
     *
@@ -255,7 +255,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         if (!dryRun)
           {
 
-            loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID, tenantID);
+            loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID);
 
             /*****************************************
              *
@@ -304,7 +304,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         //
         if (!dryRun)
           {
-            loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingLoyaltyProgram == null), userID, tenantID);
+            loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingLoyaltyProgram == null), userID);
           }
         //
         //  log
@@ -370,7 +370,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
         String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", false);
         loyaltyProgramIDs.add(loyaltyProgramID);
-        GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID, tenantID);
+        GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
 
         if (loyaltyProgram != null && (force || !loyaltyProgram.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -391,7 +391,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     for (int i = 0; i < loyaltyProgramIDs.size(); i++)
       {
         String loyaltyProgramID = loyaltyProgramIDs.get(i).toString();
-        GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID, tenantID);
+        GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
         
         if (loyaltyProgram != null && (force || !loyaltyProgram.getReadOnly()))
           {
@@ -486,7 +486,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
 
         String loyaltyProgramID = loyaltyProgramIDs.get(i).toString();
-        GUIManagedObject existingElement = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, tenantID);
+        GUIManagedObject existingElement = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(loyaltyProgramID);
@@ -523,7 +523,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                  * store
                  *
                  *****************************************/
-                loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingElement == null), userID, tenantID);
+                loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -549,7 +549,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 // store
                 //
 
-                loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingElement == null), userID, tenantID);
+                loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingElement == null), userID);
 
                 //
                 // log
@@ -594,7 +594,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         for (int i = 0; i < loyaltyProgramIDs.size(); i++)
           {
             String loyaltyProgramID = loyaltyProgramIDs.get(i).toString();
-            GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived, tenantID);
+            GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived);
             if (loyaltyProgram != null)
               {
                 loyaltyProgramObjects.add(loyaltyProgram);
@@ -707,7 +707,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID)
   {
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    GUIManagedObject report1 = reportService.getStoredReport(reportID, tenantID);
+    GUIManagedObject report1 = reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report1);
     String responseCode = null;
 
@@ -998,7 +998,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   for (int i = 0; i < reportIDs.size(); i++)
     {
       String reportID = reportIDs.get(i).toString();
-      GUIManagedObject report = reportService.getStoredReport(reportID, includeArchived, tenantID);
+      GUIManagedObject report = reportService.getStoredReport(reportID, includeArchived);
       if (report != null)
         {
           reportObjects.add(report);
@@ -1041,7 +1041,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean backendSimulator = JSONUtilities.decodeBoolean(jsonRoot, "backendsimulator", Boolean.FALSE);
-    Report report = (Report) reportService.getStoredReport(reportID, tenantID);
+    Report report = (Report) reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report);
     String responseCode;
     if (report == null)
@@ -1093,7 +1093,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         jsonRoot.put("id", reportID);
       }
     log.trace("ID : "+reportID);
-    GUIManagedObject existingReport = reportService.getStoredReport(reportID, tenantID);
+    GUIManagedObject existingReport = reportService.getStoredReport(reportID);
     if (existingReport != null && existingReport.getReadOnly())
       {
         log.trace("existingReport : "+existingReport);
@@ -1160,7 +1160,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         log.trace("new report : "+report);
         if (!dryRun)
           {
-        	            reportService.putReport(report, (existingReport == null), userID, tenantID);
+        	            reportService.putReport(report, (existingReport == null), userID);
           }
       
         response.put("id", report.getReportID());

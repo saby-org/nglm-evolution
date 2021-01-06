@@ -99,12 +99,12 @@ public class PaymentMeanService extends GUIService
   *****************************************/
 
   public String generatePaymentMeanID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredPaymentMean(String paymentMeanID, int tenantID) { return getStoredGUIManagedObject(paymentMeanID, tenantID); }
-  public GUIManagedObject getStoredPaymentMean(String paymentMeanID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(paymentMeanID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredPaymentMean(String paymentMeanID) { return getStoredGUIManagedObject(paymentMeanID); }
+  public GUIManagedObject getStoredPaymentMean(String paymentMeanID, boolean includeArchived) { return getStoredGUIManagedObject(paymentMeanID, includeArchived); }
   public Collection<GUIManagedObject> getStoredPaymentMeans(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredPaymentMeans(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActivePaymentMean(GUIManagedObject paymentMeanUnchecked, Date date) { return isActiveGUIManagedObject(paymentMeanUnchecked, date); }
-  public PaymentMean getActivePaymentMean(String paymentMeanID, Date date, int tenantID) { return (PaymentMean) getActiveGUIManagedObject(paymentMeanID, date, tenantID); }
+  public PaymentMean getActivePaymentMean(String paymentMeanID, Date date) { return (PaymentMean) getActiveGUIManagedObject(paymentMeanID, date); }
   public Collection<PaymentMean> getActivePaymentMeans(Date date, int tenantID) { return (Collection<PaymentMean>) getActiveGUIManagedObjects(date, tenantID); }
   
   //
@@ -137,7 +137,7 @@ public class PaymentMeanService extends GUIService
   *
   *****************************************/
 
-  public void putPaymentMean(PaymentMean paymentMean, boolean newObject, String userID, int tenantID) { putGUIManagedObject(paymentMean, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
+  public void putPaymentMean(PaymentMean paymentMean, boolean newObject, String userID) { putGUIManagedObject(paymentMean, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -145,10 +145,10 @@ public class PaymentMeanService extends GUIService
   *
   *****************************************/
 
-  public void putIncompletePaymentMean(IncompleteObject paymentMean, boolean newObject, String userID, int tenantID)
+  public void putIncompletePaymentMean(IncompleteObject paymentMean, boolean newObject, String userID)
   {
     Date now = SystemTime.getCurrentTime();
-    putGUIManagedObject(paymentMean, now, newObject, userID, tenantID);
+    putGUIManagedObject(paymentMean, now, newObject, userID);
   }
 
   /*****************************************

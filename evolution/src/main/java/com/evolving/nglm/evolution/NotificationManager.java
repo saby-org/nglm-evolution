@@ -216,10 +216,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
     // this resolved the source address
     // populating a param "node.parameter.sourceaddress" with a SourceaAddress "display" field from received param "node.parameter.fromaddress" which contains the "id"
-    public void resolveFromAddressToSourceAddress(SourceAddressService sourceAddressService, int tenantID){
+    public void resolveFromAddressToSourceAddress(SourceAddressService sourceAddressService){
       String sourceAddressId = getFromAddressParam();
       if(sourceAddressId==null) return;
-      GUIManagedObject sourceAddressObject = sourceAddressService.getStoredSourceAddress(sourceAddressId, tenantID);
+      GUIManagedObject sourceAddressObject = sourceAddressService.getStoredSourceAddress(sourceAddressId);
       if(sourceAddressObject==null) return;
       String sourceAddress = sourceAddressObject.getGUIManagedObjectDisplay();
       if(sourceAddress==null) return;
@@ -247,10 +247,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     *
     *****************************************/
 
-    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
+    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
     {
       Map<String, String> result = new HashMap<String, String>();
-      DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
+      DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       if(template.getDialogMessages() != null)
         {
           for(Map.Entry<String, DialogMessage> dialogMessageEntry : template.getDialogMessages().entrySet())
@@ -594,22 +594,22 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     //
 
     @Override
-    public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
+    public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(EVENTID, null);
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
-      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(SOURCE, getSourceAddressParam());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
-      guiPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService, tenantID));
+      guiPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
       
     }
 
@@ -618,15 +618,15 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     //
 
     @Override
-    public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
+    public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
-      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
+      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getSourceAddressParam());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
@@ -634,13 +634,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
-      thirdPartyPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService, tenantID));
+      thirdPartyPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
     }
 
-    public Map<String, Object> gatherChannelParameters(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
+    public Map<String, Object> gatherChannelParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
     {
       Map<String, Object> messageContent = new HashMap<>();
-      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService, tenantID);
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
       Map<String, CriterionField> comChannelParams = Deployment.getCommunicationChannels().get(getChannelID()).getParameters();
       for (Entry<String, String> entry : resolvedParameters.entrySet())
         {
@@ -740,7 +740,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
        *****************************************/
       
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {
@@ -751,8 +751,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
-      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now, subscriberEvaluationRequest.getTenantID());
-      DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext, subscriberEvaluationRequest.getTenantID())) : null;
+      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now);
+      DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
 
       String destAddress = null;
 
@@ -885,8 +885,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
         incrementStats(dialogRequest);
-        dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService(), dialogRequest.getTenantID());
-        DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now, dialogRequest.getTenantID());
+        dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService());
+        DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
         
         if (dialogTemplate != null) 
           {
@@ -898,7 +898,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                 CommunicationChannel channel = Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
                 if(channel != null) 
                   {
-                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now, dialogRequest.getTenantID());
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
                   }
 
                 if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

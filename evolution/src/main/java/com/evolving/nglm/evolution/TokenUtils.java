@@ -363,7 +363,7 @@ public class TokenUtils
             }
         }
         String scoringStrategyID = position.getScoringStrategyID();
-        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now, tenantID);
+        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
         if (scoringStrategy == null)
           {
             log.warn("For positionIndex " + (positionIndex+1) + " invalid scoring strategy " + scoringStrategyID);
@@ -538,7 +538,7 @@ public class TokenUtils
                 for (OfferProduct offerproduct : offerProducts)
                   {
                     String productID = offerproduct.getProductID();
-                    GUIManagedObject productObject = productService.getStoredProduct(productID, tenantID);
+                    GUIManagedObject productObject = productService.getStoredProduct(productID);
                     if (productObject != null && productObject instanceof Product)
                       {
                         Product product = (Product) productObject;
@@ -559,7 +559,7 @@ public class TokenUtils
                 for (OfferVoucher offerVoucher : offerVouchers)
                   {
                     String voucherID = offerVoucher.getVoucherID();
-                    GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID, tenantID);
+                    GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
                     if (voucherObject != null && voucherObject instanceof Voucher)
                       {
                         Voucher voucher = (Voucher) voucherObject;

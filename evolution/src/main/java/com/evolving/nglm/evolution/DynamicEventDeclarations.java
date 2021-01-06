@@ -20,6 +20,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+// TODO EVPRO-99 must we split per tenant ???
 public class DynamicEventDeclarations extends GUIManagedObject
 {
   /*****************************************

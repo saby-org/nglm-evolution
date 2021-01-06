@@ -130,12 +130,12 @@ public class PresentationStrategyService extends GUIService
   *****************************************/
 
   public String generatePresentationStrategyID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredPresentationStrategy(String presentationStrategyID, int tenantID) { return getStoredGUIManagedObject(presentationStrategyID, tenantID); }
-  public GUIManagedObject getStoredPresentationStrategy(String presentationStrategyID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(presentationStrategyID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredPresentationStrategy(String presentationStrategyID) { return getStoredGUIManagedObject(presentationStrategyID); }
+  public GUIManagedObject getStoredPresentationStrategy(String presentationStrategyID, boolean includeArchived) { return getStoredGUIManagedObject(presentationStrategyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredPresentationStrategies(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredPresentationStrategies(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActivePresentationStrategy(GUIManagedObject presentationStrategyUnchecked, Date date) { return isActiveGUIManagedObject(presentationStrategyUnchecked, date); }
-  public PresentationStrategy getActivePresentationStrategy(String presentationStrategyID, Date date, int tenantID) { return (PresentationStrategy) getActiveGUIManagedObject(presentationStrategyID, date, tenantID); }
+  public PresentationStrategy getActivePresentationStrategy(String presentationStrategyID, Date date) { return (PresentationStrategy) getActiveGUIManagedObject(presentationStrategyID, date); }
   public Collection<PresentationStrategy> getActivePresentationStrategies(Date date, int tenantID) { return (Collection<PresentationStrategy>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -144,7 +144,7 @@ public class PresentationStrategyService extends GUIService
   *
   *****************************************/
 
-  public void putPresentationStrategy(GUIManagedObject presentationStrategy, ScoringStrategyService scoringStrategyService, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putPresentationStrategy(GUIManagedObject presentationStrategy, ScoringStrategyService scoringStrategyService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -165,7 +165,7 @@ public class PresentationStrategyService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(presentationStrategy, now, newObject, userID, tenantID);
+    putGUIManagedObject(presentationStrategy, now, newObject, userID);
   }
 
   /*****************************************
@@ -174,11 +174,11 @@ public class PresentationStrategyService extends GUIService
   *
   *****************************************/
 
-  public void putPresentationStrategy(IncompleteObject presentationStrategy, ScoringStrategyService scoringStrategyService, boolean newObject, String userID, int tenantID)
+  public void putPresentationStrategy(IncompleteObject presentationStrategy, ScoringStrategyService scoringStrategyService, boolean newObject, String userID)
   {
     try
       {
-        putPresentationStrategy((GUIManagedObject) presentationStrategy, scoringStrategyService, newObject, userID, tenantID);
+        putPresentationStrategy((GUIManagedObject) presentationStrategy, scoringStrategyService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

@@ -120,12 +120,12 @@ public class JourneyObjectiveService extends GUIService
   *****************************************/
 
   public String generateJourneyObjectiveID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredJourneyObjective(String journeyObjectiveID, int tenantID) { return getStoredGUIManagedObject(journeyObjectiveID, tenantID); }
-  public GUIManagedObject getStoredJourneyObjective(String journeyObjectiveID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(journeyObjectiveID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredJourneyObjective(String journeyObjectiveID) { return getStoredGUIManagedObject(journeyObjectiveID); }
+  public GUIManagedObject getStoredJourneyObjective(String journeyObjectiveID, boolean includeArchived) { return getStoredGUIManagedObject(journeyObjectiveID, includeArchived); }
   public Collection<GUIManagedObject> getStoredJourneyObjectives(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredJourneyObjectives(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveJourneyObjective(GUIManagedObject journeyObjectiveUnchecked, Date date) { return isActiveGUIManagedObject(journeyObjectiveUnchecked, date); }
-  public JourneyObjective getActiveJourneyObjective(String journeyObjectiveID, Date date, int tenantID) { return (JourneyObjective) getActiveGUIManagedObject(journeyObjectiveID, date, tenantID); }
+  public JourneyObjective getActiveJourneyObjective(String journeyObjectiveID, Date date) { return (JourneyObjective) getActiveGUIManagedObject(journeyObjectiveID, date); }
   public Collection<JourneyObjective> getActiveJourneyObjectives(Date date, int tenantID) { return (Collection<JourneyObjective>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -134,7 +134,7 @@ public class JourneyObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void putJourneyObjective(GUIManagedObject journeyObjective, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putJourneyObjective(GUIManagedObject journeyObjective, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -148,14 +148,14 @@ public class JourneyObjectiveService extends GUIService
 
     if (journeyObjective instanceof JourneyObjective)
       {
-        ((JourneyObjective) journeyObjective).validate(journeyObjectiveService, contactPolicyService, catalogCharacteristicService, now, tenantID);
+        ((JourneyObjective) journeyObjective).validate(journeyObjectiveService, contactPolicyService, catalogCharacteristicService, now);
       }
 
     //
     //  put
     //
 
-    putGUIManagedObject(journeyObjective, SystemTime.getCurrentTime(), newObject, userID, tenantID);
+    putGUIManagedObject(journeyObjective, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -164,11 +164,11 @@ public class JourneyObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void putJourneyObjective(IncompleteObject journeyObjective, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID, int tenantID)
+  public void putJourneyObjective(IncompleteObject journeyObjective, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID)
   {
     try
       {
-        putJourneyObjective((GUIManagedObject) journeyObjective, journeyObjectiveService, contactPolicyService, catalogCharacteristicService, newObject, userID, tenantID);
+        putJourneyObjective((GUIManagedObject) journeyObjective, journeyObjectiveService, contactPolicyService, catalogCharacteristicService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

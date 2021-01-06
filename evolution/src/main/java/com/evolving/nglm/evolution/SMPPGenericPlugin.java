@@ -179,7 +179,7 @@ public class SMPPGenericPlugin implements NotificationInterface
   {
     
     NotificationManagerRequest deliveryRequest = (NotificationManagerRequest)deliveryNotificationRequest;
-    Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(smsNotificationManager.getSubscriberMessageTemplateService(), deliveryRequest.getTenantID());
+    Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(smsNotificationManager.getSubscriberMessageTemplateService());
     String text = resolvedParameters.get("sms.body");
         
     String destination = deliveryRequest.getDestination();

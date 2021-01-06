@@ -699,15 +699,15 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
       Date now = SystemTime.getCurrentTime();
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(PROVIDERID, getProviderID());
       guiPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
       guiPresentationMap.put(DELIVERABLEID, getCommodityID());
-      guiPresentationMap.put(DELIVERABLENAME, (deliverableService.getActiveDeliverable(getCommodityID(), now, tenantID) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now, tenantID).getDeliverableName() : getCommodityID()));
-      guiPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now, tenantID) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now, tenantID).getGUIManagedObjectDisplay() : getCommodityID()));
+      guiPresentationMap.put(DELIVERABLENAME, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getDeliverableName() : getCommodityID()));
+      guiPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getGUIManagedObjectDisplay() : getCommodityID()));
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
       guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
@@ -716,21 +716,21 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
-      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(ORIGIN, "");
       guiPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, getCommodityDeliveryStatus().toString());
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
       Date now = SystemTime.getCurrentTime();
       thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
       thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
       thirdPartyPresentationMap.put(DELIVERABLEID, getCommodityID());
-      thirdPartyPresentationMap.put(DELIVERABLENAME, (deliverableService.getActiveDeliverable(getCommodityID(), now, tenantID) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now, tenantID).getDeliverableName() : getCommodityID()));
-      thirdPartyPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now, tenantID) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now, tenantID).getGUIManagedObjectDisplay() : getCommodityID()));
+      thirdPartyPresentationMap.put(DELIVERABLENAME, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getDeliverableName() : getCommodityID()));
+      thirdPartyPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getGUIManagedObjectDisplay() : getCommodityID()));
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
       thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
@@ -739,8 +739,8 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
-      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
+      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getCommodityDeliveryStatus().getReturnCode()).getGenericResponseMessage());
@@ -1084,7 +1084,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           // Debit => check in paymentMean list
           //
           
-          paymentMean = paymentMeanService.getActivePaymentMean(commodityID, SystemTime.getCurrentTime(), commodityDeliveryRequest.getTenantID());
+          paymentMean = paymentMeanService.getActivePaymentMean(commodityID, SystemTime.getCurrentTime());
           if(paymentMean == null){
             log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
             submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "payment mean not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
@@ -1108,7 +1108,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           // Credit => check in commodity list
           //
           
-          deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime(), deliveryRequest.getTenantID());
+          deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
           if(deliverable == null){
             log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
             submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
@@ -1132,7 +1132,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
             // Set => check in commodity list
             //
             
-            deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime(), deliveryRequest.getTenantID());
+            deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
             if(deliverable == null){
               log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
               submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
@@ -1156,7 +1156,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
             // Activate => check in commodity list
             //
             
-            deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime(), deliveryRequest.getTenantID());
+            deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
             if(deliverable == null){
               log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
               submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
@@ -1180,7 +1180,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           // Check => check in commodity list
           //
           
-          deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime(), deliveryRequest.getTenantID());
+          deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
           if(deliverable == null){
             log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
             submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
@@ -1265,11 +1265,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   private static String getCommodityType(CommodityDeliveryRequest commodityDeliveryRequest){
     String providerId = null;
     if(commodityDeliveryRequest.getOperation().equals(CommodityDeliveryOperation.Debit)){
-      PaymentMean paymentMean = paymentMeanService.getActivePaymentMean(commodityDeliveryRequest.getCommodityID(),SystemTime.getCurrentTime(), commodityDeliveryRequest.getTenantID());
+      PaymentMean paymentMean = paymentMeanService.getActivePaymentMean(commodityDeliveryRequest.getCommodityID(),SystemTime.getCurrentTime());
       if(paymentMean==null) return null;
       providerId = paymentMean.getFulfillmentProviderID();
     }else{
-      Deliverable deliverable = deliverableService.getActiveDeliverable(commodityDeliveryRequest.getCommodityID(),SystemTime.getCurrentTime(), commodityDeliveryRequest.getTenantID());
+      Deliverable deliverable = deliverableService.getActiveDeliverable(commodityDeliveryRequest.getCommodityID(),SystemTime.getCurrentTime());
       if(deliverable==null) return null;
       providerId = deliverable.getFulfillmentProviderID();
     }
@@ -1641,7 +1641,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *****************************************/
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {

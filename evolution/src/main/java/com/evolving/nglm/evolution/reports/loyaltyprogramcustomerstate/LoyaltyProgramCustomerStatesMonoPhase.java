@@ -39,7 +39,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
   private final static String customerID = "customerID";
 
   @Override
-  public boolean dumpElementToCsvMono(Map<String, Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
+  public boolean dumpElementToCsvMono(Map<String, Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     List<Map<String, Object>> records = new ArrayList<Map<String, Object>>();
     Map<String, Object> subscriberFields = map;    
@@ -80,7 +80,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                     Object programID = obj.get("programID");
                     if (programID != null && programID instanceof String)
                       {
-                        GUIManagedObject guiManagedObject = loyaltyProgramService.getStoredLoyaltyProgram((String) programID, tenantID);
+                        GUIManagedObject guiManagedObject = loyaltyProgramService.getStoredLoyaltyProgram((String) programID);
                         if (guiManagedObject instanceof LoyaltyProgram)
                           {
                             LoyaltyProgram loyaltyProgram = (LoyaltyProgram) guiManagedObject;

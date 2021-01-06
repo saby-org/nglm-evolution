@@ -127,12 +127,12 @@ public class ScoringStrategyService extends GUIService
   *****************************************/
 
   public String generateScoringStrategyID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredScoringStrategy(String scoringStrategyID, int tenantID) { return getStoredGUIManagedObject(scoringStrategyID, tenantID); }
-  public GUIManagedObject getStoredScoringStrategy(String scoringStrategyID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(scoringStrategyID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredScoringStrategy(String scoringStrategyID) { return getStoredGUIManagedObject(scoringStrategyID); }
+  public GUIManagedObject getStoredScoringStrategy(String scoringStrategyID, boolean includeArchived) { return getStoredGUIManagedObject(scoringStrategyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredScoringStrategies(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredScoringStrategies(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveScoringStrategy(GUIManagedObject scoringStrategyUnchecked, Date date) { return isActiveGUIManagedObject(scoringStrategyUnchecked, date); }
-  public ScoringStrategy getActiveScoringStrategy(String scoringStrategyID, Date date, int tenantID) { return (ScoringStrategy) getActiveGUIManagedObject(scoringStrategyID, date, tenantID); }
+  public ScoringStrategy getActiveScoringStrategy(String scoringStrategyID, Date date) { return (ScoringStrategy) getActiveGUIManagedObject(scoringStrategyID, date); }
   public Collection<ScoringStrategy> getActiveScoringStrategies(Date date, int tenantID) { return (Collection<ScoringStrategy>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -141,7 +141,7 @@ public class ScoringStrategyService extends GUIService
   *
   *****************************************/
 
-  public void putScoringStrategy(GUIManagedObject scoringStrategy, boolean newObject, String userID, int tenantID) { putGUIManagedObject(scoringStrategy, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
+  public void putScoringStrategy(GUIManagedObject scoringStrategy, boolean newObject, String userID) { putGUIManagedObject(scoringStrategy, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *

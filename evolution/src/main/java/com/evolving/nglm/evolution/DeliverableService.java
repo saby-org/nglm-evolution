@@ -116,13 +116,13 @@ public class DeliverableService extends GUIService
   *****************************************/
 
   public String generateDeliverableID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredDeliverable(String deliverableID, int tenantID) { return getStoredGUIManagedObject(deliverableID, tenantID); }
-  public GUIManagedObject getStoredDeliverable(String deliverableID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(deliverableID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredDeliverable(String deliverableID) { return getStoredGUIManagedObject(deliverableID); }
+  public GUIManagedObject getStoredDeliverable(String deliverableID, boolean includeArchived) { return getStoredGUIManagedObject(deliverableID, includeArchived); }
   public Collection<GUIManagedObject> getStoredDeliverables(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredDeliverables(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveDeliverableThroughInterval(GUIManagedObject deliverableUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(deliverableUnchecked, startDate, endDate); }
   public boolean isActiveDeliverable(GUIManagedObject deliverableUnchecked, Date date) { return isActiveGUIManagedObject(deliverableUnchecked, date); }
-  public Deliverable getActiveDeliverable(String deliverableID, Date date, int tenantID) { return (Deliverable) getActiveGUIManagedObject(deliverableID, date, tenantID); }
+  public Deliverable getActiveDeliverable(String deliverableID, Date date) { return (Deliverable) getActiveGUIManagedObject(deliverableID, date); }
   public Collection<Deliverable> getActiveDeliverables(Date date, int tenantID) { return (Collection<Deliverable>) getActiveGUIManagedObjects(date, tenantID); }
 
   //
@@ -155,7 +155,7 @@ public class DeliverableService extends GUIService
   *
   *****************************************/
 
-  public void putDeliverable(GUIManagedObject deliverable, boolean newObject, String userID, int tenantID) { putGUIManagedObject(deliverable, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
+  public void putDeliverable(GUIManagedObject deliverable, boolean newObject, String userID) { putGUIManagedObject(deliverable, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *

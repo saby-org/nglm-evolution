@@ -409,7 +409,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 // get the target
                 //
 
-                Target target = targetService.getActiveTarget(currentTargetID, now, tenantID);
+                Target target = targetService.getActiveTarget(currentTargetID, now);
 
                 //
                 // target not active -- automatic false criteria
@@ -459,20 +459,20 @@ public class Journey extends GUIManagedObject implements StockableItem
   //  getAllObjectives
   //
 
-  public Set<JourneyObjective> getAllObjectives(JourneyObjectiveService journeyObjectiveService, Date now, int tenantID)
+  public Set<JourneyObjective> getAllObjectives(JourneyObjectiveService journeyObjectiveService, Date now)
   {
     Set<JourneyObjective> result = new HashSet<JourneyObjective>();
     for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectiveInstances)
       {
-        JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now, tenantID);
+        JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now);
         if (journeyObjective != null)
           {
             result.add(journeyObjective);
-            JourneyObjective walk = (journeyObjective.getParentJourneyObjectiveID() != null) ? journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), now, tenantID) : null;
+            JourneyObjective walk = (journeyObjective.getParentJourneyObjectiveID() != null) ? journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), now) : null;
             while (walk != null && ! result.contains(walk))
               {
                 result.add(walk);
-                walk = (walk.getParentJourneyObjectiveID() != null) ? journeyObjectiveService.getActiveJourneyObjective(walk.getParentJourneyObjectiveID(), now, tenantID) : null;
+                walk = (walk.getParentJourneyObjectiveID() != null) ? journeyObjectiveService.getActiveJourneyObjective(walk.getParentJourneyObjectiveID(), now) : null;
               }
           }
       }
@@ -1162,7 +1162,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         argumentJson.put("expression", "'" + targetingEvent + "'");
         eventNameCriterionJson.put("argument", argumentJson);
         arrayEventNameCriterion.add(eventNameCriterionJson);
-        EvolutionEngineEventDeclaration event = dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).get(targetingEvent);
+        EvolutionEngineEventDeclaration event = dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(targetingEvent);
         CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null, tenantID);
         List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext);        
         this.targetingEventCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingEventCriteria", false), eventNameCriteria, criterionContext);
@@ -1173,7 +1173,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       }
 
     this.targetID = decodeTargetIDs(JSONUtilities.decodeJSONArray(jsonRoot, "targetID", new JSONArray()));
-    this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService, tenantID);
+    this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
     this.appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", Boolean.FALSE);
     this.appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", Boolean.FALSE);
     this.appendUCG = JSONUtilities.decodeBoolean(jsonRoot, "appendUCG", Boolean.FALSE);
@@ -1234,7 +1234,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), JSONUtilities.decodeString(jsonRoot,  "journeyTemplateID"), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService, journeyTemplateService, tenantID);
+    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), JSONUtilities.decodeString(jsonRoot,  "journeyTemplateID"), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService, journeyTemplateService);
 
     /*****************************************
     *
@@ -1758,10 +1758,10 @@ public class Journey extends GUIManagedObject implements StockableItem
       }
   }
   
-  public void createOrConsolidateHardcodedMessageTemplates(SubscriberMessageTemplateService subscriberMessageTemplateService, String journeyID, JourneyService journeyService, int tenantID) throws GUIManagerException
+  public void createOrConsolidateHardcodedMessageTemplates(SubscriberMessageTemplateService subscriberMessageTemplateService, String journeyID, JourneyService journeyService) throws GUIManagerException
   {
     
-    GUIManagedObject gmo = journeyService.getStoredJourney(journeyID, tenantID);
+    GUIManagedObject gmo = journeyService.getStoredJourney(journeyID);
     Journey existingJourney = null;
     if (gmo instanceof Journey)
       {
@@ -1810,9 +1810,9 @@ public class Journey extends GUIManagedObject implements StockableItem
 
         if (matchingSubscriberMessage == null)
           {
-            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessagePair.getSecondElement(), subscriberMessage, subscriberMessageTemplateService, tenantID);
+            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessagePair.getSecondElement(), subscriberMessage, subscriberMessageTemplateService);
             subscriberMessage.setSubscriberMessageTemplateID(internalSubscriberMessageTemplate.getSubscriberMessageTemplateID());
-            subscriberMessageTemplateService.putSubscriberMessageTemplate(internalSubscriberMessageTemplate, true, null, tenantID);
+            subscriberMessageTemplateService.putSubscriberMessageTemplate(internalSubscriberMessageTemplate, true, null);
           }
         else
           {
@@ -1900,14 +1900,14 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private Set<JourneyObjectiveInstance> decodeJourneyObjectiveInstances(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
+  private Set<JourneyObjectiveInstance> decodeJourneyObjectiveInstances(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     Set<JourneyObjectiveInstance> result = new HashSet<JourneyObjectiveInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new JourneyObjectiveInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
+            result.add(new JourneyObjectiveInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;
@@ -1979,7 +1979,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private ParameterMap decodeBoundParameters(JSONArray jsonArray, String journeyTemplateID, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, JourneyTemplateService journeyTemplateService, int tenantID) throws GUIManagerException
+  private ParameterMap decodeBoundParameters(JSONArray jsonArray, String journeyTemplateID, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, JourneyTemplateService journeyTemplateService) throws GUIManagerException
   {
     CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, this.getTenantID());
     ParameterMap boundParameters = new ParameterMap();
@@ -2039,12 +2039,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
                 boundParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
                 boundParameters.put(parameterName, emailMessageValue);
                 break;
 
@@ -2058,7 +2058,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 if (value != null)
                   {
                     HashMap<String,Boolean> dialogMessageFieldsMandatory = new HashMap<String, Boolean>();
-                    Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(journeyTemplateID, SystemTime.getCurrentTime(), this.getTenantID());
+                    Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(journeyTemplateID, SystemTime.getCurrentTime());
                     // this is a f**** hack to retrieve the communication channel ID
                     JSONObject templateJSON = journeyTemplate.getJSONRepresentation();
                     JSONArray templateParametersJSON = JSONUtilities.decodeJSONArray(templateJSON, "templateParameters");
@@ -2114,12 +2114,12 @@ public class Journey extends GUIManagedObject implements StockableItem
 
                     if(message != null) {                
                       // case InLine Template
-                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, communcationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, this.getTenantID());
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, communcationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
                       boundParameters.put(parameterName, templateParameters);
                     }
                     else {
                       // case referenced Template
-                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, communcationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, this.getTenantID());
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, communcationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
                       boundParameters.put(parameterName, templateParameters);
                     }
                   }
@@ -2366,7 +2366,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         *
         *****************************************/
 
-        JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), date, this.getTenantID());
+        JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), date);
 
         /*****************************************
         *
@@ -2422,7 +2422,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //  retrieve target
           //
           
-          Target target = targetService.getActiveTarget(currentTargetID, date, this.getTenantID());
+          Target target = targetService.getActiveTarget(currentTargetID, date);
 
           //
           //  validate the target exists and is active
@@ -2752,7 +2752,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       //
 
       String eventName = this.nodeParameters.containsKey("node.parameter.eventname") ? (String) this.nodeParameters.get("node.parameter.eventname") : null;
-      EvolutionEngineEventDeclaration nodeEvent = (eventName != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).get(eventName) : null;
+      EvolutionEngineEventDeclaration nodeEvent = (eventName != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(eventName) : null;
       if (eventName != null && nodeEvent == null) throw new GUIManagerException("unknown event", eventName);
 
       //
@@ -2794,7 +2794,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
           //
 
-          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, tenantID));
+          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService));
           this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext));
 
           //
@@ -2915,7 +2915,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     JSONObject workflowJSON = (JSONObject) parameterJSON.get("value");
                     if (workflowJSON == null) throw new GUIManagerException("no workflow", "null");
                     String workflowID = JSONUtilities.decodeString(workflowJSON, "workflowID", true);
-                    workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime(), tenantID);                    
+                    workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());                    
                     if (workflow == null) throw new GUIManagerException("unknown workflow", workflowID);
                   }
                 break;
@@ -2930,7 +2930,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID) throws GUIManagerException
+    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       ParameterMap nodeParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -2966,12 +2966,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
                 nodeParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
                 nodeParameters.put(parameterName, emailMessageValue);
                 break;
 
@@ -3026,12 +3026,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                     // }
                     if(message != null) {                
                       // case InLine Template
-                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, tenantID);
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
                       nodeParameters.put(parameterName, templateParameters);
                     }
                     else {
                       // case referenced Template
-                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, tenantID);
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
                       nodeParameters.put(parameterName, templateParameters);
                     }
                   }
@@ -3292,7 +3292,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       //
 
       String eventName = this.outputConnectorParameters.containsKey("link.parameter.eventname") ? (String) this.outputConnectorParameters.get("link.parameter.eventname") : null;
-      EvolutionEngineEventDeclaration linkEvent = (eventName != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).get(eventName) : null;
+      EvolutionEngineEventDeclaration linkEvent = (eventName != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(eventName) : null;
       if (eventName != null && linkEvent == null) throw new GUIManagerException("unknown event", eventName);
 
       //
@@ -3414,12 +3414,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
                 outputConnectorParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
                 outputConnectorParameters.put(parameterName, emailMessageValue);
                 break;
 

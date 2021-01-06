@@ -539,7 +539,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
           for (int i = 0; i < communicationChannelTimeWindowIDs.size(); i++)
             {
               String communicationChannelTimeWindowID = communicationChannelTimeWindowIDs.get(i).toString();
-              GUIManagedObject communicationChannelTimeWindow = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowID, includeArchived, tenantID);
+              GUIManagedObject communicationChannelTimeWindow = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowID, includeArchived);
               if (communicationChannelTimeWindow != null)
                 {
                   communicationChannelTimeWindowObjects.add(communicationChannelTimeWindow);
@@ -574,7 +574,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
     *
     *****************************************/
 
-    public static JSONObject processGetTimeWindows(String userID, JSONObject jsonRoot, boolean includeArchived, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, int tenantID)
+    public static JSONObject processGetTimeWindows(String userID, JSONObject jsonRoot, boolean includeArchived, CommunicationChannelTimeWindowService communicationChannelTimeWindowService)
     {
       /****************************************
       *
@@ -598,7 +598,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       *
       ***************************************************************/
 
-      GUIManagedObject communicationChannelTimeWindowPeriod = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowPeriodID, includeArchived, tenantID);
+      GUIManagedObject communicationChannelTimeWindowPeriod = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowPeriodID, includeArchived);
       JSONObject communicationChannelTimeWindowPeriodJSON = communicationChannelTimeWindowService.generateResponseJSON(communicationChannelTimeWindowPeriod, true, SystemTime.getCurrentTime());
 
       /*****************************************
@@ -659,7 +659,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       *
       *****************************************/
 
-      GUIManagedObject existingCommunicationChannelTimeWindows = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowID, tenantID);
+      GUIManagedObject existingCommunicationChannelTimeWindows = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowID);
 
       /*****************************************
       *
@@ -703,7 +703,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
             {
 
               communicationChannelTimeWindowService.putCommunicationChannelTimeWindow(communicationChannelTimeWindowPeriod,
-                  (existingCommunicationChannelTimeWindows == null), userID, tenantID);
+                  (existingCommunicationChannelTimeWindows == null), userID);
             }
           /*****************************************
           *
@@ -733,7 +733,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
             {
 
               communicationChannelTimeWindowService.putCommunicationChannelTimeWindow(incompleteObject,
-                  (existingCommunicationChannelTimeWindows == null), userID, tenantID);
+                  (existingCommunicationChannelTimeWindows == null), userID);
             }
           //
           //  log
@@ -792,7 +792,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
           String timeWindowsID = JSONUtilities.decodeString(jsonRoot, "id", false);
           timeWindowsIDS.add(timeWindowsID);
           GUIManagedObject timeWindow = communicationChannelTimeWindowService
-              .getStoredCommunicationChannelTimeWindow(timeWindowsID, tenantID);
+              .getStoredCommunicationChannelTimeWindow(timeWindowsID);
 
           if (timeWindow != null && (force || !timeWindow.getReadOnly()))
             singleIDresponseCode = "ok";
@@ -814,7 +814,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       for (int i = 0; i < timeWindowsIDS.size(); i++)
         {
           String timeWindowID = timeWindowsIDS.get(i).toString();
-          GUIManagedObject timeWindow = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(timeWindowID, tenantID);
+          GUIManagedObject timeWindow = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(timeWindowID);
           if (timeWindow != null && (force || !timeWindow.getReadOnly()))
             {
               timeWindows.add(timeWindow);

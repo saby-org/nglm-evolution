@@ -285,7 +285,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
     {
       if (segmentationDimensionService == null) // do it only once, because we can't stop it fully
         {
-          segmentationDimensionService = new SegmentationDimensionService(kafkaNodeList, "report-segmentationDimensionservice-subscriberReportMonoPhase", Deployment.getSegmentationDimensionTopic(), false, tenantService.getActiveTenants(SystemTime.getCurrentTime()));
+          segmentationDimensionService = new SegmentationDimensionService(kafkaNodeList, "report-segmentationDimensionservice-subscriberReportMonoPhase", Deployment.getSegmentationDimensionTopic(), false);
           segmentationDimensionService.start(); // never stop it
         }
     }

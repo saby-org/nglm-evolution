@@ -22,6 +22,8 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+
+// TODO EVPRO-99 split per tenant ?
 public class SegmentContactPolicy extends GUIManagedObject
 {
   /*****************************************
@@ -240,7 +242,7 @@ public class SegmentContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(ContactPolicyService contactPolicyService, SegmentationDimensionService dimensionService, Date date, int tenantID) throws GUIManagerException
+  public void validate(ContactPolicyService contactPolicyService, SegmentationDimensionService dimensionService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -254,7 +256,7 @@ public class SegmentContactPolicy extends GUIManagedObject
 
     if (dimensionID != null)
       {
-        SegmentationDimension segmentationDimension = dimensionService.getActiveSegmentationDimension(dimensionID, date, tenantID);
+        SegmentationDimension segmentationDimension = dimensionService.getActiveSegmentationDimension(dimensionID, date);
         if (segmentationDimension == null) throw new GUIManagerException("unknown segmentation dimension", dimensionID);
       }
 
@@ -264,7 +266,7 @@ public class SegmentContactPolicy extends GUIManagedObject
 
     for (String contactPolicyID : segments.values())
       {
-        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, date, tenantID);
+        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, date);
         if (contactPolicy == null) throw new GUIManagerException("unknown contact policy", contactPolicyID);
       }
   }

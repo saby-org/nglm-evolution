@@ -54,14 +54,14 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
       }
   }
   
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map, int tenantID)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> journeyStats = map;
     Map<String, Object> journeyMetric = map;
         if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
           {
-            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime(), tenantID);
+            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
             if (journey != null)
               {
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();

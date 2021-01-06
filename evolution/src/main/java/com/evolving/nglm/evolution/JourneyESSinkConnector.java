@@ -103,7 +103,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       // TODO @rl: use ElasticsearchUtils ?
       String targets = "";
       for(String targetID : journey.getTargetID()) {
-        GUIManagedObject target = targetService.getStoredGUIManagedObject(targetID, 0);
+        GUIManagedObject target = targetService.getStoredGUIManagedObject(targetID);
         if(target != null) {
           String targetDisplay = target.getGUIManagedObjectDisplay();
           if(targetDisplay == null) {
@@ -124,7 +124,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       // TODO @rl: use ElasticsearchUtils ?
       String objectives = "";
       for(JourneyObjectiveInstance objectiveInstance : journey.getJourneyObjectiveInstances()) {
-        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredGUIManagedObject(objectiveInstance.getJourneyObjectiveID(), 0);
+        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredGUIManagedObject(objectiveInstance.getJourneyObjectiveID());
         if(journeyObjective != null) {
           String journeyObjectiveDisplay = journeyObjective.getGUIManagedObjectDisplay();
           if(journeyObjectiveDisplay == null) {

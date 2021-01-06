@@ -87,10 +87,10 @@ public abstract class OfferContentType extends GUIManagedObject {
     }
   }
 
-  public void validate(CatalogCharacteristicService catalogCharacteristicService, Date date, int tenantID) throws GUIManagerException {
+  public void validate(CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException {
     if(this.catalogCharacteristics==null) return;
     for (String catalogCharacteristicID : this.catalogCharacteristics) {
-      CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date, tenantID);
+      CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date);
       if (catalogCharacteristic == null) throw new GUIManagerException("unknown catalog characteristic", catalogCharacteristicID);
     }
   }

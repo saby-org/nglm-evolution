@@ -68,9 +68,9 @@ public class NotificationTemplateParameters extends SubscriberMessage
   *
   *****************************************/
 
-  public NotificationTemplateParameters(Object pushMessageJSON, String communicationChannelID,  Map<String, Boolean> dialogMessageFieldsMandatory, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
+  public NotificationTemplateParameters(Object pushMessageJSON, String communicationChannelID,  Map<String, Boolean> dialogMessageFieldsMandatory, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
-    super(pushMessageJSON, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, tenantID);
+    super(pushMessageJSON, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
     
   }
   /*****************************************

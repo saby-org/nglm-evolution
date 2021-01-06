@@ -256,7 +256,7 @@ public class Product extends GUIManagedObject implements StockableItem
 
     this.supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "stock", false);
-    this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService, tenantID);
+    this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService);
     this.stockableItemID = "product-" + getProductID();
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
 
@@ -317,14 +317,14 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private Set<ProductTypeInstance> decodeProductTypes(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
+  private Set<ProductTypeInstance> decodeProductTypes(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     Set<ProductTypeInstance> result = new HashSet<ProductTypeInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new ProductTypeInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
+            result.add(new ProductTypeInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;
@@ -336,7 +336,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public void validate(SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, Date date, int tenantID) throws GUIManagerException
+  public void validate(SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -344,7 +344,7 @@ public class Product extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    if (supplierService.getActiveSupplier(supplierID, date, tenantID) == null) throw new GUIManagerException("unknown supplier", supplierID);
+    if (supplierService.getActiveSupplier(supplierID, date) == null) throw new GUIManagerException("unknown supplier", supplierID);
     
     /*****************************************
     *
@@ -354,7 +354,7 @@ public class Product extends GUIManagedObject implements StockableItem
 
     for (ProductTypeInstance productTypeInstance : productTypes)
       {
-        if (productTypeService.getActiveProductType(productTypeInstance.getProductTypeID(), date, tenantID) == null) throw new GUIManagerException("unknown product type", productTypeInstance.getProductTypeID());
+        if (productTypeService.getActiveProductType(productTypeInstance.getProductTypeID(), date) == null) throw new GUIManagerException("unknown product type", productTypeInstance.getProductTypeID());
       }
 
     /****************************************
@@ -367,7 +367,7 @@ public class Product extends GUIManagedObject implements StockableItem
     //  retrieve deliverable
     //
     
-    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
 
     //
     //  validate the deliverable exists

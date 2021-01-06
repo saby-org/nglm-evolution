@@ -331,7 +331,7 @@ public class Reseller extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(ResellerService resellerService, Date date, int tenantID) throws GUIManagerException
+  public void validate(ResellerService resellerService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -375,7 +375,7 @@ public class Reseller extends GUIManagedObject
         //   4) does not create a cycle
         //
         
-        GUIManagedObject uncheckedParent = resellerService.getStoredReseller(walk.getParentResellerID(), tenantID);       
+        GUIManagedObject uncheckedParent = resellerService.getStoredReseller(walk.getParentResellerID());       
         if (uncheckedParent == null) throw new GUIManagerException("unknown Reseller ancestor", walk.getParentResellerID());
         if (uncheckedParent instanceof IncompleteObject) throw new GUIManagerException("invalid reseller ancestor", walk.getParentResellerID());
         Reseller parent = (Reseller) uncheckedParent;

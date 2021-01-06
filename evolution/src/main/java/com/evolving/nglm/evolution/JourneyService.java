@@ -169,14 +169,14 @@ public class JourneyService extends GUIService
   *****************************************/
 
   public String generateJourneyID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredJourney(String journeyID, int tenantID) { return getStoredGUIManagedObject(journeyID, tenantID); }
-  public GUIManagedObject getStoredJourney(String journeyID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(journeyID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredJourney(String journeyID) { return getStoredGUIManagedObject(journeyID); }
+  public GUIManagedObject getStoredJourney(String journeyID, boolean includeArchived) { return getStoredGUIManagedObject(journeyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredJourneys(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredJourneys(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveJourney(GUIManagedObject journeyUnchecked, Date date) { return isActiveGUIManagedObject(journeyUnchecked, date); }
-  public Journey getActiveJourney(String journeyID, Date date, int tenantID) 
+  public Journey getActiveJourney(String journeyID, Date date) 
   { 
-    Journey activeJourney = (Journey) getActiveGUIManagedObject(journeyID, date, tenantID);
+    Journey activeJourney = (Journey) getActiveGUIManagedObject(journeyID, date);
     if (!Deployment.getAutoApproveGuiObjects() && activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType()&& GUIManagedObjectType.LoyaltyWorkflow != activeJourney.getGUIManagedObjectType())
       {
         return JourneyStatus.StartedApproved == activeJourney.getApproval() ? activeJourney : null; 
@@ -264,7 +264,7 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  public void putJourney(GUIManagedObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, SubscriberMessageTemplateService subscriberMessageTemplateService, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putJourney(GUIManagedObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, SubscriberMessageTemplateService subscriberMessageTemplateService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -279,7 +279,7 @@ public class JourneyService extends GUIService
     if (journey instanceof Journey)
       {
         ((Journey) journey).validate(journeyObjectiveService, catalogCharacteristicService, targetService, now);
-        ((Journey) journey).createOrConsolidateHardcodedMessageTemplates(subscriberMessageTemplateService, journey.getGUIManagedObjectID(), this, tenantID);
+        ((Journey) journey).createOrConsolidateHardcodedMessageTemplates(subscriberMessageTemplateService, journey.getGUIManagedObjectID(), this);
       }
 
 
@@ -287,7 +287,7 @@ public class JourneyService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(journey, now, newObject, userID, tenantID);
+    putGUIManagedObject(journey, now, newObject, userID);
   }
   
   /*****************************************
@@ -296,11 +296,11 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  public void putJourney(IncompleteObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, SubscriberMessageTemplateService subscriberMessageTemplateService, boolean newObject, String userID, int tenantID)
+  public void putJourney(IncompleteObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, SubscriberMessageTemplateService subscriberMessageTemplateService, boolean newObject, String userID)
   {
     try
       {
-        putJourney((GUIManagedObject) journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, newObject, userID, tenantID);
+        putJourney((GUIManagedObject) journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

@@ -368,7 +368,7 @@ public class ScoringStrategy extends GUIManagedObject
         allOfferObjectivesID.addAll(scoringSegments.getAlwaysAppendOfferObjectiveIDs());
         for (String offerObjectiveID : allOfferObjectivesID)
           {
-            if (offerObjectiveService.getActiveOfferObjective(offerObjectiveID, date, this.getTenantID()) == null) throw new GUIManagerException("unknown offer objective", offerObjectiveID);
+            if (offerObjectiveService.getActiveOfferObjective(offerObjectiveID, date) == null) throw new GUIManagerException("unknown offer objective", offerObjectiveID);
           }
       }
     // TODO : validate segments

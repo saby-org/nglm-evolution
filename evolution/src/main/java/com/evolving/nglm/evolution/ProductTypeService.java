@@ -114,12 +114,12 @@ public class ProductTypeService extends GUIService
   *****************************************/
 
   public String generateProductTypeID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredProductType(String productTypeID, int tenantID) { return getStoredGUIManagedObject(productTypeID, tenantID); }
-  public GUIManagedObject getStoredProductType(String productTypeID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(productTypeID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredProductType(String productTypeID) { return getStoredGUIManagedObject(productTypeID); }
+  public GUIManagedObject getStoredProductType(String productTypeID, boolean includeArchived) { return getStoredGUIManagedObject(productTypeID, includeArchived); }
   public Collection<GUIManagedObject> getStoredProductTypes(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredProductTypes(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveProductType(GUIManagedObject productTypeUnchecked, Date date) { return isActiveGUIManagedObject(productTypeUnchecked, date); }
-  public ProductType getActiveProductType(String productTypeID, Date date, int tenantID) { return (ProductType) getActiveGUIManagedObject(productTypeID, date, tenantID); }
+  public ProductType getActiveProductType(String productTypeID, Date date) { return (ProductType) getActiveGUIManagedObject(productTypeID, date); }
   public Collection<ProductType> getActiveProductTypes(Date date, int tenantID) { return (Collection<ProductType>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -128,7 +128,7 @@ public class ProductTypeService extends GUIService
   *
   *****************************************/
 
-  public void putProductType(GUIManagedObject productType, boolean newObject, String userID, int tenantID) { putGUIManagedObject(productType, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
+  public void putProductType(GUIManagedObject productType, boolean newObject, String userID) { putGUIManagedObject(productType, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *

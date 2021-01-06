@@ -129,12 +129,12 @@ public class CatalogCharacteristicService extends GUIService
   *****************************************/
 
   public String generateCatalogCharacteristicID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredCatalogCharacteristic(String catalogCharacteristicID, int tenantID) { return getStoredGUIManagedObject(catalogCharacteristicID, tenantID); }
-  public GUIManagedObject getStoredCatalogCharacteristic(String catalogCharacteristicID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(catalogCharacteristicID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredCatalogCharacteristic(String catalogCharacteristicID) { return getStoredGUIManagedObject(catalogCharacteristicID); }
+  public GUIManagedObject getStoredCatalogCharacteristic(String catalogCharacteristicID, boolean includeArchived) { return getStoredGUIManagedObject(catalogCharacteristicID, includeArchived); }
   public Collection<GUIManagedObject> getStoredCatalogCharacteristics(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredCatalogCharacteristics(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveCatalogCharacteristic(GUIManagedObject catalogCharacteristicUnchecked, Date date) { return isActiveGUIManagedObject(catalogCharacteristicUnchecked, date); }
-  public CatalogCharacteristic getActiveCatalogCharacteristic(String catalogCharacteristicID, Date date, int tenantID) { return (CatalogCharacteristic) getActiveGUIManagedObject(catalogCharacteristicID, date, tenantID); }
+  public CatalogCharacteristic getActiveCatalogCharacteristic(String catalogCharacteristicID, Date date) { return (CatalogCharacteristic) getActiveGUIManagedObject(catalogCharacteristicID, date); }
   public Collection<CatalogCharacteristic> getActiveCatalogCharacteristics(Date date, int tenantID) { return (Collection<CatalogCharacteristic>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -143,7 +143,7 @@ public class CatalogCharacteristicService extends GUIService
   *
   *****************************************/
 
-  public void putCatalogCharacteristic(GUIManagedObject catalogCharacteristic, boolean newObject, String userID, int tenantID) { putGUIManagedObject(catalogCharacteristic, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
+  public void putCatalogCharacteristic(GUIManagedObject catalogCharacteristic, boolean newObject, String userID) { putGUIManagedObject(catalogCharacteristic, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *

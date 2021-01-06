@@ -372,7 +372,7 @@ public class Target extends GUIManagedObject
   *
   ****************************************/
   
-  public void validate(UploadedFileService uploadedFileService, Date now, int tenantID) throws GUIManagerException 
+  public void validate(UploadedFileService uploadedFileService, Date now) throws GUIManagerException 
   {
     //
     //  ensure file exists if specified
@@ -380,7 +380,7 @@ public class Target extends GUIManagedObject
 
     if (targetFileID != null)
       {
-        UploadedFile uploadedFile = uploadedFileService.getActiveUploadedFile(targetFileID, now, tenantID);
+        UploadedFile uploadedFile = uploadedFileService.getActiveUploadedFile(targetFileID, now);
         if (uploadedFile == null)
           { 
             throw new GUIManagerException("unknown uploaded file with id ", targetFileID);

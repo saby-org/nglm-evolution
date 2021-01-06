@@ -89,12 +89,12 @@ public class VoucherTypeService extends GUIService
   *****************************************/
 
   public String generateVoucherTypeID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredVoucherType(String voucherTypeID, int tenantID) { return getStoredGUIManagedObject(voucherTypeID, tenantID); }
-  public GUIManagedObject getStoredVoucherType(String voucherTypeID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(voucherTypeID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredVoucherType(String voucherTypeID) { return getStoredGUIManagedObject(voucherTypeID); }
+  public GUIManagedObject getStoredVoucherType(String voucherTypeID, boolean includeArchived) { return getStoredGUIManagedObject(voucherTypeID, includeArchived); }
   public Collection<GUIManagedObject> getStoredVoucherTypes(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredVoucherTypes(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveVoucherType(GUIManagedObject voucherTypeUnchecked, Date date) { return isActiveGUIManagedObject(voucherTypeUnchecked, date); }
-  public VoucherType getActiveVoucherType(String voucherTypeID, Date date, int tenantID) { return (VoucherType) getActiveGUIManagedObject(voucherTypeID, date, tenantID); }
+  public VoucherType getActiveVoucherType(String voucherTypeID, Date date) { return (VoucherType) getActiveGUIManagedObject(voucherTypeID, date); }
   public Collection<VoucherType> getActiveVoucherTypes(Date date, int tenantID) { return (Collection<VoucherType>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -103,7 +103,7 @@ public class VoucherTypeService extends GUIService
   *
   *****************************************/
 
-  public void putVoucherType(GUIManagedObject voucherType, boolean newObject, String userID, int tenantID) { putGUIManagedObject(voucherType, SystemTime.getCurrentTime(), newObject, userID, tenantID); }
+  public void putVoucherType(GUIManagedObject voucherType, boolean newObject, String userID) { putGUIManagedObject(voucherType, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *

@@ -316,7 +316,7 @@ public class JourneyObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, Date date, int tenantID) throws GUIManagerException
+  public void validate(JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -326,7 +326,7 @@ public class JourneyObjective extends GUIManagedObject
 
     if (contactPolicyID != null)
       {
-        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, date, tenantID);
+        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, date);
         if (contactPolicy == null) throw new GUIManagerException("unknown contact policy", contactPolicyID);
       }
 
@@ -338,7 +338,7 @@ public class JourneyObjective extends GUIManagedObject
 
     for (String catalogCharacteristicID : catalogCharacteristics)
       {
-        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date, tenantID);
+        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date);
         if (catalogCharacteristic == null) throw new GUIManagerException("unknown catalog characteristic", catalogCharacteristicID);
       }
     
@@ -367,7 +367,7 @@ public class JourneyObjective extends GUIManagedObject
         //   4) does not create a cycle
         //
         
-        GUIManagedObject uncheckedParent = journeyObjectiveService.getStoredJourneyObjective(walk.getParentJourneyObjectiveID(), tenantID);
+        GUIManagedObject uncheckedParent = journeyObjectiveService.getStoredJourneyObjective(walk.getParentJourneyObjectiveID());
         if (uncheckedParent == null) throw new GUIManagerException("unknown journey objective ancestor", walk.getParentJourneyObjectiveID());
         if (uncheckedParent instanceof IncompleteObject) throw new GUIManagerException("invalid journey objective ancestor", walk.getParentJourneyObjectiveID());
         JourneyObjective parent = (JourneyObjective) uncheckedParent;

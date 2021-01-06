@@ -366,13 +366,13 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public abstract DeliveryRequest copy();
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
-  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID);
-  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID);
+  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService);
+  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService);
   public abstract void resetDeliveryRequestAfterReSchedule();
   public ActivityType getActivityType() { return ActivityType.Other; }
 
-  @Override public Date getExpirationDate(RetentionService retentionService, int tenantID) { return getDeliveryDate(); }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService, int tenantID) {
+  @Override public Date getExpirationDate(RetentionService retentionService) { return getDeliveryDate(); }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
     switch (type){
       case KAFKA_DELETION:
         switch (getActivityType()){
@@ -459,7 +459,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.timeout = null;
     this.correlator = null;
     this.control = context.getSubscriberState().getSubscriberProfile().getUniversalControlGroup();
-    this.segmentContactPolicyID = context.getSubscriberState().getSubscriberProfile().getSegmentContactPolicyID(context.getSegmentContactPolicyService(), context.getSegmentationDimensionService(), context.getSubscriberGroupEpochReader(), tenantID);
+    this.segmentContactPolicyID = context.getSubscriberState().getSubscriberProfile().getSegmentContactPolicyID(context.getSegmentContactPolicyService(), context.getSegmentationDimensionService(), context.getSubscriberGroupEpochReader());
     this.deliveryType = deliveryType;
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
@@ -799,7 +799,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     guiPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     guiPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     guiPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
-    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
     return guiPresentationMap;
   }
   
@@ -819,7 +819,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
-    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
     return thirdPartyPresentationMap;
   }
   
@@ -827,14 +827,14 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //  getFeatureName
   //
 
-  public static String getFeatureName(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, int tenantID)
+  public static String getFeatureName(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     String featureName = null;
 
     switch (module)
       {
         case Journey_Manager:
-          GUIManagedObject journey = journeyService.getStoredJourney(featureId, tenantID);
+          GUIManagedObject journey = journeyService.getStoredJourney(featureId);
           journey = (journey != null && (
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign ||
@@ -845,12 +845,12 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
           break;
 
         case Loyalty_Program:
-          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId, tenantID);
+          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId);
           featureName = loyaltyProgram == null ? null : loyaltyProgram.getGUIManagedObjectName();
           break;
 
         case Offer_Catalog:
-          featureName = offerService.getStoredOffer(featureId, tenantID).getGUIManagedObjectName();
+          featureName = offerService.getStoredOffer(featureId).getGUIManagedObjectName();
           break;
 
         case Delivery_Manager:
@@ -858,7 +858,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
           break;
 
         case REST_API:
-          featureName = getFeatureDisplay(module, featureId, journeyService, offerService, loyaltyProgramService, tenantID);
+          featureName = getFeatureDisplay(module, featureId, journeyService, offerService, loyaltyProgramService);
           break;
           
         case Customer_Care:
@@ -876,14 +876,14 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //  getFeatureDisplay
   //
 
-  public static String getFeatureDisplay(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, int tenantID)
+  public static String getFeatureDisplay(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     String featureDisplay = null;
 
     switch (module)
       {
         case Journey_Manager:
-          GUIManagedObject journey = journeyService.getStoredJourney(featureId, tenantID);
+          GUIManagedObject journey = journeyService.getStoredJourney(featureId);
           journey = (journey != null && (
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign ||
@@ -894,12 +894,12 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
           break;
 
         case Loyalty_Program:
-          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId, tenantID);
+          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId);
           featureDisplay = loyaltyProgram == null ? null : loyaltyProgram.getGUIManagedObjectDisplay();
           break;
 
         case Offer_Catalog:
-          featureDisplay = offerService.getStoredOffer(featureId, tenantID).getGUIManagedObjectDisplay();
+          featureDisplay = offerService.getStoredOffer(featureId).getGUIManagedObjectDisplay();
           break;
 
         case Delivery_Manager:

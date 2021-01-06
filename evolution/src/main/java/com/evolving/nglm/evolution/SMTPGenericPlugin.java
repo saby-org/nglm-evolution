@@ -275,7 +275,7 @@ public class SMTPGenericPlugin implements NotificationInterface
         try
           {
             NotificationManagerRequest deliveryRequest = (NotificationManagerRequest) mailNotificationRequest;
-            Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(mailNotificationManager.getSubscriberMessageTemplateService(), deliveryRequest.getTenantID());
+            Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(mailNotificationManager.getSubscriberMessageTemplateService());
             String body = resolvedParameters.get("node.parameter.body");
             String toEmail = deliveryRequest.getDestination();
             String fromAddress =  deliveryRequest.getDeliveryRequestSource(); // TODO check

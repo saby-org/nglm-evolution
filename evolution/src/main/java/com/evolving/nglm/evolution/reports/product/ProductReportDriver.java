@@ -87,7 +87,7 @@ public class ProductReportDriver extends ReportDriver
                 // log.info("recordJson: {}",recordJson);
                 try
                   {
-                    dumpElementToCsv(recordJson, writer, header, (first == productJsonList.size() - 1), tenantID);
+                    dumpElementToCsv(recordJson, writer, header, (first == productJsonList.size() - 1));
 
                     if (first == 0)
                       {
@@ -134,7 +134,7 @@ public class ProductReportDriver extends ReportDriver
 
   }
 
-  private void dumpElementToCsv(JSONObject recordJson, ZipOutputStream writer, Boolean addHeaders, boolean last, int tenantID) throws IOException, InterruptedException
+  private void dumpElementToCsv(JSONObject recordJson, ZipOutputStream writer, Boolean addHeaders, boolean last) throws IOException, InterruptedException
   {
 
     // log.info("inside dumpElementToCsv method");
@@ -148,10 +148,10 @@ public class ProductReportDriver extends ReportDriver
         productFields.put("productName", recordJson.get("display"));
         productFields.put("productStartDate", recordJson.get("effectiveStartDate"));
         productFields.put("productEndDate", recordJson.get("effectiveEndDate"));
-        productFields.put("supplierName", (supplierService.getStoredSupplier((String) recordJson.get("supplierID"), tenantID)).getJSONRepresentation().get("display"));
+        productFields.put("supplierName", (supplierService.getStoredSupplier((String) recordJson.get("supplierID"))).getJSONRepresentation().get("display"));
         if (recordJson.get("deliverableID") != null)
           {
-            productFields.put("fulfillment", (deliverableService.getStoredDeliverable((String) recordJson.get("deliverableID"), tenantID)).getJSONRepresentation().get("name"));
+            productFields.put("fulfillment", (deliverableService.getStoredDeliverable((String) recordJson.get("deliverableID"))).getJSONRepresentation().get("name"));
           } else
           {
             productFields.put("fulfillment", "");
@@ -172,7 +172,7 @@ public class ProductReportDriver extends ReportDriver
                   {
                     JSONArray productChars = (JSONArray) element.get("catalogCharacteristics");
                     String objectid = (String) (element.get("productTypeID"));
-                    GUIManagedObject guiManagedObject = (GUIManagedObject) productTypeService.getStoredProductType(objectid, tenantID);
+                    GUIManagedObject guiManagedObject = (GUIManagedObject) productTypeService.getStoredProductType(objectid);
                     if (guiManagedObject != null)
                       {
                         Map<String, Object> ptJSON = new LinkedHashMap<>(); // to preserve order

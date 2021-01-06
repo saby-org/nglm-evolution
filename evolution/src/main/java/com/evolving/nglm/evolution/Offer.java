@@ -593,13 +593,13 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true), tenantID);
-    this.offerOfferObjectives = decodeOfferObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectives", true), catalogCharacteristicService, tenantID);
+    this.offerOfferObjectives = decodeOfferObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectives", true), catalogCharacteristicService);
     this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
     this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
     this.offerVouchers = decodeOfferVouchers(JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false));
     this.offerTranslations = decodeOfferTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "offerTranslations", false));
     this.stockableItemID = "offer-" + getOfferID();
-    this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false), catalogCharacteristicService, tenantID);
+    this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false), catalogCharacteristicService);
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
     this.maximumAcceptances = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptances", false);
     this.maximumAcceptancesPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriodDays", false);
@@ -638,14 +638,14 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private Set<OfferObjectiveInstance> decodeOfferObjectives(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
+  private Set<OfferObjectiveInstance> decodeOfferObjectives(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     Set<OfferObjectiveInstance> result = new HashSet<OfferObjectiveInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferObjectiveInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
+            result.add(new OfferObjectiveInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;
@@ -768,7 +768,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public void validate(CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, Date date, int tenantID) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, Date date) throws GUIManagerException
   {
     // TODO validate offerCharacteristics
     
@@ -787,7 +787,7 @@ public class Offer extends GUIManagedObject implements StockableItem
             //  retrieve salesChannel
             //
 
-            SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, date, tenantID);
+            SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, date);
 
             //
             //  validate the salesChannel exists and is active
@@ -832,7 +832,7 @@ public class Offer extends GUIManagedObject implements StockableItem
           //  retrieve product
           //
 
-          GUIManagedObject product = productService.getStoredProduct(offerProduct.getProductID(), tenantID);
+          GUIManagedObject product = productService.getStoredProduct(offerProduct.getProductID());
 
           //
           //  validate the product exists
@@ -862,7 +862,7 @@ public class Offer extends GUIManagedObject implements StockableItem
           //  retrieve voucher
           //
 
-          GUIManagedObject voucher = voucherService.getStoredVoucher(offerVoucher.getVoucherID(), tenantID);
+          GUIManagedObject voucher = voucherService.getStoredVoucher(offerVoucher.getVoucherID());
 
           //
           //  validate the voucher exists

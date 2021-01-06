@@ -202,7 +202,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public static SubscriberMessageTemplate newInternalTemplate(String communicationChannelID, SubscriberMessage subscriberMessage, SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID) throws GUIManagerException
+  public static SubscriberMessageTemplate newInternalTemplate(String communicationChannelID, SubscriberMessage subscriberMessage, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
   {
     //
     //  construct JSON representation
@@ -225,10 +225,10 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //
 
     SubscriberMessageTemplate result = null;
-    if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(internalSubscriberMessageTemplate, 0L, null, tenantID);
-    if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(internalSubscriberMessageTemplate, 0L, null, tenantID);
-    if (subscriberMessage instanceof PushMessage) result = new PushTemplate(internalSubscriberMessageTemplate, 0L, null, tenantID);
-    if (subscriberMessage instanceof NotificationTemplateParameters) result = new DialogTemplate(internalSubscriberMessageTemplate, 0L, null, tenantID);
+    if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(internalSubscriberMessageTemplate, 0L, null, subscriberMessage.getTenantID());
+    if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(internalSubscriberMessageTemplate, 0L, null, subscriberMessage.getTenantID());
+    if (subscriberMessage instanceof PushMessage) result = new PushTemplate(internalSubscriberMessageTemplate, 0L, null, subscriberMessage.getTenantID());
+    if (subscriberMessage instanceof NotificationTemplateParameters) result = new DialogTemplate(internalSubscriberMessageTemplate, 0L, null, subscriberMessage.getTenantID());
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessage");
 
     //
@@ -498,12 +498,12 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public SubscriberMessageTemplate getReadOnlyCopy(EvolutionEventContext evolutionEventContext, int tenantID)
+  public SubscriberMessageTemplate getReadOnlyCopy(EvolutionEventContext evolutionEventContext)
   {
     SubscriberMessageTemplate result;
     if (! getReadOnly() && getReadOnlyCopyID() != null)
       {
-        result = evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getReadOnlyCopyID(), evolutionEventContext.now(), tenantID);
+        result = evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getReadOnlyCopyID(), evolutionEventContext.now());
       }
     else if (getReadOnly())
       {

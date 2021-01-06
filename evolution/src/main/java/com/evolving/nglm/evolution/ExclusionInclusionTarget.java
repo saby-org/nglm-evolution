@@ -327,7 +327,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
 
     if (fileID != null)
       {
-        UploadedFile uploadedFile = uploadedFileService.getActiveUploadedFile(fileID, now, this.getTenantID());
+        UploadedFile uploadedFile = uploadedFileService.getActiveUploadedFile(fileID, now);
         if (uploadedFile == null)
           { 
             throw new GUIManagerException("unknown uploaded file with id ", fileID);

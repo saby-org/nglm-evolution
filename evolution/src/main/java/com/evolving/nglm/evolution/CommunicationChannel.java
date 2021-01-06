@@ -95,13 +95,13 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
-    public Date getEffectiveDeliveryTime(CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, Date now, int tenantID)
+    public Date getEffectiveDeliveryTime(CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, Date now)
     {
       //
       //  retrieve delivery time configuration
       //
 
-      CommunicationChannelBlackoutPeriod blackoutPeriod = communicationChannelBlackoutServiceBlackout.getActiveCommunicationChannelBlackout("blackoutPeriod", now, tenantID);
+      CommunicationChannelBlackoutPeriod blackoutPeriod = communicationChannelBlackoutServiceBlackout.getActiveCommunicationChannelBlackout("blackoutPeriod", now);
 
       //
       //  iterate until a valid date is found (give up after 7 days and reschedule even if not legal)
@@ -112,7 +112,7 @@ public class CommunicationChannel extends GUIManagedObject
       while (deliveryDate.before(maximumDeliveryDate))
         {
           Date nextDailyWindowDeliveryDate = this.getEffectiveDeliveryTime(this, deliveryDate, communicationChannelTimeWindowService);
-          Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? communicationChannelBlackoutServiceBlackout.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate, tenantID) : deliveryDate;
+          Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? communicationChannelBlackoutServiceBlackout.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
           Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
           if (nextDeliveryDate.after(deliveryDate))
             deliveryDate = nextDeliveryDate;
@@ -287,7 +287,7 @@ public class CommunicationChannel extends GUIManagedObject
     private Date getEffectiveDeliveryTime(CommunicationChannel communicationChannel, Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService)
     {
       Date effectiveDeliveryDate = now;
-      CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), now, communicationChannel.getTenantID());
+      CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), now);
       if(timeWindow == null) { timeWindow = Deployment.getDefaultNotificationDailyWindows(); }
         
       if (communicationChannel != null && timeWindow != null)

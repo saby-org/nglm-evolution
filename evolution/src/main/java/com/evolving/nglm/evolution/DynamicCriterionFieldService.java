@@ -108,10 +108,10 @@ public class DynamicCriterionFieldService extends GUIService
   *****************************************/
 
   public String generateDynamicCriterionFieldID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredDynamicCriterionField(String dynamicCriterionFieldID, int tenantID) { return getStoredGUIManagedObject(dynamicCriterionFieldID, tenantID); }
+  public GUIManagedObject getStoredDynamicCriterionField(String dynamicCriterionFieldID) { return getStoredGUIManagedObject(dynamicCriterionFieldID); }
   public Collection<GUIManagedObject> getStoredDynamicCriterionFields(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public boolean isActiveDynamicCriterionField(GUIManagedObject dynamicCriterionFieldUnchecked, Date date) { return isActiveGUIManagedObject(dynamicCriterionFieldUnchecked, date); }
-  public DynamicCriterionField getActiveDynamicCriterionField(String dynamicCriterionFieldID, Date date, int tenantID) { return (DynamicCriterionField) getActiveGUIManagedObject(dynamicCriterionFieldID, date, tenantID); }
+  public DynamicCriterionField getActiveDynamicCriterionField(String dynamicCriterionFieldID, Date date) { return (DynamicCriterionField) getActiveGUIManagedObject(dynamicCriterionFieldID, date); }
   public Collection<DynamicCriterionField> getActiveDynamicCriterionFields(Date date, int tenantID) { return (Collection<DynamicCriterionField>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -185,7 +185,7 @@ public class DynamicCriterionFieldService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newLoyaltyProgram, null, loyaltyProgram.getTenantID());
+    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newLoyaltyProgram, null);
   }
 
   /*****************************************
@@ -294,7 +294,7 @@ public class DynamicCriterionFieldService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newPoint, null, point.getTenantID());
+    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newPoint, null);
   }
 
   /*****************************************

@@ -120,7 +120,7 @@ public class DNBOUtils
       *  scoring strategy
       *
       *****************************************/
-      PresentationStrategy presentationStrategy = evolutionEventContext.getPresentationStrategyService().getActivePresentationStrategy(strategyID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
+      PresentationStrategy presentationStrategy = evolutionEventContext.getPresentationStrategyService().getActivePresentationStrategy(strategyID, evolutionEventContext.now());
       if (presentationStrategy == null)
         {
           String str = "invalid presentation strategy " + strategyID;
@@ -135,7 +135,7 @@ public class DNBOUtils
       *  token type
       *
       *****************************************/
-      TokenType tokenType = evolutionEventContext.getTokenTypeService().getActiveTokenType(tokenTypeID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
+      TokenType tokenType = evolutionEventContext.getTokenTypeService().getActiveTokenType(tokenTypeID, evolutionEventContext.now());
       if (tokenType == null)
         {
           String str = "unknown token type " + tokenTypeID; 
@@ -152,7 +152,7 @@ public class DNBOUtils
       *****************************************/
       Supplier supplier = null;
       if (supplierID != null) {
-        supplier = evolutionEventContext.getSupplierService().getActiveSupplier(supplierID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
+        supplier = evolutionEventContext.getSupplierService().getActiveSupplier(supplierID, evolutionEventContext.now());
       }
       
       /*****************************************
@@ -282,7 +282,7 @@ public class DNBOUtils
         {
           String offerId = presentedOffer.getOfferId();
           presentedOfferIDs.add(offerId);
-          Offer offer = offerService.getActiveOffer(offerId, now, subscriberEvaluationRequest.getTenantID());
+          Offer offer = offerService.getActiveOffer(offerId, now);
           if (offer == null)
             {
               String str = "invalid offer returned by scoring " + offerId;
@@ -511,7 +511,7 @@ public class DNBOUtils
       ProposedOfferDetails acceptedOfferDetail = presentedOfferDetailsList.iterator().next();
       String offerID = acceptedOfferDetail.getOfferId();
       token.setAcceptedOfferID(offerID);
-      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
+      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
       if (offer == null)
         {
           String str = "invalid offer returned by scoring " + offerID; 
@@ -642,7 +642,7 @@ public class DNBOUtils
       
       List<Action> result = new ArrayList<>();
       token.setAcceptedOfferID(offerID);
-      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
+      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
       if (offer == null)
         {
           String str = "invalid offer returned by scoring " + offerID; 

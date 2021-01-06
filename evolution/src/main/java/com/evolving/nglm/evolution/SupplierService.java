@@ -116,12 +116,12 @@ public class SupplierService extends GUIService
   *****************************************/
 
   public String generateSupplierID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredSupplier(String supplierID, int tenantID) { return getStoredGUIManagedObject(supplierID, tenantID); }
-  public GUIManagedObject getStoredSupplier(String supplierID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(supplierID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredSupplier(String supplierID) { return getStoredGUIManagedObject(supplierID); }
+  public GUIManagedObject getStoredSupplier(String supplierID, boolean includeArchived) { return getStoredGUIManagedObject(supplierID, includeArchived); }
   public Collection<GUIManagedObject> getStoredSuppliers(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredSuppliers(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveSupplier(GUIManagedObject supplierUnchecked, Date date) { return isActiveGUIManagedObject(supplierUnchecked, date); }
-  public Supplier getActiveSupplier(String supplierID, Date date, int tenantID) { return (Supplier) getActiveGUIManagedObject(supplierID, date, tenantID); }
+  public Supplier getActiveSupplier(String supplierID, Date date) { return (Supplier) getActiveGUIManagedObject(supplierID, date); }
   public Collection<Supplier> getActiveSuppliers(Date date, int tenantID) { return (Collection<Supplier>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -130,7 +130,7 @@ public class SupplierService extends GUIService
   *
   *****************************************/
 
-  public void putSupplier(GUIManagedObject supplier, boolean newObject, String userID, SupplierService supplierService, int tenantID) throws GUIManagerException{ 
+  public void putSupplier(GUIManagedObject supplier, boolean newObject, String userID, SupplierService supplierService) throws GUIManagerException{ 
     
     //
     //  now
@@ -144,13 +144,13 @@ public class SupplierService extends GUIService
 
     if (supplier instanceof Supplier)
       {
-        ((Supplier) supplier).validate(supplierService, now, tenantID);
+        ((Supplier) supplier).validate(supplierService, now);
       }
 
     //
     //  put
     //
-    putGUIManagedObject(supplier, SystemTime.getCurrentTime(), newObject, userID, tenantID); 
+    putGUIManagedObject(supplier, SystemTime.getCurrentTime(), newObject, userID); 
     
   }
   
@@ -160,11 +160,11 @@ public class SupplierService extends GUIService
   *
   *****************************************/
 
-  public void putSupplier(IncompleteObject supplier,  boolean newObject, String userID, SupplierService supplierService, int tenantID)
+  public void putSupplier(IncompleteObject supplier,  boolean newObject, String userID, SupplierService supplierService)
   {
     try
       {
-        putSupplier((GUIManagedObject) supplier, newObject, userID, supplierService, tenantID);
+        putSupplier((GUIManagedObject) supplier, newObject, userID, supplierService);
       }
     catch (GUIManagerException e)
       {

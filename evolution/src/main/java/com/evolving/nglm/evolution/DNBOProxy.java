@@ -1032,7 +1032,7 @@ public class DNBOProxy
     *****************************************/
     
     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now, tenantID); 
+    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now); 
     
     /*****************************************
     *
@@ -1057,7 +1057,7 @@ public class DNBOProxy
           {
             log.debug("DNBOproxy.processGetSubscriberOffers Processing "+scoringStrategyID+" ...");
           }
-        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now, tenantID);
+        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
         if (scoringStrategy == null)
           {
             log.info("DNBOproxy.processGetSubscriberOffers Unknown scoring strategy in list : " + scoringStrategyID);

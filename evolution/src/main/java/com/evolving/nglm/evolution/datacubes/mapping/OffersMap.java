@@ -41,7 +41,7 @@ public class OffersMap extends GUIManagedObjectMap<Offer>
   *
   *****************************************/
   // TODO: for the moment, we also retrieve archived objects
-  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredOffers(true); }
+  protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredOffers(true, tenantID); }
   
   /*****************************************
   *

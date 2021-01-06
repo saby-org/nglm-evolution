@@ -96,12 +96,12 @@ public class CommunicationChannelTimeWindowService extends GUIService
 
   public String generateCommunicationChannelTimeWindowID(String communicationChannelID) { return "timewindow-" + communicationChannelID; }
   public String getCommunicationChannelTimeWindowID(String communicationChannelID) { return generateCommunicationChannelTimeWindowID(communicationChannelID);}
-  public GUIManagedObject getStoredCommunicationChannelTimeWindow(String communicationChannelID, int tenantID) { return getStoredGUIManagedObject(getCommunicationChannelTimeWindowID(communicationChannelID), tenantID); }
-  public GUIManagedObject getStoredCommunicationChannelTimeWindow(String communicationChannelID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(getCommunicationChannelTimeWindowID(communicationChannelID), includeArchived, tenantID); }
+  public GUIManagedObject getStoredCommunicationChannelTimeWindow(String communicationChannelID) { return getStoredGUIManagedObject(getCommunicationChannelTimeWindowID(communicationChannelID)); }
+  public GUIManagedObject getStoredCommunicationChannelTimeWindow(String communicationChannelID, boolean includeArchived) { return getStoredGUIManagedObject(getCommunicationChannelTimeWindowID(communicationChannelID), includeArchived); }
   public Collection<GUIManagedObject> getStoredCommunicationChannelTimeWindows(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredCommunicationChannelTimeWindows(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveCommunicationChannelTimeWindow(GUIManagedObject timeWindowUnchecked, Date date) { return isActiveGUIManagedObject(timeWindowUnchecked, date); }
-  public CommunicationChannelTimeWindow getActiveCommunicationChannelTimeWindow(String communicationChannelID, Date date, int tenantID) { return (CommunicationChannelTimeWindow) getActiveGUIManagedObject(getCommunicationChannelTimeWindowID(communicationChannelID), date, tenantID); }
+  public CommunicationChannelTimeWindow getActiveCommunicationChannelTimeWindow(String communicationChannelID, Date date) { return (CommunicationChannelTimeWindow) getActiveGUIManagedObject(getCommunicationChannelTimeWindowID(communicationChannelID), date); }
   public Collection<CommunicationChannelTimeWindow> getActiveCommunicationChannelTimeWindow(Date date, int tenantID) { return (Collection<CommunicationChannelTimeWindow>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -110,14 +110,14 @@ public class CommunicationChannelTimeWindowService extends GUIService
   *
   *****************************************/
 
-  public void putCommunicationChannelTimeWindow(GUIManagedObject communicationChannel, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putCommunicationChannelTimeWindow(GUIManagedObject communicationChannel, boolean newObject, String userID) throws GUIManagerException
   {
 
     //
     //  put
     //
 
-    putGUIManagedObject(communicationChannel, SystemTime.getCurrentTime(), newObject, userID, tenantID);
+    putGUIManagedObject(communicationChannel, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -126,11 +126,11 @@ public class CommunicationChannelTimeWindowService extends GUIService
   *
   *****************************************/
 
-  public void putCommunicationChannelTimeWindow(IncompleteObject communicationChannel, boolean newObject, String userID, int tenantID)
+  public void putCommunicationChannelTimeWindow(IncompleteObject communicationChannel, boolean newObject, String userID)
   {
     try
       {
-        putCommunicationChannelTimeWindow((GUIManagedObject) communicationChannel, newObject, userID, tenantID);
+        putCommunicationChannelTimeWindow((GUIManagedObject) communicationChannel, newObject, userID);
       }
     catch (GUIManagerException e)
       {

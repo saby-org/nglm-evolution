@@ -98,12 +98,12 @@ public class CommunicationChannelBlackoutService extends GUIService
   *****************************************/
 
   public String generateCommunicationChannelBlackoutID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredCommunicationChannelBlackout(String blackoutPeriodID, int tenantID) { return getStoredGUIManagedObject(blackoutPeriodID, tenantID); }
-  public GUIManagedObject getStoredCommunicationChannelBlackout(String blackoutPeriodID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(blackoutPeriodID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredCommunicationChannelBlackout(String blackoutPeriodID) { return getStoredGUIManagedObject(blackoutPeriodID); }
+  public GUIManagedObject getStoredCommunicationChannelBlackout(String blackoutPeriodID, boolean includeArchived) { return getStoredGUIManagedObject(blackoutPeriodID, includeArchived); }
   public Collection<GUIManagedObject> getStoredCommunicationChannelBlackouts(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredCommunicationChannelBlackouts(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveCommunicationChannelBlackout(GUIManagedObject blackoutPeriodUnchecked, Date date) { return isActiveGUIManagedObject(blackoutPeriodUnchecked, date); }
-  public CommunicationChannelBlackoutPeriod getActiveCommunicationChannelBlackout(String communicationChannelID, Date date, int tenantID) { return (CommunicationChannelBlackoutPeriod) getActiveGUIManagedObject(communicationChannelID, date, tenantID); }
+  public CommunicationChannelBlackoutPeriod getActiveCommunicationChannelBlackout(String communicationChannelID, Date date) { return (CommunicationChannelBlackoutPeriod) getActiveGUIManagedObject(communicationChannelID, date); }
   public Collection<CommunicationChannelBlackoutPeriod> getActiveCommunicationChannelBlackout(Date date, int tenantID) { return (Collection<CommunicationChannelBlackoutPeriod>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -112,14 +112,14 @@ public class CommunicationChannelBlackoutService extends GUIService
   *
   *****************************************/
 
-  public void putCommunicationChannelBlackout(GUIManagedObject communicationChannel, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putCommunicationChannelBlackout(GUIManagedObject communicationChannel, boolean newObject, String userID) throws GUIManagerException
   {
 
     //
     //  put
     //
 
-    putGUIManagedObject(communicationChannel, SystemTime.getCurrentTime(), newObject, userID, tenantID);
+    putGUIManagedObject(communicationChannel, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -128,11 +128,11 @@ public class CommunicationChannelBlackoutService extends GUIService
   *
   *****************************************/
 
-  public void putCommunicationChannelBlackout(IncompleteObject communicationChannel, boolean newObject, String userID, int tenantID)
+  public void putCommunicationChannelBlackout(IncompleteObject communicationChannel, boolean newObject, String userID)
   {
     try
       {
-        putCommunicationChannelBlackout((GUIManagedObject) communicationChannel, newObject, userID, tenantID);
+        putCommunicationChannelBlackout((GUIManagedObject) communicationChannel, newObject, userID);
       }
     catch (GUIManagerException e)
       {
@@ -154,10 +154,10 @@ public class CommunicationChannelBlackoutService extends GUIService
   *
   *****************************************/
   
-  public Date getEffectiveDeliveryTime(String blackoutPeriodID, Date now, int tenantID)
+  public Date getEffectiveDeliveryTime(String blackoutPeriodID, Date now)
   {
     Date effectiveDeliveryDate = now;
-    CommunicationChannelBlackoutPeriod communicationChannelBlackoutPeriod = (CommunicationChannelBlackoutPeriod) getActiveCommunicationChannelBlackout(blackoutPeriodID, now, tenantID);
+    CommunicationChannelBlackoutPeriod communicationChannelBlackoutPeriod = (CommunicationChannelBlackoutPeriod) getActiveCommunicationChannelBlackout(blackoutPeriodID, now);
     if (communicationChannelBlackoutPeriod != null)
       {
         for (BlackoutPeriods blackoutPeriod : communicationChannelBlackoutPeriod.getBlackoutPeriodsList())

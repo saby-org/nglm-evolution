@@ -88,12 +88,12 @@ public class SourceAddressService extends GUIService
   *****************************************/
 
   public String generateSourceAddressID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredSourceAddress(String sourceAddressID, int tenantID) { return getStoredGUIManagedObject(sourceAddressID, tenantID); }
-  public GUIManagedObject getStoredSourceAddress(String sourceAddressID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(sourceAddressID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredSourceAddress(String sourceAddressID) { return getStoredGUIManagedObject(sourceAddressID); }
+  public GUIManagedObject getStoredSourceAddress(String sourceAddressID, boolean includeArchived) { return getStoredGUIManagedObject(sourceAddressID, includeArchived); }
   public Collection<GUIManagedObject> getStoredSourceAddresss(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredSourceAddresses(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveSourceAddress(GUIManagedObject sourceAddressUnchecked, Date date) { return isActiveGUIManagedObject(sourceAddressUnchecked, date); }
-  public SourceAddress getActiveSourceAddress(String sourceAddressID, Date date, int tenantID) { return (SourceAddress) getActiveGUIManagedObject(sourceAddressID, date, tenantID); }
+  public SourceAddress getActiveSourceAddress(String sourceAddressID, Date date) { return (SourceAddress) getActiveGUIManagedObject(sourceAddressID, date); }
   public Collection<SourceAddress> getActiveSourceAddresses(Date date, int tenantID) { return (Collection<SourceAddress>) getActiveGUIManagedObjects(date, tenantID); }
   
   /*****************************************
@@ -102,7 +102,7 @@ public class SourceAddressService extends GUIService
   *
   *****************************************/
 
-  public void putSourceAddress(GUIManagedObject sourceAddress, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putSourceAddress(GUIManagedObject sourceAddress, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -123,7 +123,7 @@ public class SourceAddressService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(sourceAddress, now, newObject, userID, tenantID);
+    putGUIManagedObject(sourceAddress, now, newObject, userID);
   }
   
   /*****************************************
@@ -132,11 +132,11 @@ public class SourceAddressService extends GUIService
   *
   *****************************************/
 
-  public void putSourceAddress(IncompleteObject sourceAddress, boolean newObject, String userID, int tenantID)
+  public void putSourceAddress(IncompleteObject sourceAddress, boolean newObject, String userID)
   {
     try
       {
-        putSourceAddress((GUIManagedObject) sourceAddress, newObject, userID, tenantID);
+        putSourceAddress((GUIManagedObject) sourceAddress, newObject, userID);
       }
     catch (GUIManagerException e)
       {

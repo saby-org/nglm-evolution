@@ -263,12 +263,12 @@ public class SegmentationDimensionService extends GUIService
   *****************************************/
 
   public String generateSegmentationDimensionID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID, int tenantID) { return getStoredGUIManagedObject(segmentationDimensionID, tenantID); }
-  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(segmentationDimensionID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID) { return getStoredGUIManagedObject(segmentationDimensionID); }
+  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID, boolean includeArchived) { return getStoredGUIManagedObject(segmentationDimensionID, includeArchived); }
   public Collection<GUIManagedObject> getStoredSegmentationDimensions(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredSegmentationDimensions(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveSegmentationDimension(GUIManagedObject segmentationDimensionUnchecked, Date date) { return isActiveGUIManagedObject(segmentationDimensionUnchecked, date); }
-  public SegmentationDimension getActiveSegmentationDimension(String segmentationDimensionID, Date date, int tenantID) { return (SegmentationDimension) getActiveGUIManagedObject(segmentationDimensionID, date, tenantID); }
+  public SegmentationDimension getActiveSegmentationDimension(String segmentationDimensionID, Date date) { return (SegmentationDimension) getActiveGUIManagedObject(segmentationDimensionID, date); }
   public Collection<SegmentationDimension> getActiveSegmentationDimensions(Date date, int tenantID) { return (Collection<SegmentationDimension>) getActiveGUIManagedObjects(date, tenantID); }
 
   //
@@ -298,7 +298,7 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
-  public void putSegmentationDimension(SegmentationDimension segmentationDimension, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID, int tenantID) throws GUIManagerException{
+  public void putSegmentationDimension(SegmentationDimension segmentationDimension, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID) throws GUIManagerException{
     
     this.uploadedFileService = uploadedFileService;
     this.subscriberIDService = subscriberIDService;
@@ -319,7 +319,7 @@ public class SegmentationDimensionService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(segmentationDimension, now, newObject, userID, tenantID);
+    putGUIManagedObject(segmentationDimension, now, newObject, userID);
     
     //
     // add to queue
@@ -336,9 +336,9 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteSegmentationDimension(IncompleteObject segmentationDimension, boolean newObject, String userID, int tenantID)
+  public void putIncompleteSegmentationDimension(IncompleteObject segmentationDimension, boolean newObject, String userID)
   {
-    putGUIManagedObject(segmentationDimension, SystemTime.getCurrentTime(), newObject, userID, tenantID);
+    putGUIManagedObject(segmentationDimension, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -402,7 +402,7 @@ public class SegmentationDimensionService extends GUIService
             
             if(segmentationDimension.getDimensionFileID() != null)
               {
-                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(segmentationDimension.getDimensionFileID(), 0);
+                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(segmentationDimension.getDimensionFileID());
                 if (uploadedFile == null)
                   { 
                     log.warn("SegmentationDimensionService.run(uploaded file not found, processing done)");

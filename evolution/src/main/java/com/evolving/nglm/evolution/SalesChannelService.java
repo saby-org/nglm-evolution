@@ -117,12 +117,12 @@ public class SalesChannelService extends GUIService
   *****************************************/
 
   public String generateSalesChannelID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredSalesChannel(String salesChannelID, int tenantID) { return getStoredGUIManagedObject(salesChannelID, tenantID); }
-  public GUIManagedObject getStoredSalesChannel(String salesChannelID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(salesChannelID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredSalesChannel(String salesChannelID) { return getStoredGUIManagedObject(salesChannelID); }
+  public GUIManagedObject getStoredSalesChannel(String salesChannelID, boolean includeArchived) { return getStoredGUIManagedObject(salesChannelID, includeArchived); }
   public Collection<GUIManagedObject> getStoredSalesChannels(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredSalesChannels(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveSalesChannel(GUIManagedObject salesChannelUnchecked, Date date) { return isActiveGUIManagedObject(salesChannelUnchecked, date); }
-  public SalesChannel getActiveSalesChannel(String salesChannelID, Date date, int tenantID) { return (SalesChannel) getActiveGUIManagedObject(salesChannelID, date, tenantID); }
+  public SalesChannel getActiveSalesChannel(String salesChannelID, Date date) { return (SalesChannel) getActiveGUIManagedObject(salesChannelID, date); }
   public Collection<SalesChannel> getActiveSalesChannels(Date date, int tenantID) { return (Collection<SalesChannel>) getActiveGUIManagedObjects(date, tenantID); }
 
   private static final String JOURNEY_SALES_CHANNEL_NAME = "journey"; 
@@ -165,7 +165,7 @@ public class SalesChannelService extends GUIService
   *
   *****************************************/
 
-  public void putSalesChannel(GUIManagedObject salesChannel, CallingChannelService callingChannelService, ResellerService resellerService, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putSalesChannel(GUIManagedObject salesChannel, CallingChannelService callingChannelService, ResellerService resellerService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -179,14 +179,14 @@ public class SalesChannelService extends GUIService
 
     if (salesChannel instanceof SalesChannel)      
       {
-        ((SalesChannel) salesChannel).validate(callingChannelService, resellerService, now, tenantID);
+        ((SalesChannel) salesChannel).validate(callingChannelService, resellerService, now);
       }
     
     //
     //  put
     //
 
-    putGUIManagedObject(salesChannel, now, newObject, userID, tenantID);
+    putGUIManagedObject(salesChannel, now, newObject, userID);
   }
   
   /*****************************************
@@ -195,11 +195,11 @@ public class SalesChannelService extends GUIService
   *
   *****************************************/
 
-  public void putSalesChannel(IncompleteObject product, CallingChannelService callingChannelService, ResellerService resellerService, boolean newObject, String userID, int tenantID)
+  public void putSalesChannel(IncompleteObject product, CallingChannelService callingChannelService, ResellerService resellerService, boolean newObject, String userID)
   {
     try
       {
-        putSalesChannel((GUIManagedObject) product, callingChannelService, resellerService, newObject, userID, tenantID);
+        putSalesChannel((GUIManagedObject) product, callingChannelService, resellerService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

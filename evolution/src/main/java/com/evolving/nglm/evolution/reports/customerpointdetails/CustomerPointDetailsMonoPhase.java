@@ -38,7 +38,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
   private PointService pointService;
 
   @Override
-  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
+  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     Map<String, Object> subscriberFields = map;
     LinkedHashMap<String, Object> subscriberComputedFields = new LinkedHashMap<String, Object>();
@@ -75,7 +75,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
                 for (int i = 0; i < pointsArray.size(); i++)
                   {
                     Map<String, Object> obj = (Map<String, Object>) pointsArray.get(i);
-                    GUIManagedObject guiManagedObject = pointService.getStoredPoint((String) obj.get("pointID"), tenantID);
+                    GUIManagedObject guiManagedObject = pointService.getStoredPoint((String) obj.get("pointID"));
                     if (guiManagedObject != null && guiManagedObject instanceof Point)
                       {
                         Point storedPoint = (Point) guiManagedObject;

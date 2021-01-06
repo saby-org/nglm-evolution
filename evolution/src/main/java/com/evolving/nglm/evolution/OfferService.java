@@ -110,12 +110,12 @@ public class OfferService extends GUIService
   *****************************************/
 
   public String generateOfferID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredOffer(String offerID, int tenantID) { return getStoredGUIManagedObject(offerID, tenantID); }
-  public GUIManagedObject getStoredOffer(String offerID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(offerID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredOffer(String offerID) { return getStoredGUIManagedObject(offerID); }
+  public GUIManagedObject getStoredOffer(String offerID, boolean includeArchived) { return getStoredGUIManagedObject(offerID, includeArchived); }
   public Collection<GUIManagedObject> getStoredOffers(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredOffers(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveOffer(GUIManagedObject offerUnchecked, Date date) { return isActiveGUIManagedObject(offerUnchecked, date); }
-  public Offer getActiveOffer(String offerID, Date date, int tenantID) { return (Offer) getActiveGUIManagedObject(offerID, date, tenantID); }
+  public Offer getActiveOffer(String offerID, Date date) { return (Offer) getActiveGUIManagedObject(offerID, date); }
   public Collection<Offer> getActiveOffers(Date date, int tenantID) { return (Collection<Offer>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -124,7 +124,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(GUIManagedObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putOffer(GUIManagedObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -138,14 +138,14 @@ public class OfferService extends GUIService
 
     if (offer instanceof Offer)
       {
-        ((Offer) offer).validate(callingChannelService, salesChannelService, productService, voucherService, now, tenantID);
+        ((Offer) offer).validate(callingChannelService, salesChannelService, productService, voucherService, now);
       }
 
     //
     //  put
     //
 
-    putGUIManagedObject(offer, now, newObject, userID, tenantID);
+    putGUIManagedObject(offer, now, newObject, userID);
   }
 
   /*****************************************
@@ -154,11 +154,11 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(IncompleteObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID, int tenantID)
+  public void putOffer(IncompleteObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID)
   {
     try
       {
-        putOffer((GUIManagedObject) offer, callingChannelService, salesChannelService, productService, voucherService, newObject, userID, tenantID);
+        putOffer((GUIManagedObject) offer, callingChannelService, salesChannelService, productService, voucherService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

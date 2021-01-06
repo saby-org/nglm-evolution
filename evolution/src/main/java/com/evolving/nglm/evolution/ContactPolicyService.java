@@ -122,12 +122,12 @@ public class ContactPolicyService extends GUIService
   *****************************************/
 
   public String generateContactPolicyID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredContactPolicy(String contactPolicyID, int tenantID) { return getStoredGUIManagedObject(contactPolicyID, tenantID); }
-  public GUIManagedObject getStoredContactPolicy(String contactPolicyID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(contactPolicyID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredContactPolicy(String contactPolicyID) { return getStoredGUIManagedObject(contactPolicyID); }
+  public GUIManagedObject getStoredContactPolicy(String contactPolicyID, boolean includeArchived) { return getStoredGUIManagedObject(contactPolicyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredContactPolicies(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredContactPolicies(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveContactPolicy(GUIManagedObject contactPolicyUnchecked, Date date) { return isActiveGUIManagedObject(contactPolicyUnchecked, date); }
-  public ContactPolicy getActiveContactPolicy(String contactPolicyID, Date date, int tenantID) { return (ContactPolicy) getActiveGUIManagedObject(contactPolicyID, date, tenantID); }
+  public ContactPolicy getActiveContactPolicy(String contactPolicyID, Date date) { return (ContactPolicy) getActiveGUIManagedObject(contactPolicyID, date); }
   public Collection<ContactPolicy> getActiveContactPolicies(Date date, int tenantID) { return (Collection<ContactPolicy>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -136,7 +136,7 @@ public class ContactPolicyService extends GUIService
   *
   *****************************************/
 
-  public void putContactPolicy(GUIManagedObject contactPolicy, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putContactPolicy(GUIManagedObject contactPolicy, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -157,7 +157,7 @@ public class ContactPolicyService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(contactPolicy, SystemTime.getCurrentTime(), newObject, userID, tenantID);
+    putGUIManagedObject(contactPolicy, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -166,11 +166,11 @@ public class ContactPolicyService extends GUIService
   *
   *****************************************/
 
-  public void putContactPolicy(IncompleteObject contactPolicy, boolean newObject, String userID, int tenantID)
+  public void putContactPolicy(IncompleteObject contactPolicy, boolean newObject, String userID)
   {
     try
       {
-        putContactPolicy((GUIManagedObject) contactPolicy, newObject, userID, tenantID);
+        putContactPolicy((GUIManagedObject) contactPolicy, newObject, userID);
       }
     catch (GUIManagerException e)
       {

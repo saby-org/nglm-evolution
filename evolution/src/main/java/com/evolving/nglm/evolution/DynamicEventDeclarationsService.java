@@ -104,17 +104,17 @@ public class DynamicEventDeclarationsService extends GUIService
   *****************************************/
 
   public String generateDynamicEventDeclarationsID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredDynamicEventDeclarations(String dynamicEventDeclarationsID, int tenantID) { return getStoredGUIManagedObject(dynamicEventDeclarationsID, tenantID); }
+  public GUIManagedObject getStoredDynamicEventDeclarations(String dynamicEventDeclarationsID) { return getStoredGUIManagedObject(dynamicEventDeclarationsID); }
   public Collection<GUIManagedObject> getStoredDynamicEventDeclarationss(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public boolean isActiveDynamicEventDeclarations(GUIManagedObject dynamicEventDeclarationsUnchecked, Date date) { return isActiveGUIManagedObject(dynamicEventDeclarationsUnchecked, date); }
-  public DynamicEventDeclarations getActiveDynamicEventDeclarations(String dynamicEventDeclarationsID, Date date, int tenantID) { return (DynamicEventDeclarations) getActiveGUIManagedObject(dynamicEventDeclarationsID, date, tenantID); }
+  public DynamicEventDeclarations getActiveDynamicEventDeclarations(String dynamicEventDeclarationsID, Date date) { return (DynamicEventDeclarations) getActiveGUIManagedObject(dynamicEventDeclarationsID, date); }
   
-  public DynamicEventDeclarations getSingletonDynamicEventDeclarations(int tenantID) { return getActiveDynamicEventDeclarations(DynamicEventDeclarations.singletonID, SystemTime.getCurrentTime(), tenantID); }
-  public Map<String, EvolutionEngineEventDeclaration> getStaticAndDynamicEvolutionEventDeclarations(int tenantID)
+  public DynamicEventDeclarations getSingletonDynamicEventDeclarations() { return getActiveDynamicEventDeclarations(DynamicEventDeclarations.singletonID, SystemTime.getCurrentTime()); }
+  public Map<String, EvolutionEngineEventDeclaration> getStaticAndDynamicEvolutionEventDeclarations()
   {
     Map<String, EvolutionEngineEventDeclaration> result = new HashMap<>();
     result.putAll(Deployment.getEvolutionEngineEvents());
-    DynamicEventDeclarations singletonDynamicEventDeclarations = getSingletonDynamicEventDeclarations(tenantID);
+    DynamicEventDeclarations singletonDynamicEventDeclarations = getSingletonDynamicEventDeclarations();
     if(singletonDynamicEventDeclarations != null)
       {
         for(String singletonDynamicEventDeclarationName : singletonDynamicEventDeclarations.getDynamicEventDeclarations().keySet()) 
@@ -143,7 +143,7 @@ public class DynamicEventDeclarationsService extends GUIService
         throw new ServerRuntimeException("dynamicEventDeclaration point program change ", e);
       }
 
-    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations(tenantID);
+    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations();
     boolean newObject;
     Map<String, DynamicEventDeclaration> dynamicEventDeclarationsMap;
     if (dynamicEventDeclarations == null)
@@ -167,7 +167,7 @@ public class DynamicEventDeclarationsService extends GUIService
     // put
     //
 
-    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null, tenantID);
+    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null);
   }
 
   /*****************************************
@@ -193,7 +193,7 @@ public class DynamicEventDeclarationsService extends GUIService
         throw new ServerRuntimeException("dynamicEventDeclaration", e);
       }
 
-    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations(tenantID);
+    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations();
     boolean newObject;
     Map<String, DynamicEventDeclaration> dynamicEventDeclarationsMap;
     if (dynamicEventDeclarations == null)
@@ -217,7 +217,7 @@ public class DynamicEventDeclarationsService extends GUIService
     // put
     //
 
-    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null, tenantID);
+    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null);
   }
   
   /*****************************************

@@ -25,6 +25,7 @@ import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
@@ -172,7 +173,7 @@ public class Deployment
   private static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
-  private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
+//  private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static Map<String,OfferProperty> offerProperties = new LinkedHashMap<String,OfferProperty>();
   private static Map<String,ScoringEngine> scoringEngines = new LinkedHashMap<String,ScoringEngine>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
@@ -181,7 +182,7 @@ public class Deployment
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
   private static Map<String,DeliveryManagerDeclaration> fulfillmentProviders = new LinkedHashMap<String,DeliveryManagerDeclaration>();
   private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
-  private static List<EvaluationCriterion> journeyUniversalEligibilityCriteria = new ArrayList<EvaluationCriterion>();
+  private static Map<Integer, List<EvaluationCriterion>> journeyUniversalEligibilityCriteriaPerTenant = new HashMap<>();
   private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
@@ -416,8 +417,8 @@ public class Deployment
   public static Map<String, CriterionField> getProfileChangeDetectionCriterionFields() { return profileChangeDetectionCriterionFields; }
   public static Map<String, CriterionField> getProfileChangeGeneratedCriterionFields() { return profileChangeGeneratedCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
-  public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
-  public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
+//  public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; } // still usefull ?
+//  public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
   public static Map<String,OfferProperty> getOfferProperties() { return offerProperties; }
   public static Map<String,ScoringEngine> getScoringEngines() { return scoringEngines; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
@@ -426,7 +427,6 @@ public class Deployment
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
   public static Map<String,DeliveryManagerDeclaration> getFulfillmentProviders() { return fulfillmentProviders; }
   public static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; }
-  public static List<EvaluationCriterion> getJourneyUniversalEligibilityCriteria() { return journeyUniversalEligibilityCriteria; }
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; }
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
@@ -503,6 +503,26 @@ public class Deployment
   public static String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
   public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; }
   public static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
+  
+  
+  public static List<EvaluationCriterion> getJourneyUniversalEligibilityCriteria(int tenantID) 
+  { 
+    List<EvaluationCriterion> result = journeyUniversalEligibilityCriteriaPerTenant.get(tenantID);
+    if(result == null)
+      {
+        synchronized (journeyUniversalEligibilityCriteriaPerTenant)
+          {
+            result = journeyUniversalEligibilityCriteriaPerTenant.get(tenantID);
+            if(result == null)
+              {
+                result = new ArrayList<EvaluationCriterion>();
+                journeyUniversalEligibilityCriteriaPerTenant.put(tenantID, result);
+              }
+          }
+      }
+    return result;
+    
+  }
 
   // addProfileCriterionField
   //
@@ -757,7 +777,13 @@ public class Deployment
         log.warn("Deployment: subscriberprofile.endpoints : '" + getSubscriberProfileEndpoints() + "' seems wrong");
         evolutionEngineInstanceNumbers=1;
       }
-
+      
+      //
+      // TenantService
+      //
+      TenantService tenantService  = new TenantService(getBrokerServers(), "deployment-tenantservice", JSONUtilities.decodeString(jsonRoot, "tenantTopic", true), true);
+      tenantService.start();
+      
       //
       //  subscriberGroupLoaderAlternateID
       //
@@ -974,23 +1000,26 @@ public class Deployment
       //  notificationDailyWindows
       //
 
-      try
+      for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
         {
-          JSONObject defaultTimeWindowJSON = (JSONObject) jsonRoot.get("notificationDailyWindows");
-          if(defaultTimeWindowJSON != null)
+          try
             {
-              defaultTimeWindowJSON.put("id", "default");
-              defaultTimeWindowJSON.put("name", "default");
-              defaultTimeWindowJSON.put("display", "default");
-              defaultTimeWindowJSON.put("active", true);
-              defaultTimeWindowJSON.put("communicationChannelID", "default");
+              JSONObject defaultTimeWindowJSON = (JSONObject) jsonRoot.get("notificationDailyWindows");
+              if(defaultTimeWindowJSON != null)
+                {
+                  defaultTimeWindowJSON.put("id", "default");
+                  defaultTimeWindowJSON.put("name", "default");
+                  defaultTimeWindowJSON.put("display", "default");
+                  defaultTimeWindowJSON.put("active", true);
+                  defaultTimeWindowJSON.put("communicationChannelID", "default");
+                }
+              GUIManagedObject.commonSchema();//avoiding a NPE in a "static init" loop
+              defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null, tenant.getTenantID());          
             }
-          GUIManagedObject.commonSchema();//avoiding a NPE in a "static init" loop
-          defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null, tenantID);          
-        }
-      catch (GUIManagerException | JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
+          catch (GUIManagerException | JSONUtilitiesException e)
+            {
+              throw new ServerRuntimeException("deployment", e);
+            }
         }
 
       //
@@ -2455,43 +2484,43 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
-      //
-      //  universalControlGroupCriteria
-      //
-
-      try
-        {
-          JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "universalControlGroupCriteria", new JSONArray());
-          for (int i=0; i<evaluationCriterionValues.size(); i++)
-            {
-              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile.get(tenantID));
-              universalControlGroupCriteria.add(evaluationCriterion);
-            }
-        }
-      catch (GUIManagerException | JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  controlGroupCriteria
-      //
-
-      try
-        {
-          JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "controlGroupCriteria", new JSONArray());
-          for (int i=0; i<evaluationCriterionValues.size(); i++)
-            {
-              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
-              controlGroupCriteria.add(evaluationCriterion);
-            }
-        }
-      catch (GUIManagerException | JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
+//      //
+//      //  universalControlGroupCriteria
+//      //
+//
+//      try
+//        {
+//          JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "universalControlGroupCriteria", new JSONArray());
+//          for (int i=0; i<evaluationCriterionValues.size(); i++)
+//            {
+//              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+//              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile.get(tenantID));
+//              universalControlGroupCriteria.add(evaluationCriterion);
+//            }
+//        }
+//      catch (GUIManagerException | JSONUtilitiesException e)
+//        {
+//          throw new ServerRuntimeException("deployment", e);
+//        }
+//
+//      //
+//      //  controlGroupCriteria
+//      //
+//
+//      try
+//        {
+//          JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "controlGroupCriteria", new JSONArray());
+//          for (int i=0; i<evaluationCriterionValues.size(); i++)
+//            {
+//              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+//              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+//              controlGroupCriteria.add(evaluationCriterion);
+//            }
+//        }
+//      catch (GUIManagerException | JSONUtilitiesException e)
+//        {
+//          throw new ServerRuntimeException("deployment", e);
+//        }
 
       //
       //  offerProperties
@@ -2651,20 +2680,22 @@ public class Deployment
       //
       //  journeyUniversalEligibilityCriteria
       //
-
-      try
+      for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getActualCurrentTime()))
         {
-          JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalEligibilityCriteria", new JSONArray());
-          for (int i=0; i<evaluationCriterionValues.size(); i++)
+          try
             {
-              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
-              journeyUniversalEligibilityCriteria.add(evaluationCriterion);
+              JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalEligibilityCriteria", new JSONArray());
+              for (int i=0; i<evaluationCriterionValues.size(); i++)
+                {
+                  JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+                  EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile.get(tenant.getEffectiveTenantID()));
+                  getJourneyUniversalEligibilityCriteria(tenant.getEffectiveTenantID()).add(evaluationCriterion);                  
+                }
             }
-        }
-      catch (GUIManagerException | JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
+          catch (GUIManagerException | JSONUtilitiesException e)
+            {
+              throw new ServerRuntimeException("deployment", e);
+            }
         }
 
       //

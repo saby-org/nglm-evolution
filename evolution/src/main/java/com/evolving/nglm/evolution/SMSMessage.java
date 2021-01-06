@@ -62,9 +62,9 @@ public class SMSMessage extends SubscriberMessage
   *
   *****************************************/
 
-  public SMSMessage(Object smsMessageJSON, String communicationChannelID, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
+  public SMSMessage(Object smsMessageJSON, String communicationChannelID, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
-    super(smsMessageJSON, communicationChannelID, createMap(), subscriberMessageTemplateService, criterionContext, tenantID);
+    super(smsMessageJSON, communicationChannelID, createMap(), subscriberMessageTemplateService, criterionContext);
   }
   
   private static Map<String, Boolean> createMap() {

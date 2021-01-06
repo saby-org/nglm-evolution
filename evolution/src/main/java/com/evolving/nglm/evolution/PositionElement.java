@@ -191,10 +191,10 @@ public class PositionElement
   *
   *****************************************/
 
-  public PositionElement(JSONObject jsonRoot) throws GUIManagerException
+  public PositionElement(JSONObject jsonRoot, int tenantID) throws GUIManagerException
   {
     this.scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "scoringStrategyID", true);
-    this.additionalCriteria = decodeAdditionalCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "additionalCriteria", true));
+    this.additionalCriteria = decodeAdditionalCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "additionalCriteria", true), tenantID);
   }
 
   /*****************************************
@@ -203,12 +203,12 @@ public class PositionElement
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeAdditionalCriteria(JSONArray jsonArray) throws GUIManagerException
+  private List<EvaluationCriterion> decodeAdditionalCriteria(JSONArray jsonArray, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Presentation));
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Presentation.get(tenantID)));
       }
     return result;
   }

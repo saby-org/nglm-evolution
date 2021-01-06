@@ -266,7 +266,7 @@ public class SalesChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(CallingChannelService callingChannelService, ResellerService resellerService, Date date, int tenantID) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, ResellerService resellerService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -276,7 +276,7 @@ public class SalesChannel extends GUIManagedObject
 
     for (String callingChannelID : callingChannelIDs)
       {
-        if (callingChannelService.getActiveCallingChannel(callingChannelID, date, tenantID) == null) throw new GUIManagerException("unknown calling channel", callingChannelID);
+        if (callingChannelService.getActiveCallingChannel(callingChannelID, date) == null) throw new GUIManagerException("unknown calling channel", callingChannelID);
       }
     
     //
@@ -285,7 +285,7 @@ public class SalesChannel extends GUIManagedObject
 
     for (String callingChannelID : callingChannelIDs)
       {
-        CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, date, tenantID);
+        CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, date);
         if (! callingChannelService.isActiveCallingChannelThroughInterval(callingChannel, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid calling channel (start/end dates)", callingChannelID);
       }
    
@@ -293,7 +293,7 @@ public class SalesChannel extends GUIManagedObject
       {
         for (String resellerID : resellerIDs)
           {
-            if (resellerService.getActiveReseller(resellerID, date, tenantID) == null) throw new GUIManagerException("unknown reseller", resellerID);
+            if (resellerService.getActiveReseller(resellerID, date) == null) throw new GUIManagerException("unknown reseller", resellerID);
           }
     }
   }

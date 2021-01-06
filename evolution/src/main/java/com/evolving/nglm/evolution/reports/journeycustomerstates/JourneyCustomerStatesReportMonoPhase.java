@@ -69,7 +69,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     Map<String, Object> journeyStats = map;
     if (journeyStats != null && !journeyStats.isEmpty())
       {
-        Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime(), 0); // TODO check EVPRO-99
+        Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime()); 
         if (journey != null)
           {
             Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();

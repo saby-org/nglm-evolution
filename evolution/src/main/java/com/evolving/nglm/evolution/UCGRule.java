@@ -260,7 +260,7 @@ public class UCGRule extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(UCGRuleService ucgRuleService, SegmentationDimensionService segmentationDimensionService, Date date, int tenantID) throws GUIManagerException
+  public void validate(UCGRuleService ucgRuleService, SegmentationDimensionService segmentationDimensionService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -276,7 +276,7 @@ public class UCGRule extends GUIManagedObject
         *
         *****************************************/
 
-        SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionID, date, tenantID);
+        SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionID, date);
         
         /*****************************************
         *

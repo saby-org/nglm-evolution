@@ -106,12 +106,12 @@ public class UCGRuleService extends GUIService
   *****************************************/
 
   public String generateUCGRuleID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredUCGRule(String ucgRuleId, int tenantID) { return getStoredGUIManagedObject(ucgRuleId, tenantID); }
-  public GUIManagedObject getStoredUCGRule(String ucgRuleId, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(ucgRuleId, includeArchived, tenantID); }
+  public GUIManagedObject getStoredUCGRule(String ucgRuleId) { return getStoredGUIManagedObject(ucgRuleId); }
+  public GUIManagedObject getStoredUCGRule(String ucgRuleId, boolean includeArchived) { return getStoredGUIManagedObject(ucgRuleId, includeArchived); }
   public Collection<GUIManagedObject> getStoredUCGRules(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredUCGRules(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveUCGRule(GUIManagedObject ucgRuleUnchecked, Date date) { return isActiveGUIManagedObject(ucgRuleUnchecked, date); }
-  public UCGRule getActiveUCGRule(String ucgRuleID, Date date, int tenantID) { return (UCGRule) getActiveGUIManagedObject(ucgRuleID, date, tenantID); }
+  public UCGRule getActiveUCGRule(String ucgRuleID, Date date) { return (UCGRule) getActiveGUIManagedObject(ucgRuleID, date); }
   public Collection<UCGRule> getActiveUCGRules(Date date, int tenantID) { return (Collection<UCGRule>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -120,7 +120,7 @@ public class UCGRuleService extends GUIService
   *
   *****************************************/
 
-  public void putUCGRule(GUIManagedObject ucgRule, SegmentationDimensionService segmentationDimensionService, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putUCGRule(GUIManagedObject ucgRule, SegmentationDimensionService segmentationDimensionService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -134,14 +134,14 @@ public class UCGRuleService extends GUIService
 
     if (ucgRule instanceof UCGRule)
       {
-        ((UCGRule) ucgRule).validate(this, segmentationDimensionService, now, tenantID);
+        ((UCGRule) ucgRule).validate(this, segmentationDimensionService, now);
       }
 
     //
     //  put
     //
 
-    putGUIManagedObject(ucgRule, now, newObject, userID, tenantID);
+    putGUIManagedObject(ucgRule, now, newObject, userID);
   }
 
   /*****************************************
@@ -150,11 +150,11 @@ public class UCGRuleService extends GUIService
   *
   *****************************************/
 
-  public void putUCGRule(IncompleteObject ucgRule, SegmentationDimensionService segmentationDimensionService, boolean newObject, String userID, int tenantID)
+  public void putUCGRule(IncompleteObject ucgRule, SegmentationDimensionService segmentationDimensionService, boolean newObject, String userID)
   {
     try
       {
-        putUCGRule((GUIManagedObject) ucgRule, segmentationDimensionService, newObject, userID, tenantID);
+        putUCGRule((GUIManagedObject) ucgRule, segmentationDimensionService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

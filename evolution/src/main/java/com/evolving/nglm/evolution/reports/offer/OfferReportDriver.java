@@ -98,7 +98,7 @@ public class OfferReportDriver extends ReportDriver
                 try
                   {
                     Offer offer = (guiManagedObject instanceof Offer) ? (Offer) guiManagedObject : null;
-                    dumpElementToCsv(offer, offerService.generateResponseJSON(guiManagedObject, true, reportGenerationDate), writer, header, (first == nbOffers - 1), tenantID);
+                    dumpElementToCsv(offer, offerService.generateResponseJSON(guiManagedObject, true, reportGenerationDate), writer, header, (first == nbOffers - 1));
                     if (first == 0)
                       {
                         header = false;
@@ -152,7 +152,7 @@ public class OfferReportDriver extends ReportDriver
    *
    ****************************************/
 
-  private void dumpElementToCsv(Offer offer, JSONObject recordJson, ZipOutputStream writer, Boolean addHeaders, boolean last, int tenantID)
+  private void dumpElementToCsv(Offer offer, JSONObject recordJson, ZipOutputStream writer, Boolean addHeaders, boolean last)
       throws IOException, InterruptedException
   {
     // log.info("offer Records : {}",recordJson);
@@ -173,7 +173,7 @@ public class OfferReportDriver extends ReportDriver
                   {
                     Map<String, Object> outputJSON = new HashMap<>();
                     String objectid = (String) (element.get("productID"));
-                    GUIManagedObject guiManagedObject = (GUIManagedObject) productService.getStoredProduct(objectid, tenantID);
+                    GUIManagedObject guiManagedObject = (GUIManagedObject) productService.getStoredProduct(objectid);
                     if (guiManagedObject != null && guiManagedObject instanceof Product)
                       {
                         Product product = (Product) guiManagedObject;
@@ -231,7 +231,7 @@ public class OfferReportDriver extends ReportDriver
                     if (element != null)
                       {
                         String objeciveID = (String) (element.get("offerObjectiveID"));
-                        GUIManagedObject guiManagedObject = (GUIManagedObject) offerObjectiveService.getStoredOfferObjective(objeciveID, tenantID);
+                        GUIManagedObject guiManagedObject = (GUIManagedObject) offerObjectiveService.getStoredOfferObjective(objeciveID);
                         if (guiManagedObject != null && guiManagedObject instanceof OfferObjective)
                           {
                             OfferObjective offerObjective = (OfferObjective) guiManagedObject;
@@ -245,7 +245,7 @@ public class OfferReportDriver extends ReportDriver
                                       {
                                         Object value = characteristicInstance.getValue();
                                         String catalogCharacteristicID = characteristicInstance.getCatalogCharacteristicID();
-                                        GUIManagedObject characteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
+                                        GUIManagedObject characteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
                                         if (characteristic != null && characteristic instanceof CatalogCharacteristic)
                                           {
                                             Map<String, Object> characteristicJSON = new HashMap<>();
@@ -283,7 +283,7 @@ public class OfferReportDriver extends ReportDriver
                     for (Object obj2 : salesChannelIDs)
                       {
                         String salesChannelID = (String) obj2;
-                        GUIManagedObject guiManagedObject = (GUIManagedObject) salesChannelService.getStoredSalesChannel(salesChannelID, tenantID);
+                        GUIManagedObject guiManagedObject = (GUIManagedObject) salesChannelService.getStoredSalesChannel(salesChannelID);
                         if (guiManagedObject != null && guiManagedObject instanceof SalesChannel)
                           {
                             Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
@@ -304,7 +304,7 @@ public class OfferReportDriver extends ReportDriver
                                 if (id != null && meansOfPayment != null)
                                   {
                                     String currency = null;
-                                    GUIManagedObject meansOfPaymentObject = paymentmeanservice.getStoredPaymentMean(meansOfPayment, tenantID);
+                                    GUIManagedObject meansOfPaymentObject = paymentmeanservice.getStoredPaymentMean(meansOfPayment);
                                     if (meansOfPaymentObject != null)
                                       {
                                         meansOfPayment = "" + meansOfPaymentObject.getJSONRepresentation().get("display");

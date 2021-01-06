@@ -278,7 +278,7 @@ public class SMTPPlugin implements MailNotificationInterface
       {
         try
           {
-            String emailText = mailNotificationRequest.getTextBody(mailNotificationManager.getSubscriberMessageTemplateService(), mailNotificationRequest.getTenantID());
+            String emailText = mailNotificationRequest.getTextBody(mailNotificationManager.getSubscriberMessageTemplateService());
             String toEmail = mailNotificationRequest.getDestination();
             String fromAddress = mailNotificationRequest.getFromAddress();
             boolean confirmationExpected = mailNotificationRequest.getConfirmationExpected();

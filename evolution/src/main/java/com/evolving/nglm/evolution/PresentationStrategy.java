@@ -250,8 +250,8 @@ public class PresentationStrategy extends GUIManagedObject
     this.salesChannelIDs = decodeSalesChannelIDs(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelIDs", true));
     this.maximumPresentations = JSONUtilities.decodeInteger(jsonRoot, "maximumPresentations", false);
     this.maximumPresentationsPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumPresentationsPeriodDays", false);
-    this.setA = new PositionSet(JSONUtilities.decodeJSONObject(jsonRoot, "setA", true));
-    this.setB = new PositionSet(JSONUtilities.decodeJSONObject(jsonRoot, "setB", true));
+    this.setA = new PositionSet(JSONUtilities.decodeJSONObject(jsonRoot, "setA", true), tenantID);
+    this.setB = new PositionSet(JSONUtilities.decodeJSONObject(jsonRoot, "setB", true), tenantID);
 
     /*****************************************
     *

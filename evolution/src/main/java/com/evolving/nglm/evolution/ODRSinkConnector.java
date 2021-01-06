@@ -133,7 +133,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
     public Map<String, Object> getDocumentMap(PurchaseFulfillmentRequest purchaseManager)
     {
       Date now = SystemTime.getCurrentTime();
-      Offer offer = offerService.getActiveOffer(purchaseManager.getOfferID(), now, 0); // TODO EVPRO-99 check this tenant 0
+      Offer offer = offerService.getActiveOffer(purchaseManager.getOfferID(), now);
 
       List<Map<String, Object>> voucherList = new ArrayList<>();
       
@@ -163,7 +163,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
                                 OfferPrice price = channel.getPrice();
                                 if (price != null)
                                   {
-                                    PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(price.getPaymentMeanID(), 0); // TODO EVPRO-99 check this tenant 0
+                                    PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(price.getPaymentMeanID());
                                     if (paymentMean != null)
                                       {
                                         documentMap.put("offerPrice", price.getAmount());
@@ -179,7 +179,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         StringBuilder sb = new StringBuilder();
         if(offer.getOfferProducts() != null) {
           for(OfferProduct offerProduct : offer.getOfferProducts()) {
-            Product product = (Product) productService.getStoredProduct(offerProduct.getProductID(), 0);  // TODO EVPRO-99 check this tenant 0
+            Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
             sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
           }
         }
@@ -194,7 +194,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
                   Voucher voucher = null;
                   if (voucherDelivery.getVoucherID() != null)
                     {
-                      voucher = (Voucher) voucherService.getStoredVoucher(voucherDelivery.getVoucherID(), 0); // TODO EVPRO-99 check this tenant 0
+                      voucher = (Voucher) voucherService.getStoredVoucher(voucherDelivery.getVoucherID());
                     }
                   String supplierID = null;
                   String voucherCode = null;

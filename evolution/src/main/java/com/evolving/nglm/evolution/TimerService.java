@@ -838,7 +838,7 @@ public class TimerService
                 activeCampaignIDs = new HashSet<>();
                 for (String campaignID : campaignIDs)
                   {
-                    Journey campaign = journeyService.getActiveJourney(campaignID, now, 0);
+                    Journey campaign = journeyService.getActiveJourney(campaignID, now);
                     if (campaign != null)
                       {
                         activeCampaignIDs.add(campaignID);
@@ -1064,7 +1064,7 @@ public class TimerService
                       }
                     
                     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now, subscriberState.getSubscriberProfile().getTenantID());
-                    boolean inclusionList = subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now, subscriberState.getSubscriberProfile().getTenantID());
+                    boolean inclusionList = subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now);
                     if(inclusionList)
                       {
                         match = true;

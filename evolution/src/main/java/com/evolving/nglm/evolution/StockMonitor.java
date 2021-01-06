@@ -1350,7 +1350,7 @@ public class StockMonitor implements Runnable
     //
 
     Date now = SystemTime.getCurrentTime();
-    Product product = productService.getActiveProduct(productID, now, 1); // tenant 1 just for example
+    Product product = productService.getActiveProduct(productID, now);
     if (product == null)
       {
         System.out.println("no active product: " + productID);

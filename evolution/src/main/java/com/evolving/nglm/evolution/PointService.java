@@ -103,12 +103,12 @@ public class PointService extends GUIService
   *****************************************/
 
   public String generatePointID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredPoint(String pointID, int tenantID) { return getStoredGUIManagedObject(pointID, tenantID); }
-  public GUIManagedObject getStoredPoint(String pointID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(pointID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredPoint(String pointID) { return getStoredGUIManagedObject(pointID); }
+  public GUIManagedObject getStoredPoint(String pointID, boolean includeArchived) { return getStoredGUIManagedObject(pointID, includeArchived); }
   public Collection<GUIManagedObject> getStoredPoints(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredPoints(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActivePoint(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date); }
-  public Point getActivePoint(String pointID, Date date, int tenantID) { return (Point) getActiveGUIManagedObject(pointID, date, tenantID); }
+  public Point getActivePoint(String pointID, Date date) { return (Point) getActiveGUIManagedObject(pointID, date); }
   public Collection<Point> getActivePoints(Date date, int tenantID) { return (Collection<Point>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -117,7 +117,7 @@ public class PointService extends GUIService
   *
   *****************************************/
 
-  public void putPoint(Point point, boolean newObject, String userID, int tenantID) throws GUIManagerException{
+  public void putPoint(Point point, boolean newObject, String userID) throws GUIManagerException{
     //
     //  now
     //
@@ -128,7 +128,7 @@ public class PointService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(point, now, newObject, userID, tenantID);
+    putGUIManagedObject(point, now, newObject, userID);
   }
   
   /*****************************************
@@ -137,9 +137,9 @@ public class PointService extends GUIService
   *
   *****************************************/
 
-  public void putIncompletePoint(IncompleteObject offer, boolean newObject, String userID, int tenantID)
+  public void putIncompletePoint(IncompleteObject offer, boolean newObject, String userID)
   {
-    putGUIManagedObject(offer, SystemTime.getCurrentTime(), newObject, userID, tenantID);
+    putGUIManagedObject(offer, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************

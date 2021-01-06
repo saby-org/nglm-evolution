@@ -51,7 +51,6 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   private long schedulingUniqueID;
   private Date nextGenerationDate;
   private CronFormat periodicGeneration;
-  private int tenantID;
 
   protected final String jobName;
   protected boolean properlyConfigured;
@@ -62,12 +61,11 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   *
   *****************************************/
 
-  public ScheduledJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart, int tenantID)
+  public ScheduledJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
   {
     this.schedulingUniqueID = schedulingUniqueID;
     this.properlyConfigured = true;
     this.jobName = jobName;
-    this.tenantID = tenantID;
     try
       {
         this.periodicGeneration = new CronFormat(periodicGenerationCronEntry, TimeZone.getTimeZone(baseTimeZone));
@@ -93,7 +91,6 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   public Date getNextGenerationDate() { return this.nextGenerationDate; }
   public boolean isProperlyConfigured() { return this.properlyConfigured; }
   public long getjobID() { return this.schedulingUniqueID; }
-  public int getTenantID() { return this.tenantID; }
 
   /*****************************************
   *

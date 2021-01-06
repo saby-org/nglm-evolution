@@ -98,7 +98,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     }
 
   @Override
-  public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders, int tenantID)
+  public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
       {
@@ -246,7 +246,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
         String voucherTypeID = null;
         if (voucherID != null)
           {
-            voucher = (Voucher) voucherService.getStoredVoucher(voucherID, tenantID);
+            voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
           }
         String supplierID = null;
         if (voucher != null && voucher instanceof Voucher)
@@ -257,7 +257,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
 
         if (supplierID != null && !(supplierID.isEmpty()))
           {
-            Supplier currentSupplier = (Supplier) (supplierService.getStoredSupplier(supplierID, tenantID));
+            Supplier currentSupplier = (Supplier) (supplierService.getStoredSupplier(supplierID));
             if (currentSupplier != null && currentSupplier instanceof Supplier)
               {
                 vdrRecs.put(supplier, currentSupplier.getGUIManagedObjectDisplay());
@@ -273,7 +273,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           }
         if (voucherTypeID != null && !(voucherTypeID.isEmpty()))
           {
-            VoucherType currentVoucherType = (VoucherType) (voucherTypeService.getStoredVoucherType(voucherTypeID, tenantID));
+            VoucherType currentVoucherType = (VoucherType) (voucherTypeService.getStoredVoucherType(voucherTypeID));
             if (currentVoucherType != null && currentVoucherType instanceof VoucherType)
               {
                 vdrRecs.put(voucherType, currentVoucherType.getGUIManagedObjectDisplay());

@@ -115,9 +115,9 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   * dumpElementToCsv
   *
   ****************************************/
- public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
  {
-   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map, tenantID);  
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
    if(mapLocal.size() != 1) {
 	   log.debug("We have multiple dates in the same index " + mapLocal.size());
    } else {
@@ -136,7 +136,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
 					   log.debug("We have multiple reports in this folder " + list.size());
 				   } else {
 					   Map<String, Object> reportMap = list.get(0);
-					   dumpLineToCsv(reportMap, writer, addHeaders, tenantID);
+					   dumpLineToCsv(reportMap, writer, addHeaders);
 					   return false;
 				   }
 			   }
@@ -146,7 +146,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
    return true;
  }
   
-  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders, int tenantID)
+  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
       {
@@ -195,7 +195,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         if (bdrFields.containsKey(deliverableID))
           {               
             GUIManagedObject deliverableObject = deliverableService
-                .getStoredDeliverable(String.valueOf(bdrFields.get(deliverableID)), tenantID);
+                .getStoredDeliverable(String.valueOf(bdrFields.get(deliverableID)));
             if (deliverableObject instanceof Deliverable)
               {
                 bdrRecs.put(deliverableDisplay, ((Deliverable) deliverableObject).getDeliverableDisplay());                   
@@ -288,7 +288,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         if (bdrFields.containsKey(moduleId) && bdrFields.containsKey(featureId))
           {
             Module module = Module.fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
-            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService, tenantID);                
+            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
             bdrRecs.put(featureDisplay, featureDis);
             bdrRecs.put(moduleName, module.toString());
             bdrRecs.put(featureId, bdrFields.get(featureId));

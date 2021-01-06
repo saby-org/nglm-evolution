@@ -105,12 +105,12 @@ public class DNBOMatrixService extends GUIService
   *****************************************/
 
   public String generateDNBOMatrixID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID, int tenantID) { return getStoredGUIManagedObject(dnboMatrixID, tenantID); }
-  public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(dnboMatrixID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID) { return getStoredGUIManagedObject(dnboMatrixID); }
+  public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID, boolean includeArchived) { return getStoredGUIManagedObject(dnboMatrixID, includeArchived); }
   public Collection<GUIManagedObject> getStoredDNBOMatrixes(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredDNBOMatrixes(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveDNBOMatrix(GUIManagedObject dnboMatrixUnchecked, Date date) { return isActiveGUIManagedObject(dnboMatrixUnchecked, date); }
-  public DNBOMatrix getActiveDNBOMatrix(String dnboMatrixID, Date date, int tenantID) { return (DNBOMatrix) getActiveGUIManagedObject(dnboMatrixID, date, tenantID); }
+  public DNBOMatrix getActiveDNBOMatrix(String dnboMatrixID, Date date) { return (DNBOMatrix) getActiveGUIManagedObject(dnboMatrixID, date); }
   public Collection<DNBOMatrix> getActiveDNBOMatrixes(Date date, int tenantID) { return (Collection<DNBOMatrix>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -119,7 +119,7 @@ public class DNBOMatrixService extends GUIService
   *
   *****************************************/
 
-  public void putDNBOMatrix(GUIManagedObject dnboMatrix, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putDNBOMatrix(GUIManagedObject dnboMatrix, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -131,7 +131,7 @@ public class DNBOMatrixService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(dnboMatrix, now, newObject, userID, tenantID);
+    putGUIManagedObject(dnboMatrix, now, newObject, userID);
   }
 
   /*****************************************
@@ -140,11 +140,11 @@ public class DNBOMatrixService extends GUIService
   *
   *****************************************/
 
-  public void putDNBOMatrix(IncompleteObject dnboMatrix, boolean newObject, String userID, int tenantID)
+  public void putDNBOMatrix(IncompleteObject dnboMatrix, boolean newObject, String userID)
   {
     try
       {
-        putDNBOMatrix((GUIManagedObject) dnboMatrix, newObject, userID, tenantID);
+        putDNBOMatrix((GUIManagedObject) dnboMatrix, newObject, userID);
       }
     catch (GUIManagerException e)
       {

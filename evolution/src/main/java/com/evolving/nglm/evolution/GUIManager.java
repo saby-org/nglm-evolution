@@ -1137,7 +1137,7 @@ public class GUIManager
                     //  create/update deliverable
                     //
 
-                    deliverableService.putDeliverable(deliverable, (existingDeliverable == null), "0", account.getTenantID());
+                    deliverableService.putDeliverable(deliverable, (existingDeliverable == null), "0");
                   }
               }
 
@@ -1197,7 +1197,7 @@ public class GUIManager
                     //  create/update paymentMean
                     //
 
-                    paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), "0", account.getTenantID());
+                    paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), "0");
                   }
               }
           }
@@ -3722,7 +3722,7 @@ public class GUIManager
                   break;
 
                 case getTimeWindows:
-                  jsonResponse = CommunicationChannelTimeWindow.processGetTimeWindows(userID, jsonRoot, includeArchived, communicationChannelTimeWindowService, tenantID);
+                  jsonResponse = CommunicationChannelTimeWindow.processGetTimeWindows(userID, jsonRoot, includeArchived, communicationChannelTimeWindowService);
                   break;
 
                 case putTimeWindows:
@@ -4783,8 +4783,8 @@ public class GUIManager
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
     Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
-    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
-    Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime(), tenantID) : null;
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
     boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
     String nodeTypeParameterID = JSONUtilities.decodeString(jsonRoot, "nodeTypeParameterID", false);
@@ -4878,8 +4878,8 @@ public class GUIManager
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
     Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
-    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
-    Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime(), tenantID) : null;
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
 
     /*****************************************
@@ -4949,8 +4949,8 @@ public class GUIManager
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
     Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
-    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
-    Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime(), tenantID) : null;
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     String id = JSONUtilities.decodeString(jsonRoot, "id", true);
     id = (id != null && id.trim().length() == 0) ? null : id;
 
@@ -5039,7 +5039,7 @@ public class GUIManager
     *
     *****************************************/
 
-    EvolutionEngineEventDeclaration targetingEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    EvolutionEngineEventDeclaration targetingEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
     boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
     
@@ -5364,7 +5364,7 @@ public class GUIManager
         for (int i = 0; i < journeyIDs.size(); i++)
           {
             String journeyID = journeyIDs.get(i).toString();
-            GUIManagedObject journey = journeyService.getStoredJourney(journeyID, includeArchived, tenantID);
+            GUIManagedObject journey = journeyService.getStoredJourney(journeyID, includeArchived);
             if (journey != null)
               {
                 journeyObjects.add(journey);
@@ -5492,7 +5492,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID, includeArchived, tenantID);
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID, includeArchived);
     journey = (journey != null && journey.getGUIManagedObjectType() == objectType && (! externalOnly || ! journey.getInternalOnly())) ? journey : null;
     JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
@@ -5600,7 +5600,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID, tenantID);
+    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
     existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == objectType) ? existingJourney : null;
 
     /*****************************************
@@ -5662,7 +5662,7 @@ public class GUIManager
           {
 
             journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, 
-                (existingJourney == null), userID, tenantID);
+                (existingJourney == null), userID);
 
             /*****************************************
              *
@@ -5698,7 +5698,7 @@ public class GUIManager
                         deliverableMap.put("label", "campaign");
                         Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch,
                             null, tenantID);
-                        deliverableService.putDeliverable(deliverable, true, userID, tenantID);
+                        deliverableService.putDeliverable(deliverable, true, userID);
                       }
                     else
                       {
@@ -5752,7 +5752,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourney == null), userID, tenantID);
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourney == null), userID);
           }
         //
         //  log
@@ -5841,7 +5841,7 @@ public class GUIManager
       {
         String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
         journeyIDs.add(journeyID);
-        GUIManagedObject journey = journeyService.getStoredJourney(journeyID, tenantID);
+        GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
         if (journey != null && (force || !journey.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (journey != null)
@@ -5885,7 +5885,7 @@ public class GUIManager
     for (int i = 0; i < journeyIDs.size(); i++)
       {
         String journeyID = journeyIDs.get(i).toString();
-        GUIManagedObject journey = journeyService.getStoredJourney(journeyID, tenantID);
+        GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
 
         if (journey != null && (force || !journey.getReadOnly()))
           {
@@ -5989,7 +5989,7 @@ public class GUIManager
       {
 
         String journeyID = journeyIDs.get(i).toString();
-        GUIManagedObject existingElement = journeyService.getStoredJourney(journeyID, tenantID);
+        GUIManagedObject existingElement = journeyService.getStoredJourney(journeyID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(journeyID);
@@ -6008,7 +6008,7 @@ public class GUIManager
                     catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, tenantID);
 
                 journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -6022,7 +6022,7 @@ public class GUIManager
                 //
                 // store
                 //
-                journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingElement == null), userID, tenantID);
+                journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingElement == null), userID);
                 //
                 // log
                 //
@@ -6105,7 +6105,7 @@ public class GUIManager
     for (int i = 0; i < elementIDs.size(); i++)
       {
         String elementID = elementIDs.get(i).toString();
-        GUIManagedObject existingElement = journeyService.getStoredJourney(elementID, tenantID);
+        GUIManagedObject existingElement = journeyService.getStoredJourney(elementID);
         if (existingElement != null && !(existingElement.getReadOnly()) && existingElement.getAccepted()) {
 
           journeys.add(existingElement);
@@ -6224,7 +6224,7 @@ public class GUIManager
              *****************************************/
 
             journeyService.putJourney(element, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService,
-                (existingJourneyElement == null), userID, tenantID);
+                (existingJourneyElement == null), userID);
 
             /*****************************************
              *
@@ -6258,7 +6258,7 @@ public class GUIManager
             // store
             //
 
-            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourneyElement == null), userID, tenantID);
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourneyElement == null), userID);
 
             //
             // log
@@ -6519,7 +6519,7 @@ public class GUIManager
       response.put("responseCode", "missingJourneyTemplate");
       return JSONUtilities.encodeObject(response);
     }
-    Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(journeyTemplateID, now, tenantID);
+    Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(journeyTemplateID, now);
     if(journeyTemplate == null){
       response.put("responseCode", "journeyTemplateNotFound");
       return JSONUtilities.encodeObject(response);
@@ -6573,7 +6573,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingBulkCampaign = journeyService.getStoredJourney(bulkCampaignID, tenantID);
+    GUIManagedObject existingBulkCampaign = journeyService.getStoredJourney(bulkCampaignID);
     existingBulkCampaign = (existingBulkCampaign != null && existingBulkCampaign.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign) ? existingBulkCampaign : null;
 
     /*****************************************
@@ -6691,7 +6691,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            journeyService.putJourney(bulkCampaign, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingBulkCampaign == null), userID, tenantID);
+            journeyService.putJourney(bulkCampaign, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingBulkCampaign == null), userID);
           }
         /*****************************************
         *
@@ -6719,7 +6719,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingBulkCampaign == null), userID, tenantID);
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingBulkCampaign == null), userID);
           }
         //
         //  log
@@ -6764,7 +6764,7 @@ public class GUIManager
         for (int i = 0; i < journeyTemplateIDs.size(); i++)
           {
             String journeyTemplateID = journeyTemplateIDs.get(i).toString();
-            GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, includeArchived, tenantID);                
+            GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, includeArchived);                
             if (journeyTemplate != null)
               {
                 journeyTemplateObjects.add(journeyTemplate);
@@ -6835,7 +6835,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, includeArchived, tenantID);
+    GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, includeArchived);
     journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.JourneyTemplate) ? journeyTemplate : null;
     JSONObject journeyTemplateJSON = resolveJourneyParameters(journeyTemplateService.generateResponseJSON(journeyTemplate, true, now), now, tenantID);
 
@@ -6897,7 +6897,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingJourneyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, tenantID);
+    GUIManagedObject existingJourneyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
     existingJourneyTemplate = (existingJourneyTemplate != null && existingJourneyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? existingJourneyTemplate : null;
 
     /*****************************************
@@ -6942,7 +6942,7 @@ public class GUIManager
           {
 
             journeyTemplateService.putJourneyTemplate(journeyTemplate, journeyObjectiveService,
-                catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID, tenantID);
+                catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID);
           }
 
         /*****************************************
@@ -6972,7 +6972,7 @@ public class GUIManager
         if (!dryRun)
           {
             journeyTemplateService.putJourneyTemplate(incompleteObject, journeyObjectiveService,
-                catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID, tenantID);
+                catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID);
           }
         //
         //  log
@@ -7036,7 +7036,7 @@ public class GUIManager
       {
         String journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "id", false);
         journeyTemplateIDs.add(journeyTemplateID);
-        GUIManagedObject journeyTemplate = journeyService.getStoredJourney(journeyTemplateID, tenantID);
+        GUIManagedObject journeyTemplate = journeyService.getStoredJourney(journeyTemplateID);
 
         if (journeyTemplate != null && (force || !journeyTemplate.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -7060,7 +7060,7 @@ public class GUIManager
     for (int i = 0; i < journeyTemplateIDs.size(); i++)
       {
         String journeyTemplateID = journeyTemplateIDs.get(i).toString();
-        GUIManagedObject journeyTemplate = journeyService.getStoredJourney(journeyTemplateID, tenantID);
+        GUIManagedObject journeyTemplate = journeyService.getStoredJourney(journeyTemplateID);
 
         if (journeyTemplate != null && (force || !journeyTemplate.getReadOnly()))
           {
@@ -7127,7 +7127,7 @@ public class GUIManager
       {
 
         String journeyTemplateID = journeyTemplateIDs.get(i).toString();
-        GUIManagedObject existingElement = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, tenantID);
+        GUIManagedObject existingElement = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(journeyTemplateID);
@@ -7152,7 +7152,7 @@ public class GUIManager
                  *****************************************/
 
                 journeyTemplateService.putJourneyTemplate(journeyTemplate, journeyObjectiveService,
-                    catalogCharacteristicService, targetService, (existingElement == null), userID, tenantID);
+                    catalogCharacteristicService, targetService, (existingElement == null), userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -7169,7 +7169,7 @@ public class GUIManager
                 //
 
                 journeyTemplateService.putJourneyTemplate(incompleteObject, journeyObjectiveService,
-                    catalogCharacteristicService, targetService, (existingElement == null), userID, tenantID);
+                    catalogCharacteristicService, targetService, (existingElement == null), userID);
 
                 //
                 // log
@@ -7246,7 +7246,7 @@ public class GUIManager
     // only return KPIs if the journey still exist.
     //
 
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID, tenantID);
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
     if (journey instanceof Journey) 
       {
         Set<String> nodeIDs = ((Journey) journey).getJourneyNodes().keySet();
@@ -7315,7 +7315,7 @@ public class GUIManager
         for (int i = 0; i < offerIDs.size(); i++)
           {
             String offerID = offerIDs.get(i).toString();
-            GUIManagedObject offer = offerService.getStoredOffer(offerID, includeArchived, tenantID);
+            GUIManagedObject offer = offerService.getStoredOffer(offerID, includeArchived);
             if (offer != null)
               {
                 offerObjects.add(offer);
@@ -7358,7 +7358,7 @@ public class GUIManager
                     if (offerObjectiveID != null)
                       {
                         GUIManagedObject offerObjectiveObject = offerObjectiveService
-                            .getStoredOfferObjective(offerObjectiveID, tenantID);
+                            .getStoredOfferObjective(offerObjectiveID);
                         String offerObjectiveDisplay = ((OfferObjective) offerObjectiveObject).getDisplay();
                         offerObjective.put("offerObjectiveDisplay", offerObjectiveDisplay);
                         offerObjectivesWithDispaly.add(offerObjective);
@@ -7412,7 +7412,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject offer = offerService.getStoredOffer(offerID, includeArchived, tenantID);
+    GUIManagedObject offer = offerService.getStoredOffer(offerID, includeArchived);
     JSONObject offerJSON = offerService.generateResponseJSON(offer, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -7473,7 +7473,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingOffer = offerService.getStoredOffer(offerID, tenantID);
+    GUIManagedObject existingOffer = offerService.getStoredOffer(offerID);
 
     /*****************************************
     *
@@ -7594,7 +7594,7 @@ public class GUIManager
           {
 
             offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService,
-                (existingOffer == null), userID, tenantID);
+                (existingOffer == null), userID);
           }
         /*****************************************
         *
@@ -7623,7 +7623,7 @@ public class GUIManager
         if (!dryRun)
           {
             offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
-                voucherService, (existingOffer == null), userID, tenantID);
+                voucherService, (existingOffer == null), userID);
           }
         //
         //  log
@@ -7687,7 +7687,7 @@ public class GUIManager
       {
         String offerID = JSONUtilities.decodeString(jsonRoot, "id", false);
         offerIDs.add(offerID);
-        GUIManagedObject offer = offerService.getStoredOffer(offerID, tenantID);
+        GUIManagedObject offer = offerService.getStoredOffer(offerID);
         if (offer != null && (force || !offer.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (offer != null)
@@ -7710,7 +7710,7 @@ public class GUIManager
     for (int i = 0; i < offerIDs.size(); i++)
       {
         String offerID = offerIDs.get(i).toString();
-        GUIManagedObject offer = offerService.getStoredOffer(offerID, tenantID);
+        GUIManagedObject offer = offerService.getStoredOffer(offerID);
 
         if (offer != null && (force || !offer.getReadOnly()))
           {
@@ -7785,7 +7785,7 @@ public class GUIManager
       {
 
         String offerID = offerIDs.get(i).toString();
-        GUIManagedObject existingElement = offerService.getStoredOffer(offerID, tenantID);
+        GUIManagedObject existingElement = offerService.getStoredOffer(offerID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(offerID);
@@ -7809,7 +7809,7 @@ public class GUIManager
                  *****************************************/
 
                 offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
               }
             catch (JSONUtilitiesException | GUIManagerException e)
               {
@@ -7824,7 +7824,7 @@ public class GUIManager
                 //
 
                 offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
-                    voucherService, (existingElement == null), userID, tenantID);
+                    voucherService, (existingElement == null), userID);
 
                 //
                 // log
@@ -7870,7 +7870,7 @@ public class GUIManager
         for (int i = 0; i < presentationStrategieIDs.size(); i++)
           {
             String presentationStrategieID = presentationStrategieIDs.get(i).toString();
-            GUIManagedObject presentationStrategie = presentationStrategyService.getStoredPresentationStrategy(presentationStrategieID, includeArchived, tenantID);
+            GUIManagedObject presentationStrategie = presentationStrategyService.getStoredPresentationStrategy(presentationStrategieID, includeArchived);
             if (presentationStrategie != null)
               {
                 presentationStrategieObjects.add(presentationStrategie);
@@ -7928,7 +7928,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID, includeArchived, tenantID);
+    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID, includeArchived);
     JSONObject presentationStrategyJSON = presentationStrategyService.generateResponseJSON(presentationStrategy, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -7989,7 +7989,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingPresentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID, tenantID);
+    GUIManagedObject existingPresentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
 
     /*****************************************
     *
@@ -8033,7 +8033,7 @@ public class GUIManager
           {
 
             presentationStrategyService.putPresentationStrategy(presentationStrategy, scoringStrategyService,
-                (existingPresentationStrategy == null), userID, tenantID);
+                (existingPresentationStrategy == null), userID);
           }
         /*****************************************
         *
@@ -8062,7 +8062,7 @@ public class GUIManager
         if (!dryRun)
           {
             presentationStrategyService.putPresentationStrategy(incompleteObject, scoringStrategyService,
-                (existingPresentationStrategy == null), userID, tenantID);
+                (existingPresentationStrategy == null), userID);
           }
         //
         //  log
@@ -8127,7 +8127,7 @@ public class GUIManager
         String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "id", false);
         presentationStrategyIDs.add(presentationStrategyID);
         GUIManagedObject presentationStrategy = presentationStrategyService
-            .getStoredPresentationStrategy(presentationStrategyID, tenantID);
+            .getStoredPresentationStrategy(presentationStrategyID);
         if (presentationStrategy != null && (force || !presentationStrategy.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (presentationStrategy != null)
@@ -8149,7 +8149,7 @@ public class GUIManager
       {
         String presentationStrategyID = presentationStrategyIDs.get(i).toString();
         GUIManagedObject presentationStrategy = presentationStrategyService
-            .getStoredPresentationStrategy(presentationStrategyID, tenantID);
+            .getStoredPresentationStrategy(presentationStrategyID);
 
         if (presentationStrategy != null && (force || !presentationStrategy.getReadOnly()))
           {
@@ -8215,7 +8215,7 @@ public class GUIManager
       {
         String presentationStrategyID = presentationStrategyIDs.get(i).toString();
         GUIManagedObject existingElement = presentationStrategyService
-            .getStoredPresentationStrategy(presentationStrategyID, tenantID);
+            .getStoredPresentationStrategy(presentationStrategyID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(presentationStrategyID);
@@ -8240,7 +8240,7 @@ public class GUIManager
                  *****************************************/
 
                 presentationStrategyService.putPresentationStrategy(presentationStrategy, scoringStrategyService,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -8256,7 +8256,7 @@ public class GUIManager
                 //
 
                 presentationStrategyService.putPresentationStrategy(incompleteObject, scoringStrategyService,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // log
@@ -8302,7 +8302,7 @@ public class GUIManager
         for (int i = 0; i < dnboMatrixeIDs.size(); i++)
           {
             String dnboMatrixeID = dnboMatrixeIDs.get(i).toString();
-            GUIManagedObject dnboMatrixe = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixeID, includeArchived, tenantID);
+            GUIManagedObject dnboMatrixe = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixeID, includeArchived);
             if (dnboMatrixe != null)
               {
                 dnboMatrixeObjects.add(dnboMatrixe);
@@ -8360,7 +8360,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID, includeArchived, tenantID);
+    GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID, includeArchived);
     JSONObject dnboMatrixJSON = dnboMatrixService.generateResponseJSON(dnboMatrix, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -8421,7 +8421,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingDNBOMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID, tenantID);
+    GUIManagedObject existingDNBOMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
 
     /*****************************************
     *
@@ -8463,7 +8463,7 @@ public class GUIManager
         *****************************************/
         if (!dryRun)
           {
-            dnboMatrixService.putDNBOMatrix(dnboMatrix, (existingDNBOMatrix == null), userID, tenantID);
+            dnboMatrixService.putDNBOMatrix(dnboMatrix, (existingDNBOMatrix == null), userID);
           }
         /*****************************************
         *
@@ -8491,7 +8491,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            dnboMatrixService.putDNBOMatrix(incompleteObject, (existingDNBOMatrix == null), userID, tenantID);
+            dnboMatrixService.putDNBOMatrix(incompleteObject, (existingDNBOMatrix == null), userID);
           }
         //
         //  log
@@ -8548,7 +8548,7 @@ public class GUIManager
       {
         String dnboMatrixID = JSONUtilities.decodeString(jsonRoot, "id", false);
         dnboMatrixIDs.add(dnboMatrixID);
-        GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID, tenantID);
+        GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
         if (dnboMatrix != null && (force || !dnboMatrix.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (dnboMatrix != null)
@@ -8571,7 +8571,7 @@ public class GUIManager
     for (int i = 0; i < dnboMatrixIDs.size(); i++)
       {
         String dnboMatrixID = dnboMatrixIDs.get(i).toString();
-        GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID, tenantID);
+        GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
 
         if (dnboMatrix != null && (force || !dnboMatrix.getReadOnly()))
           {
@@ -8639,7 +8639,7 @@ public class GUIManager
       {
 
         String dnboMatrixID = DNBOMatrixIDs.get(i).toString();
-        GUIManagedObject existingElement = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID, tenantID);
+        GUIManagedObject existingElement = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(dnboMatrixID);
@@ -8660,7 +8660,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                dnboMatrixService.putDNBOMatrix(dnboMatrix, (existingElement == null), userID, tenantID);
+                dnboMatrixService.putDNBOMatrix(dnboMatrix, (existingElement == null), userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -8674,7 +8674,7 @@ public class GUIManager
                 //
                 // store
                 //
-                dnboMatrixService.putDNBOMatrix(incompleteObject, (existingElement == null), userID, tenantID);
+                dnboMatrixService.putDNBOMatrix(incompleteObject, (existingElement == null), userID);
 
                 //
                 // log
@@ -8720,7 +8720,7 @@ public class GUIManager
         for (int i = 0; i < scoringStrategyIDs.size(); i++)
           {
             String scoringStrategyID = scoringStrategyIDs.get(i).toString();
-            GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, includeArchived, tenantID);
+            GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, includeArchived);
             if (scoringStrategy != null)
               {
                 scoringStrategyObjects.add(scoringStrategy);
@@ -8778,7 +8778,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, includeArchived, tenantID);
+    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, includeArchived);
     JSONObject scoringStrategyJSON = scoringStrategyService.generateResponseJSON(scoringStrategy, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -8840,7 +8840,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingScoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, tenantID);
+    GUIManagedObject existingScoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
 
     /*****************************************
     *
@@ -8882,7 +8882,7 @@ public class GUIManager
         *****************************************/
         if (!dryRun)
           {
-            scoringStrategyService.putScoringStrategy(scoringStrategy, (existingScoringStrategy == null), userID, tenantID);
+            scoringStrategyService.putScoringStrategy(scoringStrategy, (existingScoringStrategy == null), userID);
 
             /*****************************************
              *
@@ -8919,7 +8919,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            scoringStrategyService.putScoringStrategy(incompleteObject, (existingScoringStrategy == null), userID, tenantID);
+            scoringStrategyService.putScoringStrategy(incompleteObject, (existingScoringStrategy == null), userID);
           }
         //
         //  revalidatePresentationStrategies
@@ -8990,7 +8990,7 @@ public class GUIManager
       {
         String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "id", false);
         scoringStrategyIDs.add(scoringStrategyID);
-        GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, tenantID);
+        GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
         if (scoringStrategy != null && (force || !scoringStrategy.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (scoringStrategy != null)
@@ -9010,7 +9010,7 @@ public class GUIManager
     for (int i = 0; i < scoringStrategyIDs.size(); i++)
       {
         String scoringStrategyID = scoringStrategyIDs.get(i).toString();
-        GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, tenantID);
+        GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
         if (scoringStrategy != null && (force || !scoringStrategy.getReadOnly()))
           {
             scoringStrategies.add(scoringStrategy);
@@ -9086,7 +9086,7 @@ public class GUIManager
       {
 
         String scoringStrategyID = scoringStrategyIDs.get(i).toString();
-        GUIManagedObject existingElement = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, tenantID);
+        GUIManagedObject existingElement = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(scoringStrategyID);
@@ -9108,7 +9108,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                scoringStrategyService.putScoringStrategy(scoringStrategy, (existingElement == null), userID, tenantID);
+                scoringStrategyService.putScoringStrategy(scoringStrategy, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -9131,7 +9131,7 @@ public class GUIManager
                 // store
                 //
 
-                scoringStrategyService.putScoringStrategy(incompleteObject, (existingElement == null), userID, tenantID);
+                scoringStrategyService.putScoringStrategy(incompleteObject, (existingElement == null), userID);
 
                 //
                 // revalidatePresentationStrategies
@@ -9183,7 +9183,7 @@ public class GUIManager
         for (int i = 0; i < callingChannelIDs.size(); i++)
           {
             String callingChannelID = callingChannelIDs.get(i).toString();
-            GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, includeArchived, tenantID);
+            GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, includeArchived);
             if (callingChannel != null)
               {
                 callingChannelObjects.add(callingChannel);
@@ -9241,7 +9241,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, includeArchived, tenantID);
+    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, includeArchived);
     JSONObject callingChannelJSON = callingChannelService.generateResponseJSON(callingChannel, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -9303,7 +9303,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingCallingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, tenantID);
+    GUIManagedObject existingCallingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
 
     /*****************************************
     *
@@ -9345,7 +9345,7 @@ public class GUIManager
          *****************************************/
         if (!dryRun)
           {
-            callingChannelService.putCallingChannel(callingChannel, (existingCallingChannel == null), userID, tenantID);
+            callingChannelService.putCallingChannel(callingChannel, (existingCallingChannel == null), userID);
 
             /*****************************************
              *
@@ -9384,7 +9384,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            callingChannelService.putCallingChannel(incompleteObject, (existingCallingChannel == null), userID, tenantID);
+            callingChannelService.putCallingChannel(incompleteObject, (existingCallingChannel == null), userID);
 
             //
             // revalidateOffers
@@ -9458,7 +9458,7 @@ public class GUIManager
       {
         String callingChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
         callingChannelIDs.add(callingChannelID);
-        GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, tenantID);
+        GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
 
         if (callingChannel != null && (force || !callingChannel.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -9478,7 +9478,7 @@ public class GUIManager
     for (int i = 0; i < callingChannelIDs.size(); i++)
       {
         String callingChannelID = callingChannelIDs.get(i).toString();
-        GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, tenantID);
+        GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
 
         if (callingChannel != null && (force || !callingChannel.getReadOnly()))
           {
@@ -9559,7 +9559,7 @@ public class GUIManager
       {
 
         String callingChannelID = callingChannelIDs.get(i).toString();
-        GUIManagedObject existingElement = callingChannelService.getStoredCallingChannel(callingChannelID, tenantID);
+        GUIManagedObject existingElement = callingChannelService.getStoredCallingChannel(callingChannelID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(callingChannelID);
@@ -9580,7 +9580,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                callingChannelService.putCallingChannel(callingChannel, (existingElement == null), userID, tenantID);
+                callingChannelService.putCallingChannel(callingChannel, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -9604,7 +9604,7 @@ public class GUIManager
                 // store
                 //
 
-                callingChannelService.putCallingChannel(incompleteObject, (existingElement == null), userID, tenantID);
+                callingChannelService.putCallingChannel(incompleteObject, (existingElement == null), userID);
 
                 //
                 // revalidateOffers
@@ -9656,7 +9656,7 @@ public class GUIManager
           {
             String criterionFieldAvailableValueID = criterionFieldAvailableValueIDs.get(i).toString();
             GUIManagedObject criterionFieldAvailableValue = criterionFieldAvailableValuesService
-                .getStoredCriterionFieldAvailableValues(criterionFieldAvailableValueID, includeArchived, tenantID);
+                .getStoredCriterionFieldAvailableValues(criterionFieldAvailableValueID, includeArchived);
             if (criterionFieldAvailableValue != null)
               {
                 criterionFieldAvailableValueObjects.add(criterionFieldAvailableValue);
@@ -9728,7 +9728,7 @@ public class GUIManager
         String criterionFieldsAvailableValueID = JSONUtilities.decodeString(jsonRoot, "id", false);
         criterionFieldsAvailableValueIDs.add(criterionFieldsAvailableValueID);
         GUIManagedObject criterionFieldsAvailableValue = criterionFieldAvailableValuesService
-            .getStoredCriterionFieldAvailableValues(criterionFieldsAvailableValueID, tenantID);
+            .getStoredCriterionFieldAvailableValues(criterionFieldsAvailableValueID);
 
         if (criterionFieldsAvailableValue != null && (force || !criterionFieldsAvailableValue.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -9749,7 +9749,7 @@ public class GUIManager
     for (int i = 0; i < criterionFieldsAvailableValueIDs.size(); i++)
       {
         String criterionFieldsAvailableValueID = criterionFieldsAvailableValueIDs.get(i).toString();
-        GUIManagedObject criterionFieldsAvailableValue = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldsAvailableValueID, tenantID);
+        GUIManagedObject criterionFieldsAvailableValue = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldsAvailableValueID);
         
         if (criterionFieldsAvailableValue != null && (force || !criterionFieldsAvailableValue.getReadOnly())) 
           {
@@ -9839,7 +9839,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingCriterionFieldAvailableValues = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldAvailableValuesID, tenantID);
+    GUIManagedObject existingCriterionFieldAvailableValues = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldAvailableValuesID);
 
     /*****************************************
     *
@@ -9883,7 +9883,7 @@ public class GUIManager
           {
 
             criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(criterionFieldAvailableValues,
-                (existingCriterionFieldAvailableValues == null), userID, tenantID);
+                (existingCriterionFieldAvailableValues == null), userID);
           }
         /*****************************************
         *
@@ -9912,7 +9912,7 @@ public class GUIManager
         if (!dryRun)
           {
             criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(incompleteObject,
-                (existingCriterionFieldAvailableValues == null), userID, tenantID);
+                (existingCriterionFieldAvailableValues == null), userID);
           }
         //
         //  log
@@ -9964,7 +9964,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject criterionFieldAvailableValues = salesChannelService.getStoredSalesChannel(criterionFieldAvailableValuesID, includeArchived, tenantID);
+    GUIManagedObject criterionFieldAvailableValues = salesChannelService.getStoredSalesChannel(criterionFieldAvailableValuesID, includeArchived);
     JSONObject criterionFieldAvailableValuesJSON = criterionFieldAvailableValuesService.generateResponseJSON(criterionFieldAvailableValues, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -10003,7 +10003,7 @@ public class GUIManager
 
         String criterionFieldID = criterionFieldIDs.get(i).toString();
         GUIManagedObject existingElement = criterionFieldAvailableValuesService
-            .getStoredCriterionFieldAvailableValues(criterionFieldID, tenantID);
+            .getStoredCriterionFieldAvailableValues(criterionFieldID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(criterionFieldID);
@@ -10027,7 +10027,7 @@ public class GUIManager
                  *****************************************/
 
                 criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(criterionFieldAvailableValues,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -10043,7 +10043,7 @@ public class GUIManager
                 //
 
                 criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(incompleteObject,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // log
@@ -10091,7 +10091,7 @@ public class GUIManager
         for (int i = 0; i < salesChannelIDs.size(); i++)
           {
             String salesChannelID = salesChannelIDs.get(i).toString();
-            GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, includeArchived, tenantID);
+            GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, includeArchived);
             if (salesChannel != null)
               {
                 salesChannelObjects.add(salesChannel);
@@ -10172,7 +10172,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, includeArchived, tenantID);
+    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, includeArchived);
     JSONObject salesChannelJSON = salesChannelService.generateResponseJSON(salesChannel, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -10234,7 +10234,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingSalesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, tenantID);
+    GUIManagedObject existingSalesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
 
     /*****************************************
     *
@@ -10277,7 +10277,7 @@ public class GUIManager
         if (!dryRun)
           {
             salesChannelService.putSalesChannel(salesChannel, callingChannelService, resellerService,
-                (existingSalesChannel == null), userID, tenantID);
+                (existingSalesChannel == null), userID);
 
             /*****************************************
              *
@@ -10316,7 +10316,7 @@ public class GUIManager
           {
 
             salesChannelService.putSalesChannel(incompleteObject, callingChannelService, resellerService,
-                (existingSalesChannel == null), userID, tenantID);
+                (existingSalesChannel == null), userID);
 
             //
             // revalidateOffers
@@ -10388,7 +10388,7 @@ public class GUIManager
       {
         String salesChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
         salesChannelIDs.add(salesChannelID);
-        GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, tenantID);
+        GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
         if (salesChannel != null && (force || !salesChannel.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (salesChannel != null)
@@ -10407,7 +10407,7 @@ public class GUIManager
     for (int i = 0; i < salesChannelIDs.size(); i++)
       {
         String salesChannelID = salesChannelIDs.get(i).toString();
-        GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, tenantID);
+        GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
         if (salesChannel != null && (force || !salesChannel.getReadOnly()))
           {
             salesChannels.add(salesChannel);
@@ -10488,7 +10488,7 @@ public class GUIManager
       {
 
         String salesChannelID = salesChannelIDs.get(i).toString();
-        GUIManagedObject existingElement = salesChannelService.getStoredSalesChannel(salesChannelID, tenantID);
+        GUIManagedObject existingElement = salesChannelService.getStoredSalesChannel(salesChannelID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(salesChannelID);
@@ -10510,7 +10510,7 @@ public class GUIManager
                  *
                  *****************************************/
                 salesChannelService.putSalesChannel(salesChannel, callingChannelService, resellerService,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -10533,7 +10533,7 @@ public class GUIManager
                 // store
                 //
                 salesChannelService.putSalesChannel(incompleteObject, callingChannelService, resellerService,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // revalidateOffers
@@ -10584,7 +10584,7 @@ public class GUIManager
         for (int i = 0; i < supplierIDs.size(); i++)
           {
             String supplierID = supplierIDs.get(i).toString();
-            GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, includeArchived, tenantID);
+            GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, includeArchived);
             if (supplier != null)
               {
                 supplierObjects.add(supplier);
@@ -10642,7 +10642,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, includeArchived, tenantID);
+    GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, includeArchived);
     JSONObject supplierJSON = supplierService.generateResponseJSON(supplier, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -10704,7 +10704,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingSupplier = supplierService.getStoredSupplier(supplierID, tenantID);
+    GUIManagedObject existingSupplier = supplierService.getStoredSupplier(supplierID);
 
     /*****************************************
     *
@@ -10747,7 +10747,7 @@ public class GUIManager
         *****************************************/
         if (!dryRun)
           {
-            supplierService.putSupplier(supplier, (existingSupplier == null), userID, supplierService, tenantID);
+            supplierService.putSupplier(supplier, (existingSupplier == null), userID, supplierService);
 
             /*****************************************
              *
@@ -10785,7 +10785,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            supplierService.putSupplier(incompleteObject, (existingSupplier == null), userID, supplierService, tenantID);
+            supplierService.putSupplier(incompleteObject, (existingSupplier == null), userID, supplierService);
 
         //
         //  revalidateProducts
@@ -10879,7 +10879,7 @@ public class GUIManager
       {
         String supplierID = JSONUtilities.decodeString(jsonRoot, "id", false);
         supplierIDs.add(supplierID);
-        GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, tenantID);
+        GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
         if (supplier != null && (force || !supplier.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (supplier != null)
@@ -10898,7 +10898,7 @@ public class GUIManager
     for (int i = 0; i < supplierIDs.size(); i++)
       {
         String supplierID = supplierIDs.get(i).toString();
-        GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, tenantID);
+        GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
 
         if (supplier != null && (force || !supplier.getReadOnly()))
           {
@@ -11022,7 +11022,7 @@ public class GUIManager
       {
 
         String supplierID = supplierIDs.get(i).toString();
-        GUIManagedObject existingElement = supplierService.getStoredSupplier(supplierID, tenantID);
+        GUIManagedObject existingElement = supplierService.getStoredSupplier(supplierID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(supplierID);
@@ -11044,7 +11044,7 @@ public class GUIManager
                  *
                  *****************************************/
 
-                supplierService.putSupplier(supplier, (existingElement == null), userID, supplierService, tenantID);
+                supplierService.putSupplier(supplier, (existingElement == null), userID, supplierService);
 
                 /*****************************************
                  *
@@ -11067,7 +11067,7 @@ public class GUIManager
                 //
                 // store
                 //
-                supplierService.putSupplier(incompleteObject, (existingElement == null), userID, supplierService, tenantID);
+                supplierService.putSupplier(incompleteObject, (existingElement == null), userID, supplierService);
 
                 //
                 // revalidateProducts
@@ -11119,7 +11119,7 @@ public class GUIManager
         for (int i = 0; i < productIDs.size(); i++)
           {
             String productID = productIDs.get(i).toString();
-            GUIManagedObject product = productService.getStoredProduct(productID, includeArchived, tenantID);
+            GUIManagedObject product = productService.getStoredProduct(productID, includeArchived);
             if (product != null)
               {
                 productsObjects.add(product);
@@ -11190,7 +11190,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject product = productService.getStoredProduct(productID, includeArchived, tenantID);
+    GUIManagedObject product = productService.getStoredProduct(productID, includeArchived);
     JSONObject productJSON = productService.generateResponseJSON(product, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -11251,7 +11251,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingProduct = productService.getStoredProduct(productID, tenantID);
+    GUIManagedObject existingProduct = productService.getStoredProduct(productID);
 
     /*****************************************
     *
@@ -11335,7 +11335,7 @@ public class GUIManager
           {
 
             productService.putProduct(product, supplierService, productTypeService, deliverableService,
-                (existingProduct == null), userID, tenantID);
+                (existingProduct == null), userID);
 
             /*****************************************
              *
@@ -11374,7 +11374,7 @@ public class GUIManager
           {
 
             productService.putProduct(incompleteObject, supplierService, productTypeService, deliverableService,
-                (existingProduct == null), userID, tenantID);
+                (existingProduct == null), userID);
 
             //
             // revalidateOffers
@@ -11446,7 +11446,7 @@ public class GUIManager
       {
         String productID = JSONUtilities.decodeString(jsonRoot, "id", false);
         productIDs.add(productID);
-        GUIManagedObject product = productService.getStoredProduct(productID, tenantID);
+        GUIManagedObject product = productService.getStoredProduct(productID);
         if (product != null && (force || !product.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (product != null)
@@ -11470,7 +11470,7 @@ public class GUIManager
     for (int i = 0; i < productIDs.size(); i++)
       {
         String productID = productIDs.get(i).toString();
-        GUIManagedObject product = productService.getStoredProduct(productID, tenantID);
+        GUIManagedObject product = productService.getStoredProduct(productID);
         if (product != null && (force || !product.getReadOnly())) 
           {
             products.add(product);
@@ -11553,7 +11553,7 @@ public class GUIManager
       {
 
         String productID = productIDs.get(i).toString();
-        GUIManagedObject existingElement = productService.getStoredProduct(productID, tenantID);
+        GUIManagedObject existingElement = productService.getStoredProduct(productID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(productID);
@@ -11577,7 +11577,7 @@ public class GUIManager
                  *
                  *****************************************/
                 productService.putProduct(product, supplierService, productTypeService, deliverableService,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -11601,7 +11601,7 @@ public class GUIManager
                 //
 
                 productService.putProduct(incompleteObject, supplierService, productTypeService, deliverableService,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // revalidateOffers
@@ -11654,7 +11654,7 @@ public class GUIManager
         for (int i = 0; i < contactPolicyIDs.size(); i++)
           {
             String contactPolicyID = contactPolicyIDs.get(i).toString();
-            GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, includeArchived, tenantID);
+            GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, includeArchived);
             if (contactPolicy != null)
               {
                 contactPolicyObjects.add(contactPolicy);
@@ -11712,7 +11712,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, includeArchived, tenantID);
+    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, includeArchived);
     JSONObject contactPolicyJSON = contactPolicyService.generateResponseJSON(contactPolicy, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -11774,7 +11774,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingContactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, tenantID);
+    GUIManagedObject existingContactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
 
     /*****************************************
     *
@@ -11817,7 +11817,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            contactPolicyService.putContactPolicy(contactPolicy, (existingContactPolicy == null), userID, tenantID);
+            contactPolicyService.putContactPolicy(contactPolicy, (existingContactPolicy == null), userID);
 
             /*****************************************
              *
@@ -11854,7 +11854,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            contactPolicyService.putContactPolicy(incompleteObject, (existingContactPolicy == null), userID, tenantID);
+            contactPolicyService.putContactPolicy(incompleteObject, (existingContactPolicy == null), userID);
 
             //
             // revalidate dependent objects
@@ -11927,7 +11927,7 @@ public class GUIManager
       {
         String contactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", false);
         contactPolicyIDs.add(contactPolicyID);
-        GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, tenantID);
+        GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
         if (contactPolicy != null && (force || !contactPolicy.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (contactPolicy != null)
@@ -11946,7 +11946,7 @@ public class GUIManager
     for (int i = 0; i < contactPolicyIDs.size(); i++)
       {
         String contactPolicyID = contactPolicyIDs.get(i).toString();
-        GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, tenantID);
+        GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
         if (contactPolicy != null && (force || !contactPolicy.getReadOnly()))
           {
             contactPolicies.add(contactPolicy);
@@ -12025,7 +12025,7 @@ public class GUIManager
       {
 
         String contactPolicyID = contactPolicyIDs.get(i).toString();
-        GUIManagedObject existingElement = contactPolicyService.getStoredContactPolicy(contactPolicyID, tenantID);
+        GUIManagedObject existingElement = contactPolicyService.getStoredContactPolicy(contactPolicyID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(contactPolicyID);
@@ -12046,7 +12046,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                contactPolicyService.putContactPolicy(contactPolicy, (existingElement == null), userID, tenantID);
+                contactPolicyService.putContactPolicy(contactPolicy, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -12068,7 +12068,7 @@ public class GUIManager
                 //
                 // store
                 //
-                contactPolicyService.putContactPolicy(incompleteObject, (existingElement == null), userID, tenantID);
+                contactPolicyService.putContactPolicy(incompleteObject, (existingElement == null), userID);
 
                 //
                 // revalidate dependent objects
@@ -12117,7 +12117,7 @@ public class GUIManager
         for (int i = 0; i < journeyObjectiveIDs.size(); i++)
           {
             String journeyObjectiveID = journeyObjectiveIDs.get(i).toString();
-            GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, includeArchived, tenantID);
+            GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, includeArchived);
             if (journeyObjective != null)
               {
                 journeyObjectiveObjects.add(journeyObjective);
@@ -12176,7 +12176,7 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, includeArchived, tenantID);
+    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, includeArchived);
     JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, now);
 
     /*****************************************
@@ -12238,7 +12238,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingJourneyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, tenantID);
+    GUIManagedObject existingJourneyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
 
     /*****************************************
     *
@@ -12281,7 +12281,7 @@ public class GUIManager
         if (!dryRun)
           {
             journeyObjectiveService.putJourneyObjective(journeyObjective, journeyObjectiveService, contactPolicyService,
-                catalogCharacteristicService, (existingJourneyObjective == null), userID, tenantID);
+                catalogCharacteristicService, (existingJourneyObjective == null), userID);
 
             /*****************************************
              *
@@ -12320,7 +12320,7 @@ public class GUIManager
         if (!dryRun)
           {
             journeyObjectiveService.putJourneyObjective(incompleteObject, journeyObjectiveService, contactPolicyService,
-                catalogCharacteristicService, (existingJourneyObjective == null), userID, tenantID);
+                catalogCharacteristicService, (existingJourneyObjective == null), userID);
 
             //
             // revalidate dependent objects
@@ -12376,7 +12376,7 @@ public class GUIManager
       {
 
         String journeyObjectiveID = journeyObjectiveIDs.get(i).toString();
-        GUIManagedObject existingElement = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, tenantID);
+        GUIManagedObject existingElement = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(journeyObjectiveID);
@@ -12399,7 +12399,7 @@ public class GUIManager
                  *****************************************/
 
                 journeyObjectiveService.putJourneyObjective(journeyObjective, journeyObjectiveService,
-                    contactPolicyService, catalogCharacteristicService, (existingElement == null), userID, tenantID);
+                    contactPolicyService, catalogCharacteristicService, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -12424,7 +12424,7 @@ public class GUIManager
                 //
 
                 journeyObjectiveService.putJourneyObjective(incompleteObject, journeyObjectiveService,
-                    contactPolicyService, catalogCharacteristicService, (existingElement == null), userID, tenantID);
+                    contactPolicyService, catalogCharacteristicService, (existingElement == null), userID);
 
                 //
                 // revalidate dependent objects
@@ -12496,7 +12496,7 @@ public class GUIManager
       {
         String journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
         journeyObjectiveIDs.add(journeyObjectiveID);
-        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, tenantID);
+        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
 
         if (journeyObjective != null && (force || !journeyObjective.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -12516,7 +12516,7 @@ public class GUIManager
     for (int i = 0; i < journeyObjectiveIDs.size(); i++)
       {
         String journeyObjectiveID = journeyObjectiveIDs.get(i).toString();
-        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, tenantID);
+        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
         
         if (journeyObjective != null && (force || !journeyObjective.getReadOnly()))
           {
@@ -12598,7 +12598,7 @@ public class GUIManager
         for (int i = 0; i < offerObjectiveIDs.size(); i++)
           {
             String offerObjectiveID = offerObjectiveIDs.get(i).toString();
-            GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, includeArchived, tenantID);
+            GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, includeArchived);
             if (offerObjective != null)
               {
                 offerObjectiveObjects.add(offerObjective);
@@ -12656,7 +12656,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, includeArchived, tenantID);
+    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, includeArchived);
     JSONObject offerObjectiveJSON = offerObjectiveService.generateResponseJSON(offerObjective, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -12717,7 +12717,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingOfferObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, tenantID);
+    GUIManagedObject existingOfferObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
 
     /*****************************************
     *
@@ -12760,7 +12760,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            offerObjectiveService.putOfferObjective(offerObjective, (existingOfferObjective == null), userID, tenantID);
+            offerObjectiveService.putOfferObjective(offerObjective, (existingOfferObjective == null), userID);
 
             /*****************************************
              *
@@ -12798,7 +12798,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            offerObjectiveService.putOfferObjective(incompleteObject, (existingOfferObjective == null), userID, tenantID);
+            offerObjectiveService.putOfferObjective(incompleteObject, (existingOfferObjective == null), userID);
 
             //
             // revalidate dependent objects
@@ -12871,7 +12871,7 @@ public class GUIManager
       {
         String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
         offerObjectiveIDs.add(offerObjectiveID);
-        GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, tenantID);
+        GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
         if (offerObjective != null && (force || !offerObjective.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (offerObjective != null)
@@ -12890,7 +12890,7 @@ public class GUIManager
     for (int i = 0; i < offerObjectiveIDs.size(); i++)
       {
         String offerObjectiveID = offerObjectiveIDs.get(i).toString();
-        GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, tenantID);
+        GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
         if (offerObjective != null && (force || !offerObjective.getReadOnly()))
           {
             offerObjectives.add(offerObjective);
@@ -12973,7 +12973,7 @@ public class GUIManager
       {
 
         String offerObjectiveID = offerObjectiveIDs.get(i).toString();
-        GUIManagedObject existingElement = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, tenantID);
+        GUIManagedObject existingElement = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(offerObjectiveID);
@@ -12994,7 +12994,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                offerObjectiveService.putOfferObjective(offerObjective, (existingElement == null), userID, tenantID);
+                offerObjectiveService.putOfferObjective(offerObjective, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -13018,7 +13018,7 @@ public class GUIManager
                 // store
                 //
 
-                offerObjectiveService.putOfferObjective(incompleteObject, (existingElement == null), userID, tenantID);
+                offerObjectiveService.putOfferObjective(incompleteObject, (existingElement == null), userID);
 
                 //
                 // revalidate dependent objects
@@ -13070,7 +13070,7 @@ public class GUIManager
         for (int i = 0; i < productTypeIDs.size(); i++)
           {
             String productTypeID = productTypeIDs.get(i).toString();
-            GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, includeArchived, tenantID);
+            GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, includeArchived);
             if (productType != null)
               {
                 productTypeObjects.add(productType);
@@ -13128,7 +13128,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, includeArchived, tenantID);
+    GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, includeArchived);
     JSONObject productTypeJSON = productTypeService.generateResponseJSON(productType, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -13190,7 +13190,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingProductType = productTypeService.getStoredProductType(productTypeID, tenantID);
+    GUIManagedObject existingProductType = productTypeService.getStoredProductType(productTypeID);
 
     /*****************************************
     *
@@ -13233,7 +13233,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            productTypeService.putProductType(productType, (existingProductType == null), userID, tenantID);
+            productTypeService.putProductType(productType, (existingProductType == null), userID);
 
             /*****************************************
              *
@@ -13270,7 +13270,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            productTypeService.putProductType(incompleteObject, (existingProductType == null), userID, tenantID);
+            productTypeService.putProductType(incompleteObject, (existingProductType == null), userID);
 
             //
             // revalidateProducts
@@ -13343,7 +13343,7 @@ public class GUIManager
       {
         String productTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
         productTypeIDs.add(productTypeID);
-        GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, tenantID);
+        GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
 
         if (productType != null && (force || !productType.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -13363,7 +13363,7 @@ public class GUIManager
     for (int i = 0; i < productTypeIDs.size(); i++)
       {
         String productTypeID = productTypeIDs.get(i).toString();
-        GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, tenantID);
+        GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
         
         if (productType != null && (force || !productType.getReadOnly()))
           {
@@ -13444,7 +13444,7 @@ public class GUIManager
       {
 
         String productTypeID = productTypeIDs.get(i).toString();
-        GUIManagedObject existingElement = productTypeService.getStoredProductType(productTypeID, tenantID);
+        GUIManagedObject existingElement = productTypeService.getStoredProductType(productTypeID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(productTypeID);
@@ -13465,7 +13465,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                productTypeService.putProductType(productType, (existingElement == null), userID, tenantID);
+                productTypeService.putProductType(productType, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -13488,7 +13488,7 @@ public class GUIManager
                 // store
                 //
 
-                productTypeService.putProductType(incompleteObject, (existingElement == null), userID, tenantID);
+                productTypeService.putProductType(incompleteObject, (existingElement == null), userID);
 
                 //
                 // revalidateProducts
@@ -13538,7 +13538,7 @@ public class GUIManager
         for (int i = 0; i < deliverableIDs.size(); i++)
           {
             String deliverableID = deliverableIDs.get(i).toString();
-            GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived, tenantID);
+            GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived);
             if (deliverable != null)
               {
                 deliverableObjects.add(deliverable);
@@ -13590,7 +13590,7 @@ public class GUIManager
         for (int i = 0; i < voucherTypeIDs.size(); i++)
           {
             String voucherTypeID = voucherTypeIDs.get(i).toString();
-            GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, includeArchived, tenantID);
+            GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, includeArchived);
             if (voucherType != null)
               {
                 voucherTypeObjects.add(voucherType);
@@ -13648,7 +13648,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, includeArchived, tenantID);
+    GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, includeArchived);
     JSONObject voucherTypeJSON = voucherTypeService.generateResponseJSON(voucherType, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -13709,7 +13709,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingVoucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, tenantID);
+    GUIManagedObject existingVoucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
 
     /*****************************************
     *
@@ -13752,7 +13752,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            voucherTypeService.putVoucherType(voucherType, (existingVoucherType == null), userID, tenantID);
+            voucherTypeService.putVoucherType(voucherType, (existingVoucherType == null), userID);
 
             revalidateVouchers(now, tenantID);
           }
@@ -13783,7 +13783,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            voucherTypeService.putVoucherType(incompleteObject, (existingVoucherType == null), userID, tenantID);
+            voucherTypeService.putVoucherType(incompleteObject, (existingVoucherType == null), userID);
           }
         //
         //  log
@@ -13850,7 +13850,7 @@ public class GUIManager
       {
         String voucherTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
         voucherTypeIDs.add(voucherTypeID);
-        GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, tenantID);
+        GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
 
         if (voucherType != null && (force || !voucherType.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -13874,7 +13874,7 @@ public class GUIManager
     for (int i = 0; i < voucherTypeIDs.size(); i++)
       {
         String voucherTypeID = voucherTypeIDs.get(i).toString();
-        GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, tenantID);
+        GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
         
         if (voucherType != null && (force || !voucherType.getReadOnly()))
           {
@@ -13957,7 +13957,7 @@ public class GUIManager
       {
 
         String voucherTypeID = voucherTypeIDs.get(i).toString();
-        GUIManagedObject existingElement = voucherTypeService.getStoredVoucherType(voucherTypeID, tenantID);
+        GUIManagedObject existingElement = voucherTypeService.getStoredVoucherType(voucherTypeID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(voucherTypeID);
@@ -13978,7 +13978,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                voucherTypeService.putVoucherType(voucherType, (existingElement == null), userID, tenantID);
+                voucherTypeService.putVoucherType(voucherType, (existingElement == null), userID);
 
                 revalidateVouchers(now, tenantID);
 
@@ -13995,7 +13995,7 @@ public class GUIManager
                 // store
                 //
 
-                voucherTypeService.putVoucherType(incompleteObject, (existingElement == null), userID, tenantID);
+                voucherTypeService.putVoucherType(incompleteObject, (existingElement == null), userID);
 
                 //
                 // log
@@ -14068,7 +14068,7 @@ public class GUIManager
         for (int i = 0; i < voucherIDs.size(); i++)
           {
             String voucherID = voucherIDs.get(i).toString();
-            GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID, includeArchived, tenantID);
+            GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID, includeArchived);
             if (voucher != null)
               {
                 voucherObjects.add(voucher);
@@ -14138,7 +14138,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject voucher = voucherService.getStoredVoucherWithCurrentStocks(voucherID, includeArchived, tenantID);
+    GUIManagedObject voucher = voucherService.getStoredVoucherWithCurrentStocks(voucherID, includeArchived);
     JSONObject voucherJSON = voucherService.generateResponseJSON(voucher, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -14200,7 +14200,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingVoucher = voucherService.getStoredVoucher(voucherID, tenantID);
+    GUIManagedObject existingVoucher = voucherService.getStoredVoucher(voucherID);
 
     /*****************************************
     *
@@ -14270,7 +14270,7 @@ public class GUIManager
       {
 
         // get the voucher type to instantiate
-        VoucherType voucherType = voucherTypeService.getActiveVoucherType(JSONUtilities.decodeString(jsonRoot,"voucherTypeId",true),now, tenantID);
+        VoucherType voucherType = voucherTypeService.getActiveVoucherType(JSONUtilities.decodeString(jsonRoot,"voucherTypeId",true),now);
         if(log.isDebugEnabled()) log.debug("will use voucherType "+voucherType);
 
         // voucherType issue
@@ -14289,7 +14289,7 @@ public class GUIManager
           if(log.isDebugEnabled()) log.debug("will put personal voucher "+voucher);
         }
 
-        voucher.validate(voucherTypeService,uploadedFileService,now, tenantID);
+        voucher.validate(voucherTypeService,uploadedFileService,now);
 
 
         /*****************************************
@@ -14300,7 +14300,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            voucherService.putVoucher(voucher, (existingVoucher == null), userID, tenantID);
+            voucherService.putVoucher(voucher, (existingVoucher == null), userID);
             revalidateOffers(now, tenantID);
           }
 
@@ -14329,7 +14329,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            voucherService.putVoucher(incompleteObject, (existingVoucher == null), userID, tenantID);
+            voucherService.putVoucher(incompleteObject, (existingVoucher == null), userID);
             revalidateOffers(now, tenantID);
           }
 
@@ -14397,7 +14397,7 @@ public class GUIManager
       {
         String voucherID = JSONUtilities.decodeString(jsonRoot, "id", false);
         voucherIDs.add(voucherID);
-        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID, tenantID);
+        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
         if (voucher != null && (force || !voucher.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (voucher != null)
@@ -14416,7 +14416,7 @@ public class GUIManager
     for (int i = 0; i < voucherIDs.size(); i++)
       {
         String voucherID = voucherIDs.get(i).toString();
-        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID, tenantID);
+        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
         
         if (voucher != null && (force || !voucher.getReadOnly()))
           {
@@ -14491,7 +14491,7 @@ public class GUIManager
       {
 
         String voucherID = voucherIDs.get(i).toString();
-        GUIManagedObject existingElement = voucherService.getStoredVoucher(voucherID, tenantID);
+        GUIManagedObject existingElement = voucherService.getStoredVoucher(voucherID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(voucherID);
@@ -14503,7 +14503,7 @@ public class GUIManager
 
                 // get the voucher type to instantiate
                 VoucherType voucherType = voucherTypeService
-                    .getActiveVoucherType(JSONUtilities.decodeString(elementRoot, "voucherTypeId", true), now, tenantID);
+                    .getActiveVoucherType(JSONUtilities.decodeString(elementRoot, "voucherTypeId", true), now);
                 if (log.isDebugEnabled())
                   log.debug("will use voucherType " + voucherType);
 
@@ -14521,14 +14521,14 @@ public class GUIManager
                       log.debug("will put personal voucher " + voucher);
                   }
 
-                voucher.validate(voucherTypeService, uploadedFileService, now, tenantID);
+                voucher.validate(voucherTypeService, uploadedFileService, now);
 
                 /*****************************************
                  *
                  * store
                  *
                  *****************************************/
-                voucherService.putVoucher(voucher, (existingElement == null), userID, tenantID);
+                voucherService.putVoucher(voucher, (existingElement == null), userID);
                 revalidateOffers(now, tenantID);
 
               }
@@ -14544,7 +14544,7 @@ public class GUIManager
                 // store
                 //
 
-                voucherService.putVoucher(incompleteObject, (existingElement == null), userID, tenantID);
+                voucherService.putVoucher(incompleteObject, (existingElement == null), userID);
                 revalidateOffers(now, tenantID);
 
                 //
@@ -14652,7 +14652,7 @@ public class GUIManager
         for (int i = 0; i < templateIDs.size(); i++)
           {
             String templateID = templateIDs.get(i).toString();
-            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived, tenantID);
+            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
             if (template != null)
               {
                 templateObjects.add(template);
@@ -14710,7 +14710,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived, tenantID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
@@ -14772,7 +14772,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
     existingTemplate = (existingTemplate != null && existingTemplate.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate) ? existingTemplate : null;
 
     /*****************************************
@@ -14835,7 +14835,7 @@ public class GUIManager
               {
                 MailTemplate readOnlyCopy = (MailTemplate) SubscriberMessageTemplate.newReadOnlyCopy(mailTemplate, subscriberMessageTemplateService, tenantID);
                 mailTemplate.setReadOnlyCopyID(readOnlyCopy.getMailTemplateID());
-                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null, tenantID);
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
           }
         else if (existingTemplate.getAccepted())
@@ -14852,7 +14852,7 @@ public class GUIManager
           {
 
             subscriberMessageTemplateService.putSubscriberMessageTemplate(mailTemplate, (existingTemplate == null),
-                userID, tenantID);
+                userID);
           }
         /*****************************************
         *
@@ -14880,7 +14880,7 @@ public class GUIManager
         if (!dryRun)
           {
             subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
-                (existingTemplate == null), userID, tenantID);
+                (existingTemplate == null), userID);
           }
         //
         //  log
@@ -14939,7 +14939,7 @@ public class GUIManager
         String mailTemplateID = JSONUtilities.decodeString(jsonRoot, "id", false);
         mailTemplateIDs.add(mailTemplateID);
         GUIManagedObject mailTemplate = subscriberMessageTemplateService
-            .getStoredSubscriberMessageTemplate(mailTemplateID, tenantID);
+            .getStoredSubscriberMessageTemplate(mailTemplateID);
 
         if (mailTemplate != null && (force || !mailTemplate.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -14959,7 +14959,7 @@ public class GUIManager
     for (int i = 0; i < mailTemplateIDs.size(); i++)
       {
         String mailTemplateID = mailTemplateIDs.get(i).toString();
-        GUIManagedObject mailTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(mailTemplateID, tenantID);
+        GUIManagedObject mailTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(mailTemplateID);
         
         if (mailTemplate != null && (force || !mailTemplate.getReadOnly()))
           {
@@ -15038,7 +15038,7 @@ public class GUIManager
 
         String templateID = templateIDs.get(i).toString();
         GUIManagedObject existingElement = subscriberMessageTemplateService
-            .getStoredSubscriberMessageTemplate(templateID, tenantID);
+            .getStoredSubscriberMessageTemplate(templateID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(templateID);
@@ -15060,7 +15060,7 @@ public class GUIManager
                  *
                  *****************************************/
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(mailTemplate, (existingElement == null),
-                    userID, tenantID);
+                    userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -15077,7 +15077,7 @@ public class GUIManager
                 //
 
                 subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // log
@@ -15122,7 +15122,7 @@ public class GUIManager
         for (int i = 0; i < templateIDs.size(); i++)
           {
             String templateID = templateIDs.get(i).toString();
-            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived, tenantID);
+            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
             if (template != null)
               {
                 templateObjects.add(template);
@@ -15180,7 +15180,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived, tenantID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
@@ -15242,7 +15242,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
     existingTemplate = (existingTemplate != null && existingTemplate.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? existingTemplate : null;
 
     /*****************************************
@@ -15305,7 +15305,7 @@ public class GUIManager
               {
                 SMSTemplate readOnlyCopy = (SMSTemplate) SubscriberMessageTemplate.newReadOnlyCopy(smsTemplate, subscriberMessageTemplateService, tenantID);
                 smsTemplate.setReadOnlyCopyID(readOnlyCopy.getSMSTemplateID());
-                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null, tenantID);
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
           }
         else if (existingTemplate.getAccepted())
@@ -15322,7 +15322,7 @@ public class GUIManager
           {
 
             subscriberMessageTemplateService.putSubscriberMessageTemplate(smsTemplate, (existingTemplate == null),
-                userID, tenantID);
+                userID);
           }
         /*****************************************
         *
@@ -15350,7 +15350,7 @@ public class GUIManager
         if (!dryRun)
           {
             subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
-                (existingTemplate == null), userID, tenantID);
+                (existingTemplate == null), userID);
           }
         //
         //  log
@@ -15409,7 +15409,7 @@ public class GUIManager
         String smsTemplateID = JSONUtilities.decodeString(jsonRoot, "id", false);
         smsTemplateIDs.add(smsTemplateID);
         GUIManagedObject smsTemplate = subscriberMessageTemplateService
-            .getStoredSubscriberMessageTemplate(smsTemplateID, tenantID);
+            .getStoredSubscriberMessageTemplate(smsTemplateID);
 
         if (smsTemplate != null && (force || !smsTemplate.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -15429,7 +15429,7 @@ public class GUIManager
     for (int i = 0; i < smsTemplateIDs.size(); i++)
       {
         String smsTemplateID = smsTemplateIDs.get(i).toString();
-        GUIManagedObject smsTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(smsTemplateID, tenantID);
+        GUIManagedObject smsTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(smsTemplateID);
         
         if (smsTemplate != null && (force || !smsTemplate.getReadOnly()))
           {
@@ -15507,7 +15507,7 @@ public class GUIManager
       {
 
         String templateID = templateIDs.get(i).toString();
-        GUIManagedObject existingElement = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+        GUIManagedObject existingElement = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(templateID);
@@ -15530,7 +15530,7 @@ public class GUIManager
                  *****************************************/
 
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(smsTemplate, (existingElement == null),
-                    userID, tenantID);
+                    userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -15547,7 +15547,7 @@ public class GUIManager
                 //
 
                 subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // log
@@ -15601,7 +15601,7 @@ public class GUIManager
         for (int i = 0; i < templateIDs.size(); i++)
           {
             String templateID = templateIDs.get(i).toString();
-            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived, tenantID);
+            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
             if (template != null)
               {
                 templateObjects.add(template);
@@ -15662,7 +15662,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived, tenantID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
     template = (template != null && (template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate)) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
@@ -15725,7 +15725,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
     existingTemplate = (existingTemplate != null && existingTemplate.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? existingTemplate : null;
 
     /*****************************************
@@ -15788,7 +15788,7 @@ public class GUIManager
               {
                 PushTemplate readOnlyCopy = (PushTemplate) SubscriberMessageTemplate.newReadOnlyCopy(pushTemplate, subscriberMessageTemplateService, tenantID);
                 pushTemplate.setReadOnlyCopyID(readOnlyCopy.getPushTemplateID());
-                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null, tenantID);
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
           }
         else if (existingTemplate.getAccepted())
@@ -15805,7 +15805,7 @@ public class GUIManager
           {
 
             subscriberMessageTemplateService.putSubscriberMessageTemplate(pushTemplate, (existingTemplate == null),
-                userID, tenantID);
+                userID);
           }
         /*****************************************
         *
@@ -15833,7 +15833,7 @@ public class GUIManager
         if (!dryRun)
           {
             subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
-                (existingTemplate == null), userID, tenantID);
+                (existingTemplate == null), userID);
           }
         //
         //  log
@@ -15891,7 +15891,7 @@ public class GUIManager
       {
         String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
         templateIDs.add(templateID);
-        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
 
         if (template != null && (force || !template.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -15911,7 +15911,7 @@ public class GUIManager
     for (int i = 0; i < templateIDs.size(); i++)
       {
         String templateID = templateIDs.get(i).toString();
-        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
         
         if (template != null && (force || !template.getReadOnly()))
           {
@@ -15990,7 +15990,7 @@ public class GUIManager
 
         String templateID = templateIDs.get(i).toString();
         GUIManagedObject existingElement = subscriberMessageTemplateService
-            .getStoredSubscriberMessageTemplate(templateID, tenantID);
+            .getStoredSubscriberMessageTemplate(templateID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(templateID);
@@ -16012,7 +16012,7 @@ public class GUIManager
                  *
                  *****************************************/
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(pushTemplate, (existingElement == null),
-                    userID, tenantID);
+                    userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -16029,7 +16029,7 @@ public class GUIManager
                 //
 
                 subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // log
@@ -16083,7 +16083,7 @@ public class GUIManager
         for (int i = 0; i < templateIDs.size(); i++)
           {
             String templateID = templateIDs.get(i).toString();
-            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived, tenantID);
+            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
             if (template != null)
               {
                 templateObjects.add(template);
@@ -16146,7 +16146,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived, tenantID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
@@ -16208,7 +16208,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
     existingTemplate = (existingTemplate != null && existingTemplate.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate) ? existingTemplate : null;
 
     /*****************************************
@@ -16271,7 +16271,7 @@ public class GUIManager
               {
                 DialogTemplate readOnlyCopy = (DialogTemplate) SubscriberMessageTemplate.newReadOnlyCopy(dialogTemplate, subscriberMessageTemplateService, tenantID);
                 dialogTemplate.setReadOnlyCopyID(readOnlyCopy.getDialogTemplateID());
-                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null, tenantID);
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
           }
         else if (existingTemplate.getAccepted())
@@ -16288,7 +16288,7 @@ public class GUIManager
           {
 
             subscriberMessageTemplateService.putSubscriberMessageTemplate(dialogTemplate, (existingTemplate == null),
-                userID, tenantID);
+                userID);
           }
         /*****************************************
         *
@@ -16316,7 +16316,7 @@ public class GUIManager
         if (!dryRun)
           {
             subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
-                (existingTemplate == null), userID, tenantID);
+                (existingTemplate == null), userID);
           }
         //
         //  log
@@ -16374,7 +16374,7 @@ public class GUIManager
       {
         String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
         templateIDs.add(templateID);
-        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
 
         if (template != null && (force || !template.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -16394,7 +16394,7 @@ public class GUIManager
     for (int i = 0; i < templateIDs.size(); i++)
       {
         String templateID = templateIDs.get(i).toString();
-        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, tenantID);
+        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
         
         if (template != null && (force || !template.getReadOnly()))
           {
@@ -16475,7 +16475,7 @@ public class GUIManager
 
         String templateID = templateIDs.get(i).toString();
         GUIManagedObject existingElement = subscriberMessageTemplateService
-            .getStoredSubscriberMessageTemplate(templateID, tenantID);
+            .getStoredSubscriberMessageTemplate(templateID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(templateID);
@@ -16497,7 +16497,7 @@ public class GUIManager
                  *
                  *****************************************/
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(dialogTemplate, (existingElement == null),
-                    userID, tenantID);
+                    userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -16514,7 +16514,7 @@ public class GUIManager
                 //
 
                 subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // log
@@ -16600,7 +16600,7 @@ public class GUIManager
         for (int i = 0; i < paymentMeanIDs.size(); i++)
           {
             String paymentMeanID = paymentMeanIDs.get(i).toString();
-            GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, includeArchived, tenantID);
+            GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, includeArchived);
             if (paymentMean != null)
               {
                 paymentMeanObjects.add(paymentMean);
@@ -16678,7 +16678,7 @@ public class GUIManager
               }
             else
               {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(loyaltyProgramService, segmentationDimensionService, targetService, pointService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader, tenantID);
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(loyaltyProgramService, segmentationDimensionService, targetService, pointService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           }
@@ -17216,7 +17216,7 @@ public class GUIManager
                             if(request instanceof PurchaseFulfillmentRequest)
                               {
                                 PurchaseFulfillmentRequest odrRequest = (PurchaseFulfillmentRequest) request;
-                                Offer offer = (Offer) offerService.getStoredGUIManagedObject(odrRequest.getOfferID(), tenantID);
+                                Offer offer = (Offer) offerService.getStoredGUIManagedObject(odrRequest.getOfferID());
                                 if(offer != null)
                                   {
                                     if(offer.getOfferSalesChannelsAndPrices() != null)
@@ -17638,7 +17638,7 @@ public class GUIManager
                         journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                         journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                         journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                        journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService, tenantID)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService, tenantID)):"");
+                        journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
                         journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -17647,7 +17647,7 @@ public class GUIManager
                             List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
                             JSONObject result = new JSONObject();
                             
-                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime(), tenantID);
+                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
                             result.put("active", journeyObjective.getActive());
                             result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
                             result.put("display", journeyObjective.getJSONRepresentation().get("display"));
@@ -17939,7 +17939,7 @@ public class GUIManager
                         campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
                         campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
                         campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                        campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService, tenantID)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService, tenantID)):"");
+                        campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
                         campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -17948,7 +17948,7 @@ public class GUIManager
                             List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
                             JSONObject result = new JSONObject();
                             
-                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime(), tenantID);
+                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
                             result.put("active", journeyObjective.getActive());
                             result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
                             result.put("display", journeyObjective.getJSONRepresentation().get("display"));
@@ -18102,7 +18102,7 @@ public class GUIManager
           Map<String, PointBalance> pointBalances = baseSubscriberProfile.getPointBalances();
           for (String pointID : pointBalances.keySet())
             {
-              Point point = pointService.getActivePoint(pointID, now, tenantID);
+              Point point = pointService.getActivePoint(pointID, now);
               if (point != null && (searchedPoint == null || searchedPoint.getPointID().equals(point.getPointID())))
                 {
                   HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
@@ -18211,7 +18211,7 @@ public class GUIManager
               //  check loyalty program still exist
               //
 
-              LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now, tenantID);
+              LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
               if (loyaltyProgram != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)))
                 {
 
@@ -18248,7 +18248,7 @@ public class GUIManager
                       
                       LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
                       String statusPointID = loyaltyProgramPoints.getStatusPointsID();
-                      Point statusPoint = pointService.getActivePoint(statusPointID, now, tenantID);
+                      Point statusPoint = pointService.getActivePoint(statusPointID, now);
                       if (statusPoint != null)
                         {
                           loyaltyProgramPresentation.put("statusPointID", statusPoint.getPointID());
@@ -18270,7 +18270,7 @@ public class GUIManager
                       //
 
                       String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
-                      Point rewardPoint = pointService.getActivePoint(rewardPointID, now, tenantID);
+                      Point rewardPoint = pointService.getActivePoint(rewardPointID, now);
                       if (rewardPoint != null)
                         {
                           loyaltyProgramPresentation.put("rewardsPointID", rewardPoint.getPointID());
@@ -18497,7 +18497,7 @@ public class GUIManager
                             List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
                             JSONObject result = new JSONObject();
                             
-                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime(), tenantID);
+                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
                             result.put("active", journeyObjective.getActive());
                             result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
                             result.put("display", journeyObjective.getJSONRepresentation().get("display"));
@@ -18882,7 +18882,7 @@ public class GUIManager
       {
         JSONObject channel = communicationChannel.generateResponseJSON(fullDetails, now);        
         
-        CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime(), tenantID);
+        CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime());
         
         if(timeWindow != null) 
           {
@@ -18946,7 +18946,7 @@ public class GUIManager
     CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
     
-    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, SystemTime.getCurrentTime(), tenantID);
+    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, SystemTime.getCurrentTime());
     if(timeWindow == null)
       {
         // use the default timeWindow
@@ -19016,7 +19016,7 @@ public class GUIManager
         *
         *****************************************/
         
-        CommunicationChannelTimeWindow existingCommunicationChannelTimeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, now, tenantID);
+        CommunicationChannelTimeWindow existingCommunicationChannelTimeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, now);
         
         if(jsonRoot.get("notificationDailyWindows") != null) {
           // let GUIMangedObject This (this is a F$$$ hack)
@@ -19041,7 +19041,7 @@ public class GUIManager
           *
           *****************************************/
 
-          communicationChannelTimeWindowService.putCommunicationChannelTimeWindow(communicationChannelTimeWindow, (existingCommunicationChannelTimeWindow == null), userID, tenantID);
+          communicationChannelTimeWindowService.putCommunicationChannelTimeWindow(communicationChannelTimeWindow, (existingCommunicationChannelTimeWindow == null), userID);
           
         }else {
           // delete this time window for the associated channel
@@ -19109,7 +19109,7 @@ public class GUIManager
         for (int i = 0; i < communicationChannelBlackoutIDs.size(); i++)
           {
             String communicationChannelBlackoutID = communicationChannelBlackoutIDs.get(i).toString();
-            GUIManagedObject communicationChannelBlackout = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutID, includeArchived, tenantID);
+            GUIManagedObject communicationChannelBlackout = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutID, includeArchived);
             if (communicationChannelBlackout != null)
               {
                 communicationChannelBlackoutObjects.add(communicationChannelBlackout);
@@ -19168,7 +19168,7 @@ public class GUIManager
     *
     ***************************************************************/
 
-    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID, includeArchived, tenantID);
+    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID, includeArchived);
     JSONObject communicationChannelBlackoutPeriodJSON = communicationChannelBlackoutService.generateResponseJSON(communicationChannelBlackoutPeriod, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -19229,7 +19229,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingCommunicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID, tenantID);
+    GUIManagedObject existingCommunicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID);
 
     /*****************************************
     *
@@ -19273,7 +19273,7 @@ public class GUIManager
           {
 
             communicationChannelBlackoutService.putCommunicationChannelBlackout(communicationChannelBlackoutPeriod,
-                (existingCommunicationChannelBlackoutPeriod == null), userID, tenantID);
+                (existingCommunicationChannelBlackoutPeriod == null), userID);
           }
         /*****************************************
         *
@@ -19303,7 +19303,7 @@ public class GUIManager
           {
 
             communicationChannelBlackoutService.putCommunicationChannelBlackout(incompleteObject,
-                (existingCommunicationChannelBlackoutPeriod == null), userID, tenantID);
+                (existingCommunicationChannelBlackoutPeriod == null), userID);
           }
         //
         //  log
@@ -19362,7 +19362,7 @@ public class GUIManager
         String blackoutPeriodsID = JSONUtilities.decodeString(jsonRoot, "id", false);
         blackoutPeriodsIDS.add(blackoutPeriodsID);
         GUIManagedObject blackoutPeriod = communicationChannelBlackoutService
-            .getStoredCommunicationChannelBlackout(blackoutPeriodsID, tenantID);
+            .getStoredCommunicationChannelBlackout(blackoutPeriodsID);
 
         if (blackoutPeriod != null && (force || !blackoutPeriod.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -19384,7 +19384,7 @@ public class GUIManager
     for (int i = 0; i < blackoutPeriodsIDS.size(); i++)
       {
         String blackoutPeriodID = blackoutPeriodsIDS.get(i).toString();
-        GUIManagedObject blackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutPeriodID, tenantID);
+        GUIManagedObject blackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutPeriodID);
         if (blackoutPeriod != null && (force || !blackoutPeriod.getReadOnly()))
           {
             blackoutPeriods.add(blackoutPeriod);
@@ -19460,7 +19460,7 @@ public class GUIManager
       {
 
         String blackoutID = blackoutIDs.get(i).toString();
-        GUIManagedObject existingElement = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutID, tenantID);
+        GUIManagedObject existingElement = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(blackoutID);
@@ -19484,7 +19484,7 @@ public class GUIManager
                  *
                  *****************************************/
                 communicationChannelBlackoutService.putCommunicationChannelBlackout(communicationChannelBlackoutPeriod,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -19500,7 +19500,7 @@ public class GUIManager
                 //
 
                 communicationChannelBlackoutService.putCommunicationChannelBlackout(incompleteObject,
-                    (existingElement == null), userID, tenantID);
+                    (existingElement == null), userID);
 
                 //
                 // log
@@ -19546,7 +19546,7 @@ public class GUIManager
         for (int i = 0; i < resellerIDs.size(); i++)
           {
             String resellerID = resellerIDs.get(i).toString();
-            GUIManagedObject reseller = resellerService.getStoredReseller(resellerID, includeArchived, tenantID);
+            GUIManagedObject reseller = resellerService.getStoredReseller(resellerID, includeArchived);
             if (reseller != null)
               {
                 resellerObjects.add(reseller);
@@ -19605,7 +19605,7 @@ public class GUIManager
     *
     ***************************************************************/
 
-    GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID, includeArchived, tenantID);
+    GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID, includeArchived);
     JSONObject resellerJSON = resellerService.generateResponseJSON(reseller, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -19670,7 +19670,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingReseller= resellerService.getStoredGUIManagedObject(resellerID, tenantID);
+    GUIManagedObject existingReseller= resellerService.getStoredGUIManagedObject(resellerID);
     
     /*****************************************
     *
@@ -19742,7 +19742,7 @@ public class GUIManager
         *****************************************/
         if (!dryRun)
           {
-           resellerService.putReseller(reseller, (existingReseller == null), userID, resellerService, tenantID);
+           resellerService.putReseller(reseller, (existingReseller == null), userID, resellerService);
           }
 
         /*****************************************
@@ -19771,7 +19771,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            resellerService.putReseller(incompleteObject, (existingReseller == null), userID, resellerService, tenantID);
+            resellerService.putReseller(incompleteObject, (existingReseller == null), userID, resellerService);
           }
 
         //
@@ -19812,7 +19812,7 @@ public class GUIManager
       {
 
         String resellerID = resellerIDs.get(i).toString();
-        GUIManagedObject existingElement = resellerService.getStoredReseller(resellerID, tenantID);
+        GUIManagedObject existingElement = resellerService.getStoredReseller(resellerID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(resellerID);
@@ -19829,7 +19829,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                resellerService.putReseller(reseller, (existingElement == null), userID, resellerService, tenantID);
+                resellerService.putReseller(reseller, (existingElement == null), userID, resellerService);
                 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -19843,7 +19843,7 @@ public class GUIManager
                 //
                 // store
                 //
-                resellerService.putReseller(incompleteObject, (existingElement == null), userID, resellerService, tenantID);
+                resellerService.putReseller(incompleteObject, (existingElement == null), userID, resellerService);
 
                 //
                 // log
@@ -19890,7 +19890,7 @@ public class GUIManager
         for (int i = 0; i < segmentContactPolicyIDs.size(); i++)
           {
             String segmentContactPolicyID = segmentContactPolicyIDs.get(i).toString();
-            GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID, includeArchived, tenantID);
+            GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID, includeArchived);
             if (segmentContactPolicy != null)
               {
                 segmentContactPolicyObjects.add(segmentContactPolicy);
@@ -19961,7 +19961,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingSegmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(SegmentContactPolicy.singletonID, tenantID);
+    GUIManagedObject existingSegmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(SegmentContactPolicy.singletonID);
 
     /*****************************************
     *
@@ -20004,7 +20004,7 @@ public class GUIManager
         if (!dryRun)
           {
             segmentContactPolicyService.putSegmentContactPolicy(segmentContactPolicy, contactPolicyService,
-                segmentationDimensionService, (existingSegmentContactPolicy == null), userID, tenantID);
+                segmentationDimensionService, (existingSegmentContactPolicy == null), userID);
           }
         /*****************************************
         *
@@ -20033,7 +20033,7 @@ public class GUIManager
         if (!dryRun)
           {
             segmentContactPolicyService.putSegmentContactPolicy(incompleteObject, contactPolicyService,
-                segmentationDimensionService, (existingSegmentContactPolicy == null), userID, tenantID);
+                segmentationDimensionService, (existingSegmentContactPolicy == null), userID);
           }
         //
         //  log
@@ -20085,7 +20085,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID, includeArchived, tenantID);
+    GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID, includeArchived);
     JSONObject segmentContactPolicyJSON = segmentContactPolicyService.generateResponseJSON(segmentContactPolicy, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -20144,7 +20144,7 @@ public class GUIManager
         String segmentContactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", false);
         segmentContactPolicyIDs.add(segmentContactPolicyID);
         GUIManagedObject segmentContactPolicy = segmentContactPolicyService
-            .getStoredSegmentContactPolicy(segmentContactPolicyID, tenantID);
+            .getStoredSegmentContactPolicy(segmentContactPolicyID);
 
         if (segmentContactPolicy != null && (force || !segmentContactPolicy.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -20164,7 +20164,7 @@ public class GUIManager
     for (int i = 0; i < segmentContactPolicyIDs.size(); i++)
       {
         String segmentContactPolicyID = segmentContactPolicyIDs.get(i).toString();
-        GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID, tenantID);
+        GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID);
         
         if (segmentContactPolicy != null && (force || !segmentContactPolicy.getReadOnly()))
           {
@@ -20242,7 +20242,7 @@ public class GUIManager
 
         String segmentContactPolicyID = segmentContactPolicyIDs.get(i).toString();
         GUIManagedObject existingElement = segmentContactPolicyService
-            .getStoredSegmentContactPolicy(segmentContactPolicyID, tenantID);
+            .getStoredSegmentContactPolicy(segmentContactPolicyID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(segmentContactPolicyID);
@@ -20264,7 +20264,7 @@ public class GUIManager
                  *
                  *****************************************/
                 segmentContactPolicyService.putSegmentContactPolicy(segmentContactPolicy, contactPolicyService,
-                    segmentationDimensionService, (existingElement == null), userID, tenantID);
+                    segmentationDimensionService, (existingElement == null), userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -20280,7 +20280,7 @@ public class GUIManager
                 //
 
                 segmentContactPolicyService.putSegmentContactPolicy(incompleteObject, contactPolicyService,
-                    segmentationDimensionService, (existingElement == null), userID, tenantID);
+                    segmentationDimensionService, (existingElement == null), userID);
 
                 //
                 // log
@@ -20527,7 +20527,7 @@ public class GUIManager
     String deliveryRequestID = zuks.getStringKey();
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      GUIManagedObject pointObject = pointService.getStoredPoint(bonusID, tenantID);
+      GUIManagedObject pointObject = pointService.getStoredPoint(bonusID);
       com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit validityPeriodType = null;
       int validityPeriod = 0;
       
@@ -20681,7 +20681,7 @@ public class GUIManager
       {
         String resellerID = JSONUtilities.decodeString(jsonRoot, "id", false);
         resellerIDs.add(resellerID);
-        GUIManagedObject reseller = resellerService.getStoredReseller(resellerID, tenantID);
+        GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
         if (reseller != null && (force || !reseller.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (reseller != null)
@@ -20700,7 +20700,7 @@ public class GUIManager
     for (int i = 0; i < resellerIDs.size(); i++)
       {
         String resellerID = resellerIDs.get(i).toString();
-        GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID, tenantID);
+        GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID);
 
         if (reseller != null && (force || !reseller.getReadOnly()))
           {
@@ -20792,7 +20792,7 @@ public class GUIManager
                      *****************************************/
 
                     salesChannelService.putSalesChannel(newSalesChannel, callingChannelService, resellerService, true,
-                        userID, tenantID);
+                        userID);
 
                     /*****************************************
                      *
@@ -20873,7 +20873,7 @@ public class GUIManager
     *
     *****************************************/
 
-    SubscriberMessageTemplate template = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
+    SubscriberMessageTemplate template = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -20985,7 +20985,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject offer = offerService.getStoredOffer(offerID, tenantID);
+    GUIManagedObject offer = offerService.getStoredOffer(offerID);
     JSONObject offerJSON = offerService.generateResponseJSON(offer, true, SystemTime.getCurrentTime());
 
     //
@@ -21038,7 +21038,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject product = productService.getStoredProduct(productID, tenantID);
+    GUIManagedObject product = productService.getStoredProduct(productID);
     JSONObject productJSON = productService.generateResponseJSON(product, true, SystemTime.getCurrentTime());
 
     //
@@ -21091,7 +21091,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID, tenantID);
+    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
     JSONObject presentationStrategyJSON = presentationStrategyService.generateResponseJSON(presentationStrategy, true, SystemTime.getCurrentTime());
 
     //
@@ -21144,7 +21144,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, tenantID);
+    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
     JSONObject scoringStrategyJSON = scoringStrategyService.generateResponseJSON(scoringStrategy, true, SystemTime.getCurrentTime());
 
     //
@@ -21197,7 +21197,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, tenantID);
+    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
     JSONObject callingChannelJSON = callingChannelService.generateResponseJSON(callingChannel, true, SystemTime.getCurrentTime());
 
     //
@@ -21250,7 +21250,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, tenantID);
+    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
     JSONObject salesChannelJSON = salesChannelService.generateResponseJSON(salesChannel, true, SystemTime.getCurrentTime());
 
     //
@@ -21307,7 +21307,7 @@ public class GUIManager
        
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
     
-    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime(), tenantID);
+    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime());
     
     if(timeWindow != null) 
       {
@@ -21365,7 +21365,7 @@ public class GUIManager
     *
     ***************************************************************/
 
-    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID, tenantID);
+    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID);
     JSONObject communicationChannelBlackoutPeriodJSON = communicationChannelBlackoutService.generateResponseJSON(communicationChannelBlackoutPeriod, true, SystemTime.getCurrentTime());
 
     //
@@ -21418,7 +21418,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, tenantID);
+    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
     JSONObject contactPolicyJSON = contactPolicyService.generateResponseJSON(contactPolicy, true, SystemTime.getCurrentTime());
 
     //
@@ -21471,7 +21471,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID, tenantID);
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
     JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
     //
@@ -21536,7 +21536,7 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, tenantID);
+    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
     JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, now);
 
     //
@@ -21598,7 +21598,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, tenantID);
+    GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
     JSONObject productTypeJSON = productTypeService.generateResponseJSON(productType, true, SystemTime.getCurrentTime());
 
     //
@@ -21651,7 +21651,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, tenantID);
+    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
     JSONObject offerObjectiveJSON = offerObjectiveService.generateResponseJSON(offerObjective, true, SystemTime.getCurrentTime());
 
     //
@@ -21745,7 +21745,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    CommunicationChannelTimeWindow notifWindows = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow("default", SystemTime.getCurrentTime(), tenantID);
+    CommunicationChannelTimeWindow notifWindows = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow("default", SystemTime.getCurrentTime());
     response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
     return JSONUtilities.encodeObject(response);
   }
@@ -21780,7 +21780,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
     JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
 
     //
@@ -21833,7 +21833,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, tenantID);
+    GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
     JSONObject sourceAddressJSON = sourceAddressService.generateResponseJSON(sourceAddress, true, SystemTime.getCurrentTime());
 
     //
@@ -22008,7 +22008,7 @@ public class GUIManager
     *
     *****************************************/
     if (supplierID != null) {
-      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID, tenantID);
+      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
       if (supplierObject instanceof Supplier) {
         supplier = (Supplier) supplierObject;
       }
@@ -22085,7 +22085,7 @@ public class GUIManager
               response.put("responseCode", str);
               return JSONUtilities.encodeObject(response);
             }
-          PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID, tenantID);
+          PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
           if (presentationStrategy == null)
             {
               String str = "Bad strategy : unknown id : "+presentationStrategyID;
@@ -22349,7 +22349,7 @@ public class GUIManager
           String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
           String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
           String resellerID = "";
-          Offer offer = offerService.getActiveOffer(offerID, now, tenantID);
+          Offer offer = offerService.getActiveOffer(offerID, now);
           deliveryRequestID = purchaseOffer(subscriberProfile,true, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
 
           // Redeem the token : Send an AcceptanceLog to EvolutionEngine
@@ -22485,7 +22485,7 @@ public class GUIManager
       } 
     else
       {
-        Offer offer = offerService.getActiveOffer(offerID, now, tenantID);
+        Offer offer = offerService.getActiveOffer(offerID, now);
         if (offer == null)
           {
             String str = "Invalid Offer";
@@ -22493,7 +22493,7 @@ public class GUIManager
             response.put("responseCode", str);
             return JSONUtilities.encodeObject(response);
           }
-        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now, tenantID);
+        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now);
         if (salesChannel == null)
           {
             String str = "Invalid SalesChannel";
@@ -22683,7 +22683,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
          *
          *****************************************/
 
-        List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, tenantID)).collect(Collectors.toList());
+        List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService)).collect(Collectors.toList());
         response.put("offers", JSONUtilities.encodeArray(offersJson));
         response.put("responseCode", "ok");
       }
@@ -22797,7 +22797,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         for (int i = 0; i < sourceAddressIDs.size(); i++)
           {
             String sourceAddressID = sourceAddressIDs.get(i).toString();
-            GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, includeArchived, tenantID);
+            GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, includeArchived);
             if (sourceAddress != null)
               {
                 sourceAddressObjects.add(sourceAddress);
@@ -22863,7 +22863,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *
     *****************************************/
 
-    GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, includeArchived, tenantID);
+    GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, includeArchived);
     JSONObject sourceAddressJSON = sourceAddressService.generateResponseJSON(sourceAddress, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -22924,7 +22924,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *
     *****************************************/
 
-    GUIManagedObject existingSourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, tenantID);
+    GUIManagedObject existingSourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
 
     /*****************************************
     *
@@ -22974,7 +22974,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         if (!dryRun)
           {
 
-            sourceAddressService.putSourceAddress(sourceAddress, (existingSourceAddress == null), userID, tenantID);
+            sourceAddressService.putSourceAddress(sourceAddress, (existingSourceAddress == null), userID);
           }
         /*****************************************
         *
@@ -23002,7 +23002,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         //
         if (!dryRun)
           {
-            sourceAddressService.putSourceAddress(incompleteObject, (existingSourceAddress == null), userID, tenantID);
+            sourceAddressService.putSourceAddress(incompleteObject, (existingSourceAddress == null), userID);
           }
         //
         //  log
@@ -23068,7 +23068,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       {
         String sourceAddressID = JSONUtilities.decodeString(jsonRoot, "id", false);
         sourceAddressIDs.add(sourceAddressID);
-        GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, tenantID);
+        GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
         if (sourceAddress != null && (force || !sourceAddress.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (sourceAddress != null)
@@ -23087,7 +23087,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     for (int i = 0; i < sourceAddressIDs.size(); i++)
       {
         String sourceAddressID = sourceAddressIDs.get(i).toString();
-        GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, tenantID);
+        GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
         
         if (sourceAddress != null && (force || !sourceAddress.getReadOnly()))
           {
@@ -23161,7 +23161,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       {
 
         String sourceAddressID = sourceAddressIDs.get(i).toString();
-        GUIManagedObject existingElement = sourceAddressService.getStoredSourceAddress(sourceAddressID, tenantID);
+        GUIManagedObject existingElement = sourceAddressService.getStoredSourceAddress(sourceAddressID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(sourceAddressID);
@@ -23186,7 +23186,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                  * store
                  *
                  *****************************************/
-                sourceAddressService.putSourceAddress(sourceAddress, (existingElement == null), userID, tenantID);
+                sourceAddressService.putSourceAddress(sourceAddress, (existingElement == null), userID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -23201,7 +23201,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 // store
                 //
 
-                sourceAddressService.putSourceAddress(incompleteObject, (existingElement == null), userID, tenantID);
+                sourceAddressService.putSourceAddress(incompleteObject, (existingElement == null), userID);
 
                 //
                 // log
@@ -23266,7 +23266,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      *
      *****************************************/
 
-    GUIManagedObject existingOffer = offerService.getStoredOffer(offerID, tenantID);
+    GUIManagedObject existingOffer = offerService.getStoredOffer(offerID);
     
     
     /**********************************************************************************************
@@ -23380,8 +23380,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 *
                 *****************************************/
 
-                GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID, tenantID);
-                GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID, tenantID);
+                GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
+                GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
                 
                 if (existingVoucher != null) {
                   voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService, tenantID);
@@ -23397,7 +23397,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                  *****************************************/
 
                 productService.putProduct(product, supplierService, productTypeService, deliverableService, (existingProduct == null),
-                    userID, tenantID);
+                    userID);
                 
                 
                 /************************************************
@@ -23422,7 +23422,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                  *****************************************/
 
                 offerService.putOffer(productOffer, callingChannelService, salesChannelService, productService,
-                    voucherService, (existingOffer == null), userID, tenantID);
+                    voucherService, (existingOffer == null), userID);
 
                 /*****************************************
                  *
@@ -23453,8 +23453,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                  *
                  *****************************************/
 
-                GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID, tenantID);
-                GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID, tenantID);
+                GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+                GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
                 if (existingProduct != null) {
                   productService.removeProduct(existingproductID, userID, tenantID);
                 }
@@ -23468,7 +23468,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                  **************************************/
 
                 VoucherType voucherType = voucherTypeService
-                    .getActiveVoucherType(JSONUtilities.decodeString(voucherJSON, "voucherTypeId", true), now, tenantID);
+                    .getActiveVoucherType(JSONUtilities.decodeString(voucherJSON, "voucherTypeId", true), now);
                 if (log.isDebugEnabled())
                   log.debug("will use voucherType " + voucherType);
 
@@ -23493,7 +23493,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       log.debug("will put personal voucher " + voucher);
                   }
 
-                voucher.validate(voucherTypeService, uploadedFileService, now, tenantID);
+                voucher.validate(voucherTypeService, uploadedFileService, now);
 
                 /**
                  * **********************
@@ -23501,7 +23501,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                  * store voucher
                  * 
                  **********************/
-                voucherService.putVoucher(voucher, (existingVoucher == null), userID, tenantID);
+                voucherService.putVoucher(voucher, (existingVoucher == null), userID);
 
                 /************************************************
                  * 
@@ -23526,7 +23526,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                  *****************************************/
 
                 offerService.putOffer(voucherOffer, callingChannelService, salesChannelService, productService,
-                    voucherService, (existingOffer == null), userID, tenantID);
+                    voucherService, (existingOffer == null), userID);
 
                 /*****************************************
                  *
@@ -23566,7 +23566,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         //
 
         offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
-            voucherService, (existingOffer == null), userID, tenantID);
+            voucherService, (existingOffer == null), userID);
 
         //
         // log
@@ -23638,7 +23638,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 if (product != null)
                   {
                     String productID = product.getProductID();
-                    String productName = (productService.getStoredProduct(productID, tenantID)).getGUIManagedObjectName();
+                    String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
                     if (activeSupplier.equals(supplierID) && offerName.equals(productName))
                       {
@@ -23661,7 +23661,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 if (voucher != null)
                   {
                     String voucherID = voucher.getVoucherID();
-                    String voucherName = (voucherService.getStoredVoucher(voucherID, tenantID)).getGUIManagedObjectName();
+                    String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
                     if (activeSupplier.equals(supplierID) && offerName.equals(voucherName))
                       {
@@ -23694,7 +23694,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
         List<JSONObject> offersJson = offers.stream()
             .map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService,
-                offerObjectiveService, productService, voucherService, salesChannelService, tenantID))
+                offerObjectiveService, productService, voucherService, salesChannelService))
             .collect(Collectors.toList());
 
         response.put("simpleOffers", JSONUtilities.encodeArray(offersJson));
@@ -23751,7 +23751,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      *****************************************/
     if (jsonRoot.containsKey("id") && offerID != null)
       {
-        GUIManagedObject offerObject = offerService.getStoredOffer(offerID, tenantID);
+        GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
         offer = (Offer) offerObject;
       }
     else if (jsonRoot.containsKey("offerName") && offerDisplay != null)
@@ -23797,7 +23797,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             if (product != null)
               {
                 String productID = product.getProductID();
-                String productName = (productService.getStoredProduct(productID, tenantID)).getGUIManagedObjectName();
+                String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
                 if (activeSupplier.equals(supplierID) && offerName.equals(productName))
                   {
                     String productId = product.getProductID();
@@ -23830,7 +23830,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             if (voucher != null)
               {
                 String voucherID = voucher.getVoucherID();
-                String voucherName = (voucherService.getStoredVoucher(voucherID, tenantID)).getGUIManagedObjectName();
+                String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
                 if (activeSupplier.equals(supplierID) && offerName.equals(voucherName))
                   {
@@ -24772,7 +24772,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           break;
 
         case "eventNames":
-          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations(tenantID).values())
+          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().values())
             {
               HashMap<String,Object> availableValue = new HashMap<String,Object>();
               availableValue.put("id", evolutionEngineEventDeclaration.getName());
@@ -25623,7 +25623,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         try
           {
             Target target = new Target(existingTarget.getJSONRepresentation(), epoch, existingTarget, tenantID);
-            target.validate(uploadedFileService, date, tenantID);
+            target.validate(uploadedFileService, date);
             modifiedTarget = target;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -25649,7 +25649,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedTarget : modifiedTargets)
       {
-        targetService.putGUIManagedObject(modifiedTarget, date, false, null, tenantID);
+        targetService.putGUIManagedObject(modifiedTarget, date, false, null);
       }
 
     /****************************************
@@ -25713,7 +25713,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedScoringStrategy : modifiedScoringStrategies)
       {
-        scoringStrategyService.putGUIManagedObject(modifiedScoringStrategy, date, false, null, tenantID);
+        scoringStrategyService.putGUIManagedObject(modifiedScoringStrategy, date, false, null);
       }
 
     /****************************************
@@ -25777,7 +25777,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedPresentationStrategy : modifiedPresentationStrategies)
       {
-        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, null, tenantID);
+        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, null);
       }
   }
 
@@ -25837,7 +25837,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             try
               {
-                journeyService.putJourney(modifiedJourney, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, false, null, tenantID);
+                journeyService.putJourney(modifiedJourney, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, false, null);
               }
             catch (JSONUtilitiesException|GUIManagerException e)
               {
@@ -25846,7 +25846,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
         else
           {
-            journeyService.putGUIManagedObject(modifiedJourney, date, false, null, tenantID);
+            journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
           }
       }
   }
@@ -25907,7 +25907,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedSubscriberMessageTemplate : modifiedSubscriberMessageTemplates)
       {
-        subscriberMessageTemplateService.putGUIManagedObject(modifiedSubscriberMessageTemplate, date, false, null, tenantID);
+        subscriberMessageTemplateService.putGUIManagedObject(modifiedSubscriberMessageTemplate, date, false, null);
       }
   }
 
@@ -25937,7 +25937,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         try
           {
             Offer offer = new Offer(existingOffer.getJSONRepresentation(), epoch, existingOffer, catalogCharacteristicService, tenantID);
-            offer.validate(callingChannelService, salesChannelService, productService, voucherService, date, tenantID);
+            offer.validate(callingChannelService, salesChannelService, productService, voucherService, date);
             modifiedOffer = offer;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -25963,7 +25963,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedOffer : modifiedOffers)
       {
-        offerService.putGUIManagedObject(modifiedOffer, date, false, null, tenantID);
+        offerService.putGUIManagedObject(modifiedOffer, date, false, null);
       }
   }
 
@@ -25993,7 +25993,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         try
           {
             Product product = new Product(existingProduct.getJSONRepresentation(), epoch, existingProduct, deliverableService, catalogCharacteristicService, tenantID);
-            product.validate(supplierService, productTypeService, deliverableService, date, tenantID);
+            product.validate(supplierService, productTypeService, deliverableService, date);
             modifiedProduct = product;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -26019,7 +26019,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedProduct : modifiedProducts)
       {
-        productService.putGUIManagedObject(modifiedProduct, date, false, null, tenantID);
+        productService.putGUIManagedObject(modifiedProduct, date, false, null);
       }
 
     /****************************************
@@ -26061,12 +26061,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         Voucher voucher=null;
         if (existingVoucher instanceof VoucherShared) {
           voucher = new VoucherShared(existingVoucher.getJSONRepresentation(), epoch, existingVoucher, tenantID);
-          voucher.validate(voucherTypeService,uploadedFileService,date, tenantID);
+          voucher.validate(voucherTypeService,uploadedFileService,date);
         }
         if (voucher == null && existingVoucher instanceof VoucherPersonal) {
-          VoucherType voucherType = voucherTypeService.getActiveVoucherType(((VoucherPersonal)existingVoucher).getVoucherTypeId(),now, tenantID);
+          VoucherType voucherType = voucherTypeService.getActiveVoucherType(((VoucherPersonal)existingVoucher).getVoucherTypeId(),now);
           voucher = new VoucherPersonal(existingVoucher.getJSONRepresentation(), epoch, existingVoucher,voucherType, tenantID);
-          voucher.validate(voucherTypeService,uploadedFileService,date, tenantID);
+          voucher.validate(voucherTypeService,uploadedFileService,date);
         }
         modifiedVoucher = voucher;
       }
@@ -26093,7 +26093,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedVoucher : modifiedVouchers)
     {
-      voucherService.putGUIManagedObject(modifiedVoucher, date, false, null, tenantID);
+      voucherService.putGUIManagedObject(modifiedVoucher, date, false, null);
     }
 
     /****************************************
@@ -26156,7 +26156,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedCatalogCharacteristic : modifiedCatalogCharacteristics)
       {
-        catalogCharacteristicService.putGUIManagedObject(modifiedCatalogCharacteristic, date, false, null, tenantID);
+        catalogCharacteristicService.putGUIManagedObject(modifiedCatalogCharacteristic, date, false, null);
       }
 
     /****************************************
@@ -26200,7 +26200,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         try
           {
             JourneyObjective journeyObjective = new JourneyObjective(existingJourneyObjective.getJSONRepresentation(), epoch, existingJourneyObjective, tenantID);
-            journeyObjective.validate(journeyObjectiveService, contactPolicyService, catalogCharacteristicService, date, tenantID);
+            journeyObjective.validate(journeyObjectiveService, contactPolicyService, catalogCharacteristicService, date);
             modifiedJourneyObjective = journeyObjective;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -26226,7 +26226,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedJourneyObjective : modifiedJourneyObjectives)
       {
-        journeyObjectiveService.putGUIManagedObject(modifiedJourneyObjective, date, false, null, tenantID);
+        journeyObjectiveService.putGUIManagedObject(modifiedJourneyObjective, date, false, null);
       }
 
     /****************************************
@@ -26268,7 +26268,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         try
           {
             SalesChannel salesChannel = new SalesChannel(existingSalesChannel.getJSONRepresentation(), epoch, existingSalesChannel, tenantID);
-            salesChannel.validate(callingChannelService, resellerService, date, tenantID);
+            salesChannel.validate(callingChannelService, resellerService, date);
             modifiedSalesChannel = salesChannel;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -26294,7 +26294,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedSalesChannel : modifiedSalesChannels)
       {
-        salesChannelService.putGUIManagedObject(modifiedSalesChannel, date, false, null, tenantID);
+        salesChannelService.putGUIManagedObject(modifiedSalesChannel, date, false, null);
       }
 
     /****************************************
@@ -26332,7 +26332,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         try
           {
             OfferObjective offerObjective = new OfferObjective(existingOfferObjective.getJSONRepresentation(), epoch, existingOfferObjective, tenantID);
-            offerObjective.validate(catalogCharacteristicService, date, tenantID);
+            offerObjective.validate(catalogCharacteristicService, date);
             modifiedOfferObjective = offerObjective;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -26358,7 +26358,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedOfferObjective : modifiedOfferObjectives)
       {
-        offerObjectiveService.putGUIManagedObject(modifiedOfferObjective, date, false, null, tenantID);
+        offerObjectiveService.putGUIManagedObject(modifiedOfferObjective, date, false, null);
       }
 
     /****************************************
@@ -26397,7 +26397,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         try
           {
             ProductType productType = new ProductType(existingProductType.getJSONRepresentation(), epoch, existingProductType, tenantID);
-            productType.validate(catalogCharacteristicService, date, tenantID);
+            productType.validate(catalogCharacteristicService, date);
             modifiedProductType = productType;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -26423,7 +26423,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedProductType : modifiedProductTypes)
       {
-        productTypeService.putGUIManagedObject(modifiedProductType, date, false, null, tenantID);
+        productTypeService.putGUIManagedObject(modifiedProductType, date, false, null);
       }
 
     /****************************************
@@ -26461,7 +26461,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       try
       {
         VoucherType voucherType = new VoucherType(existingVoucherType.getJSONRepresentation(), epoch, existingVoucherType, tenantID);
-        voucherType.validate(catalogCharacteristicService, date, tenantID);
+        voucherType.validate(catalogCharacteristicService, date);
         modifiedVoucherType = voucherType;
       }
       catch (JSONUtilitiesException|GUIManagerException e)
@@ -26487,7 +26487,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     for (GUIManagedObject modifiedVoucherType : modifiedVoucherTypes)
     {
-      voucherTypeService.putGUIManagedObject(modifiedVoucherType, date, false, null, tenantID);
+      voucherTypeService.putGUIManagedObject(modifiedVoucherType, date, false, null);
     }
 
     /****************************************
@@ -27521,7 +27521,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
        JSONArray productOfferArray = (JSONArray) offer.get("products");
        JSONObject productOffer = (JSONObject) productOfferArray.get(0);
        JSONObject productJSONObject = new JSONObject();
-       Product productObject = (Product) productService.getStoredProduct(id, tenantID);
+       Product productObject = (Product) productService.getStoredProduct(id);
        productJSONObject.put("supplierID", productObject.getSupplierID());
        productJSONObject.put("deliverableID", productObject.getDeliverableID());
        productJSONObject.put("stock", productObject.getStock());
@@ -27539,7 +27539,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
        JSONObject voucherOffer = (JSONObject) voucherOfferArray.get(0);
        JSONObject voucherJSONObject = new JSONObject();
        JSONObject voucher = new JSONObject();
-       Voucher voucherObject = (Voucher) voucherService.getStoredVoucher(id, tenantID);
+       Voucher voucherObject = (Voucher) voucherService.getStoredVoucher(id);
        voucherJSONObject.put("supplierID", voucherObject.getSupplierID());
        voucherJSONObject.put("voucherTypeId", voucherObject.getVoucherTypeId());
        voucherJSONObject.put("codeFormatId", voucherObject.getJSONRepresentation().get("codeFormatId"));
@@ -27573,7 +27573,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             String productId = offerProduct.getProductID();
             if (productId != null)
               {
-                GUIManagedObject productObject = productService.getStoredProduct(productId, tenantID);
+                GUIManagedObject productObject = productService.getStoredProduct(productId);
                 if (productObject != null)
                   {
                     Product product = (Product) productObject;
@@ -27597,7 +27597,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             String voucherId = offerVoucher.getVoucherID();
             if (voucherId != null)
               {
-                GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherId, tenantID);
+                GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherId);
                 if (voucherObject != null)
                   {
                     Voucher voucher = (Voucher) voucherObject;                    
@@ -27685,9 +27685,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      *
      ************************************/
 
-    public RecurrentCampaignCreationJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart, int tenantID)
+    public RecurrentCampaignCreationJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
     {
-      super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart, tenantID);
+      super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
     }
 
     /***********************************
@@ -28075,7 +28075,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      *
      *****************************************/
 
-    GUIManagedObject existingOffer = offerService.getStoredOffer(offerID, tenantID);
+    GUIManagedObject existingOffer = offerService.getStoredOffer(offerID);
     
     
     /**********************************************************************************************
@@ -28166,11 +28166,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
             if (existingVoucherID != null)
               {
-                existingVoucher = voucherService.getStoredVoucher(existingVoucherID, tenantID);
+                existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
               }
             if (existingproductID != null)
               {
-                existingProduct = productService.getStoredProduct(existingproductID, tenantID);
+                existingProduct = productService.getStoredProduct(existingproductID);
               }
 
             if (existingVoucher != null)
@@ -28189,7 +28189,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               {
 
                 productService.putProduct(product, supplierService, productTypeService, deliverableService,
-                    (existingProduct == null), userID, tenantID);
+                    (existingProduct == null), userID);
               }
 
             /************************************************
@@ -28215,7 +28215,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             if (!dryRun)
               {
                 offerService.putOffer(productOffer, callingChannelService, salesChannelService, productService,
-                    voucherService, (existingOffer == null), userID, tenantID);
+                    voucherService, (existingOffer == null), userID);
               }
 
             /*****************************************
@@ -28251,11 +28251,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
             if (existingVoucherID != null)
               {
-                existingVoucher = voucherService.getStoredVoucher(existingVoucherID, tenantID);
+                existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
               }
             if (existingproductID != null)
               {
-                existingProduct = productService.getStoredProduct(existingproductID, tenantID);
+                existingProduct = productService.getStoredProduct(existingproductID);
               }
             
             if (existingProduct != null)
@@ -28272,7 +28272,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
              **************************************/
 
             VoucherType voucherType = voucherTypeService
-                .getActiveVoucherType(JSONUtilities.decodeString(voucherJSON, "voucherTypeId", true), now, tenantID);
+                .getActiveVoucherType(JSONUtilities.decodeString(voucherJSON, "voucherTypeId", true), now);
             if (log.isDebugEnabled())
               log.debug("will use voucherType " + voucherType);
 
@@ -28297,7 +28297,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                   log.debug("will put personal voucher " + voucher);
               }
 
-            voucher.validate(voucherTypeService, uploadedFileService, now, tenantID);
+            voucher.validate(voucherTypeService, uploadedFileService, now);
 
             /**
              * **********************
@@ -28307,7 +28307,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
              **********************/
             if (!dryRun)
               {
-                voucherService.putVoucher(voucher, (existingVoucher == null), userID, tenantID);
+                voucherService.putVoucher(voucher, (existingVoucher == null), userID);
               }
 
             /************************************************
@@ -28335,7 +28335,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               {
 
                 offerService.putOffer(voucherOffer, callingChannelService, salesChannelService, productService,
-                    voucherService, (existingOffer == null), userID, tenantID);
+                    voucherService, (existingOffer == null), userID);
               }
 
             /*****************************************
@@ -28369,7 +28369,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         if (!dryRun)
           {
             offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
-                voucherService, (existingOffer == null), userID, tenantID);
+                voucherService, (existingOffer == null), userID);
           }
 
         //
@@ -28424,7 +28424,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *
     *****************************************/
 
-    GUIManagedObject offerObject = offerService.getStoredOffer(offerID, includeArchived, tenantID);
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerID, includeArchived);
 
     if (offerObject != null && offerObject instanceof Offer)
       {
@@ -28438,7 +28438,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         if (product != null)
           {
             String productID = product.getProductID();
-            String productName = (productService.getStoredProduct(productID, tenantID)).getGUIManagedObjectName();
+            String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
             if (offer.getSimpleOffer() == true && offerName.equals(productName))
               {
@@ -28458,8 +28458,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         if (voucher != null)
           {
             String voucherID = voucher.getVoucherID();
-            Voucher voucherObject = (Voucher) voucherService.getStoredVoucher(voucherID, tenantID);
-            String voucherName = (voucherService.getStoredVoucher(voucherID, tenantID)).getGUIManagedObjectName();
+            Voucher voucherObject = (Voucher) voucherService.getStoredVoucher(voucherID);
+            String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
             if (offer.getSimpleOffer() == true && offerName.equals(voucherName))
               {
@@ -28520,7 +28520,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         for (int i = 0; i < offerIDs.size(); i++)
           {
             String offerID = offerIDs.get(i).toString();
-            GUIManagedObject offerObject = offerService.getStoredOffer(offerID, includeArchived, tenantID);
+            GUIManagedObject offerObject = offerService.getStoredOffer(offerID, includeArchived);
             offerObjects.add(offerObject);
           }
       }
@@ -28544,7 +28544,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             if (product != null)
               {
                 String productID = product.getProductID();               
-                String productName = (productService.getStoredProduct(productID, tenantID)).getGUIManagedObjectName();
+                String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
                 if (offer.getSimpleOffer() == true && offerName.equals(productName))
                   {
@@ -28576,7 +28576,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             if (voucher != null)
               {
                 String voucherID = voucher.getVoucherID();                
-                String voucherName = (voucherService.getStoredVoucher(voucherID, tenantID)).getGUIManagedObjectName();
+                String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
                 if (offer.getSimpleOffer() == true && offerName.equals(voucherName))
                   {
@@ -28664,7 +28664,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       {
         String offerID = JSONUtilities.decodeString(jsonRoot, "id", false);
         offerIDs.add(offerID);
-        GUIManagedObject offerObject = offerService.getStoredOffer(offerID, tenantID);
+        GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
         if (offerObject != null && (force || !offerObject.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (offerObject != null)
@@ -28687,7 +28687,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     for (int i = 0; i < offerIDs.size(); i++)
       {
         String offerID = offerIDs.get(i).toString();
-        GUIManagedObject offerObject = offerService.getStoredOffer(offerID, tenantID);
+        GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
 
         if (offerObject != null && (force || !offerObject.getReadOnly()))
           {
@@ -28716,7 +28716,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 if (product != null)
                   {
                     String productID = product.getProductID();
-                    String productName = (productService.getStoredProduct(productID, tenantID)).getGUIManagedObjectName();
+                    String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
                     if (offerName.equals(productName))
                       {
                         String productId = product.getProductID();
@@ -28742,7 +28742,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 if (voucher != null)
                   {
                     String voucherID = voucher.getVoucherID();
-                    String voucherName = (voucherService.getStoredVoucher(voucherID, tenantID)).getGUIManagedObjectName();
+                    String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
                     if (offerName.equals(voucherName))
                       {

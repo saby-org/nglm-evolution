@@ -348,7 +348,7 @@ public abstract class SubscriberProfile
   //  getSegmentNames (set of segment name)
   //
 
-  public JSONArray getSegmentNames(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
+  public JSONArray getSegmentNames(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     Date evaluationDate = SystemTime.getCurrentTime();    
     JSONArray result = new JSONArray();
@@ -356,7 +356,7 @@ public abstract class SubscriberProfile
       {
         String dimensionID = groupID.getFirstElement();
         String segmentID = groupID.getSecondElement();
-        SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, evaluationDate, tenantID);
+        SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, evaluationDate);
 
         if (segmentationDimension != null) {
           if (segmentationDimension.getIsSimpleProfileDimension() == false) {
@@ -431,7 +431,7 @@ public abstract class SubscriberProfile
   *
   ******************************************/
   
-  public JSONArray getLoyaltyProgramsJSON(LoyaltyProgramService loyaltyProgramService, PointService pointService, int tenantID)
+  public JSONArray getLoyaltyProgramsJSON(LoyaltyProgramService loyaltyProgramService, PointService pointService)
   {
     Date now = SystemTime.getCurrentTime();
     JSONArray array = new JSONArray();
@@ -440,7 +440,7 @@ public abstract class SubscriberProfile
         for(Entry<String, LoyaltyProgramState> program : loyaltyPrograms.entrySet())
           {
             // Add archives for datacubes & reports on terminated loyalty programs.
-            LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey(), true, tenantID);
+            LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey(), true);
             Map<String, Object> loyalty = new HashMap<String, Object>();
             
             if(loyaltyProgram != null)
@@ -472,7 +472,7 @@ public abstract class SubscriberProfile
                         if(rewardPointsID != null)
                           {
                             loyalty.put("rewardPointID", rewardPointsID);
-                            GUIManagedObject point = pointService.getStoredPoint(rewardPointsID, tenantID);
+                            GUIManagedObject point = pointService.getStoredPoint(rewardPointsID);
                             loyalty.put("rewardPointName", (point!=null)?(point.getJSONRepresentation().get("display").toString()):"");
                             int balance = 0;
                             if(this.pointBalances.get(rewardPointsID) != null){
@@ -487,7 +487,7 @@ public abstract class SubscriberProfile
                         if(statusPointsID != null)
                           {
                             loyalty.put("statusPointID", statusPointsID);
-                            GUIManagedObject point = pointService.getStoredPoint(statusPointsID, tenantID);
+                            GUIManagedObject point = pointService.getStoredPoint(statusPointsID);
                             loyalty.put("statusPointName", (point!=null)?(point.getJSONRepresentation().get("display").toString()):"");
                             int balance = 0;
                             if(this.pointBalances.get(statusPointsID) != null){
@@ -728,13 +728,13 @@ public abstract class SubscriberProfile
   //  getTargetNames (set of target name)
   //
 
-  public Set<String> getTargetNames(TargetService targetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
+  public Set<String> getTargetNames(TargetService targetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     Date evaluationDate = SystemTime.getCurrentTime();
     Set<String> result = new HashSet<String>();
     for (String targetID : targets.keySet())
       {
-        Target target = targetService.getActiveTarget(targetID, evaluationDate, tenantID);
+        Target target = targetService.getActiveTarget(targetID, evaluationDate);
         if (target != null)
           {
             int epoch = targets.get(targetID);
@@ -757,13 +757,13 @@ public abstract class SubscriberProfile
   //  getExclusionInclusionTargetNames (set of target name)
   //
 
-  public Set<String> getExclusionInclusionTargetNames(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
+  public Set<String> getExclusionInclusionTargetNames(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     Date evaluationDate = SystemTime.getCurrentTime();
     Set<String> result = new HashSet<String>();
     for (String targetID : exclusionInclusionTargets.keySet())
       {
-        ExclusionInclusionTarget target = exclusionInclusionTargetService.getActiveExclusionInclusionTarget(targetID, evaluationDate, tenantID);
+        ExclusionInclusionTarget target = exclusionInclusionTargetService.getActiveExclusionInclusionTarget(targetID, evaluationDate);
         if (target != null)
           {
             int epoch = exclusionInclusionTargets.get(targetID);
@@ -800,10 +800,10 @@ public abstract class SubscriberProfile
   *
   *****************************************/
 
-  public String getSegmentContactPolicyID(SegmentContactPolicyService segmentContactPolicyService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
+  public String getSegmentContactPolicyID(SegmentContactPolicyService segmentContactPolicyService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
-    SegmentContactPolicy segmentContactPolicy = segmentContactPolicyService.getSingletonSegmentContactPolicy(tenantID);
-    SegmentationDimension segmentationDimension = (segmentContactPolicy != null) ? segmentationDimensionService.getActiveSegmentationDimension(segmentContactPolicy.getDimensionID(), SystemTime.getCurrentTime(), tenantID) : null;
+    SegmentContactPolicy segmentContactPolicy = segmentContactPolicyService.getSingletonSegmentContactPolicy();
+    SegmentationDimension segmentationDimension = (segmentContactPolicy != null) ? segmentationDimensionService.getActiveSegmentationDimension(segmentContactPolicy.getDimensionID(), SystemTime.getCurrentTime()) : null;
     String segmentID = (segmentationDimension != null) ? getSegmentsMap(subscriberGroupEpochReader).get(segmentationDimension.getSegmentationDimensionID()) : null;
     String segmentContactPolicyID = (segmentContactPolicy != null && segmentID != null) ? segmentContactPolicy.getSegments().get(segmentID) : null;
     return segmentContactPolicyID;
@@ -819,7 +819,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
+  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -834,7 +834,7 @@ public abstract class SubscriberProfile
     ArrayList<JSONObject> pointsPresentation = new ArrayList<JSONObject>();
     for (String pointID : pointBalances.keySet())
       {
-        Point point = pointService.getActivePoint(pointID, now, tenantID);
+        Point point = pointService.getActivePoint(pointID, now);
         if (point != null)
           {
             HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
@@ -853,10 +853,10 @@ public abstract class SubscriberProfile
     ArrayList<JSONObject> vouchersPresentation = new ArrayList<JSONObject>();
     for (VoucherProfileStored storedVoucher : vouchers)
     {
-      Voucher voucher = voucherService.getActiveVoucher(storedVoucher.getVoucherID(),now, tenantID);
+      Voucher voucher = voucherService.getActiveVoucher(storedVoucher.getVoucherID(),now);
       if (voucher != null)
       {
-        VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now, tenantID);
+        VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now);
         if (voucherType != null)
         {
           HashMap<String, Object> voucherPresentation = new HashMap<String,Object>();
@@ -914,7 +914,7 @@ public abstract class SubscriberProfile
     ArrayList<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
     for (String loyaltyProgramID : loyaltyPrograms.keySet())
       {
-        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now, tenantID);
+        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
         if (loyaltyProgram != null)
           {
             
@@ -1023,16 +1023,16 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader, tenantID)));
+    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader)));
     generalDetailsPresentation.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramsPresentation));
-    generalDetailsPresentation.put("targets", JSONUtilities.encodeArray(new ArrayList<String>(getTargetNames(targetService, subscriberGroupEpochReader, tenantID))));
+    generalDetailsPresentation.put("targets", JSONUtilities.encodeArray(new ArrayList<String>(getTargetNames(targetService, subscriberGroupEpochReader))));
     generalDetailsPresentation.put("relations", JSONUtilities.encodeArray(hierarchyRelations));
     generalDetailsPresentation.put("points", JSONUtilities.encodeArray(pointsPresentation));
     generalDetailsPresentation.put("vouchers", JSONUtilities.encodeArray(vouchersPresentation));
     generalDetailsPresentation.put("language", getLanguage());
     generalDetailsPresentation.put("subscriberID", getSubscriberID());
-    generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now, tenantID))));
-    generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now, tenantID))));
+    generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
+    generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     // prepare basic kpiPresentation (if any)
     //
@@ -1068,7 +1068,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForThirdPartyPresentation
   //
 
-  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, int tenantID)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
@@ -1085,10 +1085,10 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader, tenantID)));
+    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader)));
     generalDetailsPresentation.put("language", getLanguage());
-    generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now, tenantID))));
-    generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now, tenantID))));
+    generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
+    generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
   
     //
@@ -1982,7 +1982,7 @@ public abstract class SubscriberProfile
   *
   ****************************************/
   
-  public boolean getInInclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now, int tenantID)
+  public boolean getInInclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     boolean result = false;
     for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now, tenantID))
@@ -2026,7 +2026,7 @@ public abstract class SubscriberProfile
   *
   ****************************************/
   
-  public Set<String> getExclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now, int tenantID)
+  public Set<String> getExclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     Set<String> result = new HashSet<String>();
     for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now, tenantID))
@@ -2068,7 +2068,7 @@ public abstract class SubscriberProfile
   *
   ****************************************/
   
-  public Set<String> getInclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now, int tenantID)
+  public Set<String> getInclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     Set<String> result = new HashSet<String>();
     for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now, tenantID))
@@ -2110,7 +2110,7 @@ public abstract class SubscriberProfile
   *
   ****************************************/
   
-  public boolean getInExclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now, int tenantID)
+  public boolean getInExclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     boolean result = false;
     for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now, tenantID))

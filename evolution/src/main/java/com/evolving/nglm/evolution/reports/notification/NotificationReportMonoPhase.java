@@ -121,9 +121,9 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   * dumpElementToCsv
   *
   ****************************************/
- public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
  {
-   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map, tenantID);  
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
    if(mapLocal.size() != 1) {
 	   log.debug("We have multiple dates in the same index " + mapLocal.size());
    } else {
@@ -142,7 +142,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
 					   log.debug("We have multiple reports in this folder " + list.size());
 				   } else {
 					   Map<String, Object> reportMap = list.get(0);
-					   dumpLineToCsv(reportMap, writer, addHeaders, tenantID);
+					   dumpLineToCsv(reportMap, writer, addHeaders);
 					   return false;
 				   }
 			   }
@@ -152,7 +152,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
    return true;
  }
  
-  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders, int tenantID)
+  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
       {
@@ -170,7 +170,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
       }
   }
 
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> notifFields = map;
@@ -325,14 +325,14 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
             Map<String, Object> msgContentJSON = new LinkedHashMap<>(); // to preserve order when displaying
             String tempID = notifFields.get(templateID).toString();
             String lang = notifFields.containsKey(language) ? notifFields.get(language).toString() : "";
-            SubscriberMessageTemplate templateObject = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime(), tenantID);
+            SubscriberMessageTemplate templateObject = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
             // get actual text based on the template kind
             if (templateObject instanceof SMSTemplate)
               {
                 Map<String,Object> tags = getAllTags(notifFields);
                 List<String> tagsList = getTags(tags, "tags");
                 SMSNotificationManagerRequest req = new SMSNotificationManagerRequest(tempID, lang, tagsList);
-                String actualMessage = req.getText(subscriberMessageTemplateService, tenantID);
+                String actualMessage = req.getText(subscriberMessageTemplateService);
                 msgContentJSON.put("sms", truncateIfNecessary(actualMessage));
               }
             else if (templateObject instanceof MailTemplate)
@@ -342,9 +342,9 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
                 List<String> textBodyTagsList = getTags(tags, "textBodyTags");
                 List<String> htmlBodyTagsList = getTags(tags, "htmlBodyTags");
                 MailNotificationManagerRequest req = new MailNotificationManagerRequest(tempID, lang, subjectTagsList, textBodyTagsList, htmlBodyTagsList);
-                String actualSubject = req.getSubject(subscriberMessageTemplateService, tenantID);
-                String actualTextBody = req.getTextBody(subscriberMessageTemplateService, tenantID);
-                String actualHtmlBody = req.getHtmlBody(subscriberMessageTemplateService, tenantID);
+                String actualSubject = req.getSubject(subscriberMessageTemplateService);
+                String actualTextBody = req.getTextBody(subscriberMessageTemplateService);
+                String actualHtmlBody = req.getHtmlBody(subscriberMessageTemplateService);
                 msgContentJSON.put("subject", truncateIfNecessary(actualSubject));
                 msgContentJSON.put("textBody", truncateIfNecessary(actualTextBody));
                 msgContentJSON.put("htmlBody", truncateIfNecessary(actualHtmlBody));
@@ -358,7 +358,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
               {
                 Map<String, List<String>> tags = getAllTagsList(notifFields);
                 NotificationManagerRequest req = new NotificationManagerRequest(tempID, lang, tags);
-                Map<String, String> resolvedParameters = req.getResolvedParameters(subscriberMessageTemplateService, tenantID);
+                Map<String, String> resolvedParameters = req.getResolvedParameters(subscriberMessageTemplateService);
                 msgContentJSON.putAll(resolvedParameters);
               }
             for (String key : msgContentJSON.keySet())
@@ -379,7 +379,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
           {
             String tempID = notifFields.get(templateID).toString();
             SubscriberMessageTemplate templateObject = subscriberMessageTemplateService
-                .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime(), tenantID);
+                .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
             
             if (templateObject instanceof SMSTemplate)
               {
@@ -392,7 +392,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
             else if (templateObject instanceof PushTemplate)
               {
                 PushTemplate template = (PushTemplate) subscriberMessageTemplateService
-                    .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime(), tenantID);
+                    .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
                 notifRecs.put("communicationChannel",
                     Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
 
@@ -400,7 +400,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
             else if (templateObject instanceof DialogTemplate)// GenericTemplate
               {
                 DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService
-                    .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime(), tenantID);
+                    .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
                 String channelID = template.getCommunicationChannelID();
                 notifRecs.put("communicationChannel",
                     Deployment.getCommunicationChannels().get(channelID).getDisplay());

@@ -144,12 +144,12 @@ public class ReportService extends GUIService
   *****************************************/
 
   public String generateReportID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredReport(String reportID, int tenantID) { return getStoredGUIManagedObject(reportID, tenantID); }
-  public GUIManagedObject getStoredReport(String reportID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(reportID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredReport(String reportID) { return getStoredGUIManagedObject(reportID); }
+  public GUIManagedObject getStoredReport(String reportID, boolean includeArchived) { return getStoredGUIManagedObject(reportID, includeArchived); }
   public Collection<GUIManagedObject> getStoredReports(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredReports(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveReport(GUIManagedObject reportUnchecked, Date date) { return isActiveGUIManagedObject(reportUnchecked, date); }
-  public Report getActiveReport(String reportID, Date date, int tenantID) { return (Report) getActiveGUIManagedObject(reportID, date, tenantID); }
+  public Report getActiveReport(String reportID, Date date) { return (Report) getActiveGUIManagedObject(reportID, date); }
   public Collection<Report> getActiveReports(Date date, int tenantID) { return (Collection<Report>) getActiveGUIManagedObjects(date, tenantID); }
   
   /*****************************************
@@ -158,10 +158,10 @@ public class ReportService extends GUIService
   *
   *****************************************/
 
-  public void putReport(Report report, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putReport(Report report, boolean newObject, String userID) throws GUIManagerException
   {
     Date now = SystemTime.getCurrentTime();
-    putGUIManagedObject(report, now, newObject, userID, tenantID);
+    putGUIManagedObject(report, now, newObject, userID);
   }
 
   /*****************************************

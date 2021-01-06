@@ -1216,7 +1216,7 @@ public class ThirdPartyManager
         }
       else
         {
-          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService, tenantID);
+          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService);
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -1550,7 +1550,7 @@ public class ThirdPartyManager
                       if(request instanceof PurchaseFulfillmentRequest)
                         {
                           PurchaseFulfillmentRequest odrRequest = (PurchaseFulfillmentRequest) request;
-                          Offer offer = (Offer) offerService.getStoredGUIManagedObject(odrRequest.getOfferID(), tenantID);
+                          Offer offer = (Offer) offerService.getStoredGUIManagedObject(odrRequest.getOfferID());
                           if(offer != null)
                             {
                               if(offer.getOfferSalesChannelsAndPrices() != null)
@@ -1669,7 +1669,7 @@ public class ThirdPartyManager
           Map<String, PointBalance> pointBalances = baseSubscriberProfile.getPointBalances();
           for (String pointID : pointBalances.keySet())
             {
-              Point point = pointService.getActivePoint(pointID, now, tenantID);
+              Point point = pointService.getActivePoint(pointID, now);
               if (point != null && (searchedPoint == null || searchedPoint.getPointID().equals(point.getPointID())))
                 {
                   HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
@@ -1782,7 +1782,7 @@ public class ThirdPartyManager
               break;
             }
         }
-      GUIManagedObject pointObject = pointService.getStoredPoint(pointID, tenantID);
+      GUIManagedObject pointObject = pointService.getStoredPoint(pointID);
       if (pointObject != null && pointObject instanceof Point) {
         Point point = (Point) pointObject;
         validityPeriodType = point.getValidity().getPeriodType();
@@ -2203,7 +2203,7 @@ public class ThirdPartyManager
                   journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                   journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                   journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                  journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService, tenantID)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService, tenantID)):"");
+                  journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
                   journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
@@ -2211,7 +2211,7 @@ public class ThirdPartyManager
                       List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
                       JSONObject result = new JSONObject();
 
-                      JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime(), tenantID);
+                      JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
                       result.put("active", journeyObjective.getActive());
                       result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
                       result.put("display", journeyObjective.getJSONRepresentation().get("display"));
@@ -2223,7 +2223,7 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now, tenantID);
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
                           characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
                           characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
                           characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
@@ -2494,7 +2494,7 @@ public class ThirdPartyManager
                   campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
                   campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
                   campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                  campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService, tenantID)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService, tenantID)):"");
+                  campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
                   campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeCampaign.getJourneyObjectiveInstances())
@@ -2502,7 +2502,7 @@ public class ThirdPartyManager
                       List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
                       JSONObject result = new JSONObject();
 
-                      JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime(), tenantID);
+                      JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
                       result.put("active", journeyObjective.getActive());
                       result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
                       result.put("display", journeyObjective.getJSONRepresentation().get("display"));
@@ -2514,7 +2514,7 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now, tenantID);
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
                           characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
                           characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
                           characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
@@ -2626,7 +2626,7 @@ public class ThirdPartyManager
              //  check loyalty program still exist
              //
 
-             LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now, tenantID);
+             LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
              if (loyaltyProgram != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)))
                {
 
@@ -2797,7 +2797,7 @@ public class ThirdPartyManager
     *
     *****************************************/
 
-   LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, SystemTime.getCurrentTime(), tenantID);
+   LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, SystemTime.getCurrentTime());
 
    /*****************************************
     *
@@ -3069,12 +3069,12 @@ public class ThirdPartyManager
                       for (OfferProduct offerproduct : offerProducts)
                         {
                           String productID = offerproduct.getProductID();
-                          GUIManagedObject productObject = productService.getStoredProduct(productID, tenantID);
+                          GUIManagedObject productObject = productService.getStoredProduct(productID);
                           if (productObject != null && productObject instanceof Product)
                             {
                               Product product = (Product) productObject;
                               GUIManagedObject SupplierObject = supplierService
-                                  .getStoredSupplier(product.getSupplierID(), tenantID);
+                                  .getStoredSupplier(product.getSupplierID());
                               if (SupplierObject != null && SupplierObject instanceof Supplier)
                                 {
                                   String supplierDisplay = ((Supplier) SupplierObject).getGUIManagedObjectDisplay();
@@ -3099,12 +3099,12 @@ public class ThirdPartyManager
                       for (OfferVoucher offerVoucher : offerVouchers)
                         {
                           String voucherID = offerVoucher.getVoucherID();
-                          GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID, tenantID);
+                          GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
                           if (voucherObject != null && voucherObject instanceof Voucher)
                             {
                               Voucher voucher = (Voucher) voucherObject;
                               GUIManagedObject SupplierObject = supplierService
-                                  .getStoredSupplier(voucher.getSupplierID(), tenantID);
+                                  .getStoredSupplier(voucher.getSupplierID());
                               if (SupplierObject != null && SupplierObject instanceof Supplier)
                                 {
                                   String supplierDisplay = ((Supplier) SupplierObject).getGUIManagedObjectDisplay();
@@ -3158,7 +3158,7 @@ public class ThirdPartyManager
            *
            *****************************************/
 
-          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, tenantID)).collect(Collectors.toList());
+          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService)).collect(Collectors.toList());
           response.put("offers", JSONUtilities.encodeArray(offersJson));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -3261,7 +3261,7 @@ public class ThirdPartyManager
                       List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
                       JSONObject result = new JSONObject();
 
-                      JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime(), tenantID);
+                      JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
                       result.put("active", journeyObjective.getActive());
                       result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
                       result.put("display", journeyObjective.getJSONRepresentation().get("display"));
@@ -3273,7 +3273,7 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now, tenantID);
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
                           characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
                           characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
                           characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
@@ -3694,7 +3694,7 @@ public class ThirdPartyManager
 
      if (presentationStrategyID != null)
        {
-         if (presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now, tenantID) == null)
+         if (presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now) == null)
            {
              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
@@ -3759,7 +3759,7 @@ public class ThirdPartyManager
              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseMessage());
              return JSONUtilities.encodeObject(response);          
            }
-         callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, now, tenantID);
+         callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, now);
          if (callingChannel == null)
            {
              log.error(RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericDescription()+" unknown id : "+callingChannelID);
@@ -3769,7 +3769,7 @@ public class ThirdPartyManager
            }
        }
 
-     PresentationStrategy presentationStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now, tenantID);
+     PresentationStrategy presentationStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now);
      if (presentationStrategy == null)
        {
          log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" unknown id : "+presentationStrategyID);
@@ -3778,7 +3778,7 @@ public class ThirdPartyManager
          return JSONUtilities.encodeObject(response);          
        }
 
-     TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now, tenantID);
+     TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now);
      if (tokenType == null)
        {
          log.error(RESTAPIGenericReturnCodes.INVALID_TOKEN_TYPE.getGenericDescription()+" unknown id : "+tokenTypeID);
@@ -4051,7 +4051,7 @@ public class ThirdPartyManager
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str, API.getCustomerNBOs, jsonRoot);
           return JSONUtilities.encodeObject(response);                    
         }
-      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID, tenantID);
+      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
       if (presentationStrategy == null)
         {
           log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" unknown id : "+presentationStrategyID);
@@ -4304,7 +4304,7 @@ public class ThirdPartyManager
       String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
       String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
-      Offer offer = offerService.getActiveOffer(offerID, now, tenantID);
+      Offer offer = offerService.getActiveOffer(offerID, now);
       if (offer != null)
         {
           Boolean validOffer = offerValidation(offer.getOfferID(), tenantID);
@@ -4486,7 +4486,7 @@ public class ThirdPartyManager
       
       if (offerID != null)
         {
-          if (offerService.getActiveOffer(offerID, now, tenantID) == null)
+          if (offerService.getActiveOffer(offerID, now) == null)
             {
               updateResponse(response, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND);
               return JSONUtilities.encodeObject(response);          
@@ -5062,10 +5062,10 @@ public class ThirdPartyManager
     response.put("status",voucherProfileStored.getVoucherStatus().getExternalRepresentation());
     String offerID = voucherProfileStored.getOfferID();
     JSONObject offerJSON = new JSONObject();
-    GUIManagedObject offerObject = offerService.getStoredOffer(offerID, tenantID);
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, tenantID);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService);
     }
     response.put("offerDetails",offerJSON);
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,response);
@@ -5081,10 +5081,10 @@ public class ThirdPartyManager
 
     String offerID = voucherProfileStored.getOfferID();
     JSONObject offerJSON = new JSONObject();
-    GUIManagedObject offerObject = offerService.getStoredOffer(offerID, tenantID);
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, tenantID);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService);
     }
     Map<String,Object> offerResponse = new HashMap<>();
     offerResponse.put("offerDetails", offerJSON);
@@ -5243,7 +5243,7 @@ public class ThirdPartyManager
     ThirdPartyManagerException errorException = null;
     VoucherProfileStored voucherStored = null;
     for(VoucherProfileStored profileVoucher:subscriberProfile.getVouchers()){
-      Voucher voucher = voucherService.getActiveVoucher(profileVoucher.getVoucherID(),now, tenantID);
+      Voucher voucher = voucherService.getActiveVoucher(profileVoucher.getVoucherID(),now);
       //a voucher in subscriber profile with no more voucher conf associated, very likely to happen
       if(voucher==null){
         if(errorException==null) errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
@@ -6174,7 +6174,7 @@ public class ThirdPartyManager
   {
 
     Date now = SystemTime.getCurrentTime();
-    Offer offer = offerService.getActiveOffer(offerID, now, tenantID);
+    Offer offer = offerService.getActiveOffer(offerID, now);
     Set<OfferVoucher> offerVouchers = new HashSet<>();
     Set<OfferProduct> offerProducts = new HashSet<>();
 
@@ -6191,7 +6191,7 @@ public class ThirdPartyManager
             for (OfferVoucher voucher : offerVouchers)
               {
                 voucherID = voucher.getVoucherID();
-                Voucher offerVoucher = voucherService.getActiveVoucher(voucherID, now, tenantID);
+                Voucher offerVoucher = voucherService.getActiveVoucher(voucherID, now);
                 if (offerVoucher != null)
                   {
                     if (offerVoucher.getSupplierID() != null && !(offerVoucher.getSupplierID().isEmpty()))
@@ -6210,7 +6210,7 @@ public class ThirdPartyManager
             for (OfferProduct product : offerProducts)
               {
                 productID = product.getProductID();
-                Product offerproduct = productService.getActiveProduct(productID, now, tenantID);
+                Product offerproduct = productService.getActiveProduct(productID, now);
                 if (offerproduct != null)
                   {
                     if (offerproduct.getSupplierID() != null && !(offerproduct.getSupplierID().isEmpty()))
@@ -6223,7 +6223,7 @@ public class ThirdPartyManager
               }
           }
 
-        Supplier offerSupplier = supplierService.getActiveSupplier(supplierID, now, tenantID);
+        Supplier offerSupplier = supplierService.getActiveSupplier(supplierID, now);
         if (offerSupplier != null)
           {
 
@@ -6233,7 +6233,7 @@ public class ThirdPartyManager
                 if (parentSupplierID != null)
                   {
 
-                    Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now, tenantID);
+                    Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now);
 
                     if (parentSupplier != null)
                       {

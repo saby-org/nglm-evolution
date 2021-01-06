@@ -731,7 +731,7 @@ public class GUIManagerGeneral extends GUIManager
         SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false, tenantID);
         if(evaluateBySegmentId)
         {
-          SegmentationDimension storedSegmentationDimensionEligibility = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionEligibility.getGUIManagedObjectID() , SystemTime.getCurrentTime(), tenantID);
+          SegmentationDimension storedSegmentationDimensionEligibility = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionEligibility.getGUIManagedObjectID() , SystemTime.getCurrentTime());
           evaluateBySegmentId = evaluateBySegmentId && segmentationDimensionEligibility.getSegmentsConditionEqual(storedSegmentationDimensionEligibility);
         }
         if(evaluateBySegmentId) return processGetCountBySegmentationEligibilityBySegmentId(segmentationDimensionEligibility, tenantID);
@@ -1038,7 +1038,7 @@ public class GUIManagerGeneral extends GUIManager
         for (int i = 0; i < pointIDs.size(); i++)
           {
             String pointID = pointIDs.get(i).toString();
-            GUIManagedObject point = pointService.getStoredPoint(pointID, includeArchived, tenantID);
+            GUIManagedObject point = pointService.getStoredPoint(pointID, includeArchived);
             if (point != null)
               {
                 pointObjects.add(point);
@@ -1099,7 +1099,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject point = pointService.getStoredPoint(pointID, includeArchived, tenantID);
+    GUIManagedObject point = pointService.getStoredPoint(pointID, includeArchived);
     JSONObject pointJSON = pointService.generateResponseJSON(point, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -1172,7 +1172,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingPoint = pointService.getStoredPoint(pointID, tenantID);
+    GUIManagedObject existingPoint = pointService.getStoredPoint(pointID);
 
     /*****************************************
     *
@@ -1215,7 +1215,7 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
 
-            pointService.putPoint(point, (existingPoint == null), userID, tenantID);
+            pointService.putPoint(point, (existingPoint == null), userID);
 
             /*****************************************
              *
@@ -1251,7 +1251,7 @@ public class GUIManagerGeneral extends GUIManager
                 deliverableMap.put("unitaryCost", 0);
                 deliverableMap.put("label", "points");
                 Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null, tenantID);
-                deliverableService.putDeliverable(deliverable, true, userID, tenantID);
+                deliverableService.putDeliverable(deliverable, true, userID);
               }
 
             //
@@ -1269,7 +1269,7 @@ public class GUIManagerGeneral extends GUIManager
                 paymentMeanMap.put("active", true);
                 paymentMeanMap.put("label", point.getLabel());
                 PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null, tenantID);
-                paymentMeanService.putPaymentMean(paymentMean, true, userID, tenantID);
+                paymentMeanService.putPaymentMean(paymentMean, true, userID);
               }
 
             /*****************************************
@@ -1309,7 +1309,7 @@ public class GUIManagerGeneral extends GUIManager
         //
         if (!dryRun)
           {
-            pointService.putIncompletePoint(incompleteObject, (existingPoint == null), userID, tenantID);
+            pointService.putIncompletePoint(incompleteObject, (existingPoint == null), userID);
           }
 
         //
@@ -1381,7 +1381,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String pointID = JSONUtilities.decodeString(jsonRoot, "id", false);
         pointIDs.add(pointID);
-        GUIManagedObject point = pointService.getStoredPoint(pointID, tenantID);
+        GUIManagedObject point = pointService.getStoredPoint(pointID);
         if (point != null && (force || !point.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (point != null)
@@ -1405,7 +1405,7 @@ public class GUIManagerGeneral extends GUIManager
     for (int i = 0; i < pointIDs.size(); i++)
       {
         String pointID = pointIDs.get(i).toString();
-        GUIManagedObject point = pointService.getStoredPoint(pointID, tenantID);
+        GUIManagedObject point = pointService.getStoredPoint(pointID);
 
         if (point != null && (force || !point.getReadOnly()))
           {
@@ -1542,7 +1542,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         String pointID = pointIDs.get(i).toString();
-        GUIManagedObject existingElement = pointService.getStoredPoint(pointID, tenantID);
+        GUIManagedObject existingElement = pointService.getStoredPoint(pointID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(pointID);
@@ -1564,7 +1564,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
 
-                pointService.putPoint(point, (existingElement == null), userID, tenantID);
+                pointService.putPoint(point, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -1589,7 +1589,7 @@ public class GUIManagerGeneral extends GUIManager
                 // store
                 //
 
-                pointService.putIncompletePoint(incompleteObject, (existingElement == null), userID, tenantID);
+                pointService.putIncompletePoint(incompleteObject, (existingElement == null), userID);
 
                 //
                 // log
@@ -1679,7 +1679,7 @@ public class GUIManagerGeneral extends GUIManager
 
     if(evaluateBySegmentId)
     {
-      SegmentationDimension storedSegmentationDimensionRanges = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionRanges.getGUIManagedObjectID() , SystemTime.getCurrentTime(), tenantID);
+      SegmentationDimension storedSegmentationDimensionRanges = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionRanges.getGUIManagedObjectID() , SystemTime.getCurrentTime());
       evaluateBySegmentId = evaluateBySegmentId &&  segmentationDimensionRanges.getSegmentsConditionEqual(storedSegmentationDimensionRanges);
       log.info("evaluate by segment_id = "+evaluateBySegmentId);
     }
@@ -2242,7 +2242,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived, tenantID);
+    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived);
     JSONObject catalogCharacteristicJSON = catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -2303,7 +2303,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingCatalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
+    GUIManagedObject existingCatalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
 
     /*****************************************
     *
@@ -2347,7 +2347,7 @@ public class GUIManagerGeneral extends GUIManager
           {
 
             catalogCharacteristicService.putCatalogCharacteristic(catalogCharacteristic,
-                (existingCatalogCharacteristic == null), userID, tenantID);
+                (existingCatalogCharacteristic == null), userID);
 
             /*****************************************
              *
@@ -2393,7 +2393,7 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
             catalogCharacteristicService.putCatalogCharacteristic(incompleteObject,
-                (existingCatalogCharacteristic == null), userID, tenantID);
+                (existingCatalogCharacteristic == null), userID);
 
             //
             // revalidate dependent objects
@@ -2473,7 +2473,7 @@ public class GUIManagerGeneral extends GUIManager
         String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", false);
         catalogCharacteristicIDs.add(catalogCharacteristicID);
         GUIManagedObject catalogCharacteristic = catalogCharacteristicService
-            .getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
+            .getStoredCatalogCharacteristic(catalogCharacteristicID);
         if (catalogCharacteristic != null && (force || !catalogCharacteristic.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (catalogCharacteristic != null)
@@ -2493,7 +2493,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String catalogCharacteristicID = catalogCharacteristicIDs.get(i).toString();
         GUIManagedObject catalogCharacteristic = catalogCharacteristicService
-            .getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
+            .getStoredCatalogCharacteristic(catalogCharacteristicID);
 
         if (catalogCharacteristic != null && (force || !catalogCharacteristic.getReadOnly()))
           {
@@ -2580,7 +2580,7 @@ public class GUIManagerGeneral extends GUIManager
 
         String catalogCharacteristicID = catalogCharacteristicIDs.get(i).toString();
         GUIManagedObject existingElement = catalogCharacteristicService
-            .getStoredCatalogCharacteristic(catalogCharacteristicID, tenantID);
+            .getStoredCatalogCharacteristic(catalogCharacteristicID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(catalogCharacteristicID);
@@ -2603,7 +2603,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
                 catalogCharacteristicService.putCatalogCharacteristic(catalogCharacteristic, (existingElement == null),
-                    userID, tenantID);
+                    userID);
 
                 /*****************************************
                  *
@@ -2635,7 +2635,7 @@ public class GUIManagerGeneral extends GUIManager
                 //
 
                 catalogCharacteristicService.putCatalogCharacteristic(incompleteObject, (existingElement == null),
-                    userID, tenantID);
+                    userID);
 
                 //
                 // revalidate dependent objects
@@ -2694,7 +2694,7 @@ public class GUIManagerGeneral extends GUIManager
   for (int i = 0; i < catalogCharacteristicIDs.size(); i++)
     {
       String catalogCharacteristicID = catalogCharacteristicIDs.get(i).toString();
-      GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived, tenantID);
+      GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived);
       if (catalogCharacteristic != null)
         {
           catalogCharacteristicObjects.add(catalogCharacteristic);
@@ -2752,7 +2752,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived, tenantID);
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived);
     JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -2857,7 +2857,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
+    GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverable(deliverableID);
 
     /*****************************************
     *
@@ -2900,7 +2900,7 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
 
-            deliverableService.putDeliverable(deliverable, (existingDeliverable == null), userID, tenantID);
+            deliverableService.putDeliverable(deliverable, (existingDeliverable == null), userID);
 
             /*****************************************
              *
@@ -2938,7 +2938,7 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
 
-            deliverableService.putDeliverable(incompleteObject, (existingDeliverable == null), userID, tenantID);
+            deliverableService.putDeliverable(incompleteObject, (existingDeliverable == null), userID);
 
             //
             // revalidateProducts
@@ -3011,7 +3011,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", false);
         deliverableIDs.add(deliverableID);
-        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
+        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
         if (deliverable != null && (force || !deliverable.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (deliverable != null)
@@ -3031,7 +3031,7 @@ public class GUIManagerGeneral extends GUIManager
     for (int i = 0; i < deliverableIDs.size(); i++)
       {
         String deliverableID = deliverableIDs.get(i).toString();
-        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, tenantID);
+        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
         if (deliverable != null && (force || !deliverable.getReadOnly())) 
           {
             deliverables.add(deliverable);
@@ -3113,7 +3113,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         String deliverableID = deliverableIDs.get(i).toString();
-        GUIManagedObject existingElement = deliverableService.getStoredDeliverable(deliverableID, tenantID);
+        GUIManagedObject existingElement = deliverableService.getStoredDeliverable(deliverableID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(deliverableID);
@@ -3135,7 +3135,7 @@ public class GUIManagerGeneral extends GUIManager
                  * store
                  *
                  *****************************************/
-                deliverableService.putDeliverable(deliverable, (existingElement == null), userID, tenantID);
+                deliverableService.putDeliverable(deliverable, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -3157,7 +3157,7 @@ public class GUIManagerGeneral extends GUIManager
                 //
                 // store
                 //
-                deliverableService.putDeliverable(incompleteObject, (existingElement == null), userID, tenantID);
+                deliverableService.putDeliverable(incompleteObject, (existingElement == null), userID);
 
                 //
                 // revalidateProducts
@@ -3212,7 +3212,7 @@ public class GUIManagerGeneral extends GUIManager
         for (int i = 0; i < tokenTypeIDs.size(); i++)
           {
             String tokenTypeID = tokenTypeIDs.get(i).toString();
-            GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, includeArchived, tenantID);
+            GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, includeArchived);
             if (tokenType != null)
               {
                 tokenTypeObjects.add(tokenType);
@@ -3270,7 +3270,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, includeArchived, tenantID);
+    GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, includeArchived);
     JSONObject tokenTypeJSON = tokenTypeService.generateResponseJSON(tokenType, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -3331,7 +3331,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTokenType = tokenTypeService.getStoredTokenType(tokenTypeID, tenantID);
+    GUIManagedObject existingTokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
 
     /*****************************************
     *
@@ -3374,7 +3374,7 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
 
-            tokenTypeService.putTokenType(tokenType, (existingTokenType == null), userID, tenantID);
+            tokenTypeService.putTokenType(tokenType, (existingTokenType == null), userID);
 
             /*****************************************
              *
@@ -3411,7 +3411,7 @@ public class GUIManagerGeneral extends GUIManager
         //
         if (!dryRun)
           {
-            tokenTypeService.putTokenType(incompleteObject, (existingTokenType == null), userID, tenantID);
+            tokenTypeService.putTokenType(incompleteObject, (existingTokenType == null), userID);
 
             //
             // revalidateProducts
@@ -3484,7 +3484,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
         tokenTypeIDs.add(tokenTypeID);
-        GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, tenantID);
+        GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
         if (tokenType != null && (force || !tokenType.getReadOnly()))
           singleIDresponseCode = "ok";
         else if (tokenType != null)
@@ -3504,7 +3504,7 @@ public class GUIManagerGeneral extends GUIManager
     for (int i = 0; i < tokenTypeIDs.size(); i++)
       {
         String tokenTypeID = tokenTypeIDs.get(i).toString();
-        GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, tenantID);
+        GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
         
         if (tokenType != null && (force || !tokenType.getReadOnly()))
           {
@@ -3588,7 +3588,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         String tokenTypeID = tokenTypeIDs.get(i).toString();
-        GUIManagedObject existingElement = tokenTypeService.getStoredTokenType(tokenTypeID, tenantID);
+        GUIManagedObject existingElement = tokenTypeService.getStoredTokenType(tokenTypeID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(tokenTypeID);
@@ -3610,7 +3610,7 @@ public class GUIManagerGeneral extends GUIManager
                  *
                  *****************************************/
 
-                tokenTypeService.putTokenType(tokenType, (existingElement == null), userID, tenantID);
+                tokenTypeService.putTokenType(tokenType, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -3632,7 +3632,7 @@ public class GUIManagerGeneral extends GUIManager
                 //
                 // store
                 //
-                tokenTypeService.putTokenType(incompleteObject, (existingElement == null), userID, tenantID);
+                tokenTypeService.putTokenType(incompleteObject, (existingElement == null), userID);
 
                 //
                 // revalidateProducts
@@ -3848,13 +3848,13 @@ public class GUIManagerGeneral extends GUIManager
     fileJSON.put("sourceFilename", sourceFilename);
     fileJSON.put("fileType", ".txt");
 
-    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID, tenantID);
+    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
     long epoch = epochServer.getKey();
     
     try
       {
         UploadedFile uploadedFile = new UploadedFile(fileJSON, epoch, existingFileUpload, tenantID);
-        uploadedFileService.putUploadedFile(uploadedFile, vouchersStream, uploadedFile.getDestinationFilename(), (uploadedFile == null), userID, tenantID);
+        uploadedFileService.putUploadedFile(uploadedFile, vouchersStream, uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
       }
     catch (GUIManagerException|IOException e)
       {
@@ -3903,7 +3903,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, includeArchived, tenantID);
+    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, includeArchived);
     JSONObject paymentMeanJSON = paymentMeanService.generateResponseJSON(paymentMean, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -3964,7 +3964,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, tenantID);
+    GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
 
     /*****************************************
     *
@@ -4006,7 +4006,7 @@ public class GUIManagerGeneral extends GUIManager
         if (!dryRun)
           {
 
-            paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), userID, tenantID);
+            paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), userID);
 
             /*****************************************
              *
@@ -4042,7 +4042,7 @@ public class GUIManagerGeneral extends GUIManager
         //
         if (!dryRun)
           {
-            paymentMeanService.putIncompletePaymentMean(incompleteObject, (existingPaymentMean == null), userID, tenantID);
+            paymentMeanService.putIncompletePaymentMean(incompleteObject, (existingPaymentMean == null), userID);
 
             //
             // revalidateProducts
@@ -4106,7 +4106,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", false);
         paymentMeanIDs.add(paymentMeanID);
-        GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, tenantID);
+        GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
 
         if (paymentMean != null && (force || !paymentMean.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -4127,7 +4127,7 @@ public class GUIManagerGeneral extends GUIManager
     for (int i = 0; i < paymentMeanIDs.size(); i++)
       {
         String paymentMeanID = paymentMeanIDs.get(i).toString();
-        GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, tenantID);
+        GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
         
         if (paymentMean != null && (force || !paymentMean.getReadOnly()))
           {
@@ -4199,7 +4199,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         String paymentMeanID = paymentMeanIDs.get(i).toString();
-        GUIManagedObject existingElement = paymentMeanService.getStoredPaymentMean(paymentMeanID, tenantID);
+        GUIManagedObject existingElement = paymentMeanService.getStoredPaymentMean(paymentMeanID);
         if (existingElement != null && !(existingElement.getReadOnly()))
           {
             statusSetIDs.add(paymentMeanID);
@@ -4220,7 +4220,7 @@ public class GUIManagerGeneral extends GUIManager
                  * store
                  *
                  *****************************************/
-                paymentMeanService.putPaymentMean(paymentMean, (existingElement == null), userID, tenantID);
+                paymentMeanService.putPaymentMean(paymentMean, (existingElement == null), userID);
 
                 /*****************************************
                  *
@@ -4243,7 +4243,7 @@ public class GUIManagerGeneral extends GUIManager
                 // store
                 //
 
-                paymentMeanService.putIncompletePaymentMean(incompleteObject, (existingElement == null), userID, tenantID);
+                paymentMeanService.putIncompletePaymentMean(incompleteObject, (existingElement == null), userID);
 
                 //
                 // revalidateProducts
@@ -4394,7 +4394,7 @@ public class GUIManagerGeneral extends GUIManager
                     *
                     *****************************************/
 
-                    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID, tenantID);
+                    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
                     try
                       {
                         /****************************************
@@ -4411,7 +4411,7 @@ public class GUIManagerGeneral extends GUIManager
                         *
                         *****************************************/
 
-                        uploadedFileService.putUploadedFile(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID, tenantID);
+                        uploadedFileService.putUploadedFile(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
 
                         /*****************************************
                         *
@@ -4449,7 +4449,7 @@ public class GUIManagerGeneral extends GUIManager
                         //  store
                         //
 
-                        uploadedFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID, tenantID);
+                        uploadedFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID);
 
                         //
                         //  revalidate dependent objects
@@ -4538,7 +4538,7 @@ public class GUIManagerGeneral extends GUIManager
         for (int i = 0; i < uploadedFileIDs.size(); i++)
           {
             String uploadedFileID = uploadedFileIDs.get(i).toString();
-            GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(uploadedFileID, includeArchived, tenantID);
+            GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(uploadedFileID, includeArchived);
             if (uploadedFile != null)
               {
                 uploadedFileObjects.add(uploadedFile);
@@ -4632,7 +4632,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String uploadFilesID = JSONUtilities.decodeString(jsonRoot, "id", false);
         uploadFilesIDs.add(uploadFilesID);
-        GUIManagedObject uploadedFileID = uploadedFileService.getStoredUploadedFile(uploadFilesID, tenantID);
+        GUIManagedObject uploadedFileID = uploadedFileService.getStoredUploadedFile(uploadFilesID);
 
         if (uploadedFileID != null && (force || !uploadedFileID.getReadOnly()))
           singleIDresponseCode = "ok";
@@ -4652,7 +4652,7 @@ public class GUIManagerGeneral extends GUIManager
     for (int i = 0; i < uploadFilesIDs.size(); i++)
       {
         String uploadFilesID = uploadFilesIDs.get(i).toString();
-        GUIManagedObject uploadedFileID = uploadedFileService.getStoredUploadedFile(uploadFilesID, tenantID);
+        GUIManagedObject uploadedFileID = uploadedFileService.getStoredUploadedFile(uploadFilesID);
         
         if (uploadedFileID != null && (force || !uploadedFileID.getReadOnly()))
           {

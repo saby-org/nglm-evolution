@@ -94,12 +94,12 @@ public class CriterionFieldAvailableValuesService extends GUIService
   *****************************************/
 
   public String generateCriterionFieldAvailableValuesID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredCriterionFieldAvailableValues(String criterionFieldAvailableValuesID, int tenantID) { return getStoredGUIManagedObject(criterionFieldAvailableValuesID, tenantID); }
-  public GUIManagedObject getStoredCriterionFieldAvailableValues(String criterionFieldAvailableValuesID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(criterionFieldAvailableValuesID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredCriterionFieldAvailableValues(String criterionFieldAvailableValuesID) { return getStoredGUIManagedObject(criterionFieldAvailableValuesID); }
+  public GUIManagedObject getStoredCriterionFieldAvailableValues(String criterionFieldAvailableValuesID, boolean includeArchived) { return getStoredGUIManagedObject(criterionFieldAvailableValuesID, includeArchived); }
   public Collection<GUIManagedObject> getStoredCriterionFieldAvailableValuesList(int tenantId) { return getStoredGUIManagedObjects(tenantId); }
   public Collection<GUIManagedObject> getStoredCriterionFieldAvailableValuesList(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveCriterionFieldAvailableValues(GUIManagedObject criterionFieldAvailableValuesUnchecked, Date date) { return isActiveGUIManagedObject(criterionFieldAvailableValuesUnchecked, date); }
-  public Journey getActiveCriterionFieldAvailableValues(String journeyID, Date date, int tenantID) { return (Journey) getActiveGUIManagedObject(journeyID, date, tenantID); }
+  public Journey getActiveCriterionFieldAvailableValues(String journeyID, Date date) { return (Journey) getActiveGUIManagedObject(journeyID, date); }
   public Collection<CriterionFieldAvailableValues> getActiveCriterionFieldAvailableValues(Date date, int tenantID) { return (Collection<CriterionFieldAvailableValues>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -108,7 +108,7 @@ public class CriterionFieldAvailableValuesService extends GUIService
   *
   *****************************************/
 
-  public void putCriterionFieldAvailableValues(GUIManagedObject criterionFieldAvailableValues, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putCriterionFieldAvailableValues(GUIManagedObject criterionFieldAvailableValues, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -120,7 +120,7 @@ public class CriterionFieldAvailableValuesService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(criterionFieldAvailableValues, now, newObject, userID, tenantID);
+    putGUIManagedObject(criterionFieldAvailableValues, now, newObject, userID);
   }
   
   /*****************************************
@@ -129,11 +129,11 @@ public class CriterionFieldAvailableValuesService extends GUIService
   *
   *****************************************/
 
-  public void putCriterionFieldAvailableValues(IncompleteObject criterionFieldAvailableValues, boolean newObject, String userID, int tenantID)
+  public void putCriterionFieldAvailableValues(IncompleteObject criterionFieldAvailableValues, boolean newObject, String userID)
   {
     try
       {
-        putCriterionFieldAvailableValues((GUIManagedObject) criterionFieldAvailableValues, newObject, userID, tenantID);
+        putCriterionFieldAvailableValues((GUIManagedObject) criterionFieldAvailableValues, newObject, userID);
       }
     catch (GUIManagerException e)
       {

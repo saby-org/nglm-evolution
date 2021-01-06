@@ -120,12 +120,12 @@ public class JourneyTemplateService extends GUIService
   *****************************************/
 
   public String generateJourneyTemplateID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredJourneyTemplate(String journeyTemplateID, int tenantID) { return getStoredGUIManagedObject(journeyTemplateID, tenantID); }
-  public GUIManagedObject getStoredJourneyTemplate(String journeyTemplateID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(journeyTemplateID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredJourneyTemplate(String journeyTemplateID) { return getStoredGUIManagedObject(journeyTemplateID); }
+  public GUIManagedObject getStoredJourneyTemplate(String journeyTemplateID, boolean includeArchived) { return getStoredGUIManagedObject(journeyTemplateID, includeArchived); }
   public Collection<GUIManagedObject> getStoredJourneyTemplates(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredJourneyTemplates(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveJourneyTemplate(GUIManagedObject journeyTemplateUnchecked, Date date) { return isActiveGUIManagedObject(journeyTemplateUnchecked, date); }
-  public Journey getActiveJourneyTemplate(String journeyTemplateID, Date date, int tenantID) { return (Journey) getActiveGUIManagedObject(journeyTemplateID, date, tenantID); }
+  public Journey getActiveJourneyTemplate(String journeyTemplateID, Date date) { return (Journey) getActiveGUIManagedObject(journeyTemplateID, date); }
   public Collection<Journey> getActiveJourneyTemplates(Date date, int tenantID) { return (Collection<Journey>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -134,7 +134,7 @@ public class JourneyTemplateService extends GUIService
   *
   *****************************************/
 
-  public void putJourneyTemplate(GUIManagedObject journeyTemplate, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putJourneyTemplate(GUIManagedObject journeyTemplate, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -155,7 +155,7 @@ public class JourneyTemplateService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(journeyTemplate, now, newObject, userID, tenantID);
+    putGUIManagedObject(journeyTemplate, now, newObject, userID);
   }
   
   /*****************************************
@@ -164,11 +164,11 @@ public class JourneyTemplateService extends GUIService
   *
   *****************************************/
 
-  public void putJourneyTemplate(IncompleteObject journeyTemplate, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, boolean newObject, String userID, int tenantID)
+  public void putJourneyTemplate(IncompleteObject journeyTemplate, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, boolean newObject, String userID)
   {
     try
       {
-        putJourneyTemplate((GUIManagedObject) journeyTemplate, journeyObjectiveService, catalogCharacteristicService, targetService, newObject, userID, tenantID);
+        putJourneyTemplate((GUIManagedObject) journeyTemplate, journeyObjectiveService, catalogCharacteristicService, targetService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

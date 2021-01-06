@@ -72,7 +72,7 @@ public class JourneyCleanUpTask
       String journeyID = getJourneyID.get(lowerCaseJourneyID);
       
       if(journeyID != null) { // if journeyID can't be found, it will be deleted
-        GUIManagedObject object = journeyService.getStoredJourney(journeyID, true, 0); // EVPRO-99 check this
+        GUIManagedObject object = journeyService.getStoredJourney(journeyID, true);
         
         if(object.getGUIManagedObjectType() == GUIManagedObjectType.Journey) {
           if(journeyExpirationDate.before(object.getEffectiveEndDate())) {

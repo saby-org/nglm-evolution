@@ -428,7 +428,7 @@ public class UCGEngine
         for (String dimensionID : ucgRule.getSelectedDimensions())
           {
             Set<String> segmentIDs = new HashSet<String>();
-            SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now, 0); // let do it for all tenant
+            SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now); 
             if (dimension != null)
               {
                 for (Segment segment : dimension.getSegments())

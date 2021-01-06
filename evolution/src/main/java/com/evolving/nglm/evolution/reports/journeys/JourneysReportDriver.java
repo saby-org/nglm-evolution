@@ -149,7 +149,7 @@ public class JourneysReportDriver extends ReportDriver
                   journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                   journeyInfo.put("journeyDescription", journey.getJSONRepresentation().get("description"));
                   journeyInfo.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation()); 
-                  Set<JourneyObjective> activejourneyObjectives = journey.getAllObjectives(journeyObjectiveService, SystemTime.getCurrentTime(), tenantID);                 
+                  Set<JourneyObjective> activejourneyObjectives = journey.getAllObjectives(journeyObjectiveService, SystemTime.getCurrentTime());                 
                   for (JourneyObjective journeyObjective : activejourneyObjectives) {
                     sbJourneyObjectives.append(journeyObjective.getGUIManagedObjectDisplay()).append(",");            
                   }   
@@ -181,8 +181,8 @@ public class JourneysReportDriver extends ReportDriver
 
                   Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID);
                   for (String rewards : distributedRewards.keySet()) {
-                    if (pointService.getStoredPoint(rewards, tenantID) != null) {
-                      String rewardName = pointService.getStoredPoint(rewards, tenantID).getGUIManagedObjectDisplay();
+                    if (pointService.getStoredPoint(rewards) != null) {
+                      String rewardName = pointService.getStoredPoint(rewards).getGUIManagedObjectDisplay();
                       sbRewards.append(rewardName).append(",");
                     }
                     else {

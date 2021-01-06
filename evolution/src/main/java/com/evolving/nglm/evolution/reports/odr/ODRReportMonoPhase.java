@@ -143,9 +143,9 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   * dumpElementToCsv
   *
   ****************************************/
- public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
  {
-   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map, tenantID);  
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
    if(mapLocal.size() != 1) {
 	   log.debug("We have multiple dates in the same index " + mapLocal.size());
    } else {
@@ -164,7 +164,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
 					   log.debug("We have multiple reports in this folder " + list.size());
 				   } else {
 					   Map<String, Object> reportMap = list.get(0);
-					   dumpLineToCsv(reportMap, writer, addHeaders, tenantID);
+					   dumpLineToCsv(reportMap, writer, addHeaders);
 					   return false;
 				   }
 			   }
@@ -175,7 +175,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
  }
  
  
-  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders, int tenantID)
+  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
       {
@@ -193,7 +193,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       }
   }
   
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> odrFields = map;
@@ -249,7 +249,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         //Compute featureName and ModuleName from ID
         if(odrFields.containsKey(moduleId) && odrFields.containsKey(featureId)){
           Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
-          String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService, tenantID);
+          String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
           oderRecs.put(featureName, feature);
           oderRecs.put(moduleName, module.toString());
           oderRecs.put(featureId, odrFields.get(featureId));
@@ -262,7 +262,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         if (odrFields.containsKey(offerID))
           {
             oderRecs.put(offerID, odrFields.get(offerID));
-            GUIManagedObject offerObject = offerService.getStoredOffer(String.valueOf(odrFields.get(offerID)), tenantID);
+            GUIManagedObject offerObject = offerService.getStoredOffer(String.valueOf(odrFields.get(offerID)));
             if (offerObject instanceof Offer)
               {
                 oderRecs.put(offerDisplay, ((Offer)offerObject).getDisplay());
@@ -280,7 +280,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         if (odrFields.containsKey(offerID))
           {
             List<Map<String, Object>> offerContentJSON = new ArrayList<>();
-            GUIManagedObject offerObject = offerService.getStoredOffer(String.valueOf(odrFields.get(offerID)), tenantID);
+            GUIManagedObject offerObject = offerService.getStoredOffer(String.valueOf(odrFields.get(offerID)));
             if (offerObject != null && offerObject instanceof Offer)
               {
                 if (((Offer) offerObject).getOfferProducts() != null
@@ -292,7 +292,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
                         Map<String, Object> outputJSON = new LinkedHashMap<>();
                         String objectid = offerProduct.getProductID();
                         GUIManagedObject guiManagedObject = (GUIManagedObject) productService
-                            .getStoredProduct(objectid, tenantID);
+                            .getStoredProduct(objectid);
                         if (guiManagedObject != null && guiManagedObject instanceof Product)
                           {
                             Product product = (Product) guiManagedObject;
@@ -315,7 +315,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
                         Map<String, Object> outputJSON = new LinkedHashMap<>();
                         String objectid = offerVoucher.getVoucherID();
                         GUIManagedObject guiManagedObject = (GUIManagedObject) voucherService
-                            .getStoredVoucher(objectid, tenantID);
+                            .getStoredVoucher(objectid);
                         if (guiManagedObject != null && guiManagedObject instanceof Voucher)
                           {
                             Voucher voucher = (Voucher) guiManagedObject;
@@ -355,7 +355,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
             if (odrFields.get(salesChannelID) != null)
               {
                 GUIManagedObject salesChannelObject = salesChannelService
-                    .getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)), tenantID);
+                    .getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
                 if (salesChannelObject != null && salesChannelObject instanceof SalesChannel)
                   {
                     oderRecs.put(salesChannelDisplay, ((SalesChannel) salesChannelObject).getGUIManagedObjectDisplay());
@@ -379,7 +379,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
             if (odrFields.get(resellerID) != null)
               {
                 String resellerIDString = (String) (odrFields.get(resellerID));
-                GUIManagedObject resellerObject = resellerService.getStoredReseller(resellerIDString, tenantID);
+                GUIManagedObject resellerObject = resellerService.getStoredReseller(resellerIDString);
                 if (resellerObject != null && resellerObject instanceof Reseller)
                   {
                     String display = ((Reseller) resellerObject).getGUIManagedObjectDisplay();
@@ -416,7 +416,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
                   if (voucher.get("supplierID") != null)
                     {
                       String supplierID = voucher.get("supplierID").toString();
-                      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID, tenantID);
+                      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
                       if (supplierObject != null && supplierObject instanceof Supplier)
                         {
                           supplierDisplay = ((Supplier) supplierObject).getGUIManagedObjectDisplay();

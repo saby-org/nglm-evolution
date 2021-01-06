@@ -120,10 +120,10 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  OfferObjectiveInstance(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
+  OfferObjectiveInstance(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     this.offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "offerObjectiveID", true);
-    this.catalogCharacteristics = decodeCatalogCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", false), catalogCharacteristicService, tenantID);
+    this.catalogCharacteristics = decodeCatalogCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", false), catalogCharacteristicService);
   }
 
   /*****************************************
@@ -132,14 +132,14 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  private Set<CatalogCharacteristicInstance> decodeCatalogCharacteristics(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
+  private Set<CatalogCharacteristicInstance> decodeCatalogCharacteristics(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     Set<CatalogCharacteristicInstance> result = new HashSet<CatalogCharacteristicInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new CatalogCharacteristicInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
+            result.add(new CatalogCharacteristicInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;

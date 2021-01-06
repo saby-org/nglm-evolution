@@ -155,12 +155,12 @@ public class JourneyState implements Cleanable
   public void setJourneyExitDate(Date journeyExitDate) { this.journeyExitDate = journeyExitDate; }
   public void setJourneyCloseDate(Date journeyCloseDate) { this.journeyCloseDate = journeyCloseDate; }
 
-  @Override public Date getExpirationDate(RetentionService retentionService, int tenantID) {
+  @Override public Date getExpirationDate(RetentionService retentionService) {
     if(getJourneyExitDate()!=null) return getJourneyExitDate();//case subscriber ended the journey
     return getJourneyEndDate();// case subscriber did not end the journey
   }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService, int tenantID) {
-    return retentionService.getJourneyRetention(type,getJourneyID(), tenantID);
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+    return retentionService.getJourneyRetention(type,getJourneyID());
   }
 
   /*****************************************

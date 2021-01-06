@@ -110,12 +110,12 @@ public class TenantService extends GUIService
   *****************************************/
 
   public String generateTenantID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredTenant(String tenantID) { return getStoredGUIManagedObject(tenantID, 0); } // tenants are administrator objects
-  public GUIManagedObject getStoredTenant(String tenantID, boolean includeArchived) { return getStoredGUIManagedObject(tenantID, includeArchived, 0); }
+  public GUIManagedObject getStoredTenant(String tenantID) { return getStoredGUIManagedObject(tenantID); } // tenants are administrator objects
+  public GUIManagedObject getStoredTenant(String tenantID, boolean includeArchived) { return getStoredGUIManagedObject(tenantID, includeArchived); }
   public Collection<GUIManagedObject> getStoredTenants() { return getStoredGUIManagedObjects(0); }
   public Collection<GUIManagedObject> getStoredTenants(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived, 0); }
   public boolean isActiveTenant(GUIManagedObject tenantUnchecked, Date date) { return isActiveGUIManagedObject(tenantUnchecked, date); }
-  public Tenant getActiveTenant(String tenantID, Date date) { return (Tenant) getActiveGUIManagedObject(tenantID, date, 0); }
+  public Tenant getActiveTenant(String tenantID, Date date) { return (Tenant) getActiveGUIManagedObject(tenantID, date); }
   public Collection<Tenant> getActiveTenants(Date date) { return (Collection<Tenant>) getActiveGUIManagedObjects(date, 0); }
 
   /*****************************************
@@ -136,7 +136,7 @@ public class TenantService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(tenant, now, newObject, userID, 0);
+    putGUIManagedObject(tenant, now, newObject, userID);
   }
 
   /*****************************************

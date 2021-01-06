@@ -233,7 +233,7 @@ public class SegmentationDimensionRanges extends SegmentationDimension
     *
     *****************************************/
 
-    this.baseSplit = decodeBaseSplit(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "baseSplit", true), resetSegmentIDs);
+    this.baseSplit = decodeBaseSplit(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "baseSplit", true), resetSegmentIDs, tenantID);
     
     /*****************************************
     *
@@ -253,12 +253,12 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   *
   *****************************************/
 
-  private List<BaseSplit> decodeBaseSplit(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean resetSegmentIDs) throws GUIManagerException
+  private List<BaseSplit> decodeBaseSplit(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean resetSegmentIDs, int tenantID) throws GUIManagerException
    {
     List<BaseSplit> result = new ArrayList<BaseSplit>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new BaseSplit(segmentationDimensionService, (JSONObject) jsonArray.get(i), resetSegmentIDs));
+        result.add(new BaseSplit(segmentationDimensionService, (JSONObject) jsonArray.get(i), resetSegmentIDs, tenantID));
       }
     return result;
   }

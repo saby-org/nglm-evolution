@@ -248,9 +248,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public String getSubject(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
+    public String getSubject(SubscriberMessageTemplateService subscriberMessageTemplateService)
     {
-      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getSubject() : null;
       String text = (dialogMessage != null) ? dialogMessage.resolve(language, subjectTags) : null;
       return text;
@@ -262,9 +262,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public String getHtmlBody(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
+    public String getHtmlBody(SubscriberMessageTemplateService subscriberMessageTemplateService)
     {
-      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getHTMLBody() : null;
       String text = (dialogMessage != null) ? dialogMessage.resolve(language, htmlBodyTags) : null;
       return text;
@@ -276,9 +276,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public String getTextBody(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
+    public String getTextBody(SubscriberMessageTemplateService subscriberMessageTemplateService)
     {
-      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime(), tenantID);
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getTextBody() : null;
       String text = (dialogMessage != null) ? dialogMessage.resolve(language, textBodyTags) : null;
       return text;
@@ -475,21 +475,21 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     //  addFieldsForGUIPresentation
     //
 
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(EVENTID, null);
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
-      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(SOURCE, getFromAddress());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
-      guiPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService, tenantID));
-      guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService, tenantID));
-      guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService, tenantID));
+      guiPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
+      guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
+      guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -498,22 +498,22 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     //  addFieldsForThirdPartyPresentation
     //
 
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
       thirdPartyPresentationMap.put(DELIVERYSTATUS, getMessageStatus().toString()); // replace value set by the superclass 
       thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
-      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, tenantID));
+      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getFromAddress());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService, tenantID));
-      thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService, tenantID));
-      thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService, tenantID));
+      thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
+      thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
+      thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -583,7 +583,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       *****************************************/
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {
@@ -594,8 +594,8 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
       String language = subscriberEvaluationRequest.getLanguage();
-      MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext, subscriberEvaluationRequest.getTenantID());
-      MailTemplate template = (baseTemplate != null) ? (MailTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext, subscriberEvaluationRequest.getTenantID()) : null;
+      MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext);
+      MailTemplate template = (baseTemplate != null) ? (MailTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext) : null;
 
       //
       //  subject
@@ -678,7 +678,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
             CommunicationChannel channel = Deployment.getCommunicationChannels().get("mail");
             if(channel != null) 
               {
-                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now, mailRequest.getTenantID());
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
               }
             
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

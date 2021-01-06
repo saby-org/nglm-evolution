@@ -95,12 +95,12 @@ public class LoyaltyProgramService extends GUIService
   *****************************************/
 
   public String generateLoyaltyProgramID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredLoyaltyProgram(String loyaltyProgramID, int tenantID) { return getStoredGUIManagedObject(loyaltyProgramID, tenantID); }
-  public GUIManagedObject getStoredLoyaltyProgram(String loyaltyProgramID, boolean includeArchived, int tenantID) { return getStoredGUIManagedObject(loyaltyProgramID, includeArchived, tenantID); }
+  public GUIManagedObject getStoredLoyaltyProgram(String loyaltyProgramID) { return getStoredGUIManagedObject(loyaltyProgramID); }
+  public GUIManagedObject getStoredLoyaltyProgram(String loyaltyProgramID, boolean includeArchived) { return getStoredGUIManagedObject(loyaltyProgramID, includeArchived); }
   public Collection<GUIManagedObject> getStoredLoyaltyPrograms(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public Collection<GUIManagedObject> getStoredLoyaltyPrograms(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveLoyaltyProgram(GUIManagedObject loyaltyProgramUnchecked, Date date) { return isActiveGUIManagedObject(loyaltyProgramUnchecked, date); }
-  public LoyaltyProgram getActiveLoyaltyProgram(String loyaltyProgramID, Date date, int tenantID) { return (LoyaltyProgram) getActiveGUIManagedObject(loyaltyProgramID, date, tenantID); }
+  public LoyaltyProgram getActiveLoyaltyProgram(String loyaltyProgramID, Date date) { return (LoyaltyProgram) getActiveGUIManagedObject(loyaltyProgramID, date); }
   public Collection<LoyaltyProgram> getActiveLoyaltyPrograms(Date date, int tenantID) { return (Collection<LoyaltyProgram>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
@@ -109,7 +109,7 @@ public class LoyaltyProgramService extends GUIService
   *
   *****************************************/
 
-  public void putLoyaltyProgram(LoyaltyProgram loyaltyProgram, boolean newObject, String userID, int tenantID) throws GUIManagerException
+  public void putLoyaltyProgram(LoyaltyProgram loyaltyProgram, boolean newObject, String userID) throws GUIManagerException
   {
     
     //
@@ -122,7 +122,7 @@ public class LoyaltyProgramService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(loyaltyProgram, SystemTime.getCurrentTime(), newObject, userID, tenantID);
+    putGUIManagedObject(loyaltyProgram, SystemTime.getCurrentTime(), newObject, userID);
     
   }
   
@@ -132,9 +132,9 @@ public class LoyaltyProgramService extends GUIService
   *
   *****************************************/
 
-  public void putLoyaltyProgram(IncompleteObject loyaltyProgram, boolean newObject, String userID, int tenantID)
+  public void putLoyaltyProgram(IncompleteObject loyaltyProgram, boolean newObject, String userID)
   {
-    putGUIManagedObject(loyaltyProgram, SystemTime.getCurrentTime(), newObject, userID, tenantID);
+    putGUIManagedObject(loyaltyProgram, SystemTime.getCurrentTime(), newObject, userID);
   }
   
   /*****************************************

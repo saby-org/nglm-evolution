@@ -242,7 +242,7 @@ public class OfferObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(CatalogCharacteristicService catalogCharacteristicService, Date date, int tenantID) throws GUIManagerException
+  public void validate(CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -252,7 +252,7 @@ public class OfferObjective extends GUIManagedObject
 
     for (String catalogCharacteristicID : catalogCharacteristics)
       {
-        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date, tenantID);
+        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date);
         if (catalogCharacteristic == null) throw new GUIManagerException("unknown catalog characteristic", catalogCharacteristicID);
       }
   }

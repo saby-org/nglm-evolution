@@ -243,7 +243,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
     
     this.loyaltyProgramType = LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true));
     this.loyaltyProgramDescription = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramDescription", false);
-    this.characteristics = decodeLoyaltyProgramCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "characteristics", false), catalogCharacteristicService, tenantID);
+    this.characteristics = decodeLoyaltyProgramCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "characteristics", false), catalogCharacteristicService);
     
   }
   
@@ -253,14 +253,14 @@ public abstract class LoyaltyProgram extends GUIManagedObject
   *
   *****************************************/
 
-  private Set<CatalogCharacteristicInstance> decodeLoyaltyProgramCharacteristics(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
+  private Set<CatalogCharacteristicInstance> decodeLoyaltyProgramCharacteristics(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     Set<CatalogCharacteristicInstance> result = new HashSet<CatalogCharacteristicInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new CatalogCharacteristicInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService, tenantID));
+            result.add(new CatalogCharacteristicInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;
