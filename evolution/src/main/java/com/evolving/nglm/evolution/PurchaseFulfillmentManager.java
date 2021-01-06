@@ -661,10 +661,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.offerID = (String) esFields.get("offerID");
       this.salesChannelID = (String) esFields.get("salesChannelID");
       this.meanOfPayment = (String) esFields.get("meanOfPayment");
-      this.offerPrice = (long) esFields.get("offerPrice");
+      this.offerPrice = (Integer) esFields.get("offerPrice");
       this.origin = (String) esFields.get("origin");
       this.resellerID = (String) esFields.get("resellerID");
-      this.quantity = (int) esFields.get("offerQty");
+      this.quantity = (Integer) esFields.get("offerQty");
     }
 
     /*****************************************
