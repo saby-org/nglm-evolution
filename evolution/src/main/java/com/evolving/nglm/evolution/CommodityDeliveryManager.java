@@ -600,6 +600,8 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       this.amount = (int) esFields.get("deliverableQty");
       // not in ES this.validityPeriodType = esFields.get("");
       // not in ES this.validityPeriodQuantity = esFields.get("");
+      this.validityPeriodType = TimeUnit.Year;
+      this.validityPeriodQuantity = 1;
       String deliverableExpirationDateStr = (String) esFields.get("deliverableExpirationDate");
       try
         {
