@@ -38,6 +38,8 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
@@ -217,6 +219,94 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       //
       for(Bucket bucket : buckets.getBuckets()) {
         result.put(bucket.getKeyAsString(), bucket.getDocCount());
+      }
+      
+      return result;
+    }
+    catch (ElasticsearchClientException e) { // forward
+      throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getMessage());
+    }
+  }
+
+  // @return map<STATUS,count>
+  public Map<String, Long> getJourneyBonusesCount(String journeyDisplay) throws ElasticsearchClientException {
+    return getJourneyGenericDeliveryCount(journeyDisplay, BDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_bdr
+  }
+
+  // @return map<STATUS,count>
+  public Map<String, Long> getJourneyMessagesCount(String journeyDisplay) throws ElasticsearchClientException {
+    return getJourneyGenericDeliveryCount(journeyDisplay, MDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_messages
+  }
+  
+  // @return map<STATUS,count>
+  private Map<String, Long> getJourneyGenericDeliveryCount(String journeyDisplay, String datacubeIndex) throws ElasticsearchClientException {
+    try {
+      Map<String, Long> result = new HashMap<String, Long>();
+  
+      //
+      // Build Elasticsearch query
+      // 
+      String statusBucketName = "STATUS";
+      String sumBucketName = "SUM";
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(QueryBuilders.boolQuery()
+              .filter(QueryBuilders.termQuery("filter.feature", journeyDisplay))
+              .mustNot(QueryBuilders.termQuery("period", 3600000))) // hack: filter out any hourly publication (definitive & preview) 
+          .size(0)
+          .aggregation(AggregationBuilders.terms(statusBucketName).field("filter.returnCode").size(MAX_BUCKETS)
+              .subAggregation(AggregationBuilders.sum(sumBucketName).field("count")));
+      SearchRequest searchRequest = new SearchRequest(datacubeIndex).source(searchSourceRequest);
+      
+      //
+      // Send request & retrieve response synchronously (blocking call)
+      // 
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+      
+      //
+      // Check search response
+      //
+      // @rl TODO checking status seems useless because it raises exception
+      if (searchResponse.isTimedOut()
+          || searchResponse.getFailedShards() > 0) {
+        throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+      }
+      
+      if(searchResponse.getAggregations() == null) {
+        throw new ElasticsearchClientException("Aggregation is missing in search response.");
+      }
+      
+      ParsedStringTerms buckets = searchResponse.getAggregations().get(statusBucketName);
+      if(buckets == null) {
+        throw new ElasticsearchClientException("Buckets are missing in search response.");
+      }
+      
+      //
+      // Fill result map
+      //
+      for(Bucket bucket : buckets.getBuckets()) {
+        ParsedSum metricBucket = bucket.getAggregations().get(sumBucketName);
+        if (metricBucket == null) {
+          throw new ElasticsearchClientException("Unable to extract "+sumBucketName+" metric, aggregation is missing.");
+        }
+        
+        result.put(bucket.getKeyAsString(), (long) metricBucket.getValue());
       }
       
       return result;

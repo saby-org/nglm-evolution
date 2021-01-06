@@ -41,7 +41,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_messages";
+  public static final String DATACUBE_ES_INDEX = "datacube_messages";
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_messages-";
 
   /*****************************************

@@ -43,7 +43,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_bdr";
+  public static final String DATACUBE_ES_INDEX = "datacube_bdr";
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_bonuses-";
   private static final String METRIC_TOTAL_QUANTITY = "totalQty";
 
