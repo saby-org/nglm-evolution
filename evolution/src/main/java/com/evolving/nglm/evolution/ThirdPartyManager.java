@@ -1551,9 +1551,7 @@ public class ThirdPartyManager
               List<SearchHit> hits = getESHits(searchRequest);
               for (SearchHit hit : hits)
                 {
-                  Map<String, Object> esFields = hit.getSourceAsMap();
-                  PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(esFields, supplierService, offerService, productService, voucherService, resellerService);
-                  
+                  PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
                   Map<String, Object> esOdrMap = purchaseFulfillmentRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                   ESODRsJson.add(JSONUtilities.encodeObject(esOdrMap));
                 }

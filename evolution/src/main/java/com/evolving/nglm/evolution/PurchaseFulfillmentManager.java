@@ -672,8 +672,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       
       GUIManagedObject offer = offerService.getStoredOffer(offerID);
       Supplier supplier = getOfferSupplier(offer, supplierService, productService, voucherService);
+      this.supplierDisplay = "";
       if (supplier != null) this.supplierDisplay = supplier.getGUIManagedObjectDisplay();
       GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
+      this.resellerDisplay = "";
       if (reseller != null) this.resellerDisplay = reseller.getGUIManagedObjectDisplay();
       
     }
