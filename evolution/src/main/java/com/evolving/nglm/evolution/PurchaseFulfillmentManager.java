@@ -655,7 +655,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
     
-    public PurchaseFulfillmentRequest(Map<String, Object> esFields)
+    public PurchaseFulfillmentRequest(Map<String, Object> esFields, SupplierService supplierService, OfferService offerService, ProductService productService, VoucherService voucherService, ResellerService resellerService)
     {
       super(esFields);
       this.offerID = (String) esFields.get("offerID");
@@ -665,8 +665,80 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.origin = (String) esFields.get("origin");
       this.resellerID = (String) esFields.get("resellerID");
       this.quantity = (Integer) esFields.get("offerQty");
+      
+      //
+      // derived
+      //
+      
+      GUIManagedObject offer = offerService.getStoredOffer(offerID);
+      Supplier supplier = getOfferSupplier(offer, supplierService, productService, voucherService);
+      if (supplier != null) this.supplierDisplay = supplier.getGUIManagedObjectDisplay();
+      GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
+      if (reseller != null) this.resellerDisplay = reseller.getGUIManagedObjectDisplay();
+      
     }
 
+    private Supplier getOfferSupplier(GUIManagedObject offerUnchecked, SupplierService supplierService, ProductService productService, VoucherService voucherService)
+    {
+      Supplier result = null;
+      Date now = SystemTime.getCurrentTime();
+      if (offerUnchecked != null && offerUnchecked instanceof Offer)
+        {
+          Offer offer = (Offer) offerUnchecked;
+          boolean found = false;
+          Set<OfferProduct> offerProducts = offer.getOfferProducts();
+          if (offerProducts != null && !offerProducts.isEmpty())
+            {
+              for (OfferProduct offerProduct : offerProducts)
+                {
+                  String productID = offerProduct.getProductID();
+                  Product product = productService.getActiveProduct(productID, now);
+                  if (product != null)
+                    {
+                      String supplierID = product.getSupplierID();
+                      if (supplierID != null)
+                        {
+                          Supplier supplier = supplierService.getActiveSupplier(supplierID, now);
+                          if (supplier != null)
+                            {
+                              result = supplier;
+                              found = true;
+                              break; // only consider first valid one
+                            }
+                        }
+                    }
+                }
+            }
+         if (!found)
+            {
+              Set<OfferVoucher> offerVouchers = offer.getOfferVouchers();
+              if (offerVouchers != null && !offerVouchers.isEmpty())
+                {
+                  for (OfferVoucher offerVoucher : offerVouchers)
+                    {
+                      String voucherID = offerVoucher.getVoucherID();
+                      Voucher voucher = voucherService.getActiveVoucher(voucherID, now);
+                      if (voucher != null)
+                        {
+                          String supplierID = voucher.getSupplierID();
+                          if (supplierID != null)
+                            {
+                              Supplier supplier = supplierService.getActiveSupplier(supplierID, now);
+                              if (supplier != null)
+                                {
+                                  result = supplier;
+                                  found = true;
+                                  break; // only consider first valid one
+                                }
+                            }
+                        }
+                    }
+                }
+              
+            }
+        }
+      return result;
+    }
     /*****************************************
     *
     *  pack
