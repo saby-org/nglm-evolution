@@ -383,8 +383,8 @@ public class ThirdPartyManager
     //
 
     PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
-    httpClientConnectionManager.setDefaultMaxPerRoute(50);
-    httpClientConnectionManager.setMaxTotal(150);
+    httpClientConnectionManager.setDefaultMaxPerRoute(threadPoolSize);
+    httpClientConnectionManager.setMaxTotal(threadPoolSize);
 
     //
     //  httpClient
@@ -419,7 +419,7 @@ public class ThirdPartyManager
     //  construct & start
     //
 
-    subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
+    subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints, threadPoolSize);
     subscriberProfileService.start();
 
     dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "thirdpartymanager-dynamiccriterionfieldservice-"+apiProcessKey, Deployment.getDynamicCriterionFieldTopic(), false);

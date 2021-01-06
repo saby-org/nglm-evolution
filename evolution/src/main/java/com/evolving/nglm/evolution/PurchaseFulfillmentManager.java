@@ -187,7 +187,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     this.elasticsearch = elasticsearch;
 
-    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
+    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints(), threadNumber);
     subscriberProfileService.start();
     
     dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "PurchaseMgr-dynamiccriterionfieldservice-"+deliveryManagerKey, Deployment.getDynamicCriterionFieldTopic(), false);

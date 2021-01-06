@@ -58,6 +58,7 @@ public class Deployment
   private static String topicRetentionShortMs;
   private static String topicRetentionMs;
   private static String topicRetentionLongMs;
+  private static int httpServerScalingFactor = 1;    
   private static int evolutionEngineStreamThreads;
   private static int evolutionEngineInstanceNumbers;
   private static String subscriberGroupLoaderAlternateID;
@@ -307,6 +308,7 @@ public class Deployment
   public static String getTopicRetentionShortMs() { return topicRetentionShortMs; }
   public static String getTopicRetentionMs() { return topicRetentionMs; }
   public static String getTopicRetentionLongMs() { return topicRetentionLongMs; }
+  public static int getHttpServerScalingFactor() { return httpServerScalingFactor; }
   public static int getEvolutionEngineStreamThreads() { return evolutionEngineStreamThreads; }
   public static int getEvolutionEngineInstanceNumbers() { return evolutionEngineInstanceNumbers; }
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
@@ -742,6 +744,20 @@ public class Deployment
           throw new ServerRuntimeException("deployment : topic configuration", e);
         }
 
+      //
+      //  httpServerScalingFactor
+      //
+      
+      try
+        {
+          httpServerScalingFactor = Integer.parseInt(System.getenv().get("HTTP_SERVER_SCALING_FACTOR"));
+          log.info("Deployment: HTTP_SERVER_SCALING_FACTOR set to value - " + httpServerScalingFactor);          
+        }
+      catch (NumberFormatException e)
+        {
+          log.info("Deployment: HTTP_SERVER_SCALING_FACTOR set to default value - " + httpServerScalingFactor);
+        }
+      
       try
         {
           evolutionEngineStreamThreads = Integer.parseInt(System.getProperty("evolutionengine.streamthreads","1"));

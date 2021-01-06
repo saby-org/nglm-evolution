@@ -161,7 +161,7 @@ public abstract class SubscriberProfileService
     *
     *****************************************/
 
-    public EngineSubscriberProfileService(String subscriberProfileEndpoints)
+    public EngineSubscriberProfileService(String subscriberProfileEndpoints, int threads)
     {
       /*****************************************
       *
@@ -182,8 +182,8 @@ public abstract class SubscriberProfileService
       //
 
       PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
-      httpClientConnectionManager.setDefaultMaxPerRoute(Deployment.getEvolutionEngineStreamThreads());
-      httpClientConnectionManager.setMaxTotal(Deployment.getEvolutionEngineInstanceNumbers()*Deployment.getEvolutionEngineStreamThreads());
+      httpClientConnectionManager.setDefaultMaxPerRoute(threads);
+      httpClientConnectionManager.setMaxTotal(threads);
 
       //
       //  httpClient
@@ -195,13 +195,13 @@ public abstract class SubscriberProfileService
     }
 
     //
-    //  legacy historical constructor
+    //  legacy historical constructor(removed for now)
     //
     
-    public EngineSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String subscriberProfileEndpoints)
-    {
-      this(subscriberProfileEndpoints);
-    }
+//    public EngineSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String subscriberProfileEndpoints)
+//    {
+//      this(subscriberProfileEndpoints);
+//    }
     
     /*****************************************
     *
@@ -470,7 +470,7 @@ public abstract class SubscriberProfileService
     //  instantiate service
     //
     
-    SubscriberProfileService subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
+    SubscriberProfileService subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints(), 1);
 
     //
     //  start
