@@ -6739,19 +6739,19 @@ public class ThirdPartyManager
   private DeliveryRequest getNotificationDeliveryRequest(String requestClass, SearchHit hit)
   {
     DeliveryRequest deliveryRequest = null;
-    if (deliveryRequest.equals(MailNotificationManagerRequest.class.getName()))
+    if (requestClass.equals(MailNotificationManagerRequest.class.getName()))
       {
         deliveryRequest = new MailNotificationManagerRequest(hit.getSourceAsMap());
       }
-    else if(deliveryRequest.equals(SMSNotificationManagerRequest.class.getName()))
+    else if(requestClass.equals(SMSNotificationManagerRequest.class.getName()))
       {
         deliveryRequest = new SMSNotificationManagerRequest(hit.getSourceAsMap());
       }
-    else if (deliveryRequest.equals(NotificationManagerRequest.class.getName()))
+    else if (requestClass.equals(NotificationManagerRequest.class.getName()))
       {
         deliveryRequest = new NotificationManagerRequest(hit.getSourceAsMap());
       }
-    else if (deliveryRequest.equals(PushNotificationManagerRequest.class.getName()))
+    else if (requestClass.equals(PushNotificationManagerRequest.class.getName()))
       {
         deliveryRequest = new PushNotificationManagerRequest(hit.getSourceAsMap());
       }
