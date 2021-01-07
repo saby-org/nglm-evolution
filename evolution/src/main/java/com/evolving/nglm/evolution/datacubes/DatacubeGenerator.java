@@ -199,7 +199,7 @@ public abstract class DatacubeGenerator
   *  extractRow
   *
   *****************************************/
-  protected Map<String,Object> extractRow(Map<String, Object> filters, long count, String timestamp, long period, Map<String, Object> metrics) 
+  protected Map<String,Object> extractRow(Map<String, Object> filters, long count, String timestamp, long period, Map<String, Long> metrics) 
   {
     //
     // Extract documentID from filters, timestamp

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -125,7 +126,8 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     List<CompositeValuesSourceBuilder<?>> sources = new ArrayList<>();
     sources.add(new TermsValuesSourceBuilder("loyaltyProgramID").field("loyaltyPrograms.programID"));
     sources.add(new TermsValuesSourceBuilder("tier").field("loyaltyPrograms.tierName").missingBucket(false)); // Missing means opt-out. Do not count them here
-    sources.add(new TermsValuesSourceBuilder("redeemer").field("loyaltyPrograms.rewardTodayRedeemer").missingBucket(false)); // Missing should NOT happen
+    sources.add(new TermsValuesSourceBuilder("redeemerToday").field("loyaltyPrograms.rewardTodayRedeemer").missingBucket(false)); // Missing should NOT happen
+    sources.add(new TermsValuesSourceBuilder("redeemerYesterday").field("loyaltyPrograms.rewardYesterdayRedeemer").missingBucket(false)); // Missing should NOT happen
     
     //
     // Sub Aggregation STATUS(filter) with metrics
@@ -198,11 +200,24 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     // "evolutionSubscriberStatus" stay the same. TODO: retrieve display for evolutionSubscriberStatus
     // "redeemer" stay the same    
   }
+  
+  // A = A+B
+  private void datacubeRowAddition(Map<String, Object> a, Map<String, Object> b){
+    // Add counts
+    a.put("count", ((Long) a.get("count")) + ((Long) b.get("count")));
+  
+    // Add metrics
+    for(String key : a.keySet()) {
+      if(key.startsWith("metric.")) {
+        a.put(key, ((Long) a.get(key)) + ((Long) b.get(key)));
+      }
+    }
+  }
 
   @Override
   protected List<Map<String, Object>> extractDatacubeRows(SearchResponse response, String timestamp, long period) throws ClassCastException
   {
-    List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
+    Map<String, Map<String,Object>> result = new HashMap<String, Map<String,Object>>();
     
     if (response.isTimedOut()
         || response.getFailedShards() > 0
@@ -210,24 +225,24 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         || response.status() != RestStatus.OK) {
       log.error("Elasticsearch search response return with bad status.");
       log.error(response.toString());
-      return result;
+      return Collections.emptyList();
     }
     
     if(response.getAggregations() == null) {
       log.error("Main aggregation is missing in search response.");
-      return result;
+      return Collections.emptyList();
     }
     
     ParsedNested parsedNested = response.getAggregations().get("DATACUBE");
     if(parsedNested == null || parsedNested.getAggregations() == null) {
       log.error("Nested aggregation is missing in search response.");
-      return result;
+      return Collections.emptyList();
     }
     
     ParsedComposite parsedComposite = parsedNested.getAggregations().get("LOYALTY-COMPOSITE");
     if(parsedComposite == null || parsedComposite.getBuckets() == null) {
       log.error("Composite buckets are missing in search response.");
-      return result;
+      return Collections.emptyList();
     }
     
     for(ParsedComposite.ParsedBucket bucket: parsedComposite.getBuckets()) {
@@ -240,6 +255,10 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
           filters.replace(key, UNDEFINED_BUCKET_VALUE);
         }
       }
+      
+      // Remove redeemer, the right one will be added later
+      Boolean redeemerToday = (Boolean) filters.remove("redeemerToday");
+      Boolean redeemerYesterday = (Boolean) filters.remove("redeemerYesterday");
       
       String loyaltyProgramID = (String) filters.get("loyaltyProgramID");
       String rewardID = loyaltyProgramsMap.getRewardPointsID(loyaltyProgramID, "extractDatacubeRows-rewardID");
@@ -265,15 +284,6 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       }
 
       for(org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket statusBucket: parsedTerms.getBuckets()) {
-        Map<String, Object> filtersCopy = new HashMap<String, Object>(filters);
-        filtersCopy.put("evolutionSubscriberStatus", statusBucket.getKey());
-        long docCount = statusBucket.getDocCount();
-
-        //
-        // Extract metrics
-        //
-        HashMap<String, Object> metrics = new HashMap<String,Object>();
-        
         //
         // Split between today & yesterday for metrics extraction
         //
@@ -284,14 +294,24 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         }
         
         for(org.elasticsearch.search.aggregations.bucket.range.Range.Bucket dateBucket: parsedDateBuckets.getBuckets()) {
+          Map<String, Object> filtersCopy = new HashMap<String, Object>(filters);
+          filtersCopy.put("evolutionSubscriberStatus", statusBucket.getKey());
+          long docCount = statusBucket.getDocCount();
+
+          //
+          // Extract metrics
+          //
+          HashMap<String, Long> metrics = new HashMap<String,Long>();
           String metricPrefix = "";
        
           long from = ((ZonedDateTime) dateBucket.getFrom()).toEpochSecond() * 1000;
           if(from == (long) metricTargetDayStart.getTime()) {
             metricPrefix = "TODAY."; // Look for today metrics
+            filtersCopy.put("redeemer", redeemerToday);
           } else if(from == (long) metricTargetDayAfterStart.getTime()) {
             // Those subscribers have been updated after midnight and before the execution of the datacube.
             metricPrefix = "YESTERDAY."; // Look for yesterday metrics
+            filtersCopy.put("redeemer", redeemerYesterday);
           } else {
             log.error("Should not happen, did not success to split between today and yesterday metrics.");
             continue;
@@ -312,24 +332,21 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
               log.error("Unable to extract rewards.earned metric for reward: " + rewardID + ", aggregation is missing.");
               continue;
             }
-            int currentEarned = (metrics.get("rewards.earned") == null)? 0 : (int) metrics.get("rewards.earned");
-            metrics.put("rewards.earned", ((int) rewardEarned.getValue()) + currentEarned);
+            metrics.put("rewards.earned", new Long((int) rewardEarned.getValue()));
             
             ParsedSum rewardRedeemed = dateBucket.getAggregations().get(metricPrefix + rewardID + DATA_POINT_REDEEMED);
             if (rewardRedeemed == null) {
               log.error("Unable to extract rewards.redeemed metric for reward: " + rewardID + ", aggregation is missing.");
               continue;
             }
-            int currentRedeemed = (metrics.get("rewards.redeemed") == null)? 0 : (int) metrics.get("rewards.redeemed");
-            metrics.put("rewards.redeemed", ((int) rewardRedeemed.getValue()) + currentRedeemed);
+            metrics.put("rewards.redeemed", new Long((int) rewardRedeemed.getValue()));
             
             ParsedSum rewardExpired = dateBucket.getAggregations().get(metricPrefix + rewardID + DATA_POINT_EXPIRED);
             if (rewardExpired == null) {
               log.error("Unable to extract rewards.expired metric for reward: " + rewardID + ", aggregation is missing.");
               continue;
             }
-            int currentExpired = (metrics.get("rewards.expired") == null)? 0 : (int) metrics.get("rewards.expired");
-            metrics.put("rewards.expired", ((int) rewardExpired.getValue()) + currentExpired);
+            metrics.put("rewards.expired", new Long((int) rewardExpired.getValue()));
           }
           
           //
@@ -344,20 +361,30 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
               continue;
             }
             String customFieldName = "custom." + subscriberProfileCustomMetric.getDisplay();
-            int currentCustom = (metrics.get(customFieldName) == null)? 0 : (int) metrics.get(customFieldName);
-            metrics.put(customFieldName, ((int) customMetric.getValue()) + currentCustom);
+            metrics.put(customFieldName, new Long((int) customMetric.getValue()));
+          }
+          
+          //
+          // Build row
+          //
+          Map<String, Object> row = extractRow(filtersCopy, docCount, timestamp, period, metrics);
+          String rowID = (String) row.get("_id");
+          
+          Map<String, Object> duplicate = result.get(rowID);
+          if(duplicate != null) {
+            datacubeRowAddition(duplicate, row);
+          } else {
+            result.put(rowID, row);
           }
         }
-        
-        //
-        // Build row
-        //
-        Map<String, Object> row = extractRow(filtersCopy, docCount, timestamp, period, metrics);
-        result.add(row);
       }
     }
     
-    return result;
+    List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
+    for(String key: result.keySet()) {
+      resultList.add(result.get(key));
+    }
+    return resultList;
   }
   
   /*****************************************
