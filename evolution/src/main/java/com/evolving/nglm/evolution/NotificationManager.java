@@ -460,6 +460,17 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       }
 
     /*****************************************
+    *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public NotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+    }
+
+    /*****************************************
      *
      * copy
      *

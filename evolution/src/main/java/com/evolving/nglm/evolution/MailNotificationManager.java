@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.HashMap;
 
 import org.apache.kafka.connect.data.Field;
@@ -382,6 +383,17 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       this.htmlBodyTags = htmlBodyTags;
     }
 
+    /*****************************************
+    *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public MailNotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+    }
+    
     /*****************************************
     *
     *  copy

@@ -708,6 +708,5 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         firstEntry = false;
       }
     return esIndexOdrList.toString();
-
   }
 }

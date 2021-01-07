@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -338,6 +339,17 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       this.returnCodeDetails = smsNotificationManagerRequest.getReturnCodeDetails();
     }
 
+    /*****************************************
+    *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public SMSNotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+    }
+    
     /*****************************************
     *
     *  copy

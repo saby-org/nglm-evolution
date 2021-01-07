@@ -340,6 +340,17 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
 
     /*****************************************
     *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public PushNotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+    }
+    
+    /*****************************************
+    *
     *  copy
     *
     *****************************************/

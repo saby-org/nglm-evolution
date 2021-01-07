@@ -93,7 +93,11 @@ import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -104,6 +108,8 @@ import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
+import com.evolving.nglm.evolution.reports.notification.NotificationReportDriver;
+import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
 import com.sun.net.httpserver.HttpExchange;
@@ -1252,16 +1258,29 @@ public class ThirdPartyManager
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
     JSONArray deliverableIDs = JSONUtilities.decodeJSONArray(jsonRoot, "deliverableIDs", false);
+    
+    //
+    //  filters
+    //
+    
+    Collection<String> deliverableIDCollection = new ArrayList<String>();
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
     if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
     if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
-
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    if (deliverableIDs != null)
+      {
+        for(int i=0; i<deliverableIDs.size(); i++)
+          {
+            deliverableIDCollection.add(deliverableIDs.get(i).toString());
+          }
+        if (!deliverableIDCollection.isEmpty()) filters.add(QueryBuilders.termsQuery("deliverableID", deliverableIDCollection));
+      }
 
     //
     // process
     //
-
+    
+    String subscriberID = resolveSubscriberID(jsonRoot);
     try
     {
 
@@ -2014,13 +2033,20 @@ public class ThirdPartyManager
     String startDateReq = readString(jsonRoot, "startDate", false);
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
-
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    
+    //
+    //  filters
+    //
+    
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
+    if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
 
     //
     // process
     //
-
+    
+    String subscriberID = resolveSubscriberID(jsonRoot);
     try
     {
 
@@ -2042,6 +2068,7 @@ public class ThirdPartyManager
 
           SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
           List<JSONObject> messagesJson = new ArrayList<JSONObject>();
+          List<JSONObject> ESmessagesJson = new ArrayList<JSONObject>();
           if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null) 
             {
               List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
@@ -2052,6 +2079,66 @@ public class ThirdPartyManager
 
               List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.Messages  && !DeliveryStatus.Reschedule.equals(activity.getDeliveryStatus())).collect(Collectors.toList()); 
 
+              
+              SearchRequest searchRequest = getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
+              List<SearchHit> hits = getESHits(searchRequest);
+              for (SearchHit hit : hits)
+                {
+                  String channelID = (String) hit.getSourceAsMap().get("channelID");
+                  if (channelID != null && !channelID.isEmpty())
+                    {
+                      String deliveryType = null;
+                      for (String deliveryTypeInMap : Deployment.getDeliveryTypeCommunicationChannelIDMap().keySet())
+                        {
+                          String chID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryTypeInMap);
+                          if (channelID.equals(chID))
+                            {
+                              deliveryType = deliveryTypeInMap;
+                              break;
+                            }
+                        }
+                      if (deliveryType != null && Deployment.getDeliveryManagers().get(deliveryType) != null)
+                        {
+                          String requestClass = Deployment.getDeliveryManagers().get(deliveryType).getRequestClassName();
+                          if (requestClass != null)
+                            {
+                              DeliveryRequest notification = getNotificationDeliveryRequest(requestClass, hit);
+                              if (notification != null)
+                                {
+                                  Map<String, Object> esNotificationMap = notification.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+                                  ESmessagesJson.add(JSONUtilities.encodeObject(esNotificationMap));
+                                }
+                            }
+                        }
+                    }
+                }
+                              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
               //
               // prepare dates
               //
@@ -2098,6 +2185,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("messages", JSONUtilities.encodeArray(messagesJson));
+          response.put("ESmessages", JSONUtilities.encodeArray(ESmessagesJson));
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -6857,6 +6945,19 @@ public class ThirdPartyManager
             index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
           }
         break;
+        
+      case getCustomerMessages:
+        if (startDate != null)
+          {
+            List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
+            index = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
+            query = query.filter(QueryBuilders.rangeQuery("creationDate").gte(esDateFormat.format(startDate)));
+          }
+        else
+          {
+            index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
+          }
+        break;
 
       default:
         break;
@@ -6873,6 +6974,38 @@ public class ThirdPartyManager
     //
     
     return searchRequest;
+  }
+  
+  /*****************************************
+  *
+  * getNotificationDeliveryRequest
+  *
+  *****************************************/
+  
+  private DeliveryRequest getNotificationDeliveryRequest(String requestClass, SearchHit hit)
+  {
+    DeliveryRequest deliveryRequest = null;
+    if (deliveryRequest.equals(MailNotificationManagerRequest.class.getName()))
+      {
+        deliveryRequest = new MailNotificationManagerRequest(hit.getSourceAsMap());
+      }
+    else if(deliveryRequest.equals(SMSNotificationManagerRequest.class.getName()))
+      {
+        deliveryRequest = new SMSNotificationManagerRequest(hit.getSourceAsMap());
+      }
+    else if (deliveryRequest.equals(NotificationManagerRequest.class.getName()))
+      {
+        deliveryRequest = new NotificationManagerRequest(hit.getSourceAsMap());
+      }
+    else if (deliveryRequest.equals(PushNotificationManagerRequest.class.getName()))
+      {
+        deliveryRequest = new PushNotificationManagerRequest(hit.getSourceAsMap());
+      }
+    else
+      {
+        if (log.isErrorEnabled()) log.error("invalid requestclass {}", requestClass);
+      }
+    return deliveryRequest;
   }
 
 
