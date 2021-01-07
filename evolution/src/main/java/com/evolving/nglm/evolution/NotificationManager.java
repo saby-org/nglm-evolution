@@ -469,6 +469,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     {
       super(esFields);
       //NOT in ES this.destination = esFields.get("");
+      setSourceAddressParam((String) esFields.get("source"));
+      setSubscriberID((String) esFields.get("subscriberID"));
       this.language = (String) esFields.get("language");
       this.templateID = (String) esFields.get("templateID");
       if (esFields.get("tags") != null)
