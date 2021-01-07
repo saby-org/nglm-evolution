@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.4.5_1-SNAPSHOT</version>
+  <version>1.4.5_1-EVPRO-726-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -25,13 +25,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.5_0-SNAPSHOT</version>
+    <version>1.4.5_0-PROTO-1-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.5_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.5_0-PROTO-1-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
