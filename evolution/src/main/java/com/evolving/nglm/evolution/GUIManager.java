@@ -6486,6 +6486,8 @@ public class GUIManager
     JSONObject bulkCampaignInfo = JSONUtilities.decodeJSONObject(jsonRoot, "info", false);
     
     JSONArray bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", true);
+    int priority = JSONUtilities.decodeInteger(jsonRoot, "priority", Integer.MAX_VALUE); // for legacy campaigns, very low priority
+
     
     //
     //  recurrent
@@ -6594,6 +6596,7 @@ public class GUIManager
         campaignJSONRepresentation.put("occurrenceNumber", occurrenceNumber);
         if (journeyScheduler != null)campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
         campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
+        campaignJSONRepresentation.put("priority", priority);
 
         //
         //  campaignJSON
