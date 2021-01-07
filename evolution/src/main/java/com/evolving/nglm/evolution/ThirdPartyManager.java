@@ -1325,101 +1325,6 @@ public class ThirdPartyManager
                   Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                   ESBDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
                 }
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              //
-              // prepare dates
-              //
-
-              Date startDate = null;
-
-              if (startDateReq == null) 
-                {
-                  startDate = new Date(0L);
-                }
-              else
-                {
-                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
-                }
-              
-              //
-              // filter on moduleID
-              //
-
-              if (moduleID != null)
-                {
-                  BDRs = BDRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
-                }
-              
-              //
-              // filter on featureID
-              //
-
-              if (featureID != null)
-                {
-                  BDRs = BDRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
-                }
-              
-              //
-              // filter on deliverableIDs
-              //
-              
-              if(deliverableIDs != null)
-                {
-                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                  for(DeliveryRequest deliveryRequest : BDRs)
-                    {
-                      if(deliveryRequest instanceof CommodityDeliveryRequest)
-                        {
-                          CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
-                          if(GUIManager.checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
-                            {
-                              result.add(deliveryRequest);
-                            }
-                        }
-                      else if(deliveryRequest instanceof EmptyFulfillmentRequest) 
-                        {
-                          EmptyFulfillmentRequest request = (EmptyFulfillmentRequest) deliveryRequest;
-                          if(GUIManager.checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
-                            {
-                              result.add(deliveryRequest);
-                            }
-                        }
-                      else if(deliveryRequest instanceof INFulfillmentRequest) 
-                        {
-                          INFulfillmentRequest request = (INFulfillmentRequest) deliveryRequest;
-                          if(GUIManager.checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
-                            {
-                              result.add(deliveryRequest);
-                            }
-                        }
-                      else if(deliveryRequest instanceof PointFulfillmentRequest) 
-                        {
-                          PointFulfillmentRequest request = (PointFulfillmentRequest) deliveryRequest;
-                          if(GUIManager.checkDeliverableIDs(deliverableIDs, request.getPointID()))
-                            {
-                              result.add(deliveryRequest);
-                            }
-                        }
-                    }
-                  BDRs = result;
-                }
 
               //
               // filter and prepare JSON
@@ -1427,11 +1332,8 @@ public class ThirdPartyManager
 
               for (DeliveryRequest bdr : BDRs) 
                 {
-                  if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
-                    {
-                      Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
-                      BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
-                    }
+                  Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+                  BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                 }
             }
           response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
@@ -1531,6 +1433,8 @@ public class ThirdPartyManager
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
     if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
     if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
+    if (offerID != null && !offerID.isEmpty()) filters.add(QueryBuilders.matchQuery("offerID", offerID));
+    if (salesChannelID != null && !salesChannelID.isEmpty()) filters.add(QueryBuilders.matchQuery("salesChannelID", salesChannelID));
 
     //
     // process
@@ -1577,95 +1481,8 @@ public class ThirdPartyManager
                   ESODRsJson.add(JSONUtilities.encodeObject(esOdrMap));
                 }
               
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-
               //
-              // prepare dates
-              //
-
-              Date startDate = null;
-
-              if (startDateReq == null) 
-                {
-                  startDate = new Date(0L);
-                }
-              else
-                {
-                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
-                }
-              
-              //
-              // filter on moduleID
-              //
-
-              if (moduleID != null)
-                {
-                  ODRs = ODRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
-                }
-              
-              //
-              // filter on featureID
-              //
-
-              if (featureID != null)
-                {
-                  ODRs = ODRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
-                }
-              
-              //
-              // filter on offerID
-              //
-
-              if (offerID != null)
-                {
-                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                  for (DeliveryRequest request : ODRs)
-                    {
-                      if(request instanceof PurchaseFulfillmentRequest)
-                        {
-                          if(offerID.equals(((PurchaseFulfillmentRequest)request).getOfferID()))
-                            {
-                              result.add(request);
-                            }
-                        }
-                    }
-                  ODRs = result;
-                }
-              
-              //
-              // filter on salesChannelID
-              //
-
-              if (salesChannelID != null)
-                {
-                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                  for (DeliveryRequest request : ODRs)
-                    {
-                      if(request instanceof PurchaseFulfillmentRequest)
-                        {
-                          if (salesChannelID.equals(((PurchaseFulfillmentRequest)request).getSalesChannelID()))
-                            {
-                              result.add(request);
-                            }
-                        }
-                    }
-                  ODRs = result;
-                }
-              
-              //
-              // filter on paymentMeanID
+              // filter on paymentMeanID * NOT in ES SHOULD BE FILTER AS IT IS *
               //
 
               if (paymentMeanID != null)
@@ -1701,11 +1518,8 @@ public class ThirdPartyManager
 
               for (DeliveryRequest odr : ODRs) 
                 {
-                  if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
-                    {
-                      Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
-                      ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
-                    }
+                  Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+                  ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                 }
             }
           response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
@@ -2114,65 +1928,6 @@ public class ThirdPartyManager
                         }
                     }
                 }
-                              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              //
-              // prepare dates
-              //
-
-              Date startDate = null;
-
-              if (startDateReq == null || startDateReq.isEmpty()) 
-                {
-                  startDate = new Date(0L);
-                }
-              else
-                {
-                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
-                }
-              
-              //
-              // filter on moduleID
-              //
-
-              if (moduleID != null)
-                {
-                  messages = messages.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
-                }
-              
-              //
-              // filter on featureID
-              //
-
-              if (featureID != null)
-                {
-                  messages = messages.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
-                }
 
               //
               // filter and prepare json
@@ -2180,10 +1935,7 @@ public class ThirdPartyManager
 
               for (DeliveryRequest message : messages) 
                 {
-                  if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
-                    {
-                      messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService)));
-                    }
+                  messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService)));
                 }
             }
           response.put("messages", JSONUtilities.encodeArray(messagesJson));
