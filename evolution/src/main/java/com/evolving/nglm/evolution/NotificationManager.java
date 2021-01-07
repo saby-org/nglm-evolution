@@ -468,6 +468,18 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     public NotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
+      //NOT in ES this.destination = esFields.get("");
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.tags = tags;
+        }
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+      this.channelID = (String) esFields.get("channelID");
+    //NOT in ES this.notificationParameters = esFields.get("");
     }
 
     /*****************************************

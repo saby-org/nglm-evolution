@@ -784,6 +784,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.deliveryRequestID = (String) esFields.get("deliveryRequestID");
     this.originatingDeliveryRequestID = (String) esFields.get("originatingDeliveryRequestID");
     String eventDatetimeStr = (String) esFields.get("eventDatetime");
+    if (eventDatetimeStr == null) eventDatetimeStr = (String) esFields.get("creationDate"); //messages
     try
       {
         this.creationDate = esDateFormat.parse(eventDatetimeStr);

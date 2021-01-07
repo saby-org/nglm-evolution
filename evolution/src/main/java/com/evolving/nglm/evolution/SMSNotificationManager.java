@@ -348,6 +348,17 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     public SMSNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
+      //NOT in ES this.destination = esFields.get("");
+      this.source = (String) esFields.get("source");
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.messageTags = tags.get("tags");
+        }
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
     }
     
     /*****************************************

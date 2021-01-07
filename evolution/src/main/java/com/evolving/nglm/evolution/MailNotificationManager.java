@@ -392,6 +392,23 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     public MailNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
+    //NOT IN ES this.destination = esFields.get("");
+      this.fromAddress = (String) esFields.get("source");
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.subjectTags = tags.get("subjectTags");
+          this.htmlBodyTags = tags.get("htmlBodyTags");
+          this.textBodyTags = tags.get("textBodyTags");
+        }
+      
+      //NOT IN ES this.confirmationExpected = esFields.get("");
+      //NOT IN ES this.restricted = esFields.get("");
+    //NOT IN ES this.status = esFields.get("");
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
     }
     
     /*****************************************
