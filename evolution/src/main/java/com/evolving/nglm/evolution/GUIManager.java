@@ -7190,8 +7190,10 @@ public class GUIManager
         try {
           Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID);
           for (String key : nodeIDs) {
-            Long count = esMap.get(key);
-            result.put(key, (count != null)? count : 0);
+        	  Long count = esMap.get(key);
+              if(key.trim().equalsIgnoreCase(((Journey) journey).getEndNodeID().trim()))
+            	  count=esMap.get(key)-elasticsearch.getSpecialExitCount(journeyID);
+              result.put(key, (count != null)? count : 0);
           }
         }
         catch (ElasticsearchClientException e) {

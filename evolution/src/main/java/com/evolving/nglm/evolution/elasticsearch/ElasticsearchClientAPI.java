@@ -3,9 +3,7 @@ package com.evolving.nglm.evolution.elasticsearch;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -25,15 +23,14 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -80,6 +77,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   public static final String JOURNEYSTATISTIC_NODEID_FIELD = "nodeID";
   public static final String JOURNEYSTATISTIC_REWARD_FIELD = "rewards";
   public static final String JOURNEYSTATISTIC_SAMPLE_FIELD = "sample";
+  public static final String[] specialExit = {"NotEligible", "Excluded", "ObjectiveLimitReached", "UCG"};
   public static String getJourneyIndex(String journeyID) {
     if(journeyID == null) {
       return "";
@@ -192,7 +190,17 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           .size(0)
           .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_NODEID_FIELD).size(MAX_BUCKETS));
       SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
-      
+     /*
+      *
+      QueryBuilder query=QueryBuilders.matchAllQuery();
+      for(String reason : specialExit)
+        query=((BoolQueryBuilder) query).mustNot(QueryBuilders.termQuery("status", reason)); 
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(query)
+          .size(0)
+          .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_NODEID_FIELD).size(MAX_BUCKETS));
+  
+      */
       //
       // Send request & retrieve response synchronously (blocking call)
       // 
@@ -247,6 +255,24 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     }
   }
   
+  public long getSpecialExitCount(String journeyID) throws ElasticsearchClientException{
+	  long count = 0;
+	  String index = getJourneyIndex(journeyID);
+	  BoolQueryBuilder query=QueryBuilders.boolQuery();
+      for(String reason : specialExit)
+        query=((BoolQueryBuilder) query).mustNot(QueryBuilders.termQuery("status", reason)); 
+      CountRequest countRequest = new CountRequest(index).query(query);
+      try {
+		CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
+		if(countResponse!=null)
+		count=countResponse.getCount();
+	} catch (Exception e) {
+		e.printStackTrace();
+		throw new ElasticsearchClientException(e.getMessage());
+	} 
+     
+	  return count;
+  }
   public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
     return getGeneric("STATUS", JOURNEYSTATISTIC_STATUS_FIELD, journeyID);
   }
