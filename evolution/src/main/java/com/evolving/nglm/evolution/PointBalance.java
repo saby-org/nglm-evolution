@@ -216,12 +216,11 @@ public class PointBalance
   *
   *****************************************/
 
-  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR)
+  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR, String tier)
   {
     //
     //  validate
     //
-
     switch (operation)
       {
         case Credit:
@@ -287,7 +286,7 @@ public class PointBalance
                   //  generate fake commodityDeliveryResponse (always generate BDR when bonuses expire, needed to get BDRs)
                   //
                   
-                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null);
+                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null, tier);
                   
                 }
               
@@ -362,7 +361,7 @@ public class PointBalance
               }
             }
             if(generateBDR){
-              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate);
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate, tier);
             }
            
           }
@@ -425,7 +424,7 @@ public class PointBalance
               }
             }
             if(generateBDR){
-              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null);
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null, tier);
             }
             
           }
@@ -509,7 +508,7 @@ public class PointBalance
   *
   *****************************************/
 
-  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate){
+  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate, String origin){
     
     //
     //  generate fake commodityDeliveryResponse (needed to get BDRs)
@@ -537,6 +536,7 @@ public class PointBalance
     commodityDeliveryRequestData.put("validityPeriodQuantity", 0);
 
     commodityDeliveryRequestData.put("deliverableExpirationDate", deliverableExpirationDate);
+    commodityDeliveryRequestData.put("origin", origin);
 
     commodityDeliveryRequestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.SUCCESS.getReturnCode());
 

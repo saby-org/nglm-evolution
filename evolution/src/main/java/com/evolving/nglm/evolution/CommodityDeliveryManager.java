@@ -1666,6 +1666,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {
           newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+          if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+            {
+              origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+            }
         }
       
       // retrieve the featureID that is the origin of this delivery request:

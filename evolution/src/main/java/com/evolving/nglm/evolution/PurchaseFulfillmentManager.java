@@ -2797,6 +2797,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {
           newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+          if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+            {
+              origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+            }
         }
       
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
