@@ -420,7 +420,7 @@ public class UploadedFileService extends GUIService
                       }
                   }
               }
-            uploadededFile.setNumberOfLines(lineNumber);
+            if (uploadededFile.getNumberOfLines() == null) uploadededFile.setNumberOfLines(lineNumber - 1);
             if (violations.size() > 0) prepareAndThrowViolations(violations);
           } 
         catch (IOException e)

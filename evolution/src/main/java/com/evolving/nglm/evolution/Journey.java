@@ -616,6 +616,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *  targetCount
   *
   *****************************************/
+  
   private long evaluateTargetCount(ElasticsearchClientAPI elasticsearch) 
   {
     try
@@ -639,11 +640,18 @@ public class Journey extends GUIManagedObject implements StockableItem
   // Like description, it is not used inside the system, only put at creation and pushed in Elasticsearch
   // mapping_journeys index in order to be visible for the GUI (Grafana).
   //
-  public void setTargetCount(ElasticsearchClientAPI elasticsearch)
+  public void setTargetCount(ElasticsearchClientAPI elasticsearch, UploadedFileService uploadedFileService)
   {
-    if(this.getTargetingType() == TargetingType.Target) {
-      this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)) );
-    }
+    if (this.getTargetingType() == TargetingType.Target)
+      {
+        this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)));
+      } 
+    else if (TargetingType.FileVariables == getTargetingType())
+      {
+        GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(getTargetingFileVariableID());
+        Integer targetCount = (uploadedFile != null && uploadedFile instanceof UploadedFile) ? ((UploadedFile) uploadedFile).getNumberOfLines() : new Integer(0);
+        this.getJSONRepresentation().put("targetCount", targetCount);
+      }
   }
   
   /*****************************************

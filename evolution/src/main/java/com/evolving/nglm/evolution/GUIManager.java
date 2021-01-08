@@ -5618,7 +5618,8 @@ public class GUIManager
         //
         // Update targetCount
         //
-        journey.setTargetCount(elasticsearch);
+        
+        journey.setTargetCount(elasticsearch, uploadedFileService);
         
         /*****************************************
         *
@@ -6652,7 +6653,8 @@ public class GUIManager
         //
         // Update targetCount
         //
-        bulkCampaign.setTargetCount(elasticsearch);
+        
+        bulkCampaign.setTargetCount(elasticsearch, uploadedFileService);
         
         /*****************************************
         *
