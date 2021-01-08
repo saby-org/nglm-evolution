@@ -898,8 +898,7 @@ public class GUIService
 
   private void runScheduler()
   {
-	  log.info("starting service new {}", this.getClass().getName());
-    NGLMRuntime.registerSystemTimeDependency(this);
+	NGLMRuntime.registerSystemTimeDependency(this);
     while (!stopRequested)
       {
         synchronized (this)
@@ -911,7 +910,6 @@ public class GUIService
             Date now = SystemTime.getCurrentTime();
             Date nextEvaluationDate = (schedule.size() > 0) ? schedule.first().getEvaluationDate() : NGLMRuntime.END_OF_TIME;
             long waitTime = nextEvaluationDate.getTime() - now.getTime();
-            log.info("nextEvaluationDate {} and waitTime {} for this.getClass().getName()", nextEvaluationDate , waitTime );
             while (!stopRequested && waitTime > 0)
               {
                 try
@@ -945,8 +943,7 @@ public class GUIService
                 //
                 //  existingActiveGUIManagedObject
                 //
-            	log.info("object is {}", guiManagedObject);
-                GUIManagedObject existingActiveGUIManagedObject = activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID());
+            	GUIManagedObject existingActiveGUIManagedObject = activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID());
 
                 //
                 //  active window
@@ -954,8 +951,7 @@ public class GUIService
 
                 if (guiManagedObject.getEffectiveStartDate().compareTo(now) <= 0 && now.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
                   {
-                	log.info("inside 1");
-                    activeGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
+                	activeGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
                     interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     notifyListener(guiManagedObject);
                   }
@@ -966,8 +962,7 @@ public class GUIService
 
                 if (now.compareTo(guiManagedObject.getEffectiveEndDate()) >= 0)
                   {
-                	log.info("inside 2");
-                    availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
+                	availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     activeGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObject.getGUIManagedObjectID()));
