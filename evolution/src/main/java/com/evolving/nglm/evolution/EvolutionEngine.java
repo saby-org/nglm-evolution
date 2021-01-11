@@ -4504,8 +4504,11 @@ public class EvolutionEngine
     Map<JourneyObjective, Integer> permittedJourneys = new HashMap<JourneyObjective, Integer>();
     for (JourneyObjective journeyObjective : permittedSimultaneousJourneys.keySet())
       {
-        permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
+    	System.out.println("permittedSimultaneousJourneys key"+journeyObjective.getGUIManagedObjectDisplay()+" ==full:"+journeyObjective);
+        System.out.println(Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
+    	permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
         if (permittedWaitingPeriod.get(journeyObjective) == Boolean.FALSE){
+        	System.out.println("here");
             if (log.isTraceEnabled()) log.trace("permittedJourneys put " + journeyObjective.getJourneyObjectiveName() + ": static 0");
             permittedJourneys.put(journeyObjective, 0);
         }
@@ -4516,6 +4519,7 @@ public class EvolutionEngine
       {
         for(Entry<JourneyObjective,Integer> entry:permittedJourneys.entrySet())
           {
+        	System.out.println("permittedJourneys : " + entry.getKey().getJourneyObjectiveName() + ":" + entry.getValue());
             log.debug("permittedJourneys : " + entry.getKey().getJourneyObjectiveName() + ":" + entry.getValue());
           }
       }
@@ -4791,8 +4795,10 @@ public class EvolutionEngine
 
                 if (enterJourney && currentStatus==null)
                   {
+                	System.out.println(SubscriberJourneyStatus.ObjectiveLimitReached +" check");
                     for (JourneyObjective journeyObjective : allObjectives)
                       {
+                    	System.out.println(permittedJourneys.get(journeyObjective));
                         if (permittedJourneys.get(journeyObjective) < 1)
                           {                       
                           currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
