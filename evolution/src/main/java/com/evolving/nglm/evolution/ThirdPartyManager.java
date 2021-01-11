@@ -5258,19 +5258,6 @@ public class ThirdPartyManager
                     String criterionFieldValue = (String) criterionField.retrieveNormalized(evaluationRequest);                    
                     alternateIDs.put(entry.getKey(), criterionFieldValue);
                   }
-               /* String msisdn = null;
-                String contractID = null;
-                if (alternateIDs != null && !(alternateIDs.isEmpty()))
-                  {
-                    if (alternateIDs.containsKey("msisdn") && alternateIDs.get("msisdn") != null)
-                      {
-                        msisdn = alternateIDs.get("msisdn").toString();
-                      }
-                    if (alternateIDs.containsKey("contractID") && alternateIDs.get("contractID") != null)
-                      {
-                        contractID = alternateIDs.get("contractID").toString();
-                      }
-                  }*/
                 additionalDetails.put("RedeemedDate", redeemedDate);
                 additionalDetails.put("customerID", redeemedSubscriberID);
                 additionalDetails.put("AlternateIDs", alternateIDs);
