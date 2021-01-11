@@ -598,8 +598,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       this.commodityID = (String) esFields.get("deliverableID");
       this.operation = CommodityDeliveryOperation.fromExternalRepresentation((String) esFields.get("operation"));
       this.amount = (int) esFields.get("deliverableQty");
-      // not in ES this.validityPeriodType = esFields.get("");
-      // not in ES this.validityPeriodQuantity = esFields.get("");
       this.validityPeriodType = TimeUnit.Year;
       this.validityPeriodQuantity = 1;
       String deliverableExpirationDateStr = (String) esFields.get("deliverableExpirationDate");
@@ -763,8 +761,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getGUIManagedObjectDisplay() : getCommodityID()));
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
-      thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
-      thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
       thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, getModule().toString());

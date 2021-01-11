@@ -838,7 +838,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     thirdPartyPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     thirdPartyPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(EVENTID, getEventID()); 
-    thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
