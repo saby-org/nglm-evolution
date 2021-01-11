@@ -164,6 +164,7 @@ public class ThirdPartyManager
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
   private static final String GENERIC_RESPONSE_DESCRIPTION = "description";
+  private static final String GENERIC_RESPONSE_DETAILS = "responseDetails";
   private String getCustomerAlternateID;
   public static final String REQUEST_DATE_PATTERN = "\\d{4}-\\d{2}-\\d{2}"; //Represents exact yyyy-MM-dd
   public static final String REQUEST_DATE_FORMAT= "yyyy-MM-dd";
@@ -979,6 +980,9 @@ public class ThirdPartyManager
       HashMap<String,Object> response = new HashMap<String,Object>();
       response.put(GENERIC_RESPONSE_CODE, ex.getResponseCode());
       response.put(GENERIC_RESPONSE_MSG, ex.getMessage());
+      if (ex.responseDetails != null && !(ex.responseDetails.isEmpty())) {
+        response.put(GENERIC_RESPONSE_DETAILS, ex.responseDetails);
+      }
 
       //
       //  standard response fields
@@ -5238,6 +5242,7 @@ public class ThirdPartyManager
                 dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
                 String redeemedDate = dateFormat.format(redeemedDateToBeFormatted);
                 String redeemedSubscriberID = subscriberID;
+                JSONObject additionalDetails = new JSONObject();
                 Map<String, String> alternateIDs = new LinkedHashMap<>();
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
                     subscriberGroupEpochReader, SystemTime.getCurrentTime());
@@ -5253,7 +5258,7 @@ public class ThirdPartyManager
                     String criterionFieldValue = (String) criterionField.retrieveNormalized(evaluationRequest);                    
                     alternateIDs.put(entry.getKey(), criterionFieldValue);
                   }
-                String msisdn = null;
+               /* String msisdn = null;
                 String contractID = null;
                 if (alternateIDs != null && !(alternateIDs.isEmpty()))
                   {
@@ -5265,11 +5270,14 @@ public class ThirdPartyManager
                       {
                         contractID = alternateIDs.get("contractID").toString();
                       }
-                  }
+                  }*/
+                additionalDetails.put("RedeemedDate", redeemedDate);
+                additionalDetails.put("customerID", redeemedSubscriberID);
+                additionalDetails.put("AlternateIDs", alternateIDs);
+                
                 errorException = new ThirdPartyManagerException(
-                    RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " (RedeemedDate: "
-                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" msisdn: " + msisdn + ", "+" contractID: " + contractID + ")",
-                    RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode());
+                    RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage(),
+                    RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode(), additionalDetails);
               }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
           errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
         }else{
@@ -6318,6 +6326,7 @@ public class ThirdPartyManager
      *****************************************/
 
     private int responseCode;
+    private JSONObject responseDetails;
 
     /*****************************************
      *
@@ -6326,6 +6335,7 @@ public class ThirdPartyManager
      *****************************************/
 
     public int getResponseCode() { return responseCode; }
+    public JSONObject getResponseDetails() { return responseDetails; }
 
     /*****************************************
      *
@@ -6338,12 +6348,19 @@ public class ThirdPartyManager
       super(responseMessage);
       this.responseCode = responseCode;
     }
+    
+    public ThirdPartyManagerException(String responseMessage, int responseCode, JSONObject responseDetails)
+    {
+      super(responseMessage);
+      this.responseCode = responseCode;
+      this.responseDetails = responseDetails;
+    }
 
     public ThirdPartyManagerException(RESTAPIGenericReturnCodes genericReturnCode)
     {
       this(genericReturnCode.getGenericResponseMessage(),genericReturnCode.getGenericResponseCode());
-    }
-
+    }   
+  
     /*****************************************
      *
      *  constructor - exception
