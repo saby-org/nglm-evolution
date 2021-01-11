@@ -3865,6 +3865,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> targetIDs = new ArrayList<String>();
+    List<String> internaltargetIDs = new ArrayList<String>();
     List<String> wrkflowIDs = new ArrayList<String>();
     List<String> pushTemplateIDs = new ArrayList<String>();
     List<String> mailtemplateIDs = new ArrayList<String>();
@@ -3877,7 +3878,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           //  campaign
           //
-          
+        	internaltargetIDs = new ArrayList<String>();
           List<String> campaignIDs = new ArrayList<String>();
           
           for (JourneyNode journeyNode : getJourneyNodes().values())
@@ -3905,6 +3906,17 @@ public class Journey extends GUIManagedObject implements StockableItem
           result.put("journeyobjective", journeyObjectiveIDs);
        
           targetIDs = getTargetID();
+          List<EvaluationCriterion> internalTargets=getEligibilityCriteria();
+          for(EvaluationCriterion internalTarget:internalTargets) {
+        	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
+        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression());
+        	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression());
+         	 
+        	  }
+          }
+          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+          targetIDs.addAll(internaltargetIDs);
           result.put("target", targetIDs);
           result.put("pushtemplate", pushTemplateIDs);
           result.put("mailtemplate", mailtemplateIDs);
@@ -3918,6 +3930,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           //  offer
           //
+          internaltargetIDs = new ArrayList<String>();
           List<String> pointIDs = new ArrayList<String>();
           List<String> offerIDs = new ArrayList<String>();
           List<String> workflowIDs = new ArrayList<String>();
@@ -3952,6 +3965,18 @@ public class Journey extends GUIManagedObject implements StockableItem
           result.put("journeyobjective", journeyObjIDs);
           
           targetIDs = getTargetID();
+          List<EvaluationCriterion> internalTargets1=getEligibilityCriteria();
+          for(EvaluationCriterion internalTarget:internalTargets1) {
+        	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
+        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression());
+        	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression());
+         	 
+        	  }
+          }
+          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+          targetIDs.addAll(internaltargetIDs);
+
           result.put("target", targetIDs);
           result.put("pushtemplate", pushTemplateIDs);
           result.put("mailtemplate", mailtemplateIDs);
@@ -3962,6 +3987,7 @@ public class Journey extends GUIManagedObject implements StockableItem
 
         case BulkCampaign:
 			List<String> blkpointIDs = new ArrayList<String>();
+			internaltargetIDs = new ArrayList<String>();
 			if (this.boundParameters != null && this.boundParameters.containsKey("journey.deliverableID")
 					&& this.boundParameters.get("journey.deliverableID") != null && this.boundParameters
 							.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
@@ -3980,6 +4006,18 @@ public class Journey extends GUIManagedObject implements StockableItem
 			result.put("dialogtemplate", dialogIDs);
 
 			targetIDs = getTargetID();
+			 List<EvaluationCriterion> internalTargets2=getEligibilityCriteria();
+	          for(EvaluationCriterion internalTarget:internalTargets2) {
+	        	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
+	        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+	        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression());
+	        	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression());
+	         	 
+	        	  }
+	          }
+	          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+	          targetIDs.addAll(internaltargetIDs);
+
 			result.put("target", targetIDs);
 
 			List<String> jourObjIDs = getJourneyObjectiveInstances().stream()

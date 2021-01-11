@@ -904,12 +904,25 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
     List<String> saleschannelIDs = new ArrayList<String>();
     List<String> offerObjectiveIDs = getOfferObjectives().stream().map(offerObjective -> offerObjective.getOfferObjectiveID()).collect(Collectors.toList());
-   
+    List<String> targetIDs = new ArrayList<String>();
      
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
         saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
       }
+  
+	 List<EvaluationCriterion> internalTargets2=getProfileCriteria();
+     for(EvaluationCriterion internalTarget:internalTargets2) {
+   	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
+   	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+   	  {  targetIDs.add(internalTarget.getArgumentExpression());
+   	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression());
+    	 
+   	  }
+     }
+    
+	result.put("target", targetIDs);
+
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);
