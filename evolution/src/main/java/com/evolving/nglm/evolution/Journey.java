@@ -48,6 +48,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
@@ -3908,12 +3909,17 @@ public class Journey extends GUIManagedObject implements StockableItem
           targetIDs = getTargetID();
           List<EvaluationCriterion> internalTargets=getEligibilityCriteria();
           for(EvaluationCriterion internalTarget:internalTargets) {
-        	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
-        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
-        	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression().replace("'",""));
-         	 
+        	 if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+        	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
+        	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
+        	  System.out.println("EVPRO-747 1==="+internalTarget.getArgumentExpression().replace("'",""));
+        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.IsInSetOperator || internalTarget.getCriterionOperator()==CriterionOperator.NotInSetOperator) {
+        		  
+        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
+        		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 2==="+a));
+            	  
         	  }
+          }
           }
           if(internaltargetIDs!=null && internaltargetIDs.size()>0)
           targetIDs.addAll(internaltargetIDs);
@@ -3967,12 +3973,17 @@ public class Journey extends GUIManagedObject implements StockableItem
           targetIDs = getTargetID();
           List<EvaluationCriterion> internalTargets1=getEligibilityCriteria();
           for(EvaluationCriterion internalTarget:internalTargets1) {
-        	  System.out.println("EVPRO-747 3==="+internalTarget.getCriterionField().getESField());
         	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
-        	  System.out.println("EVPRO-747 4==="+internalTarget.getArgumentExpression().replace("'",""));
-         	 
+        	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
+        	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
+        	  System.out.println("EVPRO-747 3==="+internalTarget.getArgumentExpression().replace("'",""));
+        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.IsInSetOperator || internalTarget.getCriterionOperator()==CriterionOperator.NotInSetOperator) {
+        		  
+        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
+        		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 4==="+a));
+            	  
         	  }
+          }
           }
           if(internaltargetIDs!=null && internaltargetIDs.size()>0)
           targetIDs.addAll(internaltargetIDs);
@@ -4007,13 +4018,18 @@ public class Journey extends GUIManagedObject implements StockableItem
 
 			targetIDs = getTargetID();
 			 List<EvaluationCriterion> internalTargets2=getEligibilityCriteria();
-	          for(EvaluationCriterion internalTarget:internalTargets2) {
-	        	  System.out.println("EVPRO-747 5==="+internalTarget.getCriterionField().getESField());
+			 for(EvaluationCriterion internalTarget:internalTargets2) {
 	        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-	        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
-	        	  System.out.println("EVPRO-747 6==="+internalTarget.getArgumentExpression().replace("'",""));
-	         	 
+	        	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
+	        	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
+	        	  System.out.println("EVPRO-747 5==="+internalTarget.getArgumentExpression().replace("'",""));
+	        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.IsInSetOperator || internalTarget.getCriterionOperator()==CriterionOperator.NotInSetOperator) {
+	        		  
+	        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
+	        		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 6==="+a));
+	            	  
 	        	  }
+	          }
 	          }
 	          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
 	          targetIDs.addAll(internaltargetIDs);

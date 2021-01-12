@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
@@ -14,6 +15,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -911,14 +913,20 @@ public class Offer extends GUIManagedObject implements StockableItem
         saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
       }
   
-	 List<EvaluationCriterion> internalTargets2=getProfileCriteria();
-     for(EvaluationCriterion internalTarget:internalTargets2) {
+	 List<EvaluationCriterion> internalTargets=getProfileCriteria();
+	 for(EvaluationCriterion internalTarget:internalTargets) {
    	  System.out.println("EVPRO-747 ==="+internalTarget.getCriterionField().getESField());
    	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-   	  {  targetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
-   	  System.out.println("EVPRO-747 ==="+internalTarget.getArgumentExpression().replace("'", ""));
-    	 
+   	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
+   	  { targetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
+   	  System.out.println("EVPRO-747 ==="+internalTarget.getArgumentExpression().replace("'",""));
+   	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.IsInSetOperator || internalTarget.getCriterionOperator()==CriterionOperator.NotInSetOperator) {
+   		  
+   		targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
+   		targetIDs.forEach(a-> System.out.println("EVPRO-747 ==="+a));
+       	  
    	  }
+     }
      }
     
 	result.put("target", targetIDs);
