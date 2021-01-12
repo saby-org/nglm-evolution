@@ -2329,7 +2329,11 @@ public class Journey extends GUIManagedObject implements StockableItem
             SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
             if (subscriberMessage.getDialogMessages().size() > 0)
               {
-                result.add(new Pair(subscriberMessage, subscriberMessage.getCommunicationChannelID()));
+                try{
+                  result.add(new Pair(subscriberMessage, subscriberMessage.getCommunicationChannelID()));
+                }catch (Exception e){
+                  log.error("ISSUE WITH "+(journey.getGUIManagedObjectType()!=null?journey.getGUIManagedObjectType().getExternalRepresentation():"")+journey.getJourneyID());
+                }
               }
           }
       }
