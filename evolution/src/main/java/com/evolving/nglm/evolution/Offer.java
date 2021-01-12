@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective"})
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective", "target"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -913,10 +913,10 @@ public class Offer extends GUIManagedObject implements StockableItem
   
 	 List<EvaluationCriterion> internalTargets2=getProfileCriteria();
      for(EvaluationCriterion internalTarget:internalTargets2) {
-   	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
+   	  System.out.println("EVPRO-747 ==="+internalTarget.getCriterionField().getESField());
    	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-   	  {  targetIDs.add(internalTarget.getArgumentExpression());
-   	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression());
+   	  {  targetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+   	  System.out.println("EVPRO-747 ==="+internalTarget.getArgumentExpression().replace("'", ""));
     	 
    	  }
      }
