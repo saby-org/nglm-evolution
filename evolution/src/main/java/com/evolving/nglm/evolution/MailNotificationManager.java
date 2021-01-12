@@ -406,10 +406,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
           this.htmlBodyTags = tags.get("htmlBodyTags");
           this.textBodyTags = tags.get("textBodyTags");
         }
-      
-      //NOT IN ES this.confirmationExpected = esFields.get("");
-      //NOT IN ES this.restricted = esFields.get("");
-    //NOT IN ES this.status = esFields.get("");
       this.returnCode = (Integer) esFields.get("returnCode");
       this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
     }
