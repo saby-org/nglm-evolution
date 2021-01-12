@@ -274,6 +274,18 @@ public class RLMDateUtils
 
     return result;
   }
+  // won't care about time shifting, but way, way less expensive than previous method
+  // I tried to keep same behavior than previous method, which is a probably bad, keeping same limitation probably for nothing
+  public static int daysBetweenApproximative(Date firstDay, Date secondDay){
+    Long first = firstDay.getTime();
+    Long second = secondDay.getTime();
+    if(second>first){
+      second = second + 86399999;//for partial day to count as 1
+    }else{
+      return 0;
+    }
+    return (int)( ( second - first /*milliseconds diff*/ ) / ( 1000/*to sec*/ * 86400/*secs per day*/ ) );
+  }
 
   //
   //  monthsBetween - partial month counts as 1

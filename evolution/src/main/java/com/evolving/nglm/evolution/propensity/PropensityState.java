@@ -91,7 +91,7 @@ public class PropensityState {
       currentPropensity = ((double) acceptanceCount) / ((double) presentationCount);
     }
     if(presentationCount < presentationThreshold) {
-      double lambda = RLMDateUtils.daysBetween(effectiveStartDate, SystemTime.getCurrentTime(), Deployment.getBaseTimeZone()) / ((double) daysThreshold);
+      double lambda = RLMDateUtils.daysBetweenApproximative(effectiveStartDate, SystemTime.getCurrentTime()) / ((double) daysThreshold);
       if(lambda < 1) {
         return currentPropensity * lambda + initialPropensity * (1 - lambda);
       }
