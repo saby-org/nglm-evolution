@@ -3910,8 +3910,8 @@ public class Journey extends GUIManagedObject implements StockableItem
           for(EvaluationCriterion internalTarget:internalTargets) {
         	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
         	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression());
-        	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression());
+        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
+        	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression().replace("'",""));
          	 
         	  }
           }
@@ -3967,10 +3967,10 @@ public class Journey extends GUIManagedObject implements StockableItem
           targetIDs = getTargetID();
           List<EvaluationCriterion> internalTargets1=getEligibilityCriteria();
           for(EvaluationCriterion internalTarget:internalTargets1) {
-        	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
+        	  System.out.println("EVPRO-747 3==="+internalTarget.getCriterionField().getESField());
         	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression());
-        	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression());
+        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
+        	  System.out.println("EVPRO-747 4==="+internalTarget.getArgumentExpression().replace("'",""));
          	 
         	  }
           }
@@ -4008,10 +4008,10 @@ public class Journey extends GUIManagedObject implements StockableItem
 			targetIDs = getTargetID();
 			 List<EvaluationCriterion> internalTargets2=getEligibilityCriteria();
 	          for(EvaluationCriterion internalTarget:internalTargets2) {
-	        	  System.out.println("EVPRO-747 1==="+internalTarget.getCriterionField().getESField());
+	        	  System.out.println("EVPRO-747 5==="+internalTarget.getCriterionField().getESField());
 	        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-	        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression());
-	        	  System.out.println("EVPRO-747 2==="+internalTarget.getArgumentExpression());
+	        	  {  internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
+	        	  System.out.println("EVPRO-747 6==="+internalTarget.getArgumentExpression().replace("'",""));
 	         	 
 	        	  }
 	          }
