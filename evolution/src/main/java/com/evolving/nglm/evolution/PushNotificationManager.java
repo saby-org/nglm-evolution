@@ -347,6 +347,9 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     public PushNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      
       //NOT in ES this.destination = esFields.get("");
       this.language = (String) esFields.get("language");
       this.templateID = (String) esFields.get("templateID");

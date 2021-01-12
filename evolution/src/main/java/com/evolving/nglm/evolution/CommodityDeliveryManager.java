@@ -593,22 +593,25 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     
     public CommodityDeliveryRequest(Map<String, Object> esFields)
     {
+      //
+      //  super
+      //
+      
       super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
+      
+      //
+      //  this
+      //
+      
       this.providerID = (String) esFields.get("providerID");
       this.commodityID = (String) esFields.get("deliverableID");
       this.operation = CommodityDeliveryOperation.fromExternalRepresentation((String) esFields.get("operation"));
       this.amount = (int) esFields.get("deliverableQty");
       this.validityPeriodType = TimeUnit.Year;
       this.validityPeriodQuantity = 1;
-      String deliverableExpirationDateStr = (String) esFields.get("deliverableExpirationDate");
-      try
-        {
-          this.deliverableExpirationDate = esDefaultDateFormat.parse(deliverableExpirationDateStr);
-        } 
-      catch (java.text.ParseException e)
-        {
-          if (log.isWarnEnabled()) log.warn("invalid deliverableExpirationDate {} format should be {} ", deliverableExpirationDateStr, elasticSearchDefaultDateFormat);
-        }
+      this.deliverableExpirationDate = getDateFromESString(esDefaultDateFormat, (String) esFields.get("deliverableExpirationDate"));
       CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
       this.commodityDeliveryStatus = commodityDeliveryStatus;
       this.statusMessage = (String) esFields.get("returnCodeDetails");

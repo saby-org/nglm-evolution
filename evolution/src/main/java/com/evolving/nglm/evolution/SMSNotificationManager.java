@@ -348,6 +348,9 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     public SMSNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      
       //NOT in ES this.destination = esFields.get("");
       this.source = (String) esFields.get("source");
       this.language = (String) esFields.get("language");

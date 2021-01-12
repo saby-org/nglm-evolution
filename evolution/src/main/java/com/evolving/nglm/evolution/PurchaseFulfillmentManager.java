@@ -657,7 +657,18 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     public PurchaseFulfillmentRequest(Map<String, Object> esFields, SupplierService supplierService, OfferService offerService, ProductService productService, VoucherService voucherService, ResellerService resellerService)
     {
+      //
+      //  super
+      //
+      
       super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
+      
+      //
+      //  this
+      //
+      
       this.offerID = (String) esFields.get("offerID");
       this.salesChannelID = (String) esFields.get("salesChannelID");
       this.meanOfPayment = (String) esFields.get("meanOfPayment");

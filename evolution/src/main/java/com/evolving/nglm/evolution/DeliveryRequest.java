@@ -351,6 +351,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public void setCorrelator(String correlator) { this.correlator = correlator; }
   public void setDeliveryStatus(DeliveryStatus deliveryStatus) { this.deliveryStatus = deliveryStatus; }
   public void setDeliveryDate(Date deliveryDate) { this.deliveryDate = deliveryDate; }
+  public void setCreationDate(Date creationDate) { this.creationDate = creationDate; }
   public void setEventID(String eventID) { this.eventID = eventID; }
   public void setFeatureID(String featureID) { this.featureID = featureID; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
@@ -783,16 +784,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   {
     this.deliveryRequestID = (String) esFields.get("deliveryRequestID");
     this.originatingDeliveryRequestID = (String) esFields.get("originatingDeliveryRequestID");
-    String eventDatetimeStr = (String) esFields.get("eventDatetime");
-    if (eventDatetimeStr == null) eventDatetimeStr = (String) esFields.get("creationDate"); //messages
-    try
-      {
-        this.creationDate = esDateFormat.parse(eventDatetimeStr);
-      } 
-    catch (ParseException e)
-      {
-        if (log.isWarnEnabled()) log.warn("invalid creationDate {} format should be {}", eventDatetimeStr, elasticSearchDateFormat);
-      }
     this.eventID = (String) esFields.get("eventID");
     this.moduleID = (String) esFields.get("moduleID");
     this.featureID = (String) esFields.get("featureID");
@@ -1050,6 +1041,24 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
       }
     }
     return subscriberFields;
+  }
+  
+  public Date getDateFromESString(DateFormat dateFormat, String date)
+  {
+    if (date == null) return null;
+    else
+      {
+        try
+          {
+            return dateFormat.parse(date);
+          } 
+        catch (ParseException e)
+          {
+            if (log.isWarnEnabled()) log.warn("invalid date {} parse error", date);
+            return null;
+          }
+      }
+    
   }
 
 }
