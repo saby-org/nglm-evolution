@@ -517,7 +517,7 @@ public class TokenUtils
     // - filter by offer objective coming from the split strategy
     // - filter by profile of subscriber
     // Return a set of offers that can be optimised
-    Collection<Offer> offers = offerService.getActiveOffers(Calendar.getInstance().getTime());
+    Collection<Offer> offers = offerService.getActiveOffers(SystemTime.getCurrentTime());
     Set<Offer> result = new HashSet<>();
     List<Token> tokens = subscriberProfile.getTokens();
     Collection<Offer>filteredOffers = new ArrayList<>(); 
