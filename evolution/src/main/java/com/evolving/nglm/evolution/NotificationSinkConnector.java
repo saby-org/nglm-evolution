@@ -141,6 +141,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         String deliveryType = mailNotification.getDeliveryType();
         String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
         documentMap.put("channelID", channelID);
+        documentMap.put("destination", mailNotification.getDestination());
       }
       else if (notification instanceof SMSNotificationManagerRequest) {
         SMSNotificationManagerRequest smsNotification = (SMSNotificationManagerRequest) notification;
@@ -170,6 +171,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         String deliveryType = smsNotification.getDeliveryType();
         String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
         documentMap.put("channelID", channelID);
+        documentMap.put("destination", smsNotification.getDestination());
       }
       else if (notification instanceof NotificationManagerRequest) {
         NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
@@ -194,7 +196,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("language", notifNotification.getLanguage());
         documentMap.put("tags", notifNotification.getTags());        
         String channelID = notifNotification.getChannelID();
-        documentMap.put("channelID", channelID);        
+        documentMap.put("channelID", channelID);
+        documentMap.put("destination", notifNotification.getDestination());
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
@@ -221,6 +224,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         String deliveryType = pushNotification.getDeliveryType();
         String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
         documentMap.put("channelID", channelID);
+        documentMap.put("destination", pushNotification.getDestination());
       }
       
       return documentMap;

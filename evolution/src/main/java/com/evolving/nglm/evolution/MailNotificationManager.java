@@ -395,7 +395,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
       setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
       
-    //NOT IN ES this.destination = esFields.get("");
+      this.destination = (String) esFields.get("destination");
       this.fromAddress = (String) esFields.get("source");
       this.language = (String) esFields.get("language");
       this.templateID = (String) esFields.get("templateID");

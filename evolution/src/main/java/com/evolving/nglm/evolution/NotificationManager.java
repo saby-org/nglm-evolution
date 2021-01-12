@@ -471,7 +471,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
       setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
       
-      //NOT in ES this.destination = esFields.get("");
+      this.destination = (String) esFields.get("destination");
       setSourceAddressParam((String) esFields.get("source"));
       setSubscriberID((String) esFields.get("subscriberID"));
       this.language = (String) esFields.get("language");
