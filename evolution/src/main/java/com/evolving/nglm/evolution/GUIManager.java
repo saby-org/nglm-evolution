@@ -7166,6 +7166,7 @@ public class GUIManager
         JSONObject bulkCampaignStory = new JSONObject();
         JSONObject bulkCampaignInfo = new JSONObject();
         JSONArray bulkCampaignTargetCriteria = new JSONArray();
+        int bulkCampaignPriority = Integer.MAX_VALUE;
         JSONObject campaignJSON = new JSONObject();
 
         if (jsonRoot.containsKey("name"))
@@ -7311,6 +7312,14 @@ public class GUIManager
             bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(existingBulkCampaignObject, "targetingCriteria",
                 true);
           }
+        if (jsonRoot.containsKey("priority"))
+          {
+            bulkCampaignPriority = JSONUtilities.decodeInteger(jsonRoot, "priority", false);
+          }
+        else
+          {
+            bulkCampaignPriority = JSONUtilities.decodeInteger(existingBulkCampaignObject, "priority", Integer.MAX_VALUE);
+          }
 
         //
         // recurrent
@@ -7439,6 +7448,8 @@ public class GUIManager
             campaignJSONRepresentation.put("active", active);
             campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives);
             campaignJSONRepresentation.put("story", bulkCampaignStory);
+            campaignJSONRepresentation.put("priority", bulkCampaignPriority);
+            
             if (bulkCampaignInfo != null)
               {
                 campaignJSONRepresentation.put("info", bulkCampaignInfo);
