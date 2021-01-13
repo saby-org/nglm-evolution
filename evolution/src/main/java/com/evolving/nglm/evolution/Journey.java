@@ -3910,10 +3910,11 @@ public class Journey extends GUIManagedObject implements StockableItem
           List<EvaluationCriterion> internalTargets=getEligibilityCriteria();
           for(EvaluationCriterion internalTarget:internalTargets) {
         	 if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-        	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
+        	  { System.out.println(internalTarget.getCriterionOperator().getExternalRepresentation());
+        		 if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
         	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
         	  System.out.println("EVPRO-747 1==="+internalTarget.getArgumentExpression().replace("'",""));
-        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.IsInSetOperator || internalTarget.getCriterionOperator()==CriterionOperator.NotInSetOperator) {
+        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
         		  
         		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
         		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 2==="+a));
@@ -3940,6 +3941,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           List<String> pointIDs = new ArrayList<String>();
           List<String> offerIDs = new ArrayList<String>();
           List<String> workflowIDs = new ArrayList<String>();
+          List<EvaluationCriterion> internalTargets1=getEligibilityCriteria();
           for (JourneyNode offerNode : getJourneyNodes().values())
             {
               if (offerNode.getNodeType().getActionManager() != null)
@@ -3962,6 +3964,13 @@ public class Journey extends GUIManagedObject implements StockableItem
                   String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
                 }
+             if(offerNode.getNodeName().equals("profile.selection")) {
+            	 offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
+//            	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
+//                 {
+//            		 internalTargets1.addAll(journeyLink.getTransitionCriteria());
+//                 }
+             }  
             }
           result.put("offer", offerIDs);
           result.put("point", pointIDs);
@@ -3971,13 +3980,15 @@ public class Journey extends GUIManagedObject implements StockableItem
           result.put("journeyobjective", journeyObjIDs);
           
           targetIDs = getTargetID();
-          List<EvaluationCriterion> internalTargets1=getEligibilityCriteria();
+          
           for(EvaluationCriterion internalTarget:internalTargets1) {
-        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+        	  System.out.println(internalTarget.getCriterionOperator().getExternalRepresentation());
+      		
+        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
         	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
         	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
         	  System.out.println("EVPRO-747 3==="+internalTarget.getArgumentExpression().replace("'",""));
-        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.IsInSetOperator || internalTarget.getCriterionOperator()==CriterionOperator.NotInSetOperator) {
+        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
         		  
         		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
         		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 4==="+a));
@@ -4023,7 +4034,7 @@ public class Journey extends GUIManagedObject implements StockableItem
 	        	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
 	        	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
 	        	  System.out.println("EVPRO-747 5==="+internalTarget.getArgumentExpression().replace("'",""));
-	        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.IsInSetOperator || internalTarget.getCriterionOperator()==CriterionOperator.NotInSetOperator) {
+	        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
 	        		  
 	        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
 	        		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 6==="+a));
