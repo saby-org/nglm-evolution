@@ -226,7 +226,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedLanguages = new ArrayList<JSONObject>();
-    for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
+    for (SupportedLanguage supportedLanguage : Deployment.getDeployment(tenantID).getSupportedLanguages().values())
       {
         JSONObject supportedLanguageJSON = supportedLanguage.getJSONRepresentation();
         supportedLanguages.add(supportedLanguageJSON);
@@ -239,7 +239,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedCurrencies = new ArrayList<JSONObject>();
-    for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
+    for (SupportedCurrency supportedCurrency : Deployment.getDeployment(tenantID).getSupportedCurrencies().values())
       {
         JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
         supportedCurrencies.add(supportedCurrencyJSON);
@@ -252,7 +252,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedTimeUnits = new ArrayList<JSONObject>();
-    for (SupportedTimeUnit supportedTimeUnit : Deployment.getSupportedTimeUnits().values())
+    for (SupportedTimeUnit supportedTimeUnit : Deployment.getDeployment(tenantID).getSupportedTimeUnits().values())
       {
         JSONObject supportedTimeUnitJSON = supportedTimeUnit.getJSONRepresentation();
         supportedTimeUnits.add(supportedTimeUnitJSON);
@@ -265,7 +265,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedRelationships = new ArrayList<JSONObject>();
-    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+    for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
       {
         JSONObject supportedRelationshipJSON = supportedRelationship.getJSONRepresentation();
         supportedRelationships.add(supportedRelationshipJSON);
@@ -278,7 +278,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> communicationChannels = new ArrayList<JSONObject>();
-    for (CommunicationChannel communicationChannel : Deployment.getCommunicationChannels().values())
+    for (CommunicationChannel communicationChannel : Deployment.getDeployment(tenantID).getCommunicationChannels().values())
       {
         JSONObject communicationChannelJSON = communicationChannel.getJSONRepresentation();
         communicationChannels.add(communicationChannelJSON);
@@ -291,7 +291,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> callingChannelProperties = new ArrayList<JSONObject>();
-    for (CallingChannelProperty callingChannelProperty : Deployment.getCallingChannelProperties().values())
+    for (CallingChannelProperty callingChannelProperty : Deployment.getDeployment(tenantID).getCallingChannelProperties().values())
       {
         JSONObject callingChannelPropertyJSON = callingChannelProperty.getJSONRepresentation();
         callingChannelProperties.add(callingChannelPropertyJSON);
@@ -304,7 +304,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> catalogCharacteristicUnits = new ArrayList<JSONObject>();
-    for (CatalogCharacteristicUnit catalogCharacteristicUnit : Deployment.getCatalogCharacteristicUnits().values())
+    for (CatalogCharacteristicUnit catalogCharacteristicUnit : Deployment.getDeployment(tenantID).getCatalogCharacteristicUnits().values())
       {
         JSONObject catalogCharacteristicUnitJSON = catalogCharacteristicUnit.getJSONRepresentation();
         catalogCharacteristicUnits.add(catalogCharacteristicUnitJSON);
@@ -317,7 +317,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedDataTypes = new ArrayList<JSONObject>();
-    for (SupportedDataType supportedDataType : Deployment.getSupportedDataTypes().values())
+    for (SupportedDataType supportedDataType : Deployment.getDeployment(tenantID).getSupportedDataTypes().values())
       {
         JSONObject supportedDataTypeJSON = supportedDataType.getJSONRepresentation();
         supportedDataTypes.add(supportedDataTypeJSON);
@@ -347,7 +347,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> offerProperties = new ArrayList<JSONObject>();
-    for (OfferProperty offerProperty : Deployment.getOfferProperties().values())
+    for (OfferProperty offerProperty : Deployment.getDeployment(tenantID).getOfferProperties().values())
       {
         JSONObject offerPropertyJSON = offerProperty.getJSONRepresentation();
         offerProperties.add(offerPropertyJSON);
@@ -388,7 +388,7 @@ public class GUIManagerGeneral extends GUIManager
     List<JSONObject> nodeTypes;
     try
       {
-        nodeTypes = processNodeTypes(Deployment.getNodeTypes(), Collections.<String,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap(), tenantID);
+        nodeTypes = processNodeTypes(Deployment.getDeployment(tenantID).getNodeTypes(), Collections.<String,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap(), tenantID);
       }
     catch (GUIManagerException e)
       {
@@ -402,7 +402,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> journeyToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection journeyToolboxSection : Deployment.getJourneyToolbox().values())
+    for (ToolboxSection journeyToolboxSection : Deployment.getDeployment(tenantID).getJourneyToolbox().values())
       {
         JSONObject journeyToolboxSectionJSON = journeyToolboxSection.getJSONRepresentation();
         journeyToolboxSections.add(journeyToolboxSectionJSON);
@@ -415,7 +415,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> campaignToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection campaignToolboxSection : Deployment.getCampaignToolbox().values())
+    for (ToolboxSection campaignToolboxSection : Deployment.getDeployment(tenantID).getCampaignToolbox().values())
       {
         JSONObject campaignToolboxSectionJSON = campaignToolboxSection.getJSONRepresentation();
         campaignToolboxSections.add(campaignToolboxSectionJSON);
@@ -428,7 +428,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> workflowToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection workflowToolboxSection : Deployment.getWorkflowToolbox().values())
+    for (ToolboxSection workflowToolboxSection : Deployment.getDeployment(tenantID).getWorkflowToolbox().values())
       {
         JSONObject workflowToolboxSectionJSON = workflowToolboxSection.getJSONRepresentation();
         workflowToolboxSections.add(workflowToolboxSectionJSON);
@@ -474,7 +474,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedLanguages = new ArrayList<JSONObject>();
-    for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
+    for (SupportedLanguage supportedLanguage : Deployment.getDeployment(tenantID).getSupportedLanguages().values())
       {
         JSONObject supportedLanguageJSON = supportedLanguage.getJSONRepresentation();
         supportedLanguages.add(supportedLanguageJSON);
@@ -507,7 +507,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedCurrencies = new ArrayList<JSONObject>();
-    for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
+    for (SupportedCurrency supportedCurrency : Deployment.getDeployment(tenantID).getSupportedCurrencies().values())
       {
         JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
         supportedCurrencies.add(supportedCurrencyJSON);
@@ -540,7 +540,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedTimeUnits = new ArrayList<JSONObject>();
-    for (SupportedTimeUnit supportedTimeUnit : Deployment.getSupportedTimeUnits().values())
+    for (SupportedTimeUnit supportedTimeUnit : Deployment.getDeployment(tenantID).getSupportedTimeUnits().values())
       {
         JSONObject supportedTimeUnitJSON = supportedTimeUnit.getJSONRepresentation();
         supportedTimeUnits.add(supportedTimeUnitJSON);
@@ -573,7 +573,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> catalogCharacteristicUnits = new ArrayList<JSONObject>();
-    for (CatalogCharacteristicUnit catalogCharacteristicUnit : Deployment.getCatalogCharacteristicUnits().values())
+    for (CatalogCharacteristicUnit catalogCharacteristicUnit : Deployment.getDeployment(tenantID).getCatalogCharacteristicUnits().values())
       {
         JSONObject catalogCharacteristicUnitJSON = catalogCharacteristicUnit.getJSONRepresentation();
         catalogCharacteristicUnits.add(catalogCharacteristicUnitJSON);
@@ -606,7 +606,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedDataTypes = new ArrayList<JSONObject>();
-    for (SupportedDataType supportedDataType : Deployment.getSupportedDataTypes().values())
+    for (SupportedDataType supportedDataType : Deployment.getDeployment(tenantID).getSupportedDataTypes().values())
       {
         JSONObject supportedDataTypeJSON = supportedDataType.getJSONRepresentation();
         supportedDataTypes.add(supportedDataTypeJSON);
@@ -3674,7 +3674,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedTokenCodesFormats = new ArrayList<JSONObject>();
-    for (SupportedTokenCodesFormat supportedTokenCodesFormat : Deployment.getSupportedTokenCodesFormats().values())
+    for (SupportedTokenCodesFormat supportedTokenCodesFormat : Deployment.getDeployment(tenantID).getSupportedTokenCodesFormats().values())
       {
         JSONObject supportedTokenCodesFormatJSON = supportedTokenCodesFormat.getJSONRepresentation();
         supportedTokenCodesFormats.add(supportedTokenCodesFormatJSON);
@@ -3707,7 +3707,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     List<JSONObject> supportedVoucherCodePatternList = new ArrayList<JSONObject>();
-    for (SupportedVoucherCodePattern supportedVoucherCodePattern : Deployment.getSupportedVoucherCodePatternList().values())
+    for (SupportedVoucherCodePattern supportedVoucherCodePattern : Deployment.getDeployment(tenantID).getSupportedVoucherCodePatternList().values())
       {
         JSONObject supportedVoucherCodePatternJSON = supportedVoucherCodePattern.getJSONRepresentation();
         supportedVoucherCodePatternList.add(supportedVoucherCodePatternJSON);

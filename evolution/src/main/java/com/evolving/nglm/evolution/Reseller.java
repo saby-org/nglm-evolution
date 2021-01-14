@@ -331,7 +331,7 @@ public class Reseller extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(ResellerService resellerService, Date date) throws GUIManagerException
+  public void validate(ResellerService resellerService, Date date, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -346,7 +346,7 @@ public class Reseller extends GUIManagedObject
     
     if (billingModeID != null)
       {
-        BillingMode billingMode = Deployment.getBillingModes().get(billingModeID);
+        BillingMode billingMode = Deployment.getDeployment(tenantID).getBillingModes().get(billingModeID);
         if (billingMode == null) throw new GUIManagerException("unknown billingModeID ", billingModeID);
       } 
     

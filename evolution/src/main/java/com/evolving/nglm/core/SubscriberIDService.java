@@ -247,6 +247,12 @@ public class SubscriberIDService
     return subscriberIDs.get(alternateID);
   }
   
+  public Pair<String, String> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException
+  {
+    Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
+    return new Pair<String, String>(subscriberIDs.get(alternateID), subscriberIDs.get("tenantID"));
+  }
+  
   /*****************************************
   *
   *  class SubscriberIDServiceException

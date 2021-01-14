@@ -280,7 +280,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
         this,
         csvfile
         );
-    TenantService tenantService = new TenantService(kafkaNodeList, "repor-tenantservice-subscriberReportMonoPhase", Deployment.getTenantTopic(), false);
+    TenantService tenantService = new TenantService(kafkaNodeList, "repor-tenantservice-subscriberReportMonoPhase", "tenantID", false);
     synchronized (log) // why not, this is a static object that always exists
     {
       if (segmentationDimensionService == null) // do it only once, because we can't stop it fully

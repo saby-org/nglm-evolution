@@ -207,10 +207,10 @@ public abstract class DeliveryManager
         try
           {
             result = submitRequestQueue.take();
-            if(Deployment.getEnableContactPolicyProcessing())
+            if(Deployment.getDeployment(result.getTenantID()).getEnableContactPolicyProcessing())
               {
                 //if DeliveryStatus is BlockedByContactPolicy make result null and the next request from queue will be taken
-                if (processRequestBlockedByContactPolicy(result)) result = null;
+                if (processRequestBlockedByContactPolicy(result, result.getTenantID())) result = null;
               }
           }
         catch (InterruptedException e)
@@ -1247,7 +1247,7 @@ public abstract class DeliveryManager
    *
    *****************************************/
 
-  private boolean processRequestBlockedByContactPolicy(DeliveryRequest request)
+  private boolean processRequestBlockedByContactPolicy(DeliveryRequest request, int tenantID)
   {
     boolean blockedByContactPolicy = false;
     //if request is not type of any of contact policy affected request types do nothing
@@ -1257,7 +1257,7 @@ public abstract class DeliveryManager
         RESTAPIGenericReturnCodes returnCode = RESTAPIGenericReturnCodes.UNKNOWN;
         try
           {
-            blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(notifRequest);
+            blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(notifRequest, tenantID);
             if (blockedByContactPolicy)
               {
                 request.setDeliveryStatus(DeliveryStatus.Failed);

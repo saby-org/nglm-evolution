@@ -97,7 +97,7 @@ public class SegmentationDimensionService extends GUIService
     // Service need tenantService
     //
     
-    TenantService tenantService = new TenantService(bootstrapServers, "SegmentationService-TenantService", Deployment.getTenantTopic(), false);
+    TenantService tenantService = new TenantService(bootstrapServers, "SegmentationService-TenantService", "tenant", false);
         
     //
     //  (re-initialize lastGeneratedSegmentID) for all tenant
@@ -436,7 +436,7 @@ public class SegmentationDimensionService extends GUIService
                                         {
                                           if(segment.getName().equals(segmentName)) 
                                             {
-                                              SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.SegmentationDimension, Arrays.asList(segmentationDimension.getGUIManagedObjectID(), segment.getID()), segmentationDimension.getSubscriberGroupEpoch().getEpoch(), LoadType.Add.getAddRecord());
+                                              SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.SegmentationDimension, Arrays.asList(segmentationDimension.getGUIManagedObjectID(), segment.getID()), segmentationDimension.getSubscriberGroupEpoch().getEpoch(), LoadType.Add.getAddRecord(), segmentationDimension.getTenantID());
                                               kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupTopic, stringKeySerde.serializer().serialize(subscriberGroupTopic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(subscriberGroupTopic, subscriberGroup)));
                                             }
                                         }

@@ -722,8 +722,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null, tenantID);
             String reportName = report.getName();
 
-            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
-            String fileExtension = Deployment.getReportManagerFileExtension();
+            String outputPath = Deployment.getDeployment(tenantID).getReportManagerOutputPath()+File.separator;
+            String fileExtension = Deployment.getDeployment(tenantID).getReportManagerFileExtension();
 
             File folder = new File(outputPath);
             String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
@@ -966,11 +966,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     HashMap<String,Object> globalConfig = new HashMap<String,Object>();
     globalConfig.put("reportManagerZookeeperDir",   Deployment.getReportManagerZookeeperDir());
-    globalConfig.put("reportManagerOutputPath",     Deployment.getReportManagerOutputPath());
-    globalConfig.put("reportManagerDateFormat",     Deployment.getReportManagerDateFormat());
-    globalConfig.put("reportManagerFileExtension",  Deployment.getReportManagerFileExtension());
+    globalConfig.put("reportManagerOutputPath",     Deployment.getDeployment(tenantID).getReportManagerOutputPath());
+    globalConfig.put("reportManagerDateFormat",     Deployment.getDeployment(tenantID).getReportManagerDateFormat());
+    globalConfig.put("reportManagerFileExtension",  Deployment.getDeployment(tenantID).getReportManagerFileExtension());
     globalConfig.put("reportManagerCsvSeparator",   Deployment.getReportManagerCsvSeparator());
-    globalConfig.put("reportManagerStreamsTempDir", Deployment.getReportManagerStreamsTempDir());
+    globalConfig.put("reportManagerStreamsTempDir", Deployment.getDeployment(tenantID).getReportManagerStreamsTempDir());
     response.put("reportGlobalConfiguration", JSONUtilities.encodeObject(globalConfig));
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
@@ -1198,7 +1198,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *****************************************/
 
     List<JSONObject> partnerTypes = new ArrayList<JSONObject>();
-    for (PartnerType partnerType : Deployment.getPartnerTypes().values())
+    for (PartnerType partnerType : Deployment.getDeployment(tenantID).getPartnerTypes().values())
       {
         JSONObject partnerTypeJSON = partnerType.getJSONRepresentation();
         partnerTypes.add(partnerTypeJSON);
@@ -1231,7 +1231,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *****************************************/
 
     List<JSONObject> billingModes = new ArrayList<JSONObject>();
-    for (BillingMode billingMode : Deployment.getBillingModes().values())
+    for (BillingMode billingMode : Deployment.getDeployment(tenantID).getBillingModes().values())
       {
         JSONObject billingModeJSON = billingMode.getJSONRepresentation();
         billingModes.add(billingModeJSON);

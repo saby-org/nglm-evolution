@@ -199,7 +199,7 @@ public class TenantService extends GUIService
     //  tenantService
     //
 
-    TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "example-001", Deployment.getTenantTopic(), false, tenantListener);
+    TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "example-001", "tenant", false, tenantListener);
     tenantService.start();
 
     //

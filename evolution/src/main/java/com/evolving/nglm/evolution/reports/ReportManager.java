@@ -52,6 +52,7 @@ import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.LoggerInitialization;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.ReportService;
+import com.evolving.nglm.evolution.TenantService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
 
 /**
@@ -67,6 +68,8 @@ public class ReportManager implements Watcher
   protected static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
   protected static final String LOCK_SUBDIR = "lock";
   protected static final int sessionTimeout = 30*1000; // 30 seconds
+  private static TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "", "tenant", false);
+  
   protected ZooKeeper zk = null;
   protected static String zkHostList;
   protected static String brokerServers;
@@ -159,7 +162,7 @@ public class ReportManager implements Watcher
       {
         // first time
         log.trace("Creating ReportService");
-        reportService = new ReportService(Deployment.getBrokerServers(), "reportmanager-reportservice-001", Deployment.getReportTopic(), false, reportListener);
+        reportService = new ReportService(Deployment.getBrokerServers(), "reportmanager-reportservice-001", Deployment.getReportTopic(), false, reportListener, tenantService);
         reportService.start();
         log.trace("ReportService started");
       }
@@ -562,11 +565,11 @@ public class ReportManager implements Watcher
       }
     try
       {
-        String outputPath = Deployment.getReportManagerOutputPath();
+        String outputPath = Deployment.getDeployment(tenantID).getReportManagerOutputPath();
         log.trace("outputPath = " + outputPath);
-        String dateFormat = Deployment.getReportManagerDateFormat();
+        String dateFormat = Deployment.getDeployment(tenantID).getReportManagerDateFormat();
         log.trace("dateFormat = " + dateFormat);
-        String fileExtension = Deployment.getReportManagerFileExtension();
+        String fileExtension = Deployment.getDeployment(tenantID).getReportManagerFileExtension();
         log.trace("fileExtension = " + fileExtension);
         SimpleDateFormat sdf;
         try

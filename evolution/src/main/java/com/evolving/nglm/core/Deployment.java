@@ -12,6 +12,8 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
+import com.evolving.nglm.evolution.Tenant;
+import com.evolving.nglm.evolution.TenantService;
 import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
 
 import org.json.simple.JSONArray;
@@ -27,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,19 +41,34 @@ import java.util.regex.Pattern;
 
 public class Deployment
 {
+  
+  /*****************************************
+  *
+  *  deploymentsPerTenant
+  *
+  *****************************************/
+  
+  private static Map<Integer, Deployment> deploymentsPerTenant = new HashMap<>();
+  
+  //
+  //  data
+  //
+  
+  private Tenant tenant;
+  
   /*****************************************
   *
   *  data
   *
   *****************************************/
 
-  private static JSONObject jsonRoot;
-  private static String baseTimeZone;
-  private static ZoneId baseZoneId;
-  private static String baseLanguage;
-  private static String baseCountry;
+  private JSONObject jsonRoot;
+  private String baseTimeZone;
+  private ZoneId baseZoneId;
+  private String baseLanguage;
+  private String baseCountry;
   private static String evolutionVersion;
-  private static String customerVersion;
+  private String customerVersion;
   private static Map<String,AlternateID> alternateIDs = new LinkedHashMap<String,AlternateID>();
   private static String assignSubscriberIDsTopic;
   private static String assignExternalSubscriberIDsTopic;
@@ -102,13 +120,13 @@ public class Deployment
   public static String getZookeeperRoot() { return System.getProperty("nglm.zookeeper.root"); }
   public static String getZookeeperConnect() { return System.getProperty("zookeeper.connect"); }
   public static String getBrokerServers() { return System.getProperty("broker.servers",""); }
-  public static JSONObject getJSONRoot() { return jsonRoot; }
-  public static String getBaseTimeZone() { return baseTimeZone; }
-  public static ZoneId getBaseZoneId() { return baseZoneId; }
-  public static String getBaseLanguage() { return baseLanguage; }
-  public static String getBaseCountry() { return baseCountry; }
+  public JSONObject getJSONRoot() { return jsonRoot; }
+  public String getBaseTimeZone() { return baseTimeZone; }
+  public ZoneId getBaseZoneId() { return baseZoneId; }
+  public String getBaseLanguage() { return baseLanguage; }
+  public String getBaseCountry() { return baseCountry; }
   public static String getEvolutionVersion() { return evolutionVersion!=null?evolutionVersion:"unknown"; }
-  public static String getCustomerVersion() { return customerVersion!=null?customerVersion:"unknown"; }
+  public String getCustomerVersion() { return customerVersion!=null?customerVersion:"unknown"; }
   public static String getRedisSentinels() { return System.getProperty("redis.sentinels",""); }
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getAssignSubscriberIDsTopic() { return assignSubscriberIDsTopic; }
@@ -163,6 +181,24 @@ public class Deployment
   
   static
   {
+    //
+    // TenantService
+    //
+    TenantService tenantService  = new TenantService(getBrokerServers(), "deployment-tenantservice", "tenant", false);
+    tenantService.start();
+    
+    for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+      {
+        Deployment d = new Deployment();
+        d.init(t);
+        deploymentsPerTenant.put(t.getEffectiveTenantID(), d);
+      }
+  }
+  
+  public void init(Tenant t)
+  {
+    this.tenant = t;
+    
     /*****************************************
     *
     *  zookeeper -- retrieve configuration
@@ -791,7 +827,7 @@ public class Deployment
               }
           }
       }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException | ClassNotFoundException e)
       {
         throw new ServerRuntimeException("deployment : autoProvisionEvents", e);
       }
@@ -1002,5 +1038,10 @@ public class Deployment
       String contents = new String(bytes, StandardCharsets.UTF_8);
       return new DeploymentConfigurationPart(baseName, partNumber, contents);
     }
+  }
+  
+  public static Deployment getDeployment(int tenantID)
+  {
+    return deploymentsPerTenant.get(tenantID);
   }
 }

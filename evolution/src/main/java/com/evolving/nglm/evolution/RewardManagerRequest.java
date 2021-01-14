@@ -331,11 +331,11 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   //  addFieldsForGUIPresentation
   //
 
-  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
   {
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
     guiPresentationMap.put(PROVIDERID, getProviderID());
-    guiPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
+    guiPresentationMap.put(PROVIDERNAME, Deployment.getDeployment(this.getTenantID()).getFulfillmentProviders().get(getProviderID()).getProviderName());
     guiPresentationMap.put(DELIVERABLEID, getDeliverableID());
     guiPresentationMap.put(DELIVERABLENAME, deliverableService.getActiveDeliverable(getDeliverableID(), SystemTime.getCurrentTime()).getDeliverableName());
     guiPresentationMap.put(DELIVERABLEQTY, getAmount());
@@ -356,11 +356,11 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   //  addFieldsForThirdPartyPresentation
   //
 
-  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
   {
     thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
     thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
-    thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
+    thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getDeployment(this.getTenantID()).getFulfillmentProviders().get(getProviderID()).getProviderName());
     thirdPartyPresentationMap.put(DELIVERABLEID, getDeliverableID());
     thirdPartyPresentationMap.put(DELIVERABLENAME, deliverableService.getActiveDeliverable(getDeliverableID(), SystemTime.getCurrentTime()).getDeliverableName());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
@@ -484,7 +484,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
             log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
             return new ArrayList<ActionManager.Action>();
           }else{
-            DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
+            DeliveryManagerDeclaration provider = Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
             if(provider == null){
               log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
               return new ArrayList<ActionManager.Action>();
@@ -509,7 +509,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
             log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : deliverable not found ");
             return new ArrayList<ActionManager.Action>();
           }else{
-            DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
+            DeliveryManagerDeclaration provider = Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
             if(provider == null){
               log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : deliverable not found ");
               return new ArrayList<ActionManager.Action>();

@@ -178,7 +178,7 @@ public class DynamicEventDeclarationsService extends GUIService
 
   public void refreshSegmentationChangeEvent(SegmentationDimensionService segmentationDimensionService, int tenantID)
   {
-    if (!Deployment.getEnableProfileSegmentChange()) 
+    if (!Deployment.getDeployment(tenantID).getEnableProfileSegmentChange()) 
       {
         return;
       }

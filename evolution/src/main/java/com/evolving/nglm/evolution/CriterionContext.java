@@ -104,7 +104,7 @@ public class CriterionContext
   
   static
   {    
-    tenantService = new TenantService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getTenantTopic(), false);
+    tenantService = new TenantService(Deployment.getBrokerServers(), "NOT_USED", "tenant", false);
     tenantService.start();
 
     Profile = new HashMap<Integer, CriterionContext>();
@@ -873,7 +873,7 @@ public class CriterionContext
         case FullProfile:
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(Profile.get(tenantID).getCriterionFields(tenantID));
-          result.putAll(Deployment.getExtendedProfileCriterionFields());
+          result.putAll(Deployment.getDeployment(tenantID).getExtendedProfileCriterionFields());
           break;
 
         case DynamicProfile:
@@ -889,7 +889,7 @@ public class CriterionContext
         case FullDynamicProfile:
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(DynamicProfile.get(tenantID).getCriterionFields(tenantID));
-          result.putAll(Deployment.getExtendedProfileCriterionFields());
+          result.putAll(Deployment.getDeployment(tenantID).getExtendedProfileCriterionFields());
           break;
 
         case Journey:
@@ -900,7 +900,7 @@ public class CriterionContext
           break;
 
         case Presentation:
-          result = Deployment.getPresentationCriterionFields();
+          result = Deployment.getDeployment(tenantID).getPresentationCriterionFields();
           break;
 
         default:

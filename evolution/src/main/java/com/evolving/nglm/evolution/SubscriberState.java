@@ -235,7 +235,7 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  public SubscriberState(String subscriberID)
+  public SubscriberState(String subscriberID, int tenantID)
   {
     try
       {
@@ -268,6 +268,7 @@ public class SubscriberState implements StateStore
         this.tokenChanges = new ArrayList<TokenChange>();
         this.notificationHistory = new HashMap<>();
         this.voucherChanges = new ArrayList<VoucherChange>();
+
       }
     catch (InvocationTargetException e)
       {

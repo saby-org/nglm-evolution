@@ -283,7 +283,7 @@ public class ScoringStrategy extends GUIManagedObject
     //  simple
     //
     
-    this.scoringEngine = Deployment.getScoringEngines().get(JSONUtilities.decodeString(jsonRoot, "scoringEngineID", true));
+    this.scoringEngine = Deployment.getDeployment(tenantID).getScoringEngines().get(JSONUtilities.decodeString(jsonRoot, "scoringEngineID", true));
     this.dimensionID = JSONUtilities.decodeString(jsonRoot, "dimensionID", true);
 
     //

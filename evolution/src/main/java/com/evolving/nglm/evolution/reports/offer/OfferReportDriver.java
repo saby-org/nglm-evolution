@@ -308,7 +308,7 @@ public class OfferReportDriver extends ReportDriver
                                     if (meansOfPaymentObject != null)
                                       {
                                         meansOfPayment = "" + meansOfPaymentObject.getJSONRepresentation().get("display");
-                                        for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
+                                        for (SupportedCurrency supportedCurrency : Deployment.getDeployment(offer.getTenantID()).getSupportedCurrencies().values())
                                           {
                                             JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
                                             if (id.equals(supportedCurrencyJSON.get("id")))

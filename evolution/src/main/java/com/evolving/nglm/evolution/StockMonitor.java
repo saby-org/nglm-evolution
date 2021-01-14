@@ -1336,7 +1336,7 @@ public class StockMonitor implements Runnable
     //  tenantService
     //
     
-    TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "example-tenantservice-" + stockMonitorKey, Deployment.getTenantTopic(), false);
+    TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "example-tenantservice-" + stockMonitorKey, "tenant", false);
 
     //
     //  stockMonitor

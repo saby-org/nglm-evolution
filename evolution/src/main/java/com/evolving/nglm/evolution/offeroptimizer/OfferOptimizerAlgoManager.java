@@ -54,7 +54,7 @@ public class OfferOptimizerAlgoManager {
       String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader,
-      SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,StringBuffer returnedLog) {
+      SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,StringBuffer returnedLog, int tenantID) {
 
     if (offers == null || offers.size() == 0) 
       {
@@ -102,7 +102,7 @@ public class OfferOptimizerAlgoManager {
         // Validate propensity rule before using it
         //
         double currentPropensity = o.getInitialPropensity();
-        if(Deployment.getPropensityRule().validate(segmentationDimensionService))
+        if(Deployment.getDeployment(tenantID).getPropensityRule().validate(segmentationDimensionService))
           {
             // lazy init of the propensityService if needed
             if(propensityService==null)
@@ -115,8 +115,8 @@ public class OfferOptimizerAlgoManager {
                       }
                   }
               }
-            int presentationThreshold = Deployment.getPropensityInitialisationPresentationThreshold();
-            int daysThreshold = Deployment.getPropensityInitialisationDurationInDaysThreshold();
+            int presentationThreshold = Deployment.getDeployment(tenantID).getPropensityInitialisationPresentationThreshold();
+            int daysThreshold = Deployment.getDeployment(tenantID).getPropensityInitialisationDurationInDaysThreshold();
             currentPropensity = propensityService.getPropensity(o.getOfferID(), subscriberProfile, o.getInitialPropensity(),o.getEffectiveStartDate(),presentationThreshold,daysThreshold);
           }
         else 
@@ -147,7 +147,7 @@ public class OfferOptimizerAlgoManager {
               {
                 if ((requestedSalesChannelId == null) || (salesChannelID.equals(requestedSalesChannelId))) 
                   {
-                    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), subscriberProfile.getTenantID());
+                    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
                     ProposedOfferDetails scorePerChannel = algo.getOfferPropensityScore(algoParameters, o,
                         salesChannelID,
                         currentPropensity, salesChannelAndPrice.getPrice() != null

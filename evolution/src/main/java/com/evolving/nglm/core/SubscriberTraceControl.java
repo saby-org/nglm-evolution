@@ -31,9 +31,10 @@ public class SubscriberTraceControl implements AutoProvisionSubscriberStreamEven
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscribertracecontrol");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -54,6 +55,7 @@ public class SubscriberTraceControl implements AutoProvisionSubscriberStreamEven
 
   private String subscriberID;
   private boolean subscriberTraceEnabled;
+  private int tenantID;
 
   //
   //  transient
@@ -67,11 +69,12 @@ public class SubscriberTraceControl implements AutoProvisionSubscriberStreamEven
   *
   *****************************************/
 
-  public SubscriberTraceControl(String subscriberID, boolean subscriberTraceEnabled)
+  public SubscriberTraceControl(String subscriberID, boolean subscriberTraceEnabled, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.subscriberTraceEnabled = subscriberTraceEnabled;
     this.eventDate = SystemTime.getCurrentTime();
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -83,6 +86,7 @@ public class SubscriberTraceControl implements AutoProvisionSubscriberStreamEven
   public String getSubscriberID() { return subscriberID; }
   public boolean getSubscriberTraceEnabled() { return subscriberTraceEnabled; }
   public Date getEventDate() { return eventDate; }
+  public int getTenantID() { return tenantID; }
 
   /****************************************
   *
@@ -115,6 +119,7 @@ public class SubscriberTraceControl implements AutoProvisionSubscriberStreamEven
     Struct struct = new Struct(schema);
     struct.put("subscriberID", subscriberTraceControl.getSubscriberID());
     struct.put("subscriberTraceEnabled", subscriberTraceControl.getSubscriberTraceEnabled());
+    struct.put("tenantID", subscriberTraceControl.getTenantID());
     return struct;
   }
 
@@ -147,11 +152,12 @@ public class SubscriberTraceControl implements AutoProvisionSubscriberStreamEven
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
     boolean subscriberTraceEnabled = valueStruct.getBoolean("subscriberTraceEnabled");
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
 
     //
     //  return
     //
 
-    return new SubscriberTraceControl(subscriberID, subscriberTraceEnabled);
+    return new SubscriberTraceControl(subscriberID, subscriberTraceEnabled, tenantID);
   }
 }

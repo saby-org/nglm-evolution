@@ -188,7 +188,7 @@ public abstract class SubscriberProfile
     try
       {
         Class<SubscriberProfile> subscriberProfileClass = Deployment.getSubscriberProfileClass();
-        subscriberProfileConstructor = subscriberProfileClass.getDeclaredConstructor(String.class);
+        subscriberProfileConstructor = subscriberProfileClass.getDeclaredConstructor(String.class, Integer.TYPE);
         subscriberProfileCopyConstructor = subscriberProfileClass.getDeclaredConstructor(subscriberProfileClass);
         Method serdeMethod = subscriberProfileClass.getMethod("serde");
         subscriberProfileSerde = (ConnectSerde<SubscriberProfile>) serdeMethod.invoke(null);
@@ -286,7 +286,7 @@ public abstract class SubscriberProfile
 
   public String getLanguage()
   {
-    return (languageID != null && Deployment.getSupportedLanguages().get(getLanguageID()) != null) ? Deployment.getSupportedLanguages().get(getLanguageID()).getName() : Deployment.getBaseLanguage();
+    return (languageID != null && Deployment.getDeployment(this.getTenantID()).getSupportedLanguages().get(getLanguageID()) != null) ? Deployment.getDeployment(tenantID).getSupportedLanguages().get(getLanguageID()).getName() : Deployment.getDeployment(tenantID).getBaseLanguage();
   }
 
 
@@ -656,7 +656,7 @@ public abstract class SubscriberProfile
             JSONObject obj = new JSONObject();          
             String relationShipID = relationship.getKey();
             String relationshipName = null;
-            for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+            for (SupportedRelationship supportedRelationship : Deployment.getDeployment(getTenantID()).getSupportedRelationships().values())
               {
                if (supportedRelationship.getID().equals(relationShipID)) {
                  relationshipName = supportedRelationship.getName();
@@ -2487,7 +2487,7 @@ public abstract class SubscriberProfile
     //  validate
     //
     
-    if(language != null && (Deployment.getSupportedLanguages().get(language) == null)) throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (language) ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+    if(language != null && (Deployment.getDeployment(getTenantID()).getSupportedLanguages().get(language) == null)) throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (language) ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
     if(evolutionSubscriberStatus != null && (EvolutionSubscriberStatus.fromExternalRepresentation(evolutionSubscriberStatus) == EvolutionSubscriberStatus.Unknown)) throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (evolutionSubscriberStatus) ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
 
     //

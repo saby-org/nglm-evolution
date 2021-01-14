@@ -67,12 +67,12 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  public boolean ensureContactPolicy(INotificationRequest request) throws ContactPolityProcessorException
+  public boolean ensureContactPolicy(INotificationRequest request, int tenantID) throws ContactPolityProcessorException
   {
     Date now = SystemTime.getCurrentTime();
     try
       {
-        String channelId = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(request.getDeliveryType());
+        String channelId = Deployment.getDeployment(tenantID).getDeliveryTypeCommunicationChannelIDMap().get(request.getDeliveryType());
         MetricHistory requestMetricHistory = request.getNotificationHistory();
         //validate segment contact policy
         if (request.getSegmentContactPolicyID() != null && isBlockedByContactPolicy(request.getSegmentContactPolicyID(), channelId, now, requestMetricHistory))

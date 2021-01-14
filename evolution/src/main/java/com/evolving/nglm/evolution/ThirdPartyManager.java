@@ -877,10 +877,10 @@ public class ThirdPartyManager
               jsonResponse = processUpdateCustomer(jsonRoot);
               break;
             case updateCustomerParent:
-              jsonResponse = processUpdateCustomerParent(jsonRoot);
+              jsonResponse = processUpdateCustomerParent(jsonRoot, tenantID);
               break;
             case removeCustomerParent:
-              jsonResponse = processRemoveCustomerParent(jsonRoot);
+              jsonResponse = processRemoveCustomerParent(jsonRoot, tenantID);
               break;
             case getCustomerNBOs:
               jsonResponse = processGetCustomerNBOs(jsonRoot, tenantID);
@@ -3372,7 +3372,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processUpdateCustomerParent(JSONObject jsonRoot) throws ThirdPartyManagerException
+  private JSONObject processUpdateCustomerParent(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
   {
     /****************************************
     *
@@ -3401,7 +3401,7 @@ public class ThirdPartyManager
       
     boolean isRelationshipSupported = false;
     String relationshipID = null;
-    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+    for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
       {
         if (supportedRelationship.getDisplay().equals(relationshipDisplay))
           {
@@ -3524,7 +3524,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processRemoveCustomerParent(JSONObject jsonRoot) throws ThirdPartyManagerException
+  private JSONObject processRemoveCustomerParent(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
   {
     /****************************************
     *
@@ -3549,7 +3549,7 @@ public class ThirdPartyManager
         SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
         String previousParentSubscriberID = null;
         String relationshipID = null;
-        for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
           {
             if (supportedRelationship.getDisplay().equals(relationshipDisplay))
               {

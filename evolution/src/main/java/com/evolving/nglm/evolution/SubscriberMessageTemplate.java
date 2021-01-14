@@ -475,14 +475,14 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public List<String> getLanguages()
+  public List<String> getLanguages(int tenantID)
   {
     Set<String> languages = new HashSet<String>();
     for (DialogMessage dialogMessage : dialogMessages.values())
       {
         for (String languageName : dialogMessage.getMessageTextByLanguage().keySet())
           {
-            String languageID = Deployment.getSupportedLanguageID(languageName);
+            String languageID = Deployment.getDeployment(tenantID).getSupportedLanguageID(languageName);
             if (languageID != null)
               {
                 languages.add(languageID);

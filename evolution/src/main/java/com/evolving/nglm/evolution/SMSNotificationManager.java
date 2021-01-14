@@ -242,7 +242,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     {
       SMSTemplate smsTemplate = (SMSTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       DialogMessage dialogMessage = (smsTemplate != null) ? smsTemplate.getMessageText() : null;
-      String text = (dialogMessage != null) ? dialogMessage.resolve(language, messageTags) : null;
+      String text = (dialogMessage != null) ? dialogMessage.resolve(language, messageTags, getTenantID()) : null;
       return text;
     }
 
@@ -429,7 +429,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     //  addFieldsForGUIPresentation
     //
 
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(EVENTID, null);
@@ -450,7 +450,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     //  addFieldsForThirdPartyPresentation
     //
 
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       thirdPartyPresentationMap.put(DELIVERYSTATUS, getMessageStatus().toString()); // replace value set by the superclass 
       thirdPartyPresentationMap.put(EVENTID, null);
@@ -625,11 +625,11 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
         if(smsRequest.getRestricted()) 
           {
             Date effectiveDeliveryTime = now;
-            String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(smsRequest.getDeliveryType());
-            CommunicationChannel channel = Deployment.getCommunicationChannels().get(channelID);
+            String channelID = Deployment.getDeployment(deliveryRequest.getTenantID()).getDeliveryTypeCommunicationChannelIDMap().get(smsRequest.getDeliveryType());
+            CommunicationChannel channel = Deployment.getDeployment(deliveryRequest.getTenantID()).getCommunicationChannels().get(channelID);
             if(channel != null) 
               {
-                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now, smsRequest.getTenantID());
               }
             
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

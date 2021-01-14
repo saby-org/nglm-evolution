@@ -172,7 +172,7 @@ public class CatalogCharacteristic extends GUIManagedObject
     *
     ****************************************/
 
-    if (result.getCatalogCharacteristicUnitID() != null && ! Deployment.getCatalogCharacteristicUnits().containsKey(result.getCatalogCharacteristicUnitID()))
+    if (result.getCatalogCharacteristicUnitID() != null && ! Deployment.getDeployment(result.getTenantID()).getCatalogCharacteristicUnits().containsKey(result.getCatalogCharacteristicUnitID()))
       {
         throw new SerializationException("unknown unit for catalog characteristic " + result.getCatalogCharacteristicID());
       }
@@ -246,7 +246,7 @@ public class CatalogCharacteristic extends GUIManagedObject
 
     if (getRawEffectiveStartDate() != null) throw new GUIManagerException("unsupported start date", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     if (getRawEffectiveEndDate() != null) throw new GUIManagerException("unsupported end date", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
-    if (catalogCharacteristicUnitID != null && ! Deployment.getCatalogCharacteristicUnits().containsKey(catalogCharacteristicUnitID)) throw new GUIManagerException("unknown unit", catalogCharacteristicUnitID);
+    if (catalogCharacteristicUnitID != null && ! Deployment.getDeployment(tenantID).getCatalogCharacteristicUnits().containsKey(catalogCharacteristicUnitID)) throw new GUIManagerException("unknown unit", catalogCharacteristicUnitID);
 
     /*****************************************
     *

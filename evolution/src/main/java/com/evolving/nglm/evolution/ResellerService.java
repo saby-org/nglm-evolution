@@ -144,7 +144,7 @@ public class ResellerService extends GUIService
 
     if (reseller instanceof Reseller)
       {
-        ((Reseller) reseller).validate(resellerService, now);
+        ((Reseller) reseller).validate(resellerService, now, reseller.getTenantID());
       }
 
     //

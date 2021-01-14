@@ -529,7 +529,7 @@ public class EvolutionEngine
     // tenancyService
     //
     
-    tenantService = new TenantService(bootstrapServers, "evolutionengine-tenancyservice-" + evolutionEngineKey, Deployment.getTenantTopic(), false);
+    tenantService = new TenantService(bootstrapServers, "evolutionengine-tenancyservice-" + evolutionEngineKey, "tenant", false);
     tenantService.start();
 
     
@@ -1714,8 +1714,17 @@ public class EvolutionEngine
     ****************************************/
 
     SubscriberStreamEvent evolutionEvent = evolutionHackyEvent.getOriginalEvent();
+    
+    /****************************************
+    *
+    *  retrieve TenantID either from event or from SubscriberProfile
+    *
+    ****************************************/
+    int tenantID = -1;
+    // TODO EVRO-99
+    
 
-    SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
+    SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
     EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, SystemTime.getCurrentTime());
@@ -1804,7 +1813,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    subscriberStateUpdated = updatePropensity(context, evolutionEvent) || subscriberStateUpdated;
+    subscriberStateUpdated = updatePropensity(context, evolutionEvent, tenantID) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -1844,7 +1853,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updateChangeEvents(subscriberState, now, changeEventEvaluationRequest, profileChangeOldValues);
+    updateChangeEvents(subscriberState, now, changeEventEvaluationRequest, profileChangeOldValues, tenantID);
     
     /*****************************************
     *
@@ -1852,7 +1861,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, changeEventEvaluationRequest, profileSegmentChangeOldValues);
+    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, changeEventEvaluationRequest, profileSegmentChangeOldValues, tenantID);
 
     /*****************************************
     *
@@ -1896,7 +1905,7 @@ public class EvolutionEngine
     *  update subscriberState with the +1 notif for the channel
     *
     *****************************************/
-    subscriberStateUpdated = updateNotificationMetricHistory(context.getSubscriberState(), now) || subscriberStateUpdated;
+    subscriberStateUpdated = updateNotificationMetricHistory(context.getSubscriberState(), now, tenantID) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -2187,7 +2196,7 @@ public class EvolutionEngine
   private static ParameterMap saveProfileChangeOldValues(SubscriberEvaluationRequest changeEventEvaluationRequest)
   {
     ParameterMap profileChangeOldValues = new ParameterMap();
-    for(String criterionFieldID: Deployment.getProfileChangeDetectionCriterionFields().keySet()) {
+    for(String criterionFieldID: Deployment.getDeployment(changeEventEvaluationRequest.getTenantID()).getProfileChangeDetectionCriterionFields().keySet()) {
       Object value = CriterionContext.Profile.get(changeEventEvaluationRequest.getTenantID()).getCriterionFields(changeEventEvaluationRequest.getTenantID()).get(criterionFieldID).retrieve(changeEventEvaluationRequest);
       profileChangeOldValues.put(criterionFieldID, value);      
     }
@@ -2202,7 +2211,7 @@ public class EvolutionEngine
   
   private static ParameterMap saveProfileSegmentChangeOldValues(SubscriberEvaluationRequest changeEventEvaluationRequest)
   {
-    if (!Deployment.getEnableProfileSegmentChange()) 
+    if (!Deployment.getDeployment(changeEventEvaluationRequest.getTenantID()).getEnableProfileSegmentChange()) 
       {
         return null;
       }
@@ -2512,10 +2521,10 @@ public class EvolutionEngine
   *
   *****************************************/
   
-  private static void updateChangeEvents(SubscriberState subscriberState, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileChangeOldValues)
+  private static void updateChangeEvents(SubscriberState subscriberState, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileChangeOldValues, int tenantID)
   {
     ParameterMap profileChangeNewValues = new ParameterMap();
-    for(String criterionFieldID: Deployment.getProfileChangeDetectionCriterionFields().keySet()) {
+    for(String criterionFieldID: Deployment.getDeployment(tenantID).getProfileChangeDetectionCriterionFields().keySet()) {
       Object value = CriterionContext.Profile.get(changeEventEvaluationRequest.getTenantID()).getCriterionFields(changeEventEvaluationRequest.getTenantID()).get(criterionFieldID).retrieve(changeEventEvaluationRequest);
       if(!Objects.equals(profileChangeOldValues.get(criterionFieldID), value)) {
         profileChangeNewValues.put(criterionFieldID, value);
@@ -2536,9 +2545,9 @@ public class EvolutionEngine
   *
   *****************************************/
   
-  private static void updateSegmentChangeEvents(SubscriberState subscriberState, SubscriberProfile subscriberProfile, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileSegmentChangeOldValues)
+  private static void updateSegmentChangeEvents(SubscriberState subscriberState, SubscriberProfile subscriberProfile, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileSegmentChangeOldValues, int tenantID)
   {    
-    if (!Deployment.getEnableProfileSegmentChange()) 
+    if (!Deployment.getDeployment(tenantID).getEnableProfileSegmentChange()) 
       {
         return;
       }
@@ -2739,7 +2748,7 @@ public class EvolutionEngine
       }
   }
 
-    private static boolean updateNotificationMetricHistory(SubscriberState subscriberState, Date now)
+    private static boolean updateNotificationMetricHistory(SubscriberState subscriberState, Date now, int tenantID)
     {
       // if there are no DeliveryRequests to be sent out, nothing to do
       if(subscriberState.getDeliveryRequests()==null || subscriberState.getDeliveryRequests().isEmpty()) return false;
@@ -2753,7 +2762,7 @@ public class EvolutionEngine
         if(!deliveryRequest.isPending()) continue;
 
         INotificationRequest notificationRequest = (INotificationRequest)deliveryRequest;
-        String channel = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(notificationRequest.getDeliveryType());
+        String channel = Deployment.getDeployment(tenantID).getDeliveryTypeCommunicationChannelIDMap().get(notificationRequest.getDeliveryType());
         // "warn" and skip if no channel (conf change?)
         if(channel==null){
           log.info("delivery type {} not matching channel, can not update notificationHistory for {}",notificationRequest.getDeliveryType(),subscriberState.getSubscriberID());
@@ -2948,7 +2957,7 @@ public class EvolutionEngine
 
         if (subscriberProfileForceUpdate.getParameterMap().containsKey("language"))
           {
-            SupportedLanguage supportedLanguage = Deployment.getSupportedLanguages().get((String) subscriberProfileForceUpdate.getParameterMap().get("language"));
+            SupportedLanguage supportedLanguage = Deployment.getDeployment(tenantID).getSupportedLanguages().get((String) subscriberProfileForceUpdate.getParameterMap().get("language"));
             if (supportedLanguage != null)
               {
                 subscriberProfile.setLanguageID(supportedLanguage.getID());
@@ -4142,7 +4151,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static boolean updatePropensity(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  private static boolean updatePropensity(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, int tenantID)
   {
     /*****************************************
     *
@@ -4356,7 +4365,7 @@ public class EvolutionEngine
             // Validate propensity rule before using it (ignore any propensity outputs otherwise)
             //
 
-            if (Deployment.getPropensityRule().validate(segmentationDimensionService))
+            if (Deployment.getDeployment(tenantID).getPropensityRule().validate(segmentationDimensionService))
               {
                 for(String offerID: subscriberStoredToken.getPresentedOfferIDs())
                   {
@@ -4777,7 +4786,7 @@ public class EvolutionEngine
                             // 5. Apply the journeyUniversalEligibilityCriteria
                             evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now, tenantID);
                             eligibilityAndTargetting = new ArrayList<>();
-                            eligibilityAndTargetting.addAll(Deployment.getJourneyUniversalEligibilityCriteria(tenantID));
+                            eligibilityAndTargetting.addAll(Deployment.getDeployment(tenantID).getJourneyUniversalEligibilityCriteria());
                             
                             boolean  enterAfterJourneyUniversalCriteria = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
                             if(enterAfterJourneyUniversalCriteria == false) {

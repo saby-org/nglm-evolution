@@ -792,7 +792,7 @@ public class GUIManager
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
-    String tenantTopic = Deployment.getTenantTopic();
+    String tenantTopic = "tenant";
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
@@ -960,8 +960,9 @@ public class GUIManager
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
     pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
+    TenantService tenantService  = new TenantService(bootstrapServers, "guimanager-tenantservice-"+apiProcessKey, tenantTopic, true);
     // set notifyOnSignificantChange = false
-    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true, null, false);
+    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true, null, false, tenantService);
     paymentMeanService = new PaymentMeanService(bootstrapServers, "guimanager-paymentmeanservice-" + apiProcessKey, paymentMeanTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
@@ -997,9 +998,7 @@ public class GUIManager
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
-    TenantService tenantService  = new TenantService(bootstrapServers, "guimanager-tenantservice-"+apiProcessKey, tenantTopic, true);
     elasticsearchManager = new ElasticsearchManager(elasticsearch, voucherService, journeyService);
-
     
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
@@ -1253,7 +1252,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getInitialCatalogCharacteristicsJSONArray();
+                JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialCatalogCharacteristicsJSONArray();
                 for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
                   {
                     JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
@@ -1277,7 +1276,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialTokenTypesJSONArray = Deployment.getInitialTokenTypesJSONArray();
+                JSONArray initialTokenTypesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialTokenTypesJSONArray();
                 for (int i=0; i<initialTokenTypesJSONArray.size(); i++)
                   {
                     JSONObject tokenTypeJSON = (JSONObject) initialTokenTypesJSONArray.get(i);
@@ -1300,7 +1299,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialProductTypesJSONArray = Deployment.getInitialProductTypesJSONArray();
+                JSONArray initialProductTypesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialProductTypesJSONArray();
                 for (int i=0; i<initialProductTypesJSONArray.size(); i++)
                   {
                     JSONObject productTypeJSON = (JSONObject) initialProductTypesJSONArray.get(i);
@@ -1325,7 +1324,7 @@ public class GUIManager
         {
           Date now = SystemTime.getCurrentTime();
           Collection<Report> existingReports = reportService.getActiveReports(now, tenant.getEffectiveTenantID());
-          JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
+          JSONArray initialReportsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialReportsJSONArray();
           for (int i=0; i<initialReportsJSONArray.size(); i++)
             {
               JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
@@ -1366,7 +1365,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialCallingChannelsJSONArray = Deployment.getInitialCallingChannelsJSONArray();
+                JSONArray initialCallingChannelsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialCallingChannelsJSONArray();
                 for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
                   {
                     JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
@@ -1390,7 +1389,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialSalesChannelsJSONArray = Deployment.getInitialSalesChannelsJSONArray();
+                JSONArray initialSalesChannelsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialSalesChannelsJSONArray();
                 for (int i=0; i<initialSalesChannelsJSONArray.size(); i++)
                   {
                     JSONObject  salesChannelJSON = (JSONObject) initialSalesChannelsJSONArray.get(i);
@@ -1414,7 +1413,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialSuppliersJSONArray = Deployment.getInitialSuppliersJSONArray();
+                JSONArray initialSuppliersJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialSuppliersJSONArray();
                 for (int i=0; i<initialSuppliersJSONArray.size(); i++)
                   {
                     JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
@@ -1437,7 +1436,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialProductsJSONArray = Deployment.getInitialProductsJSONArray();
+                JSONArray initialProductsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialProductsJSONArray();
                 for (int i=0; i<initialProductsJSONArray.size(); i++)
                   {
                     JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
@@ -1461,7 +1460,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialSourceAddressesJSONArray = Deployment.getInitialSourceAddressesJSONArray();
+                JSONArray initialSourceAddressesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialSourceAddressesJSONArray();
                 for (int i=0; i<initialSourceAddressesJSONArray.size(); i++)
                   {
                     JSONObject  sourceAddresslJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
@@ -1484,7 +1483,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialContactPoliciesJSONArray = Deployment.getInitialContactPoliciesJSONArray();
+                JSONArray initialContactPoliciesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialContactPoliciesJSONArray();
                 for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
                   {
                     JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
@@ -1508,7 +1507,7 @@ public class GUIManager
           {
             try
             {
-              JSONArray initialJourneyTemplatesJSONArray = Deployment.getInitialJourneyTemplatesJSONArray();
+              JSONArray initialJourneyTemplatesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialJourneyTemplatesJSONArray();
               for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
                 {
                   JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
@@ -1533,7 +1532,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialJourneyObjectivesJSONArray = Deployment.getInitialJourneyObjectivesJSONArray();
+                JSONArray initialJourneyObjectivesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialJourneyObjectivesJSONArray();
                 for (int i=0; i<initialJourneyObjectivesJSONArray.size(); i++)
                   {
                     JSONObject journeyObjectiveJSON = (JSONObject) initialJourneyObjectivesJSONArray.get(i);
@@ -1557,7 +1556,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialOfferObjectivesJSONArray = Deployment.getInitialOfferObjectivesJSONArray();
+                JSONArray initialOfferObjectivesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialOfferObjectivesJSONArray();
                 for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
                   {
                     JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
@@ -1581,7 +1580,7 @@ public class GUIManager
           {
             try
               {
-                JSONArray initialSegmentationDimensionsJSONArray = Deployment.getInitialSegmentationDimensionsJSONArray();
+                JSONArray initialSegmentationDimensionsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialSegmentationDimensionsJSONArray();
                 for (int i=0; i<initialSegmentationDimensionsJSONArray.size(); i++)
                   {
                     JSONObject segmentationDimensionJSON = (JSONObject) initialSegmentationDimensionsJSONArray.get(i);
@@ -1630,7 +1629,7 @@ public class GUIManager
         Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile.get(tenant.getEffectiveTenantID()).getCriterionFields(tenant.getEffectiveTenantID());
         for (CriterionField criterion : profileCriterionFields.values())
           {
-            if (Deployment.getGenerateSimpleProfileDimensions() || criterion.getGenerateDimension())
+            if (Deployment.getDeployment(tenant.getEffectiveTenantID()).getGenerateSimpleProfileDimensions() || criterion.getGenerateDimension())
               {
                 List<JSONObject> availableValues = evaluateAvailableValues(criterion, now, false, tenant.getEffectiveTenantID());
                 if (availableValues != null && availableValues.size() > 0)
@@ -2587,11 +2586,11 @@ public class GUIManager
                   break;
 
                 case getSupportedRelationships:
-                  jsonResponse = processGetSupportedRelationships(userID, jsonRoot);
+                  jsonResponse = processGetSupportedRelationships(userID, jsonRoot, tenantID);
                   break;
 
                 case getCallingChannelProperties:
-                  jsonResponse = processGetCallingChannelProperties(userID, jsonRoot);
+                  jsonResponse = processGetCallingChannelProperties(userID, jsonRoot, tenantID);
                   break;
 
                 case getCatalogCharacteristicUnits:
@@ -2755,7 +2754,7 @@ public class GUIManager
                   break;
 
                 case getWorkflowToolbox:
-                  jsonResponse = processGetWorkflowToolbox(userID, jsonRoot);
+                  jsonResponse = processGetWorkflowToolbox(userID, jsonRoot, tenantID);
                   break;
 
                 case getWorkflowList:
@@ -2807,7 +2806,7 @@ public class GUIManager
                   break;
                   
                 case getLoyaltyWorkflowToolbox:
-                  jsonResponse = processGetLoyaltyWorkflowToolbox(userID, jsonRoot);
+                  jsonResponse = processGetLoyaltyWorkflowToolbox(userID, jsonRoot, tenantID);
                   break;
 
                 case getBulkCampaignList:
@@ -4359,7 +4358,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupportedRelationships(String userID, JSONObject jsonRoot)
+  private JSONObject processGetSupportedRelationships(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -4368,7 +4367,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> supportedRelationships = new ArrayList<JSONObject>();
-    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+    for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
       {
         JSONObject supportedRelationshipJSON = supportedRelationship.getJSONRepresentation();
         supportedRelationships.add(supportedRelationshipJSON);
@@ -4393,7 +4392,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCallingChannelProperties(String userID, JSONObject jsonRoot)
+  private JSONObject processGetCallingChannelProperties(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -4402,7 +4401,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> callingChannelProperties = new ArrayList<JSONObject>();
-    for (CallingChannelProperty callingChannelProperty : Deployment.getCallingChannelProperties().values())
+    for (CallingChannelProperty callingChannelProperty : Deployment.getDeployment(tenantID).getCallingChannelProperties().values())
       {
         JSONObject callingChannelPropertyJSON = callingChannelProperty.getJSONRepresentation();
         callingChannelProperties.add(callingChannelPropertyJSON);
@@ -4782,7 +4781,7 @@ public class GUIManager
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
     Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
-    NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+    NodeType journeyNodeType = Deployment.getDeployment(tenantID).getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
@@ -4877,7 +4876,7 @@ public class GUIManager
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
     Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
-    NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+    NodeType journeyNodeType = Deployment.getDeployment(tenantID).getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
@@ -4948,7 +4947,7 @@ public class GUIManager
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
     Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
-    NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+    NodeType journeyNodeType = Deployment.getDeployment(tenantID).getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     String id = JSONUtilities.decodeString(jsonRoot, "id", true);
@@ -5106,7 +5105,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> offerProperties = new ArrayList<JSONObject>();
-    for (OfferProperty offerProperty : Deployment.getOfferProperties().values())
+    for (OfferProperty offerProperty : Deployment.getDeployment(tenantID).getOfferProperties().values())
       {
         JSONObject offerPropertyJSON = offerProperty.getJSONRepresentation();
         offerProperties.add(offerPropertyJSON);
@@ -5217,7 +5216,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> scoringTypes = new ArrayList<JSONObject>();
-    for (ScoringType scoringType : Deployment.getScoringTypes().values())
+    for (ScoringType scoringType : Deployment.getDeployment(tenantID).getScoringTypes().values())
       {
         JSONObject scoringTypeJSON = scoringType.getJSONRepresentation();
         scoringTypes.add(scoringTypeJSON);
@@ -5251,7 +5250,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> dnboMatrixVariables = new ArrayList<JSONObject>();
-    for (DNBOMatrixVariable dnboMatrixVariable : Deployment.getDNBOMatrixVariables().values())
+    for (DNBOMatrixVariable dnboMatrixVariable : Deployment.getDeployment(tenantID).getDNBOMatrixVariables().values())
       {
         JSONObject dnboMatrixVariableJSON = dnboMatrixVariable.getJSONRepresentation();
         dnboMatrixVariables.add(dnboMatrixVariableJSON);
@@ -5293,7 +5292,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes(), journeyParameters, contextVariables, tenantID);
+    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getDeployment(tenantID).getNodeTypes(), journeyParameters, contextVariables, tenantID);
 
     /*****************************************
     *
@@ -5322,7 +5321,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> journeyToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection journeyToolboxSection : Deployment.getJourneyToolbox().values())
+    for (ToolboxSection journeyToolboxSection : Deployment.getDeployment(tenantID).getJourneyToolbox().values())
       {
         JSONObject journeyToolboxSectionJSON = journeyToolboxSection.getJSONRepresentation();
         journeyToolboxSections.add(journeyToolboxSectionJSON);
@@ -6318,7 +6317,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> campaignToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection campaignToolboxSection : Deployment.getCampaignToolbox().values())
+    for (ToolboxSection campaignToolboxSection : Deployment.getDeployment(tenantID).getCampaignToolbox().values())
       {
         JSONObject campaignToolboxSectionJSON = campaignToolboxSection.getJSONRepresentation();
         campaignToolboxSections.add(campaignToolboxSectionJSON);
@@ -6342,7 +6341,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetWorkflowToolbox(String userID, JSONObject jsonRoot)
+  private JSONObject processGetWorkflowToolbox(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -6351,7 +6350,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> workflowToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection workflowToolboxSection : Deployment.getWorkflowToolbox().values())
+    for (ToolboxSection workflowToolboxSection : Deployment.getDeployment(tenantID).getWorkflowToolbox().values())
       {
         JSONObject workflowToolboxSectionJSON = workflowToolboxSection.getJSONRepresentation();
         workflowToolboxSections.add(workflowToolboxSectionJSON);
@@ -6375,7 +6374,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetLoyaltyWorkflowToolbox(String userID, JSONObject jsonRoot)
+  private JSONObject processGetLoyaltyWorkflowToolbox(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -6384,7 +6383,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> loyaltyWorkflowToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection loyaltyWorkflowToolboxSection : Deployment.getLoyaltyWorkflowToolbox().values())
+    for (ToolboxSection loyaltyWorkflowToolboxSection : Deployment.getDeployment(tenantID).getLoyaltyWorkflowToolbox().values())
       {
         JSONObject workflowToolboxSectionJSON = loyaltyWorkflowToolboxSection.getJSONRepresentation();
         loyaltyWorkflowToolboxSections.add(workflowToolboxSectionJSON);
@@ -6421,7 +6420,7 @@ public class GUIManager
       return JSONUtilities.encodeObject(response);
     }
     
-    Long maximumCapacity = Deployment.getJourneyTemplateCapacities().get(journeyTemplateID);
+    Long maximumCapacity = Deployment.getDeployment(tenantID).getJourneyTemplateCapacities().get(journeyTemplateID);
     if(maximumCapacity == null){
       // @rl: templates added dynamically are not supported yet. This would need a refactoring of journey templates.
       response.put("responseCode", "journeyTemplateNotFound");
@@ -14030,7 +14029,7 @@ public class GUIManager
     *
     *****************************************/
 
-    JSONArray voucherCodeFormatJSONArray = Deployment.getInitialVoucherCodeFormatsJSONArray();
+    JSONArray voucherCodeFormatJSONArray = Deployment.getDeployment(tenantID).getInitialVoucherCodeFormatsJSONArray();
 
     /*****************************************
     *
@@ -16552,7 +16551,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> fulfillmentProviders = new ArrayList<JSONObject>();
-    for(DeliveryManagerDeclaration deliveryManager : Deployment.getFulfillmentProviders().values())
+    for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeployment(tenantID).getFulfillmentProviders().values())
       {
         Map<String, String> providerJSON = new HashMap<String, String>();
         providerJSON.put("id", deliveryManager.getProviderID());
@@ -16723,8 +16722,8 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> generalDetailsMetaDataList = Deployment.getCustomerMetaData().getGeneralDetailsMetaData().stream().map(generalDetailsMetaData -> generalDetailsMetaData.getJSONRepresentation()).collect(Collectors.toList());
-    List<JSONObject> kpisMetaDataList = Deployment.getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
+    List<JSONObject> generalDetailsMetaDataList = Deployment.getDeployment(tenantID).getCustomerMetaData().getGeneralDetailsMetaData().stream().map(generalDetailsMetaData -> generalDetailsMetaData.getJSONRepresentation()).collect(Collectors.toList());
+    List<JSONObject> kpisMetaDataList = Deployment.getDeployment(tenantID).getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
     response.put("generalDetailsMetaData", JSONUtilities.encodeArray(generalDetailsMetaDataList));
     response.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
     
@@ -18574,7 +18573,7 @@ public class GUIManager
     *****************************************/
       
     boolean isRelationshipSupported = false;
-    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+    for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
       {
         if (supportedRelationship.getID().equals(relationshipID))
           {
@@ -18867,7 +18866,7 @@ public class GUIManager
         for (int i = 0; i < communicationChannelIDs.size(); i++)
           {
             String communicationChannelID = communicationChannelIDs.get(i).toString();
-            CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+            CommunicationChannel communicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
             if (communicationChannel != null)
               {
                 communicationChannelObjects.add(communicationChannel);
@@ -18876,7 +18875,7 @@ public class GUIManager
       }
     else
       {
-        communicationChannelObjects = Deployment.getCommunicationChannels().values();
+        communicationChannelObjects = Deployment.getDeployment(tenantID).getCommunicationChannels().values();
       }
     for (CommunicationChannel communicationChannel : communicationChannelObjects)
       {
@@ -18904,7 +18903,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
     if(fullDetails) {
-      CommunicationChannelTimeWindow notifWindows = Deployment.getDefaultNotificationDailyWindows();
+      CommunicationChannelTimeWindow notifWindows = Deployment.getDeployment(tenantID).getDefaultNotificationDailyWindows();
       if(notifWindows != null)
         {
           response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
@@ -18943,14 +18942,14 @@ public class GUIManager
     *
     *****************************************/
 
-    CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+    CommunicationChannel communicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
     
     CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, SystemTime.getCurrentTime());
     if(timeWindow == null)
       {
         // use the default timeWindow
-        timeWindow = Deployment.getDefaultNotificationDailyWindows();        
+        timeWindow = Deployment.getDeployment(tenantID).getDefaultNotificationDailyWindows();        
       }
     
     if(timeWindow != null) 
@@ -21303,7 +21302,7 @@ public class GUIManager
     *
     *****************************************/
 
-    CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+    CommunicationChannel communicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
        
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
     
@@ -24101,7 +24100,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             //
 
             List<JSONObject> fieldAvailableValues = resolvedAvailableValues.get(criterionField.getID());
-            List<JSONObject> operators = evaluateOperators(criterionFieldJSON, fieldAvailableValues);
+            List<JSONObject> operators = evaluateOperators(criterionFieldJSON, fieldAvailableValues, tenantID);
             criterionFieldJSON.put("operators", operators);
             criterionFieldJSON.remove("includedOperators");
             criterionFieldJSON.remove("excludedOperators");
@@ -24206,13 +24205,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   ****************************************/
 
-  private List<JSONObject> evaluateOperators(JSONObject criterionFieldJSON, List<JSONObject> fieldAvailableValues)
+  private List<JSONObject> evaluateOperators(JSONObject criterionFieldJSON, List<JSONObject> fieldAvailableValues, int tenantID)
   {
     //
     //  all operators
     //
 
-    Map<String,SupportedOperator> supportedOperatorsForType = Deployment.getSupportedDataTypes().get(criterionFieldJSON.get("dataType")).getOperators();
+    Map<String,SupportedOperator> supportedOperatorsForType = Deployment.getDeployment(tenantID).getSupportedDataTypes().get(criterionFieldJSON.get("dataType")).getOperators();
 
     //
     //  remove set operators for non-enumerated types
@@ -25112,7 +25111,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         case "providerIds":
           if (includeDynamic)
             {
-              for(DeliveryManagerDeclaration deliveryManager : Deployment.getFulfillmentProviders().values())
+              for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeployment(tenantID).getFulfillmentProviders().values())
                 {
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                   availableValue.put("id", deliveryManager.getProviderID());
@@ -25216,7 +25215,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           //  communicationChannelesEmail
           //
           
-          Collection<CommunicationChannel> communicationChannelesEmail = Deployment.getCommunicationChannels().values().stream().filter(communicationChannel -> "email".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
+          Collection<CommunicationChannel> communicationChannelesEmail = Deployment.getDeployment(tenantID).getCommunicationChannels().values().stream().filter(communicationChannel -> "email".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
           if (communicationChannelesEmail.size() > 0)
             {
               CommunicationChannel communicationChannelEmail = communicationChannelesEmail.iterator().next();
@@ -25238,7 +25237,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           break;
 
         case "supportedLanguages":
-          for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
+          for (SupportedLanguage supportedLanguage : Deployment.getDeployment(tenantID).getSupportedLanguages().values())
             {
               HashMap<String,Object> availableValue = new HashMap<String,Object>();
               availableValue.put("id", supportedLanguage.getID());
@@ -25253,7 +25252,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           //  communicationChannelesSMS
           //
           
-          Collection<CommunicationChannel> communicationChannelesSMS = Deployment.getCommunicationChannels().values().stream().filter(communicationChannel -> "SMS".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
+          Collection<CommunicationChannel> communicationChannelesSMS = Deployment.getDeployment(tenantID).getCommunicationChannels().values().stream().filter(communicationChannel -> "SMS".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
           if (communicationChannelesSMS.size() > 0)
             {
               CommunicationChannel communicationChannelSMS = communicationChannelesSMS.iterator().next();
@@ -25280,7 +25279,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           //  communicationChannelesFlashSMS
           //
           
-          Collection<CommunicationChannel> communicationChannelesFlashSMS = Deployment.getCommunicationChannels().values().stream().filter(communicationChannel -> "flashsms".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
+          Collection<CommunicationChannel> communicationChannelesFlashSMS = Deployment.getDeployment(tenantID).getCommunicationChannels().values().stream().filter(communicationChannel -> "flashsms".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
           if (communicationChannelesFlashSMS.size() > 0)
             {
               CommunicationChannel communicationChannelSMS = communicationChannelesFlashSMS.iterator().next();
@@ -25431,7 +25430,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           availableValue.put("display", "Customer");
           result.add(JSONUtilities.encodeObject(availableValue));
           
-          for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+          for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
             {
               availableValue = new HashMap<String, Object>();
               availableValue.put("id", supportedRelationship.getID());
@@ -25441,7 +25440,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           break;
 
         case "subscriberAttributes":
-          for (MetaData metaData : Deployment.getCustomerMetaData().getGeneralDetailsMetaData())
+          for (MetaData metaData : Deployment.getDeployment(tenantID).getCustomerMetaData().getGeneralDetailsMetaData())
             {
               Object value = null; // TODO : do we need to select only fields that are not ReadOnly ?
               switch (metaData.getDataType())
@@ -25465,7 +25464,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           availableValue.put("id", "customer");
           availableValue.put("display", "Customer");
           result.add(JSONUtilities.encodeObject(availableValue));
-          for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+          for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
             {
               availableValue = new HashMap<String, Object>();
               availableValue.put("id", "hierarchy_" + supportedRelationship.getID());
@@ -25515,7 +25514,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             {
               String[] referenceSplit = reference.split("_");
               String communicationChannelID = referenceSplit[(referenceSplit.length)-1];
-              CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+              CommunicationChannel communicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
               for (GUIManagedObject sourceAddressUnchecked : sourceAddressService.getStoredGUIManagedObjects(tenantID))
                 {
                   if (sourceAddressUnchecked.getAccepted())

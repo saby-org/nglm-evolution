@@ -900,7 +900,7 @@ public class DNBOProxy
               break;
               
             case provisionSubscriber:
-              jsonResponse = processProvisionSubscriber(userID, jsonRoot);
+              jsonResponse = processProvisionSubscriber(userID, jsonRoot, tenantID);
               break;
           }
 
@@ -1223,7 +1223,7 @@ public class DNBOProxy
   *
   *****************************************/
 
-  private JSONObject processProvisionSubscriber(String userID, JSONObject jsonRoot) throws DNBOProxyException, SubscriberProfileServiceException
+  private JSONObject processProvisionSubscriber(String userID, JSONObject jsonRoot, int tenantID) throws DNBOProxyException, SubscriberProfileServiceException
   {
     /*****************************************
     *
@@ -1287,7 +1287,7 @@ public class DNBOProxy
       }
     else
       {
-        effectiveSubscriberID = assignAlternateIDs.get(Deployment.getExternalSubscriberID());
+        effectiveSubscriberID = assignAlternateIDs.get(Deployment.getDeployment(tenantID).getExternalSubscriberID());
         autoProvision = true;
       }
 
@@ -1297,7 +1297,7 @@ public class DNBOProxy
     
     if (effectiveSubscriberID == null)
       {
-        throw new DNBOProxyException("subscriberID not provided", Deployment.getExternalSubscriberID());
+        throw new DNBOProxyException("subscriberID not provided", Deployment.getDeployment(tenantID).getExternalSubscriberID());
       }
 
     //
@@ -1365,11 +1365,11 @@ public class DNBOProxy
       {
         try
           {
-            timeoutSubscriberID = subscriberIDService.getSubscriberID(Deployment.getExternalSubscriberID(), assignAlternateIDs.get(Deployment.getExternalSubscriberID()));
+            timeoutSubscriberID = subscriberIDService.getSubscriberID(Deployment.getDeployment(tenantID).getExternalSubscriberID(), assignAlternateIDs.get(Deployment.getDeployment(tenantID).getExternalSubscriberID()));
           }
         catch (SubscriberIDServiceException e)
           {
-            log.error("SubscriberIDServiceException can not resolve subscriberID for {}: {}", assignAlternateIDs.get(Deployment.getExternalSubscriberID()), e.getMessage());
+            log.error("SubscriberIDServiceException can not resolve subscriberID for {}: {}", assignAlternateIDs.get(Deployment.getDeployment(tenantID).getExternalSubscriberID()), e.getMessage());
           }
       }
     

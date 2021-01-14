@@ -439,7 +439,7 @@ public class TokenUtils
             algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
             productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService,
             subscriberGroupEpochReader,
-            segmentationDimensionService, dnboMatrixAlgorithmParameters, returnedLog);
+            segmentationDimensionService, dnboMatrixAlgorithmParameters, returnedLog, tenantID);
 
     if (offerAvailabilityFromPropensityAlgo == null)
       {

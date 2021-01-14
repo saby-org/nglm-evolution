@@ -130,7 +130,7 @@ public class DialogMessage
         *
         *****************************************/
 
-        SupportedLanguage supportedLanguage = Deployment.getSupportedLanguages().get(JSONUtilities.decodeString(messageJSON, "languageID", true));
+        SupportedLanguage supportedLanguage = Deployment.getDeployment(tenantID).getSupportedLanguages().get(JSONUtilities.decodeString(messageJSON, "languageID", true));
         String language = (supportedLanguage != null) ? supportedLanguage.getName() : null;
         if (language == null) throw new GUIManagerException("unsupported language", JSONUtilities.decodeString(messageJSON, "languageID", true));
 
@@ -392,7 +392,7 @@ public class DialogMessage
 
     CriterionField subscriberLanguage = CriterionContext.Profile.get(subscriberEvaluationRequest.getTenantID()).getCriterionFields(subscriberEvaluationRequest.getTenantID()).get("subscriber.language");
     String languageID = (String) subscriberLanguage.retrieve(subscriberEvaluationRequest);
-    String language = (languageID != null && Deployment.getSupportedLanguages().get(languageID) != null) ? Deployment.getSupportedLanguages().get(languageID).getName() : Deployment.getBaseLanguage();
+    String language = (languageID != null && Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID) != null) ? Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID).getName() : Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseLanguage();
 
     //
     //  message text
@@ -406,7 +406,7 @@ public class DialogMessage
 
     if (messageText == null)
       {
-        language = Deployment.getBaseLanguage();
+        language = Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseLanguage();
         messageText = messageTextByLanguage.get(language);
       }
     
@@ -416,7 +416,7 @@ public class DialogMessage
     *
     *****************************************/
 
-    Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+    Locale messageLocale = new Locale(language, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseCountry());
     MessageFormat formatter = null;
     Object[] messageTags = new Object[this.allTags.size()];
     for (int i=0; i<this.allTags.size(); i++)
@@ -522,7 +522,7 @@ public class DialogMessage
     *
     *****************************************/
 
-    Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+    Locale messageLocale = new Locale(language, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseCountry());
     MessageFormat formatter = null;
     List<String> messageTags = new ArrayList<String>();
     for (int i=0; i<this.allTags.size(); i++)
@@ -632,12 +632,12 @@ public class DialogMessage
   *
   *****************************************/
 
-  public String resolve(String language, List<String> messageTags)
+  public String resolve(String language, List<String> messageTags, int tenantID)
   {
     String text = null;
     if (messageTextByLanguage.get(language) != null)
       {
-        Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+        Locale messageLocale = new Locale(language, Deployment.getDeployment(tenantID).getBaseCountry());
         MessageFormat formatter = new MessageFormat(messageTextByLanguage.get(language), messageLocale);
         text = formatter.format(messageTags.toArray());
       }

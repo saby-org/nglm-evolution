@@ -23,10 +23,12 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -74,7 +76,7 @@ public class ReportService extends GUIService
     TIMESTAMP_PRINT_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
   }
   
-  private File reportDirectory;
+  private Map<Integer, File> reportDirectoryPerTenant = new HashMap<Integer, File>();
 
   /*****************************************
   *
@@ -82,28 +84,32 @@ public class ReportService extends GUIService
   *
   *****************************************/
 
-  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, boolean notifyOnSignificantChange)
+  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, boolean notifyOnSignificantChange, TenantService tenantService)
   {
     super(bootstrapServers, "ReportService", groupID, reportTopic, masterService, getSuperListener(reportListener), "putReport", "removeReport", notifyOnSignificantChange);
-    this.reportDirectory = validateAndgetReportDirectory();
+    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+      {
+        File f = validateAndgetReportDirectory(tenant.getTenantID());
+        reportDirectoryPerTenant.put(tenant.getTenantID(), f);
+      }
   }
 
   //
   //  constructor
   //
   
-  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener)
+  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, TenantService tenantService)
   {
-    this(bootstrapServers, groupID, reportTopic, masterService, reportListener, true);
+    this(bootstrapServers, groupID, reportTopic, masterService, reportListener, true, tenantService);
   }
 
   //
   //  constructor
   //
 
-  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService)
+  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, TenantService tenantService)
   {
-    this(bootstrapServers, groupID, reportTopic, masterService, (ReportListener) null, true);
+    this(bootstrapServers, groupID, reportTopic, masterService, (ReportListener) null, true, tenantService);
   }
 
   //
@@ -370,12 +376,15 @@ public class ReportService extends GUIService
       }
       @Override public void reportDeactivated(String guiManagedObjectID) { log.trace("report deactivated: " + guiManagedObjectID); }
     };
+    
+    TenantService tenantService  = new TenantService(Deployment.getBrokerServers(), "", "tenant", false);
+    tenantService.start();
 
     //
     //  reportService
     //
 
-    ReportService reportService = new ReportService(Deployment.getBrokerServers(), "example-001", Deployment.getReportTopic(), false, reportListener);
+    ReportService reportService = new ReportService(Deployment.getBrokerServers(), "example-001", Deployment.getReportTopic(), false, reportListener, tenantService);
     reportService.start();
 
     //
@@ -419,7 +428,7 @@ public class ReportService extends GUIService
     //
     
     Set<Date> generatedDates = new HashSet<Date>();
-    final Path dir = Paths.get(Deployment.getReportManagerOutputPath());
+    final Path dir = Paths.get(Deployment.getDeployment(report.getTenantID()).getReportManagerOutputPath());
     try
       {
         final DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir, filter);
@@ -428,7 +437,7 @@ public class ReportService extends GUIService
           {
             Path generatedReportFilePath = iterator.next();
             String fileName = generatedReportFilePath.getFileName().toString();
-            Date reportDate = getReportDate(fileName, report.getName());
+            Date reportDate = getReportDate(fileName, report.getName(), report.getTenantID());
             if (reportDate != null) generatedDates.add(reportDate);
           }
         dirStream.close();
@@ -473,7 +482,7 @@ public class ReportService extends GUIService
     generatedDates.forEach(dt -> generatedDatesRAJKString.append("," + printDate(dt)));
     if(log.isErrorEnabled()) log.error("{} already generatedDates {}", report.getName(), generatedDatesRAJKString);
     
-    pendingDates = compareAndGetDates(report, generatedDates);
+    pendingDates = compareAndGetDates(report, generatedDates, report.getTenantID());
     
     StringBuilder pendingDatesDatesRAJKString = new StringBuilder();
     pendingDates.forEach(dt -> pendingDatesDatesRAJKString.append("," + printDate(dt)));
@@ -498,7 +507,7 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  private Set<Date> compareAndGetDates(Report report, Set<Date> generatedDates)
+  private Set<Date> compareAndGetDates(Report report, Set<Date> generatedDates, int tenantID)
   {
     Set<Date> result = new HashSet<Date>();
     final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getBaseTimeZone());
@@ -588,7 +597,7 @@ public class ReportService extends GUIService
               }
             if (!generatedLastWeek)
               {
-                Date lastWeekReportDate = getPreviousReportDate(Deployment.getWeeklyReportCronEntryString(), now);
+                Date lastWeekReportDate = getPreviousReportDate(Deployment.getDeployment(tenantID).getWeeklyReportCronEntryString(), now);
                 if (lastWeekReportDate != null)
                   {
                     int thisWK = RLMDateUtils.getField(now, Calendar.WEEK_OF_YEAR, Deployment.getBaseTimeZone());
@@ -616,7 +625,7 @@ public class ReportService extends GUIService
               }
             if (!generatedLastMonth)
               {
-                Date lastMonthReportDate = getPreviousReportDate(Deployment.getMonthlyReportCronEntryString(), now);
+                Date lastMonthReportDate = getPreviousReportDate(Deployment.getDeployment(tenantID).getMonthlyReportCronEntryString(), now);
                 if (lastMonthReportDate != null)
                   {
                     int thisMonth = RLMDateUtils.getField(now, Calendar.MONTH, Deployment.getBaseTimeZone());
@@ -671,13 +680,13 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  private Date getReportDate(String reportFileName, String fileNameInitial)
+  private Date getReportDate(String reportFileName, String fileNameInitial, int tenantID)
   {
     Date result = null;
     try
       {
-        String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getReportManagerFileExtension())[0];
-        SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getReportManagerDateFormat());
+        String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getDeployment(tenantID).getReportManagerFileExtension())[0];
+        SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getDeployment(tenantID).getReportManagerDateFormat());
         sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
         result = sdf.parse(reportDateString);
         result = RLMDateUtils.truncate(result, Calendar.DATE, Deployment.getBaseTimeZone());
@@ -698,13 +707,13 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  private File validateAndgetReportDirectory()
+  private File validateAndgetReportDirectory(int tenantID)
   {
     //
     //  create
     //
     
-    File reportDirectoryFile = new File(Deployment.getReportManagerOutputPath());
+    File reportDirectoryFile = new File(Deployment.getDeployment(tenantID).getReportManagerOutputPath());
     
     //
     // validate
