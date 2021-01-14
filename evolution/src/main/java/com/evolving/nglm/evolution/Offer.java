@@ -922,7 +922,7 @@ public class Offer extends GUIManagedObject implements StockableItem
    	  System.out.println("EVPRO-747 ==="+internalTarget.getArgumentExpression().replace("'",""));
    	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
    		  
-   		targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
+   		targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'","").split(",")));
    		targetIDs.forEach(a-> System.out.println("EVPRO-747 ==="+a));
        	  
    	  }
