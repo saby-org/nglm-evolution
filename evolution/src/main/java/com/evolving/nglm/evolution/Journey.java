@@ -3916,7 +3916,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         	  System.out.println("EVPRO-747 1==="+internalTarget.getArgumentExpression().replace("'",""));
         	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
         		  
-        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
+        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'", "").split(",")));
         		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 2==="+a));
             	  
         	  }
@@ -3964,12 +3964,14 @@ public class Journey extends GUIManagedObject implements StockableItem
                   String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
                 }
+              System.out.println(offerNode.getNodeName());
              if(offerNode.getNodeName().equals("profile.selection")) {
-            	 offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
-//            	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
-//                 {
-//            		 internalTargets1.addAll(journeyLink.getTransitionCriteria());
-//                 }
+            	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
+            	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
+                 {if(journeyLink.getTransitionCriteria()!=null && journeyLink.getTransitionCriteria().size()>0)
+            		 System.out.println(journeyLink.getTransitionCriteria().get(0).getArgumentExpression());
+            		 internalTargets1.addAll(journeyLink.getTransitionCriteria());
+                 }
              }  
             }
           result.put("offer", offerIDs);
@@ -3990,7 +3992,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         	  System.out.println("EVPRO-747 3==="+internalTarget.getArgumentExpression().replace("'",""));
         	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
         		  
-        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
+        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'", "").split(",")));
         		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 4==="+a));
             	  
         	  }
@@ -4036,7 +4038,7 @@ public class Journey extends GUIManagedObject implements StockableItem
 	        	  System.out.println("EVPRO-747 5==="+internalTarget.getArgumentExpression().replace("'",""));
 	        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
 	        		  
-	        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").split(",")));
+	        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'", "").split(",")));
 	        		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 6==="+a));
 	            	  
 	        	  }
