@@ -3965,7 +3965,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                   if (dialogID != null) dialogIDs.add(dialogID);
                 }
               System.out.println(offerNode.getNodeName());
-             if(offerNode.getNodeName().equals("profile.selection")) {
+             if(offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") ) {
             	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
             	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
                  {if(journeyLink.getTransitionCriteria()!=null && journeyLink.getTransitionCriteria().size()>0)
