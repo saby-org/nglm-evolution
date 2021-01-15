@@ -382,7 +382,7 @@
           "eventRule"  : "standard",
           "eventCriterionFields" : 
             [
-              { "id" : "event.tokenType",      "display" : "TokenRedeemed  - Token Type",       "dataType" : "string", "retriever" : "getTokenType",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#tokenTypes#"] },
+              { "id" : "event.tokenType",      "display" : "TokenRedeemed - Token Type",       "dataType" : "string", "retriever" : "getTokenType",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#tokenTypes#"] },
               { "id" : "event.acceptedOfferId","display" : "TokenRedeemed - Accepted Offer","dataType" : "string", "retriever" : "getAcceptedOfferId","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] }
             ]
         },
