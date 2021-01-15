@@ -756,10 +756,17 @@ public class GUIService
     Date readStartDate = SystemTime.getCurrentTime();
     boolean consumedAllAvailable = false;
     Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
-    for (TopicPartition topicPartition : guiManagedObjectsConsumer.assignment())
-      {
-        consumedOffsets.put(topicPartition, guiManagedObjectsConsumer.position(topicPartition) - 1L);
-      }
+    try {
+      for (TopicPartition topicPartition : guiManagedObjectsConsumer.assignment())
+        {
+          consumedOffsets.put(topicPartition, guiManagedObjectsConsumer.position(topicPartition) - 1L);
+        }
+    } catch (WakeupException e) {
+      if (stopRequested)
+        return;
+      else
+        log.info("wakeup while reading topic "+guiManagedObjectTopic);
+    }
     
     //
     //  read
@@ -778,7 +785,7 @@ public class GUIService
           }
         catch (WakeupException e)
           {
-            log.info("wakeup while reading topic "+guiManagedObjectTopic);
+            if (!stopRequested) log.info("wakeup while reading topic "+guiManagedObjectTopic);
           }
 
         //
