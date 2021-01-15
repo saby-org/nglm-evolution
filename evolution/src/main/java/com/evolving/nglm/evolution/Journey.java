@@ -4091,13 +4091,18 @@ public class Journey extends GUIManagedObject implements StockableItem
                    }  
               }
             for(EvaluationCriterion internalTarget:internalTargets) {
-           	 if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-           	  { System.out.println(internalTarget.getCriterionOperator().getExternalRepresentation());
+            	 System.out.println(internalTarget.getCriterionOperator().getExternalRepresentation());
+           		System.out.println(internalTarget.getCriterionField().getESField()==null?"ESField is null":internalTarget.getCriterionField().getESField());
+           	 if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+           	  { System.out.println(internalTarget.getCriterionOperator()==null?"operator is null":internalTarget.getCriterionOperator().getExternalRepresentation());
            		 if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
-           	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
+           	  { System.out.println(internalTarget.getArgumentExpression()==null?"1 expression is null":internalTarget.getArgumentExpression());
+        		 
+           			 internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
            	  System.out.println("EVPRO-747 1==="+internalTarget.getArgumentExpression().replace("'",""));
            	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
-           		  
+           		System.out.println(internalTarget.getArgumentExpression()==null?"expression is null":internalTarget.getArgumentExpression());
+        		
            		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'", "").split(",")));
            		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 2==="+a));
                	  
