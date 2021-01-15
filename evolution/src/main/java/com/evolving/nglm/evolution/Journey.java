@@ -3881,7 +3881,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
         	internaltargetIDs = new ArrayList<String>();
           List<String> campaignIDs = new ArrayList<String>();
-          List<EvaluationCriterion> internalTargets=getEligibilityCriteria();
+          List<EvaluationCriterion> internalTargets=getEligibilityCriteria()==null?new ArrayList<EvaluationCriterion>():getEligibilityCriteria();
           
           for (JourneyNode journeyNode : getJourneyNodes().values())
             {
@@ -3949,8 +3949,8 @@ public class Journey extends GUIManagedObject implements StockableItem
           List<String> pointIDs = new ArrayList<String>();
           List<String> offerIDs = new ArrayList<String>();
           List<String> workflowIDs = new ArrayList<String>();
-          List<EvaluationCriterion> internalTargets1=getEligibilityCriteria();
-          for (JourneyNode offerNode : getJourneyNodes().values())
+          List<EvaluationCriterion> internalTargets1=getEligibilityCriteria()==null?new ArrayList<EvaluationCriterion>():getEligibilityCriteria();
+           for (JourneyNode offerNode : getJourneyNodes().values())
             {
               if (offerNode.getNodeType().getActionManager() != null)
                 {
@@ -4080,7 +4080,8 @@ public class Journey extends GUIManagedObject implements StockableItem
                     String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
                     if (dialogID != null) dialogIDs.add(dialogID);
                   }
-                
+                System.out.println("=====================================");
+                System.out.println("workflow:"+offerNode.getNodeName());
                 if(offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection")) {
                   	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
                   	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
