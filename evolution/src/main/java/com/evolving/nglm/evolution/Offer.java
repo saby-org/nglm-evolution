@@ -914,23 +914,22 @@ public class Offer extends GUIManagedObject implements StockableItem
       }
   
 	 List<EvaluationCriterion> internalTargets=getProfileCriteria();
-	 for(EvaluationCriterion internalTarget:internalTargets) {
-   	  System.out.println("EVPRO-747 ==="+internalTarget.getCriterionField().getESField());
-   	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-   	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
-   	  { targetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
-   	  System.out.println("EVPRO-747 ==="+internalTarget.getArgumentExpression().replace("'",""));
-   	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
-   		  
-   		targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'","").split(",")));
-   		targetIDs.forEach(a-> System.out.println("EVPRO-747 ==="+a));
-       	  
-   	  }
-     }
-     }
+		for (EvaluationCriterion internalTarget : internalTargets) {
+			if (internalTarget != null && internalTarget.getCriterionField() != null
+					&& internalTarget.getCriterionField().getESField() != null
+					&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+				if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+						|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+					targetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+				else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+						|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+					targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
+							.replace("]", "").replace("'", "").split(",")));
+
+			}
+		}
     
 	result.put("target", targetIDs);
-
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);

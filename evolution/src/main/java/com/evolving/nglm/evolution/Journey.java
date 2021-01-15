@@ -3899,37 +3899,41 @@ public class Journey extends GUIManagedObject implements StockableItem
                   String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
                 }
-              if(journeyNode.getNodeName().equals("Profile Selection") || journeyNode.getNodeName().equals("Event Multi-Selection") || journeyNode.getNodeName().equals("Event Selection")) {
-              	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
-              	 for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values())
-                   {if(journeyLink.getTransitionCriteria()!=null && journeyLink.getTransitionCriteria().size()>0)
-              		 internalTargets.addAll(journeyLink.getTransitionCriteria());
-                   }
-               }   
-              }
-          result.put("campaign", campaignIDs);
-          result.put("journey", campaignIDs);
-          result.put("workflow", wrkflowIDs);
-          
-          List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-          result.put("journeyobjective", journeyObjectiveIDs);
-       
-          targetIDs = getTargetID();
-         
-          for(EvaluationCriterion internalTarget:internalTargets) {
-        	 if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-        	  { System.out.println(internalTarget.getCriterionOperator().getExternalRepresentation());
-        		 if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
-        	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
-        	  System.out.println("EVPRO-747 1==="+internalTarget.getArgumentExpression().replace("'",""));
-        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
-        		  
-        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'", "").split(",")));
-        		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 2==="+a));
-            	  
-        	  }
-          }
-          }
+				if (journeyNode.getNodeName().equals("Profile Selection")
+						|| journeyNode.getNodeName().equals("Event Multi-Selection")
+						|| journeyNode.getNodeName().equals("Event Selection")) {
+					// offerNode.getOutgoingLinks().forEach((a,b)->
+					// internalTargets1.addAll(b.getTransitionCriteria())) ;
+					for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values()) {
+						if (journeyLink.getTransitionCriteria() != null
+								&& journeyLink.getTransitionCriteria().size() > 0)
+							internalTargets.addAll(journeyLink.getTransitionCriteria());
+					}
+				}
+			}
+			result.put("campaign", campaignIDs);
+			result.put("journey", campaignIDs);
+			result.put("workflow", wrkflowIDs);
+
+			List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", journeyObjectiveIDs);
+
+			targetIDs = getTargetID();
+
+			for (EvaluationCriterion internalTarget : internalTargets) {
+				if (internalTarget != null && internalTarget.getCriterionField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+					if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+						internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+					else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+						internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
+								.replace("]", "").replace("'", "").split(",")));
+				}
+			}
           if(internaltargetIDs!=null && internaltargetIDs.size()>0)
           targetIDs.addAll(internaltargetIDs);
           result.put("target", targetIDs);
@@ -3973,38 +3977,44 @@ public class Journey extends GUIManagedObject implements StockableItem
                   if (dialogID != null) dialogIDs.add(dialogID);
                 }
               
-             if(offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection")) {
-            	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
-            	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
-                 {if(journeyLink.getTransitionCriteria()!=null && journeyLink.getTransitionCriteria().size()>0)
-            		 internalTargets1.addAll(journeyLink.getTransitionCriteria());
-                 }
-             }  
-            }
-          result.put("offer", offerIDs);
-          result.put("point", pointIDs);
-          result.put("workflow", workflowIDs);
-          
-          List<String> journeyObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-          result.put("journeyobjective", journeyObjIDs);
-          
-          targetIDs = getTargetID();
-          
-          for(EvaluationCriterion internalTarget:internalTargets1) {
-        	  System.out.println(internalTarget.getCriterionOperator().getExternalRepresentation());
-      		
-        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-        	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
-        	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
-        	  System.out.println("EVPRO-747 3==="+internalTarget.getArgumentExpression().replace("'",""));
-        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
-        		  
-        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'", "").split(",")));
-        		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 4==="+a));
-            	  
-        	  }
-          }
-          }
+				if (offerNode.getNodeName().equals("Profile Selection")
+						|| offerNode.getNodeName().equals("Event Multi-Selection")
+						|| offerNode.getNodeName().equals("Event Selection")) {
+					// offerNode.getOutgoingLinks().forEach((a,b)->
+					// internalTargets1.addAll(b.getTransitionCriteria())) ;
+					for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values()) {
+						if (journeyLink.getTransitionCriteria() != null
+								&& journeyLink.getTransitionCriteria().size() > 0)
+							internalTargets1.addAll(journeyLink.getTransitionCriteria());
+					}
+				}
+			}
+			result.put("offer", offerIDs);
+			result.put("point", pointIDs);
+			result.put("workflow", workflowIDs);
+
+			List<String> journeyObjIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", journeyObjIDs);
+
+			targetIDs = getTargetID();
+
+			for (EvaluationCriterion internalTarget : internalTargets1) {
+				if (internalTarget != null && internalTarget.getCriterionField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+					if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+						internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+					else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+						internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
+								.replace("]", "").replace("'", "").split(",")));
+
+				}
+			}
           if(internaltargetIDs!=null && internaltargetIDs.size()>0)
           targetIDs.addAll(internaltargetIDs);
 
@@ -4037,23 +4047,6 @@ public class Journey extends GUIManagedObject implements StockableItem
 			result.put("dialogtemplate", dialogIDs);
 
 			targetIDs = getTargetID();
-//			 List<EvaluationCriterion> internalTargets2=getEligibilityCriteria();
-//			 for(EvaluationCriterion internalTarget:internalTargets2) {
-//	        	  if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-//	        	  {  if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
-//	        	  { internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
-//	        	  System.out.println("EVPRO-747 5==="+internalTarget.getArgumentExpression().replace("'",""));
-//	        	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
-//	        		  
-//	        		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'", "").split(",")));
-//	        		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 6==="+a));
-//	            	  
-//	        	  }
-//	          }
-//	          }
-//	          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
-//	          targetIDs.addAll(internaltargetIDs);
-
 			result.put("target", targetIDs);
 
 			List<String> jourObjIDs = getJourneyObjectiveInstances().stream()
@@ -4080,8 +4073,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
                     if (dialogID != null) dialogIDs.add(dialogID);
                   }
-                System.out.println("=====================================");
-                System.out.println("workflow:"+offerNode.getNodeName());
+               
                 if(offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection")) {
                   	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
                   	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
@@ -4089,26 +4081,21 @@ public class Journey extends GUIManagedObject implements StockableItem
                   		 internalTargets.addAll(journeyLink.getTransitionCriteria());
                        }
                    }  
-              }
-            for(EvaluationCriterion internalTarget:internalTargets) {
-            	 System.out.println(internalTarget.getCriterionOperator().getExternalRepresentation());
-           		System.out.println(internalTarget.getCriterionField().getESField()==null?"ESField is null":internalTarget.getCriterionField().getESField());
-           	 if(internalTarget!=null && internalTarget.getCriterionField()!=null && internalTarget.getCriterionField().getESField()!=null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
-           	  { System.out.println(internalTarget.getCriterionOperator()==null?"operator is null":internalTarget.getCriterionOperator().getExternalRepresentation());
-           		 if(internalTarget.getCriterionOperator()==CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator()==CriterionOperator.DoesNotContainOperator)
-           	  { System.out.println(internalTarget.getArgumentExpression()==null?"1 expression is null":internalTarget.getArgumentExpression());
-        		 
-           			 internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'",""));
-           	  System.out.println("EVPRO-747 1==="+internalTarget.getArgumentExpression().replace("'",""));
-           	  }else if(internalTarget.getCriterionOperator()==CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator()==CriterionOperator.EmptyIntersectionOperator) {
-           		System.out.println(internalTarget.getArgumentExpression()==null?"expression is null":internalTarget.getArgumentExpression());
-        		
-           		  internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[","").replace("]", "").replace("'", "").split(",")));
-           		  internaltargetIDs.forEach(a-> System.out.println("EVPRO-747 2==="+a));
-               	  
-           	  }
-             }
-             }
+				}
+				for (EvaluationCriterion internalTarget : internalTargets) {
+					if (internalTarget != null && internalTarget.getCriterionField() != null
+							&& internalTarget.getCriterionField().getESField() != null
+							&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+						if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+								|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+							internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+						else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+								|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+							internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression()
+									.replace("[", "").replace("]", "").replace("'", "").split(",")));
+
+					}
+				}
              if(internaltargetIDs!=null && internaltargetIDs.size()>0)
              targetIDs.addAll(internaltargetIDs);
              result.put("target", targetIDs);
