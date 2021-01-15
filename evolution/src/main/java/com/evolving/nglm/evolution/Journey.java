@@ -424,7 +424,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     falseCriterionJSON.put("criterionOperator", "<>");
                     falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
                     List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile.get(tenantID)));
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile.get(tenantID), tenantID));
                     result.add(toAdd);
                   }
 
@@ -437,7 +437,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     targetCriterionJSON.put("criterionOperator", "contains");
                     targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
                     List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile.get(tenantID)));
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile.get(tenantID), tenantID));
                     result.add(toAdd);
                   }
               }
@@ -611,11 +611,11 @@ public class Journey extends GUIManagedObject implements StockableItem
   *  targetCount
   *
   *****************************************/
-  private long evaluateTargetCount(ElasticsearchClientAPI elasticsearch) 
+  private long evaluateTargetCount(ElasticsearchClientAPI elasticsearch, int tenantID) 
   {
     try
       {
-        BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(targetingCriteria);
+        BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(targetingCriteria, tenantID);
         return EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
       }
     catch (CriterionException|IOException|ElasticsearchStatusException e)
@@ -634,10 +634,10 @@ public class Journey extends GUIManagedObject implements StockableItem
   // Like description, it is not used inside the system, only put at creation and pushed in Elasticsearch
   // mapping_journeys index in order to be visible for the GUI (Grafana).
   //
-  public void setTargetCount(ElasticsearchClientAPI elasticsearch)
+  public void setTargetCount(ElasticsearchClientAPI elasticsearch, int tenantID)
   {
     if(this.getTargetingType() == TargetingType.Target) {
-      this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)) );
+      this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch, tenantID)) );
     }
   }
   
@@ -1145,8 +1145,8 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
     this.templateParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "templateParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
-    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile.get(tenantID));
-    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile.get(tenantID));
+    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile.get(tenantID), tenantID);
+    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile.get(tenantID), tenantID);
     
     //
     // Targeting Event Criterion mgt
@@ -1164,8 +1164,8 @@ public class Journey extends GUIManagedObject implements StockableItem
         arrayEventNameCriterion.add(eventNameCriterionJson);
         EvolutionEngineEventDeclaration event = dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(targetingEvent);
         CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null, tenantID);
-        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext);        
-        this.targetingEventCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingEventCriteria", false), eventNameCriteria, criterionContext);
+        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext, tenantID);        
+        this.targetingEventCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingEventCriteria", false), eventNameCriteria, criterionContext, tenantID);
       }
     else 
       {
@@ -1234,7 +1234,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), JSONUtilities.decodeString(jsonRoot,  "journeyTemplateID"), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService, journeyTemplateService);
+    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), JSONUtilities.decodeString(jsonRoot,  "journeyTemplateID"), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService, journeyTemplateService, tenantID);
 
     /*****************************************
     *
@@ -1865,7 +1865,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeCriteria(JSONArray jsonArray, List<EvaluationCriterion> additionalCriteria, CriterionContext context) throws GUIManagerException
+  private List<EvaluationCriterion> decodeCriteria(JSONArray jsonArray, List<EvaluationCriterion> additionalCriteria, CriterionContext context, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
 
@@ -1883,7 +1883,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context));
+            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context, tenantID));
           }
       }
 
@@ -1941,7 +1941,7 @@ public class Journey extends GUIManagedObject implements StockableItem
               {
                 for (ContextVariable contextVariable : node.getContextVariables())
                   {
-                    contextVariable.validate(node.getNodeOnlyCriterionContext(), node.getNodeWithJourneyResultCriterionContext());
+                    contextVariable.validate(node.getNodeOnlyCriterionContext(), node.getNodeWithJourneyResultCriterionContext(), tenantID);
                   }
               }
 
@@ -1979,7 +1979,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private ParameterMap decodeBoundParameters(JSONArray jsonArray, String journeyTemplateID, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, JourneyTemplateService journeyTemplateService) throws GUIManagerException
+  private ParameterMap decodeBoundParameters(JSONArray jsonArray, String journeyTemplateID, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, JourneyTemplateService journeyTemplateService, int tenantID) throws GUIManagerException
   {
     CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, this.getTenantID());
     ParameterMap boundParameters = new ParameterMap();
@@ -2033,7 +2033,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                 for (int j = 0; j < evaluationCriteriaArray.size(); j++)
                   {
-                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext, tenantID));
                   }
                 boundParameters.put(parameterName, evaluationCriteriaValue);
                 break;
@@ -2486,7 +2486,7 @@ public class Journey extends GUIManagedObject implements StockableItem
             case Parameter:
               CriterionContext nodeOnlyWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getFirstElement(), contextVariableFields, tenantID);
               CriterionContext nodeWithJourneyResultWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getSecondElement(), contextVariableFields, tenantID);
-              contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext);
+              contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext, tenantID);
               CriterionField criterionField = new CriterionField(contextVariable);
               contextVariableFields.put(criterionField.getID(), criterionField);
               break;
@@ -2537,7 +2537,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 //  validate
                 //
 
-                contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext);
+                contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext, tenantID);
 
                 //
                 //  mark as validated
@@ -2772,14 +2772,14 @@ public class Journey extends GUIManagedObject implements StockableItem
       //  contextVariables
       //
 
-      this.contextVariables = nodeType.getAllowContextVariables() ? decodeContextVariables(JSONUtilities.decodeJSONArray(jsonRoot, "contextVariables", false)) : Collections.<ContextVariable>emptyList();
+      this.contextVariables = nodeType.getAllowContextVariables() ? decodeContextVariables(JSONUtilities.decodeJSONArray(jsonRoot, "contextVariables", false), tenantID) : Collections.<ContextVariable>emptyList();
 
       // add a special internal variables to hold partner
       
       if ("121".equals(nodeType.getID()) && "offerDelivery".equals(eventName)) // event.selection nodetype (defined in src/main/resources/config/deployment-product-toolbox.json)
         {
-          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER, "event.supplierName")));
-          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_RESELLER, "event.resellerName")));
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER, "event.supplierName"), tenantID));
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_RESELLER, "event.resellerName"), tenantID));
         }
       
       /*****************************************
@@ -2794,7 +2794,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
           //
 
-          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService));
+          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, tenantID));
           this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext));
 
           //
@@ -2930,7 +2930,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID) throws GUIManagerException
     {
       ParameterMap nodeParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -2960,7 +2960,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                 for (int j=0; j<evaluationCriteriaArray.size(); j++)
                   {
-                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext, tenantID));
                   }
                 nodeParameters.put(parameterName, evaluationCriteriaValue);
                 break;
@@ -3210,7 +3210,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    private static List<ContextVariable> decodeContextVariables(JSONArray jsonArray) throws GUIManagerException
+    private static List<ContextVariable> decodeContextVariables(JSONArray jsonArray, int tenantID) throws GUIManagerException
     {
       List<ContextVariable> contextVariables = new ArrayList<ContextVariable>();
       if (jsonArray != null)
@@ -3218,7 +3218,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           for (int i=0; i<jsonArray.size(); i++)
             {
               JSONObject contextVariableJSON = (JSONObject) jsonArray.get(i);
-              contextVariables.add(new ContextVariable(contextVariableJSON));
+              contextVariables.add(new ContextVariable(contextVariableJSON, tenantID));
             }
         }
       return contextVariables;
@@ -3312,7 +3312,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       //  transition criteria
       //
 
-      this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), linkCriterionContext);
+      this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), linkCriterionContext, tenantID);
     }
 
     /*****************************************
@@ -3408,7 +3408,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                 for (int j=0; j<evaluationCriteriaArray.size(); j++)
                   {
-                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext, tenantID));
                   }
                 outputConnectorParameters.put(parameterName, evaluationCriteriaValue);
                 break;
@@ -3598,14 +3598,14 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    private List<EvaluationCriterion> decodeTransitionCriteria(JSONArray jsonArray, CriterionContext criterionContext) throws GUIManagerException
+    private List<EvaluationCriterion> decodeTransitionCriteria(JSONArray jsonArray, CriterionContext criterionContext, int tenantID) throws GUIManagerException
     {
       List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
       if (jsonArray != null)
         {
           for (int i=0; i<jsonArray.size(); i++)
             {
-              result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), criterionContext));
+              result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), criterionContext, tenantID));
             }
         }
       return result;

@@ -1345,7 +1345,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     if(purchaseStatus.getVoucherPersonalToBeAllocated() != null && !purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
-      boolean allocatedOK = allocateVoucherPersonal(purchaseStatus);
+      boolean allocatedOK = allocateVoucherPersonal(purchaseStatus, tenantID);
       if(!allocatedOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of voucher "+purchaseStatus.getVoucherAllocateFailed().getVoucherID());
         return;
@@ -1525,7 +1525,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     return true;
   }
 
-  private boolean allocateVoucherPersonal(PurchaseRequestStatus purchaseStatus){
+  private boolean allocateVoucherPersonal(PurchaseRequestStatus purchaseStatus, int tenantID){
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     if(purchaseStatus.getVoucherPersonalToBeAllocated() != null && !purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
       Date now = SystemTime.getCurrentTime();
@@ -1546,7 +1546,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }else{
           for(int i=0;i<offerVoucher.getQuantity();i++){
             if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", voucherID "+voucherPersonal.getVoucherID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-            VoucherPersonalES esVoucher = voucherService.getVoucherPersonalESService().allocatePendingVoucher(voucherPersonal.getSupplierID(),voucherPersonal.getVoucherID(),purchaseStatus.getSubscriberID());
+            VoucherPersonalES esVoucher = voucherService.getVoucherPersonalESService().allocatePendingVoucher(voucherPersonal.getSupplierID(),voucherPersonal.getVoucherID(),purchaseStatus.getSubscriberID(), tenantID);
             if(esVoucher!=null && esVoucher.getSubscriberId()!=null && esVoucher.getVoucherCode()!=null && esVoucher.getFileId()!=null){
               OfferVoucher allocatedVoucher = new OfferVoucher(offerVoucher);
               allocatedVoucher.setQuantity(1);

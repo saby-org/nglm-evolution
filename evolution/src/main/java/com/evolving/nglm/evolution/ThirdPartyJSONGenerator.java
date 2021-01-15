@@ -113,8 +113,8 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerDisplay", offer.getDisplay());
     offerMap.put("offerName", offer.getGUIManagedObjectName());
     offerMap.put("offerState", offerService.isActiveOffer(offer, SystemTime.getCurrentTime()) ? "active" : "stored");
-    offerMap.put("offerStartDate", getDateString(offer.getEffectiveStartDate()));
-    offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate()));
+    offerMap.put("offerStartDate", getDateString(offer.getEffectiveStartDate(), offer.getTenantID()));
+    offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate(), offer.getTenantID()));
     offerMap.put("offerDescription", offer.getDescription());
     offerMap.put("offerExternalID", offer.getJSONRepresentation().get("externalID")!=null?offer.getJSONRepresentation().get("externalID"):"");
     offerMap.put("offerAvailableStock", offer.getJSONRepresentation().get("presentationStock")!=null?offer.getJSONRepresentation().get("presentationStock"):"");
@@ -245,7 +245,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateResellerJSONForThirdParty(Reseller reseller, ResellerService resellerService)
+  protected static JSONObject generateResellerJSONForThirdParty(Reseller reseller, ResellerService resellerService, int tenantID)
   {
     HashMap<String, Object> resellerDetailsMap = new HashMap<String, Object>();
     if (null == reseller)
@@ -256,8 +256,8 @@ public class ThirdPartyJSONGenerator
     resellerDetailsMap.put("resellerWebsite", reseller.getWebsite());
     resellerDetailsMap.put("resellerActive",
         resellerService.isActiveReseller(reseller, SystemTime.getCurrentTime()) ? "active" : "inactive");
-    resellerDetailsMap.put("resellerCreatedDate", getDateString(reseller.getCreatedDate()));
-    resellerDetailsMap.put("resellerUpdatedDate", getDateString(reseller.getUpdatedDate()));
+    resellerDetailsMap.put("resellerCreatedDate", getDateString(reseller.getCreatedDate(), tenantID));
+    resellerDetailsMap.put("resellerUpdatedDate", getDateString(reseller.getUpdatedDate(), tenantID));
     resellerDetailsMap.put("resellerUserIDs", reseller.getUserIDs());
     resellerDetailsMap.put("resellerEmail", reseller.getEmail());
     resellerDetailsMap.put("resellerPhone", reseller.getPhone());
@@ -302,10 +302,10 @@ public class ThirdPartyJSONGenerator
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
     if ( null == token ) return JSONUtilities.encodeObject(tokenMap);
     tokenMap.put("tokenStatus", token.getTokenStatus().getExternalRepresentation());
-    tokenMap.put("creationDate", getDateString(token.getCreationDate()));
-    tokenMap.put("boundDate", getDateString(token.getBoundDate()));
-    tokenMap.put("redeemedDate", getDateString(token.getRedeemedDate()));
-    tokenMap.put("tokenExpirationDate", getDateString(token.getTokenExpirationDate()));
+    tokenMap.put("creationDate", getDateString(token.getCreationDate(), tenantID));
+    tokenMap.put("boundDate", getDateString(token.getBoundDate(), tenantID));
+    tokenMap.put("redeemedDate", getDateString(token.getRedeemedDate(), tenantID));
+    tokenMap.put("tokenExpirationDate", getDateString(token.getTokenExpirationDate(), tenantID));
     tokenMap.put("boundCount", token.getBoundCount());
     //tokenMap.put("eventID", token.getEventID());
     //tokenMap.put("subscriberID", token.getSubscriberID());
@@ -575,14 +575,14 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
 
- public static String getDateString(Date date)
+ public static String getDateString(Date date, int tenantID)
  {
    String result = null;
    if (date == null) return result;
    try
    {
      SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-     dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+     dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
      result = dateFormat.format(date);
    }
    catch (Exception e)

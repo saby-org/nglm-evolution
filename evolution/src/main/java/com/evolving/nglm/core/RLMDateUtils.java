@@ -40,9 +40,9 @@ public class RLMDateUtils
   // SimpleDateFormat is not threadsafe. 
   // In order to avoid instantiating the same object again an again we use a ThreadLocal static variable
   
-  public static final ThreadLocal<DateFormat> TIMESTAMP_FORMAT = ThreadLocal.withInitial(()->{
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
-    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+  public static final ThreadLocal<DateFormat> TIMESTAMP_FORMAT = ThreadLocal.withInitial(()->{ 
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ"); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));  
     return sdf;
   });
   
@@ -52,7 +52,7 @@ public class RLMDateUtils
   
   public static final ThreadLocal<DateFormat> DAY_FORMAT = ThreadLocal.withInitial(()->{
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     return sdf;
   });
   

@@ -59,12 +59,6 @@ public class SubscriberManager
 
   private static final Logger log = LoggerFactory.getLogger(SubscriberManager.class);
 
-  //
-  //  hardwired arguments
-  //
-
-  public static String baseTimeZone = Deployment.getBaseTimeZone();
-
   /*****************************************
   *
   *  data

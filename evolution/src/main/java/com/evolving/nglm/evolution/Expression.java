@@ -194,12 +194,12 @@ public abstract class Expression
   *
   *****************************************/
 
-  public abstract void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit);
+  public abstract void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit, int tenantID);
   public abstract int assignNodeID(int preorderNumber);
   public boolean isConstant() { return false; }
   protected abstract Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit);
   public Object evaluateConstant() { throw new ServerRuntimeException("constant expression"); }
-  public abstract void esQuery(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException;
+  public abstract void esQuery(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException;
 
   /*****************************************
   *
@@ -290,7 +290,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit) { }
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit, int tenantID) { }
 
     /*****************************************
     *
@@ -340,7 +340,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException
+    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException
     {
       switch (getType())
         {
@@ -426,7 +426,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit)
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit, int tenantID)
     {
       //
       //  type
@@ -551,22 +551,22 @@ public abstract class Expression
                 case Instant:
                   break;
                 case Minute:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
                   break;
                 case Hour:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.HOUR, Calendar.SUNDAY, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
                   break;
                 case Day:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
                   break;
                 case Week:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
                   break;
                 case Month:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MONTH, Calendar.SUNDAY, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
                   break;
                 case Year:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
                   break;
               }
             break;
@@ -593,7 +593,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException
+    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException
     {
       /*****************************************
       *
@@ -683,7 +683,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit)
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit, int tenantID)
     {
       /*****************************************
       *
@@ -691,8 +691,8 @@ public abstract class Expression
       *
       *****************************************/
 
-      leftArgument.typeCheck(expressionContext, baseTimeUnit);
-      rightArgument.typeCheck(expressionContext, baseTimeUnit);
+      leftArgument.typeCheck(expressionContext, baseTimeUnit, tenantID);
+      rightArgument.typeCheck(expressionContext, baseTimeUnit, tenantID);
 
       /*****************************************
       *
@@ -919,7 +919,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException
+    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException
     {
       /*****************************************
       *
@@ -931,8 +931,8 @@ public abstract class Expression
       //  arguments
       //
       
-      leftArgument.esQuery(script, baseTimeUnit);
-      rightArgument.esQuery(script, baseTimeUnit);
+      leftArgument.esQuery(script, baseTimeUnit, tenantID);
+      rightArgument.esQuery(script, baseTimeUnit, tenantID);
 
       //
       //  operator
@@ -996,7 +996,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit)
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit, int tenantID)
     {
       /*****************************************
       *
@@ -1004,7 +1004,7 @@ public abstract class Expression
       *
       *****************************************/
 
-      unaryArgument.typeCheck(expressionContext, baseTimeUnit);
+      unaryArgument.typeCheck(expressionContext, baseTimeUnit, tenantID);
 
       /*****************************************
       *
@@ -1120,7 +1120,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException
+    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException
     {
       /*****************************************
       *
@@ -1132,7 +1132,7 @@ public abstract class Expression
       //  argument
       //
       
-      unaryArgument.esQuery(script, baseTimeUnit);
+      unaryArgument.esQuery(script, baseTimeUnit, tenantID);
       
       //
       //  operator
@@ -1211,7 +1211,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit)
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit, int tenantID)
     {
       /*****************************************
       *
@@ -1221,7 +1221,7 @@ public abstract class Expression
 
       for (Expression argument : arguments)
         {
-          argument.typeCheck(expressionContext, baseTimeUnit);
+          argument.typeCheck(expressionContext, baseTimeUnit, tenantID);
         }
 
       /*****************************************
@@ -1233,42 +1233,42 @@ public abstract class Expression
       switch (function)
         {
           case DateConstantFunction:
-            typeCheckDateConstantFunction(baseTimeUnit);
+            typeCheckDateConstantFunction(baseTimeUnit, tenantID);
             break;
             
           case TimeConstantFunction:
-            typeCheckTimeConstantFunction();
+            typeCheckTimeConstantFunction(tenantID);
             break;
             
           case TimeAddFunction:
-            typeCheckTimeAddFunction(baseTimeUnit);
+            typeCheckTimeAddFunction(baseTimeUnit, tenantID);
             break;
 
           case DateAddFunction:
-            typeCheckDateAddFunction(baseTimeUnit);
+            typeCheckDateAddFunction(baseTimeUnit, tenantID);
             break;
             
           case DateAddOrConstantFunction:
-            typeCheckDateAddOrConstantFunction(baseTimeUnit);
+            typeCheckDateAddOrConstantFunction(baseTimeUnit, tenantID);
             break;
             
           case RoundFunction:
           case RoundUpFunction:
           case RoundDownFunction:
-            typeCheckRoundFunction(function);
+            typeCheckRoundFunction(function, tenantID);
             break;
 
           case DaysUntilFunction:
           case MonthsUntilFunction:
           case DaysSinceFunction:
           case MonthsSinceFunction:
-            typeCheckUntilFunction(function);
+            typeCheckUntilFunction(function, tenantID);
             break;
 
           case FirstWordFunction:
           case SecondWordFunction:
           case ThirdWordFunction:
-            typeCheckWordFunction(function);
+            typeCheckWordFunction(function, tenantID);
             break;
             
           default:
@@ -1282,7 +1282,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private void typeCheckDateConstantFunction(TimeUnit baseTimeUnit)
+    private void typeCheckDateConstantFunction(TimeUnit baseTimeUnit, int tenantID)
     {
       /****************************************
       *
@@ -1335,7 +1335,7 @@ public abstract class Expression
       String arg1_value = (String) arg1.evaluate(null, TimeUnit.Unknown);
       try
         {
-          preevaluatedResult = evaluateDateConstantFunction(arg1_value, baseTimeUnit);
+          preevaluatedResult = evaluateDateConstantFunction(arg1_value, baseTimeUnit, tenantID);
         }
       catch (ExpressionEvaluationException e)
         {
@@ -1357,7 +1357,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private void typeCheckTimeConstantFunction()
+    private void typeCheckTimeConstantFunction(int tenantID)
     {
       /****************************************
       *
@@ -1422,7 +1422,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private void typeCheckUntilFunction(ExpressionFunction function)
+    private void typeCheckUntilFunction(ExpressionFunction function, int tenantID)
     {
       /****************************************
       *
@@ -1468,7 +1468,7 @@ public abstract class Expression
           if (res instanceof String)
             {
               // DaysUntil('2020-09-20')
-              arg1_value = evaluateDateConstantFunction((String) res, TimeUnit.Unknown);
+              arg1_value = evaluateDateConstantFunction((String) res, TimeUnit.Unknown, tenantID);
             }
           else if (res instanceof Date)
             {
@@ -1484,7 +1484,7 @@ public abstract class Expression
               case MonthsUntilFunction:
               case DaysSinceFunction:
               case MonthsSinceFunction:
-                preevaluatedResult = evaluateUntilFunction(arg1_value, function);
+                preevaluatedResult = evaluateUntilFunction(arg1_value, function, tenantID);
                 break;
 
               default:
@@ -1516,7 +1516,7 @@ public abstract class Expression
       setTagMaxLength(arg1.getTagMaxLength());
     }
 
-    private void typeCheckWordFunction(ExpressionFunction function)
+    private void typeCheckWordFunction(ExpressionFunction function, int tenantID)
     {
       /****************************************
       *
@@ -1609,7 +1609,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private void typeCheckRoundFunction(ExpressionFunction function)
+    private void typeCheckRoundFunction(ExpressionFunction function, int tenantID)
     {
       /****************************************
       *
@@ -1676,7 +1676,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private void typeCheckDateAddFunction(TimeUnit baseTimeUnit)
+    private void typeCheckDateAddFunction(TimeUnit baseTimeUnit, int tenantID)
     {
       /****************************************
       *
@@ -1788,7 +1788,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private void typeCheckTimeAddFunction(TimeUnit baseTimeUnit)
+    private void typeCheckTimeAddFunction(TimeUnit baseTimeUnit, int tenantID)
     {
       /****************************************
       *
@@ -1899,7 +1899,7 @@ public abstract class Expression
     //
     
     
-    private void typeCheckDateAddOrConstantFunction(TimeUnit baseTimeUnit)
+    private void typeCheckDateAddOrConstantFunction(TimeUnit baseTimeUnit, int tenantID)
     {
       /****************************************
       *
@@ -2172,11 +2172,11 @@ public abstract class Expression
           case DateAddFunction:
             // TODO : don't do roundDown for now, not sure why we could need this
             if (expressionNullExceptionOccoured) throw expressionNullException;
-            result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
+            result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false, subscriberEvaluationRequest.getTenantID());
             break;
             
           case DateAddOrConstantFunction:
-            result = evaluateDateAddOrConstantFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, TimeUnit.fromExternalRepresentation((String) arg4Value), (String) arg5Value, (String) arg6Value, baseTimeUnit, false);
+            result = evaluateDateAddOrConstantFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, TimeUnit.fromExternalRepresentation((String) arg4Value), (String) arg5Value, (String) arg6Value, baseTimeUnit, false, subscriberEvaluationRequest.getTenantID());
             break;
             
           case RoundFunction:
@@ -2215,7 +2215,7 @@ public abstract class Expression
               }
             else
               {
-                result = evaluateUntilFunction((Date) arg1Value, function);    
+                result = evaluateUntilFunction((Date) arg1Value, function, subscriberEvaluationRequest.getTenantID());    
               }
             break;
 
@@ -2287,7 +2287,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private Date evaluateDateConstantFunction(String arg, TimeUnit baseTimeUnit)
+    private Date evaluateDateConstantFunction(String arg, TimeUnit baseTimeUnit, int tenantID)
     {
       /*****************************************
       *
@@ -2297,8 +2297,8 @@ public abstract class Expression
 
       DateFormat standardDayFormat = new SimpleDateFormat("yyyy-MM-dd");
       DateFormat standardDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-      standardDayFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-      standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+      standardDayFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+      standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
       Date date = null;
       if (date == null) try { date = standardDateFormat.parse(arg.trim()); } catch (ParseException e) { }
       if (date == null) try { date = standardDayFormat.parse(arg.trim()); } catch (ParseException e) { }
@@ -2315,22 +2315,22 @@ public abstract class Expression
           case Instant:
             break;
           case Minute:
-            date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
           case Hour:
-            date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
           case Day:
-            date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
           case Week:
-            date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
           case Month:
-            date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
           case Year:
-            date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
         }
       
@@ -2379,7 +2379,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private Date evaluateDateAddFunction(Date date, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
+    private Date evaluateDateAddFunction(Date date, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown, int tenantID)
     {
       //
       //  truncate
@@ -2392,22 +2392,22 @@ public abstract class Expression
             case Instant:
               break;
             case Minute:
-              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Hour:
-              date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Day:
-              date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Week:
-              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Month:
-              date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Year:
-              date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
           }
         }
@@ -2425,16 +2425,16 @@ public abstract class Expression
             date = RLMDateUtils.addHours(date, number.intValue());
             break;
           case Day:
-            date = RLMDateUtils.addDays(date, number.intValue(), Deployment.getBaseTimeZone());
+            date = RLMDateUtils.addDays(date, number.intValue(), Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
           case Week:
-            date = RLMDateUtils.addWeeks(date, number.intValue(), Deployment.getBaseTimeZone());
+            date = RLMDateUtils.addWeeks(date, number.intValue(), Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
           case Month:
-            date = RLMDateUtils.addMonths(date, number.intValue(), Deployment.getBaseTimeZone());
+            date = RLMDateUtils.addMonths(date, number.intValue(), Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
           case Year:
-            date = RLMDateUtils.addYears(date, number.intValue(), Deployment.getBaseTimeZone());
+            date = RLMDateUtils.addYears(date, number.intValue(), Deployment.getDeployment(tenantID).getBaseTimeZone());
             break;
         }
       
@@ -2448,22 +2448,22 @@ public abstract class Expression
             case Instant:
               break;
             case Minute:
-              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Hour:
-              date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Day:
-              date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Week:
-              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Month:
-              date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
             case Year:
-              date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
               break;
           }
         }
@@ -2514,7 +2514,7 @@ public abstract class Expression
     //  evaluateDateAddOrConstantFunction
     //
     
-    private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, String dayOfWeek, String waitTimeString, TimeUnit baseTimeUnit, boolean roundDown)
+    private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, String dayOfWeek, String waitTimeString, TimeUnit baseTimeUnit, boolean roundDown, int tenantID)
     {
       Date result = new Date(0L);
       List<Date> watingDates = new ArrayList<Date>();
@@ -2526,7 +2526,7 @@ public abstract class Expression
       if (waitDuration != null && timeUnit != TimeUnit.Unknown)
         {
           Date dateAfterWait = dateAddDate;
-          dateAfterWait = evaluateDateAddFunction(dateAfterWait, waitDuration, timeUnit, baseTimeUnit, roundDown);
+          dateAfterWait = evaluateDateAddFunction(dateAfterWait, waitDuration, timeUnit, baseTimeUnit, roundDown, tenantID);
           watingDates.add(dateAfterWait);
         }
       
@@ -2546,31 +2546,31 @@ public abstract class Expression
           switch (dayOfWeek.toUpperCase())
           {
             case "SUNDAY":
-              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.SUNDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.SUNDAY, tenantID);
               break;
               
             case "MONDAY":
-              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.MONDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.MONDAY, tenantID);
               break;
               
             case "TUESDAY":
-              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.TUESDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.TUESDAY, tenantID);
               break;
               
             case "WEDNESDAY":
-              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.WEDNESDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.WEDNESDAY, tenantID);
               break;
               
             case "THURSDAY":
-              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.THURSDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.THURSDAY, tenantID);
               break;
               
             case "FRIDAY":
-              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.FRIDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.FRIDAY, tenantID);
               break;
               
             case "SATURDAY":
-              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.SATURDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.SATURDAY, tenantID);
               break;
 
             default:
@@ -2584,15 +2584,15 @@ public abstract class Expression
               int hh = Integer.parseInt(args[0]);
               int mm = Integer.parseInt(args[1]);
               int ss = Integer.parseInt(args[2]);
-              if (RLMDateUtils.truncatedEquals(nextDayDate, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
+              if (RLMDateUtils.truncatedEquals(nextDayDate, dateAddDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone()))
                 {
                   //
                   //  expected exit time of nextDayDate
                   //
                   
-                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
-                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
-                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getBaseTimeZone());
                   
                   if (nextDayDate.before(dateAddDate))
                     {
@@ -2600,7 +2600,7 @@ public abstract class Expression
                       //  go to next day
                       //
                       
-                      nextDayDate = RLMDateUtils.addDays(nextDayDate, 7, Deployment.getBaseTimeZone());
+                      nextDayDate = RLMDateUtils.addDays(nextDayDate, 7, Deployment.getDeployment(tenantID).getBaseTimeZone());
                     }
                   watingDates.add(nextDayDate);
                 }
@@ -2611,9 +2611,9 @@ public abstract class Expression
                   //
                   
                   Date expectedDate = nextDayDate;
-                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
-                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
-                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getBaseTimeZone());
                   watingDates.add(expectedDate);
                 }
             }
@@ -2625,15 +2625,15 @@ public abstract class Expression
           int mm = Integer.parseInt(args[1]);
           int ss = Integer.parseInt(args[2]);
           Date now = SystemTime.getCurrentTime();
-          if (RLMDateUtils.truncatedEquals(now, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
+          if (RLMDateUtils.truncatedEquals(now, dateAddDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone()))
             {
               //
               //  expected exit time of today
               //
               
-              now = RLMDateUtils.setField(now, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
-              now = RLMDateUtils.setField(now, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
-              now = RLMDateUtils.setField(now, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getBaseTimeZone());
               
               if (now.before(dateAddDate))
                 {
@@ -2641,7 +2641,7 @@ public abstract class Expression
                   //  go to next day
                   //
                   
-                  now = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
+                  now = RLMDateUtils.addDays(now, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
                 }
               watingDates.add(now);
             }
@@ -2652,9 +2652,9 @@ public abstract class Expression
               //
               
               Date expectedDate = now;
-              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
-              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
-              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getBaseTimeZone());
               watingDates.add(expectedDate);
             }
         }
@@ -2677,21 +2677,21 @@ public abstract class Expression
       return result;
     }
 
-    private Date getNextDayDate(Date now, int dayOfWeek)
+    private Date getNextDayDate(Date now, int dayOfWeek, int tenantID)
     {
       Date tempDate = now;
-      if (dayOfWeek == RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) 
+      if (dayOfWeek == RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone())) 
         {
           return now;
         }
-      else if(dayOfWeek < RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()))
+      else if(dayOfWeek < RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone()))
         {
-          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
-          tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getBaseTimeZone());
+          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getDeployment(tenantID).getBaseTimeZone());
         }
       else 
         {
-          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getDeployment(tenantID).getBaseTimeZone());
         }
       return tempDate;
     }
@@ -2702,7 +2702,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private long evaluateUntilFunction(Date date, ExpressionFunction function)
+    private long evaluateUntilFunction(Date date, ExpressionFunction function, int tenantID)
     {
       long res;
       Date now = SystemTime.getCurrentTime();
@@ -2711,27 +2711,27 @@ public abstract class Expression
         case DaysUntilFunction:
           // RLMDateUtils.daysBetween() is always >=0
           if (now.before(date))
-            res = RLMDateUtils.daysBetween(now, date, Deployment.getBaseTimeZone());
+            res = RLMDateUtils.daysBetween(now, date, Deployment.getDeployment(tenantID).getBaseTimeZone());
           else
-            res = -RLMDateUtils.daysBetween(date, now, Deployment.getBaseTimeZone());
+            res = -RLMDateUtils.daysBetween(date, now, Deployment.getDeployment(tenantID).getBaseTimeZone());
           break;
         case MonthsUntilFunction:
           if (now.before(date))
-            res = RLMDateUtils.monthsBetween(now, date, Deployment.getBaseTimeZone());
+            res = RLMDateUtils.monthsBetween(now, date, Deployment.getDeployment(tenantID).getBaseTimeZone());
           else
-            res = -RLMDateUtils.monthsBetween(date, now, Deployment.getBaseTimeZone());
+            res = -RLMDateUtils.monthsBetween(date, now, Deployment.getDeployment(tenantID).getBaseTimeZone());
           break;
         case DaysSinceFunction:
           if (date.before(now))
-            res = RLMDateUtils.daysBetween(date, now, Deployment.getBaseTimeZone());
+            res = RLMDateUtils.daysBetween(date, now, Deployment.getDeployment(tenantID).getBaseTimeZone());
           else
-            res = -RLMDateUtils.daysBetween(now, date, Deployment.getBaseTimeZone());
+            res = -RLMDateUtils.daysBetween(now, date, Deployment.getDeployment(tenantID).getBaseTimeZone());
           break;
         case MonthsSinceFunction:
           if (date.before(now))
-            res = RLMDateUtils.monthsBetween(date, now, Deployment.getBaseTimeZone());
+            res = RLMDateUtils.monthsBetween(date, now, Deployment.getDeployment(tenantID).getBaseTimeZone());
           else
-            res = -RLMDateUtils.monthsBetween(now, date, Deployment.getBaseTimeZone());
+            res = -RLMDateUtils.monthsBetween(now, date, Deployment.getDeployment(tenantID).getBaseTimeZone());
           break;
         default:
           throw new ExpressionEvaluationException();
@@ -2778,7 +2778,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException
+    @Override public void esQuery(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException
     {
       /*****************************************
       *
@@ -2789,11 +2789,11 @@ public abstract class Expression
       switch (function)
         {
           case DateConstantFunction:
-            esQueryDateConstantFunction(script, baseTimeUnit);
+            esQueryDateConstantFunction(script, baseTimeUnit, tenantID);
             break;
             
           case DateAddFunction:
-            esQueryDateAddFunction(script, baseTimeUnit);
+            esQueryDateAddFunction(script, baseTimeUnit, tenantID);
             break;
             
           case TimeConstantFunction:
@@ -2809,7 +2809,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private void esQueryDateConstantFunction(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException
+    private void esQueryDateConstantFunction(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException
     {
       /****************************************
       *
@@ -2817,7 +2817,7 @@ public abstract class Expression
       *
       ****************************************/
 
-      arguments.get(0).esQuery(script, baseTimeUnit);
+      arguments.get(0).esQuery(script, baseTimeUnit, tenantID);
       
       /****************************************
       *
@@ -2826,7 +2826,7 @@ public abstract class Expression
       ****************************************/
       
       script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss\"); ");
-      script.append("rightSF_" + getNodeID() + ".setTimeZone(TimeZone.getTimeZone(\"" + Deployment.getBaseTimeZone() + "\")); ");
+      script.append("rightSF_" + getNodeID() + ".setTimeZone(TimeZone.getTimeZone(\"" + Deployment.getDeployment(tenantID).getBaseTimeZone() + "\")); ");
       script.append("def rightDT_" + getNodeID() + " = rightSF_" + getNodeID() + ".parse(right_" + arguments.get(0).getNodeID() + "); ");
       script.append("def rightCalendar_" + getNodeID() + " = rightSF_" + getNodeID() + ".getCalendar(); ");
       script.append("rightCalendar_" + getNodeID() + ".setTime(rightDT_" + getNodeID() + "); ");
@@ -2841,7 +2841,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private void esQueryDateAddFunction(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException
+    private void esQueryDateAddFunction(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException
     {
       /*****************************************
       *
@@ -2860,8 +2860,8 @@ public abstract class Expression
       *
       ****************************************/
       
-      arguments.get(0).esQuery(script, baseTimeUnit);
-      arguments.get(1).esQuery(script, baseTimeUnit);
+      arguments.get(0).esQuery(script, baseTimeUnit, tenantID);
+      arguments.get(1).esQuery(script, baseTimeUnit, tenantID);
       
       /****************************************
       *
@@ -2954,7 +2954,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    public Expression parse(ExpressionContext expressionContext) throws ExpressionParseException, ExpressionTypeCheckException
+    public Expression parse(ExpressionContext expressionContext, int tenantID) throws ExpressionParseException, ExpressionTypeCheckException
     {
       /*****************************************
       *
@@ -3018,7 +3018,7 @@ public abstract class Expression
           *
           *****************************************/
 
-          expression.typeCheck(expressionContext, expressionBaseTimeUnit);
+          expression.typeCheck(expressionContext, expressionBaseTimeUnit, tenantID);
 
           /*****************************************
           *

@@ -46,7 +46,7 @@ public class ElasticsearchManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         jobName, 
         Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
@@ -54,7 +54,7 @@ public class ElasticsearchManager
       {
         Date now = SystemTime.getCurrentTime();
         // This snapshot is done the day after the "saved" day (after midnight, in the morning usually)
-        Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
+        Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         snapshotTask.run(yesterday);
       }
     };
@@ -73,7 +73,7 @@ public class ElasticsearchManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         jobName, 
         Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
@@ -97,7 +97,7 @@ public class ElasticsearchManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         jobName, 
         Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override

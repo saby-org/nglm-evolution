@@ -117,16 +117,16 @@ public class TokenType extends GUIManagedObject
       result = RLMDateUtils.addHours(creationDate, this.validity.getPeriodQuantity());
       break;
     case Day:
-      result = RLMDateUtils.addDays(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
+      result = RLMDateUtils.addDays(creationDate, this.validity.getPeriodQuantity(), Deployment.getDeployment(tenantID).getBaseTimeZone());
       break;
     case Week:
-      result = RLMDateUtils.addWeeks(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
+      result = RLMDateUtils.addWeeks(creationDate, this.validity.getPeriodQuantity(), Deployment.getDeployment(tenantID).getBaseTimeZone());
       break;
     case Month:
-      result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
+      result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity(), Deployment.getDeployment(tenantID).getBaseTimeZone());
       break;
     case Year:
-      result = RLMDateUtils.addYears(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
+      result = RLMDateUtils.addYears(creationDate, this.validity.getPeriodQuantity(), Deployment.getDeployment(tenantID).getBaseTimeZone());
       break;
     default:
     }

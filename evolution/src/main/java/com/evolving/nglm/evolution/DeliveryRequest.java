@@ -465,7 +465,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
-    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
     this.subscriberFields = buildSubscriberFields(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader(), tenantID);
     this.topicPartition = new TopicPartition("unknown",-1);
     this.tenantID = tenantID;
@@ -506,7 +506,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
-    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
     this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader, tenantID);
     this.topicPartition = new TopicPartition("unknown",-1);
     this.tenantID = tenantID;
@@ -583,7 +583,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.deliveryDate = null;
     this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
     this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
-    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
     this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader, tenantID);
     this.topicPartition = new TopicPartition("unknown",-1);
     this.tenantID = tenantID;
@@ -625,7 +625,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.deliveryDate = null;
     this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
     this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
-    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
     this.subscriberFields = new LinkedHashMap<>();
     if(originatingDeliveryRequest.getSubscriberFields()!=null) this.subscriberFields.putAll(originatingDeliveryRequest.getSubscriberFields());
     this.topicPartition = new TopicPartition("unknown",-1);
@@ -1005,7 +1005,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     try
       {
         SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         result = dateFormat.format(date);
       }
     catch (Exception e)

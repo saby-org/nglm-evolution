@@ -226,7 +226,7 @@ public class SubscriberState implements StateStore
   {
     this.ucgRuleID = ucgState.getUCGRuleID();
     this.ucgEpoch = ucgState.getRefreshEpoch();
-    this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
   }
 
   /*****************************************

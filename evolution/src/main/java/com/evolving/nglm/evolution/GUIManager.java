@@ -2242,7 +2242,7 @@ public class GUIManager
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     long uniqueID = 0;
     String periodicGenerationCronEntry = "1,10,15,20,25,30,35,40,45,50 * * * *"; //1,15,30,45 * * * * //5 1,6,11,16,21 * * *
-    ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
+    ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getSystemTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     if(recurrnetCampaignCreationJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
@@ -6438,7 +6438,7 @@ public class GUIManager
     Date targetDay;
     try {
       Date startDate = GUIManagedObject.parseDateField(bulkCampaignEffectiveStartDate);
-      targetDay = RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getBaseTimeZone());
+      targetDay = RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
     } catch (JSONUtilitiesException e) {
       response.put("responseCode", "invalidStartDate");
       return JSONUtilities.encodeObject(response);
@@ -6451,7 +6451,7 @@ public class GUIManager
     long plannedCapacity = 0;
     for (GUIManagedObject journey : journeyService.getStoredJourneys(false, tenantID)) {
       if ( journey.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign) && journey.getEffectiveStartDate() != null) {
-        Date startDate = RLMDateUtils.truncate(journey.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone());
+        Date startDate = RLMDateUtils.truncate(journey.getEffectiveStartDate(), Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
         Object templateIDObj = journey.getJSONRepresentation().get("journeyTemplateID"); // only in JSON representation
         String templateID = (templateIDObj != null && templateIDObj instanceof String) ? (String) templateIDObj : null;
         
@@ -16817,17 +16817,17 @@ public class GUIManager
                     if (fromDateReq == null || fromDateReq.isEmpty() || toDateReq == null || toDateReq.isEmpty())
                       {
                         toDate = now;
-                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
+                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
                       }
                     else if (toDateReq == null || toDateReq.isEmpty())
                       {
                         toDate = now;
-                        fromDate = RLMDateUtils.parseDate(fromDateReq, dateFormat, Deployment.getBaseTimeZone());
+                        fromDate = RLMDateUtils.parseDate(fromDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
                       }
                     else
                       {
-                        toDate = RLMDateUtils.parseDate(toDateReq, dateFormat, Deployment.getBaseTimeZone());
-                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
+                        toDate = RLMDateUtils.parseDate(toDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
                       }
 
                     //
@@ -16955,7 +16955,7 @@ public class GUIManager
                       }
                     else
                       {
-                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
                       }
                     
                     //
@@ -17142,7 +17142,7 @@ public class GUIManager
                       }
                     else
                       {
-                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
                       }
                     
                     //
@@ -17352,7 +17352,7 @@ public class GUIManager
                       }
                     else
                       {
-                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
                       }
                     
                     //
@@ -17440,8 +17440,8 @@ public class GUIManager
     //
 
     String dateFormat = "yyyy-MM-dd";
-    Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, dateFormat));
-    Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, dateFormat));
+    Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, dateFormat, tenantID), tenantID);
+    Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, dateFormat, tenantID), tenantID);
 
     /*****************************************
     *
@@ -17634,10 +17634,10 @@ public class GUIManager
                         journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                         journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
                         journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));     // @rl: maybe generateJSON only once?
-                        journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
-                        journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
-                        journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                        journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
+                        journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate(), tenantID));
+                        journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate(), tenantID));
+                        journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate(), tenantID));
+                        journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService), tenantID):"");
                         journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -17687,7 +17687,7 @@ public class GUIManager
                             nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
                             nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
                             nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
-                            nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
+                            nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate(), tenantID));
                             nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                             nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                             nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
@@ -17748,8 +17748,8 @@ public class GUIManager
     //
 
     String dateFormat = "yyyy-MM-dd";
-    Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, dateFormat));
-    Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, dateFormat));
+    Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, dateFormat, tenantID), tenantID);
+    Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, dateFormat, tenantID), tenantID);
 
     /*****************************************
     *
@@ -17935,10 +17935,10 @@ public class GUIManager
                         campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                         campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
                         campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
-                        campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
-                        campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
-                        campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                        campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
+                        campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate(), tenantID));
+                        campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate(), tenantID));
+                        campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate(), tenantID));
+                        campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService), tenantID):"");
                         campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -17989,7 +17989,7 @@ public class GUIManager
                             nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
                             nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
                             nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
-                            nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
+                            nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate(), tenantID));
                             nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                             nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                             nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
@@ -18115,7 +18115,7 @@ public class GUIManager
                   Set<Object> pointExpirations = new HashSet<Object>();
                   for(Date expirationDate : pointBalance.getBalances().keySet()){
                     HashMap<String, Object> expirationPresentation = new HashMap<String, Object>();
-                    expirationPresentation.put("expirationDate", getDateString(expirationDate));
+                    expirationPresentation.put("expirationDate", getDateString(expirationDate, tenantID));
                     expirationPresentation.put("quantity", pointBalance.getBalances().get(expirationDate));
                     pointExpirations.add(JSONUtilities.encodeObject(expirationPresentation));
                   }
@@ -18224,8 +18224,8 @@ public class GUIManager
                   loyaltyProgramPresentation.put("loyaltyProgramType", loyaltyProgram.getLoyaltyProgramType().getExternalRepresentation());
                   loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgram.getLoyaltyProgramName());
                   loyaltyProgramPresentation.put("loyaltyProgramDisplay", loyaltyProgram.getLoyaltyProgramDisplay());
-                  loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate()));
-                  loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate()));
+                  loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate(), tenantID));
+                  loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate(), tenantID));
                   loyaltyProgramPresentation.put("active", loyaltyProgram.getActive());
 
 
@@ -18239,7 +18239,7 @@ public class GUIManager
                       //
 
                       if(loyaltyProgramPointsState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName()); }
-                      if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate())); }
+                      if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate(), tenantID)); }
 
                       //
                       //  status point
@@ -18287,12 +18287,12 @@ public class GUIManager
                           if(firstExpirationDate != null)
                             {
                               int firstExpirationQty = rewardBalance.getBalance(firstExpirationDate);
-                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(firstExpirationDate));
+                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(firstExpirationDate, tenantID));
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", firstExpirationQty);
                             }
                           else
                             {
-                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now));
+                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now, tenantID));
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
                             }
                         }
@@ -18302,7 +18302,7 @@ public class GUIManager
                           loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
                           loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
                           loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
-                          loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now));
+                          loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now, tenantID));
                           loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
                         }
 
@@ -18316,7 +18316,7 @@ public class GUIManager
                           HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
                           tierHistoryJSON.put("fromTier", tier.getFromTier());
                           tierHistoryJSON.put("toTier", tier.getToTier());
-                          tierHistoryJSON.put("transitionDate", getDateString(tier.getTransitionDate()));
+                          tierHistoryJSON.put("transitionDate", getDateString(tier.getTransitionDate(), tenantID));
                           loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
                         }
                       }
@@ -18488,8 +18488,8 @@ public class GUIManager
                         campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
                         campaignMap.put("campaignName", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("display"));
                         campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
-                        campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
-                        campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
+                        campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate(), tenantID));
+                        campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate(), tenantID));
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                         for (JourneyObjectiveInstance journeyObjectiveInstance : elgibleActiveCampaign.getJourneyObjectiveInstances())
                           {
@@ -22583,8 +22583,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   String endDateString = JSONUtilities.decodeString(jsonRoot, "endDate", false);
   String offerObjective = JSONUtilities.decodeString(jsonRoot, "objective", false);
 
-  Date offerStartDate = prepareStartDate(getDateFromString(startDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN));
-  Date offerEndDate = prepareEndDate(getDateFromString(endDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN));
+  Date offerStartDate = prepareStartDate(getDateFromString(startDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN, tenantID), tenantID);
+  Date offerEndDate = prepareEndDate(getDateFromString(endDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN, tenantID), tenantID);
 
   try
   {
@@ -26525,12 +26525,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private Date getDateFromString(String dateString, String dateFormat)
+  private Date getDateFromString(String dateString, String dateFormat, int tenantID)
   {
     Date result = null;
     if (dateString != null)
       {
-        result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getBaseTimeZone());
+        result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
       }
     return result;
   }
@@ -26542,7 +26542,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
    *
    *****************************************/
 
-  private Date getDateFromString(String dateString, String dateFormat, String pattern) throws GUIManagerException
+  private Date getDateFromString(String dateString, String dateFormat, String pattern, int tenantID) throws GUIManagerException
   {
     Date result = null;
     if (dateString != null)
@@ -26553,7 +26553,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
         try 
           {
-            result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getBaseTimeZone(), false);
+            result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone(), false);
           }
         catch(Exception ex)
           {
@@ -26571,13 +26571,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private Date prepareEndDate(Date endDate)
+  private Date prepareEndDate(Date endDate, int tenantID)
   {
     Date result = null;
     if (endDate != null)
       {
         Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         cal.setTime(endDate);
         cal.set(Calendar.HOUR_OF_DAY, 23);
         cal.set(Calendar.MINUTE, 59);
@@ -26593,13 +26593,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private Date prepareStartDate(Date startDate)
+  private Date prepareStartDate(Date startDate, int tenantID)
   {
     Date result = null;
     if (startDate != null)
       {
         Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         cal.setTime(startDate);
         cal.set(Calendar.HOUR_OF_DAY, 00);
         cal.set(Calendar.MINUTE, 00);
@@ -27366,14 +27366,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private String getDateString(Date date)
+  private String getDateString(Date date, int tenantID)
   {
     String result = null;
     if (date == null) return result;
     try
       {
         SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         result = dateFormat.format(date);
       }
     catch (Exception e)
@@ -27698,7 +27698,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     @Override protected void run()
     {
       if (log.isDebugEnabled()) log.debug("creating recurrent campaigns");
-      String tz = Deployment.getBaseTimeZone();
+      String tz = Deployment.getSystemTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct ? 
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
@@ -27737,43 +27737,43 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           List<Date> tmpJourneyCreationDates = new ArrayList<Date>();
           if ("week".equalsIgnoreCase(scheduling))
             {
-              Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK);
+              Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
               Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
-              Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
+              Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
+              Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
               while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
                 {
-                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
+                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay(), recurrentJourney.getTenantID()));
                   tempStartDate = RLMDateUtils.addWeeks(tempStartDate, scheduligInterval, tz);
-                  lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
-                  firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
+                  lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
+                  firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
                 }
               
               //
               // handle the edge (if start day of next wk)
               //
               
-              tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
+              tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay(), recurrentJourney.getTenantID()));
             } 
           else if ("month".equalsIgnoreCase(scheduling))
             {
-              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
+              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
               Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
-              Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
+              Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
+              Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
               while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
                 {
-                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
+                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay(), recurrentJourney.getTenantID()));
                   tempStartDate = RLMDateUtils.addMonths(tempStartDate, scheduligInterval, tz);
-                  firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
-                  lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
+                  firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
+                  lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
                 }
               
               //
               // handle the edge (if 1st day of next month)
               //
               
-              tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
+              tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay(), recurrentJourney.getTenantID()));
             }
           else if ("day".equalsIgnoreCase(scheduling))
             {
@@ -27808,7 +27808,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               boolean exists = false;
               for (Journey subJourney : recurrentSubJourneys)
                 {
-                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getDeployment(subJourney.getTenantID()).getBaseTimeZone()) == 0;
                   if (exists) break;
                 }
               if (!exists && limitCount > 0)
@@ -27835,9 +27835,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer lastCreatedOccurrenceNumber, int tenantID)
     {
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
-      String timeZone = Deployment.getBaseTimeZone();
+      String timeZone = Deployment.getDeployment(tenantID).getBaseTimeZone();
       Date rawEffectiveEntryPeriodEndDate = recurrentJourney.getRawEffectiveEntryPeriodEndDate();
-      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
+      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getDeployment(tenantID).getBaseTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       boolean active = recurrentJourney.getActive();
       for (Date startDate : journeyCreationDates)
@@ -27862,7 +27862,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           Date recRawEffectiveEntryPeriodEndDate = null;
           if (rawEffectiveEntryPeriodEndDate != null)
             {
-              int daysBetweenEntryPeriodEndDateAndStartDate = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(rawEffectiveEntryPeriodEndDate, Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
+              int daysBetweenEntryPeriodEndDateAndStartDate = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(rawEffectiveEntryPeriodEndDate, Calendar.DATE, timeZone), Deployment.getDeployment(tenantID).getBaseTimeZone());
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.addDays(RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone), daysBetweenEntryPeriodEndDateAndStartDate, timeZone);
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, timeZone), timeZone);
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.MINUTE, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.MINUTE, timeZone), timeZone);
@@ -27936,7 +27936,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     //  getExpectedCreationDates
     //
     
-    private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay)
+    private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
     {
       List<Date> result = new ArrayList<Date>();
       while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
@@ -27945,11 +27945,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           switch (scheduling)
             {
               case "week":
-                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
                 break;
                 
               case "month":
-                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
                 break;
 
               default:
@@ -27957,7 +27957,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
           String dayOf = String.valueOf(day);
           if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
-          firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getBaseTimeZone());
+          firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
         }
       
       //
@@ -27966,7 +27966,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       
       if ("month".equalsIgnoreCase(scheduling))
         {
-          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
           for (String day : runEveryDay)
             {
               if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
@@ -27979,19 +27979,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     //  getFirstDate
     //
     
-    private Date getFirstDate(Date now, int dayOf)
+    private Date getFirstDate(Date now, int dayOf, int tenantID)
     {
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
-          return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
+          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
         }
       else
         {
-          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
           c.setTime(now);
-          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
-          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getBaseTimeZone());
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getBaseTimeZone());
           return firstDate;
         }
     }
@@ -28000,22 +28000,22 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     //  getLastDate
     //
     
-    private Date getLastDate(Date now, int dayOf)
+    private Date getLastDate(Date now, int dayOf, int tenantID)
     {
-      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getBaseTimeZone());
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
-          return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getBaseTimeZone());
+          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getBaseTimeZone());
         }
       else
         {
-          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
           c.setTime(now);
           int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
-          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
-          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getBaseTimeZone());
-          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getBaseTimeZone());
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getDeployment(tenantID).getBaseTimeZone());
           return lastDate;
         }
     }
@@ -28806,7 +28806,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   {
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     response.put("evolutionVersion", com.evolving.nglm.core.Deployment.getEvolutionVersion());
-    response.put("customerVersion", com.evolving.nglm.core.Deployment.getCustomerVersion());
+    response.put("customerVersion", com.evolving.nglm.core.Deployment.getDeployment(tenantID).getCustomerVersion());
     
     return JSONUtilities.encodeObject(response);
    

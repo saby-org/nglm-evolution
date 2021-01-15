@@ -471,7 +471,7 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
                       if (pipelined && cacheEntry.getValue() != null)
                         pipeline.set(cacheEntry.getKey(), cacheEntry.getValue());
                       else if (pipelined && cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() != null)
-                        pipeline.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete()));
+                        pipeline.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), ten));
                       else if (pipelined && cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() == null)
                         pipeline.del(cacheEntry.getKey());
                       else if (cacheEntry.getValue() != null)
@@ -538,11 +538,11 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
     *
     *****************************************/
 
-    private long expirationDate(int ttlOnDelete)
+    private long expirationDate(int ttlOnDelete, int tenantID)
     {
       Date now = SystemTime.getCurrentTime();
-      Date day = RLMDateUtils.truncate(now, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-      Date expiration = RLMDateUtils.addDays(day, ttlOnDelete + 1, Deployment.getBaseTimeZone());
+      Date day = RLMDateUtils.truncate(now, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      Date expiration = RLMDateUtils.addDays(day, ttlOnDelete + 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
       return expiration.getTime() / 1000L;
     }
 
@@ -695,6 +695,7 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
       private byte[] value;
       private int dbIndex;
       private Integer ttlOnDelete;
+      private int tenantID;
 
       //
       //  accessors
@@ -704,26 +705,28 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
       public byte[] getValue() { return value; }
       public int getDBIndex() { return dbIndex; }
       public Integer getTTLOnDelete() { return ttlOnDelete; }
+      public int getTenantID() { return tenantID; }
 
       //
       //  constructor
       //
 
-      public CacheEntry(byte[] key, byte[] value, Integer dbIndex, Integer ttlOnDelete)
+      public CacheEntry(byte[] key, byte[] value, Integer dbIndex, Integer ttlOnDelete, int tenantID)
       {
         this.key = key;
         this.value = value;
         this.dbIndex = (dbIndex != null) ? dbIndex : SimpleRedisSinkTask.this.defaultDBIndex;
         this.ttlOnDelete = ttlOnDelete;
+        this.tenantID = tenantID;
       }
 
       //
       //  constructor (default dbIndex)
       //
 
-      public CacheEntry(byte[] key, byte[] value)
+      public CacheEntry(byte[] key, byte[] value, int tenantID)
       {
-        this(key, value, null, null);
+        this(key, value, null, null, tenantID);
       }
     }
   }

@@ -75,7 +75,7 @@ public class ContactPolicyProcessor
         String channelId = Deployment.getDeployment(tenantID).getDeliveryTypeCommunicationChannelIDMap().get(request.getDeliveryType());
         MetricHistory requestMetricHistory = request.getNotificationHistory();
         //validate segment contact policy
-        if (request.getSegmentContactPolicyID() != null && isBlockedByContactPolicy(request.getSegmentContactPolicyID(), channelId, now, requestMetricHistory))
+        if (request.getSegmentContactPolicyID() != null && isBlockedByContactPolicy(request.getSegmentContactPolicyID(), channelId, now, requestMetricHistory, tenantID))
           {
             request.setDeliveryStatus(DeliveryManager.DeliveryStatus.Failed);
             return true;
@@ -89,7 +89,7 @@ public class ContactPolicyProcessor
         for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectivesInstances)
           {
             JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now);
-            if (this.evaluateChildParentsContactPolicies(channelId, journeyObjective, requestMetricHistory, now))
+            if (this.evaluateChildParentsContactPolicies(channelId, journeyObjective, requestMetricHistory, now, tenantID))
               {
                 return true;
               }
@@ -114,13 +114,13 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  private boolean evaluateChildParentsContactPolicies(String channelID, JourneyObjective journeyObjective, MetricHistory requestMetricHistory, Date evaluationDate)
+  private boolean evaluateChildParentsContactPolicies(String channelID, JourneyObjective journeyObjective, MetricHistory requestMetricHistory, Date evaluationDate, int tenantID)
   {
     boolean returnValue = false;
     while (!returnValue && journeyObjective != null)
       {
         String contactPolicyId = journeyObjective.getContactPolicyID();
-        if (returnValue = isBlockedByContactPolicy(contactPolicyId, channelID, evaluationDate, requestMetricHistory))
+        if (returnValue = isBlockedByContactPolicy(contactPolicyId, channelID, evaluationDate, requestMetricHistory, tenantID))
           break;
         journeyObjective = journeyObjective.getParentJourneyObjectiveID() != null ? journeyObjectiveService.getActiveJourneyObjective(journeyObjective.getParentJourneyObjectiveID(), evaluationDate) : null;
       }
@@ -137,7 +137,7 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  private boolean isBlockedByContactPolicy(String contactPolicyId, String channelID, Date evaluationDate, MetricHistory requestMetricHistory)
+  private boolean isBlockedByContactPolicy(String contactPolicyId, String channelID, Date evaluationDate, MetricHistory requestMetricHistory, int tenantID)
   {
     boolean returnValue = false;
     ContactPolicy journeyContactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyId, evaluationDate);
@@ -150,17 +150,17 @@ public class ContactPolicyProcessor
             switch (limit.getTimeUnit())
               {
                 case "day":
-                  startDate = RLMDateUtils.addDays(evaluationDate, -limit.getDuration(), Deployment.getBaseTimeZone());
+                  startDate = RLMDateUtils.addDays(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getBaseTimeZone());
                   break;
                 case "week":
-                  startDate = RLMDateUtils.addWeeks(evaluationDate, -limit.getDuration(), Deployment.getBaseTimeZone());
+                  startDate = RLMDateUtils.addWeeks(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getBaseTimeZone());
                   break;
                 case "month":
-                  startDate = RLMDateUtils.addMonths(evaluationDate, -limit.getDuration(), Deployment.getBaseTimeZone());
+                  startDate = RLMDateUtils.addMonths(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getBaseTimeZone());
                   break;
               }
             //start date null means that no valid interval defined for processing list. An exception will be thrown that will be handled at upper level
-            if (requestMetricHistory.getValue(RLMDateUtils.truncate(startDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone()), RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())) >= limit.getMaxMessages())
+            if (requestMetricHistory.getValue(RLMDateUtils.truncate(startDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone()), RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone())) >= limit.getMaxMessages())
               {
                 returnValue = true;
                 break;

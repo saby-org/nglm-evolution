@@ -258,7 +258,7 @@ public class UCGEngine
     CronFormat ucgEvaluation = null;
     try
       {
-        ucgEvaluation = new CronFormat(Deployment.getUCGEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        ucgEvaluation = new CronFormat(Deployment.getUCGEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
       }
     catch (UtilitiesException e)
       {

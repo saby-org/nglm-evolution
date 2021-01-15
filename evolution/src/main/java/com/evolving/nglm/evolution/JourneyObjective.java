@@ -118,9 +118,9 @@ public class JourneyObjective extends GUIManagedObject
   //
   
   public Integer getEffectiveTargetingLimitMaxSimultaneous() { return targetingLimitMaxSimultaneous != null ? targetingLimitMaxSimultaneous : new Integer(Integer.MAX_VALUE); }
-  public Date getEffectiveWaitingPeriodEndDate(Date now) { return (targetingLimitMaxSimultaneous != null && targetingLimitMaxSimultaneous == 1 && targetingLimitWaitingPeriodDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitWaitingPeriodDuration,  targetingLimitWaitingPeriodTimeUnit, Deployment.getBaseTimeZone(), RoundingSelection.NoRound) : now; }
+  public Date getEffectiveWaitingPeriodEndDate(Date now, int tenantID) { return (targetingLimitMaxSimultaneous != null && targetingLimitMaxSimultaneous == 1 && targetingLimitWaitingPeriodDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitWaitingPeriodDuration,  targetingLimitWaitingPeriodTimeUnit, Deployment.getDeployment(tenantID).getBaseTimeZone(), RoundingSelection.NoRound) : now; }
   public Integer getEffectiveTargetingLimitMaxOccurrence() { return targetingLimitMaxOccurrence != null ? targetingLimitMaxOccurrence : new Integer(Integer.MAX_VALUE); }
-  public Date getEffectiveSlidingWindowStartDate(Date now) { return (targetingLimitSlidingWindowDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitSlidingWindowDuration,  targetingLimitSlidingWindowTimeUnit, Deployment.getBaseTimeZone(), RoundingSelection.NoRound) : now; }
+  public Date getEffectiveSlidingWindowStartDate(Date now, int tenantID) { return (targetingLimitSlidingWindowDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitSlidingWindowDuration,  targetingLimitSlidingWindowTimeUnit, Deployment.getDeployment(tenantID).getBaseTimeZone(), RoundingSelection.NoRound) : now; }
   
   /*****************************************
   *

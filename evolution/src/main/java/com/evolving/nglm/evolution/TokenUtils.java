@@ -296,7 +296,7 @@ public class TokenUtils
   {
     // check if we can call this PS
     int maximumPresentationsPeriodDays = presentationStrategy.getMaximumPresentationsPeriodDays();
-    Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getBaseTimeZone());
+    Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getDeployment(tenantID).getBaseTimeZone());
     List<Date> presentationDates = token.getPresentationDates();
     List<Date> newPresentationDates = new ArrayList<>();
     for (Date date : presentationDates)
@@ -592,7 +592,7 @@ public class TokenUtils
       Long maximumPresentationsPeriodDaysStr = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
       long maximumPresentationsPeriodDays = maximumPresentationsPeriodDaysStr != null ? maximumPresentationsPeriodDaysStr : 365L;  // default value
       
-      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getBaseTimeZone());
+      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getDeployment(tenantID).getBaseTimeZone());
 
       for (String catalogObjectiveID : catalogObjectiveIDs)
       {

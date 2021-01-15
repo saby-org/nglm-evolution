@@ -71,12 +71,13 @@ public class PointBalance
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("point_balance");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("expirationDates", SchemaBuilder.array(Timestamp.SCHEMA));
     schemaBuilder.field("points", SchemaBuilder.array(Schema.INT32_SCHEMA));
     schemaBuilder.field("earnedHistory", MetricHistory.schema());
     schemaBuilder.field("consumedHistory", MetricHistory.schema());
     schemaBuilder.field("expiredHistory", MetricHistory.schema());
+    schemaBuilder.field("tenantID", SchemaBuilder.array(Schema.INT16_SCHEMA));
     schema = schemaBuilder.build();
   };
 
@@ -114,6 +115,7 @@ public class PointBalance
   private MetricHistory earnedHistory;
   private MetricHistory consumedHistory;
   private MetricHistory expiredHistory;
+  private int tenantID;
 
   /*****************************************
   *
@@ -125,6 +127,7 @@ public class PointBalance
   public MetricHistory getEarnedHistory() { return earnedHistory; }
   public MetricHistory getConsumedHistory() { return consumedHistory; }
   public MetricHistory getExpiredHistory() { return expiredHistory; }
+  public int getTenantID() { return tenantID; }
 
   /*****************************************
   *
@@ -135,9 +138,9 @@ public class PointBalance
   public PointBalance()
   {
     this.balances = new TreeMap<Date,Integer>();
-    this.earnedHistory = new MetricHistory(0, 0);   // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
-    this.consumedHistory = new MetricHistory(0, 0); // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
-    this.expiredHistory = new MetricHistory(0, 0);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.earnedHistory = new MetricHistory(0, 0, tenantID);   // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.consumedHistory = new MetricHistory(0, 0, tenantID); // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.expiredHistory = new MetricHistory(0, 0, tenantID);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
   }
 
   /*****************************************
@@ -146,12 +149,13 @@ public class PointBalance
   *
   *****************************************/
 
-  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory)
+  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory, int tenantID)
   {
     this.balances = balances;
     this.earnedHistory = earnedHistory;
     this.consumedHistory = consumedHistory;
     this.expiredHistory = expiredHistory;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -166,6 +170,7 @@ public class PointBalance
     this.earnedHistory = new MetricHistory(pointBalance.getEarnedHistory());
     this.consumedHistory = new MetricHistory(pointBalance.getConsumedHistory());
     this.expiredHistory = new MetricHistory(pointBalance.getExpiredHistory());
+    this.tenantID = pointBalance.getTenantID();
   }
 
   /*****************************************
@@ -314,7 +319,7 @@ public class PointBalance
             //  expiration date
             //
 
-            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getBaseTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
+            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getDeployment(tenantID).getBaseTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
             if(pointFulfillmentResponse != null){ pointFulfillmentResponse.setDeliverableExpirationDate(expirationDate); }
 
             //
@@ -461,6 +466,7 @@ public class PointBalance
     struct.put("earnedHistory", MetricHistory.pack(pointBalance.getEarnedHistory()));
     struct.put("consumedHistory", MetricHistory.pack(pointBalance.getConsumedHistory()));
     struct.put("expiredHistory", MetricHistory.pack(pointBalance.getExpiredHistory()));
+    struct.put("tenantID", pointBalance.getTenantID());
     return struct;
   }
 
@@ -495,12 +501,14 @@ public class PointBalance
     MetricHistory earnedHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("earnedHistory").schema(), valueStruct.get("earnedHistory")));
     MetricHistory consumedHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("consumedHistory").schema(), valueStruct.get("consumedHistory")));
     MetricHistory expiredHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("expiredHistory").schema(), valueStruct.get("expiredHistory")));
+    
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
 
     //  
     //  return
     //
 
-    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory);
+    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory, tenantID);
   }
   
   /*****************************************

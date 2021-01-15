@@ -1593,8 +1593,8 @@ public abstract class FileSourceTask extends SourceTask
 
   protected Date readDate(String token, String record, String format, String timeZone, Date defaultValue) throws IllegalArgumentException { return FileSourceConnector.readDate(token, record, format, timeZone, defaultValue); }
   protected Date readDate(String token, String record, String format, String timeZone) throws IllegalArgumentException { return FileSourceConnector.readDate(token, record, format, timeZone, null); }
-  protected Date readDate(String token, String record, String format, Date defaultValue) throws IllegalArgumentException { return FileSourceConnector.readDate(token, record, format, Deployment.getBaseTimeZone(), defaultValue); }
-  protected Date readDate(String token, String record, String format) throws IllegalArgumentException { return FileSourceConnector.readDate(token, record, format, Deployment.getBaseTimeZone(), null); }
+  protected Date readDate(String token, String record, String format, Date defaultValue, int tenantID) throws IllegalArgumentException { return FileSourceConnector.readDate(token, record, format, Deployment.getDeployment(tenantID).getBaseTimeZone(), defaultValue); }
+  protected Date readDate(String token, String record, String format, int tenantID) throws IllegalArgumentException { return FileSourceConnector.readDate(token, record, format, Deployment.getDeployment(tenantID).getBaseTimeZone(), null); }
 
   /****************************************
   *

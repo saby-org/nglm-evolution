@@ -133,7 +133,7 @@ public class VoucherService extends GUIService {
         voucherFile.setVoucherFileStats(getVoucherFileStatsFromZookeeper(voucherID,voucherFile.getFileId()));
       }
       // add the current live status from ES
-      voucherPersonalESService.populateVoucherFileWithStockInformation(voucher);
+      voucherPersonalESService.populateVoucherFileWithStockInformation(voucher, voucher.getTenantID());
       return voucher;
     }
 
@@ -179,20 +179,20 @@ public class VoucherService extends GUIService {
       if(!(untypedVoucher instanceof VoucherPersonal)) continue;
       VoucherPersonal voucher = (VoucherPersonal) untypedVoucher;
       for(VoucherFile file:voucher.getVoucherFiles()){
-        int nbExpired=voucherPersonalESService.deleteAvailableExpiredVoucher(voucher.getSupplierID(),voucher.getVoucherID(),file.getFileId(),now);
+        int nbExpired=voucherPersonalESService.deleteAvailableExpiredVoucher(voucher.getSupplierID(),voucher.getVoucherID(),file.getFileId(),now, tenantID);
         log.info("VoucherPersonalESService-cleanUpExpiredVouchers : "+nbExpired+" unallocated expired vouchers deleted for voucher "+voucher.getVoucherID()+" and file "+file.getFileId());
         updateVoucherFileStatsInZookeeper(voucher.getVoucherID(),file.getFileId(),0,0,0,nbExpired);
       }
     }
 
     // this is a bulk delete of all vouchers a while after expiryDate is past, clean up of ES
-    Date expiryDate=EvolutionUtilities.addTime(now,-1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getBaseTimeZone());
+    Date expiryDate=EvolutionUtilities.addTime(now,-1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getDeployment(tenantID).getBaseTimeZone());
     // safety
     if(now.before(expiryDate)){
       log.error("VoucherPersonalESService-cleanUpExpiredVouchers : bug, expiryDate for cleanup is after now !! "+now+" vs "+expiryDate);
       return;
     }
-    voucherPersonalESService.deleteExpiredVoucher(expiryDate);
+    voucherPersonalESService.deleteExpiredVoucher(expiryDate, tenantID);
 
     log.info("VoucherPersonalESService-cleanUpExpiredVouchers : stop execution");
   }
@@ -413,7 +413,7 @@ public class VoucherService extends GUIService {
           int totalNbVouchersAdded=0;
           int nbOfLines=0;
           BufferedReader reader;
-          Date expiryDate = VoucherPersonalES.getDateFromESDateFormated(VoucherPersonalES.ES_FIELDS.expiryDate,job.getExpiryDate());
+          Date expiryDate = VoucherPersonalES.getDateFromESDateFormated(VoucherPersonalES.ES_FIELDS.expiryDate,job.getExpiryDate(), uploadedFile.getTenantID());
           boolean alreadyExpired=expiryDate.before(SystemTime.getCurrentTime());
           try{
             List<VoucherPersonalES> vouchersToAdd = new ArrayList<VoucherPersonalES>();

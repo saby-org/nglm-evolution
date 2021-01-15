@@ -5255,7 +5255,7 @@ public class ThirdPartyManager
               {
                 Date redeemedDateToBeFormatted = profileVoucher.getVoucherRedeemDate();
                 SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-                dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+                dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
                 String redeemedDate = dateFormat.format(redeemedDateToBeFormatted);
                 String redeemedSubscriberID = subscriberID;
                 Map<String, String> alternateIDs = new LinkedHashMap<>();
@@ -5645,7 +5645,7 @@ public class ThirdPartyManager
           }
         try 
           {
-            result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getBaseTimeZone(), false);
+            result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone(), false);
           }
         catch(Exception ex)
           {
@@ -5668,7 +5668,7 @@ public class ThirdPartyManager
     if (endDate != null)
       {
         Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         cal.setTime(endDate);
         cal.set(Calendar.HOUR_OF_DAY, 23);
         cal.set(Calendar.MINUTE, 59);
@@ -5690,7 +5690,7 @@ public class ThirdPartyManager
     if (startDate != null)
       {
         Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         cal.setTime(startDate);
         cal.set(Calendar.HOUR_OF_DAY, 00);
         cal.set(Calendar.MINUTE, 00);
@@ -6600,7 +6600,7 @@ public class ThirdPartyManager
     try
     {
       SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-      dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+      dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
       result = dateFormat.format(date);
     }
     catch (Exception e)

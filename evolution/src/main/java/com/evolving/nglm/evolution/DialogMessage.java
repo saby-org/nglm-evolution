@@ -448,7 +448,7 @@ public class DialogMessage
           {
             if (format instanceof SimpleDateFormat)
               {
-                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone()));
               }
           }
 
@@ -555,7 +555,7 @@ public class DialogMessage
           {
             if (format instanceof SimpleDateFormat)
               {
-                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone()));
               }
           }
 

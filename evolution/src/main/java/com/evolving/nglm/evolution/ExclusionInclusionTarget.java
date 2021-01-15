@@ -279,7 +279,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile.get(tenantID)));
+            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile.get(tenantID), tenantID));
           }
       }
 

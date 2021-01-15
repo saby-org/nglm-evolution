@@ -64,7 +64,9 @@ public class Deployment
 
   private JSONObject jsonRoot;
   private String baseTimeZone;
+  private static String systemTimeZone;
   private ZoneId baseZoneId;
+  private ZoneId systemZoneId;
   private String baseLanguage;
   private String baseCountry;
   private static String evolutionVersion;
@@ -122,7 +124,9 @@ public class Deployment
   public static String getBrokerServers() { return System.getProperty("broker.servers",""); }
   public JSONObject getJSONRoot() { return jsonRoot; }
   public String getBaseTimeZone() { return baseTimeZone; }
+  public static String getSystemTimeZone() { return systemTimeZone; }
   public ZoneId getBaseZoneId() { return baseZoneId; }
+  public ZoneId getSystemZoneId() { return systemZoneId; }
   public String getBaseLanguage() { return baseLanguage; }
   public String getBaseCountry() { return baseCountry; }
   public static String getEvolutionVersion() { return evolutionVersion!=null?evolutionVersion:"unknown"; }
@@ -514,6 +518,22 @@ public class Deployment
         throw new RuntimeException("deployment", e);
       }
 
+    /*****************************************
+    *
+    *  systemTimeZone
+    *
+    *****************************************/
+
+    try
+      {
+        systemTimeZone = JSONUtilities.decodeString(jsonRoot, "systemTimeZone", true);
+        systemZoneId = ZoneId.of(systemTimeZone);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new RuntimeException("deployment", e);
+      }
+    
     /*****************************************
     *
     *  baseLanguage

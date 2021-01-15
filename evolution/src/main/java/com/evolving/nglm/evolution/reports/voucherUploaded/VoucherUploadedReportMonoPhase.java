@@ -129,7 +129,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
               {
                 Object expiryDateObj = voucherPersonal.get("expiryDate");
                 SimpleDateFormat df = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-                df.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+                df.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(voucher.getTenantID()).getBaseTimeZone()));
                 try
                   {
                     expiryDate = df.parse(ReportsCommonCode.parseDate((String) expiryDateObj));

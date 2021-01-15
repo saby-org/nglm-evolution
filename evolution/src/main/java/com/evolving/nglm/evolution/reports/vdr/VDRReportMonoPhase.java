@@ -76,7 +76,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   static
     {
       DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-      DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+      DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       
       headerFieldsOrder.add(customerID);
       for (AlternateID alternateID : Deployment.getAlternateIDs().values())
@@ -489,7 +489,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     while (tempfromDate.getTime() <= toDate.getTime())
       {
         esIndexVDRList.add(DATE_FORMAT.format(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       }
     return esIndexVDRList;
   }
@@ -512,17 +512,17 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       {
         case "DAYS":
           fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity,
-              com.evolving.nglm.core.Deployment.getBaseTimeZone());
+              Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
           break;
 
         case "WEEKS":
           fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity,
-              com.evolving.nglm.core.Deployment.getBaseTimeZone());
+              Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
           break;
 
         case "MONTHS":
           fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity,
-              com.evolving.nglm.core.Deployment.getBaseTimeZone());
+              Deployment.getSystemTimeZone());
           break;
 
         default:

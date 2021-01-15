@@ -1198,18 +1198,18 @@ public abstract class FileSourceConnector extends SourceConnector
   //  readDate (without defaultValue)
   //
       
-  public static Date readDate(String token, String record, String format, Date defaultValue) throws IllegalArgumentException
+  public static Date readDate(String token, String record, String format, Date defaultValue, int tenantID) throws IllegalArgumentException
   {
-    return readDate(token, record, format, Deployment.getBaseTimeZone(), defaultValue);
+    return readDate(token, record, format, Deployment.getDeployment(tenantID).getBaseTimeZone(), defaultValue);
   }
 
   //
   //  readDate (without defaultValue)
   //
       
-  public static Date readDate(String token, String record, String format) throws IllegalArgumentException
+  public static Date readDate(String token, String record, String format, int tenantID) throws IllegalArgumentException
   {
-    return readDate(token, record, format, Deployment.getBaseTimeZone(), null);
+    return readDate(token, record, format, Deployment.getDeployment(tenantID).getBaseTimeZone(), null);
   }
 
   /****************************************

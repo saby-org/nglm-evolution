@@ -1837,7 +1837,7 @@ public class EvolutionEngine
      *
      *****************************************/
 
-    subscriberStateUpdated = updateVouchers(context, evolutionEvent) || subscriberStateUpdated;
+    subscriberStateUpdated = updateVouchers(context, evolutionEvent, tenantID) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -2261,7 +2261,7 @@ public class EvolutionEngine
    *
    *****************************************/
 
-  private static boolean updateVouchers(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  private static boolean updateVouchers(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, int tenantID)
   {
 
     SubscriberState subscriberState = context.getSubscriberState();
@@ -2288,13 +2288,13 @@ public class EvolutionEngine
             Date expiryDate=null;
             // compute expiry date here for relative expiry vouchers
             if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
-              expiryDate = EvolutionUtilities.addTime(now,voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown: EvolutionUtilities.RoundingSelection.NoRound);
+              expiryDate = EvolutionUtilities.addTime(now,voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getDeployment(tenantID).getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown: EvolutionUtilities.RoundingSelection.NoRound);
             }else if(voucherType.getCodeType()==VoucherType.CodeType.Personal){
               VoucherPersonal voucherPersonal = (VoucherPersonal) voucher;
               for(VoucherFile voucherFile:voucherPersonal.getVoucherFiles()){
                 if(voucherFile.getFileId().equals(voucherDelivery.getFileID())){
                   if(voucherFile.getExpiryDate()==null){
-                    expiryDate = EvolutionUtilities.addTime(now,voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown: EvolutionUtilities.RoundingSelection.NoRound);
+                    expiryDate = EvolutionUtilities.addTime(now,voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getDeployment(tenantID).getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown: EvolutionUtilities.RoundingSelection.NoRound);
                   }
                   break;
                 }
@@ -2772,7 +2772,7 @@ public class EvolutionEngine
         MetricHistory channelMetricHistory = subscriberState.getNotificationHistory().get(channel);
         // not yet any notif sent for this channel to this subs, init empty one
         if(channelMetricHistory==null){
-          channelMetricHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+          channelMetricHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
           subscriberState.getNotificationHistory().put(channel,channelMetricHistory);
         }
         // FIRST enrich request with previous data (keep previous behaviour for downstream processor)
@@ -3336,7 +3336,7 @@ public class EvolutionEngine
         else
           {
             int maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getBaseTimeZone());
+            Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getBaseTimeZone());
             List<Date> cleanPurchaseHistory = new ArrayList<Date>();
             Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
             List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
@@ -3385,7 +3385,7 @@ public class EvolutionEngine
 
         boolean refreshWindow = false;
         refreshWindow = refreshWindow || context.getSubscriberState().getUCGRefreshDay() == null;
-        refreshWindow = refreshWindow || RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), ucgState.getRefreshWindowDays(), Deployment.getBaseTimeZone()).compareTo(now) <= 0;
+        refreshWindow = refreshWindow || RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), ucgState.getRefreshWindowDays(), Deployment.getDeployment(tenantID).getBaseTimeZone()).compareTo(now) <= 0;
 
         //
         //  refresh if necessary
@@ -4504,12 +4504,12 @@ public class EvolutionEngine
                 if (log.isTraceEnabled()) log.trace("permittedSimultaneousJourneys put " + journeyObjective.getJourneyObjectiveName() + ":" + (permittedSimultaneousJourneys.get(journeyObjective) - 1));
                 permittedSimultaneousJourneys.put(journeyObjective, permittedSimultaneousJourneys.get(journeyObjective) - 1);
               }
-            if (journeyObjective.getEffectiveTargetingLimitMaxSimultaneous()==1 && (activeJourney || oldJourneyEndDate.compareTo(journeyObjective.getEffectiveWaitingPeriodEndDate(now)) >= 0))
+            if (journeyObjective.getEffectiveTargetingLimitMaxSimultaneous()==1 && (activeJourney || oldJourneyEndDate.compareTo(journeyObjective.getEffectiveWaitingPeriodEndDate(now, tenantID)) >= 0))
               {
                 if (log.isTraceEnabled()) log.trace("permittedWaitingPeriod put " + journeyObjective.getJourneyObjectiveName() + ": static FALSE");
                 permittedWaitingPeriod.put(journeyObjective, Boolean.FALSE);
               }
-            if (activeJourney || oldJourneyEndDate.compareTo(journeyObjective.getEffectiveSlidingWindowStartDate(now)) >= 0)
+            if (activeJourney || oldJourneyEndDate.compareTo(journeyObjective.getEffectiveSlidingWindowStartDate(now, tenantID)) >= 0)
               {
                 if (log.isTraceEnabled()) log.trace("permittedSlidingWindowJourneys put " + journeyObjective.getJourneyObjectiveName() + ":" + (permittedSlidingWindowJourneys.get(journeyObjective) - 1));
                 permittedSlidingWindowJourneys.put(journeyObjective, permittedSlidingWindowJourneys.get(journeyObjective) - 1);
@@ -4990,7 +4990,7 @@ public class EvolutionEngine
                 //
                 if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign && journey.getFullStatistics())
                   {
-                    boolean metricsUpdated = journeyState.populateMetricsPrior(subscriberState);
+                    boolean metricsUpdated = journeyState.populateMetricsPrior(subscriberState, tenantID);
                     subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                   }
 
@@ -5282,7 +5282,7 @@ public class EvolutionEngine
               {
                 for (Date nextEvaluationDate : nextEvaluationDates)
                   {
-                    if(nextEvaluationDate.before(RLMDateUtils.addDays(SystemTime.getCurrentTime(), 2, Deployment.getBaseTimeZone())))
+                    if(nextEvaluationDate.before(RLMDateUtils.addDays(SystemTime.getCurrentTime(), 2, Deployment.getDeployment(tenantID).getBaseTimeZone())))
                       {
                         subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), nextEvaluationDate));
                         subscriberStateUpdated = true;
@@ -5752,7 +5752,7 @@ public class EvolutionEngine
             // journey can be null if it has been removed in the meantime (happens with PTT tests, should not happen in prod)
             if ((journey != null) && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) && journey.getFullStatistics())
               {
-                boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now);
+                boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now, tenantID);
                 subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                 
                 //

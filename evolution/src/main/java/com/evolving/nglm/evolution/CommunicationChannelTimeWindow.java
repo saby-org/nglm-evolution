@@ -398,8 +398,8 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
 
       public String getStartTime() { return from; }
       public String getEndTime() { return until; }
-      public Date getFromDate(Date day) { return convertToDate(day, from); }
-      public Date getUntilDate(Date day) { return RLMDateUtils.addMinutes(convertToDate(day, until), 1); }
+      public Date getFromDate(Date day, int tenantID) { return convertToDate(day, from, tenantID); }
+      public Date getUntilDate(Date day, int tenantID) { return RLMDateUtils.addMinutes(convertToDate(day, until, tenantID), 1); }
 
       /*****************************************
       *
@@ -502,13 +502,13 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       *
       *****************************************/
 
-      private Date convertToDate(Date day, String time)
+      private Date convertToDate(Date day, String time, int tenantID)
       {
         Date result = day;
         String[] splitTime = time.split(":");
         if (splitTime.length != 2) throw new ServerRuntimeException("bad daily window time field");
-        result = RLMDateUtils.setField(result, Calendar.HOUR_OF_DAY, Integer.valueOf(splitTime[0]), Deployment.getBaseTimeZone());
-        result = RLMDateUtils.setField(result, Calendar.MINUTE, Integer.valueOf(splitTime[1]), Deployment.getBaseTimeZone());
+        result = RLMDateUtils.setField(result, Calendar.HOUR_OF_DAY, Integer.valueOf(splitTime[0]), Deployment.getDeployment(tenantID).getBaseTimeZone());
+        result = RLMDateUtils.setField(result, Calendar.MINUTE, Integer.valueOf(splitTime[1]), Deployment.getDeployment(tenantID).getBaseTimeZone());
         return result;
       }
     }

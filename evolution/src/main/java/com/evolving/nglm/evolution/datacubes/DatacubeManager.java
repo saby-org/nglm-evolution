@@ -191,7 +191,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -222,7 +222,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(),  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -254,7 +254,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -284,7 +284,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -315,7 +315,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -345,7 +345,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -376,7 +376,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -406,7 +406,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -437,7 +437,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -467,7 +467,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
     {
       @Override
@@ -499,7 +499,7 @@ public class DatacubeManager
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
         Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getBaseTimeZone(),
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart()) 
     {
       @Override
@@ -510,7 +510,7 @@ public class DatacubeManager
         // Therefore, we must not configure a cron period lower than 1 hour
         // If we want a lower period we will need to retrieve the schedule due date from the job !
         Date now = SystemTime.getCurrentTime();
-        Date truncatedHour = RLMDateUtils.truncate(now, Calendar.HOUR, Deployment.getBaseTimeZone());
+        Date truncatedHour = RLMDateUtils.truncate(now, Calendar.HOUR, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Date endOfLastHour = RLMDateUtils.addMilliseconds(truncatedHour, -1); // XX:59:59.999
         
         journeysMap.update();

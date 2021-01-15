@@ -108,7 +108,7 @@ public abstract class GUIManagedObject
 
     for (SimpleDateFormat standardDateFormat : standardDateFormats)
       {
-        standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
       }
   }
 

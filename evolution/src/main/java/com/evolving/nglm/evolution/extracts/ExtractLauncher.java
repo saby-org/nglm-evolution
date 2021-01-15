@@ -34,7 +34,7 @@ public class ExtractLauncher implements Runnable
     try
     {
       sdf = new SimpleDateFormat(Deployment.getExtractManagerDateFormat());
-      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     }
     catch (IllegalArgumentException e)
     {

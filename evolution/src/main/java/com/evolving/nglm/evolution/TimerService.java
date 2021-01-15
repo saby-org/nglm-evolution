@@ -588,7 +588,7 @@ public class TimerService
     CronFormat periodicEvaluation = null;
     try
       {
-        periodicEvaluation = new CronFormat(Deployment.getPeriodicEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        periodicEvaluation = new CronFormat(Deployment.getPeriodicEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
       }
     catch (UtilitiesException e)
       {

@@ -47,7 +47,7 @@ public class ExtractItem
     {
       for (int i = 0; i < evaluationCritetionListJSON.size(); i++)
       {
-        evaluationCriterionList.add(new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile.get(tenantID)));
+        evaluationCriterionList.add(new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile.get(tenantID), tenantID));
       }
     }
   }

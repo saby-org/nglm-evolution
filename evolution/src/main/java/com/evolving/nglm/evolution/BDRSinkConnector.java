@@ -111,7 +111,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
       documentMap.put("eventID", commodityRequest.getEventID());
-      documentMap.put("deliverableExpirationDate", commodityRequest.getDeliverableExpirationDate());
+      documentMap.put("deliverableExpirationDate", commodityRequest.getDeliverableExpirationDate(commodityRequest.getTenantID()));
       documentMap.put("providerID", commodityRequest.getProviderID());
       documentMap.put("deliverableID", commodityRequest.getCommodityID());
       documentMap.put("deliverableQty", commodityRequest.getAmount());

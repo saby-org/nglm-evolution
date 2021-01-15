@@ -581,7 +581,7 @@ public class ReportManager implements Watcher
             log.error("Config error : date format " + dateFormat + " is invalid, using default" + e.getLocalizedMessage(), e);
             sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
           }
-        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         String fileSuffix = sdf.format(reportGenerationDate);
         String csvFilename = "" + outputPath + File.separator + reportName + "_" + fileSuffix + "." + fileExtension;
         log.trace("csvFilename = " + csvFilename);

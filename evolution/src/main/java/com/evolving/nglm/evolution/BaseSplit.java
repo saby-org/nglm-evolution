@@ -153,12 +153,12 @@ public class BaseSplit
     boolean profileCriteriaDependentOnExtendedSubscriberProfile = false;
     try
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile.get(tenantID));
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile.get(tenantID), tenantID);
         profileCriteriaDependentOnExtendedSubscriberProfile = false;
       }
     catch (GUIManagerException e)
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile.get(tenantID));
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile.get(tenantID), tenantID);
         profileCriteriaDependentOnExtendedSubscriberProfile = true;
       }
 
@@ -175,13 +175,13 @@ public class BaseSplit
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, CriterionContext context) throws GUIManagerException
+  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, CriterionContext context, int tenantID) throws GUIManagerException
   {
     if(jsonArray == null) return null;
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context));
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context, tenantID));
       }
     return result;
   }

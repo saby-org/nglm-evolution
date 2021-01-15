@@ -80,7 +80,7 @@ public class ContextVariable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("context_variable");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
     schemaBuilder.field("id", Schema.STRING_SCHEMA);
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("criterionContext", CriterionContext.schema());
@@ -88,6 +88,7 @@ public class ContextVariable
     schemaBuilder.field("assignment", SchemaBuilder.string().defaultValue("=").schema());
     schemaBuilder.field("baseTimeUnit", Schema.STRING_SCHEMA);
     schemaBuilder.field("variableType", SchemaBuilder.string().defaultValue("local").schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -117,6 +118,7 @@ public class ContextVariable
   private Assignment assignment;
   private TimeUnit baseTimeUnit;
   private VariableType variableType;
+  private int tenantID;
 
   //
   //  derived
@@ -132,7 +134,7 @@ public class ContextVariable
   *
   *****************************************/
 
-  private ContextVariable(String id, String name, String expressionString, Assignment assignment, TimeUnit baseTimeUnit, VariableType variableType)
+  private ContextVariable(String id, String name, String expressionString, Assignment assignment, TimeUnit baseTimeUnit, VariableType variableType, int tenantID)
   {
     this.id = id;
     this.name = name;
@@ -144,6 +146,7 @@ public class ContextVariable
     this.validated = false;
     this.expression = null;
     this.type = CriterionDataType.Unknown;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -152,7 +155,7 @@ public class ContextVariable
   *
   *****************************************/
 
-  public ContextVariable(JSONObject jsonRoot) throws GUIManagerException
+  public ContextVariable(JSONObject jsonRoot, int tenantID) throws GUIManagerException
   {
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
     this.criterionContext = null;
@@ -178,6 +181,7 @@ public class ContextVariable
     }
     
     this.id = generateID(this.name);
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -199,7 +203,7 @@ public class ContextVariable
   public CriterionDataType getType() { return type; }
   public String getTagFormat() { return (expression != null) ? expression.getEffectiveTagFormat() : null; }
   public Integer getTagMaxLength() { return (expression != null) ? expression.getEffectiveTagMaxLength() : null; }
-
+  public int getTenantID() { return tenantID; }
   /*****************************************
   *
   *  pack
@@ -227,6 +231,7 @@ public class ContextVariable
     struct.put("assignment", contextVariable.getAssignment().getExternalRepresentation());
     struct.put("baseTimeUnit", contextVariable.getBaseTimeUnit().getExternalRepresentation());
     struct.put("variableType", contextVariable.getVariableType().getExternalRepresentation());
+    struct.put("tenantID", contextVariable.getTenantID());
     return struct;
   }
 
@@ -258,12 +263,13 @@ public class ContextVariable
     Assignment assignment = (schemaVersion >= 2) ? Assignment.fromExternalRepresentation(valueStruct.getString("assignment")) : Assignment.Direct;
     TimeUnit baseTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("baseTimeUnit"));
     VariableType variableType = (schemaVersion >= 3) ? VariableType.fromExternalRepresentation(valueStruct.getString("variableType")) : VariableType.Local;
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
 
     //
     //  construct 
     //
 
-    ContextVariable result = new ContextVariable(id, name, expressionString, assignment, baseTimeUnit, variableType);
+    ContextVariable result = new ContextVariable(id, name, expressionString, assignment, baseTimeUnit, variableType, tenantID);
 
     //
     //  validate
@@ -271,7 +277,7 @@ public class ContextVariable
 
     try
       {
-        result.validate(criterionContext);
+        result.validate(criterionContext, result.getTenantID());
       }
     catch (GUIManagerException e)
       {
@@ -334,7 +340,7 @@ public class ContextVariable
   *
   *****************************************/
 
-  public void validate(CriterionContext nodeOnlyCriterionContext, CriterionContext nodeWithJourneyResultCriterionContext) throws GUIManagerException
+  public void validate(CriterionContext nodeOnlyCriterionContext, CriterionContext nodeWithJourneyResultCriterionContext, int tenantID) throws GUIManagerException
   {
     switch (variableType)
       {
@@ -350,7 +356,7 @@ public class ContextVariable
           boolean validated = false;
           try
             {
-              validate(nodeOnlyCriterionContext);
+              validate(nodeOnlyCriterionContext, tenantID);
               variableType = VariableType.Local;
               validated = true;
             }
@@ -371,7 +377,7 @@ public class ContextVariable
             {
               try
                 {
-                  validate(nodeWithJourneyResultCriterionContext);
+                  validate(nodeWithJourneyResultCriterionContext, tenantID);
                   variableType = VariableType.JourneyResult;
                 }
               catch (GUIManagerException e)
@@ -396,7 +402,7 @@ public class ContextVariable
           *
           *****************************************/
 
-          validate(nodeOnlyCriterionContext);
+          validate(nodeOnlyCriterionContext, tenantID);
           break;
       }
   }
@@ -407,7 +413,7 @@ public class ContextVariable
   *
   *****************************************/
 
-  private void validate(CriterionContext criterionContext) throws GUIManagerException
+  private void validate(CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     switch (variableType)
       {
@@ -446,7 +452,7 @@ public class ContextVariable
               //
 
               ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
-              Expression expression = expressionReader.parse(ExpressionContext.ContextVariable);
+              Expression expression = expressionReader.parse(ExpressionContext.ContextVariable, tenantID);
               if (expression == null) throw new GUIManagerException("no expression", expressionString);
 
               //
@@ -503,7 +509,7 @@ public class ContextVariable
             //
 
             ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
-            Expression expression = expressionReader.parse(ExpressionContext.ContextVariable);
+            Expression expression = expressionReader.parse(ExpressionContext.ContextVariable, tenantID);
             if (expression == null) throw new GUIManagerException("no expression", expressionString);
 
             //

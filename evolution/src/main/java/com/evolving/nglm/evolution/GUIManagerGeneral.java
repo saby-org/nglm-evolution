@@ -747,7 +747,7 @@ public class GUIManagerGeneral extends GUIManager
           BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
           for (EvaluationCriterion evaluationCriterion : segmentEligibility.getProfileCriteria())
           {
-            segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
+            segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery(tenantID));
             processedQueries.add(segmentQuery);
           }
           query = query.filter(segmentQuery);
@@ -905,7 +905,7 @@ public class GUIManagerGeneral extends GUIManager
         JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
         for (int i=0; i<jsonCriteriaList.size(); i++)
           {
-            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile.get(tenantID)));
+            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile.get(tenantID), tenantID));
           }
       }
     catch (JSONUtilitiesException|GUIManagerException e)
@@ -939,7 +939,7 @@ public class GUIManagerGeneral extends GUIManager
     BoolQueryBuilder query = null;
     try
       {
-        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
+        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList, tenantID);
       }
     catch (CriterionException e)
       {
@@ -1740,7 +1740,7 @@ public class GUIManagerGeneral extends GUIManager
               {
                 for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
                   {
-                    query = query.filter(evaluationCriterion.esQuery());
+                    query = query.filter(evaluationCriterion.esQuery(tenantID));
                   }
               }
 
@@ -1762,7 +1762,7 @@ public class GUIManagerGeneral extends GUIManager
                   {
                     for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
                       {
-                        nextQuery = nextQuery.mustNot(evaluationCriterion.esQuery());
+                        nextQuery = nextQuery.mustNot(evaluationCriterion.esQuery(tenantID));
                       }
                   }
               }

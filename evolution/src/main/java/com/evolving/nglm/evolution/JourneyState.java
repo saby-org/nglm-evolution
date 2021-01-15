@@ -354,7 +354,7 @@ public class JourneyState implements Cleanable
    * populate journeyMetrics (prior and "during")
    * @return true if subscriber state has been updated
    */
-  public boolean populateMetricsPrior(SubscriberState subscriberState) 
+  public boolean populateMetricsPrior(SubscriberState subscriberState, int tenantID) 
   {
     boolean subscriberStateUpdated = false;
     for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
@@ -366,9 +366,9 @@ public class JourneyState implements Cleanable
       //
       //  prior
       //
-      Date journeyEntryDay = RLMDateUtils.truncate(this.getJourneyEntryDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-      Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * journeyMetricDeclaration.getPriorPeriodDays(), Deployment.getBaseTimeZone());
-      Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getBaseTimeZone());
+      Date journeyEntryDay = RLMDateUtils.truncate(this.getJourneyEntryDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * journeyMetricDeclaration.getPriorPeriodDays(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+      Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
       long priorMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
       this.getJourneyMetricsPrior().put(journeyMetricDeclaration.getID(), priorMetricValue);
 
@@ -411,7 +411,7 @@ public class JourneyState implements Cleanable
    * populate journeyMetrics (post)
    * @return true if subscriber state has been updated
    */
-  public boolean populateMetricsPost(SubscriberState subscriberState, Date now) 
+  public boolean populateMetricsPost(SubscriberState subscriberState, Date now, int tenantID) 
   {
     boolean subscriberStateUpdated = false;
     
@@ -420,10 +420,10 @@ public class JourneyState implements Cleanable
     //
     for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
       if (! this.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID())) {
-        Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-        Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getBaseTimeZone());
-        Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, journeyMetricDeclaration.getPostPeriodDays(), Deployment.getBaseTimeZone());
-        if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getBaseTimeZone()))) {
+        Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, journeyMetricDeclaration.getPostPeriodDays(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+        if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone()))) {
           MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
           long postMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
           this.getJourneyMetricsPost().put(journeyMetricDeclaration.getID(), postMetricValue);

@@ -33,7 +33,7 @@ public abstract class ReportDriver
   static
   {
     DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
   }
 
   /**********************
@@ -87,7 +87,7 @@ public abstract class ReportDriver
   
   public String getSubscriberProfileIndex(final Date requestedDate)
   {
-    if (0 == RLMDateUtils.truncatedCompareTo(requestedDate, SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getBaseTimeZone()))
+    if (0 == RLMDateUtils.truncatedCompareTo(requestedDate, SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getSystemTimeZone())) // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       {
         return "subscriberprofile";
       }

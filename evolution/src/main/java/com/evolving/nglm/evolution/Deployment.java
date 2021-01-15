@@ -290,6 +290,7 @@ public class Deployment
   public  static String getBrokerServers() { return com.evolving.nglm.core.Deployment.getBrokerServers(); }
   public  JSONObject getJSONRoot() { return com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getJSONRoot(); }
   public  String getBaseTimeZone() { return com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getBaseTimeZone(); }
+  public  static String getSystemTimeZone() { return com.evolving.nglm.core.Deployment.getSystemTimeZone(); }
   public  String getBaseLanguage() { return com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getBaseLanguage(); }
   public  String getBaseCountry() { return com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getBaseCountry(); }
   public  static String getRedisSentinels() { return com.evolving.nglm.core.Deployment.getRedisSentinels(); }
@@ -2689,7 +2690,7 @@ public class Deployment
           for (int i=0; i<evaluationCriterionValues.size(); i++)
             {
               JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile.get(tenant.getEffectiveTenantID()));
+              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile.get(tenant.getEffectiveTenantID()), tenant.getEffectiveTenantID());
               getJourneyUniversalEligibilityCriteria().add(evaluationCriterion);                  
             }
         }

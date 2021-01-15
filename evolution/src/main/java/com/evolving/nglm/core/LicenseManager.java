@@ -1838,15 +1838,15 @@ public class LicenseManager
                 break;
 
               case "day":
-                alarmTime = RLMDateUtils.addDays(referenceTime, timeValue, Deployment.getBaseTimeZone());
+                alarmTime = RLMDateUtils.addDays(referenceTime, timeValue, Deployment.getDeployment(tenantID).getBaseTimeZone());
                 break;
 
               case "week":
-                alarmTime = RLMDateUtils.addWeeks(referenceTime, timeValue, Deployment.getBaseTimeZone());
+                alarmTime = RLMDateUtils.addWeeks(referenceTime, timeValue, Deployment.getDeployment(tenantID).getBaseTimeZone());
                 break;
 
               case "month":
-                alarmTime = RLMDateUtils.addMonths(referenceTime, timeValue, Deployment.getBaseTimeZone());
+                alarmTime = RLMDateUtils.addMonths(referenceTime, timeValue, Deployment.getDeployment(tenantID).getBaseTimeZone());
                 break;
 
               default:
