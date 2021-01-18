@@ -239,6 +239,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       ParameterMap parameterMap = getNotificationParameters();
       if(parameterMap==null) parameterMap=new ParameterMap();
       parameterMap.put("node.parameter.sourceaddress",sourceAddress);
+      this.notificationParameters = parameterMap;
     }
 
     /*****************************************

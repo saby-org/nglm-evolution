@@ -607,7 +607,8 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       this.providerID = (String) esFields.get("providerID");
       this.commodityID = (String) esFields.get("deliverableID");
-      this.operation = CommodityDeliveryOperation.fromExternalRepresentation((String) esFields.get("operation"));
+      String esOperation = (String) esFields.get("operation");
+      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(esOperation != null ? esOperation.toLowerCase() : esOperation);
       this.amount = (int) esFields.get("deliverableQty");
       this.validityPeriodType = TimeUnit.Year;
       this.validityPeriodQuantity = 1;
