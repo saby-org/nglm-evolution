@@ -81,7 +81,7 @@ public class PropensityState {
   //  Propensity computation
   // @param presentationThreshold: number of presentation needed to return the actual propensity (without using a weighted propensity with the initial one)
   // @param daysThreshold: during this time window we will return a weighted propensity using the number of days since the effective start date
-  public double getPropensity(double initialPropensity, Date effectiveStartDate, int presentationThreshold, int daysThreshold, int tenantID) {
+  public double getPropensity(double initialPropensity, Date effectiveStartDate, int presentationThreshold, int daysThreshold) {
     double currentPropensity = initialPropensity;
     // we sum up global data we got from zookeeper + the one we just have locally yet (it is a "bit" more accurate that just the global one counters)
     long acceptanceCount = this.acceptanceCount.get() + this.localAcceptanceCount.get();
@@ -91,7 +91,7 @@ public class PropensityState {
       currentPropensity = ((double) acceptanceCount) / ((double) presentationCount);
     }
     if(presentationCount < presentationThreshold) {
-      double lambda = RLMDateUtils.daysBetween(effectiveStartDate, SystemTime.getCurrentTime(), Deployment.getDeployment(tenantID).getBaseTimeZone()) / ((double) daysThreshold);
+      double lambda = RLMDateUtils.daysBetween(effectiveStartDate, SystemTime.getCurrentTime(), Deployment.getSystemTimeZone()) / ((double) daysThreshold); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       if(lambda < 1) {
         return currentPropensity * lambda + initialPropensity * (1 - lambda);
       }

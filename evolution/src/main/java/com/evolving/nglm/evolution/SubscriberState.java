@@ -222,7 +222,7 @@ public class SubscriberState implements StateStore
   //  setUCGState
   //
 
-  public void setUCGState(UCGState ucgState, Date evaluationDate)
+  public void setUCGState(UCGState ucgState, Date evaluationDate, int tenantID)
   {
     this.ucgRuleID = ucgState.getUCGRuleID();
     this.ucgEpoch = ucgState.getRefreshEpoch();

@@ -220,7 +220,7 @@ public abstract class SubscriberMessage
                   CriterionField tagCriterionField = criterionContext.getCriterionFields(tenantID).get(parameterValue);
                   
                   if(tagCriterionField != null) {
-                    ParameterExpression parameterExpression = new ParameterExpression(parameterValue, null, criterionContext);
+                    ParameterExpression parameterExpression = new ParameterExpression(parameterValue, null, criterionContext, tenantID);
                     parameterTags.put(parameterID, parameterExpression);
                   }
                   else {
@@ -234,7 +234,7 @@ public abstract class SubscriberMessage
           }
         else
           {
-            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
             parameterTags.put(parameterID, parameterExpressionValue);
             switch (parameterExpressionValue.getType())
               {

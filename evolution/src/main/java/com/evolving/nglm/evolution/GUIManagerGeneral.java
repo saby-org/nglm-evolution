@@ -747,7 +747,7 @@ public class GUIManagerGeneral extends GUIManager
           BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
           for (EvaluationCriterion evaluationCriterion : segmentEligibility.getProfileCriteria())
           {
-            segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery(tenantID));
+            segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
             processedQueries.add(segmentQuery);
           }
           query = query.filter(segmentQuery);
@@ -939,7 +939,7 @@ public class GUIManagerGeneral extends GUIManager
     BoolQueryBuilder query = null;
     try
       {
-        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList, tenantID);
+        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
       }
     catch (CriterionException e)
       {
@@ -1740,7 +1740,7 @@ public class GUIManagerGeneral extends GUIManager
               {
                 for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
                   {
-                    query = query.filter(evaluationCriterion.esQuery(tenantID));
+                    query = query.filter(evaluationCriterion.esQuery());
                   }
               }
 
@@ -1762,7 +1762,7 @@ public class GUIManagerGeneral extends GUIManager
                   {
                     for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
                       {
-                        nextQuery = nextQuery.mustNot(evaluationCriterion.esQuery(tenantID));
+                        nextQuery = nextQuery.mustNot(evaluationCriterion.esQuery());
                       }
                   }
               }

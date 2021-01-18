@@ -588,7 +588,7 @@ public class TimerService
     CronFormat periodicEvaluation = null;
     try
       {
-        periodicEvaluation = new CronFormat(Deployment.getPeriodicEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        periodicEvaluation = new CronFormat(Deployment.getPeriodicEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       }
     catch (UtilitiesException e)
       {

@@ -53,7 +53,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("update_alternateid");
-    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("idField", Schema.STRING_SCHEMA);
     schemaBuilder.field("alternateID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
@@ -62,6 +62,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
     schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
     schemaBuilder.field("backChannel", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("cleanupTableEntry", SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -93,6 +94,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
   private SubscriberAction subscriberAction;
   private boolean backChannel;
   private boolean cleanupTableEntry;
+  private int tenantID;
 
   /****************************************
   *
@@ -108,6 +110,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
   public SubscriberAction getSubscriberAction() { return subscriberAction; }
   public boolean getBackChannel() { return backChannel; }
   public boolean getCleanupTableEntry() { return cleanupTableEntry; }
+  public int getTenantID() { return tenantID; }
 
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
 
@@ -117,7 +120,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
   *
   *****************************************/
 
-  public UpdateAlternateID(String idField, String alternateID, String subscriberID, AssignmentType assignmentType, Date eventDate, SubscriberAction subscriberAction, boolean backChannel, boolean cleanupTableEntry)
+  public UpdateAlternateID(String idField, String alternateID, String subscriberID, AssignmentType assignmentType, Date eventDate, SubscriberAction subscriberAction, boolean backChannel, boolean cleanupTableEntry, int tenantID)
   {
     this.idField = idField;
     this.alternateID = alternateID;
@@ -127,6 +130,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
     this.subscriberAction = subscriberAction;
     this.backChannel = backChannel;
     this.cleanupTableEntry = cleanupTableEntry;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -145,6 +149,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
     this.subscriberAction = updateAlternateID.getSubscriberAction();
     this.backChannel = updateAlternateID.getBackChannel();
     this.cleanupTableEntry = updateAlternateID.getCleanupTableEntry();
+    this.tenantID = updateAlternateID.getTenantID();
   }
 
   /*****************************************
@@ -165,6 +170,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
     struct.put("subscriberAction", updateAlternateID.getSubscriberAction().getExternalRepresentation());
     struct.put("backChannel", updateAlternateID.getBackChannel());
     struct.put("cleanupTableEntry", updateAlternateID.getCleanupTableEntry());
+    struct.put("tenantID", updateAlternateID.getTenantID());
     return struct;
   }
 
@@ -203,11 +209,12 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
     SubscriberAction subscriberAction = (schemaVersion >= 2) ? SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : SubscriberAction.Standard;
     boolean backChannel = (Boolean) valueStruct.get("backChannel");
     boolean cleanupTableEntry = (schemaVersion >= 2) ? (Boolean) valueStruct.get("cleanupTableEntry") : Boolean.FALSE;
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
 
     //
     //  return
     //
 
-    return new UpdateAlternateID(idField, alternateID, subscriberID, assignmentType, eventDate, subscriberAction, backChannel, cleanupTableEntry);
+    return new UpdateAlternateID(idField, alternateID, subscriberID, assignmentType, eventDate, subscriberAction, backChannel, cleanupTableEntry, tenantID);
   }
 }

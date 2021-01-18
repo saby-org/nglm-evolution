@@ -114,6 +114,8 @@ public class Deployment
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionDaysExpiredVouchers; 
   private static int elasticsearchRetentionDaysVDR;
+  private static JSONObject licenseManagement;
+  
 
   //
   //  accessors
@@ -174,6 +176,8 @@ public class Deployment
   public static int getElasticsearchRetentionDaysExpiredVouchers() { return elasticsearchRetentionDaysExpiredVouchers; }  
   public static Set<String> getCleanupSubscriberElasticsearchIndexes() { return cleanupSubscriberElasticsearchIndexes; }
   public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
+  
+  public static JSONObject getLicenseManagement() { return licenseManagement; }
   
   /*****************************************
   *
@@ -920,7 +924,24 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    
+    //
+    //  licenseManagement
+    //
+
+    try
+      {
+        licenseManagement = JSONUtilities.decodeJSONObject(jsonRoot, "licenseManagement", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    
   };
+  
+  
 
   /****************************************
   *

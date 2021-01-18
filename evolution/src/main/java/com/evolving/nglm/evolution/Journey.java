@@ -615,7 +615,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   {
     try
       {
-        BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(targetingCriteria, tenantID);
+        BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(targetingCriteria);
         return EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
       }
     catch (CriterionException|IOException|ElasticsearchStatusException e)
@@ -2130,7 +2130,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
                 
               case WorkflowParameter:
-                WorkflowParameter workflowParameterValue = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                WorkflowParameter workflowParameterValue = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext, tenantID);
                 boundParameters.put(parameterName, workflowParameterValue);
                 break;
               }
@@ -2147,7 +2147,7 @@ public class Journey extends GUIManagedObject implements StockableItem
             // parse
             //
 
-            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
             boundParameters.put(parameterName, parameterExpressionValue);
 
             //
@@ -2795,7 +2795,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
 
           this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, tenantID));
-          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext));
+          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, tenantID));
 
           //
           //  outputConnectors
@@ -3038,7 +3038,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case WorkflowParameter:
-                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext, tenantID);
                 nodeParameters.put(parameterName, workflowParameter);
                 break;
             }
@@ -3052,7 +3052,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    private ParameterMap decodeExpressionValuedParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    private ParameterMap decodeExpressionValuedParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, int tenantID) throws GUIManagerException
     {
       ParameterMap nodeParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -3079,7 +3079,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //  parse
           //
 
-          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
           nodeParameters.put(parameterName, parameterExpressionValue);
 
           //
@@ -3306,7 +3306,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       //
 
       this.outputConnectorParameters.putAll(decodeDependentOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext, journeyService, subscriberMessageTemplateService, tenantID));
-      this.outputConnectorParameters.putAll(decodeExpressionValuedOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext));
+      this.outputConnectorParameters.putAll(decodeExpressionValuedOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext, tenantID));
 
       //
       //  transition criteria
@@ -3444,7 +3444,7 @@ public class Journey extends GUIManagedObject implements StockableItem
 //                break;
 
               case WorkflowParameter:
-                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext, tenantID);
                 outputConnectorParameters.put(parameterName, workflowParameter);
                 break;
             }
@@ -3458,7 +3458,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    private ParameterMap decodeExpressionValuedOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    private ParameterMap decodeExpressionValuedOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, int tenantID) throws GUIManagerException
     {
       ParameterMap outputConnectorParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -3485,7 +3485,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //  parse
           //
 
-          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
           outputConnectorParameters.put(parameterName, parameterExpressionValue);
 
           //

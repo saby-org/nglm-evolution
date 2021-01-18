@@ -65,7 +65,7 @@ public class VoucherFile {
     this.expiryDate = expiryDate;
   }
 
-  public VoucherFile(JSONObject jsonRoot, List<VoucherFile> allPreviousVoucherFiles,VoucherPersonal voucher, VoucherType voucherType){
+  public VoucherFile(JSONObject jsonRoot, List<VoucherFile> allPreviousVoucherFiles,VoucherPersonal voucher, VoucherType voucherType, int tenantID){
     this.fileId = JSONUtilities.decodeString(jsonRoot,"fileId",true);
     this.codeFormatId = JSONUtilities.decodeString(jsonRoot,"codeFormatId",true);
     this.expiryDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot,"expiryDate",false));

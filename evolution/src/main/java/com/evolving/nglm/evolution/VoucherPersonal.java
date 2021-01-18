@@ -100,7 +100,7 @@ public class VoucherPersonal extends Voucher {
       this.previousVoucherFiles=existingVoucherPersonal.getVoucherFiles();
     }
 
-    this.voucherFiles=decodeVoucherFiles(JSONUtilities.decodeJSONArray(jsonRoot,"voucherFiles",false),voucherType);
+    this.voucherFiles=decodeVoucherFiles(JSONUtilities.decodeJSONArray(jsonRoot,"voucherFiles",false),voucherType, tenantID);
 
     if (epochChanged(existingVoucherPersonal)){
       this.setEpoch(epoch);
@@ -108,11 +108,11 @@ public class VoucherPersonal extends Voucher {
 
   }
 
-  private List<VoucherFile> decodeVoucherFiles(JSONArray jsonArray,VoucherType voucherType) throws GUIManagerException{
+  private List<VoucherFile> decodeVoucherFiles(JSONArray jsonArray,VoucherType voucherType, int tenantID) throws GUIManagerException{
     List<VoucherFile> result = new ArrayList<>();
     if(jsonArray==null) return result;
     for(int i=0;i<jsonArray.size();i++){
-      result.add(new VoucherFile((JSONObject)jsonArray.get(i),getPreviousVoucherFiles(),this,voucherType));
+      result.add(new VoucherFile((JSONObject)jsonArray.get(i),getPreviousVoucherFiles(),this,voucherType, tenantID));
     }
     return result;
   }

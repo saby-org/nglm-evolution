@@ -32,7 +32,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("update_subscriberid");
-    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("idField", Schema.STRING_SCHEMA);
     schemaBuilder.field("alternateID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -40,6 +40,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
     schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
     schemaBuilder.field("backChannel", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("cleanupTableEntry", SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -70,6 +71,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
   private SubscriberAction subscriberAction;
   private boolean backChannel;
   private boolean cleanupTableEntry;
+  private int tenantID;
 
   /****************************************
   *
@@ -84,6 +86,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
   public boolean getBackChannel() { return backChannel; }
   public boolean getCleanupTableEntry() { return cleanupTableEntry; }
   public Date getEventDate() { return eventDate; }
+  public int getTenantID() { return tenantID; }
 
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
 
@@ -93,7 +96,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
   *
   *****************************************/
 
-  public UpdateSubscriberID(String subscriberID, String idField, String alternateID, Date eventDate, SubscriberAction subscriberAction, boolean backChannel, boolean cleanupTableEntry)
+  public UpdateSubscriberID(String subscriberID, String idField, String alternateID, Date eventDate, SubscriberAction subscriberAction, boolean backChannel, boolean cleanupTableEntry, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.idField = idField;
@@ -102,6 +105,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
     this.subscriberAction = subscriberAction;
     this.backChannel = backChannel;
     this.cleanupTableEntry = cleanupTableEntry;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -119,6 +123,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
     this.subscriberAction = updateSubscriberID.getSubscriberAction();
     this.backChannel = updateSubscriberID.getBackChannel();
     this.cleanupTableEntry = updateSubscriberID.getCleanupTableEntry();
+    this.tenantID = updateSubscriberID.getTenantID();
   }
 
   /*****************************************
@@ -138,6 +143,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
     struct.put("subscriberAction", updateSubscriberID.getSubscriberAction().getExternalRepresentation());
     struct.put("backChannel", updateSubscriberID.getBackChannel());
     struct.put("cleanupTableEntry", updateSubscriberID.getCleanupTableEntry());
+    struct.put("tenantID", updateSubscriberID.getTenantID());
     return struct;
   }
 
@@ -175,11 +181,12 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
     SubscriberAction subscriberAction = (schemaVersion >= 2) ? SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : SubscriberAction.Standard;
     boolean backChannel = (Boolean) valueStruct.get("backChannel");
     boolean cleanupTableEntry = (schemaVersion >= 2) ? (Boolean) valueStruct.get("cleanupTableEntry") : Boolean.FALSE;
-
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
+    
     //
     //  return
     //
 
-    return new UpdateSubscriberID(subscriberID, idField, alternateID, eventDate, subscriberAction, backChannel, cleanupTableEntry);
+    return new UpdateSubscriberID(subscriberID, idField, alternateID, eventDate, subscriberAction, backChannel, cleanupTableEntry, tenantID);
   }
 }

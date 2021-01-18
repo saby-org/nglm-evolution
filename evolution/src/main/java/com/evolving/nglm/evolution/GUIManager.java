@@ -5650,7 +5650,7 @@ public class GUIManager
         //
         // Update targetCount
         //
-        journey.setTargetCount(elasticsearch);
+        journey.setTargetCount(elasticsearch, tenantID);
         
         /*****************************************
         *
@@ -6680,7 +6680,7 @@ public class GUIManager
         //
         // Update targetCount
         //
-        bulkCampaign.setTargetCount(elasticsearch);
+        bulkCampaign.setTargetCount(elasticsearch, tenantID);
         
         /*****************************************
         *

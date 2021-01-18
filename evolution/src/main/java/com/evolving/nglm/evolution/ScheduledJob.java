@@ -39,7 +39,7 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   static
   {
     DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz"); // @rl: TODO: chose one standard ? ss.SSSZ ?
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
   }
   
   /*****************************************

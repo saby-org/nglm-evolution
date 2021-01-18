@@ -471,13 +471,13 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
                       if (pipelined && cacheEntry.getValue() != null)
                         pipeline.set(cacheEntry.getKey(), cacheEntry.getValue());
                       else if (pipelined && cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() != null)
-                        pipeline.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), ten));
+                        pipeline.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), cacheEntry.getTenantID()));
                       else if (pipelined && cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() == null)
                         pipeline.del(cacheEntry.getKey());
                       else if (cacheEntry.getValue() != null)
                         jedis.set(cacheEntry.getKey(), cacheEntry.getValue());
                       else if (cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() != null)
-                        jedis.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete()));
+                        jedis.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), cacheEntry.getTenantID()));
                       else
                         jedis.del(cacheEntry.getKey());
                     }

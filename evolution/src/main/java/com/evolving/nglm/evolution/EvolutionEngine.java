@@ -3458,7 +3458,7 @@ public class EvolutionEngine
 
             if (addToUCG) subscriberProfile.setUniversalControlGroup(true);
             if (removeFromUCG) subscriberProfile.setUniversalControlGroup(false);
-            context.getSubscriberState().setUCGState(ucgState, now);
+            context.getSubscriberState().setUCGState(ucgState, now, tenantID);
           }
       }
 
@@ -4306,7 +4306,7 @@ public class EvolutionEngine
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
-                subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(eventDate));
+                subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(eventDate, tenantID));
                 subscriberStateUpdated = true;
               }
             List<Date> presentationDates = presentationLog.getPresentationDates();

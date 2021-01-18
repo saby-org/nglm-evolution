@@ -1306,7 +1306,7 @@ public class ThirdPartyManager
                 }
               else
                 {
-                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID);
                 }
               
               //
@@ -1477,7 +1477,7 @@ public class ThirdPartyManager
                 }
               else
                 {
-                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID);
                 }
               
               //
@@ -1679,7 +1679,7 @@ public class ThirdPartyManager
                   Set<Object> pointExpirations = new HashSet<Object>();
                   for(Date expirationDate : pointBalance.getBalances().keySet()){
                     HashMap<String, Object> expirationPresentation = new HashMap<String, Object>();
-                    expirationPresentation.put("expirationDate", getDateString(expirationDate));
+                    expirationPresentation.put("expirationDate", getDateString(expirationDate, tenantID));
                     expirationPresentation.put("quantity", pointBalance.getBalances().get(expirationDate));
                     pointExpirations.add(JSONUtilities.encodeObject(expirationPresentation));
                   }
@@ -1958,7 +1958,7 @@ public class ThirdPartyManager
                 }
               else
                 {
-                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+                  startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID);
                 }
               
               //
@@ -2029,8 +2029,8 @@ public class ThirdPartyManager
     String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", false);
     String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", false);
 
-    Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
-    Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
+    Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
+    Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
 
     /*****************************************
      *
@@ -2200,10 +2200,10 @@ public class ThirdPartyManager
                   journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                   journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
                   journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
-                  journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
-                  journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
-                  journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                  journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
+                  journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate(), tenantID));
+                  journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate(), tenantID));
+                  journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate(), tenantID));
+                  journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService), tenantID):"");
                   journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
@@ -2256,7 +2256,7 @@ public class ThirdPartyManager
                       nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
                       nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
                       nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
-                      nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
+                      nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate(), tenantID));
                       nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                       nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                       nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
@@ -2314,8 +2314,8 @@ public class ThirdPartyManager
     String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", false);
     String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", false);
 
-    Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
-    Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
+    Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
+    Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
 
     /*****************************************
      *
@@ -2491,10 +2491,10 @@ public class ThirdPartyManager
                   campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                   campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
                   campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
-                  campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
-                  campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
-                  campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                  campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
+                  campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate(), tenantID));
+                  campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate(), tenantID));
+                  campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate(), tenantID));
+                  campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService), tenantID):"");
                   campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeCampaign.getJourneyObjectiveInstances())
@@ -2546,7 +2546,7 @@ public class ThirdPartyManager
                       nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
                       nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
                       nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
-                      nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
+                      nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate(), tenantID));
                       nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                       nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                       nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
@@ -2639,8 +2639,8 @@ public class ThirdPartyManager
                  LoyaltyProgramState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
                  loyaltyProgramPresentation.put("loyaltyProgramType", loyaltyProgram.getLoyaltyProgramType().getExternalRepresentation());
                  loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
-                 loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate()));
-                 loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate()));
+                 loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate(), tenantID));
+                 loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate(), tenantID));
 
 
                  switch (loyaltyProgramState.getLoyaltyProgramType()) {
@@ -2653,7 +2653,7 @@ public class ThirdPartyManager
                      //
 
                      if(loyaltyProgramPointsState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName()); }
-                     if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate())); }
+                     if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate(), tenantID)); }
 
                      //
                      //  status point
@@ -2687,12 +2687,12 @@ public class ThirdPartyManager
                          if(firstExpirationDate != null)
                            {
                              int firstExpirationQty = rewardBalance.getBalance(firstExpirationDate);
-                             loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(firstExpirationDate));
+                             loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(firstExpirationDate, tenantID));
                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", firstExpirationQty);
                            }
                          else
                            {
-                             loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now));
+                             loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now, tenantID));
                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
                            }
                        }
@@ -2702,7 +2702,7 @@ public class ThirdPartyManager
                          loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
                          loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
                          loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
-                         loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now));
+                         loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now, tenantID));
                          loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
                        }
 
@@ -2716,7 +2716,7 @@ public class ThirdPartyManager
                          HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
                          tierHistoryJSON.put("fromTier", tier.getFromTier());
                          tierHistoryJSON.put("toTier", tier.getToTier());
-                         tierHistoryJSON.put("transitionDate", getDateString(tier.getTransitionDate()));
+                         tierHistoryJSON.put("transitionDate", getDateString(tier.getTransitionDate(), tenantID));
                          loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
                        }
                      }
@@ -2943,8 +2943,8 @@ public class ThirdPartyManager
     int user = (authResponse.getUserId());
     String userID = Integer.toString(user);
     
-    Date offerStartDate = prepareStartDate(getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
-    Date offerEndDate = prepareEndDate(getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
+    Date offerStartDate = prepareStartDate(getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
+    Date offerEndDate = prepareEndDate(getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
     
     Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID, tenantID);    
 
@@ -3253,8 +3253,8 @@ public class ThirdPartyManager
                   campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
                   campaignMap.put("campaignName", journeyService.generateResponseJSON(elgibleActiveCampaign, true, SystemTime.getCurrentTime()).get("display"));
                   campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
-                  campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
-                  campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
+                  campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate(), tenantID));
+                  campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate(), tenantID));
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : elgibleActiveCampaign.getJourneyObjectiveInstances())
                     {
@@ -5057,8 +5057,8 @@ public class ThirdPartyManager
 
     Map<String,Object> response = new HashMap<String,Object>();
     response.put("code",voucherProfileStored.getVoucherCode());
-    response.put("deliveryDate",getDateString(voucherProfileStored.getVoucherDeliveryDate()));
-    response.put("expiryDate",getDateString(voucherProfileStored.getVoucherExpiryDate()));
+    response.put("deliveryDate",getDateString(voucherProfileStored.getVoucherDeliveryDate(), tenantID));
+    response.put("expiryDate",getDateString(voucherProfileStored.getVoucherExpiryDate(), tenantID));
     response.put("status",voucherProfileStored.getVoucherStatus().getExternalRepresentation());
     String offerID = voucherProfileStored.getOfferID();
     JSONObject offerJSON = new JSONObject();
@@ -5177,7 +5177,7 @@ public class ThirdPartyManager
      {
 
        JSONObject resellerJson = ThirdPartyJSONGenerator.generateResellerJSONForThirdParty((Reseller) userReseller,
-           resellerService);
+           resellerService, tenantID);
        response.put("resellerDetails", JSONUtilities.encodeObject(resellerJson));
        updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
      }
@@ -5223,7 +5223,7 @@ public class ThirdPartyManager
 
     // OK if "not transferable"
     if(subscriberID == null){
-      VoucherPersonalES voucherES = voucherService.getVoucherPersonalESService().getESVoucherFromVoucherCode(supplier.getSupplierID(),voucherCode);
+      VoucherPersonalES voucherES = voucherService.getVoucherPersonalESService().getESVoucherFromVoucherCode(supplier.getSupplierID(),voucherCode, tenantID);
       if(voucherES==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
       subscriberID=voucherES.getSubscriberId();
     }
@@ -5634,7 +5634,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private Date getDateFromString(String dateString, String dateFormat, String pattern) throws ThirdPartyManagerException
+  private Date getDateFromString(String dateString, String dateFormat, String pattern, int tenantID) throws ThirdPartyManagerException
   {
     Date result = null;
     if (dateString != null)
@@ -5662,7 +5662,7 @@ public class ThirdPartyManager
   *
   *****************************************/
 
-  public static Date prepareEndDate(Date endDate)
+  public static Date prepareEndDate(Date endDate, int tenantID)
   {
     Date result = null;
     if (endDate != null)
@@ -5684,7 +5684,7 @@ public class ThirdPartyManager
   *
   *****************************************/
 
-  public static Date prepareStartDate(Date startDate)
+  public static Date prepareStartDate(Date startDate, int tenantID)
   {
     Date result = null;
     if (startDate != null)
@@ -6593,7 +6593,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  public static String getDateString(Date date)
+  public static String getDateString(Date date, int tenantID)
   {
     String result = null;
     if (date == null) return result;

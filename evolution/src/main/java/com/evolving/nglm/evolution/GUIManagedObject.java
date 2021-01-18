@@ -108,7 +108,7 @@ public abstract class GUIManagedObject
 
     for (SimpleDateFormat standardDateFormat : standardDateFormats)
       {
-        standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // EVPRO-99 use getSystemTimeZone instead of getBaseTimezone, is that ok ? should it be by tenant ?
       }
   }
 

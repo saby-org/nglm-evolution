@@ -202,7 +202,7 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
           *
           ****************************************/
           
-          AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), subscriberAction, assignAlternateIDs);
+          AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), subscriberAction, assignAlternateIDs, 1); // TODO EVPRO-99 for the moment harcoded to 1 FRED
           result = Collections.<KeyValue>singletonList(new KeyValue((autoProvision ? "assignexternalsubscriberids" : "assignsubscriberids"), Schema.STRING_SCHEMA, effectiveSubscriberID, AssignSubscriberIDs.schema(), AssignSubscriberIDs.pack(assignSubscriberIDs)));
         }
       catch (org.json.simple.parser.ParseException|JSONUtilitiesException e)

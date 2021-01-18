@@ -46,10 +46,11 @@ public class ParameterExpression
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("parameter_expression");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("criterionContext", CriterionContext.schema());
     schemaBuilder.field("expressionString", Schema.STRING_SCHEMA);
     schemaBuilder.field("baseTimeUnit", Schema.STRING_SCHEMA);
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -75,6 +76,7 @@ public class ParameterExpression
   private CriterionContext criterionContext;
   private String expressionString;
   private TimeUnit baseTimeUnit;
+  private int tenantID;
 
   //
   //  derived
@@ -88,11 +90,12 @@ public class ParameterExpression
   *
   *****************************************/
 
-  private ParameterExpression(CriterionContext criterionContext, String expressionString, TimeUnit baseTimeUnit)
+  private ParameterExpression(CriterionContext criterionContext, String expressionString, TimeUnit baseTimeUnit, int tenantID)
   {
     this.criterionContext = criterionContext;
     this.expressionString = expressionString;
     this.baseTimeUnit = baseTimeUnit;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -101,7 +104,7 @@ public class ParameterExpression
   *
   *****************************************/
 
-  public ParameterExpression(JSONObject jsonRoot, CriterionContext criterionContext) throws GUIManagerException
+  public ParameterExpression(JSONObject jsonRoot, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     //
     //  basic fields
@@ -110,6 +113,7 @@ public class ParameterExpression
     this.criterionContext = criterionContext;
     this.expressionString = JSONUtilities.decodeString(jsonRoot, "expression", false);
     this.baseTimeUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "timeUnit", "(unknown)"));
+    this.tenantID = tenantID;
 
     //
     //  parse
@@ -117,7 +121,7 @@ public class ParameterExpression
 
     try
       {
-        parseParameterExpression();
+        parseParameterExpression(tenantID);
       }
     catch (ExpressionParseException|ExpressionTypeCheckException e)
       {
@@ -125,7 +129,7 @@ public class ParameterExpression
       }
   }
   
-  public ParameterExpression(String expression, String timeUnit, CriterionContext criterionContext) throws GUIManagerException
+  public ParameterExpression(String expression, String timeUnit, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     //
     //  basic fields
@@ -134,6 +138,7 @@ public class ParameterExpression
     this.criterionContext = criterionContext;
     this.expressionString = expression;
     this.baseTimeUnit = TimeUnit.fromExternalRepresentation(timeUnit != null ? timeUnit : "(unknown)");
+    this.tenantID = tenantID;
 
     //
     //  parse
@@ -141,7 +146,7 @@ public class ParameterExpression
 
     try
       {
-        parseParameterExpression();
+        parseParameterExpression(tenantID);
       }
     catch (ExpressionParseException|ExpressionTypeCheckException e)
       {
@@ -160,6 +165,7 @@ public class ParameterExpression
   public TimeUnit getBaseTimeUnit() { return baseTimeUnit; }
   public Expression getExpression() { return expression; }
   public ExpressionDataType getType() { return expression.getType(); }
+  public int getTenantID() { return tenantID; }
 
   /*****************************************
   *
@@ -174,6 +180,7 @@ public class ParameterExpression
     struct.put("criterionContext", CriterionContext.pack(parameterExpression.getCriterionContext()));
     struct.put("expressionString", parameterExpression.getExpressionString());
     struct.put("baseTimeUnit", parameterExpression.getBaseTimeUnit().getExternalRepresentation());
+    struct.put("tenantID", parameterExpression.getTenantID());
     return struct;
   }
 
@@ -201,12 +208,13 @@ public class ParameterExpression
     CriterionContext criterionContext = CriterionContext.unpack(new SchemaAndValue(schema.field("criterionContext").schema(), valueStruct.get("criterionContext")));
     String expressionString = valueStruct.getString("expressionString");
     TimeUnit baseTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("baseTimeUnit"));
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
 
     //
     //  construct 
     //
 
-    ParameterExpression result = new ParameterExpression(criterionContext, expressionString, baseTimeUnit);
+    ParameterExpression result = new ParameterExpression(criterionContext, expressionString, baseTimeUnit, tenantID);
 
     //
     //  parse
@@ -214,7 +222,7 @@ public class ParameterExpression
 
     try
       {
-        result.parseParameterExpression();
+        result.parseParameterExpression(tenantID);
       }
     catch (ExpressionParseException|ExpressionTypeCheckException e)
       {
@@ -234,9 +242,9 @@ public class ParameterExpression
   *
   *****************************************/
 
-  public void parseParameterExpression() throws ExpressionParseException, ExpressionTypeCheckException
+  public void parseParameterExpression(int tenantID) throws ExpressionParseException, ExpressionTypeCheckException
   {
     ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, baseTimeUnit);
-    expression = expressionReader.parse(ExpressionContext.Parameter);
+    expression = expressionReader.parse(ExpressionContext.Parameter, tenantID);
   }
 }

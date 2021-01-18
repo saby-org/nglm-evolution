@@ -98,7 +98,7 @@ public class RecordSubscriberIDRedisSinkConnector extends SimpleRedisSinkConnect
             //
           
             Integer reverseDBIndex = alternateID.getReverseRedisCacheIndex();
-            cacheEntries.add(new CacheEntry(subscriberIDBytes, alternateIDBytes, reverseDBIndex, null));
+            cacheEntries.add(new CacheEntry(subscriberIDBytes, alternateIDBytes, reverseDBIndex, null, recordSubscriberID.getTenantID()));
           }catch (NumberFormatException ex){
             log.error("ignoring not numerical subscriberID: {}",recordSubscriberID.getSubscriberID());
             return Collections.<CacheEntry>emptyList();

@@ -107,7 +107,7 @@ public class TokenType extends GUIManagedObject
   //
 
   // TODO: RoundDown has not been implemented yet.
-  public Date getExpirationDate(Date creationDate) {    
+  public Date getExpirationDate(Date creationDate, int tenantID) {    
     Date result = null;
     switch(this.validity.getPeriodType()) {
     case Minute:

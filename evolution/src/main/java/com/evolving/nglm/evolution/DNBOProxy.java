@@ -1321,7 +1321,7 @@ public class DNBOProxy
 
     String result = null;
     LinkedBlockingQueue<String> responseQueue = new LinkedBlockingQueue<String>();
-    AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), assignAlternateIDs);
+    AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), assignAlternateIDs, tenantID);
     String topic = autoProvision ? Deployment.getAssignExternalSubscriberIDsTopic() : Deployment.getAssignSubscriberIDsTopic();
     try
       {

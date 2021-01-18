@@ -32,12 +32,13 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("record_subscriberid");
-    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("idField", Schema.STRING_SCHEMA);
     schemaBuilder.field("alternateID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -66,6 +67,7 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
   private String alternateID;
   private Date eventDate;
   private SubscriberAction subscriberAction;
+  private int tenantID;
 
   /****************************************
   *
@@ -79,6 +81,7 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
   public Date getEventDate() { return eventDate; }
   @Override public SubscriberAction getSubscriberAction() { return subscriberAction; }
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
+  public int getTenantID() { return tenantID; }
 
   /*****************************************
   *
@@ -86,13 +89,14 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
   *
   *****************************************/
 
-  public RecordSubscriberID(String subscriberID, String idField, String alternateID, Date eventDate, SubscriberAction subscriberAction)
+  public RecordSubscriberID(String subscriberID, String idField, String alternateID, Date eventDate, SubscriberAction subscriberAction, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.idField = idField;
     this.alternateID = alternateID;
     this.eventDate = eventDate;
     this.subscriberAction = subscriberAction;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -108,6 +112,7 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
     this.alternateID = recordSubscriberID.getAlternateID();
     this.eventDate = recordSubscriberID.getEventDate();
     this.subscriberAction = recordSubscriberID.getSubscriberAction();
+    this.tenantID = recordSubscriberID.getTenantID();
   }
 
   /*****************************************
@@ -125,6 +130,7 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
     struct.put("alternateID", recordSubscriberID.getAlternateID());
     struct.put("eventDate", recordSubscriberID.getEventDate());
     struct.put("subscriberAction", recordSubscriberID.getSubscriberAction().getExternalRepresentation());
+    struct.put("tenantID", recordSubscriberID.getTenantID());
     return struct;
   }
 
@@ -160,11 +166,11 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
     String alternateID = valueStruct.getString("alternateID");
     Date eventDate = (Date) valueStruct.get("eventDate");
     SubscriberAction subscriberAction = (schemaVersion >= 2) ? SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : SubscriberAction.Standard;
-
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
     //
     //  return
     //
 
-    return new RecordSubscriberID(subscriberID, idField, alternateID, eventDate, subscriberAction);
+    return new RecordSubscriberID(subscriberID, idField, alternateID, eventDate, subscriberAction, tenantID);
   }
 }
