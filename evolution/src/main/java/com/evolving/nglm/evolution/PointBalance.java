@@ -71,12 +71,13 @@ public class PointBalance
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("point_balance");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("expirationDates", SchemaBuilder.array(Timestamp.SCHEMA));
     schemaBuilder.field("points", SchemaBuilder.array(Schema.INT32_SCHEMA));
     schemaBuilder.field("earnedHistory", MetricHistory.schema());
     schemaBuilder.field("consumedHistory", MetricHistory.schema());
     schemaBuilder.field("expiredHistory", MetricHistory.schema());
+    schemaBuilder.field("redemptionHistory", MetricHistory.schema()); // Number of time we *consume* (debit) a bunch of points.
     schema = schemaBuilder.build();
   };
 
@@ -114,6 +115,7 @@ public class PointBalance
   private MetricHistory earnedHistory;
   private MetricHistory consumedHistory;
   private MetricHistory expiredHistory;
+  private MetricHistory redemptionHistory;
 
   /*****************************************
   *
@@ -125,6 +127,7 @@ public class PointBalance
   public MetricHistory getEarnedHistory() { return earnedHistory; }
   public MetricHistory getConsumedHistory() { return consumedHistory; }
   public MetricHistory getExpiredHistory() { return expiredHistory; }
+  public MetricHistory getRedemptionHistory() { return redemptionHistory; }
 
   /*****************************************
   *
@@ -138,6 +141,7 @@ public class PointBalance
     this.earnedHistory = new MetricHistory(0, 0);   // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
     this.consumedHistory = new MetricHistory(0, 0); // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
     this.expiredHistory = new MetricHistory(0, 0);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.redemptionHistory = new MetricHistory(0, 0);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
   }
 
   /*****************************************
@@ -146,12 +150,13 @@ public class PointBalance
   *
   *****************************************/
 
-  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory)
+  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory, MetricHistory redemptionHistory)
   {
     this.balances = balances;
     this.earnedHistory = earnedHistory;
     this.consumedHistory = consumedHistory;
     this.expiredHistory = expiredHistory;
+    this.redemptionHistory = redemptionHistory;
   }
 
   /*****************************************
@@ -166,6 +171,7 @@ public class PointBalance
     this.earnedHistory = new MetricHistory(pointBalance.getEarnedHistory());
     this.consumedHistory = new MetricHistory(pointBalance.getConsumedHistory());
     this.expiredHistory = new MetricHistory(pointBalance.getExpiredHistory());
+    this.redemptionHistory = new MetricHistory(pointBalance.getRedemptionHistory());
   }
 
   /*****************************************
@@ -411,6 +417,7 @@ public class PointBalance
             //
             
             consumedHistory.update(evaluationDate, amount);
+            redemptionHistory.update(evaluationDate, 1);
             
             //
             //  generate fake commodityDeliveryResponse (needed to get BDRs)
@@ -461,6 +468,7 @@ public class PointBalance
     struct.put("earnedHistory", MetricHistory.pack(pointBalance.getEarnedHistory()));
     struct.put("consumedHistory", MetricHistory.pack(pointBalance.getConsumedHistory()));
     struct.put("expiredHistory", MetricHistory.pack(pointBalance.getExpiredHistory()));
+    struct.put("redemptionHistory", MetricHistory.pack(pointBalance.getRedemptionHistory()));
     return struct;
   }
 
@@ -495,12 +503,13 @@ public class PointBalance
     MetricHistory earnedHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("earnedHistory").schema(), valueStruct.get("earnedHistory")));
     MetricHistory consumedHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("consumedHistory").schema(), valueStruct.get("consumedHistory")));
     MetricHistory expiredHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("expiredHistory").schema(), valueStruct.get("expiredHistory")));
+    MetricHistory redemptionHistory = (schemaVersion >= 2)? MetricHistory.unpack(new SchemaAndValue(schema.field("redemptionHistory").schema(), valueStruct.get("redemptionHistory"))) : new MetricHistory(0, 0);
 
     //  
     //  return
     //
 
-    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory);
+    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory, redemptionHistory);
   }
   
   /*****************************************

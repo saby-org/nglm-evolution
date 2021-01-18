@@ -49,6 +49,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   private static final String DATA_POINT_EARNED = "_Earned";
   private static final String DATA_POINT_REDEEMED = "_Redeemed";
   private static final String DATA_POINT_EXPIRED = "_Expired";
+  private static final String DATA_POINT_REDEMPTIONS = "_Redemptions";
   private static final String DATA_METRIC_PREFIX = "metric_";
 
   /*****************************************
@@ -155,9 +156,11 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     for(String rewardID: rewardIdList) {
       dateBuckets.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_EARNED).field("pointFluctuations." + rewardID + ".today.earned"));
       dateBuckets.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_REDEEMED).field("pointFluctuations." + rewardID + ".today.redeemed"));
+      dateBuckets.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_REDEMPTIONS).field("pointFluctuations." + rewardID + ".today.redemptions"));
       dateBuckets.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_EXPIRED).field("pointFluctuations." + rewardID + ".today.expired"));
       dateBuckets.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_EARNED).field("pointFluctuations." + rewardID + ".yesterday.earned"));
       dateBuckets.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_REDEEMED).field("pointFluctuations." + rewardID + ".yesterday.redeemed"));
+      dateBuckets.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_REDEMPTIONS).field("pointFluctuations." + rewardID + ".yesterday.redemptions"));
       dateBuckets.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_EXPIRED).field("pointFluctuations." + rewardID + ".yesterday.expired"));
     }
     
@@ -295,7 +298,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         for(org.elasticsearch.search.aggregations.bucket.range.Range.Bucket dateBucket: parsedDateBuckets.getBuckets()) {
           Map<String, Object> filtersCopy = new HashMap<String, Object>(filters);
           filtersCopy.put("evolutionSubscriberStatus", statusBucket.getKey());
-          long docCount = statusBucket.getDocCount();
+          long docCount = dateBucket.getDocCount();
 
           //
           // Extract metrics
@@ -339,6 +342,13 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
               continue;
             }
             metrics.put("rewards.redeemed", new Long((int) rewardRedeemed.getValue()));
+            
+            ParsedSum rewardRedemptions = dateBucket.getAggregations().get(metricPrefix + rewardID + DATA_POINT_REDEMPTIONS);
+            if (rewardRedemptions == null) {
+              log.error("Unable to extract rewards.redemptions metric for reward: " + rewardID + ", aggregation is missing.");
+              continue;
+            }
+            metrics.put("rewards.redemptions", new Long((int) rewardRedemptions.getValue()));
             
             ParsedSum rewardExpired = dateBucket.getAggregations().get(metricPrefix + rewardID + DATA_POINT_EXPIRED);
             if (rewardExpired == null) {
