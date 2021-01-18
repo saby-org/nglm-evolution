@@ -257,11 +257,12 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   
   public long getSpecialExitCount(String journeyID) throws ElasticsearchClientException{
 	  long count = 0;
+	  if(journeyID==null)return count;
 	  String index = getJourneyIndex(journeyID);
 	  BoolQueryBuilder query=QueryBuilders.boolQuery();
       for(String reason : specialExit)
-        query=((BoolQueryBuilder) query).mustNot(QueryBuilders.termQuery("status", reason)); 
-      System.out.println("query is:"+ query );
+        query=((BoolQueryBuilder) query).must(QueryBuilders.termQuery("status", reason)); 
+      log.debug("SpecialExit count query"+query.toString());
       CountRequest countRequest = new CountRequest(index).query(query);
       try {
 		CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
@@ -271,7 +272,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 		e.printStackTrace();
 		throw new ElasticsearchClientException(e.getMessage());
 	} 
-     
+      log.debug("Sum aggregation of special exit is for journey id:"+journeyID+" is:" + count); 
 	  return count;
   }
   public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
