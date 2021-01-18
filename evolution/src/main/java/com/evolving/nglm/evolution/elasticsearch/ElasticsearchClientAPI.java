@@ -261,6 +261,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 	  BoolQueryBuilder query=QueryBuilders.boolQuery();
       for(String reason : specialExit)
         query=((BoolQueryBuilder) query).mustNot(QueryBuilders.termQuery("status", reason)); 
+      System.out.println("query is:"+ query );
       CountRequest countRequest = new CountRequest(index).query(query);
       try {
 		CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
