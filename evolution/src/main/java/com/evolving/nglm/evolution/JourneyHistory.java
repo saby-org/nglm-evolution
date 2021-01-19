@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import com.evolving.nglm.evolution.retention.Cleanable;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -234,6 +235,76 @@ public class JourneyHistory implements Cleanable
     this.rewardHistory = rewardHistory;
   }
   
+  /*****************************************
+  *
+  *  minimal - ES
+  *
+  *****************************************/
+  
+  public JourneyHistory(Map<String, Object> esFields)
+  {
+    this.journeyID = (String) esFields.get("journeyID");
+    List<String> travelledNodes = (List<String>) esFields.get("nodeHistory");
+    List<String> journeyStatuses = (List<String>) esFields.get("statusHistory");
+    List<String> rewards = (List<String>) esFields.get("rewardHistory");
+    this.nodeHistory = getNodeHistoryFromESFields(travelledNodes);
+    this.statusHistory = getJourneyStatusesFromESFields(journeyStatuses);
+    this.rewardHistory = getRewardHistoryFromESFields(rewards);;
+  }
+  
+  //
+  //  getRewardHistoryFromESFields
+  //
+  
+  private List<RewardHistory> getRewardHistoryFromESFields(List<String> rewards)
+  {
+    List<RewardHistory> rewardHistoryHistories = new ArrayList<RewardHistory>();
+    if (rewards != null && !rewards.isEmpty())
+      {
+        for (String reward : rewards)
+          {
+            RewardHistory rh = new RewardHistory(reward);
+            rewardHistoryHistories.add(rh);
+          }
+      }
+    return rewardHistoryHistories;
+  }
+  
+  //
+  //  getJourneyStatusesFromESFields
+  //
+  
+  private List<StatusHistory> getJourneyStatusesFromESFields(List<String> journeyStatuses)
+  {
+    List<StatusHistory> statusHistoryHistories = new ArrayList<StatusHistory>();
+    if (journeyStatuses != null && !journeyStatuses.isEmpty())
+      {
+        for (String journeyStatus : journeyStatuses)
+          {
+            StatusHistory sh = new StatusHistory(journeyStatus);
+            statusHistoryHistories.add(sh);
+          }
+      }
+    return statusHistoryHistories;
+  }
+  
+  //
+  //  getNodeHistoryFromESFields
+  //
+  
+  private List<NodeHistory> getNodeHistoryFromESFields(List<String> travelledNodes)
+  {
+    List<NodeHistory> nodeHistories = new ArrayList<NodeHistory>();
+    if (travelledNodes != null && !travelledNodes.isEmpty())
+      {
+        for (String travelledNode : travelledNodes)
+          {
+            NodeHistory ns = new NodeHistory(travelledNode);
+            nodeHistories.add(ns);
+          }
+      }
+    return nodeHistories;
+  }
   /*****************************************
   *
   *  unpack
@@ -764,6 +835,14 @@ public class JourneyHistory implements Cleanable
     {
       return rewardName + ";" + amount + ";" + (rewardDate!=null?rewardDate.getTime():null);
     }
+    
+    public RewardHistory(String reward)
+    {
+      String[] elements = reward.split("[;]", -1);
+      this.rewardName = elements[0];
+      this.amount = Integer.parseInt(elements[1]);
+      this.rewardDate = elements[2] != null ? new Date(Long.parseLong(elements[2])) : null;
+    }
   }
   
   public static class NodeHistory
@@ -906,6 +985,18 @@ public class JourneyHistory implements Cleanable
     public String toString()
     {
       return fromNode + ";" + toNode + ";" + transitionDate.getTime();
+    }
+    
+    //
+    // NodeHistory - from toString (from ES)
+    //
+    
+    public NodeHistory(String travelledNode)
+    {
+      String[] elements = travelledNode.split("[;]", -1);
+      this.fromNode = elements[0];
+      this.toNode = elements[1];
+      this.transitionDate = new Date(Long.parseLong(elements[2]));
     }
     
   }
@@ -1102,6 +1193,17 @@ public class JourneyHistory implements Cleanable
     public String toString()
     {
       return status + ";" + date.getTime();
+    }
+    
+    //
+    //  StatusHistory from toString (ES)
+    //
+    
+    public StatusHistory(String journeyStatus)
+    {
+      String[] elements = journeyStatus.split("[;]", -1);
+      this.status = elements[0];
+      this.date = new Date(Long.parseLong(elements[1]));
     }
     
     /*****************************************

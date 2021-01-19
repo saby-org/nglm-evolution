@@ -110,6 +110,7 @@ import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
+import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver;
 import com.evolving.nglm.evolution.reports.notification.NotificationReportDriver;
 import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
@@ -2264,6 +2265,8 @@ public class ThirdPartyManager
 
     Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
+    
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
 
     /*****************************************
      *
@@ -2280,6 +2283,32 @@ public class ThirdPartyManager
         }
       else
         {
+          SearchRequest searchRequest = getSearchRequest(API.getCustomerCampaigns, subscriberID, campaignStartDate, filters);
+          List<SearchHit> hits = getESHits(searchRequest);
+          for (SearchHit hit : hits)
+            {
+              Map<String, Object> esFields = hit.getSourceAsMap();
+              JourneyHistory journeyHistory = new JourneyHistory(esFields);
+            }
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
           List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
           SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
           if (subscriberHistory != null && subscriberHistory.getJourneyHistory() != null) 
@@ -6733,6 +6762,10 @@ public class ThirdPartyManager
           {
             index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
           }
+        break;
+        
+      case getCustomerCampaigns:
+        index = JourneyCustomerStatisticsReportDriver.JOURNEY_ES_INDEX + "*";
         break;
 
       default:
