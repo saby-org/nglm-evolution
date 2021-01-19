@@ -54,7 +54,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
             addHeaders(writer, lineMap.keySet(), 1);
           }
         String line = ReportUtils.formatResult(lineMap);
-        log.trace("Writing to csv file : " + line);
+        if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
       } 
     catch (IOException e)
