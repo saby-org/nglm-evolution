@@ -247,10 +247,31 @@ public class SubscriberIDService
     return subscriberIDs.get(alternateID);
   }
   
-  public Pair<String, String> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException
+  /**
+   * return null if either subscriber ID or tenantID is null...
+   * @param alternateIDName
+   * @param alternateID
+   * @return
+   * @throws SubscriberIDServiceException
+   */
+  public Pair<String, Integer> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException
   {
     Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
-    return new Pair<String, String>(subscriberIDs.get(alternateID), subscriberIDs.get("tenantID"));
+    String tenantIDString = subscriberIDs.get("tenantID");
+    Integer tenantID = null;
+    if(tenantIDString != null) 
+      { 
+        tenantID = Integer.parseInt(tenantIDString);
+      }
+    String subscriberID = subscriberIDs.get(alternateID);
+    if(subscriberID != null && tenantID != null) 
+      {
+        return new Pair<String, Integer>(subscriberIDs.get(alternateID), tenantID);
+      }
+    else 
+      {
+        return null;
+      }
   }
   
   /*****************************************
