@@ -18,6 +18,7 @@ import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+@Deprecated
 public class DeliverableESSinkConnector extends SimpleESSinkConnector
 {
   /****************************************
@@ -39,7 +40,7 @@ public class DeliverableESSinkConnector extends SimpleESSinkConnector
   *  taskClass
   *
   ****************************************/
-  
+  @Deprecated
   public static class DeliverableESSinkTask extends ChangeLogESSinkTask<Deliverable>
   {
     @Override public Deliverable unpackRecord(SinkRecord sinkRecord) 

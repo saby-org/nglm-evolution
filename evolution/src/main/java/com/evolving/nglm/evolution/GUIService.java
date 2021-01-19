@@ -6,8 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.ElasticSearchMapping;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerException;
@@ -31,10 +32,15 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
-
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.DocWriteRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
@@ -55,8 +61,13 @@ public class GUIService
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(GUIService.class);
-
+  private static final Logger log = LoggerFactory.getLogger(GUIService.class);  
+  
+  //
+  //  elasticsearch ElasticsearchClientAPI
+  //
+  private ElasticsearchClientAPI elasticsearch;
+  
   //
   //  statistics
   //
@@ -92,6 +103,7 @@ public class GUIService
   private int lastGeneratedObjectID = 0;
   private String putAPIString;
   private String removeAPIString;
+
 
   //
   //  serdes
@@ -210,6 +222,12 @@ public class GUIService
   *
   *****************************************/
 
+  public void start(ElasticsearchClientAPI elasticSearch)
+  {
+    this.elasticsearch = elasticSearch;
+    start();
+  }
+  
   public void start()
   {
     //
@@ -1213,6 +1231,37 @@ public class GUIService
   {
     consumerProperties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, Deployment.getMaxPollIntervalMs());
 
+  }
+  
+  public void updateElasticSearch(GUIManagedObject guiManagedObject)
+  {
+    if(guiManagedObject instanceof ElasticSearchMapping)
+      {
+      if (guiManagedObject.getDeleted())
+        {
+          DeleteRequest deleteRequest = new DeleteRequest(guiManagedObject.getDocumentIndexName(), getDocumentID(item));
+          deleteRequest.id(getDocumentID(item));
+          try {
+            elasticsearch.delete(deleteRequest,RequestOptions.DEFAULT);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+      else
+        {
+          UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
+          request.doc((ElasticSearchMapping)guiManagedObject.getDocumentMap());
+          request.docAsUpsert(true);
+          request.retryOnConflict(4);
+          try {
+            elasticsearch.update(request,RequestOptions.DEFAULT);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+          
+        }
+      }
+    }
   }
 
 

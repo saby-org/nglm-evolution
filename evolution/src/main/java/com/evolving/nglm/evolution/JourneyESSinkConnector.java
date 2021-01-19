@@ -22,6 +22,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
+@Deprecated
 public class JourneyESSinkConnector extends SimpleESSinkConnector
 {
   /****************************************
@@ -40,7 +41,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
   *  taskClass
   *
   ****************************************/
-
+  @Deprecated
   public static class JourneyESSinkTask extends ChangeLogESSinkTask<Journey>
   {
     private JourneyService journeyService;

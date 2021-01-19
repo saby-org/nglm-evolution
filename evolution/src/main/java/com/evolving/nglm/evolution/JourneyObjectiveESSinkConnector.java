@@ -26,6 +26,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
+@Deprecated
 public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
 {
   private static DynamicCriterionFieldService dynamicCriterionFieldService;
@@ -49,6 +50,7 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
+  @Deprecated
   public static class JourneyObjectiveESSinkConnectorTask extends ChangeLogESSinkTask<JourneyObjective>
   {
     private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();

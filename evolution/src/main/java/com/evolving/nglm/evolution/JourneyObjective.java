@@ -13,8 +13,9 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
-
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 @GUIDependencyDef(objectType = "journeyObjective", serviceClass = JourneyObjectiveService.class, dependencies = { "contactpolicy" , "catalogcharacteristic" })
-public class JourneyObjective extends GUIManagedObject
+public class JourneyObjective extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
 {
 
   /*****************************************
@@ -390,5 +391,36 @@ public class JourneyObjective extends GUIManagedObject
     result.put("contactpolicy", contactPolicyIDs);
     result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());
     return result;
+  }
+  @Override
+  public String getESDocumentID()
+  {
+    return this.getJourneyObjectiveID();
+  }
+  @Override
+  public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  {
+    Date now = SystemTime.getCurrentTime();
+    Map<String,Object> documentMap = new HashMap<String,Object>();
+         
+    // We read all data from JSONRepresentation()
+    // because native data in object is sometimes not correct
+    
+    JSONObject jr = this.getJSONRepresentation();
+    if (jr != null)
+      {
+        documentMap.put("id",      jr.get("id"));
+        documentMap.put("display", jr.get("display"));
+        String contactPolicyID = (String) jr.get("contactPolicyID");
+        ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
+        documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
+        documentMap.put("timestamp",     RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+      }
+    return documentMap;
+  }
+  @Override
+  public String getESIndexName()
+  {
+    return "mapping_journeyobjective";
   }
 }

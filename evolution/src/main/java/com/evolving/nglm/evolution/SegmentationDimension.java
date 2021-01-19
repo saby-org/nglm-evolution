@@ -11,18 +11,24 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-public abstract class SegmentationDimension extends GUIManagedObject
+public abstract class SegmentationDimension extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
 {
   
   /*****************************************
@@ -263,4 +269,49 @@ public abstract class SegmentationDimension extends GUIManagedObject
   }
 
   public abstract boolean getSegmentsConditionEqual(SegmentationDimension dimension);
+  
+  @Override
+  public String getESDocumentID()
+  {
+    return this.getSegmentationDimensionID();
+  }
+  @Override
+  public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  {
+    Map<String,Object> documentMap = new HashMap<String,Object>();
+    
+    // We read all data from JSONRepresentation()
+    // because native data in object is sometimes not correct
+    
+    JSONObject jr = this.getJSONRepresentation();
+    if (jr != null)
+      {
+        documentMap.put("id",            jr.get("id"));
+        documentMap.put("display",       jr.get("display"));
+        documentMap.put("targetingType", jr.get("targetingType"));
+        documentMap.put("active",        jr.get("active"));
+        documentMap.put("createdDate",   GUIManagedObject.parseDateField((String) jr.get("createdDate")));
+        JSONArray segmentsJSON = (JSONArray) jr.get("segments");
+        List<Map<String,String>> segments = new ArrayList<>();
+        if (segmentsJSON != null)
+          {
+            for (int i = 0; i < segmentsJSON.size(); i++)
+              {
+                JSONObject segmentJSON = (JSONObject) segmentsJSON.get(i);
+                Map<String,String> segmentMap = new HashMap<>();
+                segmentMap.put("id", (String) segmentJSON.get("id"));
+                segmentMap.put("name", (String) segmentJSON.get("name"));
+                segments.add(segmentMap);
+              }
+          }
+        documentMap.put("segments",  segments);
+        documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+      }
+    return documentMap;
+  }
+  @Override
+  public String getESIndexName()
+  {
+    return "mapping_basemanagement";
+  }
 }

@@ -41,6 +41,7 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
@@ -59,7 +60,7 @@ import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 @GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" , "target"})
-public class Journey extends GUIManagedObject implements StockableItem
+public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
   *
@@ -3953,5 +3954,97 @@ public class Journey extends GUIManagedObject implements StockableItem
       }
 
     return result;
+  }
+  
+  @Override
+  public String getESDocumentID()
+  {
+    return "_" + this.getJourneyID().hashCode();
+  }
+  @Override
+  public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  {
+    Map<String,Object> documentMap = new HashMap<String,Object>();
+    
+    //
+    // description: retrieved from JSON, not in the object
+    //
+    Object description = this.getJSONRepresentation().get("description");
+    
+    //
+    // targets
+    //
+    // TODO @rl: use ElasticsearchUtils ?
+    String targets = "";
+    for(String targetID : this.getTargetID()) {
+      GUIManagedObject target = targetService.getStoredGUIManagedObject(targetID);
+      if(target != null) {
+        String targetDisplay = target.getGUIManagedObjectDisplay();
+        if(targetDisplay == null) {
+          targetDisplay = "Unknown(ID:" + targetID + ")";
+        }
+        
+        if(targets.equals("")) {
+          targets = targetDisplay;
+        } else {
+          targets += "/" + targetDisplay;
+        }
+      }
+    }
+    
+    //
+    // objectives
+    //
+    // TODO @rl: use ElasticsearchUtils ?
+    String objectives = "";
+    for(JourneyObjectiveInstance objectiveInstance : this.getJourneyObjectiveInstances()) {
+      GUIManagedObject journeyObjective = journeyObjectiveService.getStoredGUIManagedObject(objectiveInstance.getJourneyObjectiveID());
+      if(journeyObjective != null) {
+        String journeyObjectiveDisplay = journeyObjective.getGUIManagedObjectDisplay();
+        if(journeyObjectiveDisplay == null) {
+          journeyObjectiveDisplay = "Unknown(ID:" + objectiveInstance.getJourneyObjectiveID() + ")";
+        }
+        
+        if(objectives.equals("")) {
+          objectives = journeyObjectiveDisplay;
+        } else {
+          objectives += "/" + journeyObjectiveDisplay;
+        }
+      }
+    }
+    
+    //
+    // targetCount: retrieved from JSON, not in the object
+    //
+    Object targetCountObj = this.getJSONRepresentation().get("targetCount");
+    long targetCount = (targetCountObj != null && targetCountObj instanceof Long) ? (long) targetCountObj : 0;
+    
+    
+    //
+    // documentMap
+    //
+    documentMap.put("journeyID", this.getJourneyID());
+    documentMap.put("display", this.getGUIManagedObjectDisplay());
+    documentMap.put("description", (description != null)? description: "");
+    documentMap.put("type", this.getGUIManagedObjectType().getExternalRepresentation());
+    documentMap.put("user", this.getUserName());
+    documentMap.put("targets", targets);
+    documentMap.put("targetCount", targetCount);
+    documentMap.put("objectives", objectives);
+    documentMap.put("startDate", RLMDateUtils.printTimestamp(this.getEffectiveStartDate()));
+    documentMap.put("endDate", RLMDateUtils.printTimestamp(this.getEffectiveEndDate()));
+    documentMap.put("active", this.getActive());
+    documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+    documentMap.put("status", journeyService.getJourneyStatus(this).getExternalRepresentation());
+
+    //
+    // return
+    //
+    return documentMap;
+  }
+  @Override
+  public String getESIndexName()
+  {
+    return "mapping_journeys";
   }
 }
