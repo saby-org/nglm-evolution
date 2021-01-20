@@ -760,13 +760,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 String unzippedFile = null;
 
                 if (filters != null || percentage != null || topRows != null || header != null) {
-                  filterOutTmpFile = File.createTempFile("tempReportFilter", ".csv");
-                  percentageOutTmpFile = File.createTempFile("tempReportPercentage", ".csv");
-                  topRowsOutTmpFile = File.createTempFile("tempReportTopRows", ".csv");
-                  headerOutTmpFile = File.createTempFile("tempReportHeader", ".csv");
+                  filterOutTmpFile = File.createTempFile("tempReportFilter.", ".csv");
+                  percentageOutTmpFile = File.createTempFile("tempReportPercentage.", ".csv");
+                  topRowsOutTmpFile = File.createTempFile("tempReportTopRows.", ".csv");
+                  headerOutTmpFile = File.createTempFile("tempReportHeader.", ".csv");
                   unzippedFile = ReportUtils.unzip(reportFile.getAbsolutePath());
 
-                  if (filters != null)
+                  if (filters != null && !filters.isEmpty())
                     {
                       List<String> colNames = new ArrayList<>();
                       List<List<String>> colsValues = new ArrayList<>();
