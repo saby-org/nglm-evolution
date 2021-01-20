@@ -883,7 +883,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                       headerOutTmpFile = topRowsOutTmpFile;
                     }
 
-                  finalZipFile = File.createTempFile("reportFinal", "zip");
+                  finalZipFile = File.createTempFile("reportFinal.", ".zip");
                   String finalZipFileName = finalZipFile.getAbsolutePath();
                   ReportUtils.zipFile(headerOutTmpFile.getAbsolutePath(), finalZipFileName);
                   reportFile = new File(finalZipFileName);
