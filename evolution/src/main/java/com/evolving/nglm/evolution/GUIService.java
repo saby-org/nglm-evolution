@@ -103,6 +103,15 @@ public class GUIService
   private int lastGeneratedObjectID = 0;
   private String putAPIString;
   private String removeAPIString;
+  
+  //
+  // services usable only by the GUIManager (with a special start)
+  //
+  
+  private JourneyService journeyService;
+  private TargetService targetService;
+  private JourneyObjectiveService journeyObjectiveService;
+  private ContactPolicyService contactPolicyService;
 
 
   //
@@ -222,9 +231,13 @@ public class GUIService
   *
   *****************************************/
 
-  public void start(ElasticsearchClientAPI elasticSearch)
+  public void start(ElasticsearchClientAPI elasticSearch, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, TargetService targetService, ContactPolicyService contactPolicyService)
   {
     this.elasticsearch = elasticSearch;
+    this.journeyService = journeyService;
+    this.journeyObjectiveService = journeyObjectiveService;
+    this.targetService = targetService;
+    this.contactPolicyService = contactPolicyService;
     start();
   }
   
@@ -538,6 +551,7 @@ public class GUIService
     //
 
     processGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), guiManagedObject, date);
+    updateElasticSearch(guiManagedObject);
   }
 
   /*****************************************
@@ -585,6 +599,7 @@ public class GUIService
     //
 
     processGUIManagedObject(guiManagedObjectID, existingStoredGUIManagedObject, date);
+    updateElasticSearch(existingStoredGUIManagedObject);
   }
 
   /****************************************
@@ -666,7 +681,7 @@ public class GUIService
             activeGUIManagedObjects.remove(guiManagedObjectID);
             if (existingActiveGUIManagedObject != null){
               if(inActivePeriod) interruptedGUIManagedObjects.put(guiManagedObjectID,existingActiveGUIManagedObject);
-              notifyListener(new IncompleteObject(guiManagedObjectID));
+              notifyListener(existingActiveGUIManagedObject);
             }
           }
 
@@ -994,7 +1009,7 @@ public class GUIService
                     availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     activeGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
-                    if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObject.getGUIManagedObjectID()));
+                    if (existingActiveGUIManagedObject != null) notifyListener(guiManagedObject);
                   }
 
                 //
@@ -1167,6 +1182,7 @@ public class GUIService
 
   private void notifyListener(GUIManagedObject guiManagedObject)
   {
+    updateElasticSearch(guiManagedObject);
     listenerQueue.add(guiManagedObject);
   }
 
@@ -1235,12 +1251,12 @@ public class GUIService
   
   public void updateElasticSearch(GUIManagedObject guiManagedObject)
   {
-    if(guiManagedObject instanceof ElasticSearchMapping)
+    if(guiManagedObject instanceof ElasticSearchMapping && elasticsearch != null /* to ensure it has been started with the good parameters */) 
       {
-      if (guiManagedObject.getDeleted())
-        {
-          DeleteRequest deleteRequest = new DeleteRequest(guiManagedObject.getDocumentIndexName(), getDocumentID(item));
-          deleteRequest.id(getDocumentID(item));
+        if (guiManagedObject.getDeleted())
+          {
+            DeleteRequest deleteRequest = new DeleteRequest(((ElasticSearchMapping)guiManagedObject).getESIndexName(), ((ElasticSearchMapping)guiManagedObject).getESDocumentID());
+          deleteRequest.id(((ElasticSearchMapping)guiManagedObject).getESDocumentID());
           try {
             elasticsearch.delete(deleteRequest,RequestOptions.DEFAULT);
           } catch (IOException e) {
@@ -1249,21 +1265,16 @@ public class GUIService
         }
       else
         {
-          UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
-          request.doc((ElasticSearchMapping)guiManagedObject.getDocumentMap());
+          UpdateRequest request = new UpdateRequest(((ElasticSearchMapping)guiManagedObject).getESIndexName(), ((ElasticSearchMapping)guiManagedObject).getESDocumentID());
+          request.doc(((ElasticSearchMapping)guiManagedObject).getESDocumentMap(journeyService, targetService, journeyObjectiveService, contactPolicyService));
           request.docAsUpsert(true);
           request.retryOnConflict(4);
           try {
             elasticsearch.update(request,RequestOptions.DEFAULT);
           } catch (IOException e) {
             e.printStackTrace();
-          }
-          
+          }          
         }
-      }
-    }
+      }    
   }
-
-
-
 }

@@ -58,38 +58,36 @@ public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
   {
     if (sinkRecord.value() != null) {
       T item = unpackRecord(sinkRecord);
-      if (item != null) {
-            if (item instanceof GUIManagedObject)
-              {
-                GUIManagedObject guiManagedObject = (GUIManagedObject) item;
-                if (guiManagedObject.getDeleted())
-                  {
-                    DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item), getDocumentID(item));
-                    deleteRequest.id(getDocumentID(item));
-                    return Collections.<DocWriteRequest>singletonList(deleteRequest);
-
-                  }
-                else
-                  {
-                    UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
-                    request.doc(getDocumentMap(item));
-                    request.docAsUpsert(true);
-                    request.retryOnConflict(4);
-                    return Collections.<DocWriteRequest>singletonList(request);
-                  }
-              }
-            else
-              {
-                UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
-                request.doc(getDocumentMap(item));
-                request.docAsUpsert(true);
-                request.retryOnConflict(4);
-                return Collections.<DocWriteRequest>singletonList(request);
-              }
-       
-      }
-    }
-    
+      if (item != null) 
+        {
+          if (item instanceof GUIManagedObject)
+            {
+              GUIManagedObject guiManagedObject = (GUIManagedObject) item;
+              if (guiManagedObject.getDeleted())
+                {
+                  DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item), getDocumentID(item));
+                  deleteRequest.id(getDocumentID(item));
+                  return Collections.<DocWriteRequest>singletonList(deleteRequest);
+                }
+              else
+                {
+                  UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
+                  request.doc(getDocumentMap(item));
+                  request.docAsUpsert(true);
+                  request.retryOnConflict(4);
+                  return Collections.<DocWriteRequest>singletonList(request);
+                }
+            }
+          else
+            {
+              UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
+              request.doc(getDocumentMap(item));
+              request.docAsUpsert(true);
+              request.retryOnConflict(4);
+              return Collections.<DocWriteRequest>singletonList(request);
+            }       
+        }
+    }    
     return Collections.<DocWriteRequest>emptyList();
   }
 }
