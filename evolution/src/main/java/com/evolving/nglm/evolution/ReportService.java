@@ -253,7 +253,7 @@ public class ReportService extends GUIService
 			  List<FilterObject> filters = rd.reportFilters();
 			  JSONArray jsonArray = new JSONArray();
 
-			  if(filters != null) 
+			  if(filters != null && !filters.isEmpty()) 
 			  {
 				  for (FilterObject filter : filters)
 				  {
@@ -261,14 +261,16 @@ public class ReportService extends GUIService
 					  filterJSON = new JSONObject();
 					  filterJSON.put("criterionField", filter.getColumnName());
 					  argumentJSON = new JSONObject();
-					  argumentJSON.put("expression", "");
 					  argumentJSON.put("valueType", filter.getColumnType().getExternalRepresentation());
+					  StringBuffer expression = new StringBuffer();
 					  JSONArray valueJSON = new JSONArray();
 					  for (Object value : filter.getValues())
 					  {
 						  valueJSON.add(value);
+						  expression.append("'").append(value.toString()).append("',");
 					  }
 					  argumentJSON.put("value", valueJSON);
+					  argumentJSON.put("expression", expression.length()>0 ? "[" + expression.subSequence(0, expression.length()-2) + "]" : "[]");
 					  argumentJSON.put("timeUnit", null);
 					  filterJSON.put("argument", argumentJSON);
 					  jsonArray.add(filterJSON);

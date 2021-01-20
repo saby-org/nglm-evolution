@@ -40,8 +40,9 @@ private static final Logger log = LoggerFactory.getLogger(BDRReportDriver.class)
   public List<FilterObject> reportFilters() {
 	  List<FilterObject> result = new ArrayList<>();
 	  
-	  result.add(new FilterObject(BDRReportMonoPhase.moduleName,         ColumnType.STRING, new String[] {"Journey_Manager", "Loyalty_Program"}));
-	  result.add(new FilterObject(BDRReportMonoPhase.deliverableDisplay, ColumnType.STRING, new String[] {"OnNetMinutes"}));
+	  result.add(new FilterObject(BDRReportMonoPhase.moduleName,         ColumnType.MULTIPLE_STRING, new String[] {"Journey_Manager", "Loyalty_Program"}));
+	  result.add(new FilterObject(BDRReportMonoPhase.deliverableDisplay, ColumnType.MULTIPLE_STRING, new String[] {"OnNetMinutes"}));
+	  
 	  
 	  return result;
   }
