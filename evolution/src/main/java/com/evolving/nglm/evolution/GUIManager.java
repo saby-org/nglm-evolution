@@ -6519,7 +6519,7 @@ public class GUIManager
     JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
     JSONObject bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
     JSONObject bulkCampaignInfo = JSONUtilities.decodeJSONObject(jsonRoot, "info", false);
-    
+    String targetingType = JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria");
     JSONArray bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", true);
     
     //
@@ -6609,7 +6609,7 @@ public class GUIManager
         campaignJSONRepresentation.put("description", bulkCampaignDescription);
         campaignJSONRepresentation.put("effectiveStartDate", bulkCampaignEffectiveStartDate);
         campaignJSONRepresentation.put("effectiveEndDate", bulkCampaignEffectiveEndDate);
-        campaignJSONRepresentation.put("targetingType", "criteria");
+        campaignJSONRepresentation.put("targetingType", targetingType);
         campaignJSONRepresentation.put("targetID", bulkCampaignTargetIDs);
         campaignJSONRepresentation.put("boundParameters", bulkCampaignBoundParameters);
         campaignJSONRepresentation.put("appendUCG", appendUCG);
