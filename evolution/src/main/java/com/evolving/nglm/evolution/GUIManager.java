@@ -7186,10 +7186,12 @@ public class GUIManager
         
         //
         //  retrieve from Elasticsearch 
-        // 
+        //
+        System.out.println("end node is:"+((Journey) journey).getEndNodeID().trim());
         try {
           Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID);
           for (String key : nodeIDs) {
+        	  System.out.println("key is:"+key);
         	  Long count = esMap.get(key);
               if(key.trim().equalsIgnoreCase(((Journey) journey).getEndNodeID().trim()))
             	  count=esMap.get(key)-elasticsearch.getSpecialExitCount(journeyID);
