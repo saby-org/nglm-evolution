@@ -262,7 +262,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 	  String index = getJourneyIndex(journeyID);
 	  BoolQueryBuilder query=QueryBuilders.boolQuery();
       for(String reason : specialExit)
-        query=((BoolQueryBuilder) query).must(QueryBuilders.termQuery("status", reason)); 
+        query=((BoolQueryBuilder) query).should(QueryBuilders.termQuery("status", reason)); 
       log.info("SpecialExit count query"+query.toString());
       CountRequest countRequest = new CountRequest(index).query(query);
       try {
