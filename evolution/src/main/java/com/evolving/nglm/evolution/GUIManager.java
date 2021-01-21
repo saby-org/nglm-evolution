@@ -4752,7 +4752,6 @@ public class GUIManager
     boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
     String nodeTypeParameterID = JSONUtilities.decodeString(jsonRoot, "nodeTypeParameterID", false);
     JSONArray targetFileVariables = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
-    targetFileVariables.stream().forEach(var -> log.info("RAJ K targetFileVariables {} ", var));
     
     /*****************************************
     *
@@ -4786,9 +4785,7 @@ public class GUIManager
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType, targetFileVariables), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType);
         Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
-        unprocessedCriterionFields.values().stream().forEach(var -> log.info("RAJ K unprocessedCriterionFields {} ", var.getName()));
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
-        journeyCriterionFields.stream().forEach(var -> log.info("RAJ K journeyCriterionFields {} ", var));
         
         //
         //  intersect and put only Evaluation week Day and Time (if schedule node)

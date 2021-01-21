@@ -4912,7 +4912,7 @@ public class EvolutionEngine
                     ParameterMap parameterMap = fileWithVariableEvent.getParameterMap();
                     for (String key : parameterMap.keySet())
                       {
-                        String id = "variable." + key;
+                        String id = "variablefile" + "." + key;
                         if (allContextVars.get(id) != null)
                           {
                             boundParameters.put(id, parameterMap.get(key));

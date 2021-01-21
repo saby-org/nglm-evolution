@@ -2744,7 +2744,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       {
         JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
         JSONObject contextVarJson = generateContextVariableJson(targetFileVariableJSON);
-        ContextVariable fileContextVariable = new ContextVariable(contextVarJson);
+        ContextVariable fileContextVariable = new ContextVariable(contextVarJson, true);
         CriterionField criterionField = new CriterionField(fileContextVariable);
         contextVariableFields.put(criterionField.getID(), criterionField);
       }
@@ -2760,7 +2760,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   
   /*****************************************
   *
-  *  generateContextVariableJson
+  *  generateContextVariableJson (from file variable)
   *
   *****************************************/
   
