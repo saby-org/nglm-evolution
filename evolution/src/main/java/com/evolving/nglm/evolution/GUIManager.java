@@ -7193,7 +7193,7 @@ public class GUIManager
           for (String key : nodeIDs) {
         	  System.out.println("key is:"+key);
         	  Long count = esMap.get(key);
-              if(key.trim().equalsIgnoreCase(((Journey) journey).getEndNodeID().trim()))
+              if(key.trim().equalsIgnoreCase(((Journey) journey).getEndNodeID().trim()) && esMap.get(key)!=null)
             	  count=esMap.get(key)-elasticsearch.getSpecialExitCount(journeyID);
               result.put(key, (count != null)? count : 0);
           }
