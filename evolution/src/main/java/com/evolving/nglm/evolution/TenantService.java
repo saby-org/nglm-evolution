@@ -124,7 +124,7 @@ public class TenantService extends GUIService
   *
   *****************************************/
 
-  public void putTenant(GUIManagedObject tenant, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID) throws GUIManagerException
+  public void putTenant(GUIManagedObject tenant, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -145,11 +145,11 @@ public class TenantService extends GUIService
   *
   *****************************************/
 
-  public void putTenant(IncompleteObject tenant, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID)
+  public void putTenant(IncompleteObject tenant, boolean newObject)
   {
     try
       {
-        putTenant((GUIManagedObject) tenant, callingChannelService, salesChannelService, productService, voucherService, newObject, userID);
+        putTenant((GUIManagedObject) tenant, newObject, null);
       }
     catch (GUIManagerException e)
       {

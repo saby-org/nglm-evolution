@@ -42,9 +42,8 @@ public class Tenant extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("tenant");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("languageID", Schema.STRING_SCHEMA);
     schemaBuilder.field("effectiveTenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -68,7 +67,6 @@ public class Tenant extends GUIManagedObject
   *
   *****************************************/
   private int effectiveTenantID;
-  private String languageID;
 
   /*****************************************
   *
@@ -76,7 +74,6 @@ public class Tenant extends GUIManagedObject
   *
   *****************************************/
 
-  public String getLanguageID() { return languageID; }
   public int getEffectiveTenantID() { return effectiveTenantID; }
 
   /*****************************************
@@ -86,10 +83,9 @@ public class Tenant extends GUIManagedObject
   *
   *****************************************/
 
-  public Tenant(JSONObject guiManagedObjectJson, int effectiveTenantID, String languageID)
+  public Tenant(JSONObject guiManagedObjectJson, int effectiveTenantID)
   {
     super(guiManagedObjectJson, 1, 0); // 0 because in the point of view of the system, this GUIManagedObject is shared among all tenants (administrator)
-    this.languageID = languageID;
     this.effectiveTenantID = effectiveTenantID;
   }
 
@@ -99,10 +95,9 @@ public class Tenant extends GUIManagedObject
   *
   *****************************************/
 
-  public Tenant(SchemaAndValue schemaAndValue, int effectiveTenantID, String languageID)
+  public Tenant(SchemaAndValue schemaAndValue, int effectiveTenantID)
   {
     super(schemaAndValue);
-    this.languageID = languageID;
     this.effectiveTenantID = effectiveTenantID;
   }
 
@@ -117,7 +112,6 @@ public class Tenant extends GUIManagedObject
     Tenant tenant = (Tenant) value;
     Struct struct = new Struct(schema);
     packCommon(struct, tenant);
-    struct.put("languageID", tenant.getLanguageID());
     struct.put("effectiveTenantID", tenant.getEffectiveTenantID());
     return struct;
   }
@@ -143,7 +137,6 @@ public class Tenant extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    String languageID = valueStruct.getString("languageID");
     int effectiveTenantID = valueStruct.getInt16("effectiveTenantID");
     
 
@@ -151,6 +144,6 @@ public class Tenant extends GUIManagedObject
     //  return
     //
 
-    return new Tenant(schemaAndValue, effectiveTenantID, languageID);
+    return new Tenant(schemaAndValue, effectiveTenantID);
   }
 }

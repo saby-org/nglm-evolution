@@ -12,6 +12,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Tenant;
 import com.evolving.nglm.evolution.TenantService;
 import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
@@ -29,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -47,14 +49,15 @@ public class Deployment
   *  deploymentsPerTenant
   *
   *****************************************/
-  
+  private static Map<Integer, JSONObject> jsonConfigPerTenant = new HashMap<>();
   private static Map<Integer, Deployment> deploymentsPerTenant = new HashMap<>();
+  protected static TenantService tenantService;
   
   //
   //  data
   //
   
-  private Tenant tenant;
+  protected Tenant tenant;
   
   /*****************************************
   *
@@ -62,7 +65,7 @@ public class Deployment
   *
   *****************************************/
 
-  private JSONObject jsonRoot;
+  private JSONObject tenantSpecificJsonRoot;
   private String baseTimeZone;
   private static String systemTimeZone;
   private ZoneId baseZoneId;
@@ -124,7 +127,7 @@ public class Deployment
   public static String getZookeeperRoot() { return System.getProperty("nglm.zookeeper.root"); }
   public static String getZookeeperConnect() { return System.getProperty("zookeeper.connect"); }
   public static String getBrokerServers() { return System.getProperty("broker.servers",""); }
-  public JSONObject getJSONRoot() { return jsonRoot; }
+  public JSONObject getTenantSpecificJSONRoot() { return tenantSpecificJsonRoot; }
   public String getBaseTimeZone() { return baseTimeZone; }
   public static String getSystemTimeZone() { return systemTimeZone; }
   public ZoneId getBaseZoneId() { return baseZoneId; }
@@ -189,24 +192,113 @@ public class Deployment
   
   static
   {
-    //
-    // TenantService
-    //
-    TenantService tenantService  = new TenantService(getBrokerServers(), "deployment-tenantservice", "tenant", false);
-    tenantService.start();
     
-    for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    //
+    // Now check if there are some first level configuration whith name starting with "tenantConfiguration"
+    //
+    JSONObject original = getBrutJsonRoot();
+    
+    ArrayList<JSONObject> tenantSpecificConfigurations = new ArrayList<>();
+    for(Object key : original.keySet())
       {
+        if(key instanceof String && ((String)key).startsWith("tenantConfiguration"))
+          {
+            JSONObject tenantConfiguration = (JSONObject) original.get(key);
+            tenantSpecificConfigurations.add(tenantConfiguration);            
+          }
+      }
+    
+    //
+    // now analyse the configurations of tenants
+    //
+    for(JSONObject tenantSpecificConfiguration : tenantSpecificConfigurations)
+      {
+        //
+        // first get global jsonRoot that contains also the tenant specific configuration
+        //
+        
+        JSONObject brutJSONObject = getBrutJsonRoot();
+        
+        //
+        // remove tenantSpecific configurations
+        //
+        
+        ArrayList<String> keysToRemove = new ArrayList<>();
+        for(Object key : brutJSONObject.keySet())
+          {
+            if(key instanceof String && ((String)key).startsWith("tenantConfiguration"))
+              {
+                keysToRemove.add((String)key);
+              }
+          }
+        for(String keyToRemove : keysToRemove)
+          {
+            brutJSONObject.remove(keyToRemove);        
+          }
+        
+        //
+        // now merge the tenant specific configuration with the brut configuration, so that we have the effective JSONRoot configuration for the current tenant
+        //
+        
+        JSONObject tenantJSON = JSONUtilities.jsonMergerOverrideOrAdd(brutJSONObject,tenantSpecificConfiguration,(brut,tenant) -> brut.get("id")!=null && tenant.get("id")!=null && brut.get("id").equals(tenant.get("id")));//json object in array match thanks to "id" field only
+        
+        //
+        // get the tenantID
+        //
+        
+        int tenantID = JSONUtilities.decodeInteger(tenantJSON, "tenantID", true);
+        
+        //
+        // let reference the tenantJSONObject configuration available for all subclasses of Deployment
+        //
+        
+        jsonConfigPerTenant.put(tenantID, tenantJSON);        
+
+        
+        //
+        // init deployment for this tenant
+        //
         Deployment d = new Deployment();
-        d.init(t);
-        deploymentsPerTenant.put(t.getEffectiveTenantID(), d);
+        d.initCoreDeploymentStatic(tenantJSON);
+      
+        
+        //
+        // let update the tenantService if needed
+        //
+
+        tenantService  = new TenantService(getBrokerServers(), "deployment-tenantservice", "tenant", false);
+        tenantService.start();
+        
+        Tenant existingTenant = tenantService.getActiveTenant(""+tenantID, SystemTime.getCurrentTime());
+        if(existingTenant == null)
+          {
+            JSONObject fakeGUIManagedObject = new JSONObject();
+
+            // GUIManagedObject part
+            fakeGUIManagedObject.put("id", "tenant" + tenantID);
+            fakeGUIManagedObject.put("name", "Tenant" + tenantID);
+            fakeGUIManagedObject.put("display", "Tenant " + tenantID);
+            fakeGUIManagedObject.put("active", true);
+            
+            existingTenant = new Tenant(fakeGUIManagedObject, tenantID);
+            try 
+            {
+              tenantService.putTenant(existingTenant, true, null);
+            }
+            catch(GUIManagerException e)
+            {
+              log.error("Exception " + e.getClass().getName() + " while saving tenant " + existingTenant);
+            }
+          } 
+        
+        deploymentsPerTenant.put(existingTenant.getEffectiveTenantID(), d);  
+        
       }
   }
   
-  public void init(Tenant t)
+  private static JSONObject getBrutJsonRoot()
   {
-    this.tenant = t;
-    
+  
     /*****************************************
     *
     *  zookeeper -- retrieve configuration
@@ -496,16 +588,21 @@ public class Deployment
         //
         // merge both
         //
-        jsonRoot = JSONUtilities.jsonMergerOverrideOrAdd(productJson,custoJson,(product,custo) -> product.get("id")!=null && custo.get("id")!=null && product.get("id").equals(custo.get("id")));//json object in array match thanks to "id" field only
-		// the final running conf could be so hard to understand from all deployment files, we have to provide it to support team, hence the info log, even if big :
-		log.info("LOADED CONF : "+jsonRoot.toJSONString());
+        JSONObject brutJSONRoot = JSONUtilities.jsonMergerOverrideOrAdd(productJson,custoJson,(product,custo) -> product.get("id")!=null && custo.get("id")!=null && product.get("id").equals(custo.get("id")));//json object in array match thanks to "id" field only
+    		// the final running conf could be so hard to understand from all deployment files, we have to provide it to support team, hence the info log, even if big :
+    		log.info("LOADED BRUT CONF : "+brutJSONRoot.toJSONString());
+    		return brutJSONRoot;
 
       }
     catch (org.json.simple.parser.ParseException e)
       {
         throw new RuntimeException("deployment", e);
       }
+  }
 
+  public void initCoreDeploymentStatic(JSONObject jsonRoot)
+  {
+   
     /*****************************************
     *
     *  baseTimeZone
@@ -1084,5 +1181,10 @@ public class Deployment
   public static Deployment getDeployment(int tenantID)
   {
     return deploymentsPerTenant.get(tenantID);
+  }
+  
+  public static JSONObject getTenantJSONRoot(int tenantID)
+  {
+    return jsonConfigPerTenant.get(tenantID);
   }
 }

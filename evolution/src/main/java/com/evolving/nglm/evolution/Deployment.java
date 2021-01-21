@@ -21,7 +21,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -34,7 +33,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Deployment
+public class Deployment extends com.evolving.nglm.core.Deployment
 {
   /*****************************************
    *
@@ -59,8 +58,6 @@ public class Deployment
   //  data
   //
   
-  private Tenant tenant;
-
   // kafka topics configs
   private  static int topicSubscriberPartitions;
   private  static int topicReplication;
@@ -280,31 +277,6 @@ public class Deployment
    *  accessors
    *
    *****************************************/
-
-  //
-  //  core accessors
-  //
-
-  public  static String getZookeeperRoot() { return com.evolving.nglm.core.Deployment.getZookeeperRoot(); }
-  public  static String getZookeeperConnect() { return com.evolving.nglm.core.Deployment.getZookeeperConnect(); }
-  public  static String getBrokerServers() { return com.evolving.nglm.core.Deployment.getBrokerServers(); }
-  public  JSONObject getJSONRoot() { return com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getJSONRoot(); }
-  public  String getBaseTimeZone() { return com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getBaseTimeZone(); }
-  public  static String getSystemTimeZone() { return com.evolving.nglm.core.Deployment.getSystemTimeZone(); }
-  public  String getBaseLanguage() { return com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getBaseLanguage(); }
-  public  String getBaseCountry() { return com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getBaseCountry(); }
-  public  static String getRedisSentinels() { return com.evolving.nglm.core.Deployment.getRedisSentinels(); }
-  public  static String getAssignSubscriberIDsTopic() { return com.evolving.nglm.core.Deployment.getAssignSubscriberIDsTopic(); }
-  public  static String getAssignExternalSubscriberIDsTopic() { return com.evolving.nglm.core.Deployment.getAssignExternalSubscriberIDsTopic(); }
-  public  static String getRecordSubscriberIDTopic() { return com.evolving.nglm.core.Deployment.getRecordSubscriberIDTopic(); }
-  public  static String getCleanupSubscriberTopic() { return com.evolving.nglm.core.Deployment.getCleanupSubscriberTopic(); }
-  public  static String getExternalSubscriberID() { return com.evolving.nglm.core.Deployment.getExternalSubscriberID(); } // EVPRO-99 check static for tenant
-  public  String getSubscriberTraceControlAlternateID() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAlternateID(); }
-  public  boolean getSubscriberTraceControlAutoProvision() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAutoProvision(); }
-  public  static String getSubscriberTraceControlTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlTopic(); }
-  public  String getSubscriberTraceControlAssignSubscriberIDTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAssignSubscriberIDTopic(); }
-  public  static String getSubscriberTraceTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceTopic(); }
-  public  static Map<String, AlternateID> getAlternateIDs() { return com.evolving.nglm.core.Deployment.getAlternateIDs(); } // EVPRO-99 check static for tenant
 
   //
   //  evolution accessors
@@ -720,13 +692,7 @@ public class Deployment
   *
   *****************************************/
   static 
-  {
-    //
-    // TenantService
-    //
-    TenantService tenantService  = new TenantService(getBrokerServers(), "deployment-tenantservice", "tenant", false);
-    tenantService.start();
-    
+  {    
     for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
       {
         Deployment d = new Deployment();
@@ -758,7 +724,7 @@ public class Deployment
        *
        *****************************************/
 
-      JSONObject jsonRoot = com.evolving.nglm.core.Deployment.getDeployment(tenant.getEffectiveTenantID()).getJSONRoot();
+      JSONObject jsonRoot = com.evolving.nglm.core.Deployment.getTenantJSONRoot(tenant.getEffectiveTenantID());
       
       /*****************************************
       *
