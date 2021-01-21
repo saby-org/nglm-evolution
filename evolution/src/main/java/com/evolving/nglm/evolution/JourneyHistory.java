@@ -1230,6 +1230,16 @@ public class JourneyHistory implements Cleanable
         return false;
       return true;
     }
+    
+    public boolean  isConverted()
+    {
+      boolean result = false;
+      result = result || SubscriberJourneyStatus.ControlGroupConverted.getExternalRepresentation().equals(status);
+      result = result || SubscriberJourneyStatus.ConvertedNotified.getExternalRepresentation().equals(status);
+      result = result || SubscriberJourneyStatus.ConvertedNotNotified.getExternalRepresentation().equals(status);
+      result = result || SubscriberJourneyStatus.UniversalControlGroupConverted.getExternalRepresentation().equals(status);
+      return result;
+    }
   }
 
   @Override
