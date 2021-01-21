@@ -839,9 +839,9 @@ public class JourneyHistory implements Cleanable
     public RewardHistory(String reward)
     {
       String[] elements = reward.split("[;]", -1);
-      this.rewardName = elements[0];
-      this.amount = Integer.parseInt(elements[1]);
-      this.rewardDate = elements[2] != null ? new Date(Long.parseLong(elements[2])) : null;
+      this.rewardName = handleNullStringFromES(elements[0]);
+      this.amount = Integer.parseInt(handleNullStringFromES(elements[1]));
+      this.rewardDate = elements[2] != null ? new Date(Long.parseLong(handleNullStringFromES(elements[2]))) : null;
     }
   }
   
@@ -994,9 +994,9 @@ public class JourneyHistory implements Cleanable
     public NodeHistory(String travelledNode)
     {
       String[] elements = travelledNode.split("[;]", -1);
-      this.fromNode = elements[0];
-      this.toNode = elements[1];
-      this.transitionDate = new Date(Long.parseLong(elements[2]));
+      this.fromNode = handleNullStringFromES(elements[0]);
+      this.toNode = handleNullStringFromES(elements[1]);
+      this.transitionDate = new Date(Long.parseLong(handleNullStringFromES(elements[2])));
     }
     
   }
@@ -1202,8 +1202,8 @@ public class JourneyHistory implements Cleanable
     public StatusHistory(String journeyStatus)
     {
       String[] elements = journeyStatus.split("[;]", -1);
-      this.status = elements[0];
-      this.date = new Date(Long.parseLong(elements[1]));
+      this.status = handleNullStringFromES(elements[0]);
+      this.date = new Date(Long.parseLong(handleNullStringFromES(elements[1])));
     }
     
     /*****************************************
@@ -1246,5 +1246,11 @@ public class JourneyHistory implements Cleanable
   public String toString()
   {
     return "JourneyHistory [" + (journeyID != null ? "journeyID=" + journeyID + ", " : "") + (nodeHistory != null ? "nodeHistory=" + nodeHistory + ", " : "") + (statusHistory != null ? "statusHistory=" + statusHistory + ", " : "") + (rewardHistory != null ? "rewardHistory=" + rewardHistory : "") + "]";
+  }
+  
+  public static String handleNullStringFromES(String esVal)
+  {
+    if (esVal != null && "null".equalsIgnoreCase(esVal)) return null;
+    else return esVal;
   }
 }

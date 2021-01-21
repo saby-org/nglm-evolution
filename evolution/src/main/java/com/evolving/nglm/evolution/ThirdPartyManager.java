@@ -3320,20 +3320,9 @@ public class ThirdPartyManager
       else
         {
           SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
-          SubscriberHistory subscriberHistory = subscriberProfile.getSubscriberHistory();
-          Map<String, List<JourneyHistory>> campaignStatisticsMap = new HashMap<String, List<JourneyHistory>>();
-
-          //
-          //  journey statistics
-          //
-
-          if (subscriberHistory != null && subscriberHistory.getJourneyHistory() != null)
-            {
-              campaignStatisticsMap = subscriberHistory.getJourneyHistory().stream().collect(Collectors.groupingBy(JourneyHistory::getJourneyID));
-            }
           
           //
-          //  journey statistics ES
+          //  journey statistics from ES
           //
           
           SearchRequest searchRequest = getSearchRequest(API.getCustomerAvailableCampaigns, subscriberID, null, new ArrayList<QueryBuilder>());
@@ -3345,23 +3334,6 @@ public class ThirdPartyManager
               enteredJourneysID.add((String) esFields.get("journeyID"));
             }
           
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-
           //
           //  read the active journeys
           //
@@ -3385,10 +3357,9 @@ public class ThirdPartyManager
           //
 
           List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
-          List<JSONObject> campaignsJsonES = new ArrayList<JSONObject>();
           for (Journey elgibleActiveCampaign : elgibleActiveCampaigns)
             {
-              if (campaignStatisticsMap.get(elgibleActiveCampaign.getJourneyID()) == null || campaignStatisticsMap.get(elgibleActiveCampaign.getJourneyID()).isEmpty())
+              if (!enteredJourneysID.contains(elgibleActiveCampaign.getJourneyID()))
                 {
                   //
                   // prepare and decorate response
@@ -3432,65 +3403,8 @@ public class ThirdPartyManager
                   campaignMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
                   campaignsJson.add(JSONUtilities.encodeObject(campaignMap));
                 }
-              
-              //
-              // ES
-              //
-              
-              if (!enteredJourneysID.contains(elgibleActiveCampaign.getJourneyID()))
-                {
-                  //
-                  // prepare and decorate response
-                  //
-
-                  Map<String, Object> campaignMap = new HashMap<String, Object>();
-                  campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
-                  campaignMap.put("campaignName", journeyService.generateResponseJSON(elgibleActiveCampaign, true, SystemTime.getCurrentTime()).get("display"));
-                  campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
-                  campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
-                  campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
-                  List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
-                  for (JourneyObjectiveInstance journeyObjectiveInstance : elgibleActiveCampaign.getJourneyObjectiveInstances())
-                    {
-                      List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
-                      JSONObject result = new JSONObject();
-
-                      JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
-                      result.put("active", journeyObjective.getActive());
-                      result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
-                      result.put("display", journeyObjective.getJSONRepresentation().get("display"));
-                      result.put("readOnly", journeyObjective.getReadOnly());
-                      result.put("name", journeyObjective.getGUIManagedObjectName());
-                      result.put("contactPolicyID", journeyObjective.getContactPolicyID());
-                      result.put("id", journeyObjective.getGUIManagedObjectID());
-
-                      for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
-                        {
-                          JSONObject characteristics = new JSONObject();
-                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
-                          characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
-                          characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
-                          characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
-                          characteristics.put("value", catalogCharacteristicInstance.getValue());
-                          resultCharacteristics.add(characteristics);
-                        }
-
-                      result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
-                      resultObjectives.add(result);
-                    }                   
-                  campaignMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
-                  campaignsJsonES.add(JSONUtilities.encodeObject(campaignMap));
-                }
-              
-              
-              
-              
-              
-              
-              
             }
           response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
-          response.put("campaignsES", JSONUtilities.encodeArray(campaignsJsonES));
           response.putAll(resolveAllSubscriberIDs(subscriberProfile));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
