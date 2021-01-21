@@ -3437,7 +3437,7 @@ public class ThirdPartyManager
               // ES
               //
               
-              if (enteredJourneysID.contains(elgibleActiveCampaign.getJourneyID()))
+              if (!enteredJourneysID.contains(elgibleActiveCampaign.getJourneyID()))
                 {
                   //
                   // prepare and decorate response
