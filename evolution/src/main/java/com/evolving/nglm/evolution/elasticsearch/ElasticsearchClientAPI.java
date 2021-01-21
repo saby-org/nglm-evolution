@@ -190,19 +190,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           .size(0)
           .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_NODEID_FIELD).size(MAX_BUCKETS));
       SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
-   System.out.println("search req:"+searchRequest);
-      /*
-      *
-      QueryBuilder query=QueryBuilders.matchAllQuery();
-      for(String reason : specialExit)
-        query=((BoolQueryBuilder) query).mustNot(QueryBuilders.termQuery("status", reason)); 
-      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
-          .query(query)
-          .size(0)
-          .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_NODEID_FIELD).size(MAX_BUCKETS));
-  
-      */
-      //
+        //
       // Send request & retrieve response synchronously (blocking call)
       // 
       SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
@@ -263,7 +251,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 	  BoolQueryBuilder query=QueryBuilders.boolQuery();
       for(String reason : specialExit)
         query=((BoolQueryBuilder) query).should(QueryBuilders.termQuery("status", reason)); 
-      log.info("SpecialExit count query"+query.toString());
+      log.debug("SpecialExit count query"+query.toString());
       CountRequest countRequest = new CountRequest(index).query(query);
       try {
 		CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
@@ -273,7 +261,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 		e.printStackTrace();
 		throw new ElasticsearchClientException(e.getMessage());
 	} 
-      log.info("Sum aggregation of special exit is for journey id:"+journeyID+" is:" + count); 
+      log.debug("Sum aggregation of special exit is for journey id:"+journeyID+" is:" + count); 
 	  return count;
   }
   public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
