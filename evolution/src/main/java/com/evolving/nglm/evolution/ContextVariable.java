@@ -519,6 +519,9 @@ public class ContextVariable
                     break;
                     
                   case TimeExpression:
+                    this.type = CriterionDataType.TimeCriterion;
+                    break;
+                    
                   default:
                     throw new GUIManagerException("unsupported context variable type", expression.getType().toString());
                 }
