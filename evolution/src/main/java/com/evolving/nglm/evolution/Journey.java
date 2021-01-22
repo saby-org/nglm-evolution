@@ -2565,6 +2565,20 @@ public class Journey extends GUIManagedObject implements StockableItem
         
     Map<String,CriterionField> contextVariableFields = new HashMap<String,CriterionField>();
     Set<ContextVariable> unvalidatedContextVariables = new HashSet<ContextVariable>();
+    
+    //
+    // targetFileVariables (wild card no need to validate)
+    //
+    
+    for (int i=0; i < targetFileVariables.size(); i++)
+      {
+        JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
+        JSONObject contextVarJson = generateContextVariableJson(targetFileVariableJSON);
+        ContextVariable fileContextVariable = new ContextVariable(contextVarJson, true);
+        CriterionField criterionField = new CriterionField(fileContextVariable);
+        contextVariableFields.put(criterionField.getID(), criterionField);
+      }
+    
     for (ContextVariable contextVariable : contextVariables.keySet())
       {
         switch (contextVariable.getVariableType())
@@ -2740,19 +2754,6 @@ public class Journey extends GUIManagedObject implements StockableItem
         throw new GUIManagerException("unvalidatedContextVariables "+buffer, Integer.toString(unvalidatedContextVariables.size()));
       }
     
-    //
-    // targetFileVariables 
-    //
-    
-    for (int i=0; i < targetFileVariables.size(); i++)
-      {
-        JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
-        JSONObject contextVarJson = generateContextVariableJson(targetFileVariableJSON);
-        ContextVariable fileContextVariable = new ContextVariable(contextVarJson, true);
-        CriterionField criterionField = new CriterionField(fileContextVariable);
-        contextVariableFields.put(criterionField.getID(), criterionField);
-      }
-
     /*****************************************
     *
     *  return

@@ -461,6 +461,7 @@ public class UploadedFileService extends GUIService
               {
                 GUIManagerException e = new GUIManagerException("invalidVarName", variableName);
                 processViolations(violations, e);
+                break;
               }
           }
       }
