@@ -51,7 +51,10 @@ public class Deployment
   //  data
   //
 
-  // kafka topics configs
+  private static String elasticSearchHost;
+  private static int elasticSearchPort;
+  private static String elasticSearchUserName;
+  private static String elasticSearchUserPassword;
   private static int topicSubscriberPartitions;
   private static int topicReplication;
   private static String topicMinInSyncReplicas;
@@ -265,6 +268,7 @@ public class Deployment
 
   // generated
   private static Map<String,Topic> allTopics;
+  private static boolean isPreprocessorNeeded = false;
 
   /*****************************************
    *
@@ -300,6 +304,10 @@ public class Deployment
   //  evolution accessors
   //
 
+  public static String getElasticSearchHost() { return elasticSearchHost; }
+  public static int getElasticSearchPort() { return elasticSearchPort; }
+  public static String getElasticSearchUserName() { return  elasticSearchUserName; }
+  public static String getElasticSearchUserPassword() { return  elasticSearchUserPassword; }
   public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
   public static int getTopicSubscriberPartitions() { return topicSubscriberPartitions; }
@@ -503,6 +511,7 @@ public class Deployment
   public static String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
   public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; }
   public static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
+  public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
 
   // addProfileCriterionField
   //
@@ -726,6 +735,19 @@ public class Deployment
        *  configuration
        *
        *****************************************/
+
+      elasticSearchHost = System.getenv("ELASTICSEARCH_HOST");
+      elasticSearchPort = -1;
+      try
+        {
+          elasticSearchPort = Integer.parseInt(System.getenv("ELASTICSEARCH_PORT"));
+        }
+      catch (NumberFormatException e)
+        {
+          log.info("deployment : can not get/parse env conf ELASTICSEARCH_PORT");
+        }
+      elasticSearchUserName = System.getenv("ELASTICSEARCH_USERNAME");
+      elasticSearchUserPassword = System.getenv("ELASTICSEARCH_USERPASSWORD");
 
       //
       // kafka topics configuration
@@ -1886,9 +1908,9 @@ public class Deployment
           }
           
           // elasticsearchConnectionSettings
-          JSONObject elasticsearchConnectionSettingsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "elasticsearchConnectionSettings", true);
-          for (Object key : elasticsearchConnectionSettingsJSON.keySet()) {
-            elasticsearchConnectionSettings.put((String) key, new ElasticsearchConnectionSettings((JSONObject) elasticsearchConnectionSettingsJSON.get(key)));
+          for (Object elasticsearchConnectionSettingsObject:JSONUtilities.decodeJSONArray(jsonRoot, "elasticsearchConnectionSettings", true).toArray()){
+            ElasticsearchConnectionSettings elasticsearchConnectionSetting = new ElasticsearchConnectionSettings((JSONObject) elasticsearchConnectionSettingsObject);
+            elasticsearchConnectionSettings.put(elasticsearchConnectionSetting.getId(), elasticsearchConnectionSetting);
           }
           
         }
@@ -3265,6 +3287,14 @@ public class Deployment
           dmd.getRequestTopics().stream().filter(Topic::isAutoCreated).forEach(topic->allTopics.put(topic.getName(),topic));
           dmd.getResponseTopics().stream().filter(Topic::isAutoCreated).forEach(topic->allTopics.put(topic.getName(),topic));
           if(dmd.getRoutingTopic()!=null&&dmd.getRoutingTopic().isAutoCreated()) allTopics.put(dmd.getRoutingTopic().getName(),dmd.getRoutingTopic());
+        }
+      // for event (only preprocessor topics one for now!)
+      for(EvolutionEngineEventDeclaration declaration:getEvolutionEngineEvents().values())
+        {
+          if(declaration.getPreprocessTopic()!=null){
+            isPreprocessorNeeded=true;
+            allTopics.put(declaration.getPreprocessTopic().getName(),declaration.getPreprocessTopic());
+          }
         }
 
     }

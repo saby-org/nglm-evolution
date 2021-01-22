@@ -246,7 +246,24 @@ public class SubscriberIDService
     Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
     return subscriberIDs.get(alternateID);
   }
-  
+  // same but blocking call if redis issue
+  public String getSubscriberIDBlocking(String alternateIDName, String alternateID) throws SubscriberIDServiceException
+  {
+    while(true)
+    {
+      try
+      {
+        return getSubscriberID(alternateIDName,alternateID);
+      }
+      catch (SubscriberIDServiceException e)
+      {
+        if(!(e.getCause() instanceof JedisException)) throw e;
+        log.warn("JEDIS error, will retry",e);
+        try { Thread.sleep(1000); } catch (InterruptedException e1) { }
+      }
+    }
+  }
+
   /*****************************************
   *
   *  class SubscriberIDServiceException

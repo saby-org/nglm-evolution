@@ -467,7 +467,7 @@ public class ThirdPartyManager
     productService = new ProductService(bootstrapServers, "thirdpartymanager-productservice-" + apiProcessKey, Deployment.getProductTopic(), false);
     productService.start();
     
-    voucherService = new VoucherService(bootstrapServers, "thirdpartymanager-voucherservice-" + apiProcessKey, Deployment.getVoucherTopic(), elasticsearch);
+    voucherService = new VoucherService(bootstrapServers, "thirdpartymanager-voucherservice-" + apiProcessKey, Deployment.getVoucherTopic());
     voucherService.start();
 
     deliverableService = new DeliverableService(bootstrapServers, "thirdpartymanager-deliverableservice-" + apiProcessKey, Deployment.getDeliverableTopic(), false);
@@ -5203,7 +5203,7 @@ public class ThirdPartyManager
 
     // OK if "not transferable"
     if(subscriberID == null){
-      VoucherPersonalES voucherES = voucherService.getVoucherPersonalESService().getESVoucherFromVoucherCode(supplier.getSupplierID(),voucherCode);
+      VoucherPersonalES voucherES = VoucherPersonalESService.getESVoucherFromVoucherCode(supplier.getSupplierID(),voucherCode,elasticsearch);
       if(voucherES==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
       subscriberID=voucherES.getSubscriberId();
     }

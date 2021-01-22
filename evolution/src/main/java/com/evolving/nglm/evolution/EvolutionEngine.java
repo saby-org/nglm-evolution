@@ -21,6 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
+import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
 import com.evolving.nglm.evolution.statistics.CounterStat;
@@ -54,7 +55,6 @@ import org.apache.kafka.streams.processor.TaskMetadata;
 import org.apache.kafka.streams.processor.ThreadMetadata;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.state.*;
-import org.elasticsearch.ElasticsearchException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -76,7 +76,6 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
@@ -98,19 +97,15 @@ import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
-import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
-import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -214,7 +209,6 @@ public class EvolutionEngine
   private static PaymentMeanService paymentMeanService;
   private static ResellerService resellerService;
   private static SupplierService supplierService;
-  private static SubscriberProfileService subscriberProfileService;
 
   private static KafkaStreams streams = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
@@ -287,21 +281,14 @@ public class EvolutionEngine
     Integer kafkaReplicationFactor = Integer.parseInt(args[6]);
     Integer kafkaStreamsStandbyReplicas = Integer.parseInt(args[7]);
 
-    String elasticsearchServerHost = args[8];
-    int elasticsearchServerPort = Integer.parseInt(args[9]);
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("EvolutionEngine").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("EvolutionEngine").getQueryTimeout();
-    String userName = args[10];
-    String userPassword = args[11];
-    
     // for performance testing only, SHOULD NOT BE USED IN PROD, the right rocksDB configuration should be able to provide the same
     boolean isInMemoryStateStores = false;
-    if(args.length>12 && args[12].toLowerCase().equals("1")) isInMemoryStateStores = true;
+    if("true".equals(System.getenv("EVOLUTIONENGINE_IN_MEMORY_STATE_STORES"))) isInMemoryStateStores = true;
     // try as well some rocksdb config (not sure yet at all about all this, documentation is not so clear, so testing)
     int rocksDBCacheMBytes=-1;// will not change the default kstream rocksdb settings
-    if(args.length>13 && !isInMemoryStateStores) rocksDBCacheMBytes = Integer.parseInt(args[13]);
+    if(!isInMemoryStateStores) try{ rocksDBCacheMBytes = Integer.parseInt(System.getenv("EVOLUTIONENGINE_ROCKSDB_CACHE_MB")); } catch(NumberFormatException e){}
     int rocksDBMemTableMBytes=-1;
-    if(args.length>14 && !isInMemoryStateStores && rocksDBCacheMBytes!=-1) rocksDBMemTableMBytes = Integer.parseInt(args[14]);
+    if(!isInMemoryStateStores && rocksDBCacheMBytes!=-1) try{ rocksDBMemTableMBytes = Integer.parseInt(System.getenv("EVOLUTIONENGINE_ROCKSDB_MEMTABLE_MB")); } catch(NumberFormatException e){}
     
 
     //
@@ -340,8 +327,6 @@ public class EvolutionEngine
     String extendedSubscriberProfileChangeLog = Deployment.getExtendedSubscriberProfileChangeLog();
     String subscriberHistoryChangeLog = Deployment.getSubscriberHistoryChangeLog();
 
-    String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
-
     //
     //  (force load of SubscriberProfile class)
     //
@@ -365,21 +350,6 @@ public class EvolutionEngine
    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
-    
-   //
-   // elasticsearch
-   //
-
-   ElasticsearchClientAPI elasticsearch;
-   try
-   {
-     elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
-   }
-   catch (ElasticsearchException e)
-   {
-     throw new ServerRuntimeException("could not initialize elasticsearch client", e);
-   }
-
     
     //
     //  dynamicCriterionFieldsService
@@ -483,7 +453,7 @@ public class EvolutionEngine
     //  voucherService
     //
 
-    voucherService = new VoucherService(bootstrapServers, "evolutionengine-voucher-" + evolutionEngineKey, Deployment.getVoucherTopic(), elasticsearch);
+    voucherService = new VoucherService(bootstrapServers, "evolutionengine-voucher-" + evolutionEngineKey, Deployment.getVoucherTopic());
     voucherService.start();
 
     //
@@ -607,9 +577,6 @@ public class EvolutionEngine
     //
 
     ucgStateReader = ReferenceDataReader.<String,UCGState>startReader("evolutionengine-ucgstate", Deployment.getBrokerServers(), Deployment.getUCGStateTopic(), UCGState::unpack);
-
-    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints(), 1);
-    subscriberProfileService.start();
 
     //
     //  create monitoring object
@@ -1320,7 +1287,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService, resellerService, supplierService, subscriberProfileService, elasticsearch));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService, resellerService, supplierService));
 
     /*****************************************
     *
@@ -1356,6 +1323,10 @@ public class EvolutionEngine
     *****************************************/
 
     log.info("evolution engine started");
+
+    // start the secondary preprocessor streams if needed
+    Preprocessor.startPreprocessorStreams(evolutionEngineKey,supplierService,voucherService,voucherTypeService);
+
   }
 
   /*****************************************
@@ -1611,13 +1582,11 @@ public class EvolutionEngine
     private StockMonitor stockService;
     private ResellerService resellerService;
     private SupplierService supplierService;
-    private SubscriberProfileService subscriberProfileService;
-    private ElasticsearchClientAPI elasticsearch;
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService, ResellerService resellerService, SupplierService supplierService, SubscriberProfileService subscriberProfileService, ElasticsearchClientAPI elasticsearch)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService, ResellerService resellerService, SupplierService supplierService)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1652,8 +1621,6 @@ public class EvolutionEngine
       this.stockService = stockService;
       this.resellerService = resellerService;
       this.supplierService = supplierService;
-      this.subscriberProfileService = subscriberProfileService;
-      this.elasticsearch = elasticsearch;
     }
 
     //
@@ -1695,15 +1662,6 @@ public class EvolutionEngine
       stockService.close();
       resellerService.stop();
       supplierService.stop();
-      subscriberProfileService.stop();
-      try
-        {
-          elasticsearch.close();
-        }
-      catch (IOException e)
-        {
-          log.info("Issue stopping elasticsearch client : " + e.getLocalizedMessage());
-        }
 
       //
       //  rest server
@@ -1756,7 +1714,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, subscriberProfileService, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     if(log.isTraceEnabled()) log.trace("updateSubscriberState on event "+evolutionEvent.getClass().getSimpleName()+ " for "+evolutionEvent.getSubscriberID());
@@ -6775,7 +6733,6 @@ public class EvolutionEngine
     private KStreamsUniqueKeyServer uniqueKeyServer;
     private Date now;
     private List<String> subscriberTraceDetails;
-    private SubscriberProfileService subscriberProfileService;
     
     /*****************************************
     *
@@ -6783,7 +6740,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, SubscriberStreamEvent event, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, ResellerService resellerService, SupplierService supplierService, SubscriberProfileService subscriberProfileService, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, SubscriberStreamEvent event, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, ResellerService resellerService, SupplierService supplierService, Date now)
     {
       this.subscriberState = subscriberState;
       this.event = event;
@@ -6812,7 +6769,6 @@ public class EvolutionEngine
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
-      this.subscriberProfileService = subscriberProfileService;
     }
 
     /*****************************************
@@ -6846,7 +6802,6 @@ public class EvolutionEngine
     public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
     public ResellerService getResellerService() { return resellerService; }
     public SupplierService getSupplierService() { return supplierService; }
-    public SubscriberProfileService getSubscriberProfileService() { return subscriberProfileService; }
 
     public KStreamsUniqueKeyServer getUniqueKeyServer() { return uniqueKeyServer; }
     public List<String> getSubscriberTraceDetails() { return subscriberTraceDetails; }
@@ -8186,64 +8141,17 @@ public class EvolutionEngine
 
       String voucherCode = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.voucher.code");
       String supplierDisplay = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
-      Boolean transferred = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.transferred");
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
       VoucherAction voucherActionEvent = new VoucherAction(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage(), RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseCode(), operation.getExternalRepresentation());
-      VoucherChange voucherChange = null;
-      
-      if (supplierDisplay == null) {
-        log.info("Supplier is null in campaign " + subscriberEvaluationRequest.getJourneyState().getJourneyID());
-        voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", (operation == Operation.Redeem)?VoucherChangeAction.Redeem:VoucherChangeAction.Unknown, voucherCode, "unknownVoucherID", null, moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
-      } else {
-        if (transferred != null && transferred) { // EVPRO-778 need to do action for subscriber
-          Supplier supplier = null;
-          for (Supplier supplierLoop : evolutionEventContext.getSupplierService().getActiveSuppliers(now)) {
-            if (supplierDisplay.equals(supplierLoop.getGUIManagedObjectDisplay())) {
-              supplier = supplierLoop;
-              break;
-            }
-          }
-          if (supplier == null) {
-            log.warn("Unable to find active supplier with name " + supplierDisplay);
-            voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", (operation == Operation.Redeem)?VoucherChangeAction.Redeem:VoucherChangeAction.Unknown, voucherCode, "unknownVoucherID", null, moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
-          } else {
-            String supplierID = supplier.getSupplierID();
-            log.debug("Found supplierID " + supplierID + " for supplier " + supplierDisplay + " and voucherCode " + voucherCode);
-            VoucherPersonalES voucherES = evolutionEventContext.getVoucherService().getVoucherPersonalESService().getESVoucherFromVoucherCode(supplierID,voucherCode);
-            if (voucherES == null) {
-              log.warn("Unable to find voucher with supplier " + supplierDisplay + " (id " + supplierID + ") and voucherCode " + voucherCode);
-              voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", (operation == Operation.Redeem)?VoucherChangeAction.Redeem:VoucherChangeAction.Unknown, voucherCode, "unknownVoucherID", null, moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
-            } else {
-              log.debug("Found voucher " + voucherES + " for supplier " + supplierDisplay + " and voucherCode " + voucherCode);
-              String subscriberID = voucherES.getSubscriberId();
-              log.debug("Found subscriberID " + subscriberID + " for supplier " + supplierDisplay + " (id " + supplierID + ") and voucherCode " + voucherCode);
-              try {
-                log.debug("Trying to retrieve subscriber profile for " + subscriberID);
-                subscriberProfile = evolutionEventContext.getSubscriberProfileService().getSubscriberProfile(subscriberID, false, false);
-                log.debug("Got subscriber profile " + subscriberProfile);
-              } catch (SubscriberProfileServiceException e) {
-                log.warn("Unable to find voucher owner profile " + subscriberID + " " + e.getLocalizedMessage());
-                voucherChange = new VoucherChange(subscriberID, now, null, "", (operation == Operation.Redeem)?VoucherChangeAction.Redeem:VoucherChangeAction.Unknown, voucherCode, voucherES.getVoucherId(), null, moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
-              }
-            }
-          }
-        }
-      }
-      if (voucherChange != null) { // we got an error before, record it 
-        evolutionEventContext.getSubscriberState().getVoucherChanges().add(voucherChange);
-        subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
-        voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
-        voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
-        actions.add(voucherActionEvent);
-      } else {
-        if (operation == Operation.Redeem)
-          {
-            try
+
+      if (operation == Operation.Redeem)
+        {
+          try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -8257,44 +8165,36 @@ public class EvolutionEngine
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
-            } 
-            catch (ThirdPartyManagerException e) 
+            }
+          catch (ThirdPartyManagerException e)
             {
               voucherActionEvent.setActionStatus(e.getMessage());
               voucherActionEvent.setActionStatusCode(e.getResponseCode());
             }
-            actions.add(voucherActionEvent);
-          }
-        else if (operation == Operation.Validate)
-          {
-            try
+          actions.add(voucherActionEvent);
+        }
+      else if (operation == Operation.Validate)
+        {
+          try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              if (voucherChange == null) { // no error before
-                voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS);
-              }
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
-            } 
-            catch (ThirdPartyManagerException e)
+            }
+          catch (ThirdPartyManagerException e)
             {
               voucherActionEvent.setActionStatus(e.getMessage());
               voucherActionEvent.setActionStatusCode(e.getResponseCode());
             }
-            actions.add(voucherActionEvent);
-          }
-      }
+          actions.add(voucherActionEvent);
+        }
       
       if (log.isDebugEnabled()) log.debug("VoucherActionManager - VoucherAction {}, journeyID {}, voucherActionEvent is {} and supplier is {}", operation, journeyID, voucherActionEvent, supplierDisplay);
-      
-      /*****************************************
-      *
-      *  return request
-      *
-      *****************************************/
 
       return actions;
+
     }
   }
   

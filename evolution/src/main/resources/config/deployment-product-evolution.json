@@ -45,15 +45,16 @@
 
   "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   "elasticsearchScrollSize" : 1000,
-  "elasticsearchConnectionSettings" : {
-    "UCGEngine"                      : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "GUIManager"                     : { "connectTimeout" : 30000, "queryTimeout" : 7200000 },
-    "ThirdPartyManager"              : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "EvolutionEngine"                : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "PurchaseFulfillmentManager"     : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "ReportManager"                  : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "DatacubeManager"                : { "connectTimeout" : 30000, "queryTimeout" : 900000 }
-  },
+  "elasticsearchConnectionSettings" :
+    [
+      { "id" : "DatacubeManager",            "connectTimeout" : 30000, "queryTimeout" : 900000 },
+      { "id" : "GUIManager",                 "connectTimeout" : 30000, "queryTimeout" : 7200000 },
+      { "id" : "PreprocessorEngine",         "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "PurchaseFulfillmentManager", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "ReportManager",              "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "ThirdPartyManager",          "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "UCGEngine",                  "connectTimeout" : 30000, "queryTimeout" : 60000 }
+    ],
   "elasticSearchScrollKeepAlive" : 15,
   
   "elasticsearchDefaultShards" : 1,

@@ -198,7 +198,7 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 
 	@Override
 	public void packetReceived(Connection source, SMPPPacket packet) {
-		logger.debug("SMPPConnection.packetReceived() : execution started... source: "+source);
+		if(logger.isDebugEnabled()) logger.debug("SMPPConnection.packetReceived() : execution started... source: "+source);
 		if (source != null) {
 			if (logger.isTraceEnabled()) logger.trace("SMPPConnection.packetReceived("+source+" #"+source.hashCode()+", "+packet+") ["+this.name+"]"+"packet.getCommandId["+packet.getCommandId() +"] packet.getCommandStatus()["+packet.getCommandStatus()+"]");
 			switch(packet.getCommandId()) {
@@ -300,7 +300,7 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 	public void update(Connection source, SMPPEvent event) {
 		if (logger.isTraceEnabled()) logger.trace("SMPPConnection.update("+source+" #"+source.hashCode()+", "+event+") ["+this.name+"] event.Type["+event.getType()+"]");
 		if (source != null) {
-			logger.debug("source[state] "+source.getState()+" source[isBound] "+source.isBound()+" source[connectionType] "+source.getConnectionType());
+			if(logger.isDebugEnabled()) logger.debug("source[state] "+source.getState()+" source[isBound] "+source.isBound()+" source[connectionType] "+source.getConnectionType());
 			switch(event.getType()) {
 				case SMPPEvent.RECEIVER_START:
 					// useless

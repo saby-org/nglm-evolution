@@ -7,12 +7,11 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.DeploymentManagedObject;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import com.evolving.nglm.evolution.kafka.Topic;
+import com.evolving.nglm.evolution.preprocessor.PreprocessorEvent;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
 
@@ -20,7 +19,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class EvolutionEngineEventDeclaration
 {
@@ -53,6 +51,7 @@ public class EvolutionEngineEventDeclaration
   private String name;
   private String eventClassName;
   private String eventTopic;
+  private Topic preprocessTopic;
   private EventRule eventRule;
   private Map<String,CriterionField> eventCriterionFields;
 
@@ -61,6 +60,7 @@ public class EvolutionEngineEventDeclaration
   //
 
   private ConnectSerde<EvolutionEngineEvent> eventSerde;
+  private ConnectSerde<PreprocessorEvent> preprocessorSerde;
   
   /*****************************************
   *
@@ -72,9 +72,11 @@ public class EvolutionEngineEventDeclaration
   public String getName() { return name; }
   public String getEventClassName() { return eventClassName; }
   public String getEventTopic() { return eventTopic; }
+  public Topic getPreprocessTopic() { return preprocessTopic; }
   public EventRule getEventRule() { return eventRule; }
   public Map<String,CriterionField> getEventCriterionFields() { return eventCriterionFields; }
   public ConnectSerde<EvolutionEngineEvent> getEventSerde() { return eventSerde; }
+  public ConnectSerde<PreprocessorEvent> getPreprocessorSerde() { return preprocessorSerde; }
 
   /*****************************************
   *
@@ -93,6 +95,8 @@ public class EvolutionEngineEventDeclaration
     this.eventRule = EventRule.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "eventRule", "standard"));
     this.eventClassName = JSONUtilities.decodeString(jsonRoot, "eventClass", this.eventRule != EventRule.Internal);
     this.eventTopic = JSONUtilities.decodeString(jsonRoot, "eventTopic", false); // topic can be null
+    String preprocessTopicName = JSONUtilities.decodeString(jsonRoot, "preprocessTopic", false);
+    if(preprocessTopicName!=null) this.preprocessTopic = new Topic(preprocessTopicName, Topic.TYPE.traffic, true);// preprocessorTopic can be null
     this.eventCriterionFields = decodeEventCriterionFields(JSONUtilities.decodeJSONArray(jsonRoot, "eventCriterionFields", false));
 
     //
@@ -110,6 +114,22 @@ public class EvolutionEngineEventDeclaration
               if (! EvolutionEngineEvent.class.isAssignableFrom(eventClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration", eventClassName);
               Method serdeMethod = eventClass.getMethod("serde");
               this.eventSerde = (ConnectSerde<EvolutionEngineEvent>) serdeMethod.invoke(null);
+              if(this.getPreprocessTopic()!=null)
+			    {
+			  	  String preprocessClassName = JSONUtilities.decodeString(jsonRoot, "preprocessClass", false);
+			  	  if(preprocessClassName!=null)
+				    {
+					  Class<? extends PreprocessorEvent> preprocessClass = (Class<? extends PreprocessorEvent>) Class.forName(preprocessClassName);
+					  if (! PreprocessorEvent.class.isAssignableFrom(preprocessClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration", preprocessClassName);
+					  Method preprocessSerdeMethod = eventClass.getMethod("serde");
+					  this.preprocessorSerde = (ConnectSerde<PreprocessorEvent>) preprocessSerdeMethod.invoke(null);
+				    }
+				  else
+				    {
+				      if (! PreprocessorEvent.class.isAssignableFrom(eventClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration", eventClassName);
+				  	  this.preprocessorSerde = (ConnectSerde<PreprocessorEvent>) serdeMethod.invoke(null);
+				    }
+			    }
             }
           catch (ClassNotFoundException|NoSuchMethodException|IllegalAccessException|InvocationTargetException e)
             {
