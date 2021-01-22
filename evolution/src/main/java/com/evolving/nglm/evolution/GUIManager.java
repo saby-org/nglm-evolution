@@ -77,6 +77,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,6 +135,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchManager;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.google.gson.JsonArray;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -431,6 +433,7 @@ public class GUIManager
     getCustomerLoyaltyPrograms("getCustomerLoyaltyPrograms"),
     refreshUCG("refreshUCG"),
     putUploadedFile("putUploadedFile"),
+    putUploadedFileWithVariables("putUploadedFileWithVariables"),
     getUploadedFileList("getUploadedFileList"),
     getUploadedFileSummaryList("getUploadedFileSummaryList"),
     removeUploadedFile("removeUploadedFile"),
@@ -878,7 +881,10 @@ public class GUIManager
       @Override public void journeyActivated(Journey journey) {
           log.debug("journeyActivated: " + journey.getJourneyID()+" "+journey.getJourneyName());
 
+          // 
           // send the evaluate target order to evolution engine
+          //
+          
           if (journey.getTargetID() != null)
           {
             EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(journey.getJourneyID()), journey.getTargetID());
@@ -886,6 +892,10 @@ public class GUIManager
                   .serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
           }
 
+          //
+          //  externalAPIMethodJourneyActivated
+          //
+          
           if (externalAPIMethodJourneyActivated != null)
             {
               try
@@ -915,7 +925,21 @@ public class GUIManager
                 throw new RuntimeException(e);
               }
             }
+          
+          //
+          //  FileVariables
+          //
+          
+          if (TargetingType.FileVariables == journey.getTargetingType() && journey.getTargetingFileVariableID() != null)
+            {
+              Date now = SystemTime.getCurrentTime();
+              String targetingFileID = journey.getTargetingFileVariableID();
+              if (log.isDebugEnabled()) log.debug("fileVariable trigger will be generated from file {} for journey {}", targetingFileID, journey.getGUIManagedObjectDisplay());
+              UploadedFile targetingFile = uploadedFileService.getActiveUploadedFile(targetingFileID, now);
+              if (targetingFile != null) uploadedFileService.createFileWithVariableEvents(targetingFile, subscriberIDService, kafkaProducer);
+            }
         }
+      
       @Override public void journeyDeactivated(String guiManagedObjectID)
       {
         log.debug("journeyDeactivated: " + guiManagedObjectID);
@@ -2034,6 +2058,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getUploadedFileSummaryList", new APISimpleHandler(API.getUploadedFileSummaryList));
         restServer.createContext("/nglm-guimanager/removeUploadedFile", new APISimpleHandler(API.removeUploadedFile));
         restServer.createContext("/nglm-guimanager/putUploadedFile", new APIComplexHandler(API.putUploadedFile));
+        restServer.createContext("/nglm-guimanager/putUploadedFileWithVariables", new APIComplexHandler(API.putUploadedFileWithVariables));
         restServer.createContext("/nglm-guimanager/getCustomerAlternateIDs", new APISimpleHandler(API.getCustomerAlternateIDs));
         restServer.createContext("/nglm-guimanager/getCustomerAvailableCampaigns", new APISimpleHandler(API.getCustomerAvailableCampaigns));
         restServer.createContext("/nglm-guimanager/getTargetList", new APISimpleHandler(API.getTargetList));
@@ -4116,6 +4141,7 @@ public class GUIManager
         switch (api)
           {
             case putUploadedFile:
+            case putUploadedFileWithVariables:
               break;
 
             default:
@@ -4207,6 +4233,10 @@ public class GUIManager
               {
                 case putUploadedFile:
                   guiManagerGeneral.processPutFile(jsonResponse, exchange);
+                  break;
+                  
+                case putUploadedFileWithVariables:
+                  guiManagerGeneral.processPutUploadedFileWithVariables(jsonResponse, exchange);
                   break;
 
                 case downloadReport:
@@ -4721,6 +4751,7 @@ public class GUIManager
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
     boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
     String nodeTypeParameterID = JSONUtilities.decodeString(jsonRoot, "nodeTypeParameterID", false);
+    JSONArray targetFileVariables = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
     
     /*****************************************
     *
@@ -4751,7 +4782,7 @@ public class GUIManager
     
     if (journeyNodeType != null)
       {
-        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType);
+        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType, targetFileVariables), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType);
         Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
@@ -4814,6 +4845,7 @@ public class GUIManager
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
+    JSONArray targetFileVariables = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
 
     /*****************************************
     *
@@ -4824,7 +4856,7 @@ public class GUIManager
     List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
     if (journeyNodeType != null)
       {
-        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
+        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, targetFileVariables), journeyNodeType, journeyNodeEvent, selectedJourney);
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly);
         if (journeyNodeType.getScheduleNode()) journeyCriterionFields = journeyCriterionFields.stream().filter(criteriaFieldJSON -> IsJourneyScheduleNodeCriteria(criteriaFieldJSON)).collect(Collectors.toList());
@@ -4886,6 +4918,7 @@ public class GUIManager
     Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     String id = JSONUtilities.decodeString(jsonRoot, "id", true);
     id = (id != null && id.trim().length() == 0) ? null : id;
+    JSONArray targetFileVariables = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
 
     /*****************************************
     *
@@ -4905,7 +4938,7 @@ public class GUIManager
         List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
         if (journeyNodeType != null)
           {
-            CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
+            CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, targetFileVariables), journeyNodeType, journeyNodeEvent, selectedJourney);
             Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
             journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, false);
             if (journeyNodeType.getScheduleNode()) journeyCriterionFields = journeyCriterionFields.stream().filter(criteriaFieldJSON -> IsJourneyScheduleNodeCriteria(criteriaFieldJSON)).collect(Collectors.toList());
@@ -5218,7 +5251,8 @@ public class GUIManager
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
     Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
-    Map<String,CriterionField> contextVariables = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
+    JSONArray targetFileVariables = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
+    Map<String,CriterionField> contextVariables = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, targetFileVariables);
 
     /*****************************************
     *
@@ -5584,7 +5618,8 @@ public class GUIManager
         //
         // Update targetCount
         //
-        journey.setTargetCount(elasticsearch);
+        
+        journey.setTargetCount(elasticsearch, uploadedFileService);
         
         /*****************************************
         *
@@ -6484,7 +6519,7 @@ public class GUIManager
     JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
     JSONObject bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
     JSONObject bulkCampaignInfo = JSONUtilities.decodeJSONObject(jsonRoot, "info", false);
-    
+    String targetingType = JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria");
     JSONArray bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", true);
     
     //
@@ -6499,6 +6534,8 @@ public class GUIManager
     Integer lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     if (recurrence && lastCreatedOccurrenceNumber == null) lastCreatedOccurrenceNumber = 1;
     boolean recurrenceActive = JSONUtilities.decodeBoolean(jsonRoot, "recurrenceActive", Boolean.FALSE);
+    String targetingFileVariableID = JSONUtilities.decodeString(jsonRoot, "targetingFileVariableID", false);
+    JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", false);
     
     /*****************************************
     *
@@ -6572,7 +6609,7 @@ public class GUIManager
         campaignJSONRepresentation.put("description", bulkCampaignDescription);
         campaignJSONRepresentation.put("effectiveStartDate", bulkCampaignEffectiveStartDate);
         campaignJSONRepresentation.put("effectiveEndDate", bulkCampaignEffectiveEndDate);
-        campaignJSONRepresentation.put("targetingType", "criteria");
+        campaignJSONRepresentation.put("targetingType", targetingType);
         campaignJSONRepresentation.put("targetID", bulkCampaignTargetIDs);
         campaignJSONRepresentation.put("boundParameters", bulkCampaignBoundParameters);
         campaignJSONRepresentation.put("appendUCG", appendUCG);
@@ -6596,6 +6633,8 @@ public class GUIManager
         if (journeyScheduler != null)campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
         campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
         campaignJSONRepresentation.put("recurrenceActive", recurrenceActive);
+        campaignJSONRepresentation.put("targetingFileVariableID", targetingFileVariableID);
+        campaignJSONRepresentation.put("targetFileVariables", targetFileVariablesJSON);
 
         //
         //  campaignJSON
@@ -6614,7 +6653,8 @@ public class GUIManager
         //
         // Update targetCount
         //
-        bulkCampaign.setTargetCount(elasticsearch);
+        
+        bulkCampaign.setTargetCount(elasticsearch, uploadedFileService);
         
         /*****************************************
         *
@@ -26467,6 +26507,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     catch (SubscriberIDServiceException e)
       {
         log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());
+      }
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  resolveSubscriberID
+  *
+  ****************************************/
+
+  protected String resolveSubscriberID(String alternateID, String alternateIDValue)
+  {
+    String result = null;
+    try
+      {
+        result = subscriberIDService.getSubscriberID(alternateID, alternateIDValue);
+      }
+    catch (SubscriberIDServiceException e)
+      {
+        log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", alternateIDValue, e.getMessage());
       }
     return result;
   }

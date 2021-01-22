@@ -124,6 +124,7 @@ public class Deployment
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
   private static String voucherActionTopic;
+  private static String fileWithVariableEventTopic;
   private static String tokenRedeemedTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
@@ -371,6 +372,7 @@ public class Deployment
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
   public static String getVoucherActionTopic() { return voucherActionTopic; }
+  public static String getFileWithVariableEventTopic() { return fileWithVariableEventTopic; }
   public static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
@@ -910,6 +912,19 @@ public class Deployment
       try
         {
           voucherActionTopic = JSONUtilities.decodeString(jsonRoot, "voucherActionTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
+      //  fileWithVariableEventTopic
+      //
+
+      try
+        {
+          fileWithVariableEventTopic = JSONUtilities.decodeString(jsonRoot, "fileWithVariableEventTopic", true);
         }
       catch (JSONUtilitiesException e)
         {

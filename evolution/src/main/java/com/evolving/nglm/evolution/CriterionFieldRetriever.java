@@ -326,6 +326,12 @@ public abstract class CriterionFieldRetriever
   public static Object getVoucherRedemptionVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionVoucherCode(); }
   public static Object getVoucherRedemptionStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionStatus(); }
   public static Object getVoucherRedemptionStatusCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionStatusCode(); }
+  
+  //
+  //  FileWithVariableEvent
+  //
+  
+  public static Object getFileWithVariableID(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((FileWithVariableEvent) evaluationRequest.getSubscriberStreamEvent()).getFileID(); }
 
   
 

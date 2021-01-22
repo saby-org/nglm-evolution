@@ -18,7 +18,13 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.evolution.FileWithVariableEvent;
+
 import io.confluent.connect.avro.AvroConverter;
+import kafka.log.Log;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +37,12 @@ public class ConnectSerde<T> implements Serde<T>
   *  constructor
   *
   *****************************************/
+  
+  //
+  // logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(ConnectSerde.class);
 
   private boolean isKey;
   private boolean useWrapper;
