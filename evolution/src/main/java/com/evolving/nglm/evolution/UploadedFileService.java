@@ -546,6 +546,17 @@ public class UploadedFileService extends GUIService
           }
         result = rawValue;
         break;
+        
+      case BooleanCriterion:
+        try 
+        {
+          result = Boolean.parseBoolean(rawValue);
+        }
+      catch(JSONUtilitiesException ex)
+        {
+          processViolations(violations, new GUIManagerException("badFieldValue", rawValue + "," + variableName + "," + lineNumber));
+        }
+        break;
 
       default:
         processViolations(violations, new GUIManagerException("datatype not supported", "invalid dataType " + dataType + " for variable " + variableName));
