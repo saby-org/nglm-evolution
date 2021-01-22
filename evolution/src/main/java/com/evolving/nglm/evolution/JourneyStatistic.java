@@ -39,7 +39,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   //
 
   private static Schema schema = null;
-  private static int currentSchemaVersion = 8;
+  private static int currentSchemaVersion = 9;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
@@ -52,12 +52,14 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("transitionDate", Timestamp.SCHEMA);
     schemaBuilder.field("linkID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("fromNodeID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("toNodeID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("fromNodeID", Schema.OPTIONAL_STRING_SCHEMA); // TO BE REMOVED IN THE FUTURE (not pushed in ES anymore)
+    schemaBuilder.field("toNodeID", Schema.STRING_SCHEMA);            // TO BE **RENAMED** IN THE FUTURE (for nodeID / currentNodeID)
     schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("sample", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("markNotified", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("markConverted", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("markNotified", Schema.BOOLEAN_SCHEMA);       // TO BE REMOVED IN THE FUTURE (not pushed in ES anymore)
+    schemaBuilder.field("markConverted", Schema.BOOLEAN_SCHEMA);      // TO BE REMOVED IN THE FUTURE (not pushed in ES anymore)
+    schemaBuilder.field("lastConversionDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("conversionCount", Schema.INT32_SCHEMA);
     schemaBuilder.field("statusNotified", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("statusConverted", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("statusTargetGroup", Schema.OPTIONAL_BOOLEAN_SCHEMA);
@@ -105,6 +107,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   private String sample;
   private boolean markNotified;
   private boolean markConverted;
+  private Date lastConversionDate;
+  private int conversionCount;
   private boolean statusNotified;
   private boolean statusConverted;
   private Boolean statusTargetGroup;
@@ -135,6 +139,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   public String getSample() { return sample; }
   public boolean getMarkNotified() { return markNotified; }
   public boolean getMarkConverted() { return markConverted; }
+  public Date getLastConversionDate() { return lastConversionDate; }
+  public int getConversionCount() { return conversionCount; }
   public boolean getStatusNotified() { return statusNotified; }
   public boolean getStatusConverted() { return statusConverted; }
   public Boolean getStatusTargetGroup() { return statusTargetGroup; }
@@ -175,6 +181,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.sample = null;
     this.markNotified = false;
     this.markConverted = false;
+    this.lastConversionDate = null;
+    this.conversionCount = 0;
     this.statusNotified = false;
     this.statusConverted = false;
     this.statusTargetGroup = null;
@@ -208,6 +216,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.sample = sample;
     this.markNotified = markNotified;
     this.markConverted = markConverted;
+    this.lastConversionDate = journeyHistory.getLastConversionDate();
+    this.conversionCount = journeyHistory.getConversionCount();
     this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     this.statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
     this.statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
@@ -249,6 +259,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.deliveryRequestID = null;
     this.markNotified = false;
     this.markConverted = false;
+    this.lastConversionDate = journeyHistory.getLastConversionDate();
+    this.conversionCount = journeyHistory.getConversionCount();
     this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     this.statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
     this.statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
@@ -277,7 +289,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
 
-  private JourneyStatistic(SchemaAndValue schemaAndValue, String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum, String specialExitStatus,Date exitDate)
+  private JourneyStatistic(SchemaAndValue schemaAndValue, String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, Date lastConversionDate, int conversionCount, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum, String specialExitStatus,Date exitDate)
   {
     super(schemaAndValue);
     this.journeyStatisticID = journeyStatisticID;
@@ -292,6 +304,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.sample = sample;
     this.markNotified = markNotified;
     this.markConverted = markConverted;
+    this.lastConversionDate = lastConversionDate;
+    this.conversionCount = conversionCount;
     this.statusNotified = statusNotified;
     this.statusConverted = statusConverted;
     this.statusTargetGroup = statusTargetGroup;
@@ -329,6 +343,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.sample = journeyStatistic.getSample();
     this.markNotified = journeyStatistic.getMarkNotified();
     this.markConverted = journeyStatistic.getMarkConverted();
+    this.lastConversionDate = journeyStatistic.getLastConversionDate();
+    this.conversionCount = journeyStatistic.getConversionCount();
     this.statusNotified = journeyStatistic.getStatusNotified();
     this.statusConverted = journeyStatistic.getStatusConverted();
     this.statusTargetGroup = journeyStatistic.getStatusTargetGroup();
@@ -427,6 +443,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     struct.put("sample", journeyStatistic.getSample());
     struct.put("markNotified", journeyStatistic.getMarkNotified());
     struct.put("markConverted", journeyStatistic.getMarkConverted());
+    struct.put("lastConversionDate", journeyStatistic.getLastConversionDate());
+    struct.put("conversionCount", journeyStatistic.getConversionCount());
     struct.put("statusNotified", journeyStatistic.getStatusNotified());
     struct.put("statusConverted", journeyStatistic.getStatusConverted());
     struct.put("statusTargetGroup", journeyStatistic.getStatusTargetGroup());
@@ -529,6 +547,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     String sample = valueStruct.getString("sample");
     boolean markNotified = (schemaVersion >= 2) ? valueStruct.getBoolean("markNotified") : false;
     boolean markConverted = (schemaVersion >= 2) ? valueStruct.getBoolean("markConverted") : false;
+    Date lastConversionDate = (schemaVersion >= 9) ? (Date) valueStruct.get("lastConversionDate") : null;
+    int conversionCount = (schemaVersion >= 9) ? valueStruct.getInt32("conversionCount") : 0;
     boolean statusNotified = valueStruct.getBoolean("statusNotified");
     boolean statusConverted = valueStruct.getBoolean("statusConverted");
     Boolean statusControlGroup = valueStruct.getBoolean("statusControlGroup");
@@ -546,7 +566,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     //  return
     //
 
-    return new JourneyStatistic(schemaAndValue, journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum , specialExitStatus , exitDate);
+    return new JourneyStatistic(schemaAndValue, journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, lastConversionDate, conversionCount, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum , specialExitStatus , exitDate);
   }
   
   /*****************************************
@@ -747,6 +767,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
         + (sample != null ? "sample=" + sample + ", " : "") + "markNotified=" + markNotified 
         + ", markConverted=" + markConverted + ", statusNotified=" + statusNotified 
         + ", statusConverted=" + statusConverted + ", "
+        + (lastConversionDate != null ? "lastConversionDate=" + lastConversionDate + ", " : "") 
+        + "conversionCount=" + conversionCount + ", "
         + (statusTargetGroup != null ? "statusTargetGroup=" + statusTargetGroup + ", " : "") 
         + (statusControlGroup != null ? "statusControlGroup=" + statusControlGroup + ", " : "") 
         + (statusUniversalControlGroup != null ? "statusUniversalControlGroup=" + statusUniversalControlGroup + ", " : "") 
