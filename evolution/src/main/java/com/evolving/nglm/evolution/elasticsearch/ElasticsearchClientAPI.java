@@ -23,6 +23,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -257,9 +258,12 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 		CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
 		if(countResponse!=null)
 		count=countResponse.getCount();
-	} catch (Exception e) {
+	} catch (IndexNotFoundException ese) {
+		log.info("No Index Found" + index);
+		count=0; 
+    }catch (Exception e) {
 		e.printStackTrace();
-		throw new ElasticsearchClientException(e.getMessage());
+		count=0; 
 	} 
       log.debug("Sum aggregation of special exit is for journey id:"+journeyID+" is:" + count); 
 	  return count;
