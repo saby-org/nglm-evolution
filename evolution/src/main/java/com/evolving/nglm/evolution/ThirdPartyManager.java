@@ -1300,46 +1300,22 @@ public class ThirdPartyManager
       else
         {
 
+          List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
+          
           //
           // read history
           //
 
-          SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-          List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
-          List<JSONObject> ESBDRsJson = new ArrayList<JSONObject>();
-          if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null) 
+          SearchRequest searchRequest = getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
+          List<SearchHit> hits = getESHits(searchRequest);
+          for (SearchHit hit : hits)
             {
-              List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
-
-              //
-              // filter BDRs
-              //
-
-              List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.BDR).collect(Collectors.toList()); 
-             
-              SearchRequest searchRequest = getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
-              List<SearchHit> hits = getESHits(searchRequest);
-              for (SearchHit hit : hits)
-                {
-                  Map<String, Object> esFields = hit.getSourceAsMap();
-                  CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
-                  
-                  Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
-                  ESBDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
-                }
-
-              //
-              // filter and prepare JSON
-              //
-
-              for (DeliveryRequest bdr : BDRs) 
-                {
-                  Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
-                  BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
-                }
+              Map<String, Object> esFields = hit.getSourceAsMap();
+              CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
+              Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+              BDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
             }
           response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
-          response.put("ESBDRs", JSONUtilities.encodeArray(ESBDRsJson));
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -1461,71 +1437,57 @@ public class ThirdPartyManager
           // read history
           //
 
-          SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
           List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
-          List<JSONObject> ESODRsJson = new ArrayList<JSONObject>();
-          if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null) 
+          List<DeliveryRequest> ODRs = new ArrayList<DeliveryRequest>();
+          SearchRequest searchRequest = getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
+          List<SearchHit> hits = getESHits(searchRequest);
+          for (SearchHit hit : hits)
             {
-              List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+              PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
+              ODRs.add(purchaseFulfillmentRequest);
+            }
 
-              //
-              // filter ODRs
-              //
+          //
+          // filter on paymentMeanID * NOT in ES SHOULD BE FILTER AS IT IS *
+          //
 
-              List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.ODR).collect(Collectors.toList());
-              
-              SearchRequest searchRequest = getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
-              List<SearchHit> hits = getESHits(searchRequest);
-              for (SearchHit hit : hits)
+          if (paymentMeanID != null)
+            {
+              List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+              for (DeliveryRequest request : ODRs)
                 {
-                  PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
-                  Map<String, Object> esOdrMap = purchaseFulfillmentRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
-                  ESODRsJson.add(JSONUtilities.encodeObject(esOdrMap));
-                }
-              
-              //
-              // filter on paymentMeanID * NOT in ES SHOULD BE FILTER AS IT IS *
-              //
-
-              if (paymentMeanID != null)
-                {
-                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                  for (DeliveryRequest request : ODRs)
+                  if (request instanceof PurchaseFulfillmentRequest)
                     {
-                      if(request instanceof PurchaseFulfillmentRequest)
+                      PurchaseFulfillmentRequest odrRequest = (PurchaseFulfillmentRequest) request;
+                      Offer offer = (Offer) offerService.getStoredGUIManagedObject(odrRequest.getOfferID());
+                      if (offer != null)
                         {
-                          PurchaseFulfillmentRequest odrRequest = (PurchaseFulfillmentRequest) request;
-                          Offer offer = (Offer) offerService.getStoredGUIManagedObject(odrRequest.getOfferID());
-                          if(offer != null)
+                          if (offer.getOfferSalesChannelsAndPrices() != null)
                             {
-                              if(offer.getOfferSalesChannelsAndPrices() != null)
+                              for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
                                 {
-                                  for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
+                                  if (channel.getPrice() != null && paymentMeanID.equals(channel.getPrice().getPaymentMeanID()))
                                     {
-                                      if(channel.getPrice() != null && paymentMeanID.equals(channel.getPrice().getPaymentMeanID()))
-                                        {
-                                          result.add(request);
-                                        }
+                                      result.add(request);
                                     }
                                 }
                             }
                         }
                     }
-                  ODRs = result;
                 }
+              ODRs = result;
+            }
 
-              //
-              // filter
-              //
+          //
+          // filter
+          //
 
-              for (DeliveryRequest odr : ODRs) 
-                {
-                  Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
-                  ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
-                }
+          for (DeliveryRequest odr : ODRs)
+            {
+              Map<String, Object> presentationMap = odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+              ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
             }
           response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
-          response.put("ESODRs", JSONUtilities.encodeArray(ESODRsJson));
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -1884,64 +1846,40 @@ public class ThirdPartyManager
           // read history
           //
 
-          SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
           List<JSONObject> messagesJson = new ArrayList<JSONObject>();
-          List<JSONObject> ESmessagesJson = new ArrayList<JSONObject>();
-          if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null) 
+          SearchRequest searchRequest = getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
+          List<SearchHit> hits = getESHits(searchRequest);
+          for (SearchHit hit : hits)
             {
-              List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
-
-              //
-              // filter messages
-              //
-
-              List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.Messages  && !DeliveryStatus.Reschedule.equals(activity.getDeliveryStatus())).collect(Collectors.toList()); 
-
-              
-              SearchRequest searchRequest = getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN), filters);
-              List<SearchHit> hits = getESHits(searchRequest);
-              for (SearchHit hit : hits)
+              String channelID = (String) hit.getSourceAsMap().get("channelID");
+              if (channelID != null && !channelID.isEmpty())
                 {
-                  String channelID = (String) hit.getSourceAsMap().get("channelID");
-                  if (channelID != null && !channelID.isEmpty())
+                  String deliveryType = null;
+                  for (String deliveryTypeInMap : Deployment.getDeliveryTypeCommunicationChannelIDMap().keySet())
                     {
-                      String deliveryType = null;
-                      for (String deliveryTypeInMap : Deployment.getDeliveryTypeCommunicationChannelIDMap().keySet())
+                      String chID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryTypeInMap);
+                      if (channelID.equals(chID))
                         {
-                          String chID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryTypeInMap);
-                          if (channelID.equals(chID))
-                            {
-                              deliveryType = deliveryTypeInMap;
-                              break;
-                            }
+                          deliveryType = deliveryTypeInMap;
+                          break;
                         }
-                      if (deliveryType != null && Deployment.getDeliveryManagers().get(deliveryType) != null)
+                    }
+                  if (deliveryType != null && Deployment.getDeliveryManagers().get(deliveryType) != null)
+                    {
+                      String requestClass = Deployment.getDeliveryManagers().get(deliveryType).getRequestClassName();
+                      if (requestClass != null)
                         {
-                          String requestClass = Deployment.getDeliveryManagers().get(deliveryType).getRequestClassName();
-                          if (requestClass != null)
+                          DeliveryRequest notification = getNotificationDeliveryRequest(requestClass, hit);
+                          if (notification != null)
                             {
-                              DeliveryRequest notification = getNotificationDeliveryRequest(requestClass, hit);
-                              if (notification != null)
-                                {
-                                  Map<String, Object> esNotificationMap = notification.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
-                                  ESmessagesJson.add(JSONUtilities.encodeObject(esNotificationMap));
-                                }
+                              Map<String, Object> esNotificationMap = notification.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
+                              messagesJson.add(JSONUtilities.encodeObject(esNotificationMap));
                             }
                         }
                     }
                 }
-
-              //
-              // filter and prepare json
-              //
-
-              for (DeliveryRequest message : messages) 
-                {
-                  messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService)));
-                }
             }
           response.put("messages", JSONUtilities.encodeArray(messagesJson));
-          response.put("ESmessages", JSONUtilities.encodeArray(ESmessagesJson));
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
