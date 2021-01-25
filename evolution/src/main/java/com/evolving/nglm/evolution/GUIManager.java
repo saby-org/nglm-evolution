@@ -5343,7 +5343,9 @@ public class GUIManager
             //
             try
               {
-                Long count = this.elasticsearch.getJourneySubscriberCount(journeyID)-this.elasticsearch.getSpecialExitCount(journeyID);
+                Long count = this.elasticsearch.getJourneySubscriberCount(journeyID);
+                count = (count != null) ? count : 0;
+                count = count-this.elasticsearch.getSpecialExitCount(journeyID);
                 subscriberCount = (count != null) ? count : 0;
               } 
             catch (ElasticsearchClientException e)
