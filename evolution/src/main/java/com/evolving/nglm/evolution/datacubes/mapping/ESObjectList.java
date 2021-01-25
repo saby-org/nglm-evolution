@@ -65,7 +65,6 @@ public abstract class ESObjectList<T>
   private void reset() 
   {
     this.mapping = new HashMap<String, T>();
-    this.warnings = new HashSet<String>();
   }
   
   /*****************************************

@@ -11,6 +11,7 @@ import java.util.TimeZone;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkItemResponse.Failure;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.tasks.TaskSubmissionResponse;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.ReindexRequest;
 import org.slf4j.Logger;
@@ -70,8 +71,17 @@ public class SnapshotTask
         String destIndex = getDestinationIndex(requestedDate);
         
         ReindexRequest request = new ReindexRequest().setSourceIndices(srcIndex).setDestIndex(destIndex);
-        BulkByScrollResponse response = elasticsearch.reindex(request, RequestOptions.DEFAULT);
+        // We use submitReindexTask. This put ?wait_for_completion=false in the request and does not wait for the answer.
+        log.info("[{}]: Starting snapshot of [{}] index in [{}] (it will end silently).", this.snapshotName, srcIndex, destIndex);
+        TaskSubmissionResponse reindexSubmission = elasticsearch.submitReindexTask(request, RequestOptions.DEFAULT);
         
+        /* For the moment we ignore the answer
+         * 
+         * TODO: in the futur, look for 
+         *   String taskId = reindexSubmission.getTask();
+         * and at the end of the task, check for errors or time-out...
+         * 
+         * 
         if(response.isTimedOut()) {
           log.error("[{}]: snapshot task timed-out.", this.snapshotName);
           return;
@@ -86,6 +96,7 @@ public class SnapshotTask
         } else {
           log.info("[{}]: successful snapshot of {} index in {}. Copied {} documents in {} seconds.", this.snapshotName, srcIndex, destIndex, response.getTotal(), response.getTook().getSeconds());
         }
+        */
         
       }
     catch(IOException|ElasticsearchException|ClassCastException e)

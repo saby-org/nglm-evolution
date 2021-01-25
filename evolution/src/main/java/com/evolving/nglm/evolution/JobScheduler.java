@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 
 import org.slf4j.Logger;
@@ -213,7 +214,7 @@ public class JobScheduler
     *
     *****************************************/
 
-    NGLMRuntime.registerSystemTimeDependency(this);
+    NGLMRuntime.registerSystemTimeDependency(this); // We register this scheduler causing NGLMRuntime to wake up every thread in wait() call if we forward the time.
     while (! stopRequested)
       {
         /*****************************************
@@ -274,7 +275,7 @@ public class JobScheduler
               {
                 if (nextWaitDuration >= 0)
                   {
-                    log.info("Scheduler will now sleep for "+ Math.round(nextWaitDuration/1000.0) +" s" + ((nextPeriodicEvaluation!=null)? " until " + new Date(nextPeriodicEvaluation.getTime()) : "."));
+                    log.info("Scheduler will now sleep for "+ Math.round(nextWaitDuration/1000.0) +" s" + ((nextPeriodicEvaluation!=null)? " until " + RLMDateUtils.printTimestamp(new Date(nextPeriodicEvaluation.getTime())) : "."));
                     this.wait(nextWaitDuration); // wait till the next scheduled job
                   }
                 else 

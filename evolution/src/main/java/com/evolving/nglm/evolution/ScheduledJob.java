@@ -18,29 +18,13 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.CronFormat;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.utilities.UtilitiesException;
 
 public abstract class ScheduledJob implements Comparable<ScheduledJob>
 {
-  /*****************************************
-  *
-  *  configuration
-  *
-  *****************************************/
-
-  //
-  //  logger
-  //
-
-  private static final Logger log = LoggerFactory.getLogger(ScheduledJob.class);
-  
-  private static final DateFormat DATE_FORMAT;
-  static
-  {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz"); // @rl: TODO: chose one standard ? ss.SSSZ ?
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-  }
+  protected static final Logger log = LoggerFactory.getLogger(ScheduledJob.class);
   
   /*****************************************
   *
@@ -76,7 +60,7 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
         log.error("bad perodicEvaluationCronEntry {}", e.getMessage());
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.info(stackTraceWriter.toString());
+        log.error(stackTraceWriter.toString());
         
         this.properlyConfigured = false;
       }
@@ -140,12 +124,12 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
 
   public void call() 
   {
-    log.info("[" + this.jobName + "] Start (scheduled for " + DATE_FORMAT.format(this.nextGenerationDate) + ")");
+    log.info("Job-{" + this.jobName + "}: Start job scheduled for " + RLMDateUtils.printTimestamp(this.nextGenerationDate));
     
     this.run(); // TODO: Maybe add scheduled date later, if needed.
-    
     this.nextGenerationDate = periodicGeneration.next();
-    log.info("[" + this.jobName + "] End with success. Next call is scheduled for " + DATE_FORMAT.format(this.nextGenerationDate));
+    
+    log.info("Job-{" + this.jobName + "}: Next call is scheduled for " + RLMDateUtils.printTimestamp(this.nextGenerationDate));
   }
 
   
@@ -157,6 +141,6 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   
   @Override
   public String toString() {
-    return "{ID:" + this.schedulingUniqueID + ", " + this.jobName + ": " + DATE_FORMAT.format(this.nextGenerationDate)  + "}";
+    return "{ID:" + this.schedulingUniqueID + ", " + this.jobName + ": " + RLMDateUtils.printTimestamp(this.nextGenerationDate)  + "}";
   }
 }

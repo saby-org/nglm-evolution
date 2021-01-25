@@ -9,6 +9,7 @@ import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.VoucherService;
+import com.evolving.nglm.evolution.datacubes.AsyncScheduledJob;
 
 public class ElasticsearchManager
 {
@@ -43,14 +44,14 @@ public class ElasticsearchManager
   
   private static long scheduleSnapshot(JobScheduler scheduler, long nextAvailableID, SnapshotTask snapshotTask) {
     String jobName = "SubscriberProfileSnapshot";
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
+    ScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
         Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
         Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         Date now = SystemTime.getCurrentTime();
         // This snapshot is done the day after the "saved" day (after midnight, in the morning usually)
@@ -70,14 +71,14 @@ public class ElasticsearchManager
 
   private static long scheduleJourneystatisticCleanUp(JobScheduler scheduler, long nextAvailableID, JourneyCleanUpTask journeyCleanUpTask) {
     String jobName = "JourneystatisticCleanUp";
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
+    ScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
         Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
         Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         journeyCleanUpTask.start();
       }
@@ -94,14 +95,14 @@ public class ElasticsearchManager
 
   private static long scheduleVoucherCleanUp(JobScheduler scheduler, long nextAvailableID, VoucherService voucherService) {
     String jobName = "ExpiredVoucherCleanUp";
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
+    ScheduledJob job = new AsyncScheduledJob(nextAvailableID,
         jobName, 
         Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
         Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         voucherService.cleanUpVouchersJob();
       }

@@ -1,6 +1,7 @@
 package com.evolving.nglm.evolution.datacubes.generator;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -21,6 +22,8 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.nested.ParsedNested;
 import org.elasticsearch.search.aggregations.bucket.nested.ParsedReverseNested;
+import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.ParsedDateRange;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
@@ -33,6 +36,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
@@ -54,19 +58,19 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private Map<String, SubscriberProfileDatacubeMetric> customMetrics;
 
-  private boolean previewMode;
   private String metricTargetDay;
   private Date metricTargetDayStart;
   private Date metricTargetDayAfterStart;
+  private Date metricTargetTwoDaysAfterStart;
 
   /*****************************************
   *
   * Constructors
   *
   *****************************************/
-  public ProgramsHistoryDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, LoyaltyProgramService loyaltyProgramService)
+  public ProgramsHistoryDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService)
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     //TODO: this.subscriberStatusDisplayMapping = new SubscriberStatusMap();
@@ -113,7 +117,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     QueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders
         .rangeQuery("lastUpdateDate")
         .gte(RLMDateUtils.printTimestamp(metricTargetDayStart))
-        .lt(RLMDateUtils.printTimestamp(metricTargetDayAfterStart)));
+        .lt(RLMDateUtils.printTimestamp(metricTargetTwoDaysAfterStart)));
     
     //
     // Aggregations
@@ -129,6 +133,13 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     TermsAggregationBuilder metrics = AggregationBuilders.terms("STATUS").field("evolutionSubscriberStatus").missing("undefined"); // default bucket for status=null
     
     //
+    // Sub Aggregation DATE_BUCKETS (internal, won't be exported as a filter)
+    //
+    DateRangeAggregationBuilder dateBuckets = AggregationBuilders.dateRange("DATE_BUCKETS").field("lastUpdateDate")
+        .addRange(RLMDateUtils.printTimestamp(metricTargetDayStart), RLMDateUtils.printTimestamp(metricTargetDayAfterStart))
+        .addRange(RLMDateUtils.printTimestamp(metricTargetDayAfterStart), RLMDateUtils.printTimestamp(metricTargetTwoDaysAfterStart));
+    
+    //
     // Rewards
     //
     List<String> rewardIdList = new ArrayList<String>(); // Purpose is to have only one occurrence by rewardID (remove duplicate when different programs have the same reward)
@@ -140,9 +151,12 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     }
     
     for(String rewardID: rewardIdList) {
-      metrics.subAggregation(AggregationBuilders.sum(rewardID + DATA_POINT_EARNED).field("pointFluctuations." + rewardID + ".today.earned"));
-      metrics.subAggregation(AggregationBuilders.sum(rewardID + DATA_POINT_REDEEMED).field("pointFluctuations." + rewardID + ".today.redeemed"));
-      metrics.subAggregation(AggregationBuilders.sum(rewardID + DATA_POINT_EXPIRED).field("pointFluctuations." + rewardID + ".today.expired"));
+      dateBuckets.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_EARNED).field("pointFluctuations." + rewardID + ".today.earned"));
+      dateBuckets.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_REDEEMED).field("pointFluctuations." + rewardID + ".today.redeemed"));
+      dateBuckets.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_EXPIRED).field("pointFluctuations." + rewardID + ".today.expired"));
+      dateBuckets.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_EARNED).field("pointFluctuations." + rewardID + ".yesterday.earned"));
+      dateBuckets.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_REDEEMED).field("pointFluctuations." + rewardID + ".yesterday.redeemed"));
+      dateBuckets.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_EXPIRED).field("pointFluctuations." + rewardID + ".yesterday.expired"));
     }
     
     //
@@ -151,9 +165,11 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     for(String metricID: customMetrics.keySet()) {
       SubscriberProfileDatacubeMetric metric = customMetrics.get(metricID);
       
-      metrics.subAggregation(AggregationBuilders.sum(DATA_METRIC_PREFIX + metricID).field(metric.getTodayESField()));
+      dateBuckets.subAggregation(AggregationBuilders.sum("TODAY." + DATA_METRIC_PREFIX + metricID).field(metric.getTodayESField()));
+      dateBuckets.subAggregation(AggregationBuilders.sum("YESTERDAY." + DATA_METRIC_PREFIX + metricID).field(metric.getYesterdayESField()));
     }
     
+    metrics.subAggregation(dateBuckets);
     AggregationBuilder aggregation = AggregationBuilders.nested("DATACUBE", "loyaltyPrograms").subAggregation(
         AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(ElasticsearchClientAPI.MAX_BUCKETS).subAggregation(
             AggregationBuilders.reverseNested("REVERSE").subAggregation(metrics) // *metrics is STATUS with metrics
@@ -192,24 +208,25 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         || response.getFailedShards() > 0
         || response.getSkippedShards() > 0
         || response.status() != RestStatus.OK) {
-      log.error("Elasticsearch search response return with bad status in {} generation.", getDatacubeName());
+      log.error("Elasticsearch search response return with bad status.");
+      log.error(response.toString());
       return result;
     }
     
     if(response.getAggregations() == null) {
-      log.error("Main aggregation is missing in {} search response.", getDatacubeName());
+      log.error("Main aggregation is missing in search response.");
       return result;
     }
     
     ParsedNested parsedNested = response.getAggregations().get("DATACUBE");
     if(parsedNested == null || parsedNested.getAggregations() == null) {
-      log.error("Nested aggregation is missing in {} search response.", getDatacubeName());
+      log.error("Nested aggregation is missing in search response.");
       return result;
     }
     
     ParsedComposite parsedComposite = parsedNested.getAggregations().get("LOYALTY-COMPOSITE");
     if(parsedComposite == null || parsedComposite.getBuckets() == null) {
-      log.error("Composite buckets are missing in {} search response.", getDatacubeName());
+      log.error("Composite buckets are missing in search response.");
       return result;
     }
     
@@ -231,19 +248,19 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       // Extract the second part of the filter
       //
       if(bucket.getAggregations() == null) {
-        log.error("Aggregations in bucket is missing in {} search response.", getDatacubeName());
+        log.error("Aggregations in bucket is missing in search response.");
         continue;
       }
       
       ParsedReverseNested parsedReverseNested = bucket.getAggregations().get("REVERSE");
       if(parsedReverseNested == null || parsedReverseNested.getAggregations() == null) {
-        log.error("Reverse nested aggregation is missing in {} search response.", getDatacubeName());
+        log.error("Reverse nested aggregation is missing in search response.");
         continue;
       }
       
       ParsedTerms parsedTerms = parsedReverseNested.getAggregations().get("STATUS");
       if(parsedTerms == null || parsedTerms.getBuckets() == null) {
-        log.error("Composite buckets are missing in {} search response.", getDatacubeName());
+        log.error("Status buckets are missing in search response.");
         continue;
       }
 
@@ -256,49 +273,80 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         // Extract metrics
         //
         HashMap<String, Object> metrics = new HashMap<String,Object>();
-        if (statusBucket.getAggregations() == null) {
-          log.error("Unable to extract metrics, aggregations are missing.");
+        
+        //
+        // Split between today & yesterday for metrics extraction
+        //
+        ParsedDateRange parsedDateBuckets = statusBucket.getAggregations().get("DATE_BUCKETS");
+        if(parsedDateBuckets == null || parsedDateBuckets.getBuckets() == null) {
+          log.error("Date Range buckets are missing in search response.");
           continue;
         }
         
-        //
-        // Extract rewards
-        // 
-        if (rewardID != null) { // Otherwise no reward for this loyalty program
-          ParsedSum rewardEarned = statusBucket.getAggregations().get(rewardID + DATA_POINT_EARNED);
-          if (rewardEarned == null) {
-            log.error("Unable to extract rewards.earned metric for reward: " + rewardID + ", aggregation is missing.");
+        for(org.elasticsearch.search.aggregations.bucket.range.Range.Bucket dateBucket: parsedDateBuckets.getBuckets()) {
+          String metricPrefix = "";
+       
+          long from = ((ZonedDateTime) dateBucket.getFrom()).toEpochSecond() * 1000;
+          if(from == (long) metricTargetDayStart.getTime()) {
+            metricPrefix = "TODAY."; // Look for today metrics
+          } else if(from == (long) metricTargetDayAfterStart.getTime()) {
+            // Those subscribers have been updated after midnight and before the execution of the datacube.
+            metricPrefix = "YESTERDAY."; // Look for yesterday metrics
+          } else {
+            log.error("Should not happen, did not success to split between today and yesterday metrics.");
             continue;
           }
-          metrics.put("rewards.earned", (int) rewardEarned.getValue());
           
-          ParsedSum rewardRedeemed = statusBucket.getAggregations().get(rewardID + DATA_POINT_REDEEMED);
-          if (rewardRedeemed == null) {
-            log.error("Unable to extract rewards.redeemed metric for reward: " + rewardID + ", aggregation is missing.");
-            continue;
-          }
-          metrics.put("rewards.redeemed", (int) rewardRedeemed.getValue());
           
-          ParsedSum rewardExpired = statusBucket.getAggregations().get(rewardID + DATA_POINT_EXPIRED);
-          if (rewardExpired == null) {
-            log.error("Unable to extract rewards.expired metric for reward: " + rewardID + ", aggregation is missing.");
+          if (dateBucket.getAggregations() == null) {
+            log.error("Unable to extract metrics, aggregations are missing.");
             continue;
           }
-          metrics.put("rewards.expired", (int) rewardExpired.getValue());
-        }
-        
-        //
-        // Subscriber Metrics
-        //
-        for(String metricID: customMetrics.keySet()) {
-          SubscriberProfileDatacubeMetric subscriberProfileCustomMetric = customMetrics.get(metricID);
           
-          ParsedSum customMetric = statusBucket.getAggregations().get(DATA_METRIC_PREFIX + metricID);
-          if (customMetric == null) {
-            log.error("Unable to extract custom." + metricID + ", aggregation is missing.");
-            continue;
+          //
+          // Extract rewards
+          // 
+          if (rewardID != null) { // Otherwise no reward for this loyalty program
+            ParsedSum rewardEarned = dateBucket.getAggregations().get(metricPrefix + rewardID + DATA_POINT_EARNED);
+            if (rewardEarned == null) {
+              log.error("Unable to extract rewards.earned metric for reward: " + rewardID + ", aggregation is missing.");
+              continue;
+            }
+            int currentEarned = (metrics.get("rewards.earned") == null)? 0 : (int) metrics.get("rewards.earned");
+            metrics.put("rewards.earned", ((int) rewardEarned.getValue()) + currentEarned);
+            
+            ParsedSum rewardRedeemed = dateBucket.getAggregations().get(metricPrefix + rewardID + DATA_POINT_REDEEMED);
+            if (rewardRedeemed == null) {
+              log.error("Unable to extract rewards.redeemed metric for reward: " + rewardID + ", aggregation is missing.");
+              continue;
+            }
+            int currentRedeemed = (metrics.get("rewards.redeemed") == null)? 0 : (int) metrics.get("rewards.redeemed");
+            metrics.put("rewards.redeemed", ((int) rewardRedeemed.getValue()) + currentRedeemed);
+            
+            ParsedSum rewardExpired = dateBucket.getAggregations().get(metricPrefix + rewardID + DATA_POINT_EXPIRED);
+            if (rewardExpired == null) {
+              log.error("Unable to extract rewards.expired metric for reward: " + rewardID + ", aggregation is missing.");
+              continue;
+            }
+            int currentExpired = (metrics.get("rewards.expired") == null)? 0 : (int) metrics.get("rewards.expired");
+            metrics.put("rewards.expired", ((int) rewardExpired.getValue()) + currentExpired);
           }
-          metrics.put("custom." + subscriberProfileCustomMetric.getDisplay(), (int) customMetric.getValue());
+          
+          //
+          // Subscriber Metrics
+          //
+          for(String metricID: customMetrics.keySet()) {
+            SubscriberProfileDatacubeMetric subscriberProfileCustomMetric = customMetrics.get(metricID);
+            
+            ParsedSum customMetric = dateBucket.getAggregations().get(metricPrefix + DATA_METRIC_PREFIX + metricID);
+            if (customMetric == null) {
+              log.error("Unable to extract custom." + metricID + ", aggregation is missing.");
+              continue;
+            }
+            String customFieldName = "custom." + subscriberProfileCustomMetric.getDisplay();
+            int currentCustom = (metrics.get(customFieldName) == null)? 0 : (int) metrics.get(customFieldName);
+            metrics.put(customFieldName, ((int) customMetric.getValue()) + currentCustom);
+          }
         }
         
         //
@@ -318,10 +366,9 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   *
   *****************************************/
   /**
-   * For the moment, we only publish with a period of the day (except for preview)
-   * In order to keep only one document per day (for each combination of filters), we use the following trick:
-   * We only use the day as a timestamp (without the hour) in the document ID definition.
-   * This way, preview documents will override each other till be overriden by the definitive one at 23:59:59.999 
+   * In order to override preview documents, we use the following trick: the timestamp used in the document ID must be 
+   * the timestamp of the definitive push (and not the time we publish it).
+   * This way, preview documents will override each other till be overriden by the definitive one running the day after.
    * 
    * Be careful, it only works if we ensure to publish the definitive one. 
    * Already existing combination of filters must be published even if there is 0 count inside, in order to 
@@ -329,17 +376,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
    */
   @Override
   protected String getDocumentID(Map<String,Object> filters, String timestamp) {
-    return this.extractDocumentIDFromFilter(filters, this.metricTargetDay);
-  }
-  
-  /*****************************************
-  *
-  * Datacube name for logs
-  *
-  *****************************************/
-  @Override
-  protected String getDatacubeName() {
-    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
+    return this.extractDocumentIDFromFilter(filters, this.metricTargetDay, "default");
   }
   
   /*****************************************
@@ -356,15 +393,17 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
     
     // Dates: YYYY-MM-dd 00:00:00.000
     Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getBaseTimeZone());
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
 
-    this.previewMode = false;
     this.metricTargetDay = RLMDateUtils.printDay(yesterday);
     this.metricTargetDayStart = beginningOfYesterday;
     this.metricTargetDayAfterStart = beginningOfToday;
+    this.metricTargetTwoDaysAfterStart = beginningOfTomorrow;
 
     //
     // Timestamp & period
@@ -385,15 +424,17 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
+    Date afterTomorrow = RLMDateUtils.addDays(now, 2, Deployment.getBaseTimeZone());
     
     // Dates: YYYY-MM-dd 00:00:00.000
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date beginningDayAfterTomorrow = RLMDateUtils.truncate(afterTomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
     
-    this.previewMode = true;
     this.metricTargetDay = RLMDateUtils.printDay(now);
     this.metricTargetDayStart = beginningOfToday;
     this.metricTargetDayAfterStart = beginningOfTomorrow;
+    this.metricTargetTwoDaysAfterStart = beginningDayAfterTomorrow;
 
     //
     // Timestamp & period

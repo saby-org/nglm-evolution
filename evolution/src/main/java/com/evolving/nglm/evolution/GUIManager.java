@@ -5313,7 +5313,6 @@ public class GUIManager
     //
     //  filter to present recurrent campaigns and normal campaigns
     //
-    
     switch (objectType)
     {
       case Campaign:
@@ -5329,6 +5328,11 @@ public class GUIManager
           }
         break;
     }
+
+    boolean showDeliveriesCount = false;
+    if(objectType == GUIManagedObjectType.BulkCampaign) {
+      showDeliveriesCount = true; // Only for Bulk Campaigns for the moment
+    }
     
     for (GUIManagedObject journey : journeyObjects)
       {
@@ -5336,15 +5340,54 @@ public class GUIManager
           {
             JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
             long subscriberCount = 0;
+            JSONObject deliveriesCount = new JSONObject();
             String journeyID = journey.getGUIManagedObjectID();
+            String journeyDisplay = journey.getGUIManagedObjectDisplay();
 
             //
             // retrieve from Elasticsearch 
             //
             try
               {
+                // SubscriberCount
                 Long count = this.elasticsearch.getJourneySubscriberCount(journeyID);
                 subscriberCount = (count != null) ? count : 0;
+                
+                // DeliveriesCount 
+                if(showDeliveriesCount) {
+                  Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay);
+                  Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay);
+                  
+                  long messagesSuccess = 0;
+                  long messagesFailure = 0;
+                  for(String key: messages.keySet()) {
+                    if(key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage())) {
+                      messagesSuccess += messages.get(key);
+                    } else {
+                      messagesFailure += messages.get(key);
+                    }
+                  }
+                  JSONObject messagesCount = new JSONObject();
+                  messagesCount.put("success", messagesSuccess);
+                  messagesCount.put("failure", messagesFailure);
+                  
+                  long bonusesSuccess = 0;
+                  long bonusesFailure = 0;
+                  for(String key: bonuses.keySet()) {
+                    if(key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage())) {
+                      bonusesSuccess += bonuses.get(key);
+                    } else {
+                      bonusesFailure += bonuses.get(key);
+                    }
+                  }
+                  JSONObject bonusesCount = new JSONObject();
+                  bonusesCount.put("success", bonusesSuccess);
+                  bonusesCount.put("failure", bonusesFailure);
+
+                  deliveriesCount.put("messages", messagesCount);
+                  deliveriesCount.put("bonuses", bonusesCount);
+                  
+                }
               } 
             catch (ElasticsearchClientException e)
               {
@@ -5354,6 +5397,9 @@ public class GUIManager
               }
              
             journeyInfo.put("subscriberCount", subscriberCount);
+            if(showDeliveriesCount) {
+              journeyInfo.put("deliveriesCount", deliveriesCount);
+            }
             journeys.add(journeyInfo);
           }
       }
