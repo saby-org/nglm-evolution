@@ -984,7 +984,7 @@ public class JourneyHistory implements Cleanable
     @Override
     public String toString()
     {
-      return fromNode + ";" + toNode + ";" + transitionDate.getTime();
+      return fromNode + ";" + toNode + ";" + transitionDate.getTime() + ";" + linkID;
     }
     
     //
@@ -997,6 +997,7 @@ public class JourneyHistory implements Cleanable
       this.fromNode = handleNullStringFromES(elements[0]);
       this.toNode = handleNullStringFromES(elements[1]);
       this.transitionDate = new Date(Long.parseLong(handleNullStringFromES(elements[2])));
+      if (elements.length > 3) this.linkID = handleNullStringFromES(elements[3]);
     }
     
   }
