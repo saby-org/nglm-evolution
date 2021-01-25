@@ -740,7 +740,9 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_j
       "filter.journey" : { "type" : "keyword" },
       "filter.node" : { "type" : "keyword" },
       "filter.status" : { "type" : "keyword" },
-      "count" : { "type" : "integer" }
+      "count" : { "type" : "integer" },
+      "metric.conversions" : { "type" : "integer" },
+      "metric.converted.today" : { "type" : "integer" }
     }
   }
 }'
