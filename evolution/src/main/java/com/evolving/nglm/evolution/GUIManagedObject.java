@@ -741,4 +741,11 @@ public abstract class GUIManagedObject
   {
     return "guiManagedObjectID=" + guiManagedObjectID + ", guiManagedObjectName="  + guiManagedObjectName + ", guiManagedObjectDisplay=" + guiManagedObjectDisplay;
   }
+  
+  public interface ElasticSearchMapping 
+  {
+    public String getESDocumentID();
+    public Map<String,Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService);
+    public String getESIndexName();
+  }
 }
