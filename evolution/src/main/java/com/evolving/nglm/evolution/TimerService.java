@@ -1139,6 +1139,17 @@ public class TimerService
               }
             catch (InvalidStateStoreException e)
               {
+
+                // need to close it to re-open a new one
+                if(subscriberStateStoreIterator!=null)
+                  {
+                    subscriberStateStoreIterator.close();
+                    subscriberStateStoreIterator=null;
+                    statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
+                            .withLabel(StatsBuilders.LABEL.operation.name(),"evaluatetarget_all")
+                            .getStats().add(startTimeStateStoreStats);
+                  }
+
                 log.error("evaluateTargets exception {}", e.getMessage());
                 StringWriter stackTraceWriter = new StringWriter();
                 e.printStackTrace(new PrintWriter(stackTraceWriter, true));
