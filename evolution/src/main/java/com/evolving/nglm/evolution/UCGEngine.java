@@ -207,7 +207,7 @@ public class UCGEngine
     try
       {
         elasticsearchRestClient = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
-        subscriberGroupField = CriterionContext.Profile.get(0).getCriterionFields(0).get("subscriber.segments").getESField(); // EVPRO-99 groupe field subscriber.segment is the same for all tenant, no need to make a special case for each tenant
+        subscriberGroupField = CriterionContext.Profile(0).getCriterionFields(0).get("subscriber.segments").getESField(); // EVPRO-99 groupe field subscriber.segment is the same for all tenant, no need to make a special case for each tenant
       }
     catch (ElasticsearchException e)
       {

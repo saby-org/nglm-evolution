@@ -84,13 +84,13 @@ public class ReportService extends GUIService
   *
   *****************************************/
 
-  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, boolean notifyOnSignificantChange, TenantService tenantService)
+  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "ReportService", groupID, reportTopic, masterService, getSuperListener(reportListener), "putReport", "removeReport", notifyOnSignificantChange);
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        File f = validateAndgetReportDirectory(tenant.getTenantID());
-        reportDirectoryPerTenant.put(tenant.getTenantID(), f);
+        File f = validateAndgetReportDirectory(tenantID);
+        reportDirectoryPerTenant.put(tenantID, f);
       }
   }
 
@@ -98,18 +98,18 @@ public class ReportService extends GUIService
   //  constructor
   //
   
-  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, TenantService tenantService)
+  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener)
   {
-    this(bootstrapServers, groupID, reportTopic, masterService, reportListener, true, tenantService);
+    this(bootstrapServers, groupID, reportTopic, masterService, reportListener, true);
   }
 
   //
   //  constructor
   //
 
-  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, TenantService tenantService)
+  public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, reportTopic, masterService, (ReportListener) null, true, tenantService);
+    this(bootstrapServers, groupID, reportTopic, masterService, (ReportListener) null, true);
   }
 
   //
@@ -376,15 +376,12 @@ public class ReportService extends GUIService
       }
       @Override public void reportDeactivated(String guiManagedObjectID) { log.trace("report deactivated: " + guiManagedObjectID); }
     };
-    
-    TenantService tenantService  = new TenantService(Deployment.getBrokerServers(), "", "tenant", false);
-    tenantService.start();
 
     //
     //  reportService
     //
 
-    ReportService reportService = new ReportService(Deployment.getBrokerServers(), "example-001", Deployment.getReportTopic(), false, reportListener, tenantService);
+    ReportService reportService = new ReportService(Deployment.getBrokerServers(), "example-001", Deployment.getReportTopic(), false, reportListener);
     reportService.start();
 
     //

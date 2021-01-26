@@ -13,8 +13,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Tenant;
-import com.evolving.nglm.evolution.TenantService;
 import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
 
 import org.json.simple.JSONArray;
@@ -51,13 +49,11 @@ public class Deployment
   *****************************************/
   private static Map<Integer, JSONObject> jsonConfigPerTenant = new HashMap<>();
   private static Map<Integer, Deployment> deploymentsPerTenant = new HashMap<>();
-  protected static TenantService tenantService;
   
   //
   //  data
   //
   
-  protected Tenant tenant;
   
   /*****************************************
   *
@@ -261,37 +257,7 @@ public class Deployment
         Deployment d = new Deployment();
         d.initCoreDeploymentStatic(tenantJSON);
       
-        
-        //
-        // let update the tenantService if needed
-        //
-
-        tenantService  = new TenantService(getBrokerServers(), "deployment-tenantservice", "tenant", false);
-        tenantService.start();
-        
-        Tenant existingTenant = tenantService.getActiveTenant(""+tenantID, SystemTime.getCurrentTime());
-        if(existingTenant == null)
-          {
-            JSONObject fakeGUIManagedObject = new JSONObject();
-
-            // GUIManagedObject part
-            fakeGUIManagedObject.put("id", "tenant" + tenantID);
-            fakeGUIManagedObject.put("name", "Tenant" + tenantID);
-            fakeGUIManagedObject.put("display", "Tenant " + tenantID);
-            fakeGUIManagedObject.put("active", true);
-            
-            existingTenant = new Tenant(fakeGUIManagedObject, tenantID);
-            try 
-            {
-              tenantService.putTenant(existingTenant, true, null);
-            }
-            catch(GUIManagerException e)
-            {
-              log.error("Exception " + e.getClass().getName() + " while saving tenant " + existingTenant);
-            }
-          } 
-        
-        deploymentsPerTenant.put(existingTenant.getEffectiveTenantID(), d);  
+        deploymentsPerTenant.put(tenantID, d);  
         
       }
   }
@@ -1181,6 +1147,11 @@ public class Deployment
   public static Deployment getDeployment(int tenantID)
   {
     return deploymentsPerTenant.get(tenantID);
+  }
+  
+  public static Map<Integer, Deployment> getCoreDeployments()
+  {
+    return deploymentsPerTenant;
   }
   
   public static JSONObject getTenantJSONRoot(int tenantID)

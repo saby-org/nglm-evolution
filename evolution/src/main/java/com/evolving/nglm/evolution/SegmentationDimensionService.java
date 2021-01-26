@@ -77,8 +77,6 @@ public class SegmentationDimensionService extends GUIService
   private String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
   private int lastGeneratedSegmentID = 0;
   
-  private TenantService tenantService;
-  
   /*****************************************
   *
   *  constructor
@@ -94,18 +92,12 @@ public class SegmentationDimensionService extends GUIService
     super(bootstrapServers, "segmentationDimensionService", groupID, segmentationDimensionTopic, masterService, getSuperListener(segmentationDimensionListener), "putSegmentationDimension", "removeSegmentationDimension", notifyOnSignificantChange);
 
     //
-    // Service need tenantService
-    //
-    
-    TenantService tenantService = new TenantService(bootstrapServers, "SegmentationService-TenantService", "tenant", false);
-        
-    //
     //  (re-initialize lastGeneratedSegmentID) for all tenant
     //
 
-    for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions(true, t.getEffectiveTenantID()))
+        for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions(true, tenantID))
           {
             SegmentationDimension segmentationDimension = (guiManagedObject != null && guiManagedObject.getAccepted()) ? (SegmentationDimension) guiManagedObject : null;
             if (segmentationDimension != null)
@@ -124,7 +116,7 @@ public class SegmentationDimensionService extends GUIService
               }
           }
         // init the 
-        segmentsByIDByTenant.put(t.getEffectiveTenantID(), new HashMap<>());
+        segmentsByIDByTenant.put(tenantID, new HashMap<>());
       }
 
     //
@@ -169,13 +161,13 @@ public class SegmentationDimensionService extends GUIService
     //
 
     Date now = SystemTime.getCurrentTime();
-    for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()) )
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        for (SegmentationDimension segmentationDimension : getActiveSegmentationDimensions(now, t.getEffectiveTenantID()))
+        for (SegmentationDimension segmentationDimension : getActiveSegmentationDimensions(now, tenantID))
           {
             for (Segment segment : segmentationDimension.getSegments())
               {
-                segmentsByIDByTenant.get(t.getEffectiveTenantID()).put(segment.getID(), segment);
+                segmentsByIDByTenant.get(tenantID).put(segment.getID(), segment);
               }
           }
       }

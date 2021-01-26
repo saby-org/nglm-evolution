@@ -424,7 +424,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     falseCriterionJSON.put("criterionOperator", "<>");
                     falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
                     List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile.get(tenantID), tenantID));
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile(tenantID), tenantID));
                     result.add(toAdd);
                   }
 
@@ -437,7 +437,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     targetCriterionJSON.put("criterionOperator", "contains");
                     targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
                     List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile.get(tenantID), tenantID));
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile(tenantID), tenantID));
                     result.add(toAdd);
                   }
               }
@@ -1145,8 +1145,8 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
     this.templateParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "templateParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
-    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile.get(tenantID), tenantID);
-    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile.get(tenantID), tenantID);
+    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile(tenantID), tenantID);
+    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile(tenantID), tenantID);
     
     //
     // Targeting Event Criterion mgt

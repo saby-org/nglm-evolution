@@ -97,7 +97,7 @@ public class StockMonitor implements Runnable
   *
   *****************************************/
 
-  public StockMonitor(String stockMonitorKey, TenantService tenantService, GUIService... stockItemServices)
+  public StockMonitor(String stockMonitorKey, GUIService... stockItemServices)
   {
     //
     //  simple
@@ -129,11 +129,11 @@ public class StockMonitor implements Runnable
     //
 
     Date now = SystemTime.getCurrentTime();
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
         for (GUIService guiService : this.stockItemServices)
           {
-            for (GUIManagedObject guiManagedObject : guiService.getActiveGUIManagedObjects(now, tenant.getEffectiveTenantID()))
+            for (GUIManagedObject guiManagedObject : guiService.getActiveGUIManagedObjects(now, tenantID))
               {
                 //a bit hacky, but services might not have only StockableItem (ie VoucherService got VoucherPersonal which are not, but VoucherShared are)
                 if (guiManagedObject instanceof StockableItem) monitorStockableItem((StockableItem) guiManagedObject);
@@ -1331,18 +1331,12 @@ public class StockMonitor implements Runnable
 
     ProductService productService = new ProductService(Deployment.getBrokerServers(), "example-productservice-" + stockMonitorKey, Deployment.getProductTopic(), false);
     productService.start();
-    
-    //
-    //  tenantService
-    //
-    
-    TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "example-tenantservice-" + stockMonitorKey, "tenant", false);
 
     //
     //  stockMonitor
     //
 
-    StockMonitor stockMonitor = new StockMonitor(stockMonitorKey, tenantService, productService);
+    StockMonitor stockMonitor = new StockMonitor(stockMonitorKey, productService);
     stockMonitor.start();
 
     //

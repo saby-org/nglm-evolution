@@ -19,7 +19,6 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.ReportService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
 import com.evolving.nglm.evolution.ScheduledJob;
-import com.evolving.nglm.evolution.TenantService;
 
 /*****************************************
 *
@@ -30,7 +29,6 @@ import com.evolving.nglm.evolution.TenantService;
 public class ReportScheduler {
   
   private static final Logger log = LoggerFactory.getLogger(ReportScheduler.class);
-  private static TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "", "tenant", false);
   private ReportService reportService;
   private JobScheduler reportScheduler;
   private long uniqueID = 0;
@@ -56,7 +54,7 @@ public class ReportScheduler {
         log.info("report deactivated: " + guiManagedObjectID);
       }
     };
-    reportService = new ReportService(Deployment.getBrokerServers(), "reportscheduler-reportservice-001", Deployment.getReportTopic(), false, reportListener, tenantService);
+    reportService = new ReportService(Deployment.getBrokerServers(), "reportscheduler-reportservice-001", Deployment.getReportTopic(), false, reportListener);
     reportService.start();
     log.trace("ReportService started");
     reportScheduler = new JobScheduler("report");

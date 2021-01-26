@@ -31,14 +31,9 @@ import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Segment;
 import com.evolving.nglm.evolution.SegmentationDimension;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
-import com.evolving.nglm.evolution.Tenant;
-import com.evolving.nglm.evolution.TenantService;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
-import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
-import com.rii.utilities.SystemTime;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
 public class SubscriberReportMonoPhase implements ReportCsvFactory {
@@ -280,7 +275,6 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
         this,
         csvfile
         );
-    TenantService tenantService = new TenantService(kafkaNodeList, "repor-tenantservice-subscriberReportMonoPhase", "tenantID", false);
     synchronized (log) // why not, this is a static object that always exists
     {
       if (segmentationDimensionService == null) // do it only once, because we can't stop it fully
@@ -297,18 +291,18 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
 
       synchronized (allDimensionsMapPerTenant)
       {
-        for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+        for(int tenantID : Deployment.getDeployments().keySet())
           {
-            if(allDimensionsMapPerTenant.get(t.getEffectiveTenantID()) == null) {  allDimensionsMapPerTenant.put(t.getEffectiveTenantID(), new HashMap<>()); }
-            allDimensionsMapPerTenant.get(t.getEffectiveTenantID()).clear();
+            if(allDimensionsMapPerTenant.get(tenantID) == null) {  allDimensionsMapPerTenant.put(tenantID, new HashMap<>()); }
+            allDimensionsMapPerTenant.get(tenantID).clear();
             
-            if(segmentsNamesPerTenant.get(t.getEffectiveTenantID()) == null) {  segmentsNamesPerTenant.put(t.getEffectiveTenantID(), new HashMap<>()); }
-            segmentsNamesPerTenant.get(t.getEffectiveTenantID()).clear();
+            if(segmentsNamesPerTenant.get(tenantID) == null) {  segmentsNamesPerTenant.put(tenantID, new HashMap<>()); }
+            segmentsNamesPerTenant.get(tenantID).clear();
 
-            if(dimNameDisplayMappingPerTenant.get(t.getEffectiveTenantID()) == null) {  dimNameDisplayMappingPerTenant.put(t.getEffectiveTenantID(), new HashMap<>()); }
-            dimNameDisplayMappingPerTenant.get(t.getEffectiveTenantID()).clear();
+            if(dimNameDisplayMappingPerTenant.get(tenantID) == null) {  dimNameDisplayMappingPerTenant.put(tenantID, new HashMap<>()); }
+            dimNameDisplayMappingPerTenant.get(tenantID).clear();
             
-            initSegmentationData(t.getEffectiveTenantID());
+            initSegmentationData(tenantID);
           }
 
       }

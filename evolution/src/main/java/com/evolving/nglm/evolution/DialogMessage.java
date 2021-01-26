@@ -390,7 +390,7 @@ public class DialogMessage
     //  subscriber language
     //
 
-    CriterionField subscriberLanguage = CriterionContext.Profile.get(subscriberEvaluationRequest.getTenantID()).getCriterionFields(subscriberEvaluationRequest.getTenantID()).get("subscriber.language");
+    CriterionField subscriberLanguage = CriterionContext.Profile(subscriberEvaluationRequest.getTenantID()).getCriterionFields(subscriberEvaluationRequest.getTenantID()).get("subscriber.language");
     String languageID = (String) subscriberLanguage.retrieve(subscriberEvaluationRequest);
     String language = (languageID != null && Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID) != null) ? Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID).getName() : Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseLanguage();
 

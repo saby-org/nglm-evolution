@@ -22,7 +22,6 @@ import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberMessage;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
-import com.evolving.nglm.evolution.Tenant;
 
 public class NotificationTemplateParameters extends SubscriberMessage
 {

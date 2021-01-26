@@ -52,7 +52,6 @@ import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.LoggerInitialization;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.ReportService;
-import com.evolving.nglm.evolution.TenantService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
 
 /**
@@ -68,7 +67,6 @@ public class ReportManager implements Watcher
   protected static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
   protected static final String LOCK_SUBDIR = "lock";
   protected static final int sessionTimeout = 30*1000; // 30 seconds
-  private static TenantService tenantService = new TenantService(Deployment.getBrokerServers(), "", "tenant", false);
   
   protected ZooKeeper zk = null;
   protected static String zkHostList;
@@ -162,7 +160,7 @@ public class ReportManager implements Watcher
       {
         // first time
         log.trace("Creating ReportService");
-        reportService = new ReportService(Deployment.getBrokerServers(), "reportmanager-reportservice-001", Deployment.getReportTopic(), false, reportListener, tenantService);
+        reportService = new ReportService(Deployment.getBrokerServers(), "reportmanager-reportservice-001", Deployment.getReportTopic(), false, reportListener);
         reportService.start();
         log.trace("ReportService started");
       }

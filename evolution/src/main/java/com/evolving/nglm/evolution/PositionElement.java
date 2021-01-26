@@ -208,7 +208,7 @@ public class PositionElement
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Presentation.get(tenantID), tenantID));
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Presentation(tenantID), tenantID));
       }
     return result;
   }

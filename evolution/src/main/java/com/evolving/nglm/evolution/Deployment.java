@@ -693,11 +693,11 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   *****************************************/
   static 
   {    
-    for(Tenant t : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : com.evolving.nglm.core.Deployment.getCoreDeployments().keySet())
       {
         Deployment d = new Deployment();
-        d.init(t);
-        deploymentsPerTenant.put(t.getEffectiveTenantID(), d);
+        d.init(tenantID);
+        deploymentsPerTenant.put(tenantID, d);
       }
   }
 
@@ -707,16 +707,8 @@ public class Deployment extends com.evolving.nglm.core.Deployment
    *
    *****************************************/
 
-  public void init(Tenant tenant)
+  public void init(int tenantID)
     {
-      
-      /*****************************************
-      *
-      *  super class
-      *
-      *****************************************/
-
-      this.tenant = tenant;
       
       /*****************************************
        *
@@ -724,15 +716,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
        *
        *****************************************/
 
-      JSONObject jsonRoot = com.evolving.nglm.core.Deployment.getTenantJSONRoot(tenant.getEffectiveTenantID());
-      
-      /*****************************************
-      *
-      *  super class
-      *
-      *****************************************/
-
-      this.tenant = tenant;
+      JSONObject jsonRoot = com.evolving.nglm.core.Deployment.getTenantJSONRoot(tenantID);
 
       /*****************************************
        *
@@ -974,7 +958,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           for (int i=0; i<communicationChannelsJSONArray.size(); i++)
             {
               JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);
-              CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON, JSONUtilities.decodeInteger(communicationChannelJSON, "tenantID", true));
+              CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON, JSONUtilities.decodeInteger(communicationChannelJSON, "tenantID", 1));
               communicationChannels.put(communicationChannel.getID(), communicationChannel);
             }
         }
@@ -998,7 +982,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
               defaultTimeWindowJSON.put("communicationChannelID", "default");
             }
           GUIManagedObject.commonSchema();//avoiding a NPE in a "static init" loop
-          defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null, tenant.getTenantID());          
+          defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null, tenantID);          
         }
       catch (GUIManagerException | JSONUtilitiesException e)
         {
@@ -2464,7 +2448,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
 //          for (int i=0; i<evaluationCriterionValues.size(); i++)
 //            {
 //              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-//              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile.get(tenantID));
+//              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile(tenantID));
 //              universalControlGroupCriteria.add(evaluationCriterion);
 //            }
 //        }
@@ -2656,7 +2640,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           for (int i=0; i<evaluationCriterionValues.size(); i++)
             {
               JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile.get(tenant.getEffectiveTenantID()), tenant.getEffectiveTenantID());
+              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile(tenantID), tenantID);
               getJourneyUniversalEligibilityCriteria().add(evaluationCriterion);                  
             }
         }
@@ -3271,6 +3255,11 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static Deployment getDeployment(int tenantID)
   {
     return deploymentsPerTenant.get(tenantID);
+  }
+  
+  public static Map<Integer, Deployment> getDeployments()
+  {
+    return deploymentsPerTenant;
   }
 
   /*****************************************

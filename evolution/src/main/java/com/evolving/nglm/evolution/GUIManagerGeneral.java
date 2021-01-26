@@ -329,7 +329,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.get(tenantID).getCriterionFields(tenantID), false, tenantID);
+    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile(tenantID).getCriterionFields(tenantID), false, tenantID);
 
     /*****************************************
     *
@@ -337,7 +337,7 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.get(tenantID).getCriterionFields(tenantID), false, tenantID);
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation(tenantID).getCriterionFields(tenantID), false, tenantID);
 
 
     /*****************************************
@@ -905,7 +905,7 @@ public class GUIManagerGeneral extends GUIManager
         JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
         for (int i=0; i<jsonCriteriaList.size(); i++)
           {
-            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile.get(tenantID), tenantID));
+            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile(tenantID), tenantID));
           }
       }
     catch (JSONUtilitiesException|GUIManagerException e)
@@ -1844,7 +1844,7 @@ public class GUIManagerGeneral extends GUIManager
             // Retrieving the ElasticSearch field from the Criterion field.
             //
 
-            CriterionField criterionField = CriterionContext.FullProfile.get(tenantID).getCriterionFields(tenantID).get(baseSplit.getVariableName());
+            CriterionField criterionField = CriterionContext.FullProfile(tenantID).getCriterionFields(tenantID).get(baseSplit.getVariableName());
             if(criterionField.getESField() == null)
               {
                 //

@@ -116,14 +116,14 @@ public class BaseSplit
     if(variableName != null && !variableName.isEmpty())
       {
         CriterionField rangeVariable = null;
-        if (CriterionContext.DynamicProfile.get(tenantID).getCriterionFields(tenantID).get(variableName) != null)
+        if (CriterionContext.DynamicProfile(tenantID).getCriterionFields(tenantID).get(variableName) != null)
           {
-            rangeVariable = CriterionContext.DynamicProfile.get(tenantID).getCriterionFields(tenantID).get(variableName);
+            rangeVariable = CriterionContext.DynamicProfile(tenantID).getCriterionFields(tenantID).get(variableName);
             rangeVariableDependentOnExtendedSubscriberProfile = false;
           }
-        else if (CriterionContext.FullProfile.get(tenantID).getCriterionFields(tenantID).get(variableName) != null)
+        else if (CriterionContext.FullProfile(tenantID).getCriterionFields(tenantID).get(variableName) != null)
           {
-            rangeVariable = CriterionContext.FullProfile.get(tenantID).getCriterionFields(tenantID).get(variableName);
+            rangeVariable = CriterionContext.FullProfile(tenantID).getCriterionFields(tenantID).get(variableName);
             rangeVariableDependentOnExtendedSubscriberProfile = true;        
           }
         else
@@ -153,12 +153,12 @@ public class BaseSplit
     boolean profileCriteriaDependentOnExtendedSubscriberProfile = false;
     try
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile.get(tenantID), tenantID);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile(tenantID), tenantID);
         profileCriteriaDependentOnExtendedSubscriberProfile = false;
       }
     catch (GUIManagerException e)
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile.get(tenantID), tenantID);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile(tenantID), tenantID);
         profileCriteriaDependentOnExtendedSubscriberProfile = true;
       }
 

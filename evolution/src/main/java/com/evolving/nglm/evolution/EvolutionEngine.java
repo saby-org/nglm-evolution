@@ -218,7 +218,6 @@ public class EvolutionEngine
   private static HttpServer internalServer;
   private static HttpClient httpClient;
   private static ExclusionInclusionTargetService exclusionInclusionTargetService;
-  private static TenantService tenantService;
   private static StockMonitor stockService;
   private static PropensityService propensityService;
   private static RetentionService retentionService;
@@ -526,18 +525,10 @@ public class EvolutionEngine
     exclusionInclusionTargetService.start();
     
     //
-    // tenancyService
-    //
-    
-    tenantService = new TenantService(bootstrapServers, "evolutionengine-tenancyservice-" + evolutionEngineKey, "tenant", false);
-    tenantService.start();
-
-    
-    //
     // stockService, used to apply campaign max number of customers limit
     //
 
-    stockService = new StockMonitor("evolutionengine-stockservice-" + evolutionEngineKey, tenantService, journeyService);
+    stockService = new StockMonitor("evolutionengine-stockservice-" + evolutionEngineKey, journeyService);
     stockService.start();
 
     //
@@ -2197,7 +2188,7 @@ public class EvolutionEngine
   {
     ParameterMap profileChangeOldValues = new ParameterMap();
     for(String criterionFieldID: Deployment.getDeployment(changeEventEvaluationRequest.getTenantID()).getProfileChangeDetectionCriterionFields().keySet()) {
-      Object value = CriterionContext.Profile.get(changeEventEvaluationRequest.getTenantID()).getCriterionFields(changeEventEvaluationRequest.getTenantID()).get(criterionFieldID).retrieve(changeEventEvaluationRequest);
+      Object value = CriterionContext.Profile(changeEventEvaluationRequest.getTenantID()).getCriterionFields(changeEventEvaluationRequest.getTenantID()).get(criterionFieldID).retrieve(changeEventEvaluationRequest);
       profileChangeOldValues.put(criterionFieldID, value);      
     }
     return profileChangeOldValues;
@@ -2525,7 +2516,7 @@ public class EvolutionEngine
   {
     ParameterMap profileChangeNewValues = new ParameterMap();
     for(String criterionFieldID: Deployment.getDeployment(tenantID).getProfileChangeDetectionCriterionFields().keySet()) {
-      Object value = CriterionContext.Profile.get(changeEventEvaluationRequest.getTenantID()).getCriterionFields(changeEventEvaluationRequest.getTenantID()).get(criterionFieldID).retrieve(changeEventEvaluationRequest);
+      Object value = CriterionContext.Profile(changeEventEvaluationRequest.getTenantID()).getCriterionFields(changeEventEvaluationRequest.getTenantID()).get(criterionFieldID).retrieve(changeEventEvaluationRequest);
       if(!Objects.equals(profileChangeOldValues.get(criterionFieldID), value)) {
         profileChangeNewValues.put(criterionFieldID, value);
       }
@@ -3198,7 +3189,7 @@ public class EvolutionEngine
                           //
 
                           String variableName = baseSplit.getVariableName();
-                          CriterionField baseMetric = CriterionContext.FullProfile.get(tenantID).getCriterionFields(tenantID).get(variableName);
+                          CriterionField baseMetric = CriterionContext.FullProfile(tenantID).getCriterionFields(tenantID).get(variableName);
                           Object normalized = baseMetric == null ? null : baseMetric.retrieveNormalized(evaluationRequest);
 
                           //

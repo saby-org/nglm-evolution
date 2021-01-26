@@ -960,9 +960,8 @@ public class GUIManager
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
     pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
-    TenantService tenantService  = new TenantService(bootstrapServers, "guimanager-tenantservice-"+apiProcessKey, tenantTopic, true);
     // set notifyOnSignificantChange = false
-    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true, null, false, tenantService);
+    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true, null, false);
     paymentMeanService = new PaymentMeanService(bootstrapServers, "guimanager-paymentmeanservice-" + apiProcessKey, paymentMeanTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
@@ -1206,14 +1205,14 @@ public class GUIManager
         *  remove unused deliverables
         *
         *****************************************/
-        for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+        for(int tenantID : Deployment.getDeployments().keySet())
           {
         
-          for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime(), tenant.getEffectiveTenantID()))
+          for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime(), tenantID))
             {
               if (Objects.equals(providerID, deliverable.getFulfillmentProviderID()) && deliverable.getGeneratedFromAccount() && ! configuredDeliverableIDs.contains(deliverable.getDeliverableID()))
                 {
-                  deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0", tenant.getEffectiveTenantID());
+                  deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0", tenantID);
                   log.info("provider deliverable {} {}", deliverable.getDeliverableID(), "remove");
                 }
             }
@@ -1225,11 +1224,11 @@ public class GUIManager
           *
           *****************************************/
 
-          for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime(), tenant.getEffectiveTenantID()))
+          for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime(), tenantID))
             {
               if (Objects.equals(providerID, paymentMean.getFulfillmentProviderID()) && paymentMean.getGeneratedFromAccount() && ! configuredPaymentMeanIDs.contains(paymentMean.getPaymentMeanID()))
                 {
-                  paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0", tenant.getEffectiveTenantID());
+                  paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0", tenantID);
                   log.info("provider paymentMean {} {}", paymentMean.getPaymentMeanID(), "remove");
                 }
             }
@@ -1246,13 +1245,13 @@ public class GUIManager
     //  catalogCharacteristics
     //
 
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (catalogCharacteristicService.getStoredCatalogCharacteristics(tenant.getEffectiveTenantID()).size() == 0)
+        if (catalogCharacteristicService.getStoredCatalogCharacteristics(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialCatalogCharacteristicsJSONArray();
+                JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getDeployment(tenantID).getInitialCatalogCharacteristicsJSONArray();
                 for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
                   {
                     JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
@@ -1270,13 +1269,13 @@ public class GUIManager
     //  tokenTypes
     //
     
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (tokenTypeService.getStoredTokenTypes(tenant.getEffectiveTenantID()).size() == 0)
+        if (tokenTypeService.getStoredTokenTypes(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialTokenTypesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialTokenTypesJSONArray();
+                JSONArray initialTokenTypesJSONArray = Deployment.getDeployment(tenantID).getInitialTokenTypesJSONArray();
                 for (int i=0; i<initialTokenTypesJSONArray.size(); i++)
                   {
                     JSONObject tokenTypeJSON = (JSONObject) initialTokenTypesJSONArray.get(i);
@@ -1293,13 +1292,13 @@ public class GUIManager
     //
     //  productTypes
     //
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (productTypeService.getStoredProductTypes(tenant.getEffectiveTenantID()).size() == 0)
+        if (productTypeService.getStoredProductTypes(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialProductTypesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialProductTypesJSONArray();
+                JSONArray initialProductTypesJSONArray = Deployment.getDeployment(tenantID).getInitialProductTypesJSONArray();
                 for (int i=0; i<initialProductTypesJSONArray.size(); i++)
                   {
                     JSONObject productTypeJSON = (JSONObject) initialProductTypesJSONArray.get(i);
@@ -1318,13 +1317,13 @@ public class GUIManager
     //
 
     // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
-      {    
+    for(int tenantID : Deployment.getDeployments().keySet())
+      {   
         try
         {
           Date now = SystemTime.getCurrentTime();
-          Collection<Report> existingReports = reportService.getActiveReports(now, tenant.getEffectiveTenantID());
-          JSONArray initialReportsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialReportsJSONArray();
+          Collection<Report> existingReports = reportService.getActiveReports(now, tenantID);
+          JSONArray initialReportsJSONArray = Deployment.getDeployment(tenantID).getInitialReportsJSONArray();
           for (int i=0; i<initialReportsJSONArray.size(); i++)
             {
               JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
@@ -1359,13 +1358,13 @@ public class GUIManager
     //
     //  calling channels
     //
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (callingChannelService.getStoredCallingChannels(tenant.getEffectiveTenantID()).size() == 0)
+        if (callingChannelService.getStoredCallingChannels(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialCallingChannelsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialCallingChannelsJSONArray();
+                JSONArray initialCallingChannelsJSONArray = Deployment.getDeployment(tenantID).getInitialCallingChannelsJSONArray();
                 for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
                   {
                     JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
@@ -1383,13 +1382,13 @@ public class GUIManager
     //  sales channels
     //
 
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (salesChannelService.getStoredSalesChannels(tenant.getEffectiveTenantID()).size() == 0)
+        if (salesChannelService.getStoredSalesChannels(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialSalesChannelsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialSalesChannelsJSONArray();
+                JSONArray initialSalesChannelsJSONArray = Deployment.getDeployment(tenantID).getInitialSalesChannelsJSONArray();
                 for (int i=0; i<initialSalesChannelsJSONArray.size(); i++)
                   {
                     JSONObject  salesChannelJSON = (JSONObject) initialSalesChannelsJSONArray.get(i);
@@ -1407,13 +1406,13 @@ public class GUIManager
     //  suppliers
     //
     
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (supplierService.getStoredSuppliers(tenant.getEffectiveTenantID()).size() == 0)
+        if (supplierService.getStoredSuppliers(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialSuppliersJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialSuppliersJSONArray();
+                JSONArray initialSuppliersJSONArray = Deployment.getDeployment(tenantID).getInitialSuppliersJSONArray();
                 for (int i=0; i<initialSuppliersJSONArray.size(); i++)
                   {
                     JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
@@ -1430,13 +1429,13 @@ public class GUIManager
     //
     //  products
     //
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (productService.getStoredProducts(tenant.getEffectiveTenantID()).size() == 0)
+        if (productService.getStoredProducts(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialProductsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialProductsJSONArray();
+                JSONArray initialProductsJSONArray = Deployment.getDeployment(tenantID).getInitialProductsJSONArray();
                 for (int i=0; i<initialProductsJSONArray.size(); i++)
                   {
                     JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
@@ -1454,13 +1453,13 @@ public class GUIManager
     //  Source Addresses not before communicationChannels
     //
     
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (sourceAddressService.getStoredSourceAddresss(tenant.getEffectiveTenantID()).size() == 0)
+        if (sourceAddressService.getStoredSourceAddresss(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialSourceAddressesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialSourceAddressesJSONArray();
+                JSONArray initialSourceAddressesJSONArray = Deployment.getDeployment(tenantID).getInitialSourceAddressesJSONArray();
                 for (int i=0; i<initialSourceAddressesJSONArray.size(); i++)
                   {
                     JSONObject  sourceAddresslJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
@@ -1477,13 +1476,13 @@ public class GUIManager
     //
     //  contactPolicies
     //
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (contactPolicyService.getStoredContactPolicies(tenant.getEffectiveTenantID()).size() == 0)
+        if (contactPolicyService.getStoredContactPolicies(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialContactPoliciesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialContactPoliciesJSONArray();
+                JSONArray initialContactPoliciesJSONArray = Deployment.getDeployment(tenantID).getInitialContactPoliciesJSONArray();
                 for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
                   {
                     JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
@@ -1501,13 +1500,13 @@ public class GUIManager
     //  journeyTemplates
     //
     
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (journeyTemplateService.getStoredJourneyTemplates(tenant.getEffectiveTenantID()).size() == 0)
+        if (journeyTemplateService.getStoredJourneyTemplates(tenantID).size() == 0)
           {
             try
             {
-              JSONArray initialJourneyTemplatesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialJourneyTemplatesJSONArray();
+              JSONArray initialJourneyTemplatesJSONArray = Deployment.getDeployment(tenantID).getInitialJourneyTemplatesJSONArray();
               for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
                 {
                   JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
@@ -1526,13 +1525,13 @@ public class GUIManager
     //  journeyObjectives
     //
 
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (journeyObjectiveService.getStoredJourneyObjectives(tenant.getEffectiveTenantID()).size() == 0)
+        if (journeyObjectiveService.getStoredJourneyObjectives(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialJourneyObjectivesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialJourneyObjectivesJSONArray();
+                JSONArray initialJourneyObjectivesJSONArray = Deployment.getDeployment(tenantID).getInitialJourneyObjectivesJSONArray();
                 for (int i=0; i<initialJourneyObjectivesJSONArray.size(); i++)
                   {
                     JSONObject journeyObjectiveJSON = (JSONObject) initialJourneyObjectivesJSONArray.get(i);
@@ -1550,13 +1549,13 @@ public class GUIManager
     //  offerObjectives
     //
 
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (offerObjectiveService.getStoredOfferObjectives(tenant.getEffectiveTenantID()).size() == 0)
+        if (offerObjectiveService.getStoredOfferObjectives(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialOfferObjectivesJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialOfferObjectivesJSONArray();
+                JSONArray initialOfferObjectivesJSONArray = Deployment.getDeployment(tenantID).getInitialOfferObjectivesJSONArray();
                 for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
                   {
                     JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
@@ -1574,13 +1573,13 @@ public class GUIManager
     //
     //  segmentationDimensions
     //
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        if (segmentationDimensionService.getStoredSegmentationDimensions(tenant.getEffectiveTenantID()).size() == 0)
+        if (segmentationDimensionService.getStoredSegmentationDimensions(tenantID).size() == 0)
           {
             try
               {
-                JSONArray initialSegmentationDimensionsJSONArray = Deployment.getDeployment(tenant.getEffectiveTenantID()).getInitialSegmentationDimensionsJSONArray();
+                JSONArray initialSegmentationDimensionsJSONArray = Deployment.getDeployment(tenantID).getInitialSegmentationDimensionsJSONArray();
                 for (int i=0; i<initialSegmentationDimensionsJSONArray.size(); i++)
                   {
                     JSONObject segmentationDimensionJSON = (JSONObject) initialSegmentationDimensionsJSONArray.get(i);
@@ -1603,16 +1602,16 @@ public class GUIManager
     //
     // remove all existing simple profile dimensions
     //
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions(tenant.getEffectiveTenantID()))
+        for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions(tenantID))
           {
             if (dimensionObject instanceof SegmentationDimension)
               {
                 SegmentationDimension dimension = (SegmentationDimension)dimensionObject;
                 if (dimension.getIsSimpleProfileDimension())
                   {
-                    segmentationDimensionService.removeSegmentationDimension(dimension.getSegmentationDimensionID(), "0", tenant.getEffectiveTenantID());
+                    segmentationDimensionService.removeSegmentationDimension(dimension.getSegmentationDimensionID(), "0", tenantID);
                   }
               }
           }
@@ -1624,14 +1623,14 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile.get(tenant.getEffectiveTenantID()).getCriterionFields(tenant.getEffectiveTenantID());
+        Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile(tenantID).getCriterionFields(tenantID);
         for (CriterionField criterion : profileCriterionFields.values())
           {
-            if (Deployment.getDeployment(tenant.getEffectiveTenantID()).getGenerateSimpleProfileDimensions() || criterion.getGenerateDimension())
+            if (Deployment.getDeployment(tenantID).getGenerateSimpleProfileDimensions() || criterion.getGenerateDimension())
               {
-                List<JSONObject> availableValues = evaluateAvailableValues(criterion, now, false, tenant.getEffectiveTenantID());
+                List<JSONObject> availableValues = evaluateAvailableValues(criterion, now, false, tenantID);
                 if (availableValues != null && availableValues.size() > 0)
                   {
                     //
@@ -1743,7 +1742,7 @@ public class GUIManager
                       }
     
                     newSimpleProfileDimensionJSON.put("segments", JSONUtilities.encodeArray(newSimpleProfileDimensionSegments));
-                    newSimpleProfileDimensionJSON.put("tenantID", tenant.getEffectiveTenantID());
+                    newSimpleProfileDimensionJSON.put("tenantID", tenantID);
                     JSONObject newSimpleProfileDimension = JSONUtilities.encodeObject(newSimpleProfileDimensionJSON);
                     guiManagerBaseManagement.processPutSegmentationDimension("0", newSimpleProfileDimension, JSONUtilities.decodeInteger(newSimpleProfileDimension, "tenantID", true));
                   }
@@ -1793,10 +1792,10 @@ public class GUIManager
     resellerService.start();
     segmentContactPolicyService.start();
     dynamicEventDeclarationsService.start();
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
+    for(int tenantID : Deployment.getDeployments().keySet())
       {
-        dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService, tenant.getEffectiveTenantID());
-        dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService, tenant.getEffectiveTenantID());
+        dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService, tenantID);
+        dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService, tenantID);
       }
 
     criterionFieldAvailableValuesService.start();
@@ -2614,27 +2613,27 @@ public class GUIManager
                   break;
 
                 case getProfileCriterionFields:
-                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile.get(tenantID) : CriterionContext.Profile.get(tenantID), tenantID);
+                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile(tenantID) : CriterionContext.Profile(tenantID), tenantID);
                   break;
 
                 case getProfileCriterionFieldIDs:
-                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile.get(tenantID) : CriterionContext.Profile.get(tenantID), tenantID);
+                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile(tenantID) : CriterionContext.Profile(tenantID), tenantID);
                   break;
 
                 case getProfileCriterionField:
-                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile.get(tenantID) : CriterionContext.Profile.get(tenantID), tenantID);
+                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile(tenantID) : CriterionContext.Profile(tenantID), tenantID);
                   break;
 
                 case getFullProfileCriterionFields:
-                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile.get(tenantID) : CriterionContext.FullProfile.get(tenantID), tenantID);
+                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile(tenantID) : CriterionContext.FullProfile(tenantID), tenantID);
                   break;
 
                 case getFullProfileCriterionFieldIDs:
-                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile.get(tenantID) : CriterionContext.FullProfile.get(tenantID), tenantID);
+                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile(tenantID) : CriterionContext.FullProfile(tenantID), tenantID);
                   break;
 
                 case getFullProfileCriterionField:
-                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile.get(tenantID) : CriterionContext.FullProfile.get(tenantID), tenantID);
+                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile(tenantID) : CriterionContext.FullProfile(tenantID), tenantID);
                   break;
 
                 case getPresentationCriterionFields:
@@ -4626,7 +4625,7 @@ public class GUIManager
     *****************************************/
 
     Map<String,List<JSONObject>> currentGroups = new HashMap<>();
-    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.get(tenantID).getCriterionFields(tenantID), false, currentGroups, tenantID);
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation(tenantID).getCriterionFields(tenantID), false, currentGroups, tenantID);
     
     List<JSONObject> groups = new ArrayList<>();
     for (String id : currentGroups.keySet())
@@ -4665,7 +4664,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.get(tenantID).getCriterionFields(tenantID), false, tenantID);
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation(tenantID).getCriterionFields(tenantID), false, tenantID);
 
     /*****************************************
     *
@@ -4724,7 +4723,7 @@ public class GUIManager
         //  retrieve presentation criterion fields
         //
 
-        List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.get(tenantID).getCriterionFields(tenantID), false, tenantID);
+        List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation(tenantID).getCriterionFields(tenantID), false, tenantID);
 
         //
         //  find requested field
@@ -21698,7 +21697,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.get(tenantID).getCriterionFields(tenantID), false, tenantID);
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation(tenantID).getCriterionFields(tenantID), false, tenantID);
 
     //
     //  remove gui specific objects

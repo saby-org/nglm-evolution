@@ -147,7 +147,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private VoucherService voucherService;
   private VoucherTypeService voucherTypeService;
   private SalesChannelService salesChannelService;
-  private TenantService tenantService;
   private StockMonitor stockService;
   private DeliverableService deliverableService;
   private ResellerService resellerService;
@@ -209,11 +208,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "PurchaseMgr-salesChannelservice-"+deliveryManagerKey, Deployment.getSalesChannelTopic(), false);
     salesChannelService.start();
-    
-    tenantService = new TenantService(Deployment.getBrokerServers(), "PurchaseMgr-tenantservice-"+deliveryManagerKey, "tenant", false);
-    tenantService.start();
 
-    stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, tenantService, offerService, productService, voucherService);
+    stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, offerService, productService, voucherService);
     stockService.start();
 
     deliverableService = new DeliverableService(Deployment.getBrokerServers(), "PurchaseMgr-deliverableservice-"+deliveryManagerKey, Deployment.getDeliverableTopic(), false);

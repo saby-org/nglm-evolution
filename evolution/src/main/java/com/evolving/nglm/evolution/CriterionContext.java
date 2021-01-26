@@ -65,11 +65,11 @@ public class CriterionContext
   public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
   public static final String EVALUATION_ANIVERSARY_DAY_ID = "evaluation.aniversary.day";
   
-  public static HashMap<Integer, CriterionContext> Profile;
-  public static HashMap<Integer, CriterionContext> FullProfile;
-  public static HashMap<Integer, CriterionContext> DynamicProfile;
-  public static HashMap<Integer, CriterionContext> FullDynamicProfile;
-  public static HashMap<Integer, CriterionContext> Presentation;
+  private static HashMap<Integer, CriterionContext> Profile;
+  private static HashMap<Integer, CriterionContext> FullProfile;
+  private static HashMap<Integer, CriterionContext> DynamicProfile;
+  private static HashMap<Integer, CriterionContext> FullDynamicProfile;
+  private static HashMap<Integer, CriterionContext> Presentation;
 
   /*****************************************
   *
@@ -100,33 +100,13 @@ public class CriterionContext
   private static CriterionField internalFalse;
   private static CriterionField internalTargets;
   
-  private static TenantService tenantService;
-  
   static
-  {    
-    tenantService = new TenantService(Deployment.getBrokerServers(), "NOT_USED", "tenant", false);
-    tenantService.start();
-
+  {   
     Profile = new HashMap<Integer, CriterionContext>();
     FullProfile = new HashMap<Integer, CriterionContext>();
     DynamicProfile = new HashMap<Integer, CriterionContext>();
     FullDynamicProfile = new HashMap<Integer, CriterionContext>();
     Presentation = new HashMap<Integer, CriterionContext>();
-    
-    for(Tenant tenant : tenantService.getActiveTenants(SystemTime.getCurrentTime()))
-      {
-        CriterionContext profileCriterionContext = new CriterionContext(CriterionContextType.Profile, tenant.getEffectiveTenantID());  
-        CriterionContext fullProfileCriterionContext = new CriterionContext(CriterionContextType.FullProfile, tenant.getEffectiveTenantID());
-        CriterionContext dynamicProfileCriterionContext = new CriterionContext(CriterionContextType.DynamicProfile, tenant.getEffectiveTenantID()); 
-        CriterionContext fullDynamicProfileCriterionContext = new CriterionContext(CriterionContextType.FullDynamicProfile, tenant.getEffectiveTenantID()); 
-        CriterionContext presentation = new CriterionContext(CriterionContextType.Presentation, tenant.getEffectiveTenantID()); 
-
-        Profile.put(tenant.getEffectiveTenantID(), profileCriterionContext);
-        FullProfile.put(tenant.getEffectiveTenantID(), fullProfileCriterionContext);
-        DynamicProfile.put(tenant.getEffectiveTenantID(), dynamicProfileCriterionContext);
-        FullDynamicProfile.put(tenant.getEffectiveTenantID(), fullDynamicProfileCriterionContext);
-        Presentation.put(tenant.getEffectiveTenantID(), presentation);
-      }
     
     //
     //  evaluationDate
@@ -475,6 +455,99 @@ public class CriterionContext
       {
         throw new ServerRuntimeException(e);
       }
+  }
+  
+  private static Object lock = new Object();
+  
+  
+  public static CriterionContext Profile(int tenantID) 
+  {
+    CriterionContext criterionContext = Profile.get(tenantID);
+    if(criterionContext == null)
+      {
+        synchronized(lock)
+        {
+          criterionContext = Profile.get(tenantID);
+          if(criterionContext == null)
+            {
+              criterionContext = new CriterionContext(CriterionContextType.Profile, tenantID);
+              Profile.put(tenantID, criterionContext);
+            }          
+        }        
+      }
+    return criterionContext;
+  }
+  
+  public static CriterionContext FullProfile(int tenantID) 
+  {
+    CriterionContext criterionContext = FullProfile.get(tenantID);
+    if(criterionContext == null)
+      {
+        synchronized(lock)
+        {
+          criterionContext = FullProfile.get(tenantID);
+          if(criterionContext == null)
+            {
+              criterionContext = new CriterionContext(CriterionContextType.FullProfile, tenantID);
+              FullProfile.put(tenantID, criterionContext);
+            }          
+        }        
+      }
+    return criterionContext;
+  }
+  
+  public static CriterionContext DynamicProfile(int tenantID) 
+  {
+    CriterionContext criterionContext = DynamicProfile.get(tenantID);
+    if(criterionContext == null)
+      {
+        synchronized(lock)
+        {
+          criterionContext = DynamicProfile.get(tenantID);
+          if(criterionContext == null)
+            {
+              criterionContext = new CriterionContext(CriterionContextType.DynamicProfile, tenantID);
+              DynamicProfile.put(tenantID, criterionContext);
+            }          
+        }        
+      }
+    return criterionContext;
+  }
+  
+  public static CriterionContext FullDynamicProfile(int tenantID) 
+  {
+    CriterionContext criterionContext = FullDynamicProfile.get(tenantID);
+    if(criterionContext == null)
+      {
+        synchronized(lock)
+        {
+          criterionContext = FullDynamicProfile.get(tenantID);
+          if(criterionContext == null)
+            {
+              criterionContext = new CriterionContext(CriterionContextType.FullDynamicProfile, tenantID);
+              FullDynamicProfile.put(tenantID, criterionContext);
+            }          
+        }        
+      }
+    return criterionContext;
+  }
+  
+  public static CriterionContext Presentation(int tenantID) 
+  {
+    CriterionContext criterionContext = Presentation.get(tenantID);
+    if(criterionContext == null)
+      {
+        synchronized(lock)
+        {
+          criterionContext = Presentation.get(tenantID);
+          if(criterionContext == null)
+            {
+              criterionContext = new CriterionContext(CriterionContextType.Presentation, tenantID);
+              Presentation.put(tenantID, criterionContext);
+            }          
+        }        
+      }
+    return criterionContext;
   }
 
   /*****************************************
