@@ -30,6 +30,8 @@ fwk-api-<_KEY_>:
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
     FwkSettings__WebCallbackUrl: '<_FWKSETTINGS_WEBCALLBACKURL_>'
     FwkGuiManagerSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
+    Audit__ODUser: 'admin'
+    Audit__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/fwk-api-<_KEY_>/mnt

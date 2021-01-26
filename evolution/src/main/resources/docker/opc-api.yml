@@ -18,6 +18,8 @@ opc-api-<_KEY_>:
     TZ: <_DEPLOYMENT_TIMEZONE_>
     OPC_API_PORT: <_PORT_>
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
+    ReportSettings__ODUser: 'admin'
+    ReportSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/opc-api-<_KEY_>/mnt
