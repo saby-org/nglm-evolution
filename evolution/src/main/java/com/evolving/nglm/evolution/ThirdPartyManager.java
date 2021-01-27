@@ -1287,12 +1287,7 @@ public class ThirdPartyManager
     String subscriberID = resolveSubscriberID(jsonRoot);
     try
     {
-
-      //
-      // include history
-      //
-
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -1420,12 +1415,7 @@ public class ThirdPartyManager
 
     try
     {
-
-      //
-      // include history
-      //
-
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -1829,12 +1819,7 @@ public class ThirdPartyManager
     String subscriberID = resolveSubscriberID(jsonRoot);
     try
     {
-
-      //
-      // include history
-      //
-
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -1924,12 +1909,12 @@ public class ThirdPartyManager
 
     /*****************************************
      *
-     *  getSubscriberProfile - include history
+     *  getSubscriberProfile
      *
      *****************************************/
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -2194,12 +2179,12 @@ public class ThirdPartyManager
 
     /*****************************************
      *
-     *  getSubscriberProfile - include history
+     *  getSubscriberProfile
      *
      *****************************************/
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
