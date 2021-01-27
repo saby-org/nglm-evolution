@@ -114,8 +114,19 @@ public abstract class CriterionFieldRetriever
   public static Object getJourneyEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyEntryDate(); }
   public static Object getJourneyEndDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyEndDate(); }
   public static Object getJourneyParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) {
-    Object value = evaluationRequest.getJourneyState().getJourneyParameters().get(fieldName);
-    return evaluateParameter(evaluationRequest, value); }
+    Object value = null;
+    JourneyState journeyState = evaluationRequest.getJourneyState();
+    if (journeyState != null && journeyState.getJourneyParameters() != null)
+      {
+        value = journeyState.getJourneyParameters().get(fieldName);
+        return evaluateParameter(evaluationRequest, value);
+      }
+    else
+      {
+        return value;
+      }
+  }
+    
   public static Object getJourneyNodeEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyNodeEntryDate(); }
   public static Object getJourneyNodeParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { 
     ParameterMap parameters = evaluationRequest.getJourneyNode().getNodeParameters();
