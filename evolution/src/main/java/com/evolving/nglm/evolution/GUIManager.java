@@ -5481,6 +5481,8 @@ public class GUIManager
               {
                 // SubscriberCount
                 Long count = this.elasticsearch.getJourneySubscriberCount(journeyID);
+                count = (count != null) ? count : 0;
+                count = count-this.elasticsearch.getSpecialExitCount(journeyID);
                 subscriberCount = (count != null) ? count : 0;
                 
                 // DeliveriesCount 
@@ -8236,12 +8238,14 @@ public class GUIManager
         
         //
         //  retrieve from Elasticsearch 
-        // 
-        try {
+        //
+         try {
           Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID);
           for (String key : nodeIDs) {
-            Long count = esMap.get(key);
-            result.put(key, (count != null)? count : 0);
+        	  Long count = esMap.get(key);
+              if(key.trim().equalsIgnoreCase(((Journey) journey).getEndNodeID().trim()) && esMap.get(key)!=null)
+            	  count=esMap.get(key)-elasticsearch.getSpecialExitCount(journeyID);
+              result.put(key, (count != null)? count : 0);
           }
         }
         catch (ElasticsearchClientException e) {
