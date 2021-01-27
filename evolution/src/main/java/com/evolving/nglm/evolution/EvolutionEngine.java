@@ -129,9 +129,10 @@ public class EvolutionEngine
   public static final String DELIMITER = "-X-";
   static final String INTERNAL_VARIABLE_SUPPLIER = "XXEvolSupplier".toLowerCase();
   static final String INTERNAL_VARIABLE_RESELLER = "XXEvolReseller".toLowerCase();
-  
   static final String INTERNAL_ID_SUPPLIER = "InternalIDSupplier";
   static final String INTERNAL_ID_RESELLER = "InternalIDReseller";
+  public static final String JOURNEY_DISPLAY_PARAMETER_ID = "journey.display.parameter"; //see json
+  
 
 
   /*****************************************
@@ -4702,11 +4703,12 @@ public class EvolutionEngine
            }
         subscriberStateUpdated = subscriberStateUpdated || workflowTriggering.removeAll(toBeRemoved);
         
+        // 
         //  enter journey?
         //
 
         ParameterMap journeyDisplayBoundParameters = new ParameterMap();
-        journeyDisplayBoundParameters.put("journey.display.parameter", journey.getGUIManagedObjectDisplay());
+        journeyDisplayBoundParameters.put(JOURNEY_DISPLAY_PARAMETER_ID, journey.getGUIManagedObjectDisplay());
         
         if (calledJourney || journey.getAutoTargeted())
           {
