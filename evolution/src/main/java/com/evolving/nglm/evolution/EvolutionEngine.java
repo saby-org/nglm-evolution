@@ -129,10 +129,10 @@ public class EvolutionEngine
   public static final String DELIMITER = "-X-";
   static final String INTERNAL_VARIABLE_SUPPLIER = "XXEvolSupplier".toLowerCase();
   static final String INTERNAL_VARIABLE_RESELLER = "XXEvolReseller".toLowerCase();
+  
   static final String INTERNAL_ID_SUPPLIER = "InternalIDSupplier";
   static final String INTERNAL_ID_RESELLER = "InternalIDReseller";
-  public static final String JOURNEY_DISPLAY_PARAMETER_ID = "journey.display.parameter"; //see json
-  
+  public static final String JOURNEY_DISPLAY_PARAMETER_ID = "this.journey.display";
 
 
   /*****************************************
@@ -4703,13 +4703,9 @@ public class EvolutionEngine
            }
         subscriberStateUpdated = subscriberStateUpdated || workflowTriggering.removeAll(toBeRemoved);
         
-        // 
         //  enter journey?
         //
 
-        ParameterMap journeyDisplayBoundParameters = new ParameterMap();
-        journeyDisplayBoundParameters.put(JOURNEY_DISPLAY_PARAMETER_ID, journey.getGUIManagedObjectDisplay());
-        
         if (calledJourney || journey.getAutoTargeted())
           {
             /*****************************************
@@ -4786,7 +4782,6 @@ public class EvolutionEngine
                 *  Check target / trigger / Inclusion / Eligibility
                 *
                 *****************************************/
-                
                 if(enterJourney && currentStatus == null)
                   {
                     // check if the subscriber should enter by 
@@ -4804,9 +4799,7 @@ public class EvolutionEngine
                     for(List<EvaluationCriterion> current : targetsAndTriggerCriteria)
                       {
                         if(inAnyTargetOrTrigger == false) { // avoid evaluating target is already true
-                          
-                          JourneyState tempJourneyState = new JourneyState(context, journey, null, null, journeyDisplayBoundParameters, SystemTime.getCurrentTime(), new JourneyHistory(journey.getJourneyID()));
-                          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), null, subscriberGroupEpochReader, tempJourneyState, null, null, evolutionEvent, now);
+                          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
                           context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                           boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
                           if(inThisTarget)
@@ -4836,8 +4829,7 @@ public class EvolutionEngine
                       }
                     else 
                       {
-                        JourneyState tempJourneyState = new JourneyState(context, journey, null, null, journeyDisplayBoundParameters, SystemTime.getCurrentTime(), new JourneyHistory(journey.getJourneyID()));
-                        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), null, subscriberGroupEpochReader, tempJourneyState, null, null, evolutionEvent, now);
+                        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
                         List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
                         eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
                         //eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
@@ -4855,7 +4847,7 @@ public class EvolutionEngine
                         else 
                           {
                             // 5. Apply the journeyUniversalEligibilityCriteria
-                            evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), null, subscriberGroupEpochReader, tempJourneyState, null, null, evolutionEvent, now);
+                            evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
                             eligibilityAndTargetting = new ArrayList<>();
                             eligibilityAndTargetting.addAll(Deployment.getJourneyUniversalEligibilityCriteria());
                             
@@ -4991,11 +4983,7 @@ public class EvolutionEngine
                 *
                 *****************************************/
                 
-                //
-                //  confirm journey name
-                //
-                
-                boundParameters.putAll(journeyDisplayBoundParameters);
+                boundParameters.put(JOURNEY_DISPLAY_PARAMETER_ID, journey.getGUIManagedObjectDisplay());
 
                 //
                 // confirm "stock reservation" (journey max number of customers limits)
