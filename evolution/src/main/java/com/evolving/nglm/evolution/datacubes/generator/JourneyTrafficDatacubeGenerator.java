@@ -192,9 +192,9 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   }
   
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
+  protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {    
-    HashMap<String, Object> metrics = new HashMap<String, Object>();
+    HashMap<String, Long> metrics = new HashMap<String, Long>();
     
     if (compositeBucket.getAggregations() == null) {
       log.error("Unable to extract metrics, aggregation is missing.");

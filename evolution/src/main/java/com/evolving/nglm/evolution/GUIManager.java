@@ -6244,7 +6244,7 @@ public class GUIManager
             //
             // Update targetCount
             //
-            journey.setTargetCount(elasticsearch);
+            journey.setTargetCount(elasticsearch, uploadedFileService);
 
             /*****************************************
              *
@@ -7644,7 +7644,7 @@ public class GUIManager
             //
             // Update targetCount
             //
-            bulkCampaign.setTargetCount(elasticsearch);
+            bulkCampaign.setTargetCount(elasticsearch, uploadedFileService);
 
             /*****************************************
              *
@@ -29561,7 +29561,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
       Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
-      Collection<Journey> recurrentJourneys = journeyService.getActiveAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
+      Collection<Journey> recurrentJourneys = journeyService.getAcceptedAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
       if(log.isDebugEnabled()) log.debug("recurrentJourneys {}", recurrentJourneys);
       for (Journey recurrentJourney : recurrentJourneys)
         {
