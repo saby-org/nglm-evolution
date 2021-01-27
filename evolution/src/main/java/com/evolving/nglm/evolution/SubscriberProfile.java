@@ -527,21 +527,25 @@ public abstract class SubscriberProfile
             
             todayFluctuations.put("earned", point.getValue().getEarnedHistory().getToday(evaluationDate));
             todayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getToday(evaluationDate));
+            todayFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getToday(evaluationDate));
             todayFluctuations.put("expired", point.getValue().getExpiredHistory().getToday(evaluationDate));
             fluctuations.put("today", todayFluctuations);
             
             yesterdayFluctuations.put("earned", point.getValue().getEarnedHistory().getYesterday(evaluationDate));
             yesterdayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getYesterday(evaluationDate));
+            yesterdayFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getYesterday(evaluationDate));
             yesterdayFluctuations.put("expired", point.getValue().getExpiredHistory().getYesterday(evaluationDate));
             fluctuations.put("yesterday", yesterdayFluctuations);
             
             last7daysFluctuations.put("earned", point.getValue().getEarnedHistory().getPrevious7Days(evaluationDate));
             last7daysFluctuations.put("redeemed", point.getValue().getConsumedHistory().getPrevious7Days(evaluationDate));
+            last7daysFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getPrevious7Days(evaluationDate));
             last7daysFluctuations.put("expired", point.getValue().getExpiredHistory().getPrevious7Days(evaluationDate));
             fluctuations.put("last7days", last7daysFluctuations);
             
             last30daysFluctuations.put("earned", point.getValue().getEarnedHistory().getPrevious30Days(evaluationDate));
             last30daysFluctuations.put("redeemed", point.getValue().getConsumedHistory().getPrevious30Days(evaluationDate));
+            last30daysFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getPrevious30Days(evaluationDate));
             last30daysFluctuations.put("expired", point.getValue().getExpiredHistory().getPrevious30Days(evaluationDate));
             fluctuations.put("last30days", last30daysFluctuations);
             

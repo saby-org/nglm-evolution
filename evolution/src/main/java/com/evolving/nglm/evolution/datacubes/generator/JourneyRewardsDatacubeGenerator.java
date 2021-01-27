@@ -185,9 +185,9 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   }
 
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
+  protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {    
-    HashMap<String, Object> metrics = new HashMap<String,Object>();
+    HashMap<String, Long> metrics = new HashMap<String,Long>();
     
     if (compositeBucket.getAggregations() == null) {
       log.error("Unable to extract metrics, aggregation is missing.");
@@ -200,7 +200,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
         if (rewardAggregation == null) {
           log.warn("Unable to extract "+reward+" reward in journeystatistics, aggregation is missing.");
         } else {
-          metrics.put("reward." + reward, (int) rewardAggregation.getValue());
+          metrics.put("reward." + reward, new Long((int) rewardAggregation.getValue()));
         }
       }
     

@@ -176,9 +176,9 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   @Override protected List<AggregationBuilder> getMetricAggregations() { return this.metricAggregations; }
     
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
+  protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {
-    HashMap<String, Object> metrics = new HashMap<String,Object>();
+    HashMap<String, Long> metrics = new HashMap<String,Long>();
     if (compositeBucket.getAggregations() == null) {
       log.error("Unable to extract metrics, aggregation is missing.");
       return metrics;
@@ -189,7 +189,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
       log.error("Unable to extract totalQuantity metric, aggregation is missing.");
       return metrics;
     }
-    metrics.put(METRIC_TOTAL_QUANTITY, (int) dataTotalQuantityBucket.getValue());
+    metrics.put(METRIC_TOTAL_QUANTITY, new Long((int) dataTotalQuantityBucket.getValue()));
     
     return metrics;
   }

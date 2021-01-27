@@ -112,7 +112,6 @@ public abstract class ESObjectList<T>
     
     if(response.isTimedOut()
         || response.getFailedShards() > 0
-        || response.getSkippedShards() > 0
         || response.status() != RestStatus.OK) 
       {
         log.error("Elasticsearch index {} search response returned with bad status.", mappingEsIndex);

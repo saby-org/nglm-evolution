@@ -169,7 +169,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   @Override protected List<AggregationBuilder> getMetricAggregations() { return Collections.emptyList(); }
-  @Override protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException { return Collections.emptyMap(); }
+  @Override protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException { return Collections.emptyMap(); }
 
   /*****************************************
   *

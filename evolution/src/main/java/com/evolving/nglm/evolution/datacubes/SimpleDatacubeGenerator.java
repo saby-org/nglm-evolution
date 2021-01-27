@@ -67,7 +67,7 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   // Metrics settings
   //
   protected abstract List<AggregationBuilder> getMetricAggregations();
-  protected abstract Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException;
+  protected abstract Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException;
   
   /*****************************************
   *
@@ -138,7 +138,6 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
     
     if (response.isTimedOut()
         || response.getFailedShards() > 0
-        || response.getSkippedShards() > 0
         || response.status() != RestStatus.OK) {
       log.error("Elasticsearch search response return with bad status.");
       log.error(response.toString());
@@ -172,7 +171,7 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
       //
       // Extract metrics
       //
-      Map<String, Object> metrics = extractMetrics(bucket);
+      Map<String, Long> metrics = extractMetrics(bucket);
       
       //
       // Build row

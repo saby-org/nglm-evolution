@@ -709,7 +709,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_l
       "count" : { "type" : "integer" },
       "metric.rewards.redeemed" : { "type" : "integer" },
       "metric.rewards.earned" : { "type" : "integer" },
-      "metric.rewards.expired" : { "type" : "integer" }
+      "metric.rewards.expired" : { "type" : "integer" },
+      "metric.rewards.redemptions" : { "type" : "integer" }
     }
   }
 }'

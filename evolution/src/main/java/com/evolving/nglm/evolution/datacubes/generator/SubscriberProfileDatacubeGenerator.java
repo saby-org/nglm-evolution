@@ -169,9 +169,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   }
 
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
+  protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {    
-    HashMap<String, Object> metrics = new HashMap<String,Object>();
+    HashMap<String, Long> metrics = new HashMap<String,Long>();
     
     if (compositeBucket.getAggregations() == null) {
       log.error("Unable to extract metrics, aggregation is missing.");
@@ -187,7 +187,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
         log.error("Unable to extract "+metricID+" custom metric, aggregation is missing.");
         return metrics;
       }
-      metrics.put("custom." + customMetric.getDisplay(), (int) metricBucket.getValue());
+      metrics.put("custom." + customMetric.getDisplay(), new Long((int) metricBucket.getValue()));
     }
     
     return metrics;
