@@ -3,43 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.5.0_0-675-reports-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-675-reports-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-EVPRO-695-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-SNAPSHOT</version>
-  <version>1.5.0_0-760-SNAPSHOT</version>
-  <version>1.5.0_0-775-SNAPSHOT</version>
-  <version>EVPRO-618-SNAPSHOT</version>
-  <version>1.5.0_0-EVPRO-721-SNAPSHOT</version>
-  <version>1.5.0_0-EVPRO-351-SNAPSHOT</version>
-  <version>EVPRO-650-SNAPSHOT</version>
-  <version>release_1.5.0_0-EVPRO-712-SNAPSHOT</version>
-  <version>1.4.5_1-EVPRO-726-SNAPSHOT</version>
-  <version>release_1.5.0_0-EVPRO-589-1-SNAPSHOT</version>
-  <version>release_1.5.0_0-EVPRO-701-SNAPSHOT</version>
-  <version>EVPRO-747-v150_0-SNAPSHOT</version>
-  <version>1.5.0_0-484-SNAPSHOT</version>
-  <version>EVPRO-638-639new-SNAPSHOT</version>
-  <version>EVPRO-742-v150_0-SNAPSHOT</version>
-  <version>EVPRO-758-SNAPSHOT</version>
-  <version>1.5.0_0-669-SNAPSHOT</version>
-  <version>release_1.5.0_0-EVPRO-809-SNAPSHOT</version>
-  <version>1.5.0_0-833-SNAPSHOT</version>
-  <version>EVPRO-574-v150_0-SNAPSHOT</version>
+  <version>1.5.1_1-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -61,17 +25,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.5_0-SNAPSHOT</version>
-    <version>1.5.0_0-SNAPSHOT</version>
-    <version>1.4.5_0-PROTO-1-SNAPSHOT</version>
+    <version>1.5.1_1-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.5_0-SNAPSHOT</nglm.core.version>
-    <nglm.core.version>1.5.0_0-SNAPSHOT</nglm.core.version>
-    <nglm.core.version>1.4.5_0-PROTO-1-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.5.1_1-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
     <gui.framework.version>${gui-fwk.version}</gui.framework.version>
 
