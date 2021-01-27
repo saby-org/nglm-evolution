@@ -27,6 +27,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -149,7 +150,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_pushnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 9));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("language", Schema.STRING_SCHEMA);
@@ -159,6 +160,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("contactType", SchemaBuilder.string().defaultValue("unknown").schema());
       schema = schemaBuilder.build();
     };
 
@@ -191,6 +193,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     private MessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
+    private String contactType;
 
     //
     //  accessors
@@ -205,6 +208,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     public MessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
+    public String getContactType() { return contactType; }
 
     
     /*****************************************
@@ -262,7 +266,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public PushNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags)
+    public PushNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String contactType)
     {
       super(context, deliveryType, deliveryRequestSource);
       this.destination = destination;
@@ -272,6 +276,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       this.status = MessageStatus.PENDING;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
+      this.contactType = contactType;
     }
 
     /*****************************************
@@ -304,7 +309,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    private PushNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails)
+    private PushNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String contactType)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -316,6 +321,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       this.status = status;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = returnCodeDetails;
+      this.contactType = contactType;
     }
 
     /*****************************************
@@ -336,6 +342,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       this.status = pushNotificationManagerRequest.getMessageStatus();
       this.returnCode = pushNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = pushNotificationManagerRequest.getReturnCodeDetails();
+      this.contactType = pushNotificationManagerRequest.getContactType();
     }
 
     /*****************************************
@@ -368,6 +375,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       struct.put("restricted", notificationRequest.getRestricted());
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
+      struct.put("contactType", notificationRequest.getContactType());
       return struct;
     }
     
@@ -407,12 +415,13 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
+      String contactType = schemaVersion >= 9 ? valueStruct.getString("contactType") : "unknown";
       
       //
       //  return
       //
 
-      return new PushNotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails);
+      return new PushNotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, contactType);
     }
     
 //    /*****************************************
@@ -473,6 +482,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      guiPresentationMap.put("contactType", getContactType());
       Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
       guiPresentationMap.putAll(resolvedParameters);
     }
@@ -498,6 +508,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      thirdPartyPresentationMap.put("contactType", getContactType());
       Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
       thirdPartyPresentationMap.putAll(resolvedParameters);
     }
@@ -565,6 +576,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       *****************************************/
 
       String pushTemplateID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
+      ContactType contactType = ContactType.Unknown;
 
       /*****************************************
       *
@@ -648,7 +660,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       PushNotificationManagerRequest request = null;
       if (destAddress != null)
         {
-          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags);
+          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags, contactType.getExternalRepresentation());
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
         }

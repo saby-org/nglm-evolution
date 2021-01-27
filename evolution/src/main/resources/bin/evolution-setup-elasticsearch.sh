@@ -567,7 +567,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "origin" : { "type" : "keyword", "index" : "false" },
       "returnCode" : { "type" : "keyword" },
       "deliveryStatus" : { "type" : "keyword" },
-      "returnCodeDetails" : { "type" : "keyword", "index" : "false" }
+      "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
+      "contactType" : { "type" : "keyword" }
     }
   }
 }'
@@ -816,6 +817,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_m
       "filter.language" : { "type" : "keyword" },
       "filter.template" : { "type" : "keyword" },
       "filter.channel" : { "type" : "keyword" },
+      "filter.contactType" : { "type" : "keyword" },
       "filter.returnCode" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalQty" : { "type" : "integer" }

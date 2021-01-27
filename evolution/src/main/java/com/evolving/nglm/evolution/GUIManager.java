@@ -2188,7 +2188,7 @@ public class GUIManager
     
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     long uniqueID = 0;
-    String periodicGenerationCronEntry = "1,10,15,20,25,30,35,40,45,50 * * * *"; //1,15,30,45 * * * * //5 1,6,11,16,21 * * *
+    String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured())
       {

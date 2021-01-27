@@ -151,7 +151,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_mailnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 9));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("fromAddress", Schema.STRING_SCHEMA);
@@ -164,6 +164,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("contactType", SchemaBuilder.string().defaultValue("unknown").schema());
       schema = schemaBuilder.build();
     };
 
@@ -199,6 +200,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     private MessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
+    private String contactType;
 
     //
     //  accessors
@@ -216,6 +218,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     public MessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
+    public String getContactType() { return contactType; }
 
     //
     //  abstract
@@ -290,7 +293,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags)
+    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, String contactType)
     {
       super(context, deliveryType, deliveryRequestSource);
       this.destination = destination;
@@ -303,6 +306,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       this.status = MessageStatus.PENDING;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
+      this.contactType = contactType;
     }
 
     /*****************************************
@@ -327,7 +331,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails)
+    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String contactType)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -342,6 +346,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       this.status = status;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = returnCodeDetails;
+      this.contactType = contactType;
     }
 
     /*****************************************
@@ -365,6 +370,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       this.status = mailNotificationManagerRequest.getMessageStatus();
       this.returnCode = mailNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = mailNotificationManagerRequest.getReturnCodeDetails();
+      this.contactType = mailNotificationManagerRequest.getContactType();
     }
 
     /*****************************************
@@ -415,6 +421,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       struct.put("restricted", notificationRequest.getRestricted());
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
+      struct.put("contactType", notificationRequest.getContactType());
       return struct;
     }
     
@@ -457,12 +464,13 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
+      String contactType = schemaVersion >= 9 ? valueStruct.getString("contactType") : "unknown";
       
       //
       //  return
       //
 
-      return new MailNotificationManagerRequest(schemaAndValue, destination, fromAddress, language, templateID, subjectTags, htmlBodyTags, textBodyTags, confirmationExpected, restricted, status, returnCodeDetails);
+      return new MailNotificationManagerRequest(schemaAndValue, destination, fromAddress, language, templateID, subjectTags, htmlBodyTags, textBodyTags, confirmationExpected, restricted, status, returnCodeDetails, contactType);
     }
     
     /****************************************
@@ -491,7 +499,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
-      guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      guiPresentationMap.put("contactType", getContactType());
     }
     
     //
@@ -516,6 +524,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      thirdPartyPresentationMap.put("contactType", getContactType());
     }
     
     @Override
@@ -627,7 +636,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       MailNotificationManagerRequest request = null;
       if (template != null && email != null)
         {
-          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, language, template.getMailTemplateID(), subjectTags, htmlBodyTags, textBodyTags);
+          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, language, template.getMailTemplateID(), subjectTags, htmlBodyTags, textBodyTags, contactType.getExternalRepresentation());
           request.setModuleID(newModuleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
