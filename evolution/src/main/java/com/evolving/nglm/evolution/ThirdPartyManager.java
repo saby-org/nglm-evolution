@@ -44,6 +44,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -3907,7 +3908,8 @@ public class ThirdPartyManager
              keySerializer.serialize(topic, new StringKey(subscriberID)),
              valueSerializer.serialize(topic, presentationLog)
              ));
-
+         keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+         
          // Update token locally, so that it is correctly displayed in the response
          // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
 
@@ -4148,7 +4150,8 @@ public class ThirdPartyManager
                  keySerializer.serialize(topic, new StringKey(subscriberID)),
                  valueSerializer.serialize(topic, presentationLog)
                  ));
-
+             keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+             
              // Update token locally, so that it is correctly displayed in the response
              // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
 
@@ -4366,6 +4369,7 @@ public class ThirdPartyManager
           keySerializer.serialize(topic, new StringKey(subscriberID)),
           valueSerializer.serialize(topic, acceptanceLog)
           ));
+      keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
       }
       
       //
@@ -4382,6 +4386,7 @@ public class ThirdPartyManager
             keySerializer.serialize(topic, new StringKey(subscriberID)),
             valueSerializer.serialize(topic, tokenRedeemed)
             ));
+        keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
       }      
     }
     catch (SubscriberProfileServiceException e) 
@@ -4729,7 +4734,8 @@ public class ThirdPartyManager
           keySerializer.serialize(topic, new StringKey(subscriberID)),
           valueSerializer.serialize(topic, loyaltyProgramRequest)
           ));
-
+      keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+      
       //
       // TODO how do we deal with the offline errors ? 
       //
@@ -5823,6 +5829,7 @@ public class ThirdPartyManager
 
   private AuthenticatedResponse authenticate(ThirdPartyCredential thirdPartyCredential) throws IOException, ParseException, ThirdPartyManagerException
   {
+    CloseableHttpResponse httpResponse = null;
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
     {
       //
@@ -5837,7 +5844,7 @@ public class ThirdPartyManager
       // submit request
       //
 
-      HttpResponse httpResponse = httpClient.execute(httpPost);
+      httpResponse = httpClient.execute(httpPost);
 
       //
       // process response
@@ -5902,6 +5909,10 @@ public class ThirdPartyManager
       log.error("failed to authenticate in FWK server");
       log.error("IOException: {}", e.getMessage());
       throw e;
+    }
+    finally
+    {
+      if (httpResponse != null) httpResponse.close();
     }
   }
 
@@ -6309,7 +6320,7 @@ public class ThirdPartyManager
         keySerializer.serialize(topic, new StringKey(deliveryRequestID)),
         valueSerializer.serialize(topic, purchaseRequest)
         ));
-
+    keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
     if (sync) {
       return handleWaitingResponse(waitingResponse);
     }
@@ -6688,6 +6699,7 @@ public class ThirdPartyManager
         keySerializer.serialize(topic, new StringKey(subscriberID)),
         valueSerializer.serialize(topic, tokenChange)
         ));
+    keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
   }
 
   // helpers for stats

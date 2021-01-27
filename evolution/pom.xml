@@ -6,6 +6,7 @@
   <version>1.5.0_0-SNAPSHOT</version>
   <version>1.5.0_0-SNAPSHOT</version>
   <version>1.5.0_0-SNAPSHOT</version>
+  <version>1.5.0_0-SNAPSHOT</version>
   <version>1.4.5_1-SNAPSHOT</version>
   <version>1.5.0_0-SNAPSHOT</version>
   <version>1.5.0_0-675-reports-SNAPSHOT</version>
@@ -24,6 +25,7 @@
   <version>release_1.5.0_0-EVPRO-589-1-SNAPSHOT</version>
   <version>release_1.5.0_0-EVPRO-701-SNAPSHOT</version>
   <version>EVPRO-747-v150_0-SNAPSHOT</version>
+  <version>1.5.0_0-484-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -80,9 +82,13 @@
       <gui-fwk.version>1.5.1</gui-fwk.version>
     <gui-csr.version>1.5.1</gui-csr.version>
     <gui-itm.version>1.5.0</gui-itm.version>
+    <gui-jmr.version>1.5.0</gui-jmr.version>
+    <gui-opc.version>1.5.0</gui-opc.version>
     <gui-lpm.version>1.4.9</gui-lpm.version>
     <gui-jmr.version>1.5.6</gui-jmr.version>
     <gui-opc.version>1.5.7</gui-opc.version>
+    <gui-jmr.version>1.5.8</gui-jmr.version>
+    <gui-opc.version>1.5.0</gui-opc.version>
     <gui-iar.version>1.5.0</gui-iar.version>
     <gui-opr.version>1.5.0</gui-opr.version>
     <gui-stg.version>1.5.1</gui-stg.version>

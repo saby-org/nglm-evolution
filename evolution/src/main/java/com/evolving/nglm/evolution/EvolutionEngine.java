@@ -4570,7 +4570,16 @@ public class EvolutionEngine
     *****************************************/
 
     List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now));
+    
+    // Sort journeys by priorities, and randomize those with equal priorities
+
+    // 1) sort randomly
     Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
+    
+    // 2) sort by priorities, do not reorder journeys with same priorities
+    //logCollectionPrioritiesJourneys("Before sort journeys", activeJourneys);
+    Collections.sort(activeJourneys, ((j1, j2) -> j1.getPriority()-j2.getPriority()));
+    //logCollectionPrioritiesJourneys("After sort journeys", activeJourneys);
     
     /*****************************************
     *
@@ -5086,7 +5095,17 @@ public class EvolutionEngine
     //
 
     List<JourneyState> inactiveJourneyStates = new ArrayList<JourneyState>();
-    for (JourneyState journeyState : subscriberState.getJourneyStates())
+    
+    List<JourneyState> orderedJourneyStates = new ArrayList<>();
+    orderedJourneyStates.addAll(subscriberState.getJourneyStates());
+
+    // sort by priorities, do not change order if same priority
+    // from Collections.sort Javadoc : This sort is guaranteed to be stable: equal elements will not be reordered as a result of the sort.
+    //logCollectionPrioritiesJourneyStates("Before sort nodes", orderedJourneyStates);
+    Collections.sort(orderedJourneyStates, ((j1, j2) -> j1.getPriority()-j2.getPriority()));
+    //logCollectionPrioritiesJourneyStates("After sort nodes", orderedJourneyStates);
+    
+    for (JourneyState journeyState : orderedJourneyStates)
       {
         /*****************************************
         *
@@ -5816,6 +5835,26 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
+  private static void logCollectionPrioritiesJourneys(String msg, List<Journey> list)
+  {
+    if (!list.isEmpty())
+      {
+        StringBuffer sb = new StringBuffer();
+        list.stream().forEach(j->sb.append(j.getPriority()+","));
+        if (sb.length() > 0) sb.deleteCharAt(sb.length()-1);
+        log.info(msg + " : " + sb);
+      }
+  }
+  private static void logCollectionPrioritiesJourneyStates(String msg, List<JourneyState> list)
+  {
+    if (!list.isEmpty())
+      {
+        StringBuffer sb = new StringBuffer();
+        list.stream().forEach(j->sb.append(j.getPriority()+","));
+        if (sb.length() > 0) sb.deleteCharAt(sb.length()-1);
+        log.info(msg + ":" + sb);
+      }
+  }
 
   private static void addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
   {
@@ -6445,6 +6484,9 @@ public class EvolutionEngine
 
     JsonNode subscriberStateNode = deserializer.deserialize(null, converter.fromConnectData(null, SubscriberState.schema(),  SubscriberState.pack(subscriberState)));
 
+    converter.close(); // to make Eclipse happy
+    deserializer.close(); // to make Eclipse happy
+    
     /*****************************************
     *
     *  hack/massage triggerStateNodes to remove unwanted/misleading/spurious fields from currentTriggerState
@@ -6558,6 +6600,9 @@ public class EvolutionEngine
     //
 
     JsonNode extendedSubscriberProfileNode = deserializer.deserialize(null, converter.fromConnectData(null, ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().schema(),  ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().pack(extendedSubscriberProfile)));
+
+    converter.close(); // to make Eclipse happy
+    deserializer.close(); // to make Eclipse happy
 
     /*****************************************
     *
