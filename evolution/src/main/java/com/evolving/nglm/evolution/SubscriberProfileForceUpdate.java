@@ -14,11 +14,8 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CustomerMetaData.MetaData;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -34,7 +31,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Action
+public class SubscriberProfileForceUpdate extends SubscriberStreamOutput implements SubscriberStreamEvent, Action
 {
   /*****************************************
   *
@@ -51,7 +48,8 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Acti
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_profile_force_update");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("parameterMap", ParameterMap.schema());
@@ -91,9 +89,6 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Acti
   public String getSubscriberID() { return subscriberID; }
   public Date getEventDate() { return eventDate; }
   public ParameterMap getParameterMap() { return parameterMap; }
-
-  //TODO: this should probably extends SubscriberStreamOutput instead
-  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Standard; }
 
   /*****************************************
   *
@@ -178,6 +173,14 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Acti
   *
   *****************************************/
 
+  public SubscriberProfileForceUpdate(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, ParameterMap parameterMap)
+  {
+    super(schemaAndValue);
+    this.subscriberID = subscriberID;
+    this.eventDate = eventDate;
+    this.parameterMap = parameterMap;
+  }
+
   public SubscriberProfileForceUpdate(String subscriberID, Date eventDate, ParameterMap parameterMap)
   {
     this.subscriberID = subscriberID;
@@ -195,6 +198,7 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Acti
   {
     SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,subscriberProfileForceUpdate);
     struct.put("subscriberID", subscriberProfileForceUpdate.getSubscriberID());
     struct.put("eventDate", subscriberProfileForceUpdate.getEventDate());
     struct.put("parameterMap", ParameterMap.pack(subscriberProfileForceUpdate.getParameterMap()));
@@ -221,7 +225,7 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Acti
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -236,7 +240,7 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Acti
     //  return
     //
 
-    return new SubscriberProfileForceUpdate(subscriberID, eventDate, parameterMap);
+    return new SubscriberProfileForceUpdate(schemaAndValue, subscriberID, eventDate, parameterMap);
   }
   
   @Override

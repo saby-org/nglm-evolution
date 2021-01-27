@@ -129,6 +129,10 @@ public class SubscriberState implements StateStore
   private Map<String,MetricHistory> notificationHistory;
   private List<VoucherChange> voucherChanges;
   private DeliveryRequest deliveryResponse;
+  private List<ExecuteActionOtherSubscriber> executeActionOtherSubscribers;
+  private List<VoucherAction> voucherActions;
+  private List<EvolutionEngine.JourneyTriggerEventAction> journeyTriggerEventActions;
+  private List<SubscriberProfileForceUpdate> subscriberProfileForceUpdates;
   //
   //  in memory only
   //
@@ -170,6 +174,10 @@ public class SubscriberState implements StateStore
   public Map<String,MetricHistory> getNotificationHistory() { return notificationHistory; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
   public DeliveryRequest getDeliveryResponse() { return deliveryResponse; }
+  public List<ExecuteActionOtherSubscriber> getExecuteActionOtherSubscribers() { return executeActionOtherSubscribers; }
+  public List<VoucherAction> getVoucherActions() { return voucherActions; }
+  public List<EvolutionEngine.JourneyTriggerEventAction> getJourneyTriggerEventActions() { return journeyTriggerEventActions; }
+  public List<SubscriberProfileForceUpdate> getSubscriberProfileForceUpdates() { return subscriberProfileForceUpdates; }
 
   //
   //  kafkaRepresentation
@@ -268,6 +276,10 @@ public class SubscriberState implements StateStore
         this.tokenChanges = new ArrayList<TokenChange>();
         this.notificationHistory = new HashMap<>();
         this.voucherChanges = new ArrayList<VoucherChange>();
+        this.executeActionOtherSubscribers = new ArrayList<>();
+        this.voucherActions = new ArrayList<>();
+        this.journeyTriggerEventActions = new ArrayList<>();
+        this.subscriberProfileForceUpdates = new ArrayList<>();
       }
     catch (InvocationTargetException e)
       {
@@ -285,8 +297,9 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber, List<JourneyStatistic> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, Map<String,MetricHistory> notificationHistory, List<VoucherChange> voucherChanges)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<UUID> trackingIDs, Map<String,MetricHistory> notificationHistory)
   {
+    // stored
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
     this.journeyStates = journeyStates;
@@ -298,24 +311,29 @@ public class SubscriberState implements StateStore
     this.ucgEpoch = ucgEpoch;
     this.ucgRefreshDay = ucgRefreshDay;
     this.lastEvaluationDate = lastEvaluationDate;
-    this.journeyRequests = journeyRequests;
-    this.journeyResponses = journeyResponses;
-    this.loyaltyProgramRequests = loyaltyProgramRequests;
-    this.loyaltyProgramResponses = loyaltyProgramResponses;
-    this.pointFulfillmentResponses = pointFulfillmentResponses;
-    this.deliveryRequests = deliveryRequests;
-    this.journeyStatisticWrappers = journeyStatisticWrappers;
-    this.journeyMetrics = journeyMetrics;
-    this.profileChangeEvents = profileChangeEvents;
-    this.profileSegmentChangeEvents = profileSegmentChangeEvents;
-    this.profileLoyaltyProgramChangeEvents = profileLoyaltyProgramChangeEvents;
-    this.subscriberTrace = subscriberTrace;
-    this.externalAPIOutput = externalAPIOutput;
-    this.kafkaRepresentation = null;
     this.trackingIDs = trackingIDs;
-    this.tokenChanges = tokenChanges;
     this.notificationHistory = notificationHistory;
-    this.voucherChanges = voucherChanges;
+    // not stored
+    this.journeyRequests = new ArrayList<>();
+    this.journeyResponses = new ArrayList<>();
+    this.loyaltyProgramRequests = new ArrayList<>();
+    this.loyaltyProgramResponses = new ArrayList<>();
+    this.pointFulfillmentResponses = new ArrayList<>();
+    this.deliveryRequests = new ArrayList<>();
+    this.journeyStatisticWrappers = new ArrayList<>();
+    this.journeyMetrics = new ArrayList<>();
+    this.profileChangeEvents = new ArrayList<>();
+    this.profileSegmentChangeEvents = new ArrayList<>();
+    this.profileLoyaltyProgramChangeEvents = new ArrayList<>();
+    this.subscriberTrace = null;
+    this.externalAPIOutput = null;
+    this.kafkaRepresentation = null;
+    this.tokenChanges = new ArrayList<>();
+    this.voucherChanges = new ArrayList<>();
+    this.executeActionOtherSubscribers = new ArrayList<>();
+    this.voucherActions = new ArrayList<>();
+    this.journeyTriggerEventActions = new ArrayList<>();
+    this.subscriberProfileForceUpdates = new ArrayList<>();
   }
 
   /*****************************************
@@ -376,6 +394,10 @@ public class SubscriberState implements StateStore
         this.tokenChanges = subscriberState.getTokenChanges();
         this.notificationHistory = subscriberState.getNotificationHistory();
         this.voucherChanges = subscriberState.getVoucherChanges();
+        this.executeActionOtherSubscribers = subscriberState.getExecuteActionOtherSubscribers();
+        this.voucherActions = subscriberState.getVoucherActions();
+        this.journeyTriggerEventActions = subscriberState.getJourneyTriggerEventActions();
+        this.subscriberProfileForceUpdates = subscriberState.getSubscriberProfileForceUpdates();
       }
     catch (InvocationTargetException e)
       {
@@ -517,30 +539,14 @@ public class SubscriberState implements StateStore
     Integer ucgEpoch = valueStruct.getInt32("ucgEpoch");
     Date ucgRefreshDay = (Date) valueStruct.get("ucgRefreshDay");
     Date lastEvaluationDate = (Date) valueStruct.get("lastEvaluationDate");
-    List<JourneyRequest> journeyRequests = new ArrayList<JourneyRequest>();
-    List<JourneyRequest> journeyResponses = new ArrayList<JourneyRequest>();
-    List<LoyaltyProgramRequest> loyaltyProgramRequests = new ArrayList<LoyaltyProgramRequest>();
-    List<LoyaltyProgramRequest> loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>();
-    List<PointFulfillmentRequest> pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
-    List<DeliveryRequest> deliveryRequests = new ArrayList<DeliveryRequest>();
-    List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber = new ArrayList<ExecuteActionOtherSubscriber>();
-    List<JourneyStatistic> journeyStatisticWrappers = new ArrayList<JourneyStatistic>();
-    List<JourneyMetric> journeyMetrics = new ArrayList<JourneyMetric>();
-    List<ProfileChangeEvent> profileChangeEvents = new ArrayList<ProfileChangeEvent>();
-    List<ProfileSegmentChangeEvent> profileSegmentChangeEvents = new ArrayList<ProfileSegmentChangeEvent>();
-    List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents = new ArrayList<ProfileLoyaltyProgramChangeEvent>();
-    SubscriberTrace subscriberTrace = null;
-    ExternalAPIOutput externalAPIOutput = null;
     List<UUID> trackingIDs = schemaVersion >= 4 ? EvolutionUtilities.getUUIDsFromBytes(valueStruct.getBytes("trackingID")) : null;
-    List<TokenChange> tokenChanges = new ArrayList<TokenChange>();
     Map<String,MetricHistory> notificationHistory = schemaVersion >= 6 ? unpackNotificationHistory(valueStruct.get("notificationHistory")) : new HashMap<>();
-    List<VoucherChange> voucherChanges = new ArrayList<VoucherChange>();
 
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, executeActionsOtherSubscriber, journeyStatisticWrappers, journeyMetrics, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges, notificationHistory, voucherChanges);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, trackingIDs, notificationHistory);
   }
 
   /*****************************************
