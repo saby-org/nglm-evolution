@@ -604,12 +604,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
   public boolean evaluateEligibilityCriteria(SubscriberEvaluationRequest evaluationRequest)
   {
-    Date now = SystemTime.getCurrentTime();
-    ParameterMap journeyDisplayBoundParameters = new ParameterMap();
-    journeyDisplayBoundParameters.put(EvolutionEngine.JOURNEY_DISPLAY_PARAMETER_ID, getGUIManagedObjectDisplay());
-    JourneyState nullJourneyState = new JourneyState(null, null, getJourneyID(), null, journeyDisplayBoundParameters, null, now, now, now, null, null, null, now, null, null, null, now, null, null);
-    SubscriberEvaluationRequest evaluationRequestConstructed = new SubscriberEvaluationRequest(evaluationRequest.getSubscriberProfile(), evaluationRequest.getExtendedSubscriberProfile(), evaluationRequest.getSubscriberGroupEpochReader(), nullJourneyState, null, null, null, now);
-    return EvaluationCriterion.evaluateCriteria(evaluationRequestConstructed, eligibilityCriteria);
+    return EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityCriteria);
   }
   
   /*****************************************

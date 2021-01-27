@@ -350,8 +350,30 @@ public class CriterionContext
   private static CriterionField journeyActionDeliveryStatus;
   private static CriterionField journeyActionJourneyStatus;
   private static CriterionField journeyEndDate;
+  private static CriterionField journeyDisplay;
   static
   {
+    
+    //
+    //  journeyDisplay
+    //
+
+    try
+      {
+        Map<String,Object> journeyDisplayJSON = new LinkedHashMap<String,Object>();
+        journeyDisplayJSON.put("id", EvolutionEngine.JOURNEY_DISPLAY_PARAMETER_ID);
+        journeyDisplayJSON.put("display", "Campaign/Journey Display");
+        journeyDisplayJSON.put("dataType", "string");
+        journeyDisplayJSON.put("retriever", "getJourneyParameter");
+        journeyDisplayJSON.put("internalOnly", false);
+        journeyDisplayJSON.put("tagMaxLength", 100);
+        journeyDisplay  = new CriterionField(JSONUtilities.encodeObject(journeyDisplayJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
     //
     //  journeyEntryDate
     //
@@ -536,6 +558,7 @@ public class CriterionContext
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
     this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
     this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
+    this.additionalCriterionFields.put(journeyDisplay.getID(), journeyDisplay);
     this.additionalCriterionFields.putAll(journeyParameters);
     for (CriterionField contextVariable : contextVariables.values())
       {
@@ -591,6 +614,7 @@ public class CriterionContext
 
         this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
         this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
+        this.additionalCriterionFields.put(journeyDisplay.getID(), journeyDisplay);
 
         //
         //  journey parameters
