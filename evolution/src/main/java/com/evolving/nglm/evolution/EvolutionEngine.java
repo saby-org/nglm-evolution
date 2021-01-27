@@ -4981,6 +4981,12 @@ public class EvolutionEngine
                 *  enterJourney -- all journeys
                 *
                 *****************************************/
+                
+                //
+                //  confirm journey name( id is from json file)
+                //
+                
+                boundParameters.put("journey.display.parameter", journey.getGUIManagedObjectDisplay());
 
                 //
                 // confirm "stock reservation" (journey max number of customers limits)
