@@ -97,6 +97,7 @@ import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
+import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
@@ -226,11 +227,15 @@ public class EvolutionEngine
   private String evolutionEngineKey;
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
   private static EvolutionEngineEventDeclaration voucherActionEventDeclaration = null;
+  public static EvolutionEngineEventDeclaration fileWithVariableEventDeclaration = null;
   static
     {
       try
         {
           voucherActionEventDeclaration = new EvolutionEngineEventDeclaration("VoucherAction", "com.evolving.nglm.evolution.VoucherAction", Deployment.getVoucherActionTopic(), EventRule.Standard, null);
+          Map<String, Object> fileWithVariableEventCriteriaMap = new LinkedHashMap<String, Object>(); fileWithVariableEventCriteriaMap.put("id", "event.fileID"); fileWithVariableEventCriteriaMap.put("display", "Event FileID"); fileWithVariableEventCriteriaMap.put("dataType", "string"); fileWithVariableEventCriteriaMap.put("retriever", "getFileWithVariableID");
+          Map<String, CriterionField> fileWithVariableEventCriterias = new LinkedHashMap<String, CriterionField>(); fileWithVariableEventCriterias.put((String) fileWithVariableEventCriteriaMap.get("id"), new CriterionField(JSONUtilities.encodeObject(fileWithVariableEventCriteriaMap)));
+          fileWithVariableEventDeclaration = new EvolutionEngineEventDeclaration("FileWithVariableEvent", "com.evolving.nglm.evolution.FileWithVariableEvent", Deployment.getFileWithVariableEventTopic(), EventRule.Standard, fileWithVariableEventCriterias);
         } 
       catch (GUIManagerException e)
         {
@@ -687,6 +692,7 @@ public class EvolutionEngine
     Map<EvolutionEngineEventDeclaration,ConnectSerde<? extends SubscriberStreamEvent>> evolutionEngineEventSerdes = new HashMap<EvolutionEngineEventDeclaration,ConnectSerde<? extends SubscriberStreamEvent>>();
     Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = Deployment.getEvolutionEngineEvents();
     evolutionEngineEvents.put(voucherActionEventDeclaration.getName(), voucherActionEventDeclaration);
+    evolutionEngineEvents.put(fileWithVariableEventDeclaration.getName(), fileWithVariableEventDeclaration);
     for (EvolutionEngineEventDeclaration evolutionEngineEvent : evolutionEngineEvents.values())
       {
         switch (evolutionEngineEvent.getEventRule())
@@ -811,6 +817,7 @@ public class EvolutionEngine
     List<KStream<StringKey, ? extends SubscriberStreamEvent>> extendedProfileEvolutionEngineEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     Map<String,EvolutionEngineEventDeclaration> evolutionEngineEventsDeclr = Deployment.getEvolutionEngineEvents();
     evolutionEngineEventsDeclr.put(voucherActionEventDeclaration.getName(), voucherActionEventDeclaration);
+    evolutionEngineEventsDeclr.put(fileWithVariableEventDeclaration.getName(), fileWithVariableEventDeclaration);
     for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : evolutionEngineEventsDeclr.values())
       {
         KStream<StringKey, ? extends SubscriberStreamEvent> evolutionEngineEventStream;
@@ -4944,6 +4951,25 @@ public class EvolutionEngine
                     boundParameters = journey.getBoundParameters();
                     // get the featureID from the CalledJourney computation
                     sourceFeatureID = sourceFeatureIDFromWorkflowTriggering;
+                  }
+                
+                //
+                //  bound file variables
+                //
+                
+                if (journey.getTargetingType() == TargetingType.FileVariables && evolutionEvent instanceof FileWithVariableEvent)
+                  {
+                    FileWithVariableEvent fileWithVariableEvent = (FileWithVariableEvent) evolutionEvent;
+                    Map<String, CriterionField> allContextVars = journey.getContextVariables();
+                    ParameterMap parameterMap = fileWithVariableEvent.getParameterMap();
+                    for (String key : parameterMap.keySet())
+                      {
+                        String id = "variablefile" + "." + key;
+                        if (allContextVars.get(id) != null)
+                          {
+                            boundParameters.put(id, parameterMap.get(key));
+                          }
+                      }
                   }
 
                 /*****************************************

@@ -37,6 +37,8 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
@@ -166,6 +168,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     Target("criteria", "Target"),
     Event("event", "Trigger"),
     Manual("manual", "Manual"),
+    FileVariables("fileVariables", "FileVariables"),
     Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
     private String display;
@@ -222,7 +225,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("recurrenceActive", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("priority", Schema.OPTIONAL_INT32_SCHEMA);
-
+    schemaBuilder.field("targetingFileVariableID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -278,7 +281,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   private Integer lastCreatedOccurrenceNumber;
   private boolean recurrenceActive;
   private Integer priority;
-
+  private String targetingFileVariableID;
 
   /****************************************
   *
@@ -334,6 +337,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   public Integer getLastCreatedOccurrenceNumber() {return lastCreatedOccurrenceNumber; }
   public boolean getRecurrenceActive() { return recurrenceActive; }
   public Integer getPriority() {return priority; }
+  public String getTargetingFileVariableID() { return targetingFileVariableID; }
 
   //
   //  package protected
@@ -358,6 +362,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
       {
         case Target:
         case Event:
+        case FileVariables:
           result = true;
           break;
         case Manual:
@@ -616,6 +621,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *  targetCount
   *
   *****************************************/
+  
   private long evaluateTargetCount(ElasticsearchClientAPI elasticsearch) 
   {
     try
@@ -639,11 +645,18 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   // Like description, it is not used inside the system, only put at creation and pushed in Elasticsearch
   // mapping_journeys index in order to be visible for the GUI (Grafana).
   //
-  public void setTargetCount(ElasticsearchClientAPI elasticsearch)
+  public void setTargetCount(ElasticsearchClientAPI elasticsearch, UploadedFileService uploadedFileService)
   {
-    if(this.getTargetingType() == TargetingType.Target) {
-      this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)) );
-    }
+    if (this.getTargetingType() == TargetingType.Target)
+      {
+        this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)));
+      } 
+    else if (TargetingType.FileVariables == getTargetingType())
+      {
+        GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(getTargetingFileVariableID());
+        Integer targetCount = (uploadedFile != null && uploadedFile instanceof UploadedFile) ? ((UploadedFile) uploadedFile).getNumberOfLines() : new Integer(0);
+        this.getJSONRepresentation().put("targetCount", targetCount);
+      }
   }
   
   /*****************************************
@@ -652,7 +665,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, boolean recurrenceActive, Integer priority)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, boolean recurrenceActive, Integer priority, String targetingFileVariableID)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -683,6 +696,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     this.lastCreatedOccurrenceNumber = lastCreatedOccurrenceNumber;
     this.recurrenceActive = recurrenceActive;
     this.priority = priority;
+    this.targetingFileVariableID = targetingFileVariableID;
   }
 
   /*****************************************
@@ -724,6 +738,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     struct.put("lastCreatedOccurrenceNumber", journey.getLastCreatedOccurrenceNumber());
     struct.put("recurrenceActive", journey.getRecurrenceActive());
     struct.put("priority", journey.getPriority());
+    struct.put("targetingFileVariableID", journey.getTargetingFileVariableID());
     return struct;
   }
 
@@ -880,6 +895,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     JourneyScheduler scheduler = (schema.field("scheduler")!= null) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(),valueStruct.get("scheduler"))) : null;
     Integer lastCreatedOccurrenceNumber = (schema.field("lastCreatedOccurrenceNumber")!= null) ? valueStruct.getInt32("lastCreatedOccurrenceNumber") : null;
     boolean recurrenceActive = (schema.field("recurrenceActive") != null) ? valueStruct.getBoolean("recurrenceActive") : false;
+    String targetingFileVariableID = (schema.field("targetingFileVariableID")!= null) ? valueStruct.getString("targetingFileVariableID") : null;
     
     Integer priority = (schema.field("priority")!= null) ? valueStruct.getInt32("priority") : Integer.MAX_VALUE; // for legacy campaigns, very low priority
     /*****************************************
@@ -942,7 +958,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetingEventCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers, fullStatistics, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, recurrenceActive, priority);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetingEventCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers, fullStatistics, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, recurrenceActive, priority, targetingFileVariableID);
   }
   
   /*****************************************
@@ -1212,6 +1228,65 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", recurrence);
     this.recurrenceActive = JSONUtilities.decodeBoolean(jsonRoot, "recurrenceActive", Boolean.FALSE);
     this.priority = JSONUtilities.decodeInteger(jsonRoot, "priority", Integer.MAX_VALUE); // for legacy campaigns, very low priority
+    
+    //
+    //  FileVariables
+    //
+    
+    this.targetingFileVariableID = JSONUtilities.decodeString(jsonRoot, "targetingFileVariableID", targetingType == TargetingType.FileVariables);
+    if (targetingFileVariableID != null && targetingType == TargetingType.FileVariables)
+      {
+        EvolutionEngineEventDeclaration event = EvolutionEngine.fileWithVariableEventDeclaration;
+        JSONArray arrayEventNameCriterion = new JSONArray();
+        JSONArray arrayTargetingEventCriteria = new JSONArray();
+        
+        //
+        //  argument
+        //
+        
+        Map<String, Object> argumentMap = new HashMap<String, Object>();
+        argumentMap.put("expression", "'" + event.getName()+ "'");
+        
+        //
+        //  eventName
+        //
+        
+        Map<String, Object> eventNameCriterionMap = new HashMap<String, Object>();
+        eventNameCriterionMap.put("criterionField", "evaluation.eventname");
+        eventNameCriterionMap.put("criterionOperator", "==");
+        eventNameCriterionMap.put("argument", JSONUtilities.encodeObject(argumentMap));
+        arrayEventNameCriterion.add(JSONUtilities.encodeObject(eventNameCriterionMap));
+        
+        //
+        //  criterionContext
+        //
+        
+        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null);
+        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext);        
+        
+        //
+        //  fileID - argument
+        //
+        
+        Map<String, Object> argumentFileIDMap = new HashMap<String, Object>();
+        argumentFileIDMap.put("expression", "'" + targetingFileVariableID+ "'");
+        
+        //
+        //  fileID
+        //
+        
+        Map<String, Object> fileIDCriterionMap = new HashMap<String, Object>();
+        fileIDCriterionMap.put("criterionField", "event.fileID");
+        fileIDCriterionMap.put("criterionOperator", "==");
+        fileIDCriterionMap.put("argument", JSONUtilities.encodeObject(argumentFileIDMap));
+        arrayTargetingEventCriteria.add(JSONUtilities.encodeObject(fileIDCriterionMap));
+        
+        //
+        //  targetingEventCriteria
+        //
+        
+        this.targetingEventCriteria = decodeCriteria(arrayTargetingEventCriteria, eventNameCriteria, criterionContext);
+      }
 
 
     /*****************************************
@@ -1219,8 +1294,9 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *  contextVariables
     *
     *****************************************/
-
-    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters);
+    
+    JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
+    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters, targetFileVariablesJSON);
     this.contextVariables = new HashMap<String,CriterionField>();
     this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
     for (CriterionField contextVariable : contextVariablesAndParameters.values())
@@ -1269,6 +1345,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
       {
         case Target:
         case Event:
+        case FileVariables:
           switch (journeyType) 
             {
               case Journey:
@@ -2460,10 +2537,15 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
   public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters) throws GUIManagerException
   {
-    return processContextVariableNodes(contextVariableNodes, journeyParameters, null);
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, new JSONArray());
   }
 
-  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType) throws GUIManagerException
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, JSONArray targetFileVariables) throws GUIManagerException
+  {
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, targetFileVariables);
+  }
+
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType, JSONArray targetFileVariables) throws GUIManagerException
   {
     /*****************************************
     *
@@ -2492,6 +2574,20 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         
     Map<String,CriterionField> contextVariableFields = new HashMap<String,CriterionField>();
     Set<ContextVariable> unvalidatedContextVariables = new HashSet<ContextVariable>();
+    
+    //
+    // targetFileVariables (wild card no need to validate)
+    //
+    
+    for (int i=0; i < targetFileVariables.size(); i++)
+      {
+        JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
+        JSONObject contextVarJson = generateContextVariableJson(targetFileVariableJSON);
+        ContextVariable fileContextVariable = new ContextVariable(contextVarJson, true);
+        CriterionField criterionField = new CriterionField(fileContextVariable);
+        contextVariableFields.put(criterionField.getID(), criterionField);
+      }
+    
     for (ContextVariable contextVariable : contextVariables.keySet())
       {
         switch (contextVariable.getVariableType())
@@ -2666,7 +2762,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         unvalidatedContextVariables.iterator().forEachRemaining(var -> buffer.append(var.getID()+" "));
         throw new GUIManagerException("unvalidatedContextVariables "+buffer, Integer.toString(unvalidatedContextVariables.size()));
       }
-
+    
     /*****************************************
     *
     *  return
@@ -2674,6 +2770,33 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *****************************************/
     
     return contextVariableFields;
+  }
+  
+  /*****************************************
+  *
+  *  generateContextVariableJson (from file variable)
+  *
+  *****************************************/
+  
+  private static JSONObject generateContextVariableJson(JSONObject targetFileVariableJSON)
+  {
+    String fileVarName = JSONUtilities.decodeString(targetFileVariableJSON, "name", true);
+    String fileVarDataType = JSONUtilities.decodeString(targetFileVariableJSON, "dataType", true);
+    Map<String, Object> resultJSONMap = new LinkedHashMap<String, Object>();
+    Map<String, Object> valueJSONMap = new LinkedHashMap<String, Object>();
+    
+    valueJSONMap.put("valueAdd", null);
+    valueJSONMap.put("expression", null);
+    valueJSONMap.put("assignment", "=");
+    valueJSONMap.put("valueMultiply", null);
+    valueJSONMap.put("valueType", "complex" + "." + fileVarDataType);
+    valueJSONMap.put("expressionType", fileVarDataType);
+    valueJSONMap.put("value", null);
+    valueJSONMap.put("timeUnit", null);
+    
+    resultJSONMap.put("name", fileVarName);
+    resultJSONMap.put("value", JSONUtilities.encodeObject(valueJSONMap));
+    return JSONUtilities.encodeObject(resultJSONMap);
   }
   
   /*****************************************

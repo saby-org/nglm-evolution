@@ -195,6 +195,7 @@ public class DialogMessage
                 case StringSetCriterion:
                 case BooleanCriterion:
                 case DateCriterion:
+                case TimeCriterion:
                   break;
 
                 default:
