@@ -180,7 +180,7 @@ public class JourneyService extends GUIService
   public Journey getActiveJourney(String journeyID, Date date) 
   { 
     Journey activeJourney = (Journey) getActiveGUIManagedObject(journeyID, date);
-    if (!Deployment.getAutoApproveGuiObjects() && activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType()&& GUIManagedObjectType.LoyaltyWorkflow != activeJourney.getGUIManagedObjectType())
+    if (activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType()&& GUIManagedObjectType.LoyaltyWorkflow != activeJourney.getGUIManagedObjectType())
       {
         return JourneyStatus.StartedApproved == activeJourney.getApproval() ? activeJourney : null; 
       }
@@ -192,7 +192,7 @@ public class JourneyService extends GUIService
   public Collection<Journey> getActiveJourneys(Date date) 
   { 
     Collection<Journey> activeJourney = (Collection<Journey>) getActiveGUIManagedObjects(date);
-    if (!Deployment.getAutoApproveGuiObjects()) activeJourney = activeJourney.stream().filter(journey -> JourneyStatus.StartedApproved == journey.getApproval()).collect(Collectors.toList());
+    activeJourney = activeJourney.stream().filter(journey -> JourneyStatus.StartedApproved == journey.getApproval()).collect(Collectors.toList());
     return activeJourney;
   }
   public Collection<Journey> getActiveRecurrentJourneys(Date date) { return getActiveJourneys(date).stream().filter( journey -> journey.getRecurrence()).collect(Collectors.toList()); }
@@ -237,10 +237,7 @@ public class JourneyService extends GUIService
             // Approved
             //
             
-            if (!Deployment.getAutoApproveGuiObjects())
-              {
-                acceptedAndCompleted = acceptedAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
-              }
+            acceptedAndCompleted = acceptedAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
             
             //
             //  add
@@ -330,14 +327,7 @@ public class JourneyService extends GUIService
     Date now = SystemTime.getCurrentTime();
     JourneyStatus status = JourneyStatus.Unknown;
     status = (status == JourneyStatus.Unknown && !guiManagedObject.getAccepted()) ? JourneyStatus.NotValid : status;
-    if (Deployment.getAutoApproveGuiObjects())
-      {
-        status = (status == JourneyStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? JourneyStatus.Running : status;
-        status = (status == JourneyStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? JourneyStatus.Complete : status;
-        status = (status == JourneyStatus.Unknown && guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().after(now)) ? JourneyStatus.Started : status;
-        status = (status == JourneyStatus.Unknown && ! guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().before(now)) ? JourneyStatus.Suspended : status;
-      }
-    if (!Deployment.getAutoApproveGuiObjects() && status == JourneyStatus.Unknown)
+    if (status == JourneyStatus.Unknown)
       {
         Journey journey = (Journey) guiManagedObject;
         status = (status == JourneyStatus.Unknown && journey.getApproval() == JourneyStatus.Pending) ? JourneyStatus.Pending : status;
