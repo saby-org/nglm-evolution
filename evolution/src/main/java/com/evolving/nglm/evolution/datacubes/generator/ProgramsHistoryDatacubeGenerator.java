@@ -201,7 +201,11 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     
     // "tier" stay the same 
     // "evolutionSubscriberStatus" stay the same. TODO: retrieve display for evolutionSubscriberStatus
-    // "redeemer" stay the same    
+    // "redeemer" stay the same
+    if(filters.get("redeemer").equals(UNDEFINED_BUCKET_VALUE)) {
+      filters.replace("redeemer", null); // Because it must be a boolean, TODO implements it.
+    }
+    
   }
   
   // A = A+B
@@ -254,7 +258,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       Map<String, Object> filters = bucket.getKey();
       for(String key: filters.keySet()) {
         if(filters.get(key) == null) {
-          filters.replace(key, UNDEFINED_BUCKET_VALUE);
+          filters.replace(key, UNDEFINED_BUCKET_VALUE); // @rl especially for "redeemer" till it is implemented
         }
       }
       

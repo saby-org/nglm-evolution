@@ -119,6 +119,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     THIRD_PARTY_ERROR(24),
     BONUS_NOT_FOUND(100),
     INSUFFICIENT_BALANCE(405),
+    CHECK_BALANCE_LT(300),
+    CHECK_BALANCE_GT(301),
+    CHECK_BALANCE_ET(302),
     UNKNOWN(-1);
     private Integer externalRepresentation;
     private CommodityDeliveryStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -141,8 +144,17 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       case PENDING:
         return DeliveryStatus.Pending;
       case CUSTOMER_NOT_FOUND:
+        return DeliveryStatus.Failed;
       case BONUS_NOT_FOUND:
+        return DeliveryStatus.BonusNotFound;
       case INSUFFICIENT_BALANCE:
+        return DeliveryStatus.InsufficientBalance;
+      case CHECK_BALANCE_LT:
+        return DeliveryStatus.CheckBalanceLowerThan;
+      case CHECK_BALANCE_GT:
+        return DeliveryStatus.CheckBalanceGreaterThan;
+      case CHECK_BALANCE_ET:
+        return DeliveryStatus.CheckBalanceEqualsTo;
       default:
         return DeliveryStatus.Failed;
       }
@@ -1005,6 +1017,26 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     switch (responseDeliveryStatus) {
     case Delivered:
       submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SUCCESS, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case CheckBalanceLowerThan:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_LT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case CheckBalanceEqualsTo:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_ET, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case CheckBalanceGreaterThan:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_GT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case BonusNotFound:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate());
+      break;
+
+    case InsufficientBalance:
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.INSUFFICIENT_BALANCE, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate());
       break;
 
     case FailedRetry:
