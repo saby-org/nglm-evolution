@@ -834,7 +834,7 @@ public class CriterionContext
     Struct struct = new Struct(schema);
     struct.put("criterionContextType", criterionContext.getCriterionContextType().getExternalRepresentation());
     struct.put("additionalCriterionFields", packAdditionalCriterionFields(criterionContext.getAdditionalCriterionFields()));
-    struct.put("tenantID", criterionContext.getTenantID());
+    struct.put("tenantID", (short)criterionContext.getTenantID());
     return struct;
   }
 

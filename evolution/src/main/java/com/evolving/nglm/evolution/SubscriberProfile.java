@@ -1821,7 +1821,7 @@ public abstract class SubscriberProfile
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
-    struct.put("tenantID", subscriberProfile.getTenantID());
+    struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
   }
 
   /****************************************

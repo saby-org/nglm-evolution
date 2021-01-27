@@ -155,7 +155,7 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
     struct.put("subscriberGroupIDs", subscriberGroup.getSubscriberGroupIDs());
     struct.put("epoch", subscriberGroup.getEpoch());
     struct.put("addSubscriber", subscriberGroup.getAddSubscriber());
-    struct.put("tenantID", subscriberGroup.getTenantID());
+    struct.put("tenantID", (short)subscriberGroup.getTenantID());
     return struct;
   }
 

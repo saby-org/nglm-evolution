@@ -171,7 +171,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
     struct.put("eventDate", assignSubscriberIDs.getEventDate());
     struct.put("subscriberAction", assignSubscriberIDs.getSubscriberAction().getExternalRepresentation());
     struct.put("alternateIDs", assignSubscriberIDs.getAlternateIDs());
-    struct.put("tenantID", assignSubscriberIDs.getTenantID());
+    struct.put("tenantID", (short)assignSubscriberIDs.getTenantID());
     return struct;
   }
 

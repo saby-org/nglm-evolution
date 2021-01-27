@@ -170,7 +170,7 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
     struct.put("subscriberAction", updateAlternateID.getSubscriberAction().getExternalRepresentation());
     struct.put("backChannel", updateAlternateID.getBackChannel());
     struct.put("cleanupTableEntry", updateAlternateID.getCleanupTableEntry());
-    struct.put("tenantID", updateAlternateID.getTenantID());
+    struct.put("tenantID", (short)updateAlternateID.getTenantID());
     return struct;
   }
 

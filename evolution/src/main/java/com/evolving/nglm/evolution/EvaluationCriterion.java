@@ -684,7 +684,7 @@ public class EvaluationCriterion
     struct.put("argumentBaseTimeUnit", criterion.getArgumentBaseTimeUnit().getExternalRepresentation());
     struct.put("storyReference", criterion.getStoryReference());
     struct.put("criterionDefault", criterion.getCriterionDefault());
-    struct.put("tenantID", criterion.getTenantID());
+    struct.put("tenantID", (short)criterion.getTenantID());
     return struct;
   }
 

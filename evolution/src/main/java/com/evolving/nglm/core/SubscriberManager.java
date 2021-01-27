@@ -1598,7 +1598,7 @@ public class SubscriberManager
       struct.put("subscriberID", autoProvisionedSubscriber.getSubscriberID());
       struct.put("externalSubscriberID", autoProvisionedSubscriber.getExternalSubscriberID());
       struct.put("assignSubscriberIDs", assignSubscriberIDsSerde.packOptional(autoProvisionedSubscriber.getAssignSubscriberIDs()));
-      struct.put("tenantID", autoProvisionedSubscriber.getTenantID());
+      struct.put("tenantID", (short)autoProvisionedSubscriber.getTenantID());
       return struct;
     }
 
@@ -1985,7 +1985,7 @@ public class SubscriberManager
       struct.put("provisionedSubscriberID", recordSubscriberIDSerde.packOptional(provisionedAlternateID.getProvisionedSubscriberID()));
       struct.put("deprovisionedSubscriberID", recordSubscriberIDSerde.packOptional(provisionedAlternateID.getDeprovisionedSubscriberID()));
       struct.put("provisionedAlternateID", recordAlternateIDSerde.packOptional(provisionedAlternateID.getProvisionedAlternateID()));
-      struct.put("tenantID", provisionedAlternateID.getTenantID());
+      struct.put("tenantID", (short)provisionedAlternateID.getTenantID());
       return struct;
     }
 

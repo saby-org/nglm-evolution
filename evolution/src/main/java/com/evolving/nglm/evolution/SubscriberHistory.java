@@ -160,7 +160,7 @@ public class SubscriberHistory implements StateStore
     SubscriberHistory subscriberHistory = (SubscriberHistory) value;
     Struct struct = new Struct(schema);
     struct.put("subscriberID", subscriberHistory.getSubscriberID());
-    struct.put("tenantID", subscriberHistory.getTenantID());
+    struct.put("tenantID", (short)subscriberHistory.getTenantID());
     struct.put("deliveryRequests", packDeliveryRequests(subscriberHistory.getDeliveryRequests()));
     struct.put("journeyHistory", packJourneyHistory(subscriberHistory.getJourneyHistory()));
     return struct;

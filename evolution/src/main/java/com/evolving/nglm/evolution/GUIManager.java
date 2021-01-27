@@ -1255,7 +1255,7 @@ public class GUIManager
                 for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
                   {
                     JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
-                    guiManagerGeneral.processPutCatalogCharacteristic("0", catalogCharacteristicJSON, JSONUtilities.decodeInteger(catalogCharacteristicJSON, "tenantID", true));
+                    guiManagerGeneral.processPutCatalogCharacteristic("0", catalogCharacteristicJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1279,7 +1279,7 @@ public class GUIManager
                 for (int i=0; i<initialTokenTypesJSONArray.size(); i++)
                   {
                     JSONObject tokenTypeJSON = (JSONObject) initialTokenTypesJSONArray.get(i);
-                    guiManagerGeneral.processPutTokenType("0", tokenTypeJSON, JSONUtilities.decodeInteger(tokenTypeJSON, "tenantID", true));
+                    guiManagerGeneral.processPutTokenType("0", tokenTypeJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1302,7 +1302,7 @@ public class GUIManager
                 for (int i=0; i<initialProductTypesJSONArray.size(); i++)
                   {
                     JSONObject productTypeJSON = (JSONObject) initialProductTypesJSONArray.get(i);
-                    processPutProductType("0", productTypeJSON, JSONUtilities.decodeInteger(productTypeJSON, "tenantID", true));
+                    processPutProductType("0", productTypeJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1344,7 +1344,7 @@ public class GUIManager
                 }
               if (create)
               {
-                guiManagerLoyaltyReporting.processPutReport("0", reportJSON, JSONUtilities.decodeInteger(reportJSON, "tenantID", true)); // this will patch the report, if it already exists
+                guiManagerLoyaltyReporting.processPutReport("0", reportJSON, tenantID); // TODO-EVPRO-99 check this related to tenancy...
               }
             }
         }
@@ -1368,7 +1368,7 @@ public class GUIManager
                 for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
                   {
                     JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
-                    processPutCallingChannel("0", callingChannelJSON, JSONUtilities.decodeInteger(callingChannelJSON, "tenantID", true));
+                    processPutCallingChannel("0", callingChannelJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1392,7 +1392,7 @@ public class GUIManager
                 for (int i=0; i<initialSalesChannelsJSONArray.size(); i++)
                   {
                     JSONObject  salesChannelJSON = (JSONObject) initialSalesChannelsJSONArray.get(i);
-                    processPutSalesChannel("0", salesChannelJSON, JSONUtilities.decodeInteger(salesChannelJSON, "tenantID", true));
+                    processPutSalesChannel("0", salesChannelJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1416,7 +1416,7 @@ public class GUIManager
                 for (int i=0; i<initialSuppliersJSONArray.size(); i++)
                   {
                     JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
-                    processPutSupplier("0", supplierJSON, JSONUtilities.decodeInteger(supplierJSON, "tenantID", true));
+                    processPutSupplier("0", supplierJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1439,7 +1439,7 @@ public class GUIManager
                 for (int i=0; i<initialProductsJSONArray.size(); i++)
                   {
                     JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
-                    processPutProduct("0", productJSON, JSONUtilities.decodeInteger(productJSON, "tenantID", true));
+                    processPutProduct("0", productJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1463,7 +1463,7 @@ public class GUIManager
                 for (int i=0; i<initialSourceAddressesJSONArray.size(); i++)
                   {
                     JSONObject  sourceAddresslJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
-                    processPutSourceAddress("0", sourceAddresslJSON, JSONUtilities.decodeInteger(sourceAddresslJSON, "tenantID", true));
+                    processPutSourceAddress("0", sourceAddresslJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1486,7 +1486,7 @@ public class GUIManager
                 for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
                   {
                     JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
-                    processPutContactPolicy("0", contactPolicyJSON, JSONUtilities.decodeInteger(contactPolicyJSON, "tenantID", true));
+                    processPutContactPolicy("0", contactPolicyJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1510,7 +1510,7 @@ public class GUIManager
               for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
                 {
                   JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
-                  processPutJourneyTemplate("0", journeyTemplateJSON, JSONUtilities.decodeInteger(journeyTemplateJSON, "tenantID", true));
+                  processPutJourneyTemplate("0", journeyTemplateJSON, tenantID);
                 }
             }
           catch (JSONUtilitiesException e)
@@ -1535,7 +1535,7 @@ public class GUIManager
                 for (int i=0; i<initialJourneyObjectivesJSONArray.size(); i++)
                   {
                     JSONObject journeyObjectiveJSON = (JSONObject) initialJourneyObjectivesJSONArray.get(i);
-                    processPutJourneyObjective("0", journeyObjectiveJSON, JSONUtilities.decodeInteger(journeyObjectiveJSON, "tenantID", true));
+                    processPutJourneyObjective("0", journeyObjectiveJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1559,7 +1559,7 @@ public class GUIManager
                 for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
                   {
                     JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
-                    processPutOfferObjective("0", offerObjectiveJSON, JSONUtilities.decodeInteger(offerObjectiveJSON, "tenantID", true));
+                    processPutOfferObjective("0", offerObjectiveJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1583,7 +1583,7 @@ public class GUIManager
                 for (int i=0; i<initialSegmentationDimensionsJSONArray.size(); i++)
                   {
                     JSONObject segmentationDimensionJSON = (JSONObject) initialSegmentationDimensionsJSONArray.get(i);
-                    guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimensionJSON, JSONUtilities.decodeInteger(segmentationDimensionJSON, "tenantID", true));
+                    guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimensionJSON, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)

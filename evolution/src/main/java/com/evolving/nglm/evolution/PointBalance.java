@@ -77,7 +77,7 @@ public class PointBalance
     schemaBuilder.field("earnedHistory", MetricHistory.schema());
     schemaBuilder.field("consumedHistory", MetricHistory.schema());
     schemaBuilder.field("expiredHistory", MetricHistory.schema());
-    schemaBuilder.field("tenantID", SchemaBuilder.array(Schema.INT16_SCHEMA));
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -466,7 +466,7 @@ public class PointBalance
     struct.put("earnedHistory", MetricHistory.pack(pointBalance.getEarnedHistory()));
     struct.put("consumedHistory", MetricHistory.pack(pointBalance.getConsumedHistory()));
     struct.put("expiredHistory", MetricHistory.pack(pointBalance.getExpiredHistory()));
-    struct.put("tenantID", pointBalance.getTenantID());
+    struct.put("tenantID", (short)pointBalance.getTenantID());
     return struct;
   }
 

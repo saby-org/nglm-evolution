@@ -697,7 +697,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     struct.put("rescheduledDate", deliveryRequest.getRescheduledDate() != null ? deliveryRequest.getRescheduledDate().getTime() : null);
     struct.put("notificationHistory",MetricHistory.serde().packOptional(deliveryRequest.getNotificationHistory()));
     struct.put("subscriberFields",deliveryRequest.getSubscriberFields());
-    struct.put("tenantID", deliveryRequest.getTenantID()); 
+    struct.put("tenantID", (short)deliveryRequest.getTenantID()); 
   }
 
   /*****************************************

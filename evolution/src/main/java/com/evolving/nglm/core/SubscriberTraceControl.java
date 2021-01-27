@@ -119,7 +119,7 @@ public class SubscriberTraceControl implements AutoProvisionSubscriberStreamEven
     Struct struct = new Struct(schema);
     struct.put("subscriberID", subscriberTraceControl.getSubscriberID());
     struct.put("subscriberTraceEnabled", subscriberTraceControl.getSubscriberTraceEnabled());
-    struct.put("tenantID", subscriberTraceControl.getTenantID());
+    struct.put("tenantID", (short)subscriberTraceControl.getTenantID());
     return struct;
   }
 

@@ -143,7 +143,7 @@ public class UpdateSubscriberID implements SubscriberStreamEvent
     struct.put("subscriberAction", updateSubscriberID.getSubscriberAction().getExternalRepresentation());
     struct.put("backChannel", updateSubscriberID.getBackChannel());
     struct.put("cleanupTableEntry", updateSubscriberID.getCleanupTableEntry());
-    struct.put("tenantID", updateSubscriberID.getTenantID());
+    struct.put("tenantID", (short)updateSubscriberID.getTenantID());
     return struct;
   }
 

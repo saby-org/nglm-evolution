@@ -329,7 +329,7 @@ public abstract class GUIManagedObject
     struct.put("groupID", guiManagedObject.getGroupID());
     struct.put("createdDate", guiManagedObject.getCreatedDate());
     struct.put("updatedDate", guiManagedObject.getUpdatedDate());
-    struct.put("tenantID", guiManagedObject.getTenantID());
+    struct.put("tenantID", (short)guiManagedObject.getTenantID());
   }
 
   /*****************************************

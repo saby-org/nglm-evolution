@@ -180,7 +180,7 @@ public class ParameterExpression
     struct.put("criterionContext", CriterionContext.pack(parameterExpression.getCriterionContext()));
     struct.put("expressionString", parameterExpression.getExpressionString());
     struct.put("baseTimeUnit", parameterExpression.getBaseTimeUnit().getExternalRepresentation());
-    struct.put("tenantID", parameterExpression.getTenantID());
+    struct.put("tenantID", (short)parameterExpression.getTenantID());
     return struct;
   }
 

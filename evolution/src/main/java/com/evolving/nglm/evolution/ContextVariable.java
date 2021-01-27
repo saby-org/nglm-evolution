@@ -231,7 +231,7 @@ public class ContextVariable
     struct.put("assignment", contextVariable.getAssignment().getExternalRepresentation());
     struct.put("baseTimeUnit", contextVariable.getBaseTimeUnit().getExternalRepresentation());
     struct.put("variableType", contextVariable.getVariableType().getExternalRepresentation());
-    struct.put("tenantID", contextVariable.getTenantID());
+    struct.put("tenantID", (short)contextVariable.getTenantID());
     return struct;
   }
 

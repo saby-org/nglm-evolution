@@ -351,7 +351,7 @@ public class MetricHistory
     struct.put("monthlyBuckets", monthly.getSecondElement());
     struct.put("allTimeBucket", metricHistory.getAllTimeBucket());
     struct.put("metricHistoryMode", metricHistory.getMetricHistoryMode().getInternalRepresentation());
-    struct.put("tenantID", metricHistory.getTenantID());
+    struct.put("tenantID", (short)metricHistory.getTenantID());
     return struct;
   }
 

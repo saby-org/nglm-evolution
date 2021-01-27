@@ -132,7 +132,7 @@ public class RecordAlternateID
     struct.put("allSubscriberIDs", packAllSubscriberIDs(recordAlternateID.getAllSubscriberIDs()));
     struct.put("eventDate", recordAlternateID.getEventDate());
     struct.put("subscriberAction", recordAlternateID.getSubscriberAction().getExternalRepresentation());
-    struct.put("tenantID", recordAlternateID.getTenantID());
+    struct.put("tenantID", (short)recordAlternateID.getTenantID());
     return struct;
   }
 

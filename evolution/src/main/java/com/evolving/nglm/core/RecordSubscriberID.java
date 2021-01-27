@@ -130,7 +130,7 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
     struct.put("alternateID", recordSubscriberID.getAlternateID());
     struct.put("eventDate", recordSubscriberID.getEventDate());
     struct.put("subscriberAction", recordSubscriberID.getSubscriberAction().getExternalRepresentation());
-    struct.put("tenantID", recordSubscriberID.getTenantID());
+    struct.put("tenantID", (short)recordSubscriberID.getTenantID());
     return struct;
   }
 

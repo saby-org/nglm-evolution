@@ -344,7 +344,7 @@ public abstract class SubscriberMessage
     struct.put("communicationChannelID", subscriberMessage.getCommunicationChannelID());
     struct.put("parameterTags", SimpleParameterMap.pack(subscriberMessage.getParameterTags()));
     struct.put("dialogMessages", packDialogMessages(subscriberMessage.getDialogMessages()));
-    struct.put("tenantID", subscriberMessage.getTenantID());
+    struct.put("tenantID", (short)subscriberMessage.getTenantID());
     return struct;
   }
 
