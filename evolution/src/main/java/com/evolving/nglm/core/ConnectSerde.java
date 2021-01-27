@@ -10,11 +10,7 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.connect.data.Field;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.*;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
@@ -364,6 +360,9 @@ public class ConnectSerde<T> implements Serde<T>
           if (packData instanceof Struct)
             {
               Struct struct = (Struct) packData;
+
+              struct.validate(); // this should throw the more useful exception
+
               Schema schema = struct.schema();
               if (schema != null)
                 {
