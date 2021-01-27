@@ -1,5 +1,6 @@
 package com.lumatagroup.expression.driver.SMPP;
 
+import com.evolving.nglm.evolution.preprocessor.PreprocessorEvent;
 import ie.omk.smpp.Address;
 import ie.omk.smpp.SMPPException;
 import ie.omk.smpp.SMPPRuntimeException;
@@ -175,13 +176,13 @@ public class SimpleSMSSender extends SMSSenderListener {
 				}
 			}
 		}
-		if (logger.isInfoEnabled()) {
-			if(this.delay_on_queue_full==0){
-				logger.info("SimpleSMSSender.SimpleSMSSender: delay_on_queue_full configured to " + this.delay_on_queue_full + ", will not resend SMS on QUEUE_FULL or THROTTLING error");
-			}else{
-				logger.info("SimpleSMSSender.SimpleSMSSender: delay_on_queue_full configured, will resend SMS after " + this.delay_on_queue_full + "sec on QUEUE_FULL or THROTTLING error");
-			}
-		}
+		//if (logger.isInfoEnabled()) {
+		//	if(this.delay_on_queue_full==0){
+		//		logger.info("SimpleSMSSender.SimpleSMSSender: delay_on_queue_full configured to " + this.delay_on_queue_full + ", will not resend SMS on QUEUE_FULL or THROTTLING error");
+		//	}else{
+		//		logger.info("SimpleSMSSender.SimpleSMSSender: delay_on_queue_full configured, will resend SMS after " + this.delay_on_queue_full + "sec on QUEUE_FULL or THROTTLING error");
+		//	}
+		//}
 
 		this.deliveryReceiptDecodingDecimalHexa = deliveryReceiptDecodingDecimalHexa;
 		if(deliveryReceiptDecodingDecimalHexa != null){
@@ -378,13 +379,11 @@ public class SimpleSMSSender extends SMSSenderListener {
 	 * Send an sms to the smsc (on the form of a SubmitSM)
 	 * <p>
 	 * Synchronous call (up to the SMPP layer)
-	 * @param sms
-	 * @param receipt
 	 */
 	public boolean sendSMS(INotificationRequest deliveryRequest, String text, String desination, String sender, boolean receipt, boolean flashsms){
 
 		//DialogManagerMessage sms = expandedsms.getOriginalMsg();
-		logger.info("SimpleSMSSender.sendSMS("+text+")");
+		if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.sendSMS("+text+")");
 
 		if (!conn.isConnected()) {
 			logger.info("SimpleSMSSender.sendSMS("+text+") cannot send SMS, connection is not established");
@@ -432,7 +431,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 			}
 
 
-			logger.info("SimpleSMSSender.sendSMS dest_addr_ton="+dest_addr_ton+", dest_addr_npi="+dest_addr_npi+", dest_addr="+desination);
+			if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.sendSMS dest_addr_ton="+dest_addr_ton+", dest_addr_npi="+dest_addr_npi+", dest_addr="+desination);
 			Address destination = new Address(dest_addr_ton, dest_addr_npi, desination);
 
 			byte[] message = null;
@@ -460,8 +459,8 @@ public class SimpleSMSSender extends SMSSenderListener {
 			  c.add(Calendar.HOUR_OF_DAY, this.expiration_period);
 			  expiryDateTimeStamp = c.getTime();
 			}
-			
-			logger.info("SimpleSMSSender.sendSMS expiration period of "+this.expiration_period+" hours, set the expiration date to "+expiryDateTimeStamp);
+
+			if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.sendSMS expiration period of "+this.expiration_period+" hours, set the expiration date to "+expiryDateTimeStamp);
 			//sms.setExpiration_timestamp(d[0]); // mostly for SMSC
 
 			if (!this.support_sar && !this.support_udh) {
@@ -750,7 +749,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 	protected int sendSubmitSM(INotificationRequest deliveryRequest, final String text, final Address source, final Address destination, final byte[] message, final MessageEncoding encoding, Date expiryTime, final boolean receipt,
 								final Integer dest_addr_subunit, final boolean isSendToPayload, boolean flashsms) throws IOException, SMPPException, SMPPRuntimeException {
 		final int id = super.getSMPPConnection().referenceMessageId(deliveryRequest,text, false, 0 /*useless for simple sms*/, 0 /*useless for simple sms */); // simple message index for the current connection, not the E4O (i.e. notif bean) message id)
-		logger.info("SimpleSMSSender.sendSubmitSM("+id+", "+source+", "+destination+", ..., "+encoding+", "+receipt+", "+dest_addr_subunit+ ", "+isSendToPayload+")");
+		if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.sendSubmitSM("+id+", "+source+", "+destination+", ..., "+encoding+", "+receipt+", "+dest_addr_subunit+ ", "+isSendToPayload+")");
 		SubmitSM sm = (SubmitSM) conn.getConnection().newInstance(SMPPPacket.SUBMIT_SM);
 		// Set the sequence number that will be sent by the connection
 		// This is a different implementation as {@see ie.omk.smpp.util.DefaultSequenceScheme}
@@ -914,12 +913,12 @@ public class SimpleSMSSender extends SMSSenderListener {
     String packetSequenceNumber = ""+packet.getSequenceNum();
     SubmitSMCorrectionDeliveryRequest smsCorrelation = super.getSMPPConnection().getReferencedMessageId(packetSequenceNumber);
     if(smsCorrelation == null){
-        logger.info("SimpleSMSSender.onSubmitSmResp:  (May be NORMAL) packet.getCommandStatus():"+packet.getCommandStatus()+" missing seqnum: "+packetSequenceNumber);
+		if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onSubmitSmResp:  (May be NORMAL) packet.getCommandStatus():"+packet.getCommandStatus()+" missing seqnum: "+packetSequenceNumber);
         return;
     }
     else{
-        logger.info("SimpleSMSSender.onSubmitSmResp: packet.getCommandStatus():"+packet.getCommandStatus()+" ExpandedMsg : "+smsCorrelation.toString());
-         super.getSMPPConnection().deleteReferencedMessageId(packetSequenceNumber);
+		if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onSubmitSmResp: packet.getCommandStatus():"+packet.getCommandStatus()+" ExpandedMsg : "+smsCorrelation.toString());
+        super.getSMPPConnection().deleteReferencedMessageId(packetSequenceNumber);
     }
 
     switch (packet.getCommandStatus()) {
@@ -943,7 +942,7 @@ public class SimpleSMSSender extends SMSSenderListener {
                 if(messageId != null){
                     messageId = messageId.toLowerCase();
                 }
-                logger.info("SimpleSMSSender.onSubmitSmResp: seqnum: "+packetSequenceNumber+", idreceipt: "+ messageId);
+				if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onSubmitSmResp: seqnum: "+packetSequenceNumber+", idreceipt: "+ messageId);
 
                 
                 
@@ -964,8 +963,8 @@ public class SimpleSMSSender extends SMSSenderListener {
                   {
                     // deliveryRequest expected
                     updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
-                  }                
-                logger.info("Feedback Call for Accept Handler for messageId "+ messageId + " SimpleSMSSender " + this.hashCode());
+                  }
+				if (logger.isDebugEnabled()) logger.debug("Feedback Call for Accept Handler for messageId "+ messageId + " SimpleSMSSender " + this.hashCode());
 
             }
             else {
@@ -977,33 +976,26 @@ public class SimpleSMSSender extends SMSSenderListener {
         break;
         // error message from which we will resend after conf "delay_on_queue_full" seconds (SMSC temporary unable to send message)
         case PacketStatus.MESSAGE_QUEUE_FULL:
-          if (logger.isWarnEnabled()) {
-            logger.info("SimpleSMSSender.onSubmitSmResp: Message Queue Full for sms "+ packetSequenceNumber+" will try to resend in "+this.delay_on_queue_full+" sec");
-          }
+          logger.warn("SimpleSMSSender.onSubmitSmResp: Message Queue Full for sms "+ packetSequenceNumber);
           completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), MessageStatus.QUEUE_FULL, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
           break;
         case PacketStatus.THROTTLING_ERROR:
-            if (logger.isWarnEnabled()) {
-                        logger.info("SimpleSMSSender.onSubmitSmResp: Throttling Error for sms "+ packetSequenceNumber+" will try to resend in "+this.delay_on_queue_full+" sec");
-            }
-            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), MessageStatus.THROTTLING, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
-
-            logger.info("Feedback Call for Accept Handler for messageId "+packet.getMessageId() + " SimpleSMSSender " + this.hashCode());
-            break;
+          logger.warn("SimpleSMSSender.onSubmitSmResp: Throttling Error for sms "+ packetSequenceNumber);
+          completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), MessageStatus.THROTTLING, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
+          break;
         default:
-            logger.info("SimpleSMSSender.onSubmitSmResp: Unknown Status "+ packet.getCommandStatus()+" ("+PacketStatusUtils.getMessage(packet.getCommandStatus())+")");
-//            if(smsCorrelation.getMessageContent().getDialogManagerMessage().getIdentifier().getMessageId() != null){
-//                originalMessageId = "" + smsCorrelation.getExpandedMessageContent().getDialogManagerMessage().getIdentifier().getMessageId().toString();
-//            }
-//            else {
-//                originalMessageId = null;
-//                if (logger.isDebugEnabled()) {
-//                    logger.debug("SimpleSMSSender.onSubmitSmResp No message Id " + packet + " " + packet.getMessageStatus());
-//                }
-//            }
-            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), MessageStatus.UNKNOWN, DeliveryStatus.Failed, PacketStatusUtils.getMessage(packet.getCommandStatus()));
-            
-            logger.info("Feedback Call for Accept Handler for messageId "+packet.getMessageId() + "SimpleSMSSender "+ this.hashCode());
+          logger.info("SimpleSMSSender.onSubmitSmResp: Unknown Status "+ packet.getCommandStatus()+" ("+PacketStatusUtils.getMessage(packet.getCommandStatus())+")");
+//        if(smsCorrelation.getMessageContent().getDialogManagerMessage().getIdentifier().getMessageId() != null){
+//          originalMessageId = "" + smsCorrelation.getExpandedMessageContent().getDialogManagerMessage().getIdentifier().getMessageId().toString();
+//        }
+//        else {
+//          originalMessageId = null;
+//          if (logger.isDebugEnabled()) {
+//            logger.debug("SimpleSMSSender.onSubmitSmResp No message Id " + packet + " " + packet.getMessageStatus());
+//          }
+//        }
+          completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), MessageStatus.UNKNOWN, DeliveryStatus.Failed, PacketStatusUtils.getMessage(packet.getCommandStatus()));
+		  if (logger.isDebugEnabled()) logger.debug("Feedback Call for Accept Handler for messageId "+packet.getMessageId() + "SimpleSMSSender "+ this.hashCode());
         break;
     }
     
@@ -1031,17 +1023,17 @@ public class SimpleSMSSender extends SMSSenderListener {
   public void onDeliverSm(DeliverSM packet)
   {
 
-    logger.info("SimpleSMSSender.onDeliverSm() : execution started... ");
+	if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSm() : execution started... ");
     try{
 
-            logger.info("SimpleSMSSender.onDeliverSM: " + packet+" "+(packet!=null?packet.getSequenceNum():"")+" "+(packet!=null?"("+packet.getCommandStatus()+","+packet.getMessageStatus()+")":""));
+		if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSM: " + packet+" "+(packet!=null?packet.getSequenceNum():"")+" "+(packet!=null?"("+packet.getCommandStatus()+","+packet.getMessageStatus()+")":""));
         
         if (packet == null) {
             logger.error("SimpleSMSSender.onDeliverSM: empty DeliverSM");
             return;
         }
         int seqNum = packet.getSequenceNum();
-        logger.info("packet.getCommandStatus():"+packet.getCommandStatus());
+		if (logger.isDebugEnabled()) logger.debug("packet.getCommandStatus():"+packet.getCommandStatus());
         switch (packet.getCommandStatus()) {
         case PacketStatus.OK:
             if (logger.isTraceEnabled()) {
@@ -1051,10 +1043,10 @@ public class SimpleSMSSender extends SMSSenderListener {
             String messageId = (String)packet.getOptionalParameter(Tag.RECEIPTED_MESSAGE_ID);
 
 
-                logger.info("SimpleSMSSender.onDeliverSm: messageStatus == "+messageStatus+" and messageid == "+messageId);
+			if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSm: messageStatus == "+messageStatus+" and messageid == "+messageId);
 
             if (messageStatus == null && messageId == null) {
-                    logger.info("SimpleSMSSender.onDeliverSm: messageStatus == null and messageid == null");
+				if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSm: messageStatus == null and messageid == null");
                 // attempt to read the "message" field
                 String message = packet.getMessageText();
                     if (logger.isTraceEnabled()) {
@@ -1086,9 +1078,7 @@ public class SimpleSMSSender extends SMSSenderListener {
                 if(deliveryReceiptDecodingDecimalHexa == null
                         || !deliveryReceiptDecodingDecimalHexa.toLowerCase().equals(DELIVERY_RECEIPT_DEC)){
                     messageId = Long.toHexString(new Long(messageId));
-                    if (logger.isInfoEnabled()) {
-                        logger.info("SimpleSMSSender.onDeliverSM: convert messageId dec to hex "+messageId);
-                    }
+					if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSM: convert messageId dec to hex "+messageId);
                 }
             }
             if (messageId != null && messageStatus != null) {
@@ -1102,11 +1092,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 
 
                 String tmp = PacketStatusUtils.getStatus(messageStatus);
-                if (tmp.equals("UNKNOWN")) {
-                    logger.info("SimpleSMSSender.onDeliverSM: unknown messageStatus: "+ messageStatus);
-                }
-                    logger.info("SimpleSMSSender.onDeliverSM: Statut of seqNum: "+seqNum+", idreceipt: "+messageId
-                            + " = " + messageStatus+" ("+tmp+")");
+				if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSM: Statut of seqNum: "+seqNum+", idreceipt: "+messageId+ " = " + messageStatus+" ("+tmp+")");
                 
                 MessageStatus evolutionCode = null;
                 if(tmp != null){
@@ -1120,11 +1106,11 @@ public class SimpleSMSSender extends SMSSenderListener {
             } else {
 
                 // Handling MO message
-                    logger.info("SimpleSMSSender.onDeliverSM: ESMClass " + packet.getEsmClass());
+				if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSM: ESMClass " + packet.getEsmClass());
                
 
                 if(packet.getEsmClass() == SMPPPacket.ESME_ROK){
-                    logger.info("SimpleSMSSender.onDeliverSm: MO packet received via SMSC at driver.");
+					if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSm: MO packet received via SMSC at driver.");
                     try {
                       // build a MO message and drop it into the good queue
                       if(sms_MO_event_name != null) {
@@ -1185,8 +1171,10 @@ public class SimpleSMSSender extends SMSSenderListener {
                         }
                         
                         moEvent.fillWithMOInfos(subscriberID, new Date(), sms_MO_channel_name, packet.getSource()!=null ? packet.getSource().getAddress() : null, destination, body);
-                        // now drop it into the good topic
-                        SMSSenderFactory.kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberID)), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), (EvolutionEngineEvent)moEvent)));
+                        // now drop it into the good topic with right format
+						String topic = eventDeclaration.getPreprocessTopic() != null ? eventDeclaration.getPreprocessTopic().getName() : eventDeclaration.getEventTopic();
+						byte[] message = eventDeclaration.getPreprocessorSerde() !=null ? eventDeclaration.getPreprocessorSerde().serializer().serialize(topic,(PreprocessorEvent)moEvent) : eventDeclaration.getEventSerde().serializer().serialize(topic,(EvolutionEngineEvent)moEvent);
+                        SMSSenderFactory.kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID)), message));
                       }
                     } catch (Exception e) {
                         logger.warn("SMSSender.onDeliverSM MO handling failed due to "+e,e);
@@ -1197,10 +1185,10 @@ public class SimpleSMSSender extends SMSSenderListener {
             }
             break;
         default:
-            logger.info("SMSSender.onDeliverSM "+seqNum+" unknown status "+ packet.getCommandStatus()+" ("+PacketStatusUtils.getMessage(packet.getCommandStatus())+")");
+			if (logger.isDebugEnabled()) logger.debug("SMSSender.onDeliverSM "+seqNum+" unknown status "+ packet.getCommandStatus()+" ("+PacketStatusUtils.getMessage(packet.getCommandStatus())+")");
         }
         try {
-                logger.info("SimpleSMSSender.onDeliverSM attempt to ack DeliverSM "+seqNum);
+			if (logger.isDebugEnabled()) logger.debug("SimpleSMSSender.onDeliverSM attempt to ack DeliverSM "+seqNum);
             conn.getConnection().ackDeliverSm(packet);
         } catch (IOException e) {
             logger.warn("SimpleSMSSender.onDeliverSM Exception while sending DeliverSM "+seqNum+" response "+e,e);
@@ -1225,7 +1213,6 @@ public class SimpleSMSSender extends SMSSenderListener {
   @Override
   public void onSubmitSM(SubmitSM packet)
   {
-    logger.info("SimpleSMSSender.onSubmitSM() execution started..");
     logger.warn("SimpleSMSSender.onSubmitSM: should not happen");
   }
   
@@ -1241,7 +1228,7 @@ public class SimpleSMSSender extends SMSSenderListener {
     String result = null;
     try
       {
-        result = SMSSenderFactory.subscriberIDService.getSubscriberID(Deployment.getGetCustomerAlternateID(), customerID);
+        result = SMSSenderFactory.subscriberIDService.getSubscriberIDBlocking(Deployment.getGetCustomerAlternateID(), customerID);
       } catch (SubscriberIDServiceException e)
       {
         logger.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());

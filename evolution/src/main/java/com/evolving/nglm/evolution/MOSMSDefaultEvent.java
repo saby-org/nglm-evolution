@@ -100,7 +100,7 @@ public class MOSMSDefaultEvent implements EvolutionEngineEvent, MONotificationEv
   *  setters
   *
   *****************************************/
-  
+
   /*****************************************
   *
   * constructor
@@ -155,7 +155,7 @@ public class MOSMSDefaultEvent implements EvolutionEngineEvent, MONotificationEv
    this.channelName = channelName;
    this.sourceAddress = sourceAddress;
    this.destinationAddress = destinationAddress;
-   this.messageText = messageText;   
+   this.messageText = messageText;
  }
  
  /*****************************************

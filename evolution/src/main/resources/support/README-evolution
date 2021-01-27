@@ -5,6 +5,18 @@
 ------------------------------------------
 
 --
+--  elasticsearch
+--
+
+curl -u 'admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>' -XGET http://<_MASTER_ELASTICSEARCH_SERVER_>/_cat/indices
+curl -u 'admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>' -XGET http://<_MASTER_ELASTICSEARCH_SERVER_>/subscriberprofile/_search?pretty
+curl -u 'admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>' -XGET "http://<_MASTER_ELASTICSEARCH_SERVER_>/subscriberprofile/_search?q=173&pretty"
+curl -u 'admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>' -XDELETE http://<_MASTER_ELASTICSEARCH_SERVER_>/logstash-2021.01.21
+curl -u 'admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>' -XGET "http://<_MASTER_ELASTICSEARCH_SERVER_>/_nodes"
+curl -u 'admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>' -XPUT -H "Content-Type: application/json" http://<_MASTER_ELASTICSEARCH_SERVER_>/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
+
+
+--
 -- validate deployment.json
 --
 
@@ -413,17 +425,6 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/r
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/blk-rc-001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putBulkCampaign; echo
 
 --
---  elasticsearch
---
-
-curl -XGET http://<_MASTER_ELASTICSEARCH_SERVER_>/_cat/indices -u admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>
-curl -XGET http://<_MASTER_ELASTICSEARCH_SERVER_>/subscriberprofile/_search?pretty  -u admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>
-curl -XGET "http://<_MASTER_ELASTICSEARCH_SERVER_>/subscriberprofile/_search?q=173&pretty" -u admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>
-curl -XDELETE http://<_MASTER_ELASTICSEARCH_SERVER_>/logstash-2021.01.21 -u admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>
-curl -XGET "http://<_MASTER_ELASTICSEARCH_SERVER_>/_nodes" -u admin:<_ELASTICSEARCH_ADMIN_PASSWORD_>
-curl -XPUT -H "Content-Type: application/json" http://<_MASTER_ELASTICSEARCH_SERVER_>/_all/_settings -u admin:<_ELASTICSEARCH_ADMIN_PASSWORD_> -d '{"index.blocks.read_only_allow_delete": null}'
-
---
 --  thirdpartymanager
 --
 
@@ -576,15 +577,4 @@ java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.a
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> com.evolving.nglm.evolution.SubscriberProfileService 001
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> com.evolving.nglm.evolution.StockMonitor 001 1001
 
-
-#
-#  EVPRO-433
-#
-
-
-3. Error returned by GUI Manager � but the actually the object is saved - (was not reproduced)
-4. Can’t Save a Campaign is there is a “G_Mail’ node not filled in on all fields. Fixed
-5. The following methods need to be updated: getDialogTemplateSummaryList, getPushTemplateSummaryList (in JMR,STG, LPM) - Fixed
-9. Strange behavior of Bulk Campaign Edit/Save: - Fixed
-11. getProductTypeList - with List of IDs - Fixed
 

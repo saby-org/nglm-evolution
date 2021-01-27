@@ -30,7 +30,7 @@ public class ReceiverWorkerThread extends GenericWorkerThread {
 		long start = System.currentTimeMillis();
 		String commandId = null;
 		try{
-			logger.info("ReceiverWorkerThread.process() : execution started...");
+			if(logger.isDebugEnabled()) logger.debug("ReceiverWorkerThread.process() : execution started...");
 			// Ensure the request object is a SMPPReceiverRequest
 			if(!(request instanceof SMPPReceiverRequest)){
 					logger.warn("ReceiverWorkerThread.process: bad request type " + request.getClass().getName());
@@ -61,8 +61,8 @@ public class ReceiverWorkerThread extends GenericWorkerThread {
 			logger.warn("ReceiverWorkerThread.process Exception " + e.getClass().getName() +" " + e.getMessage() + " while handling message " + request, e);
 
 		}
-		
-			logger.info("ReceiverWorkerThread.process Duration of request " + request + " with command id=" + commandId + " last " + (System.currentTimeMillis() - start) + " ms" );
+
+		if(logger.isDebugEnabled()) logger.debug("ReceiverWorkerThread.process Duration of request " + request + " with command id=" + commandId + " last " + (System.currentTimeMillis() - start) + " ms" );
 	}
 
 }

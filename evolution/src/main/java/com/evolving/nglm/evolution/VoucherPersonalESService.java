@@ -280,11 +280,16 @@ public class VoucherPersonalESService{
 
   // to get the associate subscriberId to a voucher
   public VoucherPersonalES getESVoucherFromVoucherCode(String supplierId, String voucherCode){
-    if(elasticsearch==null) log.error("VoucherPersonalESService.getESVoucherFromVoucherCode : called with no elasticsearch client init");
+    if(this.elasticsearch==null) log.error("VoucherPersonalESService.getESVoucherFromVoucherCode : called with no elasticsearch client init");
+    return VoucherPersonalESService.getESVoucherFromVoucherCode(supplierId,voucherCode,this.elasticsearch);
+  }
+
+  // static call providing the elasticsearch client
+  public static VoucherPersonalES getESVoucherFromVoucherCode(String supplierId, String voucherCode, ElasticsearchClientAPI elasticsearchClient){
     try{
       for(int i=0;i<maxTries;i++){
         try{
-          GetResponse response = elasticsearch.get(new GetRequest().index(getLiveIndexName(supplierId)).id(voucherCode),RequestOptions.DEFAULT);
+          GetResponse response = elasticsearchClient.get(new GetRequest().index(getLiveIndexName(supplierId)).id(voucherCode),RequestOptions.DEFAULT);
           if(response.isExists()){
             VoucherPersonalES toRet = new VoucherPersonalES(response);
             if(log.isDebugEnabled()) log.debug("VoucherPersonalESService.getESVoucherFromVoucherCode : found "+toRet);
@@ -656,7 +661,7 @@ public class VoucherPersonalESService{
     return;
   }
 
-  private String getLiveIndexName(String supplierID){
+  private static String getLiveIndexName(String supplierID){
     return LIVE_VOUCHER_INDEX_PREFIX+supplierID;
   }
 

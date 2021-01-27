@@ -29,18 +29,6 @@
     <category name="org.apache.http">
         <priority value="ERROR"/>
     </category>
-    <category name="com.evolving.nglm.core.ReferenceDataReader">
-        <priority value="ERROR"/>
-    </category>
-    <category name="com.evolving.nglm.evolution.propensity">
-        <priority value="ERROR"/>
-    </category>
-    <category name="com.evolving.nglm.evolution.zookeeper">
-        <priority value="ERROR"/>
-    </category>
-    <category name="">
-        <priority value="ERROR"/>
-    </category>
     <category name="org.apache.kafka">
         <priority value="ERROR"/>
     </category>

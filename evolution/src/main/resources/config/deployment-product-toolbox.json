@@ -821,16 +821,7 @@
 			  "expressionValuedParameter" : true,
 			  "defaultValue" : null,
 			  "showContextVariables":true
-			},
-            {
-              "id" : "node.parameter.transferred",
-              "display" : "Transferred",
-              "dataType" : "boolean",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [true, false],
-              "defaultValue" : false
-            }
+			}
           ],
         "action" : 
           {
@@ -879,16 +870,7 @@
 			  "expressionValuedParameter" : true,
 			  "defaultValue" : null,
 			  "showContextVariables":true
-			},
-            {
-              "id" : "node.parameter.transferred",
-              "display" : "Transferred",
-              "dataType" : "boolean",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [true, false],
-              "defaultValue" : false
-            }
+			}
           ],
         "action" : 
           {
