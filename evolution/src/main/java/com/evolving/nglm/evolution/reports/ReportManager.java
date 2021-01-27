@@ -592,7 +592,7 @@ public class ReportManager implements Watcher
             // handle any kind of exception that can happen during generating the report, and do not crash the container
             StringWriter stackTraceWriter = new StringWriter();
             e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.error("Exception processing report " + reportName + " in " + csvFilename + " : {}", stackTraceWriter.toString());
+            log.error("Exception processing report " + reportName + " in " + csvFilename + " : {}", stackTraceWriter.toString().replace('\n', '\u2028'));
             // the report may have been partially generated. We need to remove it and restart
             Path path = FileSystems.getDefault().getPath(csvFilename + ReportUtils.ZIP_EXTENSION);
             try
