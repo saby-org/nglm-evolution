@@ -34,7 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "journeyObjective", serviceClass = JourneyObjectiveService.class, dependencies = { "contactpolicy" , "catalogcharacteristic" })
+@GUIDependencyDef(objectType = "journeyObjective", serviceClass = JourneyObjectiveService.class, dependencies = { "contactpolicy" , "catalogcharacteristic" , "journeyobjective"})
 public class JourneyObjective extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
 {
 
@@ -387,9 +387,12 @@ public class JourneyObjective extends GUIManagedObject implements GUIManagedObje
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> contactPolicyIDs = new ArrayList<String>();
+    List<String> parentJOIDs = new ArrayList<String>();
+    parentJOIDs.add(getParentJourneyObjectiveID());
     contactPolicyIDs.add(getContactPolicyID());
     result.put("contactpolicy", contactPolicyIDs);
     result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());
+    result.put("journeyobjective".toLowerCase(), parentJOIDs);
     return result;
   }
   @Override

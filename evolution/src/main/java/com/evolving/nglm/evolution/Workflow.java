@@ -3,11 +3,11 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 
-@GUIDependencyDef(objectType = "bulkCampaign", serviceClass = JourneyService.class, dependencies = {"point" , "target" , "journeyobjective" , "mailtemplate" , "pushtemplate" , "dialogtemplate"})
-public class BulkCampaign extends GUIManagedObject
+@GUIDependencyDef(objectType = "workflow", serviceClass = JourneyService.class, dependencies = {"mailtemplate" , "pushtemplate" , "dialogtemplate", "target"})
+public class Workflow extends GUIManagedObject
 {
 
-  protected BulkCampaign(String guiManagedObjectID)
+  protected Workflow(String guiManagedObjectID)
   {
     super(guiManagedObjectID);
     throw new ServerRuntimeException("Bulk Campaign is marker only - not allowed to create an object");

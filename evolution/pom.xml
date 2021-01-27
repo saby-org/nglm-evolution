@@ -5,6 +5,7 @@
   <packaging>jar</packaging>
   <version>1.5.0_0-SNAPSHOT</version>
   <version>1.5.0_0-SNAPSHOT</version>
+  <version>1.5.0_0-SNAPSHOT</version>
   <version>1.4.5_1-SNAPSHOT</version>
   <version>1.5.0_0-SNAPSHOT</version>
   <version>1.5.0_0-675-reports-SNAPSHOT</version>
@@ -22,6 +23,7 @@
   <version>1.4.5_1-EVPRO-726-SNAPSHOT</version>
   <version>release_1.5.0_0-EVPRO-589-1-SNAPSHOT</version>
   <version>release_1.5.0_0-EVPRO-701-SNAPSHOT</version>
+  <version>EVPRO-747-v150_0-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>

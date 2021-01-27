@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
@@ -14,6 +15,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective"})
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective", "target"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -904,12 +906,30 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
     List<String> saleschannelIDs = new ArrayList<String>();
     List<String> offerObjectiveIDs = getOfferObjectives().stream().map(offerObjective -> offerObjective.getOfferObjectiveID()).collect(Collectors.toList());
-   
+    List<String> targetIDs = new ArrayList<String>();
      
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
         saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
       }
+  
+	 List<EvaluationCriterion> internalTargets=getProfileCriteria();
+		for (EvaluationCriterion internalTarget : internalTargets) {
+			if (internalTarget != null && internalTarget.getCriterionField() != null
+					&& internalTarget.getCriterionField().getESField() != null
+					&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+				if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+						|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+					targetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+				else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+						|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+					targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
+							.replace("]", "").replace("'", "").split(",")));
+
+			}
+		}
+    
+	result.put("target", targetIDs);
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);

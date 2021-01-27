@@ -49,6 +49,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
@@ -59,7 +60,7 @@ import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" , "target"})
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate"})
 public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
@@ -3878,6 +3879,12 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> targetIDs = new ArrayList<String>();
+    List<String> internaltargetIDs = new ArrayList<String>();
+    List<String> wrkflowIDs = new ArrayList<String>();
+    List<String> pushTemplateIDs = new ArrayList<String>();
+    List<String> mailtemplateIDs = new ArrayList<String>();
+    List<String> dialogIDs = new ArrayList<String>();
+    
     switch (getGUIManagedObjectType())
       {
         case Journey:
@@ -3885,23 +3892,67 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           //
           //  campaign
           //
-          
+        	internaltargetIDs = new ArrayList<String>();
           List<String> campaignIDs = new ArrayList<String>();
+          List<EvaluationCriterion> internalTargets=getEligibilityCriteria()==null?new ArrayList<EvaluationCriterion>():getEligibilityCriteria();
+          
           for (JourneyNode journeyNode : getJourneyNodes().values())
             {
               if (journeyNode.getNodeType().getActionManager() != null)
                 {
                   String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("journey");
                   if (campaignID != null)campaignIDs.add(campaignID);
+                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("workflow");
+                  if (workflowID != null) wrkflowIDs.add(workflowID);
+                 
+                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("pushtemplate");
+                  if (pushId != null) pushTemplateIDs.add(pushId);
+                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("mailtemplate");
+                  if (mailId != null) mailtemplateIDs.add(mailId);
+                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("dialogtemplate");
+                  if (dialogID != null) dialogIDs.add(dialogID);
                 }
-            }
-          result.put("campaign", campaignIDs);
-          
-          List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-          result.put("journeyobjective", journeyObjectiveIDs);
-       
-          targetIDs = getTargetID();
+				if (journeyNode.getNodeName().equals("Profile Selection")
+						|| journeyNode.getNodeName().equals("Event Multi-Selection")
+						|| journeyNode.getNodeName().equals("Event Selection")) {
+					// offerNode.getOutgoingLinks().forEach((a,b)->
+					// internalTargets1.addAll(b.getTransitionCriteria())) ;
+					for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values()) {
+						if (journeyLink.getTransitionCriteria() != null
+								&& journeyLink.getTransitionCriteria().size() > 0)
+							internalTargets.addAll(journeyLink.getTransitionCriteria());
+					}
+				}
+			}
+			result.put("campaign", campaignIDs);
+			result.put("journey", campaignIDs);
+			result.put("workflow", wrkflowIDs);
+
+			List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", journeyObjectiveIDs);
+
+			targetIDs = getTargetID();
+
+			for (EvaluationCriterion internalTarget : internalTargets) {
+				if (internalTarget != null && internalTarget.getCriterionField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+					if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+						internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+					else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+						internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
+								.replace("]", "").replace("'", "").split(",")));
+				}
+			}
+          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+          targetIDs.addAll(internaltargetIDs);
           result.put("target", targetIDs);
+          result.put("pushtemplate", pushTemplateIDs);
+          result.put("mailtemplate", mailtemplateIDs);
+          result.put("dialogtemplate", dialogIDs);
           
           
           break;
@@ -3911,9 +3962,12 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           //
           //  offer
           //
+          internaltargetIDs = new ArrayList<String>();
           List<String> pointIDs = new ArrayList<String>();
           List<String> offerIDs = new ArrayList<String>();
-          for (JourneyNode offerNode : getJourneyNodes().values())
+          List<String> workflowIDs = new ArrayList<String>();
+          List<EvaluationCriterion> internalTargets1=getEligibilityCriteria()==null?new ArrayList<EvaluationCriterion>():getEligibilityCriteria();
+           for (JourneyNode offerNode : getJourneyNodes().values())
             {
               if (offerNode.getNodeType().getActionManager() != null)
                 {
@@ -3924,31 +3978,150 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   
                   String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("point");
                   if (pointID != null) pointIDs.add(pointID);
+                  
+                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("workflow");
+                  if (workflowID != null) workflowIDs.add(workflowID);
+                  
+                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
+                  if (pushId != null) pushTemplateIDs.add(pushId);
+                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
+                  if (mailId != null) mailtemplateIDs.add(mailId);
+                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
+                  if (dialogID != null) dialogIDs.add(dialogID);
                 }
-            }
-          result.put("offer", offerIDs);
-          result.put("point", pointIDs);
-          
-          List<String> journeyObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-          result.put("journeyobjective", journeyObjIDs);
-          
-          targetIDs = getTargetID();
+              
+				if (offerNode.getNodeName().equals("Profile Selection")
+						|| offerNode.getNodeName().equals("Event Multi-Selection")
+						|| offerNode.getNodeName().equals("Event Selection")) {
+					// offerNode.getOutgoingLinks().forEach((a,b)->
+					// internalTargets1.addAll(b.getTransitionCriteria())) ;
+					for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values()) {
+						if (journeyLink.getTransitionCriteria() != null
+								&& journeyLink.getTransitionCriteria().size() > 0)
+							internalTargets1.addAll(journeyLink.getTransitionCriteria());
+					}
+				}
+			}
+			result.put("offer", offerIDs);
+			result.put("point", pointIDs);
+			result.put("workflow", workflowIDs);
+
+			List<String> journeyObjIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", journeyObjIDs);
+
+			targetIDs = getTargetID();
+
+			for (EvaluationCriterion internalTarget : internalTargets1) {
+				if (internalTarget != null && internalTarget.getCriterionField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+					if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+						internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+					else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+						internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
+								.replace("]", "").replace("'", "").split(",")));
+
+				}
+			}
+          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+          targetIDs.addAll(internaltargetIDs);
+
           result.put("target", targetIDs);
+          result.put("pushtemplate", pushTemplateIDs);
+          result.put("mailtemplate", mailtemplateIDs);
+          result.put("dialogtemplate", dialogIDs);
             
           
           break;
 
         case BulkCampaign:
-            List<String> blkpointIDs = new ArrayList<String>();
-         if (this.boundParameters.containsKey("journey.deliverableID") && boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
-        	 blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-             result.put("point", blkpointIDs);    
-             
-            targetIDs = getTargetID();
-             result.put("target", targetIDs);
-             
-            break;
+			List<String> blkpointIDs = new ArrayList<String>();
+			internaltargetIDs = new ArrayList<String>();
+			if (this.boundParameters != null && this.boundParameters.containsKey("journey.deliverableID")
+					&& this.boundParameters.get("journey.deliverableID") != null && this.boundParameters
+							.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
+				blkpointIDs.add(boundParameters.get("journey.deliverableID").toString()
+						.replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+
+			if (this.boundParameters != null && this.boundParameters.containsKey("journey.dialogtemplate")
+					&& this.boundParameters.get("journey.dialogtemplate") != null) {
+				String dialogId = ((NotificationTemplateParameters) boundParameters.get("journey.dialogtemplate"))
+						.getSubscriberMessageTemplateID();
+				dialogIDs.add(dialogId);
+
+			}
+
+			result.put("point", blkpointIDs);
+			result.put("dialogtemplate", dialogIDs);
+
+			targetIDs = getTargetID();
+			result.put("target", targetIDs);
+
+			List<String> jourObjIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", jourObjIDs);
+
+			break;
             
+        case Workflow:
+            
+            //
+            //  offer
+            //
+        	internalTargets=new ArrayList<EvaluationCriterion>();
+            for (JourneyNode offerNode : getJourneyNodes().values())
+              {
+                if (offerNode.getNodeType().getActionManager() != null)
+                  {
+                           
+                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
+                    if (pushId != null) pushTemplateIDs.add(pushId);
+                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
+                    if (mailId != null) mailtemplateIDs.add(mailId);
+                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
+                    if (dialogID != null) dialogIDs.add(dialogID);
+                  }
+               
+                if(offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection")) {
+                  	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
+                  	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
+                       {if(journeyLink.getTransitionCriteria()!=null && journeyLink.getTransitionCriteria().size()>0)
+                  		 internalTargets.addAll(journeyLink.getTransitionCriteria());
+                       }
+                   }  
+				}
+				for (EvaluationCriterion internalTarget : internalTargets) {
+					if (internalTarget != null && internalTarget.getCriterionField() != null
+							&& internalTarget.getCriterionField().getESField() != null
+							&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+						if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+								|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+							internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+						else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+								|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+							internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression()
+									.replace("[", "").replace("]", "").replace("'", "").split(",")));
+
+					}
+				}
+             if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+             targetIDs.addAll(internaltargetIDs);
+             result.put("target", targetIDs);
+        
+            result.put("pushtemplate", pushTemplateIDs);
+            result.put("mailtemplate", mailtemplateIDs);
+            result.put("dialogtemplate", dialogIDs);
+           
+            
+           
+              
+            
+            break;
         default:
           break;
       }

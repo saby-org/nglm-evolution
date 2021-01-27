@@ -677,6 +677,15 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
 
       return Collections.<Action>singletonList(request);
     }
+    
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String pushTemplateID = (String) journeyNode.getNodeParameters().get("node.parameter.message");
+      if (pushTemplateID != null) {
+    	  result.put("pushtemplate", pushTemplateID);}
+          return result;
+    }
   }
 
   /*****************************************

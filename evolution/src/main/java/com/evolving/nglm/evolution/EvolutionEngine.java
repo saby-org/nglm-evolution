@@ -4547,9 +4547,9 @@ public class EvolutionEngine
     Map<JourneyObjective, Integer> permittedJourneys = new HashMap<JourneyObjective, Integer>();
     for (JourneyObjective journeyObjective : permittedSimultaneousJourneys.keySet())
       {
-        permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
+    	permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
         if (permittedWaitingPeriod.get(journeyObjective) == Boolean.FALSE){
-            if (log.isTraceEnabled()) log.trace("permittedJourneys put " + journeyObjective.getJourneyObjectiveName() + ": static 0");
+        	if (log.isTraceEnabled()) log.trace("permittedJourneys put " + journeyObjective.getJourneyObjectiveName() + ": static 0");
             permittedJourneys.put(journeyObjective, 0);
         }
       }
@@ -4559,7 +4559,7 @@ public class EvolutionEngine
       {
         for(Entry<JourneyObjective,Integer> entry:permittedJourneys.entrySet())
           {
-            log.debug("permittedJourneys : " + entry.getKey().getJourneyObjectiveName() + ":" + entry.getValue());
+        	log.debug("permittedJourneys : " + entry.getKey().getJourneyObjectiveName() + ":" + entry.getValue());
           }
       }
 
@@ -4834,9 +4834,9 @@ public class EvolutionEngine
 
                 if (enterJourney && currentStatus==null)
                   {
-                    for (JourneyObjective journeyObjective : allObjectives)
+                	for (JourneyObjective journeyObjective : allObjectives)
                       {
-                        if (permittedJourneys.get(journeyObjective) < 1)
+                    	 if (permittedJourneys.get(journeyObjective) < 1)
                           {                       
                           currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
                           context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
@@ -7811,6 +7811,15 @@ public class EvolutionEngine
       *****************************************/
 
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      WorkflowParameter workflowparam= (WorkflowParameter) journeyNode.getNodeParameters().get("node.parameter.workflow");
+      String workflowID =workflowparam.getWorkflowID();
+      if (workflowID != null) result.put("workflow", workflowID);
+      return result;
     }
   }
 
