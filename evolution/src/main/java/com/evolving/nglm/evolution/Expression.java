@@ -640,7 +640,7 @@ public abstract class Expression
             script.append("def rightInstant_" + getNodeID() + " = rightCalendar_" + getNodeID() + ".toInstant(); ");
             script.append("def rightRaw_" + getNodeID() + " = LocalDateTime.ofInstant(rightInstant_" + getNodeID() + ", ZoneOffset.UTC); ");
             script.append(EvaluationCriterion.constructDateTruncateESScript(getNodeID(), "rightRaw", "tempRight", baseTimeUnit));
-            script.append("right_" + getNodeID() + " =  tempRight; } ");
+            script.append("right_" + getNodeID() + " =  tempRight_" + getNodeID() + "; } ");
             break;
             
           case TimeExpression:
