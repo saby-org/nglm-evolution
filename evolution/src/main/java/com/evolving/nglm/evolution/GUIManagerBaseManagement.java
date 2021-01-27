@@ -1178,8 +1178,7 @@ public class GUIManagerBaseManagement extends GUIManager
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
-    
-
+  
     /*****************************************
     *
     *  dryRun

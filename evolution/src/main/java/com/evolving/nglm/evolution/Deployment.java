@@ -245,6 +245,8 @@ public class Deployment
   private static int kafkaRetentionDaysODR;
   private static int kafkaRetentionDaysBDR;
   private static int kafkaRetentionDaysMDR;
+  //EVPRO-574
+  private static int kafkaRetentionDaysTargets;
 
   private static boolean enableContactPolicyProcessing;
 
@@ -510,6 +512,8 @@ public class Deployment
   public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; }
   public static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
+  //EVPRO-574
+  public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
 
   // addProfileCriterionField
   //
@@ -3241,6 +3245,7 @@ public class Deployment
             kafkaRetentionDaysODR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysODR",91);
             kafkaRetentionDaysBDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBDR",91);
             kafkaRetentionDaysMDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysMDR",91);
+            kafkaRetentionDaysTargets = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysTargets",91);
           }
         catch (JSONUtilitiesException|NumberFormatException e)
           {

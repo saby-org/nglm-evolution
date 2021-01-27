@@ -19,8 +19,11 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
+import com.evolving.nglm.evolution.Target.TargetStatus;
 
 @GUIDependencyDef(objectType = "target", serviceClass = TargetService.class, dependencies = {})
 public class Target extends GUIManagedObject
@@ -42,6 +45,51 @@ public class Target extends GUIManagedObject
     public static TargetingType fromExternalRepresentation(String externalRepresentation) { for (TargetingType enumeratedValue : TargetingType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) { return enumeratedValue; } } return Unknown; }
   }
   
+  //
+  //  TargetStatus
+  //
+
+  public enum TargetStatus
+  {
+    NotValid("Not Valid"),
+    Running("Running"),
+    Complete("Complete"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private TargetStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static TargetStatus fromExternalRepresentation(String externalRepresentation) { for (TargetStatus enumeratedValue : TargetStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
+  /*****************************************
+  *
+  *  getTargetStatus
+  *
+  *****************************************/
+
+  TargetStatus getTargetStatus()
+  {
+	Date now = SystemTime.getCurrentTime();
+    TargetStatus status = TargetStatus.Unknown;
+    status = (status == TargetStatus.Unknown && !this.getAccepted()) ? TargetStatus.NotValid : status;
+    status = (status == TargetStatus.Unknown && isActiveGUIManagedObject(this, now)) ? TargetStatus.Running : status;
+    status = (status == TargetStatus.Unknown && this.getEffectiveEndDate().before(now)) ? TargetStatus.Complete : status;
+    return status;
+  }
+  
+  /*****************************************
+  *
+  *  isActiveGUIManagedObject
+  *
+  *****************************************/
+
+  protected boolean isActiveGUIManagedObject(GUIManagedObject guiManagedObject, Date date) {
+    if(guiManagedObject==null) return false;
+    if(!guiManagedObject.getAccepted()) return false;
+    if(guiManagedObject.getEffectiveStartDate().after(date)) return false;
+    if(guiManagedObject.getEffectiveEndDate().before(date)) return false;
+    return true;
+  }
   /*****************************************
   *
   *  schema

@@ -948,7 +948,7 @@ public class GUIService
 
   private void runScheduler()
   {
-    NGLMRuntime.registerSystemTimeDependency(this);
+	NGLMRuntime.registerSystemTimeDependency(this);
     while (!stopRequested)
       {
         synchronized (this)
@@ -993,8 +993,7 @@ public class GUIService
                 //
                 //  existingActiveGUIManagedObject
                 //
-
-                GUIManagedObject existingActiveGUIManagedObject = activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID());
+            	GUIManagedObject existingActiveGUIManagedObject = activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID());
 
                 //
                 //  active window
@@ -1002,7 +1001,7 @@ public class GUIService
 
                 if (guiManagedObject.getEffectiveStartDate().compareTo(now) <= 0 && now.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
                   {
-                    activeGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
+                	activeGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
                     interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     notifyListener(guiManagedObject);
                   }
@@ -1013,7 +1012,7 @@ public class GUIService
 
                 if (now.compareTo(guiManagedObject.getEffectiveEndDate()) >= 0)
                   {
-                    availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
+                	availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     activeGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     if (existingActiveGUIManagedObject != null) notifyListener(guiManagedObject);
@@ -1037,7 +1036,7 @@ public class GUIService
 
   public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
-    JSONObject responseJSON = new JSONObject();
+	JSONObject responseJSON = new JSONObject();
     if (guiManagedObject != null)
       {
         responseJSON.putAll(fullDetails ? getJSONRepresentation(guiManagedObject) : getSummaryJSONRepresentation(guiManagedObject));
@@ -1046,6 +1045,7 @@ public class GUIService
         responseJSON.put("valid", guiManagedObject.getAccepted());
         responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
         responseJSON.put("readOnly", guiManagedObject.getReadOnly());
+       
       }
     return responseJSON;
   }
@@ -1058,7 +1058,7 @@ public class GUIService
 
   protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
   {
-    JSONObject result = new JSONObject();
+	JSONObject result = new JSONObject();
     result.putAll(guiManagedObject.getJSONRepresentation());
     return result;
   }
@@ -1071,7 +1071,7 @@ public class GUIService
 
   protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
-    JSONObject result = new JSONObject();
+	JSONObject result = new JSONObject();
     result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
     result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
     result.put("description", guiManagedObject.getJSONRepresentation().get("description"));

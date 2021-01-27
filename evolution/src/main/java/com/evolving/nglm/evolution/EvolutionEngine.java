@@ -541,8 +541,8 @@ public class EvolutionEngine
     //
     // retention service
     //
-    
-    retentionService = new RetentionService(journeyService);
+    //EVPRO-574
+    retentionService = new RetentionService(journeyService,targetService);
     
     //
     // supplierService
