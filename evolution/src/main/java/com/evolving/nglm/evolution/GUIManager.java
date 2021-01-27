@@ -6254,6 +6254,7 @@ public class GUIManager
       {
         response.put("updatedIds", updatedIDs);
         response.put("exceptionIds", exceptionList);
+        response.put("responseCode", "ok");
       }
       
   return JSONUtilities.encodeObject(response);
@@ -7134,14 +7135,24 @@ public class GUIManager
           }
         if (journeyTemplateID == null || journeyTemplateID.isEmpty())
           {
-            response.put("responseCode", "missingJourneyTemplate");
-            return JSONUtilities.encodeObject(response);
+            //response.put("responseCode", "missingJourneyTemplate");
+            HashMap<String, String> errorResponseDisplay = new HashMap<String, String>();
+            errorResponseDisplay.put("id", existingBulkCampaignToBeUpdated.getGUIManagedObjectID());
+            errorResponseDisplay.put("responseCode",
+                "missingJourneyTemplate");
+            exceptionList.add(errorResponseDisplay);
+            continue;
           }
         Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(journeyTemplateID, now);
         if (journeyTemplate == null)
           {
-            response.put("responseCode", "journeyTemplateNotFound");
-            return JSONUtilities.encodeObject(response);
+            //response.put("responseCode", "journeyTemplateNotFound");
+            HashMap<String, String> errorResponseDisplay = new HashMap<String, String>();
+            errorResponseDisplay.put("id", existingBulkCampaignToBeUpdated.getGUIManagedObjectID());
+            errorResponseDisplay.put("responseCode",
+                "journeyTemplateNotFound");
+            exceptionList.add(errorResponseDisplay);
+            continue;
           }
 
         //
@@ -7558,6 +7569,7 @@ public class GUIManager
       {
         response.put("updatedIds", updatedIDs);
         response.put("exceptionIds", exceptionList);
+        response.put("responseCode", "ok");
 
       }
 
@@ -8666,6 +8678,7 @@ public class GUIManager
                   {
                     HashMap<String, String> errorResponseDisplay = new HashMap<String, String>();
                     errorResponseDisplay.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+                    errorResponseDisplay.put("responseCode", "Invalid display");
                     errorResponseDisplay.put("responseMessage",
                         "The display cannot be changed for the existing simple offer");
                     exceptionList.add(errorResponseDisplay);
@@ -8679,6 +8692,7 @@ public class GUIManager
                     if (!simpleOffer)
                       {
                         errorResponseSimpleOffer.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+                        errorResponseSimpleOffer.put("responseCode", "Invalid Offer");
                         errorResponseSimpleOffer.put("responseMessage",
                             "The simple Offer cannot be changed for the existing simple offer");
                         exceptionList.add(errorResponseSimpleOffer);
@@ -8689,6 +8703,7 @@ public class GUIManager
                   {
                     HashMap<String, String> errorResponseProduct = new HashMap<String, String>();
                     errorResponseProduct.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+                    errorResponseProduct.put("responseCode", "Invalid Offer product");
                     errorResponseProduct.put("responseMessage",
                         "The products cannot be changed for the existing simple offer");
                     exceptionList.add(errorResponseProduct);
@@ -8698,7 +8713,7 @@ public class GUIManager
                   {
                     HashMap<String, String> errorResponseVoucher = new HashMap<String, String>();
                     errorResponseVoucher.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
-                    
+                    errorResponseVoucher.put("responseCode", "Invalid Offer voucher");
                     errorResponseVoucher.put("responseMessage",
                         "The vouchers cannot be changed for the existing simple offer");
                     exceptionList.add(errorResponseVoucher);
@@ -8816,6 +8831,7 @@ public class GUIManager
     if (jsonRoot.containsKey("ids")) {
       response.put("updatedIds", updatedIDs);
       response.put("exceptionIds", exceptionList);
+      response.put("responseCode", "ok");
       
     }
 
@@ -12674,6 +12690,7 @@ public class GUIManager
                   {
                     HashMap<String, String> errorResponseDisplay = new HashMap<String, String>();
                     errorResponseDisplay.put("id", existingProductToBeUpdated.getGUIManagedObjectID());
+                    errorResponseDisplay.put("responseCode", "Invalid display");
                     errorResponseDisplay.put("responseMessage",
                         "The display cannot be changed for the existing simple offer product");
                     exceptionList.add(errorResponseDisplay);
@@ -12686,6 +12703,7 @@ public class GUIManager
                       {
                         HashMap<String, String> errorResponseSimpleOffer = new HashMap<String, String>();
                         errorResponseSimpleOffer.put("id", existingProductToBeUpdated.getGUIManagedObjectID());
+                        errorResponseSimpleOffer.put("responseCode", "Invalid product");
                         errorResponseSimpleOffer.put("responseMessage",
                             "The simple Offer cannot be changed for the existing simple offer product");
                         exceptionList.add(errorResponseSimpleOffer);
@@ -12813,6 +12831,7 @@ public class GUIManager
     if (jsonRoot.containsKey("ids")) {
       response.put("updatedIds", updatedIDs);
       response.put("exceptionIds", exceptionList);
+      response.put("responseCode", "ok");
       
     }
 
