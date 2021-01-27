@@ -4905,7 +4905,9 @@ public class ThirdPartyManager
     //  eventBody
     //
 
+    Pair<String, String> subscriberParameter = resolveSubscriberAlternateID(jsonRoot);
     JSONObject eventBody = JSONUtilities.decodeJSONObject(jsonRoot, "eventBody");
+    eventBody.put(subscriberParameter.getFirstElement(), subscriberParameter.getSecondElement());
     if (eventBody == null)
       {
         updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS, "-{eventBody is missing}");
@@ -5994,6 +5996,68 @@ public class ThirdPartyManager
     // Returns a value, or an exception
     return subscriberID;
   }
+  
+  /*****************************************
+  *
+  *  resolveSubscriberAlternateID
+  *
+  *****************************************/
+
+  private Pair<String, String> resolveSubscriberAlternateID(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    // "customerID" parameter is mapped internally to subscriberID 
+    String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
+    String alternateSubscriberID = null;
+    
+    // finds the first parameter in the input request that corresponds to an entry in alternateID[]
+    String subscriberkey = null;
+    String subscriberValue = null;
+    String alternateIDKey = null;
+    String alternateIDValue = null;
+    Map<String, String> result = new HashMap<>();
+    for (String id : Deployment.getAlternateIDs().keySet())
+      {
+        String param = JSONUtilities.decodeString(jsonRoot, id, false);
+        if (param != null)
+          {
+            try
+            {
+              alternateSubscriberID = subscriberIDService.getSubscriberID(id, param);
+              if (alternateSubscriberID == null)
+                {
+                  throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+                }
+              alternateIDKey = id;
+              alternateIDValue = param;
+              break;
+            } catch (SubscriberIDServiceException e)
+            {
+              log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
+            }
+          }
+      }
+    
+    if (subscriberID == null)
+      {
+        if (alternateSubscriberID == null)
+          {
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
+          }
+        subscriberkey = alternateIDKey;
+        subscriberValue = alternateIDValue;
+      }
+    else if (subscriberID != null && alternateSubscriberID != null)
+      {
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE);
+      }
+    else {
+      subscriberkey = CUSTOMER_ID;
+      subscriberValue = subscriberID;
+    }
+    // Returns a value, or an exception
+    return new Pair<String, String>(subscriberkey, subscriberValue);
+  }
+
 
   /*****************************************
   *
