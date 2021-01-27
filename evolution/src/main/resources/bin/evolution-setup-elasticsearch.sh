@@ -610,17 +610,16 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeysta
       "journeyID" : { "type" : "keyword" },
       "subscriberID" : { "type" : "keyword" },
       "transitionDate" : { "type" : "date" },
+      "nodeID" : { "type" : "keyword" },
       "nodeHistory" : { "type" : "keyword" },
       "statusHistory" : { "type" : "keyword" },
       "rewardHistory" : { "type" : "keyword" },
-      "fromNodeID" : { "type" : "keyword" },
-      "toNodeID" : { "type" : "keyword" },
       "deliveryRequestID" : { "type" : "keyword" },
       "sample" : { "type" : "keyword" },
-      "markNotified" : { "type" : "boolean" },
-      "markConverted" : { "type" : "boolean" },
       "statusNotified" : { "type" : "boolean" },
       "statusConverted" : { "type" : "boolean" },
+      "conversionCount" : { "type" : "long" },
+      "lastConversionDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "statusTargetGroup" : { "type" : "boolean" },
       "statusControlGroup" : { "type" : "boolean" },
       "statusUniversalControlGroup" : { "type" : "boolean" },
@@ -741,7 +740,9 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_j
       "filter.journey" : { "type" : "keyword" },
       "filter.node" : { "type" : "keyword" },
       "filter.status" : { "type" : "keyword" },
-      "count" : { "type" : "integer" }
+      "count" : { "type" : "integer" },
+      "metric.conversions" : { "type" : "integer" },
+      "metric.converted.today" : { "type" : "integer" }
     }
   }
 }'

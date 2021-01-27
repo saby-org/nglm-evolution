@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
@@ -160,17 +161,15 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("statusHistory", journeyStatus);
       documentMap.put("rewardHistory", journeyReward);
       
-      documentMap.put("fromNodeID", journeyStatistic.getFromNodeID()); // TODO delete ?
-      documentMap.put("toNodeID", journeyStatistic.getToNodeID()); // TODO delete ?
       documentMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
       documentMap.put("sample", journeyStatistic.getSample());
-      documentMap.put("markNotified", journeyStatistic.getMarkNotified());
-      documentMap.put("markConverted", journeyStatistic.getMarkConverted());
       documentMap.put("statusNotified", journeyStatistic.getStatusNotified());
       documentMap.put("statusConverted", journeyStatistic.getStatusConverted());
       documentMap.put("statusTargetGroup", journeyStatistic.getStatusTargetGroup());
       documentMap.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
       documentMap.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
+      documentMap.put("conversionCount", journeyStatistic.getConversionCount());
+      documentMap.put("lastConversionDate", journeyStatistic.getLastConversionDate() != null ? RLMDateUtils.printTimestamp(journeyStatistic.getLastConversionDate()) : null);
       documentMap.put("journeyComplete", journeyStatistic.getJourneyComplete());
       documentMap.put("exitDate", journeyStatistic.getExitDate()==null?"null":journeyStatistic.getExitDate());
       

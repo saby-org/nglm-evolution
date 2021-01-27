@@ -5421,7 +5421,14 @@ public class EvolutionEngine
 
                 boolean originalStatusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
                 boolean originalStatusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-
+                
+                // Check for new conversion - setup
+                Boolean convertedReference = null;
+                if(originalStatusConverted) {
+                  convertedReference = new Boolean(true); // We track for change (Boolean object, we will compare reference and not value) 
+                  journeyState.getJourneyParameters().put(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName(), convertedReference);
+                }
+                
                 /*****************************************
                 *
                 *  set context variables when exiting node
@@ -5733,11 +5740,20 @@ public class EvolutionEngine
                 boolean markNotified = originalStatusNotified == false && currentStatusNotified == true;
 
                 //
-                //  markConverted
+                //  markConverted & conversionCount
                 //
-
-                boolean currentStatusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-                boolean markConverted = originalStatusConverted == false && currentStatusConverted == true;
+                boolean markConverted = false;
+                
+                if(originalStatusConverted == false) { // first conversion 
+                  markConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+                }
+                else { // conversion on already converted -- Be careful, we are comparing references here, not the value (as intended) !
+                  markConverted = (convertedReference != journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()));
+                }
+                
+                if(markConverted) {
+                  journeyState.getJourneyHistory().incrementConversions(now);
+                }
                 
                 //
                 // abTesting (we remove it so its only counted once per journey)
@@ -6369,7 +6385,7 @@ public class EvolutionEngine
         JourneyHistory history = iterator.next();
         if(history.getJourneyID().equals(journeyStatistic.getJourneyID())) 
           {
-            updatedHistory = new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory());
+            updatedHistory = new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory(), journeyStatistic.getLastConversionDate(), journeyStatistic.getConversionCount());
             iterator.remove();
             break;
           }
@@ -6381,7 +6397,7 @@ public class EvolutionEngine
       }    
     else 
       {
-        subscriberHistory.getJourneyHistory().add(new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory()));
+        subscriberHistory.getJourneyHistory().add(new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory(), journeyStatistic.getLastConversionDate(), journeyStatistic.getConversionCount()));
       }
     
     /*****************************************
