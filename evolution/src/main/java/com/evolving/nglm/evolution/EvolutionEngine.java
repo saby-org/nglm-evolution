@@ -1934,11 +1934,14 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  lastEvaluationDate
+    *  lastEvaluationDate, only if current event is an effective periodic evaluation, i.e. TimedEvaluation + periodicEvaluation = true
     *
     *****************************************/
 
-    subscriberState.setLastEvaluationDate(now);
+    if(evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation())
+      {
+        subscriberState.setLastEvaluationDate(now);
+      }
     subscriberStateUpdated = true;
 
     /*****************************************
