@@ -24,6 +24,8 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeSubfield;
 
 public class DynamicCriterionFieldService extends GUIService
 {
@@ -321,6 +323,90 @@ public class DynamicCriterionFieldService extends GUIService
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last7days", null);
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last30days", null);
   }
+  
+  /*****************************************
+  *
+  *  addComplexObjectTypeCriterionFields
+  *
+  *****************************************/
+
+  public void addComplexObjectTypeCriterionFields(ComplexObjectType complexObjectType, boolean newComplexObjectType) throws GUIManagerException
+  {
+    
+    for(String currentName : complexObjectType.getAvailableElements())
+      {
+        for(Map.Entry<Integer, ComplexObjectTypeSubfield> current : complexObjectType.getSubfields().entrySet())
+          {
+            Integer subFieldID = current.getKey();
+            String subFieldName = current.getValue().getSubfieldName();
+            ComplexObjectTypeSubfield subField = current.getValue();
+            switch (subField.getCriterionDataType())
+              {
+              case IntegerCriterion :
+              case StringCriterion :
+              case StringSetCriterion :
+              case DateCriterion :
+                //
+                //  json constructor
+                //
+      
+                JSONObject criterionFieldJSON = new JSONObject();
+                String id = "complexObject." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldName;
+                criterionFieldJSON.put("id", id);
+                criterionFieldJSON.put("display", complexObjectType.getComplexObjectTypeName() + "." + currentName + "." + subFieldName);
+                criterionFieldJSON.put("epoch", complexObjectType.getEpoch());
+                criterionFieldJSON.put("dataType", subField.getCriterionDataType().getExternalRepresentation());
+                criterionFieldJSON.put("tagFormat", null);
+                criterionFieldJSON.put("tagMaxLength", null);
+                criterionFieldJSON.put("esField", id);
+                criterionFieldJSON.put("retriever", "getComplexObjectFieldValue");
+                criterionFieldJSON.put("minValue", null);
+                criterionFieldJSON.put("maxValue", null);
+    // TODO            criterionFieldJSON.put("availableValues", availableValues);
+                criterionFieldJSON.put("includedOperators", null);
+                criterionFieldJSON.put("excludedOperators", null);
+                criterionFieldJSON.put("includedComparableFields", null); 
+                criterionFieldJSON.put("excludedComparableFields", null);
+                DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON);
+      
+                //
+                //  put
+                //
+      
+                putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);  
+              
+              
+                break;
+    
+              default:
+                log.warn("ComplexObjectType: Unsupported CriterionDataType " + subField.getCriterionDataType());
+                break;
+              }
+          }
+      }
+  }
+
+  /*****************************************
+  *
+  *  removePointCriterionFields
+  *
+  *****************************************/
+
+  public void removeComplexObjectTypeCriterionFields(GUIManagedObject guiManagedObject)
+  {
+    
+    ComplexObjectType complexObjectType = (ComplexObjectType)guiManagedObject;
+    for(String currentName : complexObjectType.getAvailableElements())
+      {
+        for(Map.Entry<Integer, ComplexObjectTypeSubfield> current : complexObjectType.getSubfields().entrySet())
+          {
+            Integer subFieldID = current.getKey();
+            String id = "complexObject." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldID;
+            removeGUIManagedObject(id, SystemTime.getCurrentTime(), null);
+          }
+      }
+  }
+
   
   /*****************************************
   *

@@ -81,6 +81,7 @@ public class Deployment
   private static String journeyTemplateTopic;
   private static String segmentationDimensionTopic;
   private static String pointTopic;
+  private static String complexObjectTypeTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String paymentMeanTopic;
@@ -165,6 +166,7 @@ public class Deployment
   private static JSONArray initialVoucherCodeFormatsJSONArray = null;
   private static JSONArray initialScoringTypesJSONArray = null;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
+  private static JSONArray initialComplexObjectJSONArray = null;
   private static boolean generateSimpleProfileDimensions;
   private static Map<String,CommunicationChannel> communicationChannels = new LinkedHashMap<>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
@@ -333,6 +335,7 @@ public class Deployment
   public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getPointTopic() { return pointTopic; }
+  public static String getComplexObjectTypeTopic() { return complexObjectTypeTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getPaymentMeanTopic() { return paymentMeanTopic; }
@@ -414,6 +417,7 @@ public class Deployment
   public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
   public static JSONArray getInitialVoucherCodeFormatsJSONArray() { return initialVoucherCodeFormatsJSONArray; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
+  public static JSONArray getInitialComplexObjectJSONArray() { return initialComplexObjectJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; }
@@ -1075,6 +1079,19 @@ public class Deployment
       try
         {
           pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
+      //  pointTopic
+      //
+
+      try
+        {
+          complexObjectTypeTopic = JSONUtilities.decodeString(jsonRoot, "complexObjectTypeTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -2306,6 +2323,12 @@ public class Deployment
       //
 
       initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
+      
+      //
+      //  initialComplexObjectJSONArray
+      //
+
+      initialComplexObjectJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialComplexObjects", new JSONArray());
 
       //
       //  generateSimpleProfileDimensions

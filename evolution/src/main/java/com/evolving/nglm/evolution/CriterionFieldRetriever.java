@@ -13,6 +13,8 @@ import com.evolving.nglm.core.RLMDateUtils;
 
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectinstanceSubfieldValue;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -755,6 +757,33 @@ public abstract class CriterionFieldRetriever
       }
      return status;
   }
+  
+  public static Object getComplexObjectFieldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    // parse the field name to retrieve the good value...
+    // complexObject.<objectTypeID>.<elementID>.<subfieldName>;
+    String[] split = fieldName.split("\\.");
+    if(split.length != 4 || !split[0].equals("complexObject")) {throw new CriterionException("field " + fieldName + " can't be handled"); }
+    String objectTypeID = split[1];
+    String elementID = split[2];
+    String subfieldName = split[3];
+    List<ComplexObjectInstance> complexObjectInstances = evaluationRequest.getSubscriberProfile().getComplexObjectInstances();
+    if(complexObjectInstances == null) { return null; }
+    ComplexObjectInstance instance = null;
+    for(ComplexObjectInstance current : complexObjectInstances) 
+      { 
+        if(current.getComplexObjectTypeID().equals(objectTypeID) && current.getElementID().equals(elementID)) 
+          { 
+            instance = current; break; 
+          }
+      }
+    if(instance == null) { return null; }
+    Map<String, ComplexObjectinstanceSubfieldValue> values = instance.getFieldValues();
+    if(values == null) { return null; }
+    ComplexObjectinstanceSubfieldValue elementValue = values.get(subfieldName);
+    if(elementValue == null) { return null; }
+    return elementValue.getValue();   
+  }
 
   /*****************************************
   *
@@ -802,6 +831,8 @@ public abstract class CriterionFieldRetriever
     else
       return null;
   }
+  
+  
 
   /*****************************************
   *
@@ -821,6 +852,8 @@ public abstract class CriterionFieldRetriever
       }
     return result;
   }
+  
+  
   
   /*****************************************
   *
