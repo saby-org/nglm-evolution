@@ -28634,7 +28634,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       case getCustomerBDRs:
         if (startDate != null)
           {
-            if (startDate.before(indexFilterDate))
+            if (indexFilterDate.before(startDate))
               {
                 List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
@@ -28655,7 +28655,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       case getCustomerODRs:
         if (startDate != null)
           {
-            if (startDate.before(indexFilterDate))
+            if (indexFilterDate.before(startDate))
               {
                 List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
@@ -28676,7 +28676,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       case getCustomerMessages:
         if (startDate != null)
           {
-            if (startDate.before(indexFilterDate))
+            if (indexFilterDate.before(startDate))
               {
                 List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
