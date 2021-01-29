@@ -17024,7 +17024,6 @@ public class GUIManager
                 List<SearchHit> hits = getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
-                    log.info("RAJ K hit {}", hit);
                     PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
                     ODRs.add(purchaseFulfillmentRequest);
                   }
@@ -28712,7 +28711,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     //  searchRequest
     //
     
-    log.info("RAJ K api {} - startDate {} - es index {}", api.toString(), startDate, index);
     searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
     
     //

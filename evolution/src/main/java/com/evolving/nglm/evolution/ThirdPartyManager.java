@@ -1434,7 +1434,6 @@ public class ThirdPartyManager
           List<SearchHit> hits = getESHits(searchRequest);
           for (SearchHit hit : hits)
             {
-              log.info("RAJ K hit {}", hit);
               PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
               ODRs.add(purchaseFulfillmentRequest);
             }
@@ -6581,7 +6580,8 @@ public class ThirdPartyManager
             if (startDate.before(indexFilterDate))
               {
                 List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
-                index = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
+                String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
+                index = getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
               }
             else
               {
@@ -6601,7 +6601,8 @@ public class ThirdPartyManager
             if (startDate.before(indexFilterDate))
               {
                 List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
-                index = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
+                String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
+                index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
               }
             else
               {
@@ -6621,7 +6622,8 @@ public class ThirdPartyManager
             if (startDate.before(indexFilterDate))
               {
                 List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
-                index = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
+                String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
+                index = getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
               }
             else
               {
@@ -6652,8 +6654,7 @@ public class ThirdPartyManager
     //  searchRequest
     //
     
-    String existingIndex = getExistingIndices(index);
-    searchRequest = new SearchRequest(existingIndex).source(new SearchSourceBuilder().query(query));
+    searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
     
     //
     //  return
@@ -6700,7 +6701,7 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private String getExistingIndices(String indexCSV)
+  private String getExistingIndices(String indexCSV, String defaulteValue)
   {
     String result = null;
     StringBuilder existingIndexes = new StringBuilder();
@@ -6741,6 +6742,7 @@ public class ThirdPartyManager
           }
         result = existingIndexes.toString();
       }
+    result = result == null || result.trim().isEmpty() ? defaulteValue : result;
     if (log.isDebugEnabled()) log.debug("reading data from index {}", result);
     return result;
   }
