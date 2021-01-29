@@ -69,6 +69,7 @@ import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -28707,7 +28708,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     //  searchRequest
     //
     
-    searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
+    String existingIndex = getExistingIndices(index);
+    searchRequest = new SearchRequest(existingIndex).source(new SearchSourceBuilder().query(query));
     
     //
     //  return
@@ -28795,6 +28797,57 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     //
     
     return hits;
+  }
+  
+  /*****************************************
+  *
+  * getExistingIndices
+  *
+  *****************************************/
+  
+  private String getExistingIndices(String indexCSV)
+  {
+    String result = null;
+    StringBuilder existingIndexes = new StringBuilder();
+    boolean firstEntry = true;
+    
+    if (indexCSV != null)
+      {
+        for (String index : indexCSV.split(","))
+          {
+            if(index.endsWith("*")) 
+              {
+                if (!firstEntry) existingIndexes.append(",");
+                existingIndexes.append(index); 
+                firstEntry = false;
+                continue;
+              }
+            else
+              {
+                GetIndexRequest request = new GetIndexRequest(index);
+                request.local(false); 
+                request.humanReadable(true); 
+                request.includeDefaults(false); 
+                try
+                {
+                  boolean exists = elasticsearch.indices().exists(request, RequestOptions.DEFAULT);
+                  if (exists) 
+                    {
+                      if (!firstEntry) existingIndexes.append(",");
+                      existingIndexes.append(index);
+                      firstEntry = false;
+                    }
+                } 
+              catch (IOException e)
+                {
+                  log.info("Exception " + e.getLocalizedMessage());
+                }
+              }
+          }
+        result = existingIndexes.toString();
+      }
+    if (log.isDebugEnabled()) log.debug("reading data from index {}", result);
+    return result;
   }
 
 }
