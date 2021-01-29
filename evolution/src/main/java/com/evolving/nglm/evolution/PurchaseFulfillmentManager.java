@@ -662,6 +662,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
       
       super(esFields);
+      log.info("RAJ K esFields {}", esFields);
       setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
       setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
       

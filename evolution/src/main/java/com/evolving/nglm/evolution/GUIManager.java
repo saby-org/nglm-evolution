@@ -17024,6 +17024,7 @@ public class GUIManager
                 List<SearchHit> hits = getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
+                    log.info("RAJ K hit {}", hit);
                     PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
                     ODRs.add(purchaseFulfillmentRequest);
                   }
