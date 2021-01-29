@@ -68,6 +68,7 @@ public class CriterionContext
   public static final String EVALUATION_MONTH_ID = "evaluation.month";
   public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
   public static final String EVALUATION_ANIVERSARY_DAY_ID = "evaluation.aniversary.day";
+  public static final String JOURNEY_DISPLAY_PARAMETER_ID = "this.journey.display";
 
   /*****************************************
   *
@@ -361,8 +362,8 @@ public class CriterionContext
     try
       {
         Map<String,Object> journeyDisplayJSON = new LinkedHashMap<String,Object>();
-        journeyDisplayJSON.put("id", EvolutionEngine.JOURNEY_DISPLAY_PARAMETER_ID);
-        journeyDisplayJSON.put("display", "Campaign/Journey Display");
+        journeyDisplayJSON.put("id", JOURNEY_DISPLAY_PARAMETER_ID);
+        journeyDisplayJSON.put("display", "Campaign");
         journeyDisplayJSON.put("dataType", "string");
         journeyDisplayJSON.put("retriever", "getJourneyParameter");
         journeyDisplayJSON.put("internalOnly", false);

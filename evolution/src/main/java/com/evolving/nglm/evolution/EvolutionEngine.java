@@ -132,8 +132,6 @@ public class EvolutionEngine
   
   static final String INTERNAL_ID_SUPPLIER = "InternalIDSupplier";
   static final String INTERNAL_ID_RESELLER = "InternalIDReseller";
-  public static final String JOURNEY_DISPLAY_PARAMETER_ID = "this.journey.display";
-
 
   /*****************************************
   *
@@ -4983,7 +4981,7 @@ public class EvolutionEngine
                 *
                 *****************************************/
                 
-                boundParameters.put(JOURNEY_DISPLAY_PARAMETER_ID, journey.getGUIManagedObjectDisplay());
+                boundParameters.put(CriterionContext.JOURNEY_DISPLAY_PARAMETER_ID, journey.getGUIManagedObjectDisplay());
 
                 //
                 // confirm "stock reservation" (journey max number of customers limits)
