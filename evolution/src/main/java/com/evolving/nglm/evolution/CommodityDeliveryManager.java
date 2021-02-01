@@ -358,7 +358,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_commodityDelivery_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),9));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),10));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
@@ -1688,12 +1688,20 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *****************************************/
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+      String origin = null;
+      if (subscriberEvaluationRequest.getJourneyNode() != null)
+        {
+          origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+        }
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {
           newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+          if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+            {
+              origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+            }
         }
       
       // retrieve the featureID that is the origin of this delivery request:

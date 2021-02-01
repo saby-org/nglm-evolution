@@ -2783,7 +2783,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       String offerID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.offerid");
       int quantity = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.quantity");
-      
+      String origin = null;
+      if (subscriberEvaluationRequest.getJourneyNode() != null)
+        {
+          origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+        }
       /*****************************************
       *
       *  TEMP DEW HACK
@@ -2803,23 +2807,27 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {
           newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+          if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+            {
+              origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+            }
         }
       
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       String nodeName = subscriberEvaluationRequest.getJourneyNode().getNodeName();
-      
+
       /*****************************************
       *
       *  request
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, nodeName, "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, origin, "");
       request.setModuleID(newModuleID);
       request.setFeatureID(deliveryRequestSource);
 
       /*****************************************
-      *
+      *s
       *  return
       *
       *****************************************/

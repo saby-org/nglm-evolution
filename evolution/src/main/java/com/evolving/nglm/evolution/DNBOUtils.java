@@ -70,7 +70,11 @@ public class DNBOUtils
         break;
         
     }*/
-    String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+    String origin = null;
+    if (subscriberEvaluationRequest.getJourneyNode() != null)
+      {
+        origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+      }
     String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
     Date date = evolutionEventContext.now();
     String featureID = subscriberEvaluationRequest.getJourneyState().getJourneyID();

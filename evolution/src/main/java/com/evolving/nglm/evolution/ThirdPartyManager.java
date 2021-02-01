@@ -1698,6 +1698,8 @@ public class ThirdPartyManager
   /*****************************************
   *
   *  processCreditBonus
+   * @throws ParseException 
+   * @throws IOException 
   *
   *****************************************/
   

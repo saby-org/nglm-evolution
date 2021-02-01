@@ -70,7 +70,7 @@ public class JourneyState implements Cleanable
     schemaBuilder.field("journeyEndDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("specialExitReason", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("priority", Schema.OPTIONAL_INT32_SCHEMA);
-
+    schemaBuilder.field("sourceOrigin", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -115,6 +115,7 @@ public class JourneyState implements Cleanable
   private List<VoucherChange> voucherChanges;
   private SubscriberJourneyStatus specialExitReason = null;
   private int priority;
+  private String sourceOrigin;
   public void setJourneyEndDate(Date journeyEndDate) { this.journeyEndDate = journeyEndDate; }
   public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) { this.specialExitReason = specialExitReason;	}
   public void setJourneyNodeID(String journeyNodeID) { this.journeyNodeID = journeyNodeID; }
@@ -146,8 +147,8 @@ public class JourneyState implements Cleanable
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
   public Boolean isSpecialExit() { return specialExitReason != null; }
   public SubscriberJourneyStatus getSpecialExitReason() {return specialExitReason;}
-  public int getPriority() {return priority;}
-  
+  public int getPriority() {return priority;}  
+  public String getsourceOrigin() { return sourceOrigin; }
   /*****************************************
   *
   *  setters
@@ -174,7 +175,7 @@ public class JourneyState implements Cleanable
   *
   *****************************************/
 
-  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, String sourceFeatureID, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory)
+  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, String sourceFeatureID, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory, String sourceOrigin)
   {
     this.callingJourneyRequest = callingJourneyRequest;
     this.sourceFeatureID = sourceFeatureID;
@@ -195,6 +196,7 @@ public class JourneyState implements Cleanable
     this.journeyEndDate = journey.getEffectiveEndDate();
     this.voucherChanges = new ArrayList<VoucherChange>();
     this.priority = journey.getPriority();
+    this.sourceOrigin = sourceOrigin;
   }
   
  
@@ -205,7 +207,7 @@ public class JourneyState implements Cleanable
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges, SubscriberJourneyStatus specialExitReason, int priority)
+  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges, SubscriberJourneyStatus specialExitReason, int priority, String sourceOrigin)
   {
     this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = journeyInstanceID;
@@ -227,6 +229,7 @@ public class JourneyState implements Cleanable
     this.voucherChanges = voucherChanges;
     this.specialExitReason = specialExitReason;
     this.priority = priority;
+    this.sourceOrigin = sourceOrigin;
   }
 
   /*****************************************
@@ -257,6 +260,7 @@ public class JourneyState implements Cleanable
     this.voucherChanges = journeyState.getVoucherChanges();
     this.specialExitReason = journeyState.getSpecialExitReason();
     this.priority = journeyState.getPriority();
+    this.sourceOrigin = journeyState.getsourceOrigin();
   }
 
   /*****************************************
@@ -288,6 +292,7 @@ public class JourneyState implements Cleanable
     struct.put("journeyEndDate", journeyState.getJourneyEndDate());
     struct.put("specialExitReason", journeyState.getSpecialExitReason() != null ? journeyState.getSpecialExitReason().getExternalRepresentation() : null);
     struct.put("priority", journeyState.getPriority());
+    struct.put("sourceOrigin", journeyState.getsourceOrigin());
     return struct;
   }
   
@@ -332,12 +337,13 @@ public class JourneyState implements Cleanable
     List<VoucherChange> voucherChanges = new ArrayList<VoucherChange>();
     SubscriberJourneyStatus specialExitReason = schema.field("specialExitReason") != null ? unpackSpecialExitReason(valueStruct) : null;
     int priority = schema.field("priority") != null ? valueStruct.getInt32("priority") : Integer.MAX_VALUE; // for legacy campaigns, very low priority
-
+    String sourceOrigin= schema.field("sourceOrigin") != null ? valueStruct.getString("sourceOrigin") : null;
+    
     //
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges, specialExitReason, priority);
+    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges, specialExitReason, priority, sourceOrigin);
   }
   
   private static SubscriberJourneyStatus unpackSpecialExitReason(Struct valueStruct)
