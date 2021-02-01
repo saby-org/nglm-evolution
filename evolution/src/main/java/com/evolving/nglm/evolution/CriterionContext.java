@@ -462,6 +462,12 @@ public class CriterionContext
   
   public static CriterionContext Profile(int tenantID) 
   {
+    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
+    if(tenantID == 0)
+      {
+        throw new RuntimeException("tenantID is 0");
+      }
+
     CriterionContext criterionContext = Profile.get(tenantID);
     if(criterionContext == null)
       {
@@ -480,6 +486,12 @@ public class CriterionContext
   
   public static CriterionContext FullProfile(int tenantID) 
   {
+    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
+    if(tenantID == 0)
+      {
+        throw new RuntimeException("tenantID is 0");
+      }
+
     CriterionContext criterionContext = FullProfile.get(tenantID);
     if(criterionContext == null)
       {
@@ -498,6 +510,12 @@ public class CriterionContext
   
   public static CriterionContext DynamicProfile(int tenantID) 
   {
+    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
+    if(tenantID == 0)
+      {
+        throw new RuntimeException("tenantID is 0");
+      }
+    
     CriterionContext criterionContext = DynamicProfile.get(tenantID);
     if(criterionContext == null)
       {
@@ -516,6 +534,12 @@ public class CriterionContext
   
   public static CriterionContext FullDynamicProfile(int tenantID) 
   {
+    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
+    if(tenantID == 0)
+      {
+        throw new RuntimeException("tenantID is 0");
+      }
+
     CriterionContext criterionContext = FullDynamicProfile.get(tenantID);
     if(criterionContext == null)
       {
@@ -534,6 +558,12 @@ public class CriterionContext
   
   public static CriterionContext Presentation(int tenantID) 
   {
+    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
+    if(tenantID == 0)
+      {
+        throw new RuntimeException("tenantID is 0");
+      }
+
     CriterionContext criterionContext = Presentation.get(tenantID);
     if(criterionContext == null)
       {
@@ -945,14 +975,14 @@ public class CriterionContext
 
         case FullProfile:
           result = new LinkedHashMap<String,CriterionField>();
-          result.putAll(Profile.get(tenantID).getCriterionFields(tenantID));
+          result.putAll(Profile(tenantID).getCriterionFields(tenantID));
           result.putAll(Deployment.getDeployment(tenantID).getExtendedProfileCriterionFields());
           break;
 
         case DynamicProfile:
           if (dynamicCriterionFieldService == null) throw new ServerRuntimeException("criterion context not initialized");
           result = new LinkedHashMap<String,CriterionField>();
-          result.putAll(Profile.get(tenantID).getCriterionFields(tenantID));
+          result.putAll(Profile(tenantID).getCriterionFields(tenantID));
           for (DynamicCriterionField dynamicCriterionField : dynamicCriterionFieldService.getActiveDynamicCriterionFields(SystemTime.getCurrentTime(), tenantID))
             {
               result.put(dynamicCriterionField.getCriterionField().getID(), dynamicCriterionField.getCriterionField());
@@ -961,7 +991,7 @@ public class CriterionContext
 
         case FullDynamicProfile:
           result = new LinkedHashMap<String,CriterionField>();
-          result.putAll(DynamicProfile.get(tenantID).getCriterionFields(tenantID));
+          result.putAll(DynamicProfile(tenantID).getCriterionFields(tenantID));
           result.putAll(Deployment.getDeployment(tenantID).getExtendedProfileCriterionFields());
           break;
 
@@ -969,7 +999,7 @@ public class CriterionContext
         case JourneyNode:
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(additionalCriterionFields);
-          result.putAll(DynamicProfile.get(tenantID).getCriterionFields(tenantID));
+          result.putAll(DynamicProfile(tenantID).getCriterionFields(tenantID));
           break;
 
         case Presentation:

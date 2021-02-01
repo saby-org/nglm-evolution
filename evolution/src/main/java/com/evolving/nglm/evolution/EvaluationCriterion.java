@@ -771,7 +771,7 @@ public class EvaluationCriterion
 
   public void parseArgument(int tenantiD) throws ExpressionParseException, ExpressionTypeCheckException
   {
-    ExpressionReader expressionReader = new ExpressionReader(criterionContext, argumentExpression, argumentBaseTimeUnit);
+    ExpressionReader expressionReader = new ExpressionReader(criterionContext, argumentExpression, argumentBaseTimeUnit, tenantiD);
     argument = expressionReader.parse(ExpressionContext.Criterion, tenantiD);
   }
 

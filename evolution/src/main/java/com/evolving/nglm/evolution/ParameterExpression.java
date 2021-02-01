@@ -244,7 +244,7 @@ public class ParameterExpression
 
   public void parseParameterExpression(int tenantID) throws ExpressionParseException, ExpressionTypeCheckException
   {
-    ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, baseTimeUnit);
+    ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, baseTimeUnit, tenantID);
     expression = expressionReader.parse(ExpressionContext.Parameter, tenantID);
   }
 }

@@ -15,7 +15,7 @@ import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Date;
 
-public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStreamEvent
+public class RecordSubscriberID implements com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent
 {
   /*****************************************
   *
@@ -81,6 +81,14 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
   public Date getEventDate() { return eventDate; }
   @Override public SubscriberAction getSubscriberAction() { return subscriberAction; }
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
+  
+  /****************************************
+  *
+  * setters
+  *
+  ****************************************/
+
+  @Override public void rebindSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
   public int getTenantID() { return tenantID; }
 
   /*****************************************

@@ -62,6 +62,7 @@ import org.rocksdb.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
@@ -1711,10 +1712,24 @@ public class EvolutionEngine
     *  retrieve TenantID either from event or from SubscriberProfile
     *
     ****************************************/
-    int tenantID = -1;
-    // TODO EVRO-99
+    int tenantID;
+    if(currentSubscriberState == null)
+      {
+        // ensure this event is of type Auto
+        if(evolutionEvent instanceof AutoProvisionSubscriberStreamEvent)
+          {
+            tenantID = ((AutoProvisionSubscriberStreamEvent)evolutionEvent).getTenantID();
+          }
+        else {
+          log.warn("Event " + evolutionEvent.getClass() + " does not implement AutoProvisionSubscriberStreamEvent, can't retrieve the tenantID for SubscriberState creation");
+          return null;
+        }
+      }
+    else 
+      {
+        tenantID = currentSubscriberState.getSubscriberProfile().getTenantID();
+      }
     
-
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
@@ -1762,8 +1777,8 @@ public class EvolutionEngine
     *  profileChangeEvent get Old Values
     *
     *****************************************/
-    // TODO EVPRO-99
-    SubscriberEvaluationRequest changeEventEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, 0);
+
+    SubscriberEvaluationRequest changeEventEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
     ParameterMap profileChangeOldValues = saveProfileChangeOldValues(changeEventEvaluationRequest); 
     
     /*****************************************

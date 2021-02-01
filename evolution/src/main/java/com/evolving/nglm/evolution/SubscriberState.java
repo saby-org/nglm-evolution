@@ -240,7 +240,7 @@ public class SubscriberState implements StateStore
     try
       {
         this.subscriberID = subscriberID;
-        this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileConstructor().newInstance(subscriberID);
+        this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileConstructor().newInstance(subscriberID, tenantID);
         this.journeyStates = new HashSet<JourneyState>();
         this.recentJourneyStates = new HashSet<JourneyState>();
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>();

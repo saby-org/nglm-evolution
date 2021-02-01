@@ -481,7 +481,7 @@ public class MetricHistory
     byte[] packedMonthlyBuckets = valueStruct.getBytes("monthlyBuckets");
     long allTimeBucket = valueStruct.getInt64("allTimeBucket");
     MetricHistoryMode metricHistoryMode = (schemaVersion >= 2) ? MetricHistoryMode.fromInternalRepresentation(valueStruct.getInt32("metricHistoryMode")) : MetricHistoryMode.Standard;
-    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt32("tenantID") : 1;
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
     
     //
     //  unpack buckets

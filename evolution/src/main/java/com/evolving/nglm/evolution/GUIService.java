@@ -354,7 +354,7 @@ public class GUIService
   protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID, boolean includeArchived)
   {
     if(guiManagedObjectID==null) return null;
-    Map<String,GUIManagedObject> storedGUIManagedObjects = storedPerTenantGUIManagedObjects.get(0);
+    Map<String,GUIManagedObject> storedGUIManagedObjects = createAndGetTenantSpecificMap(storedPerTenantGUIManagedObjects, 0);
     GUIManagedObject result = storedGUIManagedObjects.get(guiManagedObjectID);
     result = (result != null && (includeArchived || ! result.getDeleted())) ? result : null;
       return result;

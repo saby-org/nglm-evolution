@@ -248,17 +248,13 @@ public class Deployment
         // let reference the tenantJSONObject configuration available for all subclasses of Deployment
         //
         
-        jsonConfigPerTenant.put(tenantID, tenantJSON);        
-
+        jsonConfigPerTenant.put(tenantID, tenantJSON);
         
-        //
-        // init deployment for this tenant
-        //
-        Deployment d = new Deployment();
-        d.initCoreDeploymentStatic(tenantJSON);
-      
-        deploymentsPerTenant.put(tenantID, d);  
-        
+       //
+       // init deployment for this tenant
+       //
+       Deployment d = new Deployment();
+       d.initCoreDeploymentStatic(tenantID);
       }
   }
   
@@ -566,9 +562,13 @@ public class Deployment
       }
   }
 
-  public void initCoreDeploymentStatic(JSONObject jsonRoot)
+  public void initCoreDeploymentStatic(int tenantID)
   {
    
+    deploymentsPerTenant.put(tenantID, this);
+    
+    JSONObject jsonRoot = jsonConfigPerTenant.get(tenantID);
+    
     /*****************************************
     *
     *  baseTimeZone
@@ -577,6 +577,7 @@ public class Deployment
 
     try
       {
+        System.out.println(jsonRoot.toJSONString());
         baseTimeZone = JSONUtilities.decodeString(jsonRoot, "baseTimeZone", true);
         baseZoneId = ZoneId.of(baseTimeZone);
       }

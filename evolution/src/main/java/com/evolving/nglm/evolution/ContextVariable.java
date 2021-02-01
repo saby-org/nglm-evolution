@@ -451,7 +451,7 @@ public class ContextVariable
               //  parse expression
               //
 
-              ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
+              ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit, tenantID);
               Expression expression = expressionReader.parse(ExpressionContext.ContextVariable, tenantID);
               if (expression == null) throw new GUIManagerException("no expression", expressionString);
 
@@ -508,7 +508,7 @@ public class ContextVariable
             //  parse expression
             //
 
-            ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
+            ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit, tenantID);
             Expression expression = expressionReader.parse(ExpressionContext.ContextVariable, tenantID);
             if (expression == null) throw new GUIManagerException("no expression", expressionString);
 

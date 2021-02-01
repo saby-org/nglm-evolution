@@ -62,9 +62,9 @@ public class EmailMessage extends SubscriberMessage
   *
   *****************************************/
 
-  public EmailMessage(Object emailMessageJSON, String communicationChannelID, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  public EmailMessage(Object emailMessageJSON, String communicationChannelID, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
-    super(emailMessageJSON, communicationChannelID, createMap(), subscriberMessageTemplateService, criterionContext);
+    super(emailMessageJSON, communicationChannelID, createMap(), subscriberMessageTemplateService, criterionContext, tenantID);
   }
   
   private static Map<String, Boolean> createMap() {

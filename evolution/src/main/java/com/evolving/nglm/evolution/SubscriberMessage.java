@@ -99,7 +99,7 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  protected SubscriberMessage(Object subscriberMessageJSON, String communicationChannelID, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  protected SubscriberMessage(Object subscriberMessageJSON, String communicationChannelID, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     this.communicationChannelID = communicationChannelID;
     this.tenantID = tenantID;

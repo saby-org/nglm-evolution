@@ -709,6 +709,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
 
   public void init(int tenantID)
     {
+      super.initCoreDeploymentStatic(tenantID);
       
       /*****************************************
        *
