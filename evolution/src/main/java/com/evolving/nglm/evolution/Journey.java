@@ -500,47 +500,47 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   //
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(boolean statusConverted, boolean statusNotified, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup)
   {
-  // Non UCG
-  if (statusUniversalControlGroup == null || statusUniversalControlGroup == Boolean.FALSE)
-  {
-    // Non CG
-    if (statusControlGroup == null || statusControlGroup == Boolean.FALSE) {
-      // Status not updated yet
-      if (! statusNotified && ! statusConverted) {
-        if (statusTargetGroup == null || statusTargetGroup == Boolean.FALSE)
-          return SubscriberJourneyStatus.Entered;
-        else
-          return SubscriberJourneyStatus.Targeted;
-      }
-      // Status updated
-      else {
-        if (! statusConverted)
-          return SubscriberJourneyStatus.Notified;
-        else {
-          if (! statusNotified)
-            return SubscriberJourneyStatus.ConvertedNotNotified;
+    // Non UCG
+    if (statusUniversalControlGroup == null || statusUniversalControlGroup == Boolean.FALSE)
+    {
+      // Non CG
+      if (statusControlGroup == null || statusControlGroup == Boolean.FALSE) {
+        // Status not updated yet
+        if (! statusNotified && ! statusConverted) {
+          if (statusTargetGroup == null || statusTargetGroup == Boolean.FALSE)
+            return SubscriberJourneyStatus.Entered;
           else
-            return SubscriberJourneyStatus.ConvertedNotified;
+            return SubscriberJourneyStatus.Targeted;
+        }
+        // Status updated
+        else {
+          if (! statusConverted)
+            return SubscriberJourneyStatus.Notified;
+          else {
+            if (! statusNotified)
+              return SubscriberJourneyStatus.ConvertedNotNotified;
+            else
+              return SubscriberJourneyStatus.ConvertedNotified;
+          }
         }
       }
+      // CG
+      else {
+        if (! statusConverted)
+          return SubscriberJourneyStatus.ControlGroup;
+        else
+          return SubscriberJourneyStatus.ControlGroupConverted; 
+      }
     }
-    // CG
-    else {
-      if (! statusConverted)
-        return SubscriberJourneyStatus.ControlGroup;
-      else
-        return SubscriberJourneyStatus.ControlGroupConverted; 
-    }
-  }
-  // UCG
-  else
-  {
-    if (! statusConverted)
-      return SubscriberJourneyStatus.UniversalControlGroup;
+    // UCG
     else
-      return SubscriberJourneyStatus.UniversalControlGroupConverted;
+    {
+      if (! statusConverted)
+        return SubscriberJourneyStatus.UniversalControlGroup;
+      else
+        return SubscriberJourneyStatus.UniversalControlGroupConverted;
+    }
   }
-}
   
   //
   //  journeyStatistic
@@ -548,10 +548,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyStatistic journeyStatistic)
   {
-	  if(journeyStatistic.getSpecialExitStatus()!=null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty())
-		  return SubscriberJourneyStatus.fromExternalRepresentation(journeyStatistic.getSpecialExitStatus()); 
-				  else	    
-					  return getSubscriberJourneyStatus(journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusTargetGroup(), journeyStatistic.getStatusControlGroup(), journeyStatistic.getStatusUniversalControlGroup());
+    if(journeyStatistic.getSpecialExitStatus() != null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty()) {
+      return SubscriberJourneyStatus.fromExternalRepresentation(journeyStatistic.getSpecialExitStatus()); 
+    } else {
+      return getSubscriberJourneyStatus(journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusTargetGroup(), journeyStatistic.getStatusControlGroup(), journeyStatistic.getStatusUniversalControlGroup());
+    }
   }
 
   //
@@ -560,17 +561,17 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyState journeyState)
   {
-	  if(journeyState.isSpecialExit())
-	   return journeyState.getSpecialExitReason();
-	  else {
-    boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-    boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
-    Boolean statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
-    Boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
-    Boolean statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
-    
-    return getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
-  }
+    if(journeyState.isSpecialExit()) {
+      return journeyState.getSpecialExitReason();
+    } else {
+      boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+      boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+      Boolean statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+      Boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+      Boolean statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+      
+      return getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+    }
   }
 
   //
