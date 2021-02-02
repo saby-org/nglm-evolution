@@ -77,8 +77,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("loyalty_program_challenge");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(LoyaltyProgram.commonSchema().version(), 1));
-      for (Field field : LoyaltyProgram.commonSchema().fields())
-        schemaBuilder.field(field.name(), field.schema());
+      for (Field field : LoyaltyProgram.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("createLeaderBoard", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("recurrence", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("recurrenceId", Schema.OPTIONAL_STRING_SCHEMA);
