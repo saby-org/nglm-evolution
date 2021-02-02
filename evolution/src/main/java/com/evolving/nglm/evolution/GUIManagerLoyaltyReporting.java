@@ -238,6 +238,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           case POINTS:
             loyaltyProgram = new LoyaltyProgramPoints(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
             break;
+            
+          case CHALLENGE:
+            loyaltyProgram = new LoyaltyProgramChallenge(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
+            break;
 
 //          case BADGES:
 //            // TODO
@@ -501,22 +505,23 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                  ****************************************/
 
                 LoyaltyProgram loyaltyProgram = null;
-                switch (LoyaltyProgramType
-                    .fromExternalRepresentation(JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", true)))
-                  {
-                    case POINTS:
-                      loyaltyProgram = new LoyaltyProgramPoints(elementRoot, epoch, existingElement,
-                          catalogCharacteristicService);
-                      break;
+                switch (LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", true)))
+                {
+                  case POINTS:
+                    loyaltyProgram = new LoyaltyProgramPoints(elementRoot, epoch, existingElement, catalogCharacteristicService);
+                    break;
+                    
+                  case CHALLENGE:
+                    loyaltyProgram = new LoyaltyProgramChallenge(elementRoot, epoch, existingElement, catalogCharacteristicService);
+                    break;
 
-//          case BADGES:
-//            // TODO
-//            break;
+                  // case BADGES:
+                  // // TODO
+                  // break;
 
-                    case Unknown:
-                      throw new GUIManagerException("unsupported loyalty program type",
-                          JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", false));
-                  }
+                  case Unknown:
+                    throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", false));
+                }
 
                 /*****************************************
                  *
