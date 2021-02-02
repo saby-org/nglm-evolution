@@ -404,6 +404,7 @@ public class ConnectSerde<T> implements Serde<T>
         //
 
         Schema concreteSchema = schemas.get(data.getClass());
+        log.info("RAJ K concreteSchema {} class {}", concreteSchema, data.getClass());
         Schema optionalConcreteSchema = optionalSchemasByName.get(schemaName(concreteSchema));
         PackSchema packSchema = packSchemas.get(concreteSchema);
         Object concretePackedData = packSchema.pack(data);
