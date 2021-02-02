@@ -33,7 +33,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
 {
 
   //
-  // LoyaltyProgramTierChange
+  // LoyaltyProgramLevelChange
   //
 
   public enum LoyaltyProgramLevelChange
@@ -76,7 +76,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("loyalty_program_challenge");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(LoyaltyProgram.commonSchema().version(), 2));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(LoyaltyProgram.commonSchema().version(), 1));
       for (Field field : LoyaltyProgram.commonSchema().fields())
         schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("createLeaderBoard", Schema.BOOLEAN_SCHEMA);
@@ -85,7 +85,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
       schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
-      schemaBuilder.field("levels", SchemaBuilder.array(Level.schema()).schema());
+      schemaBuilder.field("challengeLevels", SchemaBuilder.array(Level.schema()).schema());
       schema = schemaBuilder.build();
     };
 
@@ -250,7 +250,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     struct.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber());
     struct.put("scheduler", JourneyScheduler.serde().packOptional(loyaltyProgramChallenge.getJourneyScheduler()));
     struct.put("lastCreatedOccurrenceNumber", loyaltyProgramChallenge.getLastCreatedOccurrenceNumber());
-    struct.put("levels", packLoyaltyProgramLevels(loyaltyProgramChallenge.getLevels()));
+    struct.put("challengeLevels", packLoyaltyProgramLevels(loyaltyProgramChallenge.getLevels()));
     return struct;
   }
 
@@ -297,7 +297,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     Integer occurrenceNumber = valueStruct.getInt32("occurrenceNumber");
     JourneyScheduler scheduler = JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("scheduler")));
     Integer lastCreatedOccurrenceNumber = valueStruct.getInt32("lastCreatedOccurrenceNumber");
-    List<Level> levels = unpackLoyaltyProgramLevels(schema.field("levels").schema(), valueStruct.get("levels"));
+    List<Level> levels = unpackLoyaltyProgramLevels(schema.field("challengeLevels").schema(), valueStruct.get("challengeLevels"));
 
     //
     // return
@@ -308,14 +308,14 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
 
   /*****************************************
    *
-   * unpackLoyaltyProgramTiers
+   * unpackLoyaltyProgramLevels
    *
    *****************************************/
 
   private static List<Level> unpackLoyaltyProgramLevels(Schema schema, Object value)
   {
     //
-    // get schema for LoyaltyProgramTiers
+    // get schema for LoyaltyProgramLevels
     //
 
     Schema propertySchema = schema.valueSchema();
@@ -443,7 +443,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     static
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("level");
+      schemaBuilder.name("challenge_level");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
       schemaBuilder.field("levelName", Schema.STRING_SCHEMA);
       schemaBuilder.field("scoreLevel", Schema.INT32_SCHEMA);

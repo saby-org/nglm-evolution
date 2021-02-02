@@ -14,6 +14,9 @@ import org.apache.kafka.connect.data.*;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.confluent.connect.avro.AvroConverter;
 
 import java.util.Collections;
@@ -22,6 +25,9 @@ import java.util.Map;
 
 public class ConnectSerde<T> implements Serde<T>
 {
+  
+  private static final Logger log = LoggerFactory.getLogger(ConnectSerde.class);
+  
   /*****************************************
   *
   *  constructor
@@ -680,6 +686,7 @@ public class ConnectSerde<T> implements Serde<T>
   private String schemaName(Schema schema)
   {
     String result;
+    log.info("RAJ K schema {}", schema);
     switch (schema.type())
       {
         case STRUCT:
