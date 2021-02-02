@@ -63,4 +63,22 @@ public class StatsBuilders {
     return toRet;
   }
 
+  // the InstantStat instances
+  private static final Map<String,InstantStat> evolutionInstantStatistics = new HashMap<>();
+  // get the stats instance
+  public static StatBuilder<InstantStat> getEvolutionInstantStatisticsBuilder(String metricName, String processName){
+    String key=metricName+"-"+processName;
+    InstantStat toRet = evolutionInstantStatistics.get(key);
+    if(toRet==null){
+      synchronized (evolutionInstantStatistics){
+        toRet = evolutionInstantStatistics.get(key);
+        if(toRet==null){
+          toRet = new InstantStat(metricName,processName);
+          evolutionInstantStatistics.put(key,toRet);
+        }
+      }
+    }
+    return new StatBuilder<>(toRet);
+  }
+
 }

@@ -16,15 +16,14 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.utilities.UtilitiesException;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 
-import com.evolving.nglm.evolution.statistics.CounterStat;
 import com.evolving.nglm.evolution.statistics.DurationStat;
+import com.evolving.nglm.evolution.statistics.InstantStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
@@ -71,6 +70,7 @@ public class TimerService
   private EvolutionEngine evolutionEngine = null;
   private ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private StatBuilder<DurationStat> statsStateStoresDuration;
+  private InstantStat statsNumberSubscribers;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = null;
   private TargetService targetService = null;
   private JourneyService journeyService = null;
@@ -105,6 +105,7 @@ public class TimerService
 
     this.evolutionEngine = evolutionEngine;
     this.statsStateStoresDuration = StatsBuilders.getEvolutionDurationStatisticsBuilder("evolutionengine_statestore","evolutionengine-"+evolutionEngine.getEvolutionEngineKey());
+    this.statsNumberSubscribers = StatsBuilders.getEvolutionInstantStatisticsBuilder("evolutionengine_number_subscribers","evolutionengine-"+evolutionEngine.getEvolutionEngineKey()).getStats();
 
     /*****************************************
     *
@@ -132,6 +133,9 @@ public class TimerService
     producerProperties.put("acks", "all");
     producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
     producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    //under brokers load those default seems not OK (and async send might just hide errors)
+    producerProperties.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG,120000);// instead of 30s previous
+    producerProperties.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG,Integer.MAX_VALUE);// instead of 2 minutes before
     kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
   }
 
@@ -434,7 +438,7 @@ public class TimerService
 
         if (scheduledEvaluation != null)
           {
-            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));
+            sendTimedEvaluation(scheduledEvaluation);
           }
       }
 
@@ -667,16 +671,19 @@ public class TimerService
           {
             long startTime = DurationStat.startTime();
             KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
+            int nbSubs=0;
             while (! stopRequested && subscriberStateStoreIterator.hasNext())
               {
+                nbSubs++;
                 SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
                 if (subscriberState.getLastEvaluationDate() == null || subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
                   {
                     TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation, true);
-                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));
+                    sendTimedEvaluation(scheduledEvaluation);
                   }
               }
             subscriberStateStoreIterator.close();
+            statsNumberSubscribers.set(nbSubs);
             statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
                                     .withLabel(StatsBuilders.LABEL.operation.name(),"periodicevaluation_all")
                                     .getStats().add(startTime);
@@ -1078,7 +1085,7 @@ public class TimerService
                       {
                         if(log.isTraceEnabled()) log.trace("evaluateTargets match for subscriber "+subscriberState.getSubscriberID()+", generating an event");
                         TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), now);
-                        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));
+                        sendTimedEvaluation(scheduledEvaluation);
                       }
                     else
                       {
@@ -1172,4 +1179,17 @@ public class TimerService
         this.notifyAll();
       }
   }
+
+  private void sendTimedEvaluation(TimedEvaluation timedEvaluation){
+    ProducerRecord<byte[], byte[]> toSend = new ProducerRecord<>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(timedEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), timedEvaluation));
+    if(log.isInfoEnabled()){
+      kafkaProducer.send(toSend,(recordMetadata,exception)->{
+        if(exception==null) return;
+        log.info("exception sending TimedEvaluation "+timedEvaluation,exception);
+      });
+    }else{
+      kafkaProducer.send(toSend);
+    }
+  }
+
 }
