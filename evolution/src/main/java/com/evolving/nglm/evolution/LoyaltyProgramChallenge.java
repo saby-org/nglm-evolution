@@ -19,14 +19,13 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 @GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic" })
 public class LoyaltyProgramChallenge extends LoyaltyProgram
@@ -84,7 +83,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
       schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
-      schemaBuilder.field("tiers", SchemaBuilder.array(ChallengeLevel.schema()).schema());
+      schemaBuilder.field("tiers", SchemaBuilder.array(Tier.schema()).schema());
       schema = schemaBuilder.build();
     };
 
@@ -120,7 +119,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   private Integer occurrenceNumber;
   private JourneyScheduler journeyScheduler;
   private Integer lastCreatedOccurrenceNumber;
-  private List<ChallengeLevel> tiers = null;
+  private List<Tier> tiers = null;
 
   /*****************************************
    *
@@ -158,7 +157,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     return lastCreatedOccurrenceNumber;
   }
 
-  public List<ChallengeLevel> getTiers()
+  public List<Tier> getTiers()
   {
     return tiers;
   }
@@ -220,7 +219,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, List<ChallengeLevel> tiers)
+  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, List<Tier> tiers)
   {
     super(schemaAndValue);
     this.createLeaderBoard = createLeaderBoard;
@@ -249,7 +248,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     struct.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber());
     struct.put("scheduler", JourneyScheduler.serde().packOptional(loyaltyProgramChallenge.getJourneyScheduler()));
     struct.put("lastCreatedOccurrenceNumber", loyaltyProgramChallenge.getLastCreatedOccurrenceNumber());
-    struct.put("challengeLevels", packLoyaltyProgramLevels(loyaltyProgramChallenge.getTiers()));
+    struct.put("tiers", packLoyaltyProgramLevels(loyaltyProgramChallenge.getTiers()));
     return struct;
   }
 
@@ -259,12 +258,12 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    ****************************************/
 
-  private static List<Object> packLoyaltyProgramLevels(List<ChallengeLevel> tiers)
+  private static List<Object> packLoyaltyProgramLevels(List<Tier> tiers)
   {
     List<Object> result = new ArrayList<Object>();
-    for (ChallengeLevel tier : tiers)
+    for (Tier tier : tiers)
       {
-        result.add(ChallengeLevel.pack(tier));
+        result.add(Tier.pack(tier));
       }
     return result;
   }
@@ -296,7 +295,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     Integer occurrenceNumber = valueStruct.getInt32("occurrenceNumber");
     JourneyScheduler scheduler = JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("scheduler")));
     Integer lastCreatedOccurrenceNumber = valueStruct.getInt32("lastCreatedOccurrenceNumber");
-    List<ChallengeLevel> tiers = unpackLoyaltyProgramTiers(schema.field("tiers").schema(), valueStruct.get("tiers"));
+    List<Tier> tiers = unpackLoyaltyProgramTiers(schema.field("tiers").schema(), valueStruct.get("tiers"));
 
     //
     // return
@@ -311,7 +310,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  private static List<ChallengeLevel> unpackLoyaltyProgramTiers(Schema schema, Object value)
+  private static List<Tier> unpackLoyaltyProgramTiers(Schema schema, Object value)
   {
     //
     // get schema for LoyaltyProgramLevels
@@ -323,11 +322,11 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     // unpack
     //
 
-    List<ChallengeLevel> result = new ArrayList<ChallengeLevel>();
+    List<Tier> result = new ArrayList<Tier>();
     List<Object> valueArray = (List<Object>) value;
     for (Object property : valueArray)
       {
-        result.add(ChallengeLevel.unpack(new SchemaAndValue(propertySchema, property)));
+        result.add(Tier.unpack(new SchemaAndValue(propertySchema, property)));
       }
 
     //
@@ -343,14 +342,14 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  private List<ChallengeLevel> decodeLoyaltyProgramTiers(JSONArray jsonArray) throws GUIManagerException
+  private List<Tier> decodeLoyaltyProgramTiers(JSONArray jsonArray) throws GUIManagerException
   {
-    List<ChallengeLevel> result = new ArrayList<ChallengeLevel>();
+    List<Tier> result = new ArrayList<Tier>();
     if (jsonArray != null)
       {
         for (int i = 0; i < jsonArray.size(); i++)
           {
-            result.add(new ChallengeLevel((JSONObject) jsonArray.get(i)));
+            result.add(new Tier((JSONObject) jsonArray.get(i)));
           }
       }
     return result;
@@ -396,171 +395,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     return true;
   }
   
-  public static class ChallengeLevel
-  {
-    //
-    //  logger
-    //
-
-    private static final Logger log = LoggerFactory.getLogger(ChallengeLevel.class);
-
-    /*****************************************
-     *
-     *  schema
-     *
-     *****************************************/
-
-    //
-    //  schema
-    //
-
-    private static Schema schema = null;
-    static
-    {
-      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("challenge_level");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
-      schemaBuilder.field("tierName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("statusPointLevel", Schema.INT32_SCHEMA);
-      schemaBuilder.field("statusEventName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("numberOfStatusPointsPerUnit", Schema.INT32_SCHEMA);
-      schemaBuilder.field("rewardEventName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("numberOfRewardPointsPerUnit", Schema.INT32_SCHEMA);
-      schemaBuilder.field("workflowChange", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("workflowReward", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("workflowStatus", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA);
-      schema = schemaBuilder.build();
-    };
-
-    //
-    //  serde
-    //
-
-    private static ConnectSerde<ChallengeLevel> serde = new ConnectSerde<ChallengeLevel>(schema, false, ChallengeLevel.class, ChallengeLevel::pack, ChallengeLevel::unpack);
-
-    //
-    //  accessor
-    //
-
-    public static Schema schema() { return schema; }
-    public static ConnectSerde<ChallengeLevel> serde() { return serde; }
-
-    /*****************************************
-     *
-     *  data
-     *
-     *****************************************/
-
-    private String levelName = null;
-    private int scoreLevel = 0;
-    private String scoreEventName = null;
-    private int numberOfScorePerEvent = 0;
-    private String levelUpAction = null;
-
-    /*****************************************
-     *
-     *  accessors
-     *
-     *****************************************/
-
-    public String getLevelName() { return levelName; }
-    public int getScoreLevel() { return scoreLevel; }
-    public String getScoreEventName() { return scoreEventName; }
-    public int getNumberOfScorePerEvent() { return numberOfScorePerEvent; }
-    public String getLevelUpAction() { return levelUpAction; }
-
-
-    /*****************************************
-     *
-     *  constructor -- unpack
-     *
-     *****************************************/
-
-    public ChallengeLevel(String levelName, String scoreEventName, int numberOfScorePerEvent, int scoreLevel, String levelUpAction)
-    {
-      this.levelName = levelName;
-      this.scoreLevel = scoreLevel;
-      this.scoreEventName = scoreEventName;
-      this.numberOfScorePerEvent = numberOfScorePerEvent;
-      this.levelUpAction = levelUpAction;
-    }
-
-    /*****************************************
-     *
-     *  pack
-     *
-     *****************************************/
-
-    public static Object pack(Object value)
-    {
-      ChallengeLevel tier = (ChallengeLevel) value;
-      Struct struct = new Struct(schema);
-      struct.put("levelName", tier.getLevelName());
-      struct.put("scoreLevel", tier.getScoreLevel());
-      struct.put("scoreEventName", tier.getScoreEventName());
-      struct.put("numberOfScorePerEvent", tier.getNumberOfScorePerEvent());
-      struct.put("levelUpAction", tier.getLevelUpAction());
-      return struct;
-    }
-
-    /*****************************************
-     *
-     *  unpack
-     *
-     *****************************************/
-
-    public static ChallengeLevel unpack(SchemaAndValue schemaAndValue)
-    {
-      //
-      //  data
-      //
-
-      Schema schema = schemaAndValue.schema();
-      Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
-
-      //
-      //  unpack
-      //
-
-      Struct valueStruct = (Struct) value;
-      String levelName = valueStruct.getString("levelName");
-      int scoreLevel = valueStruct.getInt32("scoreLevel");
-      String scoreEventName = valueStruct.getString("scoreEventName");
-      int numberOfScorePerEvent = valueStruct.getInt32("numberOfScorePerEvent");
-      String levelUpAction = valueStruct.getString("levelUpAction");
-      
-      
-      //
-      //  return
-      //
-
-      return new ChallengeLevel(levelName, scoreEventName, numberOfScorePerEvent, scoreLevel, levelUpAction);
-    }
-
-    /*****************************************
-     *
-     *  constructor -- JSON
-     *
-     *****************************************/
-
-    public ChallengeLevel(JSONObject jsonRoot) throws GUIManagerException
-    {
-
-      /*****************************************
-       *
-       *  attributes
-       *
-       *****************************************/
-      this.levelName = JSONUtilities.decodeString(jsonRoot, "levelName", true);
-      this.scoreLevel = JSONUtilities.decodeInteger(jsonRoot, "scoreLevel", true);
-      this.scoreEventName = JSONUtilities.decodeString(jsonRoot, "scoreEventName", true);
-      this.numberOfScorePerEvent = JSONUtilities.decodeInteger(jsonRoot, "numberOfScorePerEvent", true);
-      this.levelUpAction = JSONUtilities.decodeString(jsonRoot, "levelUpAction", true);
-    }
-  }
-
   /*******************************
    * 
    * getGUIDependencies
@@ -582,166 +416,4 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     result.put("catalogcharacteristic", catalogcharacteristicIDs);
     return result;
   }
-  
-  /*******************************
-   * 
-   * Level
-   * 
-   *******************************/
-  
-  public static class Level
-  {
-    //
-    //  logger
-    //
-
-    private static final Logger log = LoggerFactory.getLogger(Level.class);
-
-    /*****************************************
-     *
-     *  schema
-     *
-     *****************************************/
-    
-    private static Schema schema = null;
-    static
-    {
-      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("challenge_level");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-      schemaBuilder.field("levelName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("scoreLevel", Schema.INT32_SCHEMA);
-      schemaBuilder.field("scoreEvent", Schema.STRING_SCHEMA);
-      schemaBuilder.field("numberOfScorePerEvent", Schema.INT32_SCHEMA);
-      schemaBuilder.field("levelUpAction", Schema.OPTIONAL_STRING_SCHEMA);
-      schema = schemaBuilder.build();
-    };
-    
-    //
-    //  serde
-    //
-
-    private static ConnectSerde<Level> serde = new ConnectSerde<Level>(schema, false, Level.class, Level::pack, Level::unpack);
-
-    //
-    //  accessor
-    //
-
-    public static Schema schema() { return schema; }
-    public static ConnectSerde<Level> serde() { return serde; }
-
-    /*****************************************
-     *
-     * data
-     *
-     *****************************************/
-
-    private String levelName;
-    private int scoreLevel = 0;
-    private String scoreEvent;
-    private int numberOfScorePerEvent = 0;
-    private String levelUpAction;
-
-    /*****************************************
-     *
-     * accessors
-     *
-     *****************************************/
-    
-    public String getLevelName() { return levelName; }
-    public Integer getScoreLevel() { return scoreLevel; }
-    public String getScoreEvent() { return scoreEvent; }
-    public Integer getNumberOfScorePerEvent() { return numberOfScorePerEvent; }
-    public String getLevelUpAction() { return levelUpAction; }
-    
-    /*****************************************
-     *
-     * constructor -- JSON
-     *
-     *****************************************/
-
-    public Level(JSONObject jsonRoot) throws GUIManagerException
-    {
-
-      /*****************************************
-       *
-       * attributes
-       *
-       *****************************************/
-      this.levelName = JSONUtilities.decodeString(jsonRoot, "levelName", true);
-      this.scoreLevel = JSONUtilities.decodeInteger(jsonRoot, "scoreLevel", true);
-      this.scoreEvent = JSONUtilities.decodeString(jsonRoot, "scoreEvent", true);
-      this.numberOfScorePerEvent = JSONUtilities.decodeInteger(jsonRoot, "numberOfScorePerEvent", true);
-      this.levelUpAction = JSONUtilities.decodeString(jsonRoot, "levelUpAction", false);
-    }
-
-    /*****************************************
-     *
-     * constructor -- unpack
-     *
-     *****************************************/
-
-    public Level(String levelName, int scoreLevel, String scoreEvent, int numberOfScorePerEvent, String levelUpAction)
-    {
-      this.levelName = levelName;
-      this.scoreLevel = scoreLevel;
-      this.scoreEvent = scoreEvent;
-      this.numberOfScorePerEvent = numberOfScorePerEvent;
-      this.levelUpAction = levelUpAction;
-    }
-
-    /*****************************************
-     *
-     * pack
-     *
-     *****************************************/
-
-    public static Object pack(Object value)
-    {
-      Level level = (Level) value;
-      Struct struct = new Struct(schema);
-      struct.put("levelName", level.getLevelName());
-      struct.put("scoreLevel", level.getScoreLevel());
-      struct.put("scoreEvent", level.getScoreEvent());
-      struct.put("numberOfScorePerEvent", level.getNumberOfScorePerEvent());
-      struct.put("levelUpAction", level.getLevelUpAction());
-      return struct;
-    }
-    
-    /*****************************************
-    *
-    *  unpack
-    *
-    *****************************************/
-
-    public static Level unpack(SchemaAndValue schemaAndValue)
-    {
-      //
-      // data
-      //
-
-      Schema schema = schemaAndValue.schema();
-      Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
-
-      //
-      // unpack
-      //
-
-      Struct valueStruct = (Struct) value;
-      String levelName = valueStruct.getString("levelName");
-      int scoreLevel = valueStruct.getInt32("scoreLevel");
-      String scoreEvent = valueStruct.getString("scoreEvent");
-      int numberOfScorePerEvent = valueStruct.getInt32("numberOfScorePerEvent");
-      String levelUpAction = valueStruct.getString("levelUpAction");
-
-      //
-      // return
-      //
-
-      return new Level(levelName, scoreLevel, scoreEvent, numberOfScorePerEvent, levelUpAction);
-    }
-    
-  }
-
 }
