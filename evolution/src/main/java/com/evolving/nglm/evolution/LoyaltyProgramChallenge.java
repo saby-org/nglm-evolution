@@ -19,13 +19,14 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 @GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic" })
 public class LoyaltyProgramChallenge extends LoyaltyProgram
@@ -83,7 +84,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
       schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
-      schemaBuilder.field("tiers", SchemaBuilder.array(Tier.schema()).schema());
+      schemaBuilder.field("tiers", SchemaBuilder.array(ChallengeLevel.schema()).schema());
       schema = schemaBuilder.build();
     };
 
@@ -118,7 +119,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   private Integer occurrenceNumber;
   private JourneyScheduler journeyScheduler;
   private Integer lastCreatedOccurrenceNumber;
-  private List<Tier> tiers = null;
+  private List<ChallengeLevel> tiers = null;
 
   /*****************************************
    *
@@ -151,7 +152,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     return lastCreatedOccurrenceNumber;
   }
 
-  public List<Tier> getTiers()
+  public List<ChallengeLevel> getTiers()
   {
     return tiers;
   }
@@ -212,7 +213,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, List<Tier> tiers)
+  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, List<ChallengeLevel> tiers)
   {
     super(schemaAndValue);
     this.recurrence = recurrence;
@@ -249,12 +250,12 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    ****************************************/
 
-  private static List<Object> packLoyaltyProgramTiers(List<Tier> tiers)
+  private static List<Object> packLoyaltyProgramTiers(List<ChallengeLevel> tiers)
   {
     List<Object> result = new ArrayList<Object>();
-    for (Tier tier : tiers)
+    for (ChallengeLevel tier : tiers)
       {
-        result.add(Tier.pack(tier));
+        result.add(ChallengeLevel.pack(tier));
       }
     return result;
   }
@@ -285,7 +286,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     Integer occurrenceNumber = valueStruct.getInt32("occurrenceNumber");
     JourneyScheduler scheduler = JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("scheduler")));
     Integer lastCreatedOccurrenceNumber = valueStruct.getInt32("lastCreatedOccurrenceNumber");
-    List<Tier> tiers = unpackLoyaltyProgramTiers(schema.field("tiers").schema(), valueStruct.get("tiers"));
+    List<ChallengeLevel> tiers = unpackLoyaltyProgramTiers(schema.field("tiers").schema(), valueStruct.get("tiers"));
 
     //
     // return
@@ -300,7 +301,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  private static List<Tier> unpackLoyaltyProgramTiers(Schema schema, Object value)
+  private static List<ChallengeLevel> unpackLoyaltyProgramTiers(Schema schema, Object value)
   {
     //
     // get schema for LoyaltyProgramTiers
@@ -312,11 +313,11 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     // unpack
     //
 
-    List<Tier> result = new ArrayList<Tier>();
+    List<ChallengeLevel> result = new ArrayList<ChallengeLevel>();
     List<Object> valueArray = (List<Object>) value;
     for (Object property : valueArray)
       {
-        result.add(Tier.unpack(new SchemaAndValue(propertySchema, property)));
+        result.add(ChallengeLevel.unpack(new SchemaAndValue(propertySchema, property)));
       }
 
     //
@@ -332,14 +333,14 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  private List<Tier> decodeLoyaltyProgramTiers(JSONArray jsonArray) throws GUIManagerException
+  private List<ChallengeLevel> decodeLoyaltyProgramTiers(JSONArray jsonArray) throws GUIManagerException
   {
-    List<Tier> result = new ArrayList<Tier>();
+    List<ChallengeLevel> result = new ArrayList<ChallengeLevel>();
     if (jsonArray != null)
       {
         for (int i = 0; i < jsonArray.size(); i++)
           {
-            result.add(new Tier((JSONObject) jsonArray.get(i)));
+            result.add(new ChallengeLevel((JSONObject) jsonArray.get(i)));
           }
       }
     return result;
@@ -382,6 +383,233 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   public boolean validate() throws GUIManagerException
   {
     return true;
+  }
+  
+  public static class ChallengeLevel
+  {
+    //
+    //  logger
+    //
+
+    private static final Logger log = LoggerFactory.getLogger(ChallengeLevel.class);
+
+    /*****************************************
+     *
+     *  schema
+     *
+     *****************************************/
+
+    //
+    //  schema
+    //
+
+    private static Schema schema = null;
+    static
+    {
+      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+      schemaBuilder.name("challenge_level");
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+      schemaBuilder.field("tierName", Schema.STRING_SCHEMA);
+      schemaBuilder.field("statusPointLevel", Schema.INT32_SCHEMA);
+      schemaBuilder.field("statusEventName", Schema.STRING_SCHEMA);
+      schemaBuilder.field("numberOfStatusPointsPerUnit", Schema.INT32_SCHEMA);
+      schemaBuilder.field("rewardEventName", Schema.STRING_SCHEMA);
+      schemaBuilder.field("numberOfRewardPointsPerUnit", Schema.INT32_SCHEMA);
+      schemaBuilder.field("workflowChange", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("workflowReward", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("workflowStatus", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA);
+      schema = schemaBuilder.build();
+    };
+
+    //
+    //  serde
+    //
+
+    private static ConnectSerde<ChallengeLevel> serde = new ConnectSerde<ChallengeLevel>(schema, false, ChallengeLevel.class, ChallengeLevel::pack, ChallengeLevel::unpack);
+
+    //
+    //  accessor
+    //
+
+    public static Schema schema() { return schema; }
+    public static ConnectSerde<ChallengeLevel> serde() { return serde; }
+
+    /*****************************************
+     *
+     *  data
+     *
+     *****************************************/
+
+    private String tierName = null;
+    private int statusPointLevel = 0;
+    private String statusEventName = null;
+    private int numberOfStatusPointsPerUnit = 0;
+    private String rewardEventName = null;
+    private int numberOfRewardPointsPerUnit = 0;
+    private String workflowChange = null;
+    private String workflowReward = null;
+    private String workflowStatus = null;
+    private String workflowDaily = null;
+
+
+    /*****************************************
+     *
+     *  accessors
+     *
+     *****************************************/
+
+    public String getTierName() { return tierName; }
+    public int getStatusPointLevel() { return statusPointLevel; }
+    public String getStatusEventName() { return statusEventName; }
+    public int getNumberOfStatusPointsPerUnit() { return numberOfStatusPointsPerUnit; }
+    public String getRewardEventName() { return rewardEventName; }
+    public int getNumberOfRewardPointsPerUnit() { return numberOfRewardPointsPerUnit; }
+    public String getWorkflowChange()    {      return workflowChange;    }
+    public String getWorkflowReward()    {      return workflowReward;    }
+    public String getWorkflowStatus()    {      return workflowStatus;    }
+    public String getWorkflowDaily()    {      return workflowDaily;    }
+
+
+    /*****************************************
+     *
+     *  constructor -- unpack
+     *
+     *****************************************/
+
+    public ChallengeLevel(String tierName, int statusPointLevel, String statusEventName, int numberOfStatusPointsPerUnit, String rewardEventName, int numberOfRewardPointsPerUnit, String workflowChange, String workflowReward, String workflowStatus, String workflowDaily)
+    {
+      this.tierName = tierName;
+      this.statusPointLevel = statusPointLevel;
+      this.statusEventName = statusEventName;
+      this.numberOfStatusPointsPerUnit = numberOfStatusPointsPerUnit;
+      this.rewardEventName = rewardEventName;
+      this.numberOfRewardPointsPerUnit = numberOfRewardPointsPerUnit;
+      this.workflowChange = workflowChange;
+      this.workflowReward = workflowReward;
+      this.workflowStatus = workflowStatus;
+      this.workflowDaily = workflowDaily;
+    }
+
+    /*****************************************
+     *
+     *  pack
+     *
+     *****************************************/
+
+    public static Object pack(Object value)
+    {
+      ChallengeLevel tier = (ChallengeLevel) value;
+      Struct struct = new Struct(schema);
+      struct.put("tierName", tier.getTierName());
+      struct.put("statusPointLevel", tier.getStatusPointLevel());
+      struct.put("statusEventName", tier.getStatusEventName());
+      struct.put("numberOfStatusPointsPerUnit", tier.getNumberOfStatusPointsPerUnit());
+      struct.put("rewardEventName", tier.getRewardEventName());
+      struct.put("numberOfRewardPointsPerUnit", tier.getNumberOfRewardPointsPerUnit());
+      struct.put("workflowChange", tier.getWorkflowChange());
+      struct.put("workflowReward", tier.getWorkflowReward());
+      struct.put("workflowStatus", tier.getWorkflowStatus());
+      struct.put("workflowDaily", tier.getWorkflowDaily());
+      return struct;
+    }
+
+    /*****************************************
+     *
+     *  unpack
+     *
+     *****************************************/
+
+    public static ChallengeLevel unpack(SchemaAndValue schemaAndValue)
+    {
+      //
+      //  data
+      //
+
+      Schema schema = schemaAndValue.schema();
+      Object value = schemaAndValue.value();
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+
+      //
+      //  unpack
+      //
+
+      Struct valueStruct = (Struct) value;
+      String tierName = valueStruct.getString("tierName");
+      int statusPointLevel = valueStruct.getInt32("statusPointLevel");
+      String statusEventName = valueStruct.getString("statusEventName");
+      int numberOfStatusPointsPerUnit = valueStruct.getInt32("numberOfStatusPointsPerUnit");
+      String rewardEventName = valueStruct.getString("rewardEventName");
+      int numberOfRewardPointsPerUnit = valueStruct.getInt32("numberOfRewardPointsPerUnit");
+      
+      String workflowChange = schema.field("workflowChange") != null ? valueStruct.getString("workflowChange") : null;
+      String workflowReward = schema.field("workflowReward") != null ? valueStruct.getString("workflowReward") : null;
+      String workflowStatus = schema.field("workflowStatus") != null ? valueStruct.getString("workflowStatus") : null;
+      String workflowDaily = schema.field("workflowDaily") != null ? valueStruct.getString("workflowDaily") : null;
+
+      //
+      //  return
+      //
+
+      return new ChallengeLevel(tierName, statusPointLevel, statusEventName, numberOfStatusPointsPerUnit, rewardEventName, numberOfRewardPointsPerUnit, workflowChange, workflowReward, workflowStatus, workflowDaily);
+    }
+
+    /*****************************************
+     *
+     *  constructor -- JSON
+     *
+     *****************************************/
+
+    public ChallengeLevel(JSONObject jsonRoot) throws GUIManagerException
+    {
+
+      /*****************************************
+       *
+       *  attributes
+       *
+       *****************************************/
+      this.tierName = JSONUtilities.decodeString(jsonRoot, "tierName", true);
+      this.statusPointLevel = JSONUtilities.decodeInteger(jsonRoot, "statusPointLevel", true);
+      this.statusEventName = JSONUtilities.decodeString(jsonRoot, "statusEventName", true);
+      this.numberOfStatusPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfStatusPointsPerUnit", true);
+      this.rewardEventName = JSONUtilities.decodeString(jsonRoot, "rewardEventName", true);
+      this.numberOfRewardPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfRewardPointsPerUnit", true);
+      this.workflowChange = JSONUtilities.decodeString(jsonRoot, "workflowChange", false);
+      this.workflowReward = JSONUtilities.decodeString(jsonRoot, "workflowReward", false);
+      this.workflowStatus = JSONUtilities.decodeString(jsonRoot, "workflowStatus", false);
+      this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
+    }
+
+    /*****************************************
+     *
+     *  changeFrom
+     *
+     *****************************************/
+    public static LoyaltyProgramTierChange changeFromTierToTier(ChallengeLevel from, ChallengeLevel to)
+    {
+      if(to == null) { return LoyaltyProgramTierChange.Optout; }
+      if(from == null) { return LoyaltyProgramTierChange.Optin; }
+      
+      if(to.statusPointLevel - from.statusPointLevel > 0)
+        {
+          return LoyaltyProgramTierChange.Upgrade;
+        }
+      else if (to.statusPointLevel - from.statusPointLevel < 0)
+        {
+          return LoyaltyProgramTierChange.Downgrade;
+        }
+      else 
+        {
+          return LoyaltyProgramTierChange.NoChange;
+        }
+    }
+    
+    @Override
+    public String toString()
+    {
+      return "Tier [" + (tierName != null ? "tierName=" + tierName + ", " : "") + "statusPointLevel=" + statusPointLevel + ", " + (statusEventName != null ? "statusEventName=" + statusEventName + ", " : "") + "numberOfStatusPointsPerUnit=" + numberOfStatusPointsPerUnit + ", " + (rewardEventName != null ? "rewardEventName=" + rewardEventName + ", " : "") + "numberOfRewardPointsPerUnit=" + numberOfRewardPointsPerUnit + ", " + (workflowChange != null ? "workflowChange=" + workflowChange + ", " : "")
+          + (workflowReward != null ? "workflowReward=" + workflowReward + ", " : "") + (workflowStatus != null ? "workflowStatus=" + workflowStatus + ", " : "") + (workflowDaily != null ? "workflowDaily=" + workflowDaily : "") + "]";
+    }
   }
 
   /*******************************
