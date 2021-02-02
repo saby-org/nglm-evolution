@@ -452,17 +452,11 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
      *
      *****************************************/
 
-    private String tierName = null;
-    private int statusPointLevel = 0;
-    private String statusEventName = null;
-    private int numberOfStatusPointsPerUnit = 0;
-    private String rewardEventName = null;
-    private int numberOfRewardPointsPerUnit = 0;
-    private String workflowChange = null;
-    private String workflowReward = null;
-    private String workflowStatus = null;
-    private String workflowDaily = null;
-
+    private String levelName = null;
+    private int scoreLevel = 0;
+    private String scoreEventName = null;
+    private int numberOfScorePerEvent = 0;
+    private String levelUpAction = null;
 
     /*****************************************
      *
@@ -470,16 +464,11 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
      *
      *****************************************/
 
-    public String getTierName() { return tierName; }
-    public int getStatusPointLevel() { return statusPointLevel; }
-    public String getStatusEventName() { return statusEventName; }
-    public int getNumberOfStatusPointsPerUnit() { return numberOfStatusPointsPerUnit; }
-    public String getRewardEventName() { return rewardEventName; }
-    public int getNumberOfRewardPointsPerUnit() { return numberOfRewardPointsPerUnit; }
-    public String getWorkflowChange()    {      return workflowChange;    }
-    public String getWorkflowReward()    {      return workflowReward;    }
-    public String getWorkflowStatus()    {      return workflowStatus;    }
-    public String getWorkflowDaily()    {      return workflowDaily;    }
+    public String getLevelName() { return levelName; }
+    public int getScoreLevel() { return scoreLevel; }
+    public String getScoreEventName() { return scoreEventName; }
+    public int getNumberOfScorePerEvent() { return numberOfScorePerEvent; }
+    public String getLevelUpAction() { return levelUpAction; }
 
 
     /*****************************************
@@ -488,18 +477,13 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
      *
      *****************************************/
 
-    public ChallengeLevel(String tierName, int statusPointLevel, String statusEventName, int numberOfStatusPointsPerUnit, String rewardEventName, int numberOfRewardPointsPerUnit, String workflowChange, String workflowReward, String workflowStatus, String workflowDaily)
+    public ChallengeLevel(String levelName, String scoreEventName, int numberOfScorePerEvent, int scoreLevel, String levelUpAction)
     {
-      this.tierName = tierName;
-      this.statusPointLevel = statusPointLevel;
-      this.statusEventName = statusEventName;
-      this.numberOfStatusPointsPerUnit = numberOfStatusPointsPerUnit;
-      this.rewardEventName = rewardEventName;
-      this.numberOfRewardPointsPerUnit = numberOfRewardPointsPerUnit;
-      this.workflowChange = workflowChange;
-      this.workflowReward = workflowReward;
-      this.workflowStatus = workflowStatus;
-      this.workflowDaily = workflowDaily;
+      this.levelName = levelName;
+      this.scoreLevel = scoreLevel;
+      this.scoreEventName = scoreEventName;
+      this.numberOfScorePerEvent = numberOfScorePerEvent;
+      this.levelUpAction = levelUpAction;
     }
 
     /*****************************************
@@ -512,16 +496,11 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     {
       ChallengeLevel tier = (ChallengeLevel) value;
       Struct struct = new Struct(schema);
-      struct.put("tierName", tier.getTierName());
-      struct.put("statusPointLevel", tier.getStatusPointLevel());
-      struct.put("statusEventName", tier.getStatusEventName());
-      struct.put("numberOfStatusPointsPerUnit", tier.getNumberOfStatusPointsPerUnit());
-      struct.put("rewardEventName", tier.getRewardEventName());
-      struct.put("numberOfRewardPointsPerUnit", tier.getNumberOfRewardPointsPerUnit());
-      struct.put("workflowChange", tier.getWorkflowChange());
-      struct.put("workflowReward", tier.getWorkflowReward());
-      struct.put("workflowStatus", tier.getWorkflowStatus());
-      struct.put("workflowDaily", tier.getWorkflowDaily());
+      struct.put("levelName", tier.getLevelName());
+      struct.put("scoreLevel", tier.getScoreLevel());
+      struct.put("scoreEventName", tier.getScoreEventName());
+      struct.put("numberOfScorePerEvent", tier.getNumberOfScorePerEvent());
+      struct.put("levelUpAction", tier.getLevelUpAction());
       return struct;
     }
 
@@ -546,23 +525,18 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       //
 
       Struct valueStruct = (Struct) value;
-      String tierName = valueStruct.getString("tierName");
-      int statusPointLevel = valueStruct.getInt32("statusPointLevel");
-      String statusEventName = valueStruct.getString("statusEventName");
-      int numberOfStatusPointsPerUnit = valueStruct.getInt32("numberOfStatusPointsPerUnit");
-      String rewardEventName = valueStruct.getString("rewardEventName");
-      int numberOfRewardPointsPerUnit = valueStruct.getInt32("numberOfRewardPointsPerUnit");
+      String levelName = valueStruct.getString("levelName");
+      int scoreLevel = valueStruct.getInt32("scoreLevel");
+      String scoreEventName = valueStruct.getString("scoreEventName");
+      int numberOfScorePerEvent = valueStruct.getInt32("numberOfScorePerEvent");
+      String levelUpAction = valueStruct.getString("levelUpAction");
       
-      String workflowChange = schema.field("workflowChange") != null ? valueStruct.getString("workflowChange") : null;
-      String workflowReward = schema.field("workflowReward") != null ? valueStruct.getString("workflowReward") : null;
-      String workflowStatus = schema.field("workflowStatus") != null ? valueStruct.getString("workflowStatus") : null;
-      String workflowDaily = schema.field("workflowDaily") != null ? valueStruct.getString("workflowDaily") : null;
-
+      
       //
       //  return
       //
 
-      return new ChallengeLevel(tierName, statusPointLevel, statusEventName, numberOfStatusPointsPerUnit, rewardEventName, numberOfRewardPointsPerUnit, workflowChange, workflowReward, workflowStatus, workflowDaily);
+      return new ChallengeLevel(levelName, scoreEventName, numberOfScorePerEvent, scoreLevel, levelUpAction);
     }
 
     /*****************************************
@@ -579,23 +553,11 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
        *  attributes
        *
        *****************************************/
-      this.tierName = JSONUtilities.decodeString(jsonRoot, "tierName", true);
-      this.statusPointLevel = JSONUtilities.decodeInteger(jsonRoot, "statusPointLevel", true);
-      this.statusEventName = JSONUtilities.decodeString(jsonRoot, "statusEventName", true);
-      this.numberOfStatusPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfStatusPointsPerUnit", true);
-      this.rewardEventName = JSONUtilities.decodeString(jsonRoot, "rewardEventName", true);
-      this.numberOfRewardPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfRewardPointsPerUnit", true);
-      this.workflowChange = JSONUtilities.decodeString(jsonRoot, "workflowChange", false);
-      this.workflowReward = JSONUtilities.decodeString(jsonRoot, "workflowReward", false);
-      this.workflowStatus = JSONUtilities.decodeString(jsonRoot, "workflowStatus", false);
-      this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
-    }
-
-    @Override
-    public String toString()
-    {
-      return "Tier [" + (tierName != null ? "tierName=" + tierName + ", " : "") + "statusPointLevel=" + statusPointLevel + ", " + (statusEventName != null ? "statusEventName=" + statusEventName + ", " : "") + "numberOfStatusPointsPerUnit=" + numberOfStatusPointsPerUnit + ", " + (rewardEventName != null ? "rewardEventName=" + rewardEventName + ", " : "") + "numberOfRewardPointsPerUnit=" + numberOfRewardPointsPerUnit + ", " + (workflowChange != null ? "workflowChange=" + workflowChange + ", " : "")
-          + (workflowReward != null ? "workflowReward=" + workflowReward + ", " : "") + (workflowStatus != null ? "workflowStatus=" + workflowStatus + ", " : "") + (workflowDaily != null ? "workflowDaily=" + workflowDaily : "") + "]";
+      this.levelName = JSONUtilities.decodeString(jsonRoot, "levelName", true);
+      this.scoreLevel = JSONUtilities.decodeInteger(jsonRoot, "scoreLevel", true);
+      this.scoreEventName = JSONUtilities.decodeString(jsonRoot, "scoreEventName", true);
+      this.numberOfScorePerEvent = JSONUtilities.decodeInteger(jsonRoot, "numberOfScorePerEvent", true);
+      this.levelUpAction = JSONUtilities.decodeString(jsonRoot, "levelUpAction", true);
     }
   }
 
