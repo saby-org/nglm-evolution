@@ -687,7 +687,6 @@ public class ConnectSerde<T> implements Serde<T>
   private String schemaName(Schema schema)
   {
     String result;
-    log.info("RAJ K schema {}", schema);
     switch (schema.type())
       {
         case STRUCT:
