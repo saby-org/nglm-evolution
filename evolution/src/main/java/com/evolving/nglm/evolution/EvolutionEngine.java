@@ -6153,7 +6153,9 @@ public class EvolutionEngine
 
     if (subscriberStateOutputWrapper.getOriginalEvent() instanceof TimedEvaluation && ((TimedEvaluation)subscriberStateOutputWrapper.getOriginalEvent()).getPeriodicEvaluation())
       {
+        if(currentSubscriberHistory==null) return null;//this case trigger no update into topic at all
         subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory) || subscriberHistoryUpdated;
+        if(subscriberHistory.getJourneyHistory().isEmpty() && subscriberHistory.getDeliveryRequests().isEmpty()) return null;
       }
 
     if (subscriberStateOutputWrapper.getSubscriberState().getDeliveryResponse()!=null)
