@@ -26,8 +26,6 @@ import java.util.Map;
 public class ConnectSerde<T> implements Serde<T>
 {
   
-  private static final Logger log = LoggerFactory.getLogger(ConnectSerde.class);
-  
   /*****************************************
   *
   *  constructor
@@ -54,7 +52,6 @@ public class ConnectSerde<T> implements Serde<T>
 
   public ConnectSerde(Schema schema, boolean isKey, Class<T> objectClass, PackSchema packSchema, UnpackSchema unpackSchema)
   {
-    if (objectClass.getName().contains("LoyaltyProgramChallenge")) log.info("RAJ K objectClass {} schema {}", objectClass, schema);
     /****************************************
     *
     *  optionalSchema
@@ -100,7 +97,6 @@ public class ConnectSerde<T> implements Serde<T>
     this.isKey = isKey;
     this.useWrapper = false;
     this.schemas.put(objectClass, schema);
-    if (objectClass.getName().contains("LoyaltyProgramChallenge")) log.info("RAJ K schemas {}", schemas);
     this.schemasByName.put(schemaName(schema), schema);
     this.optionalSchemasByName.put(schemaName(schema), optionalSchema);
     this.packSchemas.put(schema, packSchema);
@@ -406,7 +402,6 @@ public class ConnectSerde<T> implements Serde<T>
         //
 
         Schema concreteSchema = schemas.get(data.getClass());
-        log.info("RAJ K concreteSchema {} class {}", concreteSchema, data.getClass());
         Schema optionalConcreteSchema = optionalSchemasByName.get(schemaName(concreteSchema));
         PackSchema packSchema = packSchemas.get(concreteSchema);
         Object concretePackedData = packSchema.pack(data);
