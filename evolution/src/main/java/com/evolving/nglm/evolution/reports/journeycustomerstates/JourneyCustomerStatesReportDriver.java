@@ -1,11 +1,14 @@
 package com.evolving.nglm.evolution.reports.journeycustomerstates;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
 import java.util.Date;
@@ -25,6 +28,17 @@ public class JourneyCustomerStatesReportDriver extends ReportDriver
     log.debug("PHASE 1 : read ElasticSearch");
     JourneyCustomerStatesReportMonoPhase.main(new String[] { elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
     log.debug("Finished with Journey Customer States Report");
+  }
 
+
+  @Override
+  public List<FilterObject> reportFilters() {
+    return null;
+  }
+
+  @Override
+  public List<String> reportHeader() {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

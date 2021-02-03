@@ -40,6 +40,8 @@ import com.evolving.nglm.evolution.JourneyObjectiveService;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.PointService;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.ColumnType;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
@@ -275,4 +277,29 @@ public class JourneysReportDriver extends ReportDriver
     }
   }
   
+
+  @Override
+  public List<FilterObject> reportFilters() {
+	    List<FilterObject> result = new ArrayList<>();
+	    
+	    result.add(new FilterObject("journeyType", ColumnType.MULTIPLE_STRING, new String[] {"journey","campaign","workflow","loyaltyWorkflow","bulkCampaign"}));
+	    List<String> values = new ArrayList<>();
+	    for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
+	      values.add(states.getDisplay());
+	    }
+	    String[] valuesArray = values.toArray(new String[0]);
+	    result.add(new FilterObject("customerStatuses", ColumnType.MULTIPLE_STRING, valuesArray));
+	    
+	    return result;
+	  }
+	  
+  @Override
+  public List<String> reportHeader() {
+	  List<String> result = new ArrayList<>();
+	    
+	    result.add("journeyType");
+	    result.add("customerStatuses");
+	    
+	    return result;
+  }
 }

@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.journeyimpact;
 
+import java.util.List;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -31,6 +32,7 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
@@ -338,4 +340,15 @@ public class JourneyImpactReportDriver extends ReportDriver
     }
   }
 
+
+  @Override
+  public List<FilterObject> reportFilters() {
+    return null;
+  }
+
+  @Override
+  public List<String> reportHeader() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }
