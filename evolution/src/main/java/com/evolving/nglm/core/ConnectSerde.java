@@ -54,6 +54,7 @@ public class ConnectSerde<T> implements Serde<T>
 
   public ConnectSerde(Schema schema, boolean isKey, Class<T> objectClass, PackSchema packSchema, UnpackSchema unpackSchema)
   {
+    if (objectClass.getName().contains("LoyaltyProgramChallenge")) log.info("RAJ K objectClass {} schema {}", objectClass, schema);
     /****************************************
     *
     *  optionalSchema
@@ -99,6 +100,7 @@ public class ConnectSerde<T> implements Serde<T>
     this.isKey = isKey;
     this.useWrapper = false;
     this.schemas.put(objectClass, schema);
+    if (objectClass.getName().contains("LoyaltyProgramChallenge")) log.info("RAJ K schemas {}", schemas);
     this.schemasByName.put(schemaName(schema), schema);
     this.optionalSchemasByName.put(schemaName(schema), optionalSchema);
     this.packSchemas.put(schema, packSchema);
