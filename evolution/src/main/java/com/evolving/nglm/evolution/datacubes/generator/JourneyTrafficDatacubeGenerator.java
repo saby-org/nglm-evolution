@@ -1,15 +1,22 @@
 package com.evolving.nglm.evolution.datacubes.generator;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
+import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.ParsedDateRange;
+import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Deployment;
@@ -29,6 +36,8 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   private static final String DATACUBE_ES_INDEX_PREFIX = "datacube_journeytraffic-";
   private static final String DATA_ES_INDEX_PREFIX = "journeystatistic-";
   private static final String FILTER_STRATUM_PREFIX = "subscriberStratum.";
+  private static final String METRIC_CONVERSION_COUNT = "metricConversionCount";
+  private static final String METRIC_CONVERTED_TODAY = "metricConvertedToday";
 
   /*****************************************
   *
@@ -42,6 +51,8 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   
   private String journeyID;
   private Date publishDate;
+  private Date metricTargetDayStart;
+  private Date metricTargetDayAfterStart;
 
   /*****************************************
   *
@@ -168,8 +179,51 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   * Metrics settings
   *
   *****************************************/
-  @Override protected List<AggregationBuilder> getMetricAggregations() { return Collections.emptyList(); }
-  @Override protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException { return Collections.emptyMap(); }
+  @Override
+  protected List<AggregationBuilder> getMetricAggregations()
+  {
+    List<AggregationBuilder> metricAggregations = new ArrayList<AggregationBuilder>();
+
+    metricAggregations.add(AggregationBuilders.sum(METRIC_CONVERSION_COUNT).field("conversionCount"));
+    metricAggregations.add(AggregationBuilders.dateRange(METRIC_CONVERTED_TODAY).field("lastConversionDate")
+        .addRange(RLMDateUtils.printTimestamp(metricTargetDayStart), RLMDateUtils.printTimestamp(metricTargetDayAfterStart)));
+    
+    return metricAggregations;
+  }
+  
+  @Override
+  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
+  {    
+    HashMap<String, Object> metrics = new HashMap<String, Object>();
+    
+    if (compositeBucket.getAggregations() == null) {
+      log.error("Unable to extract metrics, aggregation is missing.");
+      return metrics;
+    }
+
+    // ConversionCount
+    ParsedSum conversionCountAggregation = compositeBucket.getAggregations().get(METRIC_CONVERSION_COUNT);
+    if (conversionCountAggregation == null) {
+      log.error("Unable to extract conversionCount in journeystatistics, aggregation is missing.");
+      return metrics;
+    } else {
+      metrics.put("conversions", new Long((long) conversionCountAggregation.getValue()));
+    }
+    
+    // ConvertedToday
+    ParsedDateRange convertedTodayAggregation= compositeBucket.getAggregations().get(METRIC_CONVERTED_TODAY);
+    if(convertedTodayAggregation == null || convertedTodayAggregation.getBuckets() == null) {
+      log.error("Date Range buckets are missing in search response, unable to retrieve convertedToday.");
+      return metrics;
+    }
+    
+    for(org.elasticsearch.search.aggregations.bucket.range.Range.Bucket bucket: convertedTodayAggregation.getBuckets()) {
+      // WARNING: we should only enter this loop once because there is only one bucket defined !
+      metrics.put("converted.today", new Long(bucket.getDocCount()));
+    }
+        
+    return metrics;
+  }
 
   /*****************************************
   *
@@ -180,6 +234,13 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   {
     this.journeyID = journeyID;
     this.publishDate = publishDate;
+
+    Date tomorrow = RLMDateUtils.addDays(publishDate, 1, Deployment.getBaseTimeZone());
+    // Dates: YYYY-MM-dd 00:00:00.000
+    Date beginningOfToday = RLMDateUtils.truncate(publishDate, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
+    this.metricTargetDayStart = beginningOfToday;
+    this.metricTargetDayAfterStart = beginningOfTomorrow;
     
     String timestamp = RLMDateUtils.printTimestamp(publishDate);
     long targetPeriod = publishDate.getTime() - journeyStartDateTime;
