@@ -49,6 +49,7 @@ public class Deployment
   *****************************************/
   private static Map<Integer, JSONObject> jsonConfigPerTenant = new HashMap<>();
   private static Map<Integer, Deployment> deploymentsPerTenant = new HashMap<>();
+  private static Object lock = new Object();
   
   //
   //  data
@@ -204,6 +205,11 @@ public class Deployment
           }
       }
     
+    // also add fake tenant 0 (for static configurations of Deployment)
+    JSONObject tenant0Configuration = new JSONObject();
+    tenant0Configuration.put("tenantID", 0);
+    tenantSpecificConfigurations.add(tenant0Configuration);
+    
     //
     // now analyse the configurations of tenants
     //
@@ -249,13 +255,10 @@ public class Deployment
         //
         
         jsonConfigPerTenant.put(tenantID, tenantJSON);
-        
-       //
-       // init deployment for this tenant
-       //
-       Deployment d = new Deployment();
-       d.initCoreDeploymentStatic(tenantID);
       }
+    
+    // just init the tenant0 for static configuration
+    new Deployment(0);
   }
   
   private static JSONObject getBrutJsonRoot()
@@ -562,7 +565,7 @@ public class Deployment
       }
   }
 
-  public void initCoreDeploymentStatic(int tenantID)
+  public Deployment(int tenantID)
   {
    
     deploymentsPerTenant.put(tenantID, this);
@@ -1147,6 +1150,19 @@ public class Deployment
   
   public static Deployment getDeployment(int tenantID)
   {
+    Deployment result = deploymentsPerTenant.get(tenantID);
+    if(result == null)
+      {
+        synchronized(lock)
+          {
+            result = deploymentsPerTenant.get(tenantID);
+            if(result == null)
+              {
+                result = new Deployment(tenantID);
+                deploymentsPerTenant.put(tenantID, result);
+              }
+          }
+      }
     return deploymentsPerTenant.get(tenantID);
   }
   

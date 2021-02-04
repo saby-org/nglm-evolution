@@ -52,6 +52,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   //
   
   private static Map<Integer, Deployment> deploymentsPerTenant = new HashMap<>();
+  private static Object lock = new Object();
   
 
   //
@@ -693,12 +694,8 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   *****************************************/
   static 
   {    
-    for(int tenantID : com.evolving.nglm.core.Deployment.getCoreDeployments().keySet())
-      {
-        Deployment d = new Deployment();
-        d.init(tenantID);
-        deploymentsPerTenant.put(tenantID, d);
-      }
+    // just init the tenant0 for static configuration
+    new Deployment(0);
   }
 
   /*****************************************
@@ -707,9 +704,11 @@ public class Deployment extends com.evolving.nglm.core.Deployment
    *
    *****************************************/
 
-  public void init(int tenantID)
+  public Deployment(int tenantID)
     {
-      super.initCoreDeploymentStatic(tenantID);
+      super(tenantID);
+      
+      deploymentsPerTenant.put(tenantID, this);
       
       /*****************************************
        *
@@ -3255,6 +3254,19 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   
   public static Deployment getDeployment(int tenantID)
   {
+    Deployment result = deploymentsPerTenant.get(tenantID);
+    if(result == null)
+      {
+        synchronized(lock)
+          {
+            result = deploymentsPerTenant.get(tenantID);
+            if(result == null)
+              {
+                result = new Deployment(tenantID);
+                deploymentsPerTenant.put(tenantID, result);
+              }
+          }
+      }
     return deploymentsPerTenant.get(tenantID);
   }
   

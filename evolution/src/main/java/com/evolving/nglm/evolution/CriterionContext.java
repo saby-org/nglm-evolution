@@ -462,12 +462,6 @@ public class CriterionContext
   
   public static CriterionContext Profile(int tenantID) 
   {
-    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
-    if(tenantID == 0)
-      {
-        throw new RuntimeException("tenantID is 0");
-      }
-
     CriterionContext criterionContext = Profile.get(tenantID);
     if(criterionContext == null)
       {
@@ -486,12 +480,6 @@ public class CriterionContext
   
   public static CriterionContext FullProfile(int tenantID) 
   {
-    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
-    if(tenantID == 0)
-      {
-        throw new RuntimeException("tenantID is 0");
-      }
-
     CriterionContext criterionContext = FullProfile.get(tenantID);
     if(criterionContext == null)
       {
@@ -510,12 +498,6 @@ public class CriterionContext
   
   public static CriterionContext DynamicProfile(int tenantID) 
   {
-    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
-    if(tenantID == 0)
-      {
-        throw new RuntimeException("tenantID is 0");
-      }
-    
     CriterionContext criterionContext = DynamicProfile.get(tenantID);
     if(criterionContext == null)
       {
@@ -534,12 +516,6 @@ public class CriterionContext
   
   public static CriterionContext FullDynamicProfile(int tenantID) 
   {
-    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
-    if(tenantID == 0)
-      {
-        throw new RuntimeException("tenantID is 0");
-      }
-
     CriterionContext criterionContext = FullDynamicProfile.get(tenantID);
     if(criterionContext == null)
       {
@@ -558,12 +534,6 @@ public class CriterionContext
   
   public static CriterionContext Presentation(int tenantID) 
   {
-    // TODO Just during the mutlitenancy development, ensure tenantID != 0 here
-    if(tenantID == 0)
-      {
-        throw new RuntimeException("tenantID is 0");
-      }
-
     CriterionContext criterionContext = Presentation.get(tenantID);
     if(criterionContext == null)
       {

@@ -202,14 +202,15 @@ public class CommunicationChannel extends GUIManagedObject
       // deliveryManagerDeclaration derived
       if(isGeneric())
         {
+          String deliveryType = "notification_"+getName();
+          
           //TODO remove later, forcing conf cleaning
-          if(getDeliveryType()!=null)
+          if(getDeliveryType()!=null && !getDeliveryType().equals(deliveryType)) // EVPRO-99 compare to deliveryType because of multiple time this is initialized
             {
               log.error("deliveryType configuration for generic channel ("+getName()+") is not possible anymore");
               throw new ServerRuntimeException("old conf for generic channel");
             }
           // delivery type should be derived
-          String deliveryType = "notification_"+getName();
           this.deliveryType = deliveryType;
           jsonRoot.put("deliveryType",deliveryType);
           jsonRoot.put("requestClass", NotificationManager.NotificationManagerRequest.class.getName());
