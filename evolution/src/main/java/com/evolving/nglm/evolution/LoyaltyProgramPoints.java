@@ -382,8 +382,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
   
   @Override public boolean validate() throws GUIManagerException 
   {
-    // TODO : any validation needed ?
-    return true;
+    return LoyaltyProgramType.POINTS == getLoyaltyProgramType();
   }
 
   public static class Tier

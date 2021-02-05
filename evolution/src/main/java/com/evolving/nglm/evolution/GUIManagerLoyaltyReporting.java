@@ -114,7 +114,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot, LoyaltyProgramType loyaltyProgramType, boolean includeArchived)
   {
     /****************************************
     *
@@ -146,9 +146,23 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *  response
     *
     *****************************************/
+    
+    switch (loyaltyProgramType)
+    {
+      case POINTS:
+        response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramNotFound");
+        if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
+        break;
 
-    response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramNotFound");
-    if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
+      case CHALLENGE:
+        response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramChallengeNotFound");
+        if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
+        break;
+
+      default:
+        break;
+    }
+    
     return JSONUtilities.encodeObject(response);
   }
 
@@ -158,7 +172,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutLoyaltyProgram(String userID, JSONObject jsonRoot)
+  JSONObject processPutLoyaltyProgram(String userID, JSONObject jsonRoot, LoyaltyProgramType loyaltyProgramType)
   {
     /****************************************
     *
@@ -233,7 +247,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         ****************************************/
 
         LoyaltyProgram loyaltyProgram = null;
-        switch (LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true)))
+        switch (loyaltyProgramType)
         {
           case POINTS:
             loyaltyProgram = new LoyaltyProgramPoints(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
@@ -243,12 +257,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             loyaltyProgram = new LoyaltyProgramChallenge(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
             break;
 
-//          case BADGES:
-//            // TODO
-//            break;
-
-          case Unknown:
-            throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", false));
+          default:
+            throw new GUIManagerException("unsupported loyalty program type ", loyaltyProgramType.getExternalRepresentation());
         }
 
         /*****************************************
@@ -581,7 +591,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetLoyaltyProgramList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetLoyaltyProgramList(String userID, JSONObject jsonRoot, LoyaltyProgramType loyaltyProgramType, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -612,17 +622,23 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     for (GUIManagedObject loyaltyProgram : loyaltyProgramObjects)
       {
-        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
-        try {
-          long membersCount = this.elasticsearch.getLoyaltyProgramCount(loyaltyProgram.getGUIManagedObjectID());
-          loyaltyPro.put("programsMembersCount", membersCount);
-        }
-        catch (ElasticsearchClientException e) {
-          StringWriter stackTraceWriter = new StringWriter();
-          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-          log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-        }
-        loyaltyProgramList.add(loyaltyPro);
+        JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, now);
+        if (loyaltyProgramType == LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType")))
+          {
+            JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
+            try
+              {
+                long membersCount = this.elasticsearch.getLoyaltyProgramCount(loyaltyProgram.getGUIManagedObjectID());
+                loyaltyPro.put("programsMembersCount", membersCount);
+              } 
+            catch (ElasticsearchClientException e)
+              {
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+              }
+            loyaltyProgramList.add(loyaltyPro);
+          }
       }
 
     /*****************************************

@@ -121,6 +121,7 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
@@ -464,11 +465,20 @@ public class GUIManager
 
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
+    getLoyaltyProgramChallengeList("getLoyaltyProgramChallengeList"),
+    
     getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
+    getLoyaltyProgramChallengeSummaryList("getLoyaltyProgramChallengeSummaryList"),
+    
     getLoyaltyProgram("getLoyaltyProgram"),
+    getLoyaltyProgramChallenge("getLoyaltyProgramChallenge"),
+    
     putLoyaltyProgram("putLoyaltyProgram"),
+    putLoyaltyProgramChallenge("putLoyaltyProgramChallenge"),
+    
     removeLoyaltyProgram("removeLoyaltyProgram"),
     setStatusLoyaltyProgram("setStatusLoyaltyProgram"),
+    
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
     getReseller("getReseller"),
@@ -2064,9 +2074,13 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeList", new APISimpleHandler(API.getLoyaltyProgramChallengeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramSummaryList", new APISimpleHandler(API.getLoyaltyProgramSummaryList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeSummaryList", new APISimpleHandler(API.getLoyaltyProgramChallengeSummaryList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgram", new APISimpleHandler(API.getLoyaltyProgram));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallenge", new APISimpleHandler(API.getLoyaltyProgramChallenge));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
+        restServer.createContext("/nglm-guimanager/putLoyaltyProgramChallenge", new APISimpleHandler(API.putLoyaltyProgramChallenge));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/setStatusLoyaltyProgram", new APISimpleHandler(API.setStatusLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
@@ -3680,19 +3694,35 @@ public class GUIManager
                   break;
 
                 case getLoyaltyProgramList:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.POINTS, true, includeArchived);
+                  break;
+                  
+                case getLoyaltyProgramChallengeList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, true, includeArchived);
                   break;
 
                 case getLoyaltyProgramSummaryList:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.POINTS, false, includeArchived);
+                  break;
+                  
+                case getLoyaltyProgramChallengeSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, false, includeArchived);
                   break;
 
                 case getLoyaltyProgram:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.POINTS, includeArchived);
+                  break;
+                  
+                case getLoyaltyProgramChallenge:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, includeArchived);
                   break;
 
                 case putLoyaltyProgram:
-                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.POINTS);
+                  break;
+                  
+                case putLoyaltyProgramChallenge:
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE);
                   break;
 
                 case removeLoyaltyProgram:
@@ -3702,7 +3732,7 @@ public class GUIManager
                 case setStatusLoyaltyProgram:
                   jsonResponse = guiManagerLoyaltyReporting.processSetStatusLoyaltyProgram(userID, jsonRoot);
                   break;
-
+                  
                 case getResellerList:
                   jsonResponse = processGetResellerList(userID, jsonRoot, true, includeArchived);
                   break;

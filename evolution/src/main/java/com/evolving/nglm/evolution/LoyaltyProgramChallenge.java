@@ -197,9 +197,8 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     this.recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
     this.recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
     this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
-    if (recurrence)
-      this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
-    this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", recurrence);
+    if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
+    this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     this.levels = decodeLoyaltyProgramLevels(JSONUtilities.decodeJSONArray(jsonRoot, "levels", true));
 
     /*****************************************
@@ -259,12 +258,12 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    ****************************************/
 
-  private static List<Object> packLoyaltyProgramLevels(List<ChallengeLevel> tiers)
+  private static List<Object> packLoyaltyProgramLevels(List<ChallengeLevel> levels)
   {
     List<Object> result = new ArrayList<Object>();
-    for (ChallengeLevel tier : tiers)
+    for (ChallengeLevel level : levels)
       {
-        result.add(ChallengeLevel.pack(tier));
+        result.add(ChallengeLevel.pack(level));
       }
     return result;
   }
@@ -393,7 +392,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   @Override
   public boolean validate() throws GUIManagerException
   {
-    return true;
+    return LoyaltyProgramType.CHALLENGE == getLoyaltyProgramType();
   }
   
   public static class ChallengeLevel
