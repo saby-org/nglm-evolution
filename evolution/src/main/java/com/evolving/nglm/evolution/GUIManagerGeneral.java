@@ -4277,7 +4277,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  void processPutFile(JSONObject jsonResponse, HttpExchange exchange, int tenantID) throws IOException
+  void processPutFile(JSONObject jsonResponse, HttpExchange exchange) throws IOException
   {
     /****************************************
     *
@@ -4368,6 +4368,16 @@ public class GUIManagerGeneral extends GUIManager
                     InputStream streams = fis.openStream();
                     String jsonAsString = Streams.asString(streams, "UTF-8");
                     jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
+                    
+                    /*****************************************
+                    *
+                    *  get tenantID
+                    *
+                    *****************************************/
+                    
+                    int tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", 1);
+
+                    
                     userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
                     if(!jsonRoot.containsKey("id"))
                       {
@@ -4397,6 +4407,15 @@ public class GUIManagerGeneral extends GUIManager
                     GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
                     try
                       {
+                        /*****************************************
+                        *
+                        *  get tenantID
+                        *
+                        *****************************************/
+                        
+                        int tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", 1);
+
+                        
                         /****************************************
                         *
                         *  instantiate new UploadedFile
@@ -4439,6 +4458,16 @@ public class GUIManagerGeneral extends GUIManager
                       }
                     catch (JSONUtilitiesException|GUIManagerException e)
                       {
+                        
+                        /*****************************************
+                        *
+                        *  get tenantID
+                        *
+                        *****************************************/
+                        
+                        int tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", 1);
+
+                        
                         //
                         //  incompleteObject
                         //

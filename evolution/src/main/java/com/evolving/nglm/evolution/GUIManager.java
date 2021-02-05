@@ -4222,13 +4222,6 @@ public class GUIManager
               break;
           }
         
-        /*****************************************
-        *
-        *  get tenantID
-        *
-        *****************************************/
-        
-        int tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", 1);
 
         /*****************************************
         *
@@ -4271,19 +4264,19 @@ public class GUIManager
             switch (api)
               {
                 case putUploadedFile:
-                  guiManagerGeneral.processPutFile(jsonResponse, exchange, tenantID);
+                  guiManagerGeneral.processPutFile(jsonResponse, exchange); // EVPRO-99 retrieve the tenantID, from userName ??
                   break;
 
                 case downloadReport:
-                  guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange, tenantID);
+                  guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
                   break;
                   
                 case downloadExtractFile:
-                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange, tenantID);
+                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
                   break;
                   
                 case launchAndDownloadExtract:
-                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange, tenantID);
+                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
                   break;
 
               }
