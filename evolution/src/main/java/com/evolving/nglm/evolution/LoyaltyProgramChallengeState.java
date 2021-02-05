@@ -238,6 +238,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
+        LoyaltyProgramTierChange tierChangeType = LoyaltyProgramTierChange.fromExternalRepresentation(loyaltyProgramLevelChange.getExternalRepresentation());
         loyaltyProgramHistory.addTierHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, tierChangeType);
         break;
 
@@ -260,6 +261,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
+        tierChangeType = LoyaltyProgramTierChange.fromExternalRepresentation(loyaltyProgramLevelChange.getExternalRepresentation());
         loyaltyProgramHistory.addTierHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, tierChangeType);
         break;
 

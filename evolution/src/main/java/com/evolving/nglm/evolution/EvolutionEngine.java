@@ -99,6 +99,8 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramLevelChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
@@ -2863,6 +2865,10 @@ public class EvolutionEngine
                       }
                   }
               }
+            else
+              {
+                // RAJ K TO DO
+              }
           }        
       }
     
@@ -3621,15 +3627,33 @@ public class EvolutionEngine
   }
 
 
-  public static void launchChangeTierWorkflows(ProfileLoyaltyProgramChangeEvent event, SubscriberState subscriberState, LoyaltyProgramPoints loyaltyProgramPoints, String oldTierName, String newTierName, String featureID)
-  {    
-    // Exit tier workflow
-    Tier oldTier = loyaltyProgramPoints.getTier(oldTierName);
-    if (oldTier != null) triggerLoyaltyWorflow(event, subscriberState, oldTier.getWorkflowChange(), featureID);
+  public static void launchChangeTierWorkflows(ProfileLoyaltyProgramChangeEvent event, SubscriberState subscriberState, LoyaltyProgram loyaltyProgram, String oldTierName, String newTierName, String featureID)
+  {  
+    switch (loyaltyProgram.getLoyaltyProgramType())
+    {
+      
+      case POINTS:
+        LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+        
+        // Exit tier workflow
+        Tier oldTier = loyaltyProgramPoints.getTier(oldTierName);
+        if (oldTier != null) triggerLoyaltyWorflow(event, subscriberState, oldTier.getWorkflowChange(), featureID);
+        
+        // Enter tier workflow
+        Tier newTier = loyaltyProgramPoints.getTier(newTierName);
+        if (newTier != null) triggerLoyaltyWorflow(event, subscriberState, newTier.getWorkflowChange(), featureID);
+        
+        break;
+        
+      case CHALLENGE:
+        throw new RuntimeException("RAJ K TO DO launchChangeTierWorkflows");
+
+      default:
+        break;
+    }
     
-    // Enter tier workflow
-    Tier newTier = loyaltyProgramPoints.getTier(newTierName);
-    if (newTier != null) triggerLoyaltyWorflow(event, subscriberState, newTier.getWorkflowChange(), featureID);
+    
+    
   }
 
 
@@ -3922,12 +3946,120 @@ public class EvolutionEngine
                   default:
                     break;
                 }
-
                 break;
+                
+              case CHALLENGE:
+                LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+                switch (loyaltyProgramRequest.getOperation())
+                {
+                  case Optin:
+                    String newLevelName = determineLoyaltyProgramChallengeLevel(subscriberProfile, loyaltyProgramChallenge, now);
+                    LoyaltyProgramState currentLoyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
+                    if (currentLoyaltyProgramState == null || !(currentLoyaltyProgramState instanceof LoyaltyProgramChallengeState))
+                      {
+                        LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
+                        currentLoyaltyProgramState = new LoyaltyProgramChallengeState(LoyaltyProgramType.CHALLENGE, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newLevelName, null, now, loyaltyProgramHistory);
+                        if (log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '" + subscriberProfile.getSubscriberID() + "' : loyaltyProgramState.update(" + loyaltyProgram.getEpoch() + ", " + loyaltyProgramRequest.getOperation() + ", " + loyaltyProgram.getLoyaltyProgramName() + ", " + newLevelName + ", " + now + ", " + loyaltyProgramRequest.getDeliveryRequestID() + ")");
+                        LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
 
-              // case BADGES:
-              // // TODO
-              // break;
+                        //
+                        // generate new event (opt-in)
+                        //
+
+                        ParameterMap infos = new ParameterMap();
+                        infos.put(LoyaltyProgramPointsEventInfos.ENTERING.getExternalRepresentation(), loyaltyProgramRequest.getLoyaltyProgramID());
+                        infos.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), null);
+                        infos.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newLevelName);
+                        infos.put(LoyaltyProgramPointsEventInfos.TIER_UPDATE_TYPE.getExternalRepresentation(), levelChangeType.getExternalRepresentation());
+                        ProfileLoyaltyProgramChangeEvent profileChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), infos);
+                        subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileChangeEvent);
+
+                        launchChangeTierWorkflows(profileChangeEvent, subscriberState, loyaltyProgramChallenge, null, newLevelName, currentLoyaltyProgramState.getLoyaltyProgramID());
+                      } 
+                    else
+                      {
+                        //
+                        // get current tier
+                        //
+
+                        LoyaltyProgramChallengeState loyaltyProgramChallengeState = ((LoyaltyProgramChallengeState) currentLoyaltyProgramState);
+                        String currentTier = loyaltyProgramChallengeState.getLevelName();
+                        if ((currentTier != null && !currentTier.equals(newLevelName)) || (currentTier == null && newLevelName != null))
+                          {
+
+                            //
+                            // update loyalty program state
+                            //
+
+                            LoyaltyProgramLevelChange loyaltyProgramLevelChange = loyaltyProgramChallengeState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
+
+                            //
+                            // generate new event (tier changed)
+                            //
+
+                            ParameterMap info = new ParameterMap();
+                            info.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), currentTier);
+                            info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newLevelName);
+                            info.put(LoyaltyProgramPointsEventInfos.TIER_UPDATE_TYPE.getExternalRepresentation(), loyaltyProgramLevelChange.getExternalRepresentation());
+                            ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
+                            subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
+
+                            launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramChallenge, currentTier, newLevelName, currentLoyaltyProgramState.getLoyaltyProgramID());
+                          }
+                      }
+
+                    //
+                    // update subscriber state - return
+                    //
+
+                    subscriberProfile.getLoyaltyPrograms().put(loyaltyProgramRequest.getLoyaltyProgramID(), currentLoyaltyProgramState);
+                    success = true;
+                    break;
+
+                  case Optout:
+                    String tierName = null;
+                    LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
+                    if (loyaltyProgramState == null)
+                      {
+                        LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
+                        loyaltyProgramState = new LoyaltyProgramChallengeState(LoyaltyProgramType.CHALLENGE, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, tierName, null, now, loyaltyProgramHistory);
+                      }
+
+                    String oldTier = ((LoyaltyProgramChallengeState) loyaltyProgramState).getLevelName();
+                    if (log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '" + subscriberProfile.getSubscriberID() + "' : loyaltyProgramState.update(" + loyaltyProgram.getEpoch() + ", " + loyaltyProgramRequest.getOperation() + ", " + loyaltyProgram.getLoyaltyProgramName() + ", " + tierName + ", " + now + ", " + loyaltyProgramRequest.getDeliveryRequestID() + ")");
+                    LoyaltyProgramLevelChange loyaltyProgramLevelChange = ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), tierName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
+
+                    //
+                    // update subscriber loyalty programs state
+                    //
+
+                    subscriberProfile.getLoyaltyPrograms().put(loyaltyProgramRequest.getLoyaltyProgramID(), loyaltyProgramState);
+
+                    //
+                    // generate new event (opt-out)
+                    //
+
+                    ParameterMap info = new ParameterMap();
+                    info.put(LoyaltyProgramPointsEventInfos.LEAVING.getExternalRepresentation(), loyaltyProgramRequest.getLoyaltyProgramID());
+                    info.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), oldTier);
+                    info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), null);
+                    info.put(LoyaltyProgramPointsEventInfos.TIER_UPDATE_TYPE.getExternalRepresentation(), loyaltyProgramLevelChange.getExternalRepresentation());
+                    ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
+                    subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
+
+                    launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramChallenge, oldTier, null, loyaltyProgram.getLoyaltyProgramID());
+
+                    //
+                    // return
+                    //
+
+                    success = true;
+                    break;
+
+                  default:
+                    break;
+                }
+                break;
 
               default:
                 break;
@@ -4147,6 +4279,27 @@ public class EvolutionEngine
     }
     
     return newTierName;
+  }
+  
+  /*****************************************
+  *
+  *  determineLoyaltyProgramChallengeLevel
+  *
+  *****************************************/
+
+  private static String determineLoyaltyProgramChallengeLevel(SubscriberProfile subscriberProfile, LoyaltyProgramChallenge loyaltyProgramChallenge, Date now)
+  {
+    String newLevelName = null;
+    int currentSubsriberScores = 0;
+    for (ChallengeLevel level : loyaltyProgramChallenge.getLevels())
+      {
+        if (currentSubsriberScores >= level.getScoreLevel())
+          {
+            newLevelName = level.getLevelName();
+          }
+      }
+    throw new RuntimeException("RAJ K get currentSubsriberScores from subscriberProfile");
+    //return newLevelName;
   }
 
   /*****************************************
