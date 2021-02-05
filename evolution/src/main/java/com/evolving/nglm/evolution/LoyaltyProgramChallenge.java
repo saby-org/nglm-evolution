@@ -27,6 +27,8 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 @GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic" })
 public class LoyaltyProgramChallenge extends LoyaltyProgram
@@ -162,6 +164,27 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   {
     return levels;
   }
+  
+  /*****************************************
+  *
+  * getLevel
+  *
+  *****************************************/
+ 
+ public ChallengeLevel getLevel(String levelName)
+ {
+   ChallengeLevel challengeLevel = null;
+   if (levelName == null) return challengeLevel;
+   for (ChallengeLevel level : levels)
+     {
+       if (levelName.equals(level.getLevelName()))
+         {
+           challengeLevel = level;
+           break;
+         }
+     }
+   return challengeLevel;
+ }
 
   /*****************************************
    *
@@ -553,6 +576,44 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       this.numberOfscorePerEvent = JSONUtilities.decodeInteger(jsonRoot, "numberOfscorePerEvent", true);
       this.levelUpAction = JSONUtilities.decodeString(jsonRoot, "levelUpAction", true);
     }
+    
+    /*****************************************
+     *
+     * changeFrom
+     *
+     *****************************************/
+    
+    public static LoyaltyProgramLevelChange changeFromLevelToLevel(ChallengeLevel from, ChallengeLevel to)
+    {
+      if (to == null)
+        {
+          return LoyaltyProgramLevelChange.Optout;
+        }
+      if (from == null)
+        {
+          return LoyaltyProgramLevelChange.Optin;
+        }
+
+      if (to.scoreLevel - from.scoreLevel > 0)
+        {
+          return LoyaltyProgramLevelChange.Upgrade;
+        } 
+      else if (to.scoreLevel - from.scoreLevel < 0)
+        {
+          return LoyaltyProgramLevelChange.Downgrade;
+        } 
+      else
+        {
+          return LoyaltyProgramLevelChange.NoChange;
+        }
+   }
+    
+    @Override
+    public String toString()
+    {
+      return "ChallengeLevel [levelName=" + levelName + ", scoreLevel=" + scoreLevel + ", scoreEventName=" + scoreEventName + ", numberOfscorePerEvent=" + numberOfscorePerEvent + ", levelUpAction=" + levelUpAction + "]";
+    }
+   
   }
   
   /*******************************

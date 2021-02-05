@@ -146,9 +146,10 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 
   /*****************************************
    *
-   *  getTier
+   * getTier
    *
    *****************************************/
+  
   public Tier getTier(String tierName)
   {
     if (tierName == null) return null; // optimization
