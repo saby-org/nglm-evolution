@@ -59,8 +59,7 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   *****************************************/
   protected void reset() 
   {
-    this.guiManagedObjects = new HashMap<String, T>(); 
-    this.warnings = new HashSet<String>();
+    this.guiManagedObjects = new HashMap<String, T>();
   }
   
   /*****************************************
@@ -94,7 +93,7 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
           }
         else
           {
-            log.warn("Unable to cast {} into {}. It will be discarded from the final map.", object.getGUIManagedObjectID(), typeOfT.toString());
+            logWarningOnlyOnce("Unable to cast "+object.getGUIManagedObjectID()+" into "+typeOfT.toString()+". It will be discarded from the final map.");
           }
       }
   }

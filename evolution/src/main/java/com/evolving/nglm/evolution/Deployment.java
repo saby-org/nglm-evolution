@@ -7,15 +7,9 @@
 package com.evolving.nglm.evolution;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
+import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.kafka.Topic;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -59,200 +53,209 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   //  data
   //
   
-  // kafka topics configs
-  private  static int topicSubscriberPartitions;
-  private  static int topicReplication;
-  private  static String topicMinInSyncReplicas;
-  private  static String topicRetentionShortMs;
-  private  static String topicRetentionMs;
-  private  static String topicRetentionLongMs;
-  private  static int evolutionEngineStreamThreads;
-  private  static int evolutionEngineInstanceNumbers;
-  private  String subscriberGroupLoaderAlternateID;
-  private  static String getCustomerAlternateID;
-  private  boolean subscriberGroupLoaderAutoProvision;
-  private  static String criterionFieldRetrieverClassName;
-  private  static String evolutionEngineExtensionClassName;
-  private  static String guiManagerExtensionClassName;
-  private  static String subscriberProfileClassName;
-  private  static String extendedSubscriberProfileClassName;
-  private  static String evolutionEngineExternalAPIClassName;
-  private  static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
-  private  Map<String, CriterionField> profileChangeDetectionCriterionFields = new HashMap<>();
-  private  Map<String, CriterionField> profileChangeGeneratedCriterionFields = new HashMap<>();
-  private  boolean enableProfileSegmentChange;
-  private  static String journeyTopic;
-  private  static String journeyTemplateTopic;
-  private  static String segmentationDimensionTopic;
-  private  static String pointTopic;
-  private  static String offerTopic;
-  private  static String reportTopic;
-  private  static String paymentMeanTopic;
-  private  static String presentationStrategyTopic;
-  private  static String scoringStrategyTopic;
-  private  static String callingChannelTopic;
-  private  static String salesChannelTopic;
-  private  static String supplierTopic;
-  private  static String resellerTopic;
-  private  static String productTopic;
-  private  static String catalogCharacteristicTopic;
-  private  static String contactPolicyTopic;
-  private  static String journeyObjectiveTopic;
-  private  static String offerObjectiveTopic;
-  private  static String productTypeTopic;
-  private  static String ucgRuleTopic;
-  private  static String deliverableTopic;
-  private  static String tokenTypeTopic;
-  private  static String voucherTypeTopic;
-  private  static String voucherTopic;
-  private  static String subscriberMessageTemplateTopic;
-  private  static String guiAuditTopic;
-  private  static String subscriberGroupTopic;
-  private  static String subscriberGroupAssignSubscriberIDTopic;
-  private  static String subscriberGroupEpochTopic;
-  private  static String ucgStateTopic;
-  private  static String renamedProfileCriterionFieldTopic;
-  private  static String timedEvaluationTopic;
-  private  static String evaluateTargetsTopic;
-  private  static String subscriberProfileForceUpdateTopic;
-  private  static String executeActionOtherSubscriberTopic;
-  private  static String subscriberStateChangeLog;
-  private  static String subscriberStateChangeLogTopic;
-  private  static String extendedSubscriberProfileChangeLog;
-  private  static String extendedSubscriberProfileChangeLogTopic;
-  private  static String subscriberHistoryChangeLog;
-  private  static String subscriberHistoryChangeLogTopic;
-  private  static String journeyStatisticTopic;
-  private  static String journeyMetricTopic;
-  private  static String deliverableSourceTopic;
-  private  static String presentationLogTopic;
-  private  static String acceptanceLogTopic;
-  private  static String profileLoyaltyProgramChangeEventTopic;
-  private  static String profileChangeEventTopic;
-  private  static String profileSegmentChangeEventTopic;
-  private  static String voucherActionTopic;
-  private  static String tokenRedeemedTopic;
-  private  int propensityInitialisationPresentationThreshold;
-  private  int propensityInitialisationDurationInDaysThreshold;
-  private  static String tokenChangeTopic;
-  private  static String subscriberProfileRegistrySubject;
-  private  static Map<String,ScheduledJobConfiguration> datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
-  private  static Map<String,ScheduledJobConfiguration> elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
-  private  PropensityRule propensityRule;
-  private  Map<String,Long> journeyTemplateCapacities = new LinkedHashMap<String,Long>();
-  private  Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
-  private  static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();
-  private  String baseLanguageID;
-  private  Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
-  private  Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
-  private  Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
-  private  Map<String,SupportedVoucherCodePattern> supportedVoucherCodePatternList = new LinkedHashMap<String,SupportedVoucherCodePattern>();
-  private  Map<String,SupportedRelationship> supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
-  private  Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
-  private  Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
-  private  Map<String,PartnerType> partnerTypes = new LinkedHashMap<String,PartnerType>();
-  private  Map<String,BillingMode> billingModes = new LinkedHashMap<String,BillingMode>();
-  private  JSONArray initialCallingChannelsJSONArray = null;
-  private  JSONArray initialSalesChannelsJSONArray = null;
-  private  JSONArray initialSourceAddressesJSONArray = null;
-  private  JSONArray initialSuppliersJSONArray = null;
-  private  JSONArray initialPartnersJSONArray = null;
-  private  JSONArray initialProductsJSONArray = null;
-  private  JSONArray initialReportsJSONArray = null;
-  private  JSONArray initialCatalogCharacteristicsJSONArray = null;
-  private  JSONArray initialContactPoliciesJSONArray = null;
-  private  JSONArray initialJourneyTemplatesJSONArray = null;
-  private  JSONArray initialJourneyObjectivesJSONArray = null;
-  private  JSONArray initialOfferObjectivesJSONArray = null;
-  private  JSONArray initialProductTypesJSONArray = null;
-  private  JSONArray initialTokenTypesJSONArray = null;
-  private  JSONArray initialVoucherCodeFormatsJSONArray = null;
-  private  JSONArray initialScoringTypesJSONArray = null;
-  private  JSONArray initialSegmentationDimensionsJSONArray = null;
-  private  boolean generateSimpleProfileDimensions;
-  private  static Map<String,CommunicationChannel> communicationChannels = new LinkedHashMap<>();
-  private  Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
-  private  static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
-  private  static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics = new LinkedHashMap<String,SubscriberProfileDatacubeMetric>();
-  private  static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
-  private  static Map<String,CriterionField> baseProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
-  private  static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
-  private  static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
-  private  static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
-//  private  List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
-  private  Map<String,OfferProperty> offerProperties = new LinkedHashMap<String,OfferProperty>();
-  private  static Map<String,ScoringEngine> scoringEngines = new LinkedHashMap<String,ScoringEngine>();
-  private  static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
-  private  Map<String,ScoringType> scoringTypes = new LinkedHashMap<String,ScoringType>();
-  private  Map<String,DNBOMatrixVariable> dnboMatrixVariables = new LinkedHashMap<String,DNBOMatrixVariable>();
-  private  static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
-  private  static Map<String,DeliveryManagerDeclaration> fulfillmentProviders = new LinkedHashMap<String,DeliveryManagerDeclaration>();
-  private  static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
-  private  List<EvaluationCriterion> journeyUniversalEligibilityCriteria = new ArrayList<>();
-  private  static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
-  private  Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
-  private  Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
-  private  Map<String,ToolboxSection> workflowToolbox = new LinkedHashMap<String,ToolboxSection>();
-  private  Map<String,ToolboxSection> loyaltyWorkflowToolbox = new LinkedHashMap<String,ToolboxSection>();
-  private  static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
-  private  CommunicationChannelTimeWindow defaultNotificationTimeWindowsMap;
-  private  static Integer authResponseCacheLifetimeInMinutes = null;
-  private  static Integer reportManagerMaxMessageLength = null;
-  private  static int stockRefreshPeriod;
-  private  static String periodicEvaluationCronEntry;
-  private  static String ucgEvaluationCronEntry;
-  private  Map<String,Report> initialReports = new LinkedHashMap<>();
-  private  static String reportManagerZookeeperDir;
-  private  String reportManagerOutputPath;
-  private  String reportManagerDateFormat;
-  private  String reportManagerFileExtension;
-  private  String reportManagerStreamsTempDir;
-  private  static String reportManagerTopicsCreationProperties;
-  private  static String reportManagerCsvSeparator;
-  private  static String reportManagerFieldSurrounder;
-  private  static String uploadedFileSeparator;
-  private  static CustomerMetaData customerMetaData = null;
-  private  static String APIresponseDateFormat;
-  private  static String uploadedFileTopic;
-  private  static String targetTopic;
-  private  static String communicationChannelTopic;
-  public  static String communicationChannelBlackoutTopic;
-  public  static String communicationChannelTimeWindowTopic;
-  public  static String loyaltyProgramTopic;
-  private  static String exclusionInclusionTargetTopic;
-  private  static String dnboMatrixTopic;
-  private  static String segmentContactPolicyTopic;
-  private  static String dynamicEventDeclarationsTopic;
-  private  static String dynamicCriterionFieldsTopic;
-  private  static Map<String,ElasticsearchConnectionSettings> elasticsearchConnectionSettings = new LinkedHashMap<String,ElasticsearchConnectionSettings>();
-  private  static int maxPollIntervalMs;
-  private  static String criterionFieldAvailableValuesTopic;
-  private  static String sourceAddressTopic;
-  private  boolean autoApproveGuiObjects;
-  private  static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
-  private  static int purchaseTimeoutMs;
-  private  static String voucherChangeRequestTopic;
-  private  static String voucherChangeResponseTopic;
-  private  static String hourlyReportCronEntryString;
-  private  static String dailyReportCronEntryString;
-  private  static String weeklyReportCronEntryString;
-  private  static String monthlyReportCronEntryString;
-  private  static boolean enableEvaluateTargetRandomness;
-  private  static int minExpiryDelayForVoucherDeliveryInHours;
-  private  static int importVoucherFileBulkSize;
-  private  static int voucherESCacheCleanerFrequencyInSec;
-  private  static int numberConcurrentVoucherAllocationToES;
-  private  static int propensityReaderRefreshPeriodMs;
-  private  static int propensityWriterRefreshPeriodMs;
-  private  static int kafkaRetentionDaysExpiredTokens;
-  private  static int kafkaRetentionDaysExpiredVouchers;
-  private  static int kafkaRetentionDaysJourneys;
-  private  static int kafkaRetentionDaysCampaigns;
-  private  static int kafkaRetentionDaysBulkCampaigns;
-  private  static int kafkaRetentionDaysLoyaltyPrograms;
-  private  static int kafkaRetentionDaysODR;
-  private  static int kafkaRetentionDaysBDR;
-  private  static int kafkaRetentionDaysMDR;
+  private static String elasticSearchHost;
+  private static int elasticSearchPort;
+  private static String elasticSearchUserName;
+  private static String elasticSearchUserPassword;
+  private static int topicSubscriberPartitions;
+  private static int topicReplication;
+  private static String topicMinInSyncReplicas;
+  private static String topicRetentionShortMs;
+  private static String topicRetentionMs;
+  private static String topicRetentionLongMs;
+  private static int httpServerScalingFactor = 1;    
+  private static int evolutionEngineStreamThreads;
+  private static int evolutionEngineInstanceNumbers;
+  private String subscriberGroupLoaderAlternateID;
+  private static String getCustomerAlternateID;
+  private boolean subscriberGroupLoaderAutoProvision;
+  private static String criterionFieldRetrieverClassName;
+  private static String evolutionEngineExtensionClassName;
+  private static String guiManagerExtensionClassName;
+  private static String subscriberProfileClassName;
+  private static String extendedSubscriberProfileClassName;
+  private static String evolutionEngineExternalAPIClassName;
+  private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
+  private Map<String, CriterionField> profileChangeDetectionCriterionFields = new HashMap<>();
+  private Map<String, CriterionField> profileChangeGeneratedCriterionFields = new HashMap<>();
+  private boolean enableProfileSegmentChange;
+  private static String journeyTopic;
+  private static String journeyTemplateTopic;
+  private static String segmentationDimensionTopic;
+  private static String pointTopic;
+  private static String complexObjectTypeTopic;
+  private static String offerTopic;
+  private static String reportTopic;
+  private static String paymentMeanTopic;
+  private static String presentationStrategyTopic;
+  private static String scoringStrategyTopic;
+  private static String callingChannelTopic;
+  private static String salesChannelTopic;
+  private static String supplierTopic;
+  private static String resellerTopic;
+  private static String productTopic;
+  private static String catalogCharacteristicTopic;
+  private static String contactPolicyTopic;
+  private static String journeyObjectiveTopic;
+  private static String offerObjectiveTopic;
+  private static String productTypeTopic;
+  private static String ucgRuleTopic;
+  private static String deliverableTopic;
+  private static String tokenTypeTopic;
+  private static String voucherTypeTopic;
+  private static String voucherTopic;
+  private static String subscriberMessageTemplateTopic;
+  private static String guiAuditTopic;
+  private static String subscriberGroupTopic;
+  private static String subscriberGroupAssignSubscriberIDTopic;
+  private static String subscriberGroupEpochTopic;
+  private static String ucgStateTopic;
+  private static String renamedProfileCriterionFieldTopic;
+  private static String timedEvaluationTopic;
+  private static String evaluateTargetsTopic;
+  private static String subscriberProfileForceUpdateTopic;
+  private static String executeActionOtherSubscriberTopic;
+  private static String subscriberStateChangeLog;
+  private static String subscriberStateChangeLogTopic;
+  private static String extendedSubscriberProfileChangeLog;
+  private static String extendedSubscriberProfileChangeLogTopic;
+  private static String subscriberHistoryChangeLog;
+  private static String subscriberHistoryChangeLogTopic;
+  private static String journeyStatisticTopic;
+  private static String journeyMetricTopic;
+  private static String deliverableSourceTopic;
+  private static String presentationLogTopic;
+  private static String acceptanceLogTopic;
+  private static String profileLoyaltyProgramChangeEventTopic;
+  private static String profileChangeEventTopic;
+  private static String profileSegmentChangeEventTopic;
+  private static String voucherActionTopic;
+  private static String fileWithVariableEventTopic;
+  private static String tokenRedeemedTopic;
+  private int propensityInitialisationPresentationThreshold;
+  private int propensityInitialisationDurationInDaysThreshold;
+  private static String tokenChangeTopic;
+  private static String subscriberProfileRegistrySubject;
+  private static Map<String,ScheduledJobConfiguration> datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
+  private static Map<String,ScheduledJobConfiguration> elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
+  private PropensityRule propensityRule;
+  private Map<String,Long> journeyTemplateCapacities = new LinkedHashMap<String,Long>();
+  private Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
+  private static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();
+  private String baseLanguageID;
+  private Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
+  private Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
+  private Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
+  private Map<String,SupportedVoucherCodePattern> supportedVoucherCodePatternList = new LinkedHashMap<String,SupportedVoucherCodePattern>();
+  private Map<String,SupportedRelationship> supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
+  private Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
+  private Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
+  private Map<String,PartnerType> partnerTypes = new LinkedHashMap<String,PartnerType>();
+  private Map<String,BillingMode> billingModes = new LinkedHashMap<String,BillingMode>();
+  private JSONArray initialCallingChannelsJSONArray = null;
+  private JSONArray initialSalesChannelsJSONArray = null;
+  private JSONArray initialSourceAddressesJSONArray = null;
+  private JSONArray initialSuppliersJSONArray = null;
+  private JSONArray initialPartnersJSONArray = null;
+  private JSONArray initialProductsJSONArray = null;
+  private JSONArray initialReportsJSONArray = null;
+  private JSONArray initialCatalogCharacteristicsJSONArray = null;
+  private JSONArray initialContactPoliciesJSONArray = null;
+  private JSONArray initialJourneyTemplatesJSONArray = null;
+  private JSONArray initialJourneyObjectivesJSONArray = null;
+  private JSONArray initialOfferObjectivesJSONArray = null;
+  private JSONArray initialProductTypesJSONArray = null;
+  private JSONArray initialTokenTypesJSONArray = null;
+  private JSONArray initialVoucherCodeFormatsJSONArray = null;
+  private JSONArray initialScoringTypesJSONArray = null;
+  private JSONArray initialSegmentationDimensionsJSONArray = null;
+  private static JSONArray initialComplexObjectJSONArray = null;
+  private boolean generateSimpleProfileDimensions;
+  private static Map<String,CommunicationChannel> communicationChannels = new LinkedHashMap<>();
+  private Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
+  private static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
+  private static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics = new LinkedHashMap<String,SubscriberProfileDatacubeMetric>();
+  private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,CriterionField> baseProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
+//  private List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
+  private Map<String,OfferProperty> offerProperties = new LinkedHashMap<String,OfferProperty>();
+  private static Map<String,ScoringEngine> scoringEngines = new LinkedHashMap<String,ScoringEngine>();
+  private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
+  private Map<String,ScoringType> scoringTypes = new LinkedHashMap<String,ScoringType>();
+  private Map<String,DNBOMatrixVariable> dnboMatrixVariables = new LinkedHashMap<String,DNBOMatrixVariable>();
+  private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
+  private static Map<String,DeliveryManagerDeclaration> fulfillmentProviders = new LinkedHashMap<String,DeliveryManagerDeclaration>();
+  private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
+  private List<EvaluationCriterion> journeyUniversalEligibilityCriteria = new ArrayList<>();
+  private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
+  private Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private Map<String,ToolboxSection> workflowToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private Map<String,ToolboxSection> loyaltyWorkflowToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
+  private CommunicationChannelTimeWindow defaultNotificationTimeWindowsMap;
+  private static Integer authResponseCacheLifetimeInMinutes = null;
+  private static Integer reportManagerMaxMessageLength = null;
+  private static int stockRefreshPeriod;
+  private static String periodicEvaluationCronEntry;
+  private static String ucgEvaluationCronEntry;
+  private Map<String,Report> initialReports = new LinkedHashMap<>();
+  private static String reportManagerZookeeperDir;
+  private String reportManagerOutputPath;
+  private String reportManagerDateFormat;
+  private String reportManagerFileExtension;
+  private String reportManagerStreamsTempDir;
+  private static String reportManagerTopicsCreationProperties;
+  private static String reportManagerCsvSeparator;
+  private static String reportManagerFieldSurrounder;
+  private static String uploadedFileSeparator;
+  private static CustomerMetaData customerMetaData = null;
+  private static String APIresponseDateFormat;
+  private static String uploadedFileTopic;
+  private static String targetTopic;
+  private static String communicationChannelTopic;
+  public static String communicationChannelBlackoutTopic;
+  public static String communicationChannelTimeWindowTopic;
+  public static String loyaltyProgramTopic;
+  private static String exclusionInclusionTargetTopic;
+  private static String dnboMatrixTopic;
+  private static String segmentContactPolicyTopic;
+  private static String dynamicEventDeclarationsTopic;
+  private static String dynamicCriterionFieldsTopic;
+  private static Map<String,ElasticsearchConnectionSettings> elasticsearchConnectionSettings = new LinkedHashMap<String,ElasticsearchConnectionSettings>();
+  private static int maxPollIntervalMs;
+  private static String criterionFieldAvailableValuesTopic;
+  private static String sourceAddressTopic;
+  private static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
+  private static int purchaseTimeoutMs;
+  private static String voucherChangeRequestTopic;
+  private static String voucherChangeResponseTopic;
+  private static String hourlyReportCronEntryString;
+  private static String dailyReportCronEntryString;
+  private static String weeklyReportCronEntryString;
+  private static String monthlyReportCronEntryString;
+  private static boolean enableEvaluateTargetRandomness;
+  private static int minExpiryDelayForVoucherDeliveryInHours;
+  private static int importVoucherFileBulkSize;
+  private static int voucherESCacheCleanerFrequencyInSec;
+  private static int numberConcurrentVoucherAllocationToES;
+  private static int propensityReaderRefreshPeriodMs;
+  private static int propensityWriterRefreshPeriodMs;
+  private static int kafkaRetentionDaysExpiredTokens;
+  private static int kafkaRetentionDaysExpiredVouchers;
+  private static int kafkaRetentionDaysJourneys;
+  private static int kafkaRetentionDaysCampaigns;
+  private static int kafkaRetentionDaysBulkCampaigns;
+  private static int kafkaRetentionDaysLoyaltyPrograms;
+  private static int kafkaRetentionDaysODR;
+  private static int kafkaRetentionDaysBDR;
+  private static int kafkaRetentionDaysMDR;
+  //EVPRO-574
+  private static int kafkaRetentionDaysTargets;
+
 
   private  boolean enableContactPolicyProcessing;
 
@@ -272,6 +275,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
 
   // generated
   private static Map<String,Topic> allTopics;
+  private static boolean isPreprocessorNeeded = false;
 
   /*****************************************
    *
@@ -283,208 +287,218 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   //  evolution accessors
   //
 
-  public  static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
-  public  static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
-  public  static int getTopicSubscriberPartitions() { return topicSubscriberPartitions; }
-  public  static int getTopicReplication() { return topicReplication; }
-  public  static String getTopicMinInSyncReplicas() { return topicMinInSyncReplicas; }
-  public  static String getTopicRetentionShortMs() { return topicRetentionShortMs; }
-  public  static String getTopicRetentionMs() { return topicRetentionMs; }
-  public  static String getTopicRetentionLongMs() { return topicRetentionLongMs; }
-  public  static int getEvolutionEngineStreamThreads() { return evolutionEngineStreamThreads; }
-  public  static int getEvolutionEngineInstanceNumbers() { return evolutionEngineInstanceNumbers; }
-  public  String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
-  public  static String getGetCustomerAlternateID() { return getCustomerAlternateID; }  // EVPRO-99 check for tenant and static
-  public  boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
-  public  static String getCriterionFieldRetrieverClassName() { return criterionFieldRetrieverClassName; }
-  public  static String getEvolutionEngineExtensionClassName() { return evolutionEngineExtensionClassName; }
-  public  static String getGUIManagerExtensionClassName() { return guiManagerExtensionClassName; }
-  public  static String getSubscriberProfileClassName() { return subscriberProfileClassName; }
-  public  static String getExtendedSubscriberProfileClassName() { return extendedSubscriberProfileClassName; }
-  public  static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
-  public  boolean getEnableProfileSegmentChange() { return enableProfileSegmentChange; }
-  public  static String getJourneyTopic() { return journeyTopic; }
-  public  static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
-  public  static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
-  public  static String getPointTopic() { return pointTopic; }
-  public  static String getOfferTopic() { return offerTopic; }
-  public  static String getReportTopic() { return reportTopic; }
-  public  static String getPaymentMeanTopic() { return paymentMeanTopic; }
-  public  static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
-  public  static String getScoringStrategyTopic() { return scoringStrategyTopic; }
-  public  static String getCallingChannelTopic() { return callingChannelTopic; }
-  public  static String getSalesChannelTopic() { return salesChannelTopic; }
-  public  static String getSupplierTopic() { return supplierTopic; }
-  public  static String getResellerTopic() { return resellerTopic; }
-  public  static String getProductTopic() { return productTopic; }
-  public  static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
-  public  static String getContactPolicyTopic() { return contactPolicyTopic; }
-  public  static String getJourneyObjectiveTopic() { return journeyObjectiveTopic; }
-  public  static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
-  public  static String getProductTypeTopic() { return productTypeTopic; }
-  public  static String getUCGRuleTopic() { return ucgRuleTopic; }
-  public  static String getDeliverableTopic() { return deliverableTopic; }
-  public  static String getTokenTypeTopic() { return tokenTypeTopic; }
-  public  static String getVoucherTypeTopic() { return voucherTypeTopic; }
-  public  static String getVoucherTopic() { return voucherTopic; }
-  public  static String getSubscriberMessageTemplateTopic() { return subscriberMessageTemplateTopic; }
-  public  static String getGUIAuditTopic() { return guiAuditTopic; }
-  public  static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
-  public  static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
-  public  static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
-  public  static String getUCGStateTopic() { return ucgStateTopic; }
-  public  static String getRenamedProfileCriterionFieldTopic() { return renamedProfileCriterionFieldTopic; }
-  public  static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
-  public  static String getEvaluateTargetsTopic() { return evaluateTargetsTopic; }
-  public  static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
-  public  static String getExecuteActionOtherSubscriberTopic() { return executeActionOtherSubscriberTopic; }
-  public  static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
-  public  static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
-  public  static String getExtendedSubscriberProfileChangeLog() { return extendedSubscriberProfileChangeLog; }
-  public  static String getExtendedSubscriberProfileChangeLogTopic() { return extendedSubscriberProfileChangeLogTopic; }
-  public  static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
-  public  static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
-  public  static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
-  public  static String getJourneyMetricTopic() { return journeyMetricTopic; }
-  public  static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
-  public  static String getPresentationLogTopic() { return presentationLogTopic; }
-  public  static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
-  public  static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
-  public  static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
-  public  static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
-  public  static String getVoucherActionTopic() { return voucherActionTopic; }
-  public  static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
-  public  int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
-  public  int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
-  public  static String getTokenChangeTopic() { return tokenChangeTopic; }
-  public  static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
-  public  static Map<String,ScheduledJobConfiguration> getDatacubeJobsScheduling() { return datacubeJobsScheduling; } // EVPRO-99 check static for tenant...
-  public  static Map<String,ScheduledJobConfiguration> getElasticsearchJobsScheduling() { return elasticsearchJobsScheduling; }
-  public  PropensityRule getPropensityRule() { return propensityRule; }
-  public  Map<String,Long> getJourneyTemplateCapacities() { return journeyTemplateCapacities; }
-  public  Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
-  public  static Map<String,ExternalAPITopic> getExternalAPITopics() { return externalAPITopics; }
-  public  String getBaseLanguageID() { return baseLanguageID; }
-  public  Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
-  public  Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
-  public  Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
-  public  Map<String,SupportedVoucherCodePattern> getSupportedVoucherCodePatternList() { return supportedVoucherCodePatternList; }
-  public  Map<String,SupportedRelationship> getSupportedRelationships() { return supportedRelationships; }
-  public  Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
-  public  Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
-  public  JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
-  public  JSONArray getInitialSalesChannelsJSONArray() { return initialSalesChannelsJSONArray; }
-  public  JSONArray getInitialSourceAddressesJSONArray() { return initialSourceAddressesJSONArray; }
-  public  JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
-  public  JSONArray getInitialPartnersJSONArray() { return initialPartnersJSONArray; }
-  public  JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
-  public  JSONArray getInitialReportsJSONArray() { return initialReportsJSONArray; }
-  public  JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
-  public  JSONArray getInitialContactPoliciesJSONArray() { return initialContactPoliciesJSONArray; }
-  public  JSONArray getInitialJourneyTemplatesJSONArray() { return initialJourneyTemplatesJSONArray; }
-  public  JSONArray getInitialJourneyObjectivesJSONArray() { return initialJourneyObjectivesJSONArray; }
-  public  JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
-  public  JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
-  public  JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
-  public  JSONArray getInitialVoucherCodeFormatsJSONArray() { return initialVoucherCodeFormatsJSONArray; }
-  public  JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
-  public  boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
-  public  Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
-  public  static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; } // EVPRO-99 check for tenant and static
-  public  static Map<String,SubscriberProfileDatacubeMetric> getSubscriberProfileDatacubeMetrics() { return subscriberProfileDatacubeMetrics; } // EVPRO-99 check for tenant and static 
-  public  static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; } // EVPRO-99 check for tenant and static
-  public  static Map<String,CriterionField> getBaseProfileCriterionFields() { return baseProfileCriterionFields; }
-  public  Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
-  public  Map<String, CriterionField> getProfileChangeDetectionCriterionFields() { return profileChangeDetectionCriterionFields; }
-  public  Map<String, CriterionField> getProfileChangeGeneratedCriterionFields() { return profileChangeGeneratedCriterionFields; }
-  public  Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
-//  public  List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; } // still usefull ?
-//  public  List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
-  public  Map<String,OfferProperty> getOfferProperties() { return offerProperties; }
-  public  static Map<String,ScoringEngine> getScoringEngines() { return scoringEngines; } // EVPRO-99 check for tenant and static
-  public  static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; } // EVPRO-99 check for tenant and static
-  public  Map<String,ScoringType> getScoringTypes() { return scoringTypes; }
-  public  Map<String,DNBOMatrixVariable> getDNBOMatrixVariables() { return dnboMatrixVariables; }
-  public  static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
-  public  static Map<String,DeliveryManagerDeclaration> getFulfillmentProviders() { return fulfillmentProviders; } // TODO EVPRO-99 fulfillmentProviders accounts per tenant ?
-  public  static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; } // TODO EVPRO-99 deliveryManager accounts per tenant ?
-  public  static Map<String,NodeType> getNodeTypes() { return nodeTypes; } // EVPRO-99 should not be per tenant...
-  public  Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
-  public  Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
-  public  Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
-  public  Map<String,ToolboxSection> getLoyaltyWorkflowToolbox() { return loyaltyWorkflowToolbox; }
-  public  static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; } // TODO EVPRO-99 check for tenant and static
-  public  static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
-  public  static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; } // TODO EVPRO-99 check for tenant and static
-  public  static int getStockRefreshPeriod() { return stockRefreshPeriod; } // TODO EVPRO-99 check for tenant and static
-  public  static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
-  public  static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; } // TODO EVPRO-99 check for tenant and static
-  public  Map<String,Report> getInitialReports() { return initialReports; }
-  public  static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
-  public  String getReportManagerOutputPath() { return reportManagerOutputPath; }
-  public  String getReportManagerDateFormat() { return reportManagerDateFormat; }
-  public  String getReportManagerFileExtension() { return reportManagerFileExtension; }
-  public  static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; } // EVPRO-99 check for tenant and static
-  public  static String getReportManagerFieldSurrounder() { return reportManagerFieldSurrounder; } // EVPRO-99 check for tenant and static
-  public  static String getUploadedFileSeparator() { return uploadedFileSeparator; } // EVPRO-99 check for tenant and static
-  public  String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
-  public  static String getReportManagerTopicsCreationProperties() { return reportManagerTopicsCreationProperties; }
-  public  static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
-  public  static String getAPIresponseDateFormat() { return APIresponseDateFormat; } // EVPRO-99 check for tenant and static
-  public  static String getUploadedFileTopic() { return uploadedFileTopic; }
-  public  static String getTargetTopic() { return targetTopic; }
-  public  CommunicationChannelTimeWindow getDefaultNotificationDailyWindows() { return defaultNotificationTimeWindowsMap; }
-  public  static String getCommunicationChannelTopic() { return communicationChannelTopic; }
-  public  static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; }
-  public  static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
-  public  static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
-  public  static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
-  public  static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
-  public  static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
-  public  static String getDynamicEventDeclarationsTopic() { return dynamicEventDeclarationsTopic; }
-  public  static String getDynamicCriterionFieldTopic() { return dynamicCriterionFieldsTopic; }
-  public  Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
-  public  Map<String,BillingMode> getBillingModes() { return billingModes; }
-  public  static Map<String,ElasticsearchConnectionSettings> getElasticsearchConnectionSettings() { return elasticsearchConnectionSettings; }
-  public  static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
-  public  static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
-  public  static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
-  public  static String getSourceAddressTopic() { return sourceAddressTopic; }
-  public  boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
-  public  static Map<String,CommunicationChannel> getCommunicationChannels(){ return communicationChannels; }; // TODO EVPRO-99 how communication channels are handled into multitenancy ??
-  public  static Map<String,String> getDeliveryTypeCommunicationChannelIDMap(){ return deliveryTypeCommunicationChannelIDMap; };  // TODO EVPRO-99 how communication channels are handled into multitenancy ??
-  public  static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
-  public  static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
-  public  static int getMinExpiryDelayForVoucherDeliveryInHours() { return minExpiryDelayForVoucherDeliveryInHours; } // TODO EVPRO-99 check for tenant and static
-  public  static int getImportVoucherFileBulkSize() { return importVoucherFileBulkSize; } // TODO EVPRO-99 check for tenant and static
-  public  static int getNumberConcurrentVoucherAllocationToES() { return numberConcurrentVoucherAllocationToES; }
-  public  static int getVoucherESCacheCleanerFrequencyInSec() { return voucherESCacheCleanerFrequencyInSec; }
-  public  static String getHourlyReportCronEntryString() { return hourlyReportCronEntryString; }
-  public  static String getDailyReportCronEntryString() { return dailyReportCronEntryString; }
-  public  static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
-  public  static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
-  public  static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
-  public  static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
-  public  static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
-  public  int getKafkaRetentionDaysExpiredTokens() { return kafkaRetentionDaysExpiredTokens; }
-  public  static int getKafkaRetentionDaysExpiredVouchers() { return kafkaRetentionDaysExpiredVouchers; }
-  public  static int getKafkaRetentionDaysJourneys() { return kafkaRetentionDaysJourneys; }
-  public  static int getKafkaRetentionDaysCampaigns() { return kafkaRetentionDaysCampaigns; }
-  public  static int getKafkaRetentionDaysBulkCampaigns() { return kafkaRetentionDaysBulkCampaigns; }
-  public  static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
-  public  static int getKafkaRetentionDaysODR() { return kafkaRetentionDaysODR; }
-  public  static int getKafkaRetentionDaysBDR() { return kafkaRetentionDaysBDR; }
-  public  static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
-  public  boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
-  public  static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
-  public  static String getExtractManagerOutputPath() { return extractManagerOutputPath; } // TODO EVPRO-99 check tenant ?
-  public  static String getExtractManagerDateFormat() { return extractManagerDateFormat; }// TODO EVPRO-99 check tenant ?
-  public  static String getExtractManagerFileExtension() { return extractManagerFileExtension; } // TODO EVPRO-99 check tenant ?
-  public  static String getExtractManagerCsvSeparator() { return extractManagerCsvSeparator; }// EVPRO-99 check static for tenant
-  public  String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
-  public  static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; } // TODO EVPRO-99 check tenant aspect
-  public  static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
+  public static String getElasticSearchHost() { return elasticSearchHost; }
+  public static int getElasticSearchPort() { return elasticSearchPort; }
+  public static String getElasticSearchUserName() { return  elasticSearchUserName; }
+  public static String getElasticSearchUserPassword() { return  elasticSearchUserPassword; }
+  public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
+  public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
+  public static int getTopicSubscriberPartitions() { return topicSubscriberPartitions; }
+  public static int getTopicReplication() { return topicReplication; }
+  public static String getTopicMinInSyncReplicas() { return topicMinInSyncReplicas; }
+  public static String getTopicRetentionShortMs() { return topicRetentionShortMs; }
+  public static int getHttpServerScalingFactor() { return httpServerScalingFactor; }
+  public static String getTopicRetentionMs() { return topicRetentionMs; }
+  public static String getTopicRetentionLongMs() { return topicRetentionLongMs; }
+  public static int getEvolutionEngineStreamThreads() { return evolutionEngineStreamThreads; }
+  public static int getEvolutionEngineInstanceNumbers() { return evolutionEngineInstanceNumbers; }
+  public String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
+  public static String getGetCustomerAlternateID() { return getCustomerAlternateID; }  // EVPRO-99 check for tenant and static
+  public boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
+  public static String getCriterionFieldRetrieverClassName() { return criterionFieldRetrieverClassName; }
+  public static String getEvolutionEngineExtensionClassName() { return evolutionEngineExtensionClassName; }
+  public static String getGUIManagerExtensionClassName() { return guiManagerExtensionClassName; }
+  public static String getSubscriberProfileClassName() { return subscriberProfileClassName; }
+  public static String getExtendedSubscriberProfileClassName() { return extendedSubscriberProfileClassName; }
+  public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
+  public boolean getEnableProfileSegmentChange() { return enableProfileSegmentChange; }
+  public static String getJourneyTopic() { return journeyTopic; }
+  public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
+  public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
+  public static String getPointTopic() { return pointTopic; }
+  public static String getOfferTopic() { return offerTopic; }
+  public static String getReportTopic() { return reportTopic; }
+  public static String getComplexObjectTypeTopic() { return complexObjectTypeTopic; }
+  public static String getPaymentMeanTopic() { return paymentMeanTopic; }
+  public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
+  public static String getScoringStrategyTopic() { return scoringStrategyTopic; }
+  public static String getCallingChannelTopic() { return callingChannelTopic; }
+  public static String getSalesChannelTopic() { return salesChannelTopic; }
+  public static String getSupplierTopic() { return supplierTopic; }
+  public static String getResellerTopic() { return resellerTopic; }
+  public static String getProductTopic() { return productTopic; }
+  public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
+  public static String getContactPolicyTopic() { return contactPolicyTopic; }
+  public static String getJourneyObjectiveTopic() { return journeyObjectiveTopic; }
+  public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
+  public static String getProductTypeTopic() { return productTypeTopic; }
+  public static String getUCGRuleTopic() { return ucgRuleTopic; }
+  public static String getDeliverableTopic() { return deliverableTopic; }
+  public static String getTokenTypeTopic() { return tokenTypeTopic; }
+  public static String getVoucherTypeTopic() { return voucherTypeTopic; }
+  public static String getVoucherTopic() { return voucherTopic; }
+  public static String getSubscriberMessageTemplateTopic() { return subscriberMessageTemplateTopic; }
+  public static String getGUIAuditTopic() { return guiAuditTopic; }
+  public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
+  public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
+  public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
+  public static String getUCGStateTopic() { return ucgStateTopic; }
+  public static String getRenamedProfileCriterionFieldTopic() { return renamedProfileCriterionFieldTopic; }
+  public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
+  public static String getEvaluateTargetsTopic() { return evaluateTargetsTopic; }
+  public static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
+  public static String getExecuteActionOtherSubscriberTopic() { return executeActionOtherSubscriberTopic; }
+  public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
+  public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
+  public static String getExtendedSubscriberProfileChangeLog() { return extendedSubscriberProfileChangeLog; }
+  public static String getExtendedSubscriberProfileChangeLogTopic() { return extendedSubscriberProfileChangeLogTopic; }
+  public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
+  public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
+  public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
+  public static String getJourneyMetricTopic() { return journeyMetricTopic; }
+  public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
+  public static String getPresentationLogTopic() { return presentationLogTopic; }
+  public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
+  public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
+  public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
+  public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
+  public static String getVoucherActionTopic() { return voucherActionTopic; }
+  public static String getFileWithVariableEventTopic() { return fileWithVariableEventTopic; }
+  public static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
+  public int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
+  public int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
+  public static String getTokenChangeTopic() { return tokenChangeTopic; }
+  public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
+  public static Map<String,ScheduledJobConfiguration> getDatacubeJobsScheduling() { return datacubeJobsScheduling; } // EVPRO-99 check static for tenant...
+  public static Map<String,ScheduledJobConfiguration> getElasticsearchJobsScheduling() { return elasticsearchJobsScheduling; }
+  public PropensityRule getPropensityRule() { return propensityRule; }
+  public Map<String,Long> getJourneyTemplateCapacities() { return journeyTemplateCapacities; }
+  public Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
+  public static Map<String,ExternalAPITopic> getExternalAPITopics() { return externalAPITopics; }
+  public String getBaseLanguageID() { return baseLanguageID; }
+  public Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
+  public Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
+  public Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
+  public Map<String,SupportedVoucherCodePattern> getSupportedVoucherCodePatternList() { return supportedVoucherCodePatternList; }
+  public Map<String,SupportedRelationship> getSupportedRelationships() { return supportedRelationships; }
+  public Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
+  public Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
+  public JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
+  public JSONArray getInitialSalesChannelsJSONArray() { return initialSalesChannelsJSONArray; }
+  public JSONArray getInitialSourceAddressesJSONArray() { return initialSourceAddressesJSONArray; }
+  public JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
+  public JSONArray getInitialPartnersJSONArray() { return initialPartnersJSONArray; }
+  public JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
+  public JSONArray getInitialReportsJSONArray() { return initialReportsJSONArray; }
+  public JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
+  public JSONArray getInitialContactPoliciesJSONArray() { return initialContactPoliciesJSONArray; }
+  public JSONArray getInitialJourneyTemplatesJSONArray() { return initialJourneyTemplatesJSONArray; }
+  public JSONArray getInitialJourneyObjectivesJSONArray() { return initialJourneyObjectivesJSONArray; }
+  public JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
+  public JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
+  public JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
+  public JSONArray getInitialVoucherCodeFormatsJSONArray() { return initialVoucherCodeFormatsJSONArray; }
+  public JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
+  public static JSONArray getInitialComplexObjectJSONArray() { return initialComplexObjectJSONArray; }
+  public boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
+  public Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
+  public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; } // EVPRO-99 check for tenant and static
+  public static Map<String,SubscriberProfileDatacubeMetric> getSubscriberProfileDatacubeMetrics() { return subscriberProfileDatacubeMetrics; } // EVPRO-99 check for tenant and static 
+  public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; } // EVPRO-99 check for tenant and static
+  public static Map<String,CriterionField> getBaseProfileCriterionFields() { return baseProfileCriterionFields; }
+  public Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
+  public Map<String, CriterionField> getProfileChangeDetectionCriterionFields() { return profileChangeDetectionCriterionFields; }
+  public Map<String, CriterionField> getProfileChangeGeneratedCriterionFields() { return profileChangeGeneratedCriterionFields; }
+  public Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
+//  public List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; } // still usefull ?
+//  public List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
+  public Map<String,OfferProperty> getOfferProperties() { return offerProperties; }
+  public static Map<String,ScoringEngine> getScoringEngines() { return scoringEngines; } // EVPRO-99 check for tenant and static
+  public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; } // EVPRO-99 check for tenant and static
+  public Map<String,ScoringType> getScoringTypes() { return scoringTypes; }
+  public Map<String,DNBOMatrixVariable> getDNBOMatrixVariables() { return dnboMatrixVariables; }
+  public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
+  public static Map<String,DeliveryManagerDeclaration> getFulfillmentProviders() { return fulfillmentProviders; } // TODO EVPRO-99 fulfillmentProviders accounts per tenant ?
+  public static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; } // TODO EVPRO-99 deliveryManager accounts per tenant ?
+  public static Map<String,NodeType> getNodeTypes() { return nodeTypes; } // EVPRO-99 should not be per tenant...
+  public Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
+  public Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
+  public Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
+  public Map<String,ToolboxSection> getLoyaltyWorkflowToolbox() { return loyaltyWorkflowToolbox; }
+  public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; } // TODO EVPRO-99 check for tenant and static
+  public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
+  public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; } // TODO EVPRO-99 check for tenant and static
+  public static int getStockRefreshPeriod() { return stockRefreshPeriod; } // TODO EVPRO-99 check for tenant and static
+  public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
+  public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; } // TODO EVPRO-99 check for tenant and static
+  public Map<String,Report> getInitialReports() { return initialReports; }
+  public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
+  public String getReportManagerOutputPath() { return reportManagerOutputPath; }
+  public String getReportManagerDateFormat() { return reportManagerDateFormat; }
+  public String getReportManagerFileExtension() { return reportManagerFileExtension; }
+  public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; } // EVPRO-99 check for tenant and static
+  public static String getReportManagerFieldSurrounder() { return reportManagerFieldSurrounder; } // EVPRO-99 check for tenant and static
+  public static String getUploadedFileSeparator() { return uploadedFileSeparator; } // EVPRO-99 check for tenant and static
+  public String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
+  public static String getReportManagerTopicsCreationProperties() { return reportManagerTopicsCreationProperties; }
+  public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
+  public static String getAPIresponseDateFormat() { return APIresponseDateFormat; } // EVPRO-99 check for tenant and static
+  public static String getUploadedFileTopic() { return uploadedFileTopic; }
+  public static String getTargetTopic() { return targetTopic; }
+  public CommunicationChannelTimeWindow getDefaultNotificationDailyWindows() { return defaultNotificationTimeWindowsMap; }
+  public static String getCommunicationChannelTopic() { return communicationChannelTopic; }
+  public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; }
+  public static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
+  public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
+  public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
+  public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
+  public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
+  public static String getDynamicEventDeclarationsTopic() { return dynamicEventDeclarationsTopic; }
+  public static String getDynamicCriterionFieldTopic() { return dynamicCriterionFieldsTopic; }
+  public Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
+  public Map<String,BillingMode> getBillingModes() { return billingModes; }
+  public static Map<String,ElasticsearchConnectionSettings> getElasticsearchConnectionSettings() { return elasticsearchConnectionSettings; }
+  public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
+  public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
+  public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
+  public static String getSourceAddressTopic() { return sourceAddressTopic; }
+  public static Map<String,CommunicationChannel> getCommunicationChannels(){ return communicationChannels; }; // TODO EVPRO-99 how communication channels are handled into multitenancy ??
+  public static Map<String,String> getDeliveryTypeCommunicationChannelIDMap(){ return deliveryTypeCommunicationChannelIDMap; };  // TODO EVPRO-99 how communication channels are handled into multitenancy ??
+  public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
+  public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
+  public static int getMinExpiryDelayForVoucherDeliveryInHours() { return minExpiryDelayForVoucherDeliveryInHours; } // TODO EVPRO-99 check for tenant and static
+  public static int getImportVoucherFileBulkSize() { return importVoucherFileBulkSize; } // TODO EVPRO-99 check for tenant and static
+  public static int getNumberConcurrentVoucherAllocationToES() { return numberConcurrentVoucherAllocationToES; }
+  public static int getVoucherESCacheCleanerFrequencyInSec() { return voucherESCacheCleanerFrequencyInSec; }
+  public static String getHourlyReportCronEntryString() { return hourlyReportCronEntryString; }
+  public static String getDailyReportCronEntryString() { return dailyReportCronEntryString; }
+  public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
+  public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
+  public static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
+  public static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
+  public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
+  public int getKafkaRetentionDaysExpiredTokens() { return kafkaRetentionDaysExpiredTokens; }
+  public static int getKafkaRetentionDaysExpiredVouchers() { return kafkaRetentionDaysExpiredVouchers; }
+  public static int getKafkaRetentionDaysJourneys() { return kafkaRetentionDaysJourneys; }
+  public static int getKafkaRetentionDaysCampaigns() { return kafkaRetentionDaysCampaigns; }
+  public static int getKafkaRetentionDaysBulkCampaigns() { return kafkaRetentionDaysBulkCampaigns; }
+  public static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
+  public static int getKafkaRetentionDaysODR() { return kafkaRetentionDaysODR; }
+  public static int getKafkaRetentionDaysBDR() { return kafkaRetentionDaysBDR; }
+  public static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
+  public boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
+  public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
+  public static String getExtractManagerOutputPath() { return extractManagerOutputPath; } // TODO EVPRO-99 check tenant ?
+  public static String getExtractManagerDateFormat() { return extractManagerDateFormat; }// TODO EVPRO-99 check tenant ?
+  public static String getExtractManagerFileExtension() { return extractManagerFileExtension; } // TODO EVPRO-99 check tenant ?
+  public static String getExtractManagerCsvSeparator() { return extractManagerCsvSeparator; }// EVPRO-99 check static for tenant
+  public String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
+  public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; } // TODO EVPRO-99 check tenant aspect
+  public static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
   public List<EvaluationCriterion> getJourneyUniversalEligibilityCriteria() { return journeyUniversalEligibilityCriteria; } 
+  public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
+  //EVPRO-574
+  public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
 
   // addProfileCriterionField
   //
@@ -724,6 +738,19 @@ public class Deployment extends com.evolving.nglm.core.Deployment
        *
        *****************************************/
 
+      elasticSearchHost = System.getenv("ELASTICSEARCH_HOST");
+      elasticSearchPort = -1;
+      try
+        {
+          elasticSearchPort = Integer.parseInt(System.getenv("ELASTICSEARCH_PORT"));
+        }
+      catch (NumberFormatException e)
+        {
+          log.info("deployment : can not get/parse env conf ELASTICSEARCH_PORT");
+        }
+      elasticSearchUserName = System.getenv("ELASTICSEARCH_USERNAME");
+      elasticSearchUserPassword = System.getenv("ELASTICSEARCH_USERPASSWORD");
+
       //
       // kafka topics configuration
       //
@@ -741,6 +768,20 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           throw new ServerRuntimeException("deployment : topic configuration", e);
         }
 
+      //
+      //  httpServerScalingFactor
+      //
+      
+      try
+        {
+          httpServerScalingFactor = Integer.parseInt(System.getenv().get("HTTP_SERVER_SCALING_FACTOR"));
+          log.info("Deployment: HTTP_SERVER_SCALING_FACTOR set to value - " + httpServerScalingFactor);          
+        }
+      catch (NumberFormatException e)
+        {
+          log.info("Deployment: HTTP_SERVER_SCALING_FACTOR set to default value - " + httpServerScalingFactor);
+        }
+      
       try
         {
           evolutionEngineStreamThreads = Integer.parseInt(System.getProperty("evolutionengine.streamthreads","1"));
@@ -900,6 +941,19 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         }
       
       //
+      //  fileWithVariableEventTopic
+      //
+
+      try
+        {
+          fileWithVariableEventTopic = JSONUtilities.decodeString(jsonRoot, "fileWithVariableEventTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
       //  tokenRedeemedTopic
       //
 
@@ -1035,6 +1089,19 @@ public class Deployment extends com.evolving.nglm.core.Deployment
       try
         {
           pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
+      //  pointTopic
+      //
+
+      try
+        {
+          complexObjectTypeTopic = JSONUtilities.decodeString(jsonRoot, "complexObjectTypeTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -1868,9 +1935,9 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           }
           
           // elasticsearchConnectionSettings
-          JSONObject elasticsearchConnectionSettingsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "elasticsearchConnectionSettings", true);
-          for (Object key : elasticsearchConnectionSettingsJSON.keySet()) {
-            elasticsearchConnectionSettings.put((String) key, new ElasticsearchConnectionSettings((JSONObject) elasticsearchConnectionSettingsJSON.get(key)));
+          for (Object elasticsearchConnectionSettingsObject:JSONUtilities.decodeJSONArray(jsonRoot, "elasticsearchConnectionSettings", true).toArray()){
+            ElasticsearchConnectionSettings elasticsearchConnectionSetting = new ElasticsearchConnectionSettings((JSONObject) elasticsearchConnectionSettingsObject);
+            elasticsearchConnectionSettings.put(elasticsearchConnectionSetting.getId(), elasticsearchConnectionSetting);
           }
           
         }
@@ -2266,6 +2333,12 @@ public class Deployment extends com.evolving.nglm.core.Deployment
       //
 
       initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
+      
+      //
+      //  initialComplexObjectJSONArray
+      //
+
+      initialComplexObjectJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialComplexObjects", new JSONArray());
 
       //
       //  generateSimpleProfileDimensions
@@ -2684,6 +2757,21 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         }
 
       //
+      // check nodeTypes about action manager TriggerEventAction
+      //
+
+      for(NodeType nodeType:nodeTypes.values()){
+        if(nodeType.getActionManager()==null) continue;
+        if(nodeType.getActionManager() instanceof EvolutionEngine.TriggerEventAction){
+          EvolutionEngine.TriggerEventAction triggerEventAction = (EvolutionEngine.TriggerEventAction)nodeType.getActionManager();
+          triggerEventAction.getEventDeclaration().markAsTriggerEvent();
+          if(!triggerEventAction.getEventDeclaration().getEventClass().getSuperclass().equals(SubscriberStreamOutput.class)){
+            throw new ServerRuntimeException("deployment nodeType "+nodeType.getID()+" "+nodeType.getName()+" eventName in action declaration does not extends "+SubscriberStreamOutput.class.getCanonicalName()+", it needs to");
+          }
+        }
+      }
+
+      //
       //  journeyToolboxSections
       //
 
@@ -3015,19 +3103,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         }
 
       //
-      //  autoApproveGuiObjects
-      //
-
-      try
-        {
-          autoApproveGuiObjects = JSONUtilities.decodeBoolean(jsonRoot, "autoApproveGuiObjects", Boolean.TRUE);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  deliveryTypeCommunicationChannelMap
       //
 
@@ -3169,6 +3244,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
             kafkaRetentionDaysODR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysODR",91);
             kafkaRetentionDaysBDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBDR",91);
             kafkaRetentionDaysMDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysMDR",91);
+            kafkaRetentionDaysTargets = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysTargets",91);
           }
         catch (JSONUtilitiesException|NumberFormatException e)
           {
@@ -3247,6 +3323,14 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           dmd.getRequestTopics().stream().filter(Topic::isAutoCreated).forEach(topic->allTopics.put(topic.getName(),topic));
           dmd.getResponseTopics().stream().filter(Topic::isAutoCreated).forEach(topic->allTopics.put(topic.getName(),topic));
           if(dmd.getRoutingTopic()!=null&&dmd.getRoutingTopic().isAutoCreated()) allTopics.put(dmd.getRoutingTopic().getName(),dmd.getRoutingTopic());
+        }
+      // for event (only preprocessor topics one for now!)
+      for(EvolutionEngineEventDeclaration declaration:getEvolutionEngineEvents().values())
+        {
+          if(declaration.getPreprocessTopic()!=null){
+            isPreprocessorNeeded=true;
+            allTopics.put(declaration.getPreprocessTopic().getName(),declaration.getPreprocessTopic());
+          }
         }
 
     }

@@ -246,7 +246,7 @@ public class SubscriberIDService
     Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
     return subscriberIDs.get(alternateID);
   }
-  
+    
   /**
    * return null if either subscriber ID or tenantID is null...
    * @param alternateIDName
@@ -254,8 +254,7 @@ public class SubscriberIDService
    * @return
    * @throws SubscriberIDServiceException
    */
-  public Pair<String, Integer> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException
-  {
+  public Pair<String, Integer> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException {
     Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
     String tenantIDString = subscriberIDs.get("tenantID");
     Integer tenantID = null;
@@ -274,6 +273,25 @@ public class SubscriberIDService
       }
   }
   
+
+  // same but blocking call if redis issue
+  public String getSubscriberIDBlocking(String alternateIDName, String alternateID) throws SubscriberIDServiceException
+  {
+    while(true)
+    {
+      try
+      {
+        return getSubscriberID(alternateIDName,alternateID);
+      }
+      catch (SubscriberIDServiceException e)
+      {
+        if(!(e.getCause() instanceof JedisException)) throw e;
+        log.warn("JEDIS error, will retry",e);
+        try { Thread.sleep(1000); } catch (InterruptedException e1) { }
+      }
+    }
+  }
+
   /*****************************************
   *
   *  class SubscriberIDServiceException

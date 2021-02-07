@@ -257,7 +257,7 @@ public class OfferObjective extends GUIManagedObject
       }
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());

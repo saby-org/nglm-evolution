@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution.reports.product;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.*;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import org.json.simple.JSONArray;
@@ -239,4 +240,14 @@ public class ProductReportDriver extends ReportDriver
   }
 
 
+  @Override
+  public List<FilterObject> reportFilters() {
+	  return null;
+  }
+
+  @Override
+  public List<String> reportHeader() {
+	  // TODO Auto-generated method stub
+	  return null;
+  }
 }

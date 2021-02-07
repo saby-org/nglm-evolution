@@ -40,6 +40,8 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -158,6 +160,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
+    schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
 
@@ -236,12 +239,14 @@ public abstract class SubscriberProfile
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private SubscriberHistory subscriberHistory;
   private Map<String,Integer> exclusionInclusionTargets; 
+  private List<ComplexObjectInstance> complexObjectInstances; 
   private Map<String, List<Date>> offerPurchaseHistory;
   private int tenantID;
-
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
-  private List<Pair<String, String>> unknownRelationships = new ArrayList<>();  
+  private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
+  
+ 
 
   /****************************************
   *
@@ -268,6 +273,8 @@ public abstract class SubscriberProfile
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
+  public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
+  public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
   public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
   public int getTenantID() { return tenantID; }
@@ -463,9 +470,6 @@ public abstract class SubscriberProfile
                     Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
                     Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
                     loyalty.put("tierChangeType", Tier.changeFromTierToTier(previousTier, tier).getExternalRepresentation());
-                    
-                    boolean todayRedeemer = false;
-                    boolean yesterdayRedeemer = false;
                     if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
                       { 
                         String rewardPointsID = loyaltyProgramPoints.getRewardPointsID();
@@ -476,10 +480,7 @@ public abstract class SubscriberProfile
                             loyalty.put("rewardPointName", (point!=null)?(point.getJSONRepresentation().get("display").toString()):"");
                             int balance = 0;
                             if(this.pointBalances.get(rewardPointsID) != null){
-                              PointBalance pointBalance = this.pointBalances.get(rewardPointsID);
-                              balance = pointBalance.getBalance(now);
-                              todayRedeemer = pointBalance.getConsumedHistory().getToday(now) > 0;
-                              yesterdayRedeemer = pointBalance.getConsumedHistory().getYesterday(now) > 0;
+                              balance = this.pointBalances.get(rewardPointsID).getBalance(now);
                             }
                             loyalty.put("rewardPointBalance", balance);
                           }
@@ -496,8 +497,6 @@ public abstract class SubscriberProfile
                             loyalty.put("statusPointBalance", balance);
                           } 
                       }
-                    loyalty.put("rewardTodayRedeemer", todayRedeemer);
-                    loyalty.put("rewardYesterdayRedeemer", yesterdayRedeemer);
                   }
               }
             
@@ -530,21 +529,25 @@ public abstract class SubscriberProfile
             
             todayFluctuations.put("earned", point.getValue().getEarnedHistory().getToday(evaluationDate));
             todayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getToday(evaluationDate));
+            todayFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getToday(evaluationDate));
             todayFluctuations.put("expired", point.getValue().getExpiredHistory().getToday(evaluationDate));
             fluctuations.put("today", todayFluctuations);
             
             yesterdayFluctuations.put("earned", point.getValue().getEarnedHistory().getYesterday(evaluationDate));
             yesterdayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getYesterday(evaluationDate));
+            yesterdayFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getYesterday(evaluationDate));
             yesterdayFluctuations.put("expired", point.getValue().getExpiredHistory().getYesterday(evaluationDate));
             fluctuations.put("yesterday", yesterdayFluctuations);
             
             last7daysFluctuations.put("earned", point.getValue().getEarnedHistory().getPrevious7Days(evaluationDate));
             last7daysFluctuations.put("redeemed", point.getValue().getConsumedHistory().getPrevious7Days(evaluationDate));
+            last7daysFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getPrevious7Days(evaluationDate));
             last7daysFluctuations.put("expired", point.getValue().getExpiredHistory().getPrevious7Days(evaluationDate));
             fluctuations.put("last7days", last7daysFluctuations);
             
             last30daysFluctuations.put("earned", point.getValue().getEarnedHistory().getPrevious30Days(evaluationDate));
             last30daysFluctuations.put("redeemed", point.getValue().getConsumedHistory().getPrevious30Days(evaluationDate));
+            last30daysFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getPrevious30Days(evaluationDate));
             last30daysFluctuations.put("expired", point.getValue().getExpiredHistory().getPrevious30Days(evaluationDate));
             fluctuations.put("last30days", last30daysFluctuations);
             
@@ -819,7 +822,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -1063,6 +1066,8 @@ public abstract class SubscriberProfile
 
     return baseProfilePresentation;
   }
+  
+  
 
   //
   //  getProfileMapForThirdPartyPresentation
@@ -1434,6 +1439,7 @@ public abstract class SubscriberProfile
     this.extendedSubscriberProfile = null;
     this.subscriberHistory = null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
+    this.complexObjectInstances = new ArrayList<>();
     this.offerPurchaseHistory = new HashMap<>();
     this.tenantID = tenantID;
   }
@@ -1477,6 +1483,7 @@ public abstract class SubscriberProfile
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
+    List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
@@ -1503,6 +1510,7 @@ public abstract class SubscriberProfile
     this.extendedSubscriberProfile = extendedSubscriberProfile;
     this.subscriberHistory = subscriberHistory;
     this.exclusionInclusionTargets = exclusionInclusionTargets;
+    this.complexObjectInstances = complexObjectInstances;
     this.offerPurchaseHistory = offerPurchaseHistory;
     this.tenantID = tenantID;
   }
@@ -1759,6 +1767,39 @@ public abstract class SubscriberProfile
 
     return result;
   }
+  
+  /*****************************************
+  *
+  *  unpackComplexObjectInstances
+  *
+  *****************************************/
+
+ private static List<ComplexObjectInstance> unpackComplexObjectInstances(Schema schema, Object value)
+ {
+   //
+   //  get schema for voucher
+   //
+
+   Schema complexObjectInstancesSchema = schema.valueSchema();
+
+   //
+   //  unpack
+   //
+
+   List<ComplexObjectInstance> result = new LinkedList<>();
+   List<Object> valueArray = (List<Object>) value;
+   for (Object complexObjectInstance : valueArray)
+   {
+     result.add(ComplexObjectInstance.unpack(new SchemaAndValue(complexObjectInstancesSchema, complexObjectInstance)));
+   }
+
+   //
+   //  return
+   //
+
+   return result;
+ }
+
 
   /*****************************************
   *
@@ -1787,7 +1828,7 @@ public abstract class SubscriberProfile
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
-    this.subscriberHistory = subscriberProfile.getSubscriberHistory();
+    this.complexObjectInstances = subscriberProfile.getComplexObjectInstances();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
     this.tenantID = subscriberProfile.getTenantID();
@@ -1820,6 +1861,7 @@ public abstract class SubscriberProfile
     struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
+    struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
   }
@@ -1976,6 +2018,23 @@ public abstract class SubscriberProfile
     return result;
   }
   
+  
+  /****************************************
+  *
+  *  packComplexObjectInstances
+  *
+  ****************************************/
+
+  private static Object packComplexObjectInstances(List<ComplexObjectInstance> complexObjectInstances)
+  {
+    if(complexObjectInstances == null) { return null; }
+    List<Object> result = new ArrayList<Object>();
+    for (ComplexObjectInstance complexObjectInstance : complexObjectInstances)
+      {
+        result.add(ComplexObjectInstance.serde().pack(complexObjectInstance));
+      }
+    return result;
+  }
   /****************************************
   *
   *  getInInclusionList

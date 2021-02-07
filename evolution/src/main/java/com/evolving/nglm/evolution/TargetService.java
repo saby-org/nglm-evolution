@@ -10,6 +10,7 @@ import com.evolving.nglm.evolution.extracts.ExtractManager;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.zookeeper.*;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,8 +22,10 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
 import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
+import com.evolving.nglm.evolution.Target.TargetStatus;
 
 public class TargetService extends GUIService
 {
@@ -143,6 +146,53 @@ public class TargetService extends GUIService
   public Target getActiveTarget(String targetID, Date date) { return (Target) getActiveGUIManagedObject(targetID, date); }
   public Collection<Target> getActiveTargets(Date date, int tenantID) { return (Collection<Target>) getActiveGUIManagedObjects(date, tenantID); }
 
+  
+  /*****************************************
+  *
+  *  getJSONRepresentation
+  *
+  *****************************************/
+
+  @Override protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+	JSONObject result = super.getJSONRepresentation(guiManagedObject);
+    result.put("status", getTargetStatus(guiManagedObject).getExternalRepresentation());
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  getTargetStatus
+  *
+  *****************************************/
+
+  private TargetStatus getTargetStatus(GUIManagedObject guiManagedObject)
+  {
+	Date now = SystemTime.getCurrentTime();
+    TargetStatus status = TargetStatus.Unknown;
+    status = (status == TargetStatus.Unknown && !guiManagedObject.getAccepted()) ? TargetStatus.NotValid : status;
+    status = (status == TargetStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? TargetStatus.Running : status;
+    status = (status == TargetStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? TargetStatus.Complete : status;
+    return status;
+  }
+  /*****************************************
+  *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+  @Override 
+  protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+	JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+    result.put("status", getTargetStatus(guiManagedObject).getExternalRepresentation());
+    return result;
+  }
+  
+  
+
+  
+  
   /*****************************************
   *
   *  putTarget

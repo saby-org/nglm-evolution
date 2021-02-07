@@ -58,6 +58,9 @@ public class ContextVariable
     FirstWord("firstWord"),
     SecondWord("secondWord"),
     ThirdWord("thirdWord"),
+    Int("int"),
+    String("string"),
+    Double("double"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private Assignment(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -182,6 +185,41 @@ public class ContextVariable
     
     this.id = generateID(this.name);
     this.tenantID = tenantID;
+  }
+  
+  /*****************************************
+  *
+  *  constructor -- external JSON (file Variable)
+  *
+  *****************************************/
+
+  public ContextVariable(JSONObject jsonRoot, boolean isFileVariable) throws GUIManagerException
+  {
+    this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
+    this.criterionContext = null;
+    JSONObject jsonValue = JSONUtilities.decodeJSONObject(jsonRoot, "value", false);
+    this.expressionString = (jsonValue != null) ? JSONUtilities.decodeString(jsonValue, "expression", false) : null;
+    this.assignment = (jsonValue != null) ? Assignment.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "assignment", "=")) : Assignment.Direct;
+    this.baseTimeUnit = (jsonValue != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
+    this.variableType = (jsonValue != null) ? (JSONUtilities.decodeBoolean(jsonValue, "isParameter", Boolean.FALSE) ? VariableType.Parameter : VariableType.Local) : VariableType.Local;
+    this.validated = false;
+    this.expression = null;
+    this.type = CriterionDataType.Unknown;
+    String expressionTypeFromJSON = JSONUtilities.decodeString(jsonValue, "expressionType", false);
+    if(expressionTypeFromJSON != null) {
+      
+      // gotten a expressionType from GUI with possible values: 
+      //      integer
+      //      double
+      //      date
+      //      time
+      //      string
+      
+      this.type = CriterionDataType.fromExternalRepresentation(expressionTypeFromJSON);
+    }
+    
+    if (isFileVariable) this.id = "variablefile" + "." + name;
+    else this.id = generateID(this.name);
   }
 
   /*****************************************
@@ -333,7 +371,7 @@ public class ContextVariable
 
     return result.toString();
   }
-
+  
   /*****************************************
   *
   *  validate
@@ -441,6 +479,9 @@ public class ContextVariable
                   case FirstWord:
                   case SecondWord:
                   case ThirdWord:
+                  case Int:
+                  case String:
+                  case Double:
                     break;
                   default:
                     // NO-OP
@@ -484,6 +525,9 @@ public class ContextVariable
                     break;
                     
                   case TimeExpression:
+                    this.type = CriterionDataType.TimeCriterion;
+                    break;
+                    
                   default:
                     throw new GUIManagerException("unsupported context variable type", expression.getType().toString());
                 }

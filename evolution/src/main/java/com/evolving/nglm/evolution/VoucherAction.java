@@ -8,11 +8,8 @@ package com.evolving.nglm.evolution;
 
 import java.util.Date;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
+import com.evolving.nglm.core.SubscriberStreamOutput;
+import org.apache.kafka.connect.data.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +19,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvolutionEngine.VoucherActionManager.Operation;
 
-public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedemption, VoucherValidation
+public class VoucherAction extends SubscriberStreamOutput implements EvolutionEngineEvent, Action, VoucherRedemption, VoucherValidation
 {
 
   /*****************************************
@@ -41,7 +38,8 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("VoucherAction");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+      for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("eventDate", Timestamp.SCHEMA);
       schemaBuilder.field("voucherCode", Schema.STRING_SCHEMA);
@@ -121,9 +119,6 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
   public String getOperation() { return operation; }
   @Override public ActionType getActionType() { return ActionType.VoucherChange; }
 
-  //TODO: this should probably extends SubscriberStreamOutput instead
-  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
-  
   /*****************************************
   *
   *  setters
@@ -141,7 +136,17 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
   
   public VoucherAction(String subscriberID, Date eventDate, String voucherCode, String actionStatus, Integer actionStatusCode, String operation)
   {
-    super();
+    this.subscriberID = subscriberID;
+    this.eventDate = eventDate;
+    this.voucherCode = voucherCode;
+    this.actionStatus = actionStatus;
+    this.actionStatusCode = actionStatusCode;
+    this.operation = operation;
+  }
+
+  public VoucherAction(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, String voucherCode, String actionStatus, Integer actionStatusCode, String operation)
+  {
+    super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.voucherCode = voucherCode;
@@ -160,6 +165,7 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
  {
    VoucherAction event = (VoucherAction) value;
    Struct struct = new Struct(schema);
+   packSubscriberStreamOutput(struct,event);
    struct.put("subscriberID", event.getSubscriberID());
    struct.put("eventDate", event.getEventDate());
    struct.put("voucherCode", event.getVoucherCode());
@@ -189,7 +195,7 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
 
    Schema schema = schemaAndValue.schema();
    Object value = schemaAndValue.value();
-   Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+   Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
    //
    // unpack
@@ -207,7 +213,7 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
    // return
    //
 
-   return new VoucherAction(subscriberID, eventDate, voucherCode, actionStatus, actionStatusCode, operation);
+   return new VoucherAction(schemaAndValue, subscriberID, eventDate, voucherCode, actionStatus, actionStatusCode, operation);
  }
 
 @Override

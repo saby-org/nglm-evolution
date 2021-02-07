@@ -6,8 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.ElasticSearchMapping;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerException;
@@ -31,10 +32,15 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
-
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.DocWriteRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
@@ -55,8 +61,13 @@ public class GUIService
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(GUIService.class);
-
+  private static final Logger log = LoggerFactory.getLogger(GUIService.class);  
+  
+  //
+  //  elasticsearch ElasticsearchClientAPI
+  //
+  private ElasticsearchClientAPI elasticsearch;
+  
   //
   //  statistics
   //
@@ -92,6 +103,16 @@ public class GUIService
   private int lastGeneratedObjectID = 0;
   private String putAPIString;
   private String removeAPIString;
+  
+  //
+  // services usable only by the GUIManager (with a special start)
+  //
+  
+  private JourneyService journeyService;
+  private TargetService targetService;
+  private JourneyObjectiveService journeyObjectiveService;
+  private ContactPolicyService contactPolicyService;
+
 
   //
   //  serdes
@@ -210,6 +231,16 @@ public class GUIService
   *
   *****************************************/
 
+  public void start(ElasticsearchClientAPI elasticSearch, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, TargetService targetService, ContactPolicyService contactPolicyService)
+  {
+    this.elasticsearch = elasticSearch;
+    this.journeyService = journeyService;
+    this.journeyObjectiveService = journeyObjectiveService;
+    this.targetService = targetService;
+    this.contactPolicyService = contactPolicyService;
+    start();
+  }
+  
   public void start()
   {
     //
@@ -574,6 +605,7 @@ public class GUIService
     //
 
     processGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), guiManagedObject, date, guiManagedObject.getTenantID());
+    updateElasticSearch(guiManagedObject);
   }
 
   /*****************************************
@@ -621,6 +653,7 @@ public class GUIService
     //
 
     processGUIManagedObject(guiManagedObjectID, existingStoredGUIManagedObject, date, tenantID);
+    updateElasticSearch(existingStoredGUIManagedObject);
   }
 
   /****************************************
@@ -702,7 +735,7 @@ public class GUIService
             removeSpecificAndAllTenants(activePerTenantGUIManagedObjects, guiManagedObjectID, tenantID);
             if (existingActiveGUIManagedObject != null){
               if(inActivePeriod) putSpecificAndAllTenants(interruptedPerTenantGUIManagedObjects, existingActiveGUIManagedObject);
-              notifyListener(new IncompleteObject(guiManagedObjectID, tenantID));
+              notifyListener(existingActiveGUIManagedObject);
             }
           }
 
@@ -810,10 +843,17 @@ public class GUIService
     Date readStartDate = SystemTime.getCurrentTime();
     boolean consumedAllAvailable = false;
     Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
-    for (TopicPartition topicPartition : guiManagedObjectsConsumer.assignment())
-      {
-        consumedOffsets.put(topicPartition, guiManagedObjectsConsumer.position(topicPartition) - 1L);
-      }
+    try {
+      for (TopicPartition topicPartition : guiManagedObjectsConsumer.assignment())
+        {
+          consumedOffsets.put(topicPartition, guiManagedObjectsConsumer.position(topicPartition) - 1L);
+        }
+    } catch (WakeupException e) {
+      if (stopRequested)
+        return;
+      else
+        log.info("wakeup while reading topic "+guiManagedObjectTopic);
+    }
     
     //
     //  read
@@ -832,7 +872,7 @@ public class GUIService
           }
         catch (WakeupException e)
           {
-            log.info("wakeup while reading topic "+guiManagedObjectTopic);
+            if (!stopRequested) log.info("wakeup while reading topic "+guiManagedObjectTopic);
           }
 
         //
@@ -962,7 +1002,7 @@ public class GUIService
 
   private void runScheduler()
   {
-    NGLMRuntime.registerSystemTimeDependency(this);
+	NGLMRuntime.registerSystemTimeDependency(this);
     while (!stopRequested)
       {
         synchronized (this)
@@ -1007,7 +1047,6 @@ public class GUIService
                 //
                 //  existingActiveGUIManagedObject
                 //
-
                 GUIManagedObject existingActiveGUIManagedObject = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, guiManagedObject.getTenantID()).get(guiManagedObject.getGUIManagedObjectID());
 
                 //
@@ -1030,7 +1069,7 @@ public class GUIService
                     removeSpecificAndAllTenants(availablePerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID());
                     removeSpecificAndAllTenants(activePerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID());
                     removeSpecificAndAllTenants(interruptedPerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID());
-                    if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObject.getGUIManagedObjectID(), guiManagedObject.getTenantID()));
+                    if (existingActiveGUIManagedObject != null) notifyListener(guiManagedObject);
                   }
 
                 //
@@ -1051,7 +1090,7 @@ public class GUIService
 
   public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
-    JSONObject responseJSON = new JSONObject();
+	JSONObject responseJSON = new JSONObject();
     if (guiManagedObject != null)
       {
         responseJSON.putAll(fullDetails ? getJSONRepresentation(guiManagedObject) : getSummaryJSONRepresentation(guiManagedObject));
@@ -1060,6 +1099,7 @@ public class GUIService
         responseJSON.put("valid", guiManagedObject.getAccepted());
         responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
         responseJSON.put("readOnly", guiManagedObject.getReadOnly());
+       
       }
     return responseJSON;
   }
@@ -1072,7 +1112,7 @@ public class GUIService
 
   protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
   {
-    JSONObject result = new JSONObject();
+	JSONObject result = new JSONObject();
     result.putAll(guiManagedObject.getJSONRepresentation());
     return result;
   }
@@ -1085,7 +1125,7 @@ public class GUIService
 
   protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
-    JSONObject result = new JSONObject();
+	JSONObject result = new JSONObject();
     result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
     result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
     result.put("description", guiManagedObject.getJSONRepresentation().get("description"));
@@ -1206,6 +1246,7 @@ public class GUIService
 
   private void notifyListener(GUIManagedObject guiManagedObject)
   {
+    updateElasticSearch(guiManagedObject);
     listenerQueue.add(guiManagedObject);
   }
 
@@ -1271,7 +1312,33 @@ public class GUIService
     consumerProperties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, Deployment.getMaxPollIntervalMs());
 
   }
-
-
-
+  
+  public void updateElasticSearch(GUIManagedObject guiManagedObject)
+  {
+    if(guiManagedObject instanceof ElasticSearchMapping && elasticsearch != null /* to ensure it has been started with the good parameters */) 
+      {
+        if (guiManagedObject.getDeleted())
+          {
+            DeleteRequest deleteRequest = new DeleteRequest(((ElasticSearchMapping)guiManagedObject).getESIndexName(), ((ElasticSearchMapping)guiManagedObject).getESDocumentID());
+          deleteRequest.id(((ElasticSearchMapping)guiManagedObject).getESDocumentID());
+          try {
+            elasticsearch.delete(deleteRequest,RequestOptions.DEFAULT);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+      else
+        {
+          UpdateRequest request = new UpdateRequest(((ElasticSearchMapping)guiManagedObject).getESIndexName(), ((ElasticSearchMapping)guiManagedObject).getESDocumentID());
+          request.doc(((ElasticSearchMapping)guiManagedObject).getESDocumentMap(journeyService, targetService, journeyObjectiveService, contactPolicyService));
+          request.docAsUpsert(true);
+          request.retryOnConflict(4);
+          try {
+            elasticsearch.update(request,RequestOptions.DEFAULT);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }          
+        }
+      }    
+  }
 }

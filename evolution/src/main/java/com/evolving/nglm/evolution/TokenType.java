@@ -20,6 +20,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class TokenType extends GUIManagedObject
@@ -106,31 +107,13 @@ public class TokenType extends GUIManagedObject
   // getExpirationDate
   //
 
-  // TODO: RoundDown has not been implemented yet.
-  public Date getExpirationDate(Date creationDate, int tenantID) {    
-    Date result = null;
-    switch(this.validity.getPeriodType()) {
-    case Minute:
-      result = RLMDateUtils.addMinutes(creationDate, this.validity.getPeriodQuantity());
-      break;
-    case Hour:
-      result = RLMDateUtils.addHours(creationDate, this.validity.getPeriodQuantity());
-      break;
-    case Day:
-      result = RLMDateUtils.addDays(creationDate, this.validity.getPeriodQuantity(), Deployment.getDeployment(tenantID).getBaseTimeZone());
-      break;
-    case Week:
-      result = RLMDateUtils.addWeeks(creationDate, this.validity.getPeriodQuantity(), Deployment.getDeployment(tenantID).getBaseTimeZone());
-      break;
-    case Month:
-      result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity(), Deployment.getDeployment(tenantID).getBaseTimeZone());
-      break;
-    case Year:
-      result = RLMDateUtils.addYears(creationDate, this.validity.getPeriodQuantity(), Deployment.getDeployment(tenantID).getBaseTimeZone());
-      break;
-    default:
-    }
-
+  public Date getExpirationDate(Date creationDate, int tenantID) {
+    Date result = EvolutionUtilities.addTime(
+        creationDate, 
+        this.getValidity().getPeriodQuantity(),
+        this.getValidity().getPeriodType(),
+        Deployment.getDeployment(tenantID).getBaseTimeZone(),
+        this.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
     return result;
   }
 
@@ -233,7 +216,15 @@ public class TokenType extends GUIManagedObject
     this.tokenTypeKind = TokenTypeKind.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "tokenTypeKind", true));
     this.validity = new TokenTypeValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity"));
     this.codeFormat = JSONUtilities.decodeString(jsonRoot, "codeFormat", true);
-    this.maxNumberOfPlays = JSONUtilities.decodeInteger(jsonRoot, "maxNumberOfPlays", false);
+    this.maxNumberOfPlays = null; // unlimited unless specified otherwise
+    String maxNoOfPlaysStr = JSONUtilities.decodeString(jsonRoot, "maxNoOfPlays", false);
+    if (maxNoOfPlaysStr != null) {
+      try {
+        this.maxNumberOfPlays = Integer.parseInt(maxNoOfPlaysStr);
+      } catch (NumberFormatException ex) {
+        log.info("Bad maxNoOfPlays received, expecting Integer, got " + maxNoOfPlaysStr + ", set it to unlimited");
+      }
+    }
 
     /*****************************************
     *

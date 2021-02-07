@@ -98,9 +98,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
               "loyaltyProgramEnrollmentDate" : { "type" : "date" },
               "loyaltyProgramExitDate"       : { "type" : "date" },
               "tierUpdateDate"               : { "type" : "date" },
-              "loyaltyProgramEpoch"          : { "type" : "long" },
-              "rewardTodayRedeemer"          : { "type" : "boolean" },
-              "rewardYesterdayRedeemer"      : { "type" : "boolean" }
+              "loyaltyProgramEpoch"          : { "type" : "long" }
            }
       },
       "pointBalances"                       : { "type": "nested",
@@ -567,7 +565,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "origin" : { "type" : "keyword", "index" : "false" },
       "returnCode" : { "type" : "keyword" },
       "deliveryStatus" : { "type" : "keyword" },
-      "returnCodeDetails" : { "type" : "keyword", "index" : "false" }
+      "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
+      "contactType" : { "type" : "keyword" }
     }
   }
 }'
@@ -611,17 +610,16 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeysta
       "journeyID" : { "type" : "keyword" },
       "subscriberID" : { "type" : "keyword" },
       "transitionDate" : { "type" : "date" },
+      "nodeID" : { "type" : "keyword" },
       "nodeHistory" : { "type" : "keyword" },
       "statusHistory" : { "type" : "keyword" },
       "rewardHistory" : { "type" : "keyword" },
-      "fromNodeID" : { "type" : "keyword" },
-      "toNodeID" : { "type" : "keyword" },
       "deliveryRequestID" : { "type" : "keyword" },
       "sample" : { "type" : "keyword" },
-      "markNotified" : { "type" : "boolean" },
-      "markConverted" : { "type" : "boolean" },
       "statusNotified" : { "type" : "boolean" },
       "statusConverted" : { "type" : "boolean" },
+      "conversionCount" : { "type" : "long" },
+      "lastConversionDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "statusTargetGroup" : { "type" : "boolean" },
       "statusControlGroup" : { "type" : "boolean" },
       "statusUniversalControlGroup" : { "type" : "boolean" },
@@ -708,7 +706,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_l
       "count" : { "type" : "integer" },
       "metric.rewards.redeemed" : { "type" : "integer" },
       "metric.rewards.earned" : { "type" : "integer" },
-      "metric.rewards.expired" : { "type" : "integer" }
+      "metric.rewards.expired" : { "type" : "integer" },
+      "metric.rewards.redemptions" : { "type" : "integer" }
     }
   }
 }'
@@ -741,7 +740,9 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_j
       "filter.journey" : { "type" : "keyword" },
       "filter.node" : { "type" : "keyword" },
       "filter.status" : { "type" : "keyword" },
-      "count" : { "type" : "integer" }
+      "count" : { "type" : "integer" },
+      "metric.conversions" : { "type" : "integer" },
+      "metric.converted.today" : { "type" : "integer" }
     }
   }
 }'
@@ -816,6 +817,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_m
       "filter.language" : { "type" : "keyword" },
       "filter.template" : { "type" : "keyword" },
       "filter.channel" : { "type" : "keyword" },
+      "filter.contactType" : { "type" : "keyword" },
       "filter.returnCode" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalQty" : { "type" : "integer" }

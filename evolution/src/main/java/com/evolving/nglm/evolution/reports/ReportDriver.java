@@ -11,7 +11,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.List;
 
+import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +21,8 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Report;
+
+
 
 /**
  * Abstract class that must be implemented to produce a report.
@@ -43,6 +47,8 @@ public abstract class ReportDriver
    **********************/
   
   public abstract void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID);
+
+  public abstract List<FilterObject> reportFilters();
 
   /******************************
    * 
@@ -96,5 +102,8 @@ public abstract class ReportDriver
         return SUBSCRIBERPROFILE_SNAPSHOT_INDEX_INITIAL + DATE_FORMAT.format(requestedDate);
       }
   }
+  
+  
+  abstract public List<String> reportHeader(); 
 
 }

@@ -198,7 +198,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
             String line = ReportUtils.formatResult(headerFieldsOrder, record);
             if (!line.isEmpty())
               {
-                log.trace("Writing to csv file : " + line);
+                if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
                 writer.write(line.getBytes());
               }
             else

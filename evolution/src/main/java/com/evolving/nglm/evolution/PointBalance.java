@@ -78,6 +78,7 @@ public class PointBalance
     schemaBuilder.field("consumedHistory", MetricHistory.schema());
     schemaBuilder.field("expiredHistory", MetricHistory.schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
+    schemaBuilder.field("redemptionHistory", MetricHistory.schema()); // Number of time we *consume* (debit) a bunch of points.
     schema = schemaBuilder.build();
   };
 
@@ -100,22 +101,12 @@ public class PointBalance
   *
   *****************************************/
 
-  private static KafkaProducer commodityDeliveryProducer;
-  static{
-    Properties kafkaProducerProperties = new Properties();
-    kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
-    kafkaProducerProperties.put("acks", "all");
-    kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    commodityDeliveryProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
-    NGLMRuntime.addShutdownHook(notused->commodityDeliveryProducer.close());
-  }
-
   private SortedMap<Date,Integer> balances;
   private MetricHistory earnedHistory;
   private MetricHistory consumedHistory;
   private MetricHistory expiredHistory;
   private int tenantID;
+  private MetricHistory redemptionHistory;
 
   /*****************************************
   *
@@ -128,6 +119,7 @@ public class PointBalance
   public MetricHistory getConsumedHistory() { return consumedHistory; }
   public MetricHistory getExpiredHistory() { return expiredHistory; }
   public int getTenantID() { return tenantID; }
+  public MetricHistory getRedemptionHistory() { return redemptionHistory; }
 
   /*****************************************
   *
@@ -141,6 +133,7 @@ public class PointBalance
     this.earnedHistory = new MetricHistory(0, 0, tenantID);   // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
     this.consumedHistory = new MetricHistory(0, 0, tenantID); // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
     this.expiredHistory = new MetricHistory(0, 0, tenantID);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.redemptionHistory = new MetricHistory(0, 0, tenantID);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
   }
 
   /*****************************************
@@ -149,13 +142,14 @@ public class PointBalance
   *
   *****************************************/
 
-  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory, int tenantID)
+  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory, MetricHistory redemptionHistory, int tenantID)
   {
     this.balances = balances;
     this.earnedHistory = earnedHistory;
     this.consumedHistory = consumedHistory;
     this.expiredHistory = expiredHistory;
     this.tenantID = tenantID;
+    this.redemptionHistory = redemptionHistory;
   }
 
   /*****************************************
@@ -171,6 +165,7 @@ public class PointBalance
     this.consumedHistory = new MetricHistory(pointBalance.getConsumedHistory());
     this.expiredHistory = new MetricHistory(pointBalance.getExpiredHistory());
     this.tenantID = pointBalance.getTenantID();
+    this.redemptionHistory = new MetricHistory(pointBalance.getRedemptionHistory());
   }
 
   /*****************************************
@@ -221,12 +216,11 @@ public class PointBalance
   *
   *****************************************/
 
-  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR, int tenantID)
+  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR, String tier, int tenantID)
   {
     //
     //  validate
     //
-
     switch (operation)
       {
         case Credit:
@@ -292,7 +286,7 @@ public class PointBalance
                   //  generate fake commodityDeliveryResponse (always generate BDR when bonuses expire, needed to get BDRs)
                   //
                   
-                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null, tenantID);
+                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null, tier, tenantID);
                   
                 }
               
@@ -367,7 +361,7 @@ public class PointBalance
               }
             }
             if(generateBDR){
-              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate, tenantID);
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate, tier, tenantID);
             }
            
           }
@@ -416,6 +410,7 @@ public class PointBalance
             //
             
             consumedHistory.update(evaluationDate, amount);
+            redemptionHistory.update(evaluationDate, 1);
             
             //
             //  generate fake commodityDeliveryResponse (needed to get BDRs)
@@ -430,7 +425,7 @@ public class PointBalance
               }
             }
             if(generateBDR){
-              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null, tenantID);
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null, tier, tenantID);
             }
             
           }
@@ -467,6 +462,7 @@ public class PointBalance
     struct.put("consumedHistory", MetricHistory.pack(pointBalance.getConsumedHistory()));
     struct.put("expiredHistory", MetricHistory.pack(pointBalance.getExpiredHistory()));
     struct.put("tenantID", (short)pointBalance.getTenantID());
+    struct.put("redemptionHistory", MetricHistory.pack(pointBalance.getRedemptionHistory()));
     return struct;
   }
 
@@ -503,12 +499,13 @@ public class PointBalance
     MetricHistory expiredHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("expiredHistory").schema(), valueStruct.get("expiredHistory")));
     
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
+    MetricHistory redemptionHistory = (schemaVersion >= 2)? MetricHistory.unpack(new SchemaAndValue(schema.field("redemptionHistory").schema(), valueStruct.get("redemptionHistory"))) : new MetricHistory(0, 0, tenantID);
 
     //  
     //  return
     //
 
-    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory, tenantID);
+    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory, redemptionHistory, tenantID);
   }
   
   /*****************************************
@@ -517,7 +514,7 @@ public class PointBalance
   *
   *****************************************/
 
-  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate, int tenantID){
+  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate, String origin, int tenantID){
     
     //
     //  generate fake commodityDeliveryResponse (needed to get BDRs)
@@ -545,6 +542,7 @@ public class PointBalance
     commodityDeliveryRequestData.put("validityPeriodQuantity", 0);
 
     commodityDeliveryRequestData.put("deliverableExpirationDate", deliverableExpirationDate);
+    commodityDeliveryRequestData.put("origin", origin);
 
     commodityDeliveryRequestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.SUCCESS.getReturnCode());
 
@@ -557,8 +555,7 @@ public class PointBalance
     commodityDeliveryRequest.setStatusMessage("Success");
     commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
 
-    String commodityDeliveryResponseTopic = commodityDeliveryManagerDeclaration.getResponseTopic(commodityDeliveryRequest.getDeliveryPriority());
-    commodityDeliveryProducer.send(new ProducerRecord<byte[], byte[]>(commodityDeliveryResponseTopic, StringKey.serde().serializer().serialize(commodityDeliveryResponseTopic, new StringKey(commodityDeliveryRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)commodityDeliveryManagerDeclaration.getRequestSerde()).serializer().serialize(commodityDeliveryResponseTopic, commodityDeliveryRequest)));
+    context.getSubscriberState().getDeliveryRequests().add(commodityDeliveryRequest);
 
   }
 }

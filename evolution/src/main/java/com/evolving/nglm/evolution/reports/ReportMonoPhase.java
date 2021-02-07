@@ -272,7 +272,7 @@ public class ReportMonoPhase
               long elapsedBatch = System.currentTimeMillis() - startBatch;
               if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L)
                 {
-                  log.info("problem : took " + elapsedBatch + " to process scroll, keepAlive of " + scroolKeepAlive + " exceeded");
+                  log.info("Potential problem : scroll took " + elapsedBatch/1000.0 + " seconds to process, keepAlive of " + scroolKeepAlive + " seconds exceeded");
                   nbMaxTraces--;
                 }
               SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
@@ -503,7 +503,7 @@ public class ReportMonoPhase
                     long elapsedBatch = System.currentTimeMillis() - startBatch;
                     if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L)
                       {
-                        log.info("problem : took " + elapsedBatch + " to process scroll, keepAlive of " + scroolKeepAlive + " exceeded");
+                        log.info("Potential problem : scroll took " + elapsedBatch/1000.0 + " seconds to process, keepAlive of " + scroolKeepAlive + " seconds exceeded");
                         nbMaxTraces--;
                       }
 

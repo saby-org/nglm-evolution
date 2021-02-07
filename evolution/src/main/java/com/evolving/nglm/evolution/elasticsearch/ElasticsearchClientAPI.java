@@ -3,9 +3,7 @@ package com.evolving.nglm.evolution.elasticsearch;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -25,15 +23,15 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -42,6 +40,8 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
+import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
@@ -80,6 +80,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   public static final String JOURNEYSTATISTIC_NODEID_FIELD = "nodeID";
   public static final String JOURNEYSTATISTIC_REWARD_FIELD = "rewards";
   public static final String JOURNEYSTATISTIC_SAMPLE_FIELD = "sample";
+  public static final String[] specialExit = {"NotEligible", "Excluded", "ObjectiveLimitReached", "UCG"};
   public static String getJourneyIndex(String journeyID) {
     if(journeyID == null) {
       return "";
@@ -192,8 +193,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           .size(0)
           .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_NODEID_FIELD).size(MAX_BUCKETS));
       SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
-      
-      //
+        //
       // Send request & retrieve response synchronously (blocking call)
       // 
       SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
@@ -246,7 +246,118 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       throw new ElasticsearchClientException(e.getMessage());
     }
   }
+
+  // @return map<STATUS,count>
+  public Map<String, Long> getJourneyBonusesCount(String journeyDisplay) throws ElasticsearchClientException {
+    return getJourneyGenericDeliveryCount(journeyDisplay, BDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_bdr
+  }
+
+  // @return map<STATUS,count>
+  public Map<String, Long> getJourneyMessagesCount(String journeyDisplay) throws ElasticsearchClientException {
+    return getJourneyGenericDeliveryCount(journeyDisplay, MDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_messages
+  }
   
+  // @return map<STATUS,count>
+  private Map<String, Long> getJourneyGenericDeliveryCount(String journeyDisplay, String datacubeIndex) throws ElasticsearchClientException {
+    try {
+      Map<String, Long> result = new HashMap<String, Long>();
+  
+      //
+      // Build Elasticsearch query
+      // 
+      String statusBucketName = "STATUS";
+      String sumBucketName = "SUM";
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(QueryBuilders.boolQuery()
+              .filter(QueryBuilders.termQuery("filter.feature", journeyDisplay))
+              .mustNot(QueryBuilders.termQuery("period", 3600000))) // hack: filter out any hourly publication (definitive & preview) 
+          .size(0)
+          .aggregation(AggregationBuilders.terms(statusBucketName).field("filter.returnCode").size(MAX_BUCKETS)
+              .subAggregation(AggregationBuilders.sum(sumBucketName).field("count")));
+      SearchRequest searchRequest = new SearchRequest(datacubeIndex).source(searchSourceRequest);
+      
+      //
+      // Send request & retrieve response synchronously (blocking call)
+      // 
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+      
+      //
+      // Check search response
+      //
+      // @rl TODO checking status seems useless because it raises exception
+      if (searchResponse.isTimedOut()
+          || searchResponse.getFailedShards() > 0) {
+        throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+      }
+      
+      if(searchResponse.getAggregations() == null) {
+        throw new ElasticsearchClientException("Aggregation is missing in search response.");
+      }
+      
+      ParsedStringTerms buckets = searchResponse.getAggregations().get(statusBucketName);
+      if(buckets == null) {
+        throw new ElasticsearchClientException("Buckets are missing in search response.");
+      }
+      
+      //
+      // Fill result map
+      //
+      for(Bucket bucket : buckets.getBuckets()) {
+        ParsedSum metricBucket = bucket.getAggregations().get(sumBucketName);
+        if (metricBucket == null) {
+          throw new ElasticsearchClientException("Unable to extract "+sumBucketName+" metric, aggregation is missing.");
+        }
+        
+        result.put(bucket.getKeyAsString(), (long) metricBucket.getValue());
+      }
+      
+      return result;
+    }
+    catch (ElasticsearchClientException e) { // forward
+      throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getMessage());
+    }
+  }
+  
+  public long getSpecialExitCount(String journeyID) throws ElasticsearchClientException{
+	  long count = 0;
+	  if(journeyID==null)return count;
+	  String index = getJourneyIndex(journeyID);
+	  BoolQueryBuilder query=QueryBuilders.boolQuery();
+      for(String reason : specialExit)
+        query=((BoolQueryBuilder) query).should(QueryBuilders.termQuery("status", reason)); 
+      log.debug("SpecialExit count query"+query.toString());
+      CountRequest countRequest = new CountRequest(index).query(query);
+      try {
+		CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
+		if(countResponse!=null)
+		count=countResponse.getCount();
+	} catch (IndexNotFoundException ese) {
+		log.info("No Index Found" + index);
+		count=0; 
+    }catch (Exception e) {
+		e.printStackTrace();
+		count=0; 
+	} 
+      log.debug("Sum aggregation of special exit is for journey id:"+journeyID+" is:" + count); 
+	  return count;
+  }
   public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
     return getGeneric("STATUS", JOURNEYSTATISTIC_STATUS_FIELD, journeyID);
   }

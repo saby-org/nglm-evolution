@@ -14,9 +14,14 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.Pa
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
+import com.evolving.nglm.evolution.MetricHistory;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -40,15 +45,16 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   private JourneyRewardsMap journeyRewardsList;
   
   private String journeyID;
+  private Date publishDate;
 
   /*****************************************
   *
   * Constructors
   *
   *****************************************/
-  public JourneyRewardsDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
+  public JourneyRewardsDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);
@@ -92,10 +98,35 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     
     this.segmentationDimensionList.update();
     this.journeysMap.update();
-    this.journeyRewardsList.update(this.journeyID, this.getDataESIndex());
     
+    //
+    // Should we keep pushing datacube for this journey ?
+    //
+    Journey journey = this.journeysMap.get(this.journeyID);
+    if(journey == null) {
+      log.error("Error, unable to retrieve info for JourneyID=" + this.journeyID);
+      return false;
+    }
+    // Retrieve the number of day we should wait after EndDate to be sure that every JourneyMetrics is pushed.
+    int maximumPostPeriod = 0;
+    for(JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+      if(maximumPostPeriod < journeyMetricDeclaration.getPostPeriodDays()) {
+        maximumPostPeriod = journeyMetricDeclaration.getPostPeriodDays();
+      }
+    }
+    maximumPostPeriod = maximumPostPeriod + 1; // Add 24 hours to be sure (due to truncation, see populateMetricsPost)
+    Date stopDate = RLMDateUtils.addDays(journey.getEffectiveEndDate(), maximumPostPeriod, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    if(publishDate.after(stopDate)) {
+      log.info("JourneyID=" + this.journeyID + " has ended more than " + maximumPostPeriod + " days ago. No data will be published anymore.");
+      return false;
+    }
+    
+    //
+    // Rewards list update
+    //
+    this.journeyRewardsList.updateAndPush(this.journeyID, this.getDataESIndex(), datacubeWriter);
     if(this.journeyRewardsList.getRewards().isEmpty()) {
-      log.info("No rewards found in " + this.journeyID + " journey statistics.");
+      log.info("No rewards found in JourneyID=" + this.journeyID + " journey statistics.");
       // It is useless to generate a rewards datacube if there is not any rewards.
       return false;
     }
@@ -154,9 +185,9 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   }
 
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
+  protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {    
-    HashMap<String, Object> metrics = new HashMap<String,Object>();
+    HashMap<String, Long> metrics = new HashMap<String,Long>();
     
     if (compositeBucket.getAggregations() == null) {
       log.error("Unable to extract metrics, aggregation is missing.");
@@ -169,7 +200,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
         if (rewardAggregation == null) {
           log.warn("Unable to extract "+reward+" reward in journeystatistics, aggregation is missing.");
         } else {
-          metrics.put("reward." + reward, (int) rewardAggregation.getValue());
+          metrics.put("reward." + reward, new Long((int) rewardAggregation.getValue()));
         }
       }
     
@@ -184,6 +215,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   public void definitive(String journeyID, long journeyStartDateTime, Date publishDate)
   {
     this.journeyID = journeyID;
+    this.publishDate = publishDate;
 
     String timestamp = RLMDateUtils.printTimestamp(publishDate);
     long targetPeriod = publishDate.getTime() - journeyStartDateTime;

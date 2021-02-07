@@ -10,6 +10,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -31,9 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -42,6 +43,7 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -52,7 +54,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
   private static final Logger log = LoggerFactory.getLogger(GUIManagerLoyaltyReporting.class);
 
-  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -67,6 +69,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     super.loyaltyProgramService = loyaltyProgramService;
     super.offerObjectiveService = offerObjectiveService;
     super.offerService = offerService;
+    super.complexObjectTypeService = complexObjectTypeService;
     super.paymentMeanService = paymentMeanService;
     super.pointService = pointService;
     super.presentationStrategyService = presentationStrategyService;
@@ -701,12 +704,18 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   /*****************************************
   *
   *  processDownloadReport
+ * @throws IOException 
   *
   *****************************************/
 
-  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID)
+  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID) throws IOException
   {
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
+    Integer percentage = JSONUtilities.decodeInteger(jsonRoot, "percentage", false);
+    Integer topRows = JSONUtilities.decodeInteger(jsonRoot, "topRows", false);
+    JSONArray header = JSONUtilities.decodeJSONArray(jsonRoot, "header", false);
+
     GUIManagedObject report1 = reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report1);
     String responseCode = null;
@@ -746,44 +755,192 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     }
                   }
                 }
-              }else {
-                responseCode = "Cant find report with that name";
+          } else {
+            responseCode = "Cant find report with that name";
+          }
+
+          File filterOutTmpFile = reportFile;
+          File percentageOutTmpFile = reportFile;
+          File topRowsOutTmpFile = reportFile;
+          File headerOutTmpFile = reportFile;
+          File finalZipFile = null;
+
+          if(reportFile != null) {
+            if(reportFile.length() > 0) {
+              try {
+                String unzippedFile = null;
+
+                if (filters != null || percentage != null || topRows != null || header != null) {
+                  filterOutTmpFile = File.createTempFile("tempReportFilter.", ".csv");
+                  percentageOutTmpFile = File.createTempFile("tempReportPercentage.", ".csv");
+                  topRowsOutTmpFile = File.createTempFile("tempReportTopRows.", ".csv");
+                  headerOutTmpFile = File.createTempFile("tempReportHeader.", ".csv");
+                  unzippedFile = ReportUtils.unzip(reportFile.getAbsolutePath());
+
+                  if (filters != null && !filters.isEmpty())
+                    {
+                      List<String> colNames = new ArrayList<>();
+                      List<List<String>> colsValues = new ArrayList<>();
+                      for (int i=0; i<filters.size(); i++)
+                        {
+                          JSONObject filterJSON = (JSONObject) filters.get(i);
+                          Object nameOfColumnObj = filterJSON.get("criterionField");
+                          if (!(nameOfColumnObj instanceof String))
+                            {
+                              log.warn("criterionField is not a String : " + nameOfColumnObj.getClass().getName());
+                              colNames.add("");
+                              break;
+                            }
+                          String nameOfColumn = (String) nameOfColumnObj;
+                          colNames.add(nameOfColumn);
+
+                          Object argumentObj = filterJSON.get("argument");
+                          if (!(argumentObj instanceof JSONObject))
+                            {
+                              log.warn("argument is not a JSONObject : " + argumentObj.getClass().getName());
+                              colsValues.add(new ArrayList<>());
+                              break;
+                            }
+                          JSONObject argument = (JSONObject) argumentObj;
+                          String valueType = (String) argument.get("valueType");
+                          Object value = (Object) argument.get("value");
+
+                          List<String> valuesOfColumns;
+                          switch (valueType) 
+                          {
+                            case "simpleSelect.string":
+                              if (!(value instanceof String))
+                                {
+                                  log.warn("value of column " + nameOfColumn + " is not a String : " + value);
+                                  colsValues.add(new ArrayList<>());
+                                }
+                              else
+                                {
+                                  String valueSimpleSelect = (String) value;
+                                  valuesOfColumns = new ArrayList<>();
+                                  valuesOfColumns.add(valueSimpleSelect);
+                                  colsValues.add(valuesOfColumns);
+                                }
+                              break;
+
+                            case "multiple.string":
+                              valuesOfColumns = new ArrayList<>();
+                              if (!(value instanceof JSONArray))
+                                {
+                                  log.warn("value of column " + nameOfColumn + " is not an array : " + value.getClass().getName());
+                                }
+                              else
+                                {
+                                  JSONArray valueMultiple = (JSONArray) value;
+                                  for (int j=0; j<valueMultiple.size(); j++)
+                                    {
+                                      Object obj = valueMultiple.get(j);
+                                      if (!(obj instanceof String))
+                                        {
+                                          log.warn("value is not a String : " + obj.getClass().getName());
+                                        }
+                                      else
+                                        {
+                                          valuesOfColumns.add((String) obj);
+                                        }
+                                    }
+                                }
+                              colsValues.add(valuesOfColumns);
+                              break;
+
+                            default:
+                              log.info("Received unsupported valueType : " + valueType);
+                              break;
+                          }
+                        }
+
+                      ReportUtils.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                    }
+                  else
+                    {
+                      filterOutTmpFile = new File(unzippedFile);
+                    }
+
+                  if (percentage != null) 
+                    {
+                      ReportUtils.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
+                    }
+                  else
+                    {
+                      percentageOutTmpFile = filterOutTmpFile;
+                    }
+
+                  if (topRows != null) 
+                    {
+                      ReportUtils.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
+                    }
+                  else
+                    {
+                      topRowsOutTmpFile = percentageOutTmpFile;
+                    }
+
+                  if (header != null)
+                    {
+                      List<String> columnNames = new ArrayList<>();
+                      for (int i=0; i<header.size(); i++)
+                        {
+                          String nameOfColumn = (String) header.get(i);
+                          columnNames.add(nameOfColumn);
+                        }
+                      ReportUtils.subsetOfCols(topRowsOutTmpFile.getAbsolutePath(), headerOutTmpFile.getAbsolutePath(), columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                    }
+                  else
+                    {
+                      headerOutTmpFile = topRowsOutTmpFile;
+                    }
+
+                  finalZipFile = File.createTempFile("reportFinal.", ".zip");
+                  String finalZipFileName = finalZipFile.getAbsolutePath();
+                  ReportUtils.zipFile(headerOutTmpFile.getAbsolutePath(), finalZipFileName);
+                  reportFile = new File(finalZipFileName);
+                }
+
+                FileInputStream fis = new FileInputStream(reportFile);
+                exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+                exchange.sendResponseHeaders(200, reportFile.length());
+                OutputStream os = exchange.getResponseBody();
+                byte data[] = new byte[10_000]; // allow some bufferization
+                int length;
+                while ((length = fis.read(data)) != -1) {
+                  os.write(data, 0, length);
+                }
+                fis.close();
+                os.flush();
+                os.close();
+              } catch (Exception excp) {
+                StringWriter stackTraceWriter = new StringWriter();
+                excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
 
-              if(reportFile != null) {
-                if(reportFile.length() > 0) {
-                  try {
-                    FileInputStream fis = new FileInputStream(reportFile);
-                    exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                    exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
-                    exchange.sendResponseHeaders(200, reportFile.length());
-                    OutputStream os = exchange.getResponseBody();
-                    byte data[] = new byte[10_000]; // allow some bufferization
-                    int length;
-                    while ((length = fis.read(data)) != -1) {
-                      os.write(data, 0, length);
-                    }
-                    fis.close();
-                    os.flush();
-                    os.close();
-                  } catch (Exception excp) {
-                    StringWriter stackTraceWriter = new StringWriter();
-                    excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-                  }
-                }else {
-                  responseCode = "Report size is 0, report file is empty";
+              if (filters != null || percentage != null || topRows != null || header != null)
+                {
+                  if (filterOutTmpFile != null) filterOutTmpFile.delete();
+                  if (percentageOutTmpFile != null) percentageOutTmpFile.delete();
+                  if (topRowsOutTmpFile != null) topRowsOutTmpFile.delete();
+                  if (headerOutTmpFile != null) headerOutTmpFile.delete();
+                  if (finalZipFile != null) finalZipFile.delete();
                 }
-              }else {
-                responseCode = "Report is null, cant find this report";
-              }
+
+            } else {
+              responseCode = "Report size is 0, report file is empty";
+            }
+          } else {
+            responseCode = "Report is null, cant find this report";
           }
-        catch (GUIManagerException e)
-          {
-            log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
-            responseCode = "internalError";
-          }
+        } catch (GUIManagerException e)
+        {
+          log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
+          responseCode = "internalError";
+        }
       }
+    
     if(responseCode != null) {
       try {
         jsonResponse.put("responseCode", responseCode);

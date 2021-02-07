@@ -1,9 +1,12 @@
 package com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import java.util.Date;
 
@@ -22,4 +25,14 @@ public class LoyaltyProgramCustomerStatesDriver extends ReportDriver
     log.debug("Finished with LoyaltyProgramCustomerStates Report");
   }
 
+  @Override
+  public List<FilterObject> reportFilters() {
+	  return null;
+  }
+
+  @Override
+  public List<String> reportHeader() {
+	  // TODO Auto-generated method stub
+	  return null;
+  }
 }

@@ -11,6 +11,8 @@ sbm-api-<_KEY_>:
     TZ: <_DEPLOYMENT_TIMEZONE_>
     SBM_API_PORT: <_PORT_>
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
+    SBMSettings__ODUser: 'admin'
+    SBMSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/sbm-api-<_KEY_>/mnt

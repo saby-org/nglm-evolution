@@ -23,6 +23,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
@@ -43,7 +44,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   private List<String> filterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
 
-  private boolean previewMode;
   private String metricTargetDay;
   private long metricTargetDayStartTime;
   private long metricTargetDayDuration;
@@ -55,9 +55,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public SubscriberProfileDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, SegmentationDimensionService segmentationDimensionService)
+  public SubscriberProfileDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService)
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     
@@ -106,6 +106,11 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
       {
         this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
       }
+    
+    if(this.filterFields.isEmpty()) {
+      log.warn("Found no dimension defined.");
+      return false;
+    }
     
     return true;
   }
@@ -164,9 +169,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   }
 
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
+  protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {    
-    HashMap<String, Object> metrics = new HashMap<String,Object>();
+    HashMap<String, Long> metrics = new HashMap<String,Long>();
     
     if (compositeBucket.getAggregations() == null) {
       log.error("Unable to extract metrics, aggregation is missing.");
@@ -182,7 +187,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
         log.error("Unable to extract "+metricID+" custom metric, aggregation is missing.");
         return metrics;
       }
-      metrics.put("custom." + customMetric.getDisplay(), (int) metricBucket.getValue());
+      metrics.put("custom." + customMetric.getDisplay(), new Long((int) metricBucket.getValue()));
     }
     
     return metrics;
@@ -194,9 +199,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   /**
-   * In order to keep only one document per day (for each combination of filters), we use the following trick:
-   * We only use the target day as a timestamp (without the hour) in the document ID definition.
-   * This way, preview documents will override each other till be overriden by the definitive one at 23:59:59.999 
+   * In order to override preview documents, we use the following trick: the timestamp used in the document ID must be 
+   * the timestamp of the definitive push (and not the time we publish it).
+   * This way, preview documents will override each other till be overriden by the definitive one running the day after.
    * 
    * Be careful, it only works if we ensure to publish the definitive one. 
    * Already existing combination of filters must be published even if there is 0 count inside, in order to 
@@ -204,17 +209,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
    */
   @Override
   protected String getDocumentID(Map<String,Object> filters, String timestamp) {
-    return this.extractDocumentIDFromFilter(filters, this.metricTargetDay);
-  }
-  
-  /*****************************************
-  *
-  * Datacube name for logs
-  *
-  *****************************************/
-  @Override
-  protected String getDatacubeName() {
-    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
+    return this.extractDocumentIDFromFilter(filters, this.metricTargetDay, "default");
   }
 
   /*****************************************
@@ -238,7 +233,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
 
-    this.previewMode = false;
     this.metricTargetDay = RLMDateUtils.printDay(yesterday);
     this.metricTargetDayStartTime = beginningOfYesterday.getTime();
     this.metricTargetDayDuration = beginningOfToday.getTime() - beginningOfYesterday.getTime();
@@ -271,7 +265,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     Date beginningOfTwodaysafter = RLMDateUtils.truncate(twodaysafter, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
 
-    this.previewMode = true;
     this.metricTargetDay = RLMDateUtils.printDay(now);
     this.metricTargetDayStartTime = beginningOfToday.getTime();
     this.metricTargetDayDuration = beginningOfTomorrow.getTime() - beginningOfToday.getTime();

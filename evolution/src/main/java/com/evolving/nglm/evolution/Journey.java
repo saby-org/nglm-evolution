@@ -37,10 +37,13 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
@@ -48,6 +51,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
@@ -58,8 +62,8 @@ import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" , "target"})
-public class Journey extends GUIManagedObject implements StockableItem
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate"})
+public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
   *
@@ -164,6 +168,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     Target("criteria", "Target"),
     Event("event", "Trigger"),
     Manual("manual", "Manual"),
+    FileVariables("fileVariables", "FileVariables"),
     Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
     private String display;
@@ -183,7 +188,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   //  schema
   //
 
-  private static int currentSchemaVersion = 8;
+  private static int currentSchemaVersion = 9;
   private static Schema schema = null;
   static
   {
@@ -219,7 +224,8 @@ public class Journey extends GUIManagedObject implements StockableItem
     schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
     schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("recurrenceActive", Schema.BOOLEAN_SCHEMA);
-
+    schemaBuilder.field("priority", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("targetingFileVariableID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -274,7 +280,8 @@ public class Journey extends GUIManagedObject implements StockableItem
   private JourneyScheduler journeyScheduler;
   private Integer lastCreatedOccurrenceNumber;
   private boolean recurrenceActive;
-
+  private Integer priority;
+  private String targetingFileVariableID;
 
   /****************************************
   *
@@ -329,6 +336,8 @@ public class Journey extends GUIManagedObject implements StockableItem
   public JourneyScheduler getJourneyScheduler() { return journeyScheduler ; }
   public Integer getLastCreatedOccurrenceNumber() {return lastCreatedOccurrenceNumber; }
   public boolean getRecurrenceActive() { return recurrenceActive; }
+  public Integer getPriority() {return priority; }
+  public String getTargetingFileVariableID() { return targetingFileVariableID; }
 
   //
   //  package protected
@@ -353,6 +362,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       {
         case Target:
         case Event:
+        case FileVariables:
           result = true;
           break;
         case Manual:
@@ -634,11 +644,18 @@ public class Journey extends GUIManagedObject implements StockableItem
   // Like description, it is not used inside the system, only put at creation and pushed in Elasticsearch
   // mapping_journeys index in order to be visible for the GUI (Grafana).
   //
-  public void setTargetCount(ElasticsearchClientAPI elasticsearch, int tenantID)
+  public void setTargetCount(ElasticsearchClientAPI elasticsearch, UploadedFileService uploadedFileService, int tenantID)
   {
-    if(this.getTargetingType() == TargetingType.Target) {
-      this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch, tenantID)) );
-    }
+    if (this.getTargetingType() == TargetingType.Target)
+      {
+        this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch, tenantID)));
+      } 
+    else if (TargetingType.FileVariables == getTargetingType())
+      {
+        GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(getTargetingFileVariableID());
+        Integer targetCount = (uploadedFile != null && uploadedFile instanceof UploadedFile) ? ((UploadedFile) uploadedFile).getNumberOfLines() : new Integer(0);
+        this.getJSONRepresentation().put("targetCount", targetCount);
+      }
   }
   
   /*****************************************
@@ -647,7 +664,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, boolean recurrenceActive)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, boolean recurrenceActive, Integer priority, String targetingFileVariableID)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -677,6 +694,8 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.journeyScheduler = scheduler;
     this.lastCreatedOccurrenceNumber = lastCreatedOccurrenceNumber;
     this.recurrenceActive = recurrenceActive;
+    this.priority = priority;
+    this.targetingFileVariableID = targetingFileVariableID;
   }
 
   /*****************************************
@@ -717,6 +736,8 @@ public class Journey extends GUIManagedObject implements StockableItem
     struct.put("scheduler", JourneyScheduler.serde().packOptional(journey.getJourneyScheduler()));
     struct.put("lastCreatedOccurrenceNumber", journey.getLastCreatedOccurrenceNumber());
     struct.put("recurrenceActive", journey.getRecurrenceActive());
+    struct.put("priority", journey.getPriority());
+    struct.put("targetingFileVariableID", journey.getTargetingFileVariableID());
     return struct;
   }
 
@@ -873,7 +894,9 @@ public class Journey extends GUIManagedObject implements StockableItem
     JourneyScheduler scheduler = (schema.field("scheduler")!= null) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(),valueStruct.get("scheduler"))) : null;
     Integer lastCreatedOccurrenceNumber = (schema.field("lastCreatedOccurrenceNumber")!= null) ? valueStruct.getInt32("lastCreatedOccurrenceNumber") : null;
     boolean recurrenceActive = (schema.field("recurrenceActive") != null) ? valueStruct.getBoolean("recurrenceActive") : false;
+    String targetingFileVariableID = (schema.field("targetingFileVariableID")!= null) ? valueStruct.getString("targetingFileVariableID") : null;
     
+    Integer priority = (schema.field("priority")!= null) ? valueStruct.getInt32("priority") : Integer.MAX_VALUE; // for legacy campaigns, very low priority
     /*****************************************
     *
     *  validate
@@ -934,7 +957,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetingEventCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers, fullStatistics, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, recurrenceActive);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetingEventCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers, fullStatistics, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, recurrenceActive, priority, targetingFileVariableID);
   }
   
   /*****************************************
@@ -1203,6 +1226,66 @@ public class Journey extends GUIManagedObject implements StockableItem
     if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", recurrence);
     this.recurrenceActive = JSONUtilities.decodeBoolean(jsonRoot, "recurrenceActive", Boolean.FALSE);
+    this.priority = JSONUtilities.decodeInteger(jsonRoot, "priority", Integer.MAX_VALUE); // for legacy campaigns, very low priority
+    
+    //
+    //  FileVariables
+    //
+    
+    this.targetingFileVariableID = JSONUtilities.decodeString(jsonRoot, "targetingFileVariableID", targetingType == TargetingType.FileVariables);
+    if (targetingFileVariableID != null && targetingType == TargetingType.FileVariables)
+      {
+        EvolutionEngineEventDeclaration event = EvolutionEngine.fileWithVariableEventDeclaration;
+        JSONArray arrayEventNameCriterion = new JSONArray();
+        JSONArray arrayTargetingEventCriteria = new JSONArray();
+        
+        //
+        //  argument
+        //
+        
+        Map<String, Object> argumentMap = new HashMap<String, Object>();
+        argumentMap.put("expression", "'" + event.getName()+ "'");
+        
+        //
+        //  eventName
+        //
+        
+        Map<String, Object> eventNameCriterionMap = new HashMap<String, Object>();
+        eventNameCriterionMap.put("criterionField", "evaluation.eventname");
+        eventNameCriterionMap.put("criterionOperator", "==");
+        eventNameCriterionMap.put("argument", JSONUtilities.encodeObject(argumentMap));
+        arrayEventNameCriterion.add(JSONUtilities.encodeObject(eventNameCriterionMap));
+        
+        //
+        //  criterionContext
+        //
+        
+        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null, tenantID);
+        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext, tenantID);        
+        
+        //
+        //  fileID - argument
+        //
+        
+        Map<String, Object> argumentFileIDMap = new HashMap<String, Object>();
+        argumentFileIDMap.put("expression", "'" + targetingFileVariableID+ "'");
+        
+        //
+        //  fileID
+        //
+        
+        Map<String, Object> fileIDCriterionMap = new HashMap<String, Object>();
+        fileIDCriterionMap.put("criterionField", "event.fileID");
+        fileIDCriterionMap.put("criterionOperator", "==");
+        fileIDCriterionMap.put("argument", JSONUtilities.encodeObject(argumentFileIDMap));
+        arrayTargetingEventCriteria.add(JSONUtilities.encodeObject(fileIDCriterionMap));
+        
+        //
+        //  targetingEventCriteria
+        //
+        
+        this.targetingEventCriteria = decodeCriteria(arrayTargetingEventCriteria, eventNameCriteria, criterionContext, tenantID);
+      }
 
 
     /*****************************************
@@ -1210,8 +1293,8 @@ public class Journey extends GUIManagedObject implements StockableItem
     *  contextVariables
     *
     *****************************************/
-
-    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters, tenantID);
+    JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
+    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters, targetFileVariablesJSON, tenantID);
     this.contextVariables = new HashMap<String,CriterionField>();
     this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
     for (CriterionField contextVariable : contextVariablesAndParameters.values())
@@ -1260,6 +1343,7 @@ public class Journey extends GUIManagedObject implements StockableItem
       {
         case Target:
         case Event:
+        case FileVariables:
           switch (journeyType) 
             {
               case Journey:
@@ -2329,7 +2413,11 @@ public class Journey extends GUIManagedObject implements StockableItem
             SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
             if (subscriberMessage.getDialogMessages().size() > 0)
               {
-                result.add(new Pair(subscriberMessage, subscriberMessage.getCommunicationChannelID()));
+                try{
+                  result.add(new Pair(subscriberMessage, subscriberMessage.getCommunicationChannelID()));
+                }catch (Exception e){
+                  log.error("ISSUE WITH "+(journey.getGUIManagedObjectType()!=null?journey.getGUIManagedObjectType().getExternalRepresentation():"")+journey.getJourneyID());
+                }
               }
           }
       }
@@ -2447,10 +2535,15 @@ public class Journey extends GUIManagedObject implements StockableItem
 
   public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, int tenantID) throws GUIManagerException
   {
-    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, tenantID);
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, new JSONArray(), tenantID);
   }
 
-  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType, int tenantID) throws GUIManagerException
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, JSONArray targetFileVariables, int tenantID) throws GUIManagerException
+  {
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, targetFileVariables, tenantID);
+  }
+
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType, JSONArray targetFileVariables, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -2479,6 +2572,20 @@ public class Journey extends GUIManagedObject implements StockableItem
         
     Map<String,CriterionField> contextVariableFields = new HashMap<String,CriterionField>();
     Set<ContextVariable> unvalidatedContextVariables = new HashSet<ContextVariable>();
+    
+    //
+    // targetFileVariables (wild card no need to validate)
+    //
+    
+    for (int i=0; i < targetFileVariables.size(); i++)
+      {
+        JSONObject targetFileVariableJSON = (JSONObject) targetFileVariables.get(i);
+        JSONObject contextVarJson = generateContextVariableJson(targetFileVariableJSON);
+        ContextVariable fileContextVariable = new ContextVariable(contextVarJson, true);
+        CriterionField criterionField = new CriterionField(fileContextVariable);
+        contextVariableFields.put(criterionField.getID(), criterionField);
+      }
+    
     for (ContextVariable contextVariable : contextVariables.keySet())
       {
         switch (contextVariable.getVariableType())
@@ -2653,7 +2760,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         unvalidatedContextVariables.iterator().forEachRemaining(var -> buffer.append(var.getID()+" "));
         throw new GUIManagerException("unvalidatedContextVariables "+buffer, Integer.toString(unvalidatedContextVariables.size()));
       }
-
+    
     /*****************************************
     *
     *  return
@@ -2661,6 +2768,33 @@ public class Journey extends GUIManagedObject implements StockableItem
     *****************************************/
     
     return contextVariableFields;
+  }
+  
+  /*****************************************
+  *
+  *  generateContextVariableJson (from file variable)
+  *
+  *****************************************/
+  
+  private static JSONObject generateContextVariableJson(JSONObject targetFileVariableJSON)
+  {
+    String fileVarName = JSONUtilities.decodeString(targetFileVariableJSON, "name", true);
+    String fileVarDataType = JSONUtilities.decodeString(targetFileVariableJSON, "dataType", true);
+    Map<String, Object> resultJSONMap = new LinkedHashMap<String, Object>();
+    Map<String, Object> valueJSONMap = new LinkedHashMap<String, Object>();
+    
+    valueJSONMap.put("valueAdd", null);
+    valueJSONMap.put("expression", null);
+    valueJSONMap.put("assignment", "=");
+    valueJSONMap.put("valueMultiply", null);
+    valueJSONMap.put("valueType", "complex" + "." + fileVarDataType);
+    valueJSONMap.put("expressionType", fileVarDataType);
+    valueJSONMap.put("value", null);
+    valueJSONMap.put("timeUnit", null);
+    
+    resultJSONMap.put("name", fileVarName);
+    resultJSONMap.put("value", JSONUtilities.encodeObject(valueJSONMap));
+    return JSONUtilities.encodeObject(resultJSONMap);
   }
   
   /*****************************************
@@ -3869,10 +4003,16 @@ public class Journey extends GUIManagedObject implements StockableItem
    * 
    *******************************/
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> targetIDs = new ArrayList<String>();
+    List<String> internaltargetIDs = new ArrayList<String>();
+    List<String> wrkflowIDs = new ArrayList<String>();
+    List<String> pushTemplateIDs = new ArrayList<String>();
+    List<String> mailtemplateIDs = new ArrayList<String>();
+    List<String> dialogIDs = new ArrayList<String>();
+    
     switch (getGUIManagedObjectType())
       {
         case Journey:
@@ -3880,23 +4020,67 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           //  campaign
           //
-          
+        	internaltargetIDs = new ArrayList<String>();
           List<String> campaignIDs = new ArrayList<String>();
+          List<EvaluationCriterion> internalTargets=getEligibilityCriteria()==null?new ArrayList<EvaluationCriterion>():getEligibilityCriteria();
+          
           for (JourneyNode journeyNode : getJourneyNodes().values())
             {
               if (journeyNode.getNodeType().getActionManager() != null)
                 {
-                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("journey");
+                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("journey");
                   if (campaignID != null)campaignIDs.add(campaignID);
+                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("workflow");
+                  if (workflowID != null) wrkflowIDs.add(workflowID);
+                 
+                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("pushtemplate");
+                  if (pushId != null) pushTemplateIDs.add(pushId);
+                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("mailtemplate");
+                  if (mailId != null) mailtemplateIDs.add(mailId);
+                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("dialogtemplate");
+                  if (dialogID != null) dialogIDs.add(dialogID);
                 }
-            }
-          result.put("campaign", campaignIDs);
-          
-          List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-          result.put("journeyobjective", journeyObjectiveIDs);
-       
-          targetIDs = getTargetID();
+				if (journeyNode.getNodeName().equals("Profile Selection")
+						|| journeyNode.getNodeName().equals("Event Multi-Selection")
+						|| journeyNode.getNodeName().equals("Event Selection")) {
+					// offerNode.getOutgoingLinks().forEach((a,b)->
+					// internalTargets1.addAll(b.getTransitionCriteria())) ;
+					for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values()) {
+						if (journeyLink.getTransitionCriteria() != null
+								&& journeyLink.getTransitionCriteria().size() > 0)
+							internalTargets.addAll(journeyLink.getTransitionCriteria());
+					}
+				}
+			}
+			result.put("campaign", campaignIDs);
+			result.put("journey", campaignIDs);
+			result.put("workflow", wrkflowIDs);
+
+			List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", journeyObjectiveIDs);
+
+			targetIDs = getTargetID();
+
+			for (EvaluationCriterion internalTarget : internalTargets) {
+				if (internalTarget != null && internalTarget.getCriterionField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+					if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+						internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+					else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+						internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
+								.replace("]", "").replace("'", "").split(",")));
+				}
+			}
+          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+          targetIDs.addAll(internaltargetIDs);
           result.put("target", targetIDs);
+          result.put("pushtemplate", pushTemplateIDs);
+          result.put("mailtemplate", mailtemplateIDs);
+          result.put("dialogtemplate", dialogIDs);
           
           
           break;
@@ -3906,48 +4090,262 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           //  offer
           //
+          internaltargetIDs = new ArrayList<String>();
           List<String> pointIDs = new ArrayList<String>();
           List<String> offerIDs = new ArrayList<String>();
-          for (JourneyNode offerNode : getJourneyNodes().values())
+          List<String> workflowIDs = new ArrayList<String>();
+          List<EvaluationCriterion> internalTargets1=getEligibilityCriteria()==null?new ArrayList<EvaluationCriterion>():getEligibilityCriteria();
+           for (JourneyNode offerNode : getJourneyNodes().values())
             {
               if (offerNode.getNodeType().getActionManager() != null)
                 {
-                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("offer");
+                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("offer");
                   if (offerID != null) 
                 	  offerIDs.add(offerID);
                   
                   
-                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("point");
+                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("point");
                   if (pointID != null) pointIDs.add(pointID);
+                  
+                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("workflow");
+                  if (workflowID != null) workflowIDs.add(workflowID);
+                  
+                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("pushtemplate");
+                  if (pushId != null) pushTemplateIDs.add(pushId);
+                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate");
+                  if (mailId != null) mailtemplateIDs.add(mailId);
+                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate");
+                  if (dialogID != null) dialogIDs.add(dialogID);
                 }
-            }
-          result.put("offer", offerIDs);
-          result.put("point", pointIDs);
-          
-          List<String> journeyObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-          result.put("journeyobjective", journeyObjIDs);
-          
-          targetIDs = getTargetID();
+              
+				if (offerNode.getNodeName().equals("Profile Selection")
+						|| offerNode.getNodeName().equals("Event Multi-Selection")
+						|| offerNode.getNodeName().equals("Event Selection")) {
+					// offerNode.getOutgoingLinks().forEach((a,b)->
+					// internalTargets1.addAll(b.getTransitionCriteria())) ;
+					for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values()) {
+						if (journeyLink.getTransitionCriteria() != null
+								&& journeyLink.getTransitionCriteria().size() > 0)
+							internalTargets1.addAll(journeyLink.getTransitionCriteria());
+					}
+				}
+			}
+			result.put("offer", offerIDs);
+			result.put("point", pointIDs);
+			result.put("workflow", workflowIDs);
+
+			List<String> journeyObjIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", journeyObjIDs);
+
+			targetIDs = getTargetID();
+
+			for (EvaluationCriterion internalTarget : internalTargets1) {
+				if (internalTarget != null && internalTarget.getCriterionField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField() != null
+						&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+					if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+						internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+					else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+							|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+						internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
+								.replace("]", "").replace("'", "").split(",")));
+
+				}
+			}
+          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+          targetIDs.addAll(internaltargetIDs);
+
           result.put("target", targetIDs);
+          result.put("pushtemplate", pushTemplateIDs);
+          result.put("mailtemplate", mailtemplateIDs);
+          result.put("dialogtemplate", dialogIDs);
             
           
           break;
 
         case BulkCampaign:
-            List<String> blkpointIDs = new ArrayList<String>();
-         if (this.boundParameters.containsKey("journey.deliverableID") && boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
-        	 blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-             result.put("point", blkpointIDs);    
-             
-            targetIDs = getTargetID();
-             result.put("target", targetIDs);
-             
-            break;
+			List<String> blkpointIDs = new ArrayList<String>();
+			internaltargetIDs = new ArrayList<String>();
+			if (this.boundParameters != null && this.boundParameters.containsKey("journey.deliverableID")
+					&& this.boundParameters.get("journey.deliverableID") != null && this.boundParameters
+							.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
+				blkpointIDs.add(boundParameters.get("journey.deliverableID").toString()
+						.replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+
+			if (this.boundParameters != null && this.boundParameters.containsKey("journey.dialogtemplate")
+					&& this.boundParameters.get("journey.dialogtemplate") != null) {
+				String dialogId = ((NotificationTemplateParameters) boundParameters.get("journey.dialogtemplate"))
+						.getSubscriberMessageTemplateID();
+				dialogIDs.add(dialogId);
+
+			}
+
+			result.put("point", blkpointIDs);
+			result.put("dialogtemplate", dialogIDs);
+
+			targetIDs = getTargetID();
+			result.put("target", targetIDs);
+
+			List<String> jourObjIDs = getJourneyObjectiveInstances().stream()
+					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			result.put("journeyobjective", jourObjIDs);
+
+			break;
             
+        case Workflow:
+            
+            //
+            //  offer
+            //
+        	internalTargets=new ArrayList<EvaluationCriterion>();
+            for (JourneyNode offerNode : getJourneyNodes().values())
+              {
+                if (offerNode.getNodeType().getActionManager() != null)
+                  {
+                           
+                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("pushtemplate");
+                    if (pushId != null) pushTemplateIDs.add(pushId);
+                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate");
+                    if (mailId != null) mailtemplateIDs.add(mailId);
+                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate");
+                    if (dialogID != null) dialogIDs.add(dialogID);
+                  }
+               
+                if(offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection")) {
+                  	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
+                  	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
+                       {if(journeyLink.getTransitionCriteria()!=null && journeyLink.getTransitionCriteria().size()>0)
+                  		 internalTargets.addAll(journeyLink.getTransitionCriteria());
+                       }
+                   }  
+				}
+				for (EvaluationCriterion internalTarget : internalTargets) {
+					if (internalTarget != null && internalTarget.getCriterionField() != null
+							&& internalTarget.getCriterionField().getESField() != null
+							&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
+						if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
+								|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+							internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+						else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
+								|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+							internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression()
+									.replace("[", "").replace("]", "").replace("'", "").split(",")));
+
+					}
+				}
+             if(internaltargetIDs!=null && internaltargetIDs.size()>0)
+             targetIDs.addAll(internaltargetIDs);
+             result.put("target", targetIDs);
+        
+            result.put("pushtemplate", pushTemplateIDs);
+            result.put("mailtemplate", mailtemplateIDs);
+            result.put("dialogtemplate", dialogIDs);
+           
+            
+           
+              
+            
+            break;
         default:
           break;
       }
 
     return result;
+  }
+  
+  @Override
+  public String getESDocumentID()
+  {
+    return "_" + this.getJourneyID().hashCode();
+  }
+  @Override
+  public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  {
+    Map<String,Object> documentMap = new HashMap<String,Object>();
+    
+    //
+    // description: retrieved from JSON, not in the object
+    //
+    Object description = this.getJSONRepresentation().get("description");
+    
+    //
+    // targets
+    //
+    // TODO @rl: use ElasticsearchUtils ?
+    String targets = "";
+    for(String targetID : this.getTargetID()) {
+      GUIManagedObject target = targetService.getStoredGUIManagedObject(targetID);
+      if(target != null) {
+        String targetDisplay = target.getGUIManagedObjectDisplay();
+        if(targetDisplay == null) {
+          targetDisplay = "Unknown(ID:" + targetID + ")";
+        }
+        
+        if(targets.equals("")) {
+          targets = targetDisplay;
+        } else {
+          targets += "/" + targetDisplay;
+        }
+      }
+    }
+    
+    //
+    // objectives
+    //
+    // TODO @rl: use ElasticsearchUtils ?
+    String objectives = "";
+    for(JourneyObjectiveInstance objectiveInstance : this.getJourneyObjectiveInstances()) {
+      GUIManagedObject journeyObjective = journeyObjectiveService.getStoredGUIManagedObject(objectiveInstance.getJourneyObjectiveID());
+      if(journeyObjective != null) {
+        String journeyObjectiveDisplay = journeyObjective.getGUIManagedObjectDisplay();
+        if(journeyObjectiveDisplay == null) {
+          journeyObjectiveDisplay = "Unknown(ID:" + objectiveInstance.getJourneyObjectiveID() + ")";
+        }
+        
+        if(objectives.equals("")) {
+          objectives = journeyObjectiveDisplay;
+        } else {
+          objectives += "/" + journeyObjectiveDisplay;
+        }
+      }
+    }
+    
+    //
+    // targetCount: retrieved from JSON, not in the object
+    //
+    Object targetCountObj = this.getJSONRepresentation().get("targetCount");
+    long targetCount = (targetCountObj != null && targetCountObj instanceof Long) ? (long) targetCountObj : 0;
+    
+    
+    //
+    // documentMap
+    //
+    documentMap.put("journeyID", this.getJourneyID());
+    documentMap.put("display", this.getGUIManagedObjectDisplay());
+    documentMap.put("description", (description != null)? description: "");
+    documentMap.put("type", this.getGUIManagedObjectType().getExternalRepresentation());
+    documentMap.put("user", this.getUserName());
+    documentMap.put("targets", targets);
+    documentMap.put("targetCount", targetCount);
+    documentMap.put("objectives", objectives);
+    documentMap.put("startDate", RLMDateUtils.printTimestamp(this.getEffectiveStartDate()));
+    documentMap.put("endDate", RLMDateUtils.printTimestamp(this.getEffectiveEndDate()));
+    documentMap.put("active", this.getActive());
+    documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+    documentMap.put("status", journeyService.getJourneyStatus(this).getExternalRepresentation());
+
+    //
+    // return
+    //
+    return documentMap;
+  }
+  @Override
+  public String getESIndexName()
+  {
+    return "mapping_journeys";
   }
 }

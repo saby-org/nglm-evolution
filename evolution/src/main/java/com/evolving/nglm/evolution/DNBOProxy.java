@@ -256,7 +256,7 @@ public class DNBOProxy
     catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "dnboproxy-catalogcharacteristicservice-" + apiProcessKey, Deployment.getCatalogCharacteristicTopic(), false);
     scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "dnboproxy-scoringstrategyservice-" + apiProcessKey, Deployment.getScoringStrategyTopic(), false);
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "dnboproxy-saleschannelservice-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
-    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
+    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints(), dnboProxyThread);
     subscriberGroupEpochReader = ReferenceDataReader.<String, SubscriberGroupEpoch>startReader("dnboproxy-subscribergroupepoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
     segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "dnboproxy-segmentationdimensionservice-"+apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
     dnboMatrixService = new DNBOMatrixService(Deployment.getBrokerServers(),"dnboproxy-matrixservice"+apiProcessKey,Deployment.getDNBOMatrixTopic(),false);

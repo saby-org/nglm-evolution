@@ -143,6 +143,8 @@ public class JourneyService extends GUIService
     Integer lastCompletedOccurrenceNumber = JSONUtilities.decodeInteger(fullJSON, "lastCompletedOccurrenceNumber", false);
     boolean recurrenceActive = JSONUtilities.decodeBoolean(fullJSON, "recurrenceActive", Boolean.FALSE);
     
+    int priority = JSONUtilities.decodeInteger(fullJSON, "priority", Integer.MAX_VALUE);
+
     //
     //  result
     //
@@ -154,6 +156,7 @@ public class JourneyService extends GUIService
     result.put("numberOfOccurrences", numberOfOccurrences);
     result.put("lastCompletedOccurrenceNumber", lastCompletedOccurrenceNumber);
     result.put("recurrenceActive", recurrenceActive);
+    result.put("priority", priority);
     
     if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign))
       {
@@ -177,7 +180,7 @@ public class JourneyService extends GUIService
   public Journey getActiveJourney(String journeyID, Date date) 
   { 
     Journey activeJourney = (Journey) getActiveGUIManagedObject(journeyID, date);
-    if ( activeJourney != null && !Deployment.getDeployment(activeJourney.getTenantID()).getAutoApproveGuiObjects() && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType()&& GUIManagedObjectType.LoyaltyWorkflow != activeJourney.getGUIManagedObjectType())
+    if (activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType()&& GUIManagedObjectType.LoyaltyWorkflow != activeJourney.getGUIManagedObjectType())
       {
         return JourneyStatus.StartedApproved == activeJourney.getApproval() ? activeJourney : null; 
       }
@@ -189,7 +192,7 @@ public class JourneyService extends GUIService
   public Collection<Journey> getActiveJourneys(Date date, int tenantID) 
   { 
     Collection<Journey> activeJourney = (Collection<Journey>) getActiveGUIManagedObjects(date, tenantID);
-    if (!Deployment.getDeployment(tenantID).getAutoApproveGuiObjects()) activeJourney = activeJourney.stream().filter(journey -> JourneyStatus.StartedApproved == journey.getApproval()).collect(Collectors.toList());
+    activeJourney = activeJourney.stream().filter(journey -> JourneyStatus.StartedApproved == journey.getApproval()).collect(Collectors.toList());
     return activeJourney;
   }
   public Collection<Journey> getActiveRecurrentJourneys(Date date, int tenantID) { return getActiveJourneys(date, tenantID).stream().filter( journey -> journey.getRecurrence()).collect(Collectors.toList()); }
@@ -234,10 +237,7 @@ public class JourneyService extends GUIService
             // Approved
             //
             
-            if (!Deployment.getDeployment(tenantID).getAutoApproveGuiObjects())
-              {
-                acceptedAndCompleted = acceptedAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
-              }
+            acceptedAndCompleted = acceptedAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
             
             //
             //  add
@@ -327,14 +327,7 @@ public class JourneyService extends GUIService
     Date now = SystemTime.getCurrentTime();
     JourneyStatus status = JourneyStatus.Unknown;
     status = (status == JourneyStatus.Unknown && !guiManagedObject.getAccepted()) ? JourneyStatus.NotValid : status;
-    if (Deployment.getDeployment(guiManagedObject.getTenantID()).getAutoApproveGuiObjects())
-      {
-        status = (status == JourneyStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? JourneyStatus.Running : status;
-        status = (status == JourneyStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? JourneyStatus.Complete : status;
-        status = (status == JourneyStatus.Unknown && guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().after(now)) ? JourneyStatus.Started : status;
-        status = (status == JourneyStatus.Unknown && ! guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().before(now)) ? JourneyStatus.Suspended : status;
-      }
-    if (!Deployment.getDeployment(guiManagedObject.getTenantID()).getAutoApproveGuiObjects() && status == JourneyStatus.Unknown)
+    if (status == JourneyStatus.Unknown)
       {
         Journey journey = (Journey) guiManagedObject;
         status = (status == JourneyStatus.Unknown && journey.getApproval() == JourneyStatus.Pending) ? JourneyStatus.Pending : status;

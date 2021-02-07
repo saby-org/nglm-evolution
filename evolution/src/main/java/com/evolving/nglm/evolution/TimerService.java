@@ -670,7 +670,7 @@ public class TimerService
             while (! stopRequested && subscriberStateStoreIterator.hasNext())
               {
                 SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
-                if (subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
+                if (subscriberState.getLastEvaluationDate() == null || subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
                   {
                     TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation, true);
                     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));
@@ -1139,6 +1139,17 @@ public class TimerService
               }
             catch (InvalidStateStoreException e)
               {
+
+                // need to close it to re-open a new one
+                if(subscriberStateStoreIterator!=null)
+                  {
+                    subscriberStateStoreIterator.close();
+                    subscriberStateStoreIterator=null;
+                    statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
+                            .withLabel(StatsBuilders.LABEL.operation.name(),"evaluatetarget_all")
+                            .getStats().add(startTimeStateStoreStats);
+                  }
+
                 log.error("evaluateTargets exception {}", e.getMessage());
                 StringWriter stackTraceWriter = new StringWriter();
                 e.printStackTrace(new PrintWriter(stackTraceWriter, true));

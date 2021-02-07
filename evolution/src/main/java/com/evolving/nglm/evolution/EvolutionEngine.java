@@ -21,6 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
+import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
 import com.evolving.nglm.evolution.statistics.CounterStat;
@@ -97,7 +98,7 @@ import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
-import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
+import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
@@ -169,7 +170,6 @@ public class EvolutionEngine
   //  static data (for the singleton instance)
   //
 
-  private static KafkaProducer<byte[], byte[]> kafkaProducer;
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static ReferenceDataReader<String,UCGState> ucgStateReader;
   private static DynamicCriterionFieldService dynamicCriterionFieldService; 
@@ -210,6 +210,7 @@ public class EvolutionEngine
   private static PaymentMeanService paymentMeanService;
   private static ResellerService resellerService;
   private static SupplierService supplierService;
+
   private static KafkaStreams streams = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private static ReadOnlyKeyValueStore<StringKey, ExtendedSubscriberProfile> extendedSubscriberProfileStore = null;
@@ -226,11 +227,15 @@ public class EvolutionEngine
   private String evolutionEngineKey;
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
   private static EvolutionEngineEventDeclaration voucherActionEventDeclaration = null;
+  public static EvolutionEngineEventDeclaration fileWithVariableEventDeclaration = null;
   static
     {
       try
         {
           voucherActionEventDeclaration = new EvolutionEngineEventDeclaration("VoucherAction", "com.evolving.nglm.evolution.VoucherAction", Deployment.getVoucherActionTopic(), EventRule.Standard, null);
+          Map<String, Object> fileWithVariableEventCriteriaMap = new LinkedHashMap<String, Object>(); fileWithVariableEventCriteriaMap.put("id", "event.fileID"); fileWithVariableEventCriteriaMap.put("display", "Event FileID"); fileWithVariableEventCriteriaMap.put("dataType", "string"); fileWithVariableEventCriteriaMap.put("retriever", "getFileWithVariableID");
+          Map<String, CriterionField> fileWithVariableEventCriterias = new LinkedHashMap<String, CriterionField>(); fileWithVariableEventCriterias.put((String) fileWithVariableEventCriteriaMap.get("id"), new CriterionField(JSONUtilities.encodeObject(fileWithVariableEventCriteriaMap)));
+          fileWithVariableEventDeclaration = new EvolutionEngineEventDeclaration("FileWithVariableEvent", "com.evolving.nglm.evolution.FileWithVariableEvent", Deployment.getFileWithVariableEventTopic(), EventRule.Standard, fileWithVariableEventCriterias);
         } 
       catch (GUIManagerException e)
         {
@@ -280,14 +285,16 @@ public class EvolutionEngine
     Integer internalPort = Integer.parseInt(args[5]);
     Integer kafkaReplicationFactor = Integer.parseInt(args[6]);
     Integer kafkaStreamsStandbyReplicas = Integer.parseInt(args[7]);
+
     // for performance testing only, SHOULD NOT BE USED IN PROD, the right rocksDB configuration should be able to provide the same
     boolean isInMemoryStateStores = false;
-    if(args.length>8 && args[8].toLowerCase().equals("1")) isInMemoryStateStores = true;
+    if("true".equals(System.getenv("EVOLUTIONENGINE_IN_MEMORY_STATE_STORES"))) isInMemoryStateStores = true;
     // try as well some rocksdb config (not sure yet at all about all this, documentation is not so clear, so testing)
     int rocksDBCacheMBytes=-1;// will not change the default kstream rocksdb settings
-    if(args.length>9 && !isInMemoryStateStores) rocksDBCacheMBytes = Integer.parseInt(args[9]);
+    if(!isInMemoryStateStores) try{ rocksDBCacheMBytes = Integer.parseInt(System.getenv("EVOLUTIONENGINE_ROCKSDB_CACHE_MB")); } catch(NumberFormatException e){}
     int rocksDBMemTableMBytes=-1;
-    if(args.length>10 && !isInMemoryStateStores && rocksDBCacheMBytes!=-1) rocksDBMemTableMBytes = Integer.parseInt(args[10]);
+    if(!isInMemoryStateStores && rocksDBCacheMBytes!=-1) try{ rocksDBMemTableMBytes = Integer.parseInt(System.getenv("EVOLUTIONENGINE_ROCKSDB_MEMTABLE_MB")); } catch(NumberFormatException e){}
+    
 
     //
     //  source topics
@@ -297,25 +304,12 @@ public class EvolutionEngine
     String cleanupSubscriberTopic = Deployment.getCleanupSubscriberTopic();
     String subscriberProfileForceUpdateTopic = Deployment.getSubscriberProfileForceUpdateTopic();
     String executeActionOtherSubscriberTopic = Deployment.getExecuteActionOtherSubscriberTopic();
-    String profileChangeEventTopic = Deployment.getProfileChangeEventTopic();
-    String profileSegmentChangeEventTopic = Deployment.getProfileSegmentChangeEventTopic();
-    String profileLoyaltyProgramChangeEventTopic = Deployment.getProfileLoyaltyProgramChangeEventTopic();
-    String journeyStatisticTopic = Deployment.getJourneyStatisticTopic();
-    String journeyMetricTopic = Deployment.getJourneyMetricTopic();
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
     String presentationLogTopic = Deployment.getPresentationLogTopic();
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
-
-    //
-    //  sink topics
-    //
-
-    String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
-    String tokenChangeTopic = Deployment.getTokenChangeTopic();
-    String voucherChangeResponseTopic = Deployment.getVoucherChangeResponseTopic();
 
     //
     //  changelogs
@@ -337,19 +331,6 @@ public class EvolutionEngine
 
     log.info("main START: {} {} {} {} {}", stateDirectory, bootstrapServers, kafkaStreamsStandbyReplicas, kafkaReplicationFactor);
 
-    
-    //
-    // kafka producer
-    //    
-
-   Properties producerProperties = new Properties();
-   producerProperties.put("bootstrap.servers", bootstrapServers);
-   producerProperties.put("acks", "all");
-   producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-   producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-   kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
-    
-    
     //
     //  dynamicCriterionFieldsService
     //
@@ -561,8 +542,8 @@ public class EvolutionEngine
     //
     // retention service
     //
-    
-    retentionService = new RetentionService(journeyService);
+    //EVPRO-574
+    retentionService = new RetentionService(journeyService,targetService);
     
     //
     // supplierService
@@ -686,6 +667,7 @@ public class EvolutionEngine
     Map<EvolutionEngineEventDeclaration,ConnectSerde<? extends SubscriberStreamEvent>> evolutionEngineEventSerdes = new HashMap<EvolutionEngineEventDeclaration,ConnectSerde<? extends SubscriberStreamEvent>>();
     Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = Deployment.getEvolutionEngineEvents();
     evolutionEngineEvents.put(voucherActionEventDeclaration.getName(), voucherActionEventDeclaration);
+    evolutionEngineEvents.put(fileWithVariableEventDeclaration.getName(), fileWithVariableEventDeclaration);
     for (EvolutionEngineEventDeclaration evolutionEngineEvent : evolutionEngineEvents.values())
       {
         switch (evolutionEngineEvent.getEventRule())
@@ -726,9 +708,10 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
-    final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
-    final Serde<TokenChange> tokenChangeSerde = TokenChange.serde();
+    final ConnectSerde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
+    final ConnectSerde<TokenChange> tokenChangeSerde = TokenChange.serde();
     final ConnectSerde<VoucherChange> voucherChangeSerde = VoucherChange.serde();
+    final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
 
     //
     //  special serdes
@@ -790,8 +773,8 @@ public class EvolutionEngine
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     KStream<StringKey, PresentationLog> presentationLogSourceStream = builder.stream(presentationLogTopic, Consumed.with(stringKeySerde, presentationLogSerde));
     KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
-    KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(profileSegmentChangeEventTopic, Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
-    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(profileLoyaltyProgramChangeEventTopic, Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
+    KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(Deployment.getProfileSegmentChangeEventTopic(), Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
+    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
 
     //
@@ -810,6 +793,7 @@ public class EvolutionEngine
     List<KStream<StringKey, ? extends SubscriberStreamEvent>> extendedProfileEvolutionEngineEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     Map<String,EvolutionEngineEventDeclaration> evolutionEngineEventsDeclr = Deployment.getEvolutionEngineEvents();
     evolutionEngineEventsDeclr.put(voucherActionEventDeclaration.getName(), voucherActionEventDeclaration);
+    evolutionEngineEventsDeclr.put(fileWithVariableEventDeclaration.getName(), fileWithVariableEventDeclaration);
     for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : evolutionEngineEventsDeclr.values())
       {
         KStream<StringKey, ? extends SubscriberStreamEvent> evolutionEngineEventStream;
@@ -974,27 +958,36 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyStatistic), 
         (key,value) -> (value instanceof JourneyMetric), 
         (key,value) -> (value instanceof SubscriberTrace),
-
         (key,value) -> (value instanceof ExternalAPIOutput),
+
         (key,value) -> (value instanceof ProfileChangeEvent),
         (key,value) -> (value instanceof ProfileSegmentChangeEvent),
         (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent),
         (key,value) -> (value instanceof TokenChange),
+        (key,value) -> (value instanceof VoucherChange),
 
-        (key,value) -> (value instanceof VoucherChange));
+        (key,value) -> (value instanceof ExecuteActionOtherSubscriber),
+        (key,value) -> (value instanceof VoucherAction),
+        (key,value) -> (value instanceof JourneyTriggerEventAction),
+        (key,value) -> (value instanceof SubscriberProfileForceUpdate)
+    );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[2];
     KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[3];
-
     KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[4];
+
     KStream<StringKey, ProfileChangeEvent> profileChangeEventsStream = (KStream<StringKey, ProfileChangeEvent>) branchedEvolutionEngineOutputs[5];
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventsStream = (KStream<StringKey, ProfileSegmentChangeEvent>) branchedEvolutionEngineOutputs[6];
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[7];
     KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[8];
-
     KStream<StringKey, VoucherChange> voucherChangeStream = (KStream<StringKey, VoucherChange>) branchedEvolutionEngineOutputs[9];
+
+    KStream<StringKey, ExecuteActionOtherSubscriber> executeActionOtherSubscriberStream = (KStream<StringKey, ExecuteActionOtherSubscriber>) branchedEvolutionEngineOutputs[10];
+    KStream<StringKey, VoucherAction> voucherActionStream = (KStream<StringKey, VoucherAction>) branchedEvolutionEngineOutputs[11];
+    KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
+    KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
 
     /*****************************************
     *
@@ -1021,15 +1014,18 @@ public class EvolutionEngine
     //  sink - core streams
     //
 
-    journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
-    journeyMetricStream.to(journeyMetricTopic, Produced.with(stringKeySerde, journeyMetricSerde));
-    subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
-    extendedProfileSubscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
-    profileChangeEventsStream.to(profileChangeEventTopic, Produced.with(stringKeySerde, profileChangeEventSerde));
-    profileSegmentChangeEventsStream.to(profileSegmentChangeEventTopic, Produced.with(stringKeySerde, profileSegmentChangeEventSerde));
-    profileLoyaltyProgramChangeEventsStream.to(profileLoyaltyProgramChangeEventTopic, Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
-    tokenChangeStream.to(tokenChangeTopic, Produced.with(stringKeySerde, tokenChangeSerde));
-    voucherChangeStream.to(voucherChangeResponseTopic, Produced.with(stringKeySerde, voucherChangeSerde));
+    journeyStatisticStream.to(Deployment.getJourneyStatisticTopic(), Produced.with(stringKeySerde, journeyStatisticSerde));
+    journeyMetricStream.to(Deployment.getJourneyMetricTopic(), Produced.with(stringKeySerde, journeyMetricSerde));
+    subscriberTraceStream.to(Deployment.getSubscriberTraceTopic(), Produced.with(stringKeySerde, subscriberTraceSerde));
+    extendedProfileSubscriberTraceStream.to(Deployment.getSubscriberTraceTopic(), Produced.with(stringKeySerde, subscriberTraceSerde));
+    profileChangeEventsStream.to(Deployment.getProfileChangeEventTopic(), Produced.with(stringKeySerde, profileChangeEventSerde));
+    profileSegmentChangeEventsStream.to(Deployment.getProfileSegmentChangeEventTopic(), Produced.with(stringKeySerde, profileSegmentChangeEventSerde));
+    profileLoyaltyProgramChangeEventsStream.to(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
+    tokenChangeStream.to(Deployment.getTokenChangeTopic(), Produced.with(stringKeySerde, tokenChangeSerde));
+    voucherChangeStream.to(Deployment.getVoucherChangeResponseTopic(), Produced.with(stringKeySerde, voucherChangeSerde));
+	executeActionOtherSubscriberStream.map((key,value)->new KeyValue<>(new StringKey(value.getSubscriberID()),value)).to(Deployment.getExecuteActionOtherSubscriberTopic(), Produced.with(stringKeySerde, executeActionOtherSubscriberSerde));
+    voucherActionStream.to(Deployment.getVoucherActionTopic(), Produced.with(stringKeySerde, voucherActionSerde));
+    subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
 
     //
 	//  sink DeliveryRequest
@@ -1037,15 +1033,15 @@ public class EvolutionEngine
 
 	// rekeyed as needed
 	KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
-	// topics/predicates/serdes for branching by request or reponse and priority
-	// important to keep to 2 list coherent one with the other!
+	// topics/predicates/serdes for branching by request or response and priority
+	// important to keep those 2 lists coherent one with the other!
 	LinkedList<String> topics = new LinkedList<>();
 	LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
 	Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
 	// populate
 	for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
 	  for(DeliveryPriority priority:DeliveryPriority.values()){
-	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine()){
+	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine() || deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)/*or special case the "hacky loyalty point update BDR only" (sounds to me that is actually not the hacky at all, sending point request to commodity delivery manager to send back to engine to send back to commodity delivery manager to send back to engine feels a bit more shitty)*/){
 	  	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
 		  topics.add(topic);
 	  	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
@@ -1063,6 +1059,26 @@ public class EvolutionEngine
 	  String topic = topicIterator.next();
 	  stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
 	}
+
+	//
+    // sink TriggerEvent
+    //
+
+    // important to keep those 2 lists coherent one with the other!
+    LinkedList<EvolutionEngineEventDeclaration> triggerEventsDeclarations = new LinkedList<>();
+    LinkedList<Predicate<StringKey,JourneyTriggerEventAction>> triggerEventsPredicates = new LinkedList<>();
+	for(EvolutionEngineEventDeclaration eventDeclaration:Deployment.getEvolutionEngineEvents().values()){
+	  if(!eventDeclaration.isTriggerEvent()) continue;
+	  triggerEventsDeclarations.add(eventDeclaration);
+	  triggerEventsPredicates.add((key,value)->value.getEventDeclaration().getEventClass().equals(eventDeclaration.getEventClass()));
+	}
+	//branch and sink
+    Iterator<EvolutionEngineEventDeclaration> eventDeclarationIterator = triggerEventsDeclarations.iterator();
+    for(KStream<StringKey,JourneyTriggerEventAction> stream:journeyTriggerEventActionStream.branch(triggerEventsPredicates.toArray(new Predicate[triggerEventsPredicates.size()]))){
+      EvolutionEngineEventDeclaration eventDeclaration = eventDeclarationIterator.next();
+      KStream<StringKey,EvolutionEngineEvent> outputStream = stream.mapValues(value->value.getEventToTrigger());
+      outputStream.to(eventDeclaration.getEventTopic(),Produced.with(stringKeySerde,eventDeclaration.getEventSerde()));
+    }
 
     //
     //  sink -- externalAPI output stream
@@ -1233,8 +1249,8 @@ public class EvolutionEngine
     //
 
     PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
-    httpClientConnectionManager.setDefaultMaxPerRoute(Deployment.getEvolutionEngineStreamThreads());
-    httpClientConnectionManager.setMaxTotal(Deployment.getEvolutionEngineInstanceNumbers()*Deployment.getEvolutionEngineStreamThreads());
+    httpClientConnectionManager.setDefaultMaxPerRoute(Deployment.getEvolutionEngineStreamThreads()*Deployment.getHttpServerScalingFactor());
+    httpClientConnectionManager.setMaxTotal(Deployment.getEvolutionEngineInstanceNumbers()*Deployment.getEvolutionEngineStreamThreads()*Deployment.getHttpServerScalingFactor());
 
     //
     //  httpClient
@@ -1255,7 +1271,7 @@ public class EvolutionEngine
         InetSocketAddress addr = new InetSocketAddress(subscriberProfilePort);
         subscriberProfileServer = HttpServer.create(addr, 0);
         subscriberProfileServer.createContext("/nglm-evolutionengine/getSubscriberProfile", new APIHandler(API.getSubscriberProfile));
-        subscriberProfileServer.setExecutor(Executors.newFixedThreadPool(Deployment.getEvolutionEngineInstanceNumbers()*Deployment.getEvolutionEngineStreamThreads()));
+        subscriberProfileServer.setExecutor(Executors.newFixedThreadPool(Deployment.getEvolutionEngineInstanceNumbers()*Deployment.getEvolutionEngineStreamThreads()*Deployment.getHttpServerScalingFactor()));        
       }
     catch (IOException e)
       {
@@ -1273,7 +1289,7 @@ public class EvolutionEngine
         InetSocketAddress addr = new InetSocketAddress(internalPort);
         internalServer = HttpServer.create(addr, 0);
         internalServer.createContext("/nglm-evolutionengine/retrieveSubscriberProfile", new APIHandler(API.retrieveSubscriberProfile));
-        internalServer.setExecutor(Executors.newFixedThreadPool(Deployment.getEvolutionEngineStreamThreads()));
+        internalServer.setExecutor(Executors.newFixedThreadPool(Deployment.getEvolutionEngineStreamThreads()*Deployment.getHttpServerScalingFactor()));
       }
     catch (IOException e)
       {
@@ -1322,6 +1338,10 @@ public class EvolutionEngine
     *****************************************/
 
     log.info("evolution engine started");
+
+    // start the secondary preprocessor streams if needed
+    Preprocessor.startPreprocessorStreams(evolutionEngineKey,supplierService,voucherService,voucherTypeService);
+
   }
 
   /*****************************************
@@ -1577,7 +1597,6 @@ public class EvolutionEngine
     private StockMonitor stockService;
     private ResellerService resellerService;
     private SupplierService supplierService;
-
     //
     //  constructor
     //
@@ -1953,11 +1972,14 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  lastEvaluationDate
+    *  lastEvaluationDate, only if current event is an effective periodic evaluation, i.e. TimedEvaluation + periodicEvaluation = true
     *
     *****************************************/
 
-    subscriberState.setLastEvaluationDate(now);
+    if(evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation())
+      {
+        subscriberState.setLastEvaluationDate(now);
+      }
     subscriberStateUpdated = true;
 
     /*****************************************
@@ -2012,7 +2034,7 @@ public class EvolutionEngine
       {
         return false;
       }
-    
+
     //
     //  subscriberStateUpdated
     //
@@ -2138,7 +2160,7 @@ public class EvolutionEngine
         subscriberState.getTokenChanges().clear();
         subscriberStateUpdated = true;
       }
-    
+
     //
     //  voucherChange cleaning
     //
@@ -2184,6 +2206,45 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
+    //
+    //  executeActionOtherSubscribers cleaning
+    //
+
+    if (subscriberState.getExecuteActionOtherSubscribers() != null)
+      {
+        subscriberState.getExecuteActionOtherSubscribers().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  voucherActions cleaning
+    //
+
+    if (subscriberState.getVoucherActions() != null)
+      {
+        subscriberState.getVoucherActions().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  journeyTriggerEventActions cleaning
+    //
+
+    if (subscriberState.getJourneyTriggerEventActions() != null)
+      {
+        subscriberState.getJourneyTriggerEventActions().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  subscriberProfileForceUpdates cleaning
+    //
+
+    if (subscriberState.getSubscriberProfileForceUpdates() != null)
+      {
+        subscriberState.getSubscriberProfileForceUpdates().clear();
+        subscriberStateUpdated = true;
+      }
 
 
     //
@@ -2256,7 +2317,7 @@ public class EvolutionEngine
         if(point != null)
           {
             //TODO : what module is best here ?
-            updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, tenantID);
+            updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, "", tenantID);
           }
       }
   }
@@ -2397,7 +2458,7 @@ public class EvolutionEngine
       }
 
     }else{
-      if(log.isTraceEnabled()) log.trace("no vouchers stored in profile for "+subscriberProfile.getSubscriberID());
+      if(log.isTraceEnabled()) log.trace("no vouchers to expire in vouchers stored in profile for "+subscriberProfile.getSubscriberID());
     }
 
     // check if we have update request
@@ -2476,7 +2537,7 @@ public class EvolutionEngine
           }
           if(!voucherFound) voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
         }else{
-          if(log.isDebugEnabled()) log.debug("no vouchers stored in profile for "+subscriberProfile.getSubscriberID());
+          if(log.isDebugEnabled()) log.debug("no vouchers stored for action " + voucherChange.getAction().getExternalRepresentation() + " in profile for "+subscriberProfile.getSubscriberID());
           voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
         }
       }
@@ -2877,7 +2938,7 @@ public class EvolutionEngine
                     Tier tier = ((LoyaltyProgramPoints) loyaltyProgram).getTier(currentTier);
                     if (tier != null)
                       {
-                        subscriberProfileUpdated = triggerLoyaltyWorflow(evolutionEvent, context.getSubscriberState(), tier.getWorkflowDaily(), loyaltyProgram.getLoyaltyProgramID()) || subscriberProfileUpdated;
+                        subscriberProfileUpdated = triggerLoyaltyWorflow(evolutionEvent, context.getSubscriberState(), tier.getWorkflowDaily(), loyaltyProgram.getLoyaltyProgramID(), currentTier) || subscriberProfileUpdated;
                       }
                   }
               }
@@ -3043,17 +3104,50 @@ public class EvolutionEngine
                     }
                     if (parameterType != null)
                       {
-                        try
-                        {
-                          Method setter = subscriberProfile.getClass().getMethod(methodName, parameterType);
-                          setter.invoke(subscriberProfile, value);
-                          subscriberProfileUpdated = true;
-                        }
-                        catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
-                        {
-                          log.info("unable to set profile attribute " + attributeName + " : " + e.getLocalizedMessage());
-                        }
-                      }
+                        // special case for evolutionSubscriberStatus
+                        if ("evolutionSubscriberStatus".equals(attributeName) && (value instanceof String))
+                          {
+                            EvolutionSubscriberStatus currentEvolutionSubscriberStatus = subscriberProfile.getEvolutionSubscriberStatus();
+                            EvolutionSubscriberStatus updatedEvolutionSubscriberStatus = EvolutionSubscriberStatus.fromExternalRepresentation((String) value);
+                            if (currentEvolutionSubscriberStatus != updatedEvolutionSubscriberStatus)
+                              {
+                                subscriberProfile.setEvolutionSubscriberStatus(updatedEvolutionSubscriberStatus);
+                                subscriberProfile.setEvolutionSubscriberStatusChangeDate(subscriberProfileForceUpdate.getEventDate());
+                                subscriberProfile.setPreviousEvolutionSubscriberStatus(currentEvolutionSubscriberStatus);
+                                subscriberProfileUpdated = true;
+                              }
+                          }
+                        else
+                          {
+                            try
+                            {
+                              Method setter = subscriberProfile.getClass().getMethod(methodName, parameterType);
+                              setter.invoke(subscriberProfile, value);
+                              subscriberProfileUpdated = true;
+                            }
+                            catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1)
+                              {
+                                // setters defined as Integer can be declared with long param (ex: setLastRechargeAmount())
+                                if (Integer.class.equals(parameterType) && (value instanceof Integer))
+                                  {
+                                    try
+                                    {
+                                      Method setter = subscriberProfile.getClass().getMethod(methodName, Long.class);
+                                      setter.invoke(subscriberProfile, new Long((long) (int) value));
+                                      subscriberProfileUpdated = true;
+                                     }
+                                     catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+                                     {
+                                       log.info("unable to set profile attribute with long " + attributeName + " : " + e.getLocalizedMessage());
+                                     }
+                                   }
+                                 else
+                                   {
+                                     log.info("unable to set profile attribute " + attributeName + " : " + e1.getLocalizedMessage());
+                                   }
+                               }
+                           }
+                       }
                   }
               }
           }
@@ -3107,7 +3201,7 @@ public class EvolutionEngine
             // update balance 
             //
             
-            boolean success = updatePointBalance(context, pointFulfillmentResponse, pointFulfillmentRequest.getEventID(), pointFulfillmentRequest.getModuleID(), pointFulfillmentRequest.getFeatureID(), subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now, false, tenantID);
+            boolean success = updatePointBalance(context, pointFulfillmentResponse, pointFulfillmentRequest.getEventID(), pointFulfillmentRequest.getModuleID(), pointFulfillmentRequest.getFeatureID(), subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now, false, "", tenantID);
             
             //
             //  response
@@ -3519,13 +3613,15 @@ public class EvolutionEngine
               null,
               evolutionEventContext.now, tenantID);
           List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
-          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions);
+          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest);
 
           // clean temporary data to avoid next nodes considering this event
           evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
           evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(null);
 
           return true;
+        } else {
+          log.info("No action manager originatingSubscriberID : " + executeActionOtherSubscriber.getOriginatingSubscriberID() + " journeyID : " + executeActionOtherSubscriber.getOriginalJourneyID() + " nodeID : " + executeActionOtherSubscriber.getOriginatingNodeID());
         }
       }
     return false;
@@ -3608,15 +3704,15 @@ public class EvolutionEngine
   {    
     // Exit tier workflow
     Tier oldTier = loyaltyProgramPoints.getTier(oldTierName);
-    if (oldTier != null) triggerLoyaltyWorflow(event, subscriberState, oldTier.getWorkflowChange(), featureID);
+    if (oldTier != null) triggerLoyaltyWorflow(event, subscriberState, oldTier.getWorkflowChange(), featureID, oldTier.getTierName());
     
     // Enter tier workflow
     Tier newTier = loyaltyProgramPoints.getTier(newTierName);
-    if (newTier != null) triggerLoyaltyWorflow(event, subscriberState, newTier.getWorkflowChange(), featureID);
+    if (newTier != null) triggerLoyaltyWorflow(event, subscriberState, newTier.getWorkflowChange(), featureID, newTier.getTierName());
   }
 
 
-  public static boolean triggerLoyaltyWorflow(SubscriberStreamEvent eventToTrigWorkflow, SubscriberState subscriberState, String loyaltyWorflowID, String featureID)
+  public static boolean triggerLoyaltyWorflow(SubscriberStreamEvent eventToTrigWorkflow, SubscriberState subscriberState, String loyaltyWorflowID, String featureID, String origin)
   {
     // 
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
@@ -3624,7 +3720,7 @@ public class EvolutionEngine
     
     if(loyaltyWorflowID == null) { return false; }
     
-    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID + ":" + featureID;
+    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID + ":" + featureID + ":" + origin;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
       {
@@ -3642,7 +3738,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static boolean updatePointBalance(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now, boolean generateBDR, int tenantID)
+  private static boolean updatePointBalance(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now, boolean generateBDR, String tier, int tenantID)
   {
 
     //
@@ -3665,7 +3761,7 @@ public class EvolutionEngine
     //  update
     //
 
-    boolean success = pointBalance.update(context, pointFulfillmentResponse, eventID, moduleID, featureID, subscriberProfile.getSubscriberID(), operation, amount, point, now, generateBDR, tenantID);
+    boolean success = pointBalance.update(context, pointFulfillmentResponse, eventID, moduleID, featureID, subscriberProfile.getSubscriberID(), operation, amount, point, now, generateBDR, tier, tenantID);
 
     //
     //  update balances
@@ -4012,6 +4108,7 @@ public class EvolutionEngine
                 
                 String oldTier = ((LoyaltyProgramPointsState)loyaltyProgramState).getTierName();
                 Tier subscriberCurrentTierDefinition = loyaltyProgramPoints.getTier(oldTier);
+
                 if(subscriberCurrentTierDefinition != null){
                   
                   //
@@ -4025,15 +4122,14 @@ public class EvolutionEngine
                       //
                       //  update status points
                       //
-
                       Point point = pointService.getActivePoint(loyaltyProgramPoints.getStatusPointsID(), now);
                       if(point != null)
                         {
 
                           if(log.isDebugEnabled()) log.debug("update loyalty program STATUS => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit()+" of point "+point.getPointName());
                           int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit();
-                          updatePointBalance(context, null, statusEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, tenantID);
-                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowStatus(), loyaltyProgramID);
+                          updatePointBalance(context, null, statusEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, oldTier, tenantID);
+                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowStatus(), loyaltyProgramID, subscriberCurrentTierDefinition.getTierName());
                           subscriberProfileUpdated = true;
                         }
                       else
@@ -4079,10 +4175,10 @@ public class EvolutionEngine
                         {
                           if(log.isDebugEnabled()) log.debug("update loyalty program REWARD => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit()+" of point with ID "+loyaltyProgramPoints.getRewardPointsID());
                           int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit();
-                          updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, tenantID);
+                          updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, oldTier, tenantID);
                           
                           // TODO Previous call might have changed tier -> do we need to generate tier changed event + trigger workflow for tier change ?
-                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowReward(), loyaltyProgramID);
+                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowReward(), loyaltyProgramID, oldTier);
                           subscriberProfileUpdated = true;
                         }
                       else
@@ -4530,9 +4626,9 @@ public class EvolutionEngine
     Map<JourneyObjective, Integer> permittedJourneys = new HashMap<JourneyObjective, Integer>();
     for (JourneyObjective journeyObjective : permittedSimultaneousJourneys.keySet())
       {
-        permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
+    	permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
         if (permittedWaitingPeriod.get(journeyObjective) == Boolean.FALSE){
-            if (log.isTraceEnabled()) log.trace("permittedJourneys put " + journeyObjective.getJourneyObjectiveName() + ": static 0");
+        	if (log.isTraceEnabled()) log.trace("permittedJourneys put " + journeyObjective.getJourneyObjectiveName() + ": static 0");
             permittedJourneys.put(journeyObjective, 0);
         }
       }
@@ -4542,7 +4638,7 @@ public class EvolutionEngine
       {
         for(Entry<JourneyObjective,Integer> entry:permittedJourneys.entrySet())
           {
-            log.debug("permittedJourneys : " + entry.getKey().getJourneyObjectiveName() + ":" + entry.getValue());
+        	log.debug("permittedJourneys : " + entry.getKey().getJourneyObjectiveName() + ":" + entry.getValue());
           }
       }
 
@@ -4553,7 +4649,16 @@ public class EvolutionEngine
     *****************************************/
 
     List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now, tenantID));
+    
+    // Sort journeys by priorities, and randomize those with equal priorities
+
+    // 1) sort randomly
     Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
+    
+    // 2) sort by priorities, do not reorder journeys with same priorities
+    //logCollectionPrioritiesJourneys("Before sort journeys", activeJourneys);
+    Collections.sort(activeJourneys, ((j1, j2) -> j1.getPriority()-j2.getPriority()));
+    //logCollectionPrioritiesJourneys("After sort journeys", activeJourneys);
     
     /*****************************************
     *
@@ -4597,6 +4702,7 @@ public class EvolutionEngine
         // In case of Workflow, it can be triggered through a JourneyRequest or from a loyalty program
         //
         String sourceFeatureIDFromWorkflowTriggering = null;
+        String origin = null;
         List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
         List<String> toBeRemoved = new ArrayList<>();
         if(journey.isWorkflow())
@@ -4619,6 +4725,10 @@ public class EvolutionEngine
 				                    calledJourney = true;
 				                    toBeRemoved.add(currentWFToTrigger);
 				                    sourceFeatureIDFromWorkflowTriggering=elements[3];
+                            if (elements.length >= 5)
+                              {
+                                origin = elements[4];
+                              }
 				                  }
 				              }
 				            else 
@@ -4817,9 +4927,9 @@ public class EvolutionEngine
 
                 if (enterJourney && currentStatus==null)
                   {
-                    for (JourneyObjective journeyObjective : allObjectives)
+                	for (JourneyObjective journeyObjective : allObjectives)
                       {
-                        if (permittedJourneys.get(journeyObjective) < 1)
+                    	 if (permittedJourneys.get(journeyObjective) < 1)
                           {                       
                           currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
                           context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
@@ -4903,6 +5013,7 @@ public class EvolutionEngine
 
                 JourneyRequest journeyRequest;
                 String sourceFeatureID;
+                String sourceOrigin = "";
                 ParameterMap boundParameters;
                 if (calledJourney && evolutionEvent instanceof JourneyRequest)
                   {
@@ -4918,6 +5029,26 @@ public class EvolutionEngine
                     boundParameters = journey.getBoundParameters();
                     // get the featureID from the CalledJourney computation
                     sourceFeatureID = sourceFeatureIDFromWorkflowTriggering;
+                    sourceOrigin = origin;
+                  }
+                
+                //
+                //  bound file variables
+                //
+                
+                if (journey.getTargetingType() == TargetingType.FileVariables && evolutionEvent instanceof FileWithVariableEvent)
+                  {
+                    FileWithVariableEvent fileWithVariableEvent = (FileWithVariableEvent) evolutionEvent;
+                    Map<String, CriterionField> allContextVars = journey.getContextVariables();
+                    ParameterMap parameterMap = fileWithVariableEvent.getParameterMap();
+                    for (String key : parameterMap.keySet())
+                      {
+                        String id = "variablefile" + "." + key;
+                        if (allContextVars.get(id) != null)
+                          {
+                            boundParameters.put(id, parameterMap.get(key));
+                          }
+                      }
                   }
 
                 /*****************************************
@@ -4935,7 +5066,7 @@ public class EvolutionEngine
 				}
 
 				JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
-				JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
+				JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory, sourceOrigin);
 
 				if (currentStatus != null) // EVPRO-530
 				{
@@ -5069,7 +5200,17 @@ public class EvolutionEngine
     //
 
     List<JourneyState> inactiveJourneyStates = new ArrayList<JourneyState>();
-    for (JourneyState journeyState : subscriberState.getJourneyStates())
+    
+    List<JourneyState> orderedJourneyStates = new ArrayList<>();
+    orderedJourneyStates.addAll(subscriberState.getJourneyStates());
+
+    // sort by priorities, do not change order if same priority
+    // from Collections.sort Javadoc : This sort is guaranteed to be stable: equal elements will not be reordered as a result of the sort.
+    //logCollectionPrioritiesJourneyStates("Before sort nodes", orderedJourneyStates);
+    Collections.sort(orderedJourneyStates, ((j1, j2) -> j1.getPriority()-j2.getPriority()));
+    //logCollectionPrioritiesJourneyStates("After sort nodes", orderedJourneyStates);
+    
+    for (JourneyState journeyState : orderedJourneyStates)
       {
         /*****************************************
         *
@@ -5313,7 +5454,14 @@ public class EvolutionEngine
 
                 boolean originalStatusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
                 boolean originalStatusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-
+                
+                // Check for new conversion - setup
+                Boolean convertedReference = null;
+                if(originalStatusConverted) {
+                  convertedReference = new Boolean(true); // We track for change (Boolean object, we will compare reference and not value) 
+                  journeyState.getJourneyParameters().put(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName(), convertedReference);
+                }
+                
                 /*****************************************
                 *
                 *  set context variables when exiting node
@@ -5467,11 +5615,17 @@ public class EvolutionEngine
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
                         if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_SUPPLIER))
                           {
-                            addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, supplierService, INTERNAL_VARIABLE_SUPPLIER);
+                            if (!addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, supplierService, INTERNAL_VARIABLE_SUPPLIER))
+                              {
+                                subscriberState.getSubscriberProfile().getUnknownRelationships().add(new Pair(entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID()));
+                              }
                           }
                         else if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_RESELLER))
                           {
-                            addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, resellerService, INTERNAL_VARIABLE_RESELLER);
+                            if (!addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, resellerService, INTERNAL_VARIABLE_RESELLER))
+                              {
+                                subscriberState.getSubscriberProfile().getUnknownRelationships().add(new Pair(entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID()));
+                              }
                           }
                         else if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
                           {
@@ -5506,7 +5660,7 @@ public class EvolutionEngine
                           // execute action
                           //
 
-                          handleExecuteOnEntryActions(subscriberState, journeyState, journey, actions);
+                          handleExecuteOnEntryActions(subscriberState, journeyState, journey, actions, entryActionEvaluationRequest);
                       }
                     catch (RuntimeException e)
                       {
@@ -5619,11 +5773,20 @@ public class EvolutionEngine
                 boolean markNotified = originalStatusNotified == false && currentStatusNotified == true;
 
                 //
-                //  markConverted
+                //  markConverted & conversionCount
                 //
-
-                boolean currentStatusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-                boolean markConverted = originalStatusConverted == false && currentStatusConverted == true;
+                boolean markConverted = false;
+                
+                if(originalStatusConverted == false) { // first conversion 
+                  markConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+                }
+                else { // conversion on already converted -- Be careful, we are comparing references here, not the value (as intended) !
+                  markConverted = (convertedReference != journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()));
+                }
+                
+                if(markConverted) {
+                  journeyState.getJourneyHistory().incrementConversions(now);
+                }
                 
                 //
                 // abTesting (we remove it so its only counted once per journey)
@@ -5799,12 +5962,35 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
-
-  private static void addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
+  private static void logCollectionPrioritiesJourneys(String msg, List<Journey> list)
   {
+    if (!list.isEmpty())
+      {
+        StringBuffer sb = new StringBuffer();
+        list.stream().forEach(j->sb.append(j.getPriority()+","));
+        if (sb.length() > 0) sb.deleteCharAt(sb.length()-1);
+        log.info(msg + " : " + sb);
+      }
+  }
+  private static void logCollectionPrioritiesJourneyStates(String msg, List<JourneyState> list)
+  {
+    if (!list.isEmpty())
+      {
+        StringBuffer sb = new StringBuffer();
+        list.stream().forEach(j->sb.append(j.getPriority()+","));
+        if (sb.length() > 0) sb.deleteCharAt(sb.length()-1);
+        log.info(msg + ":" + sb);
+      }
+  }
+
+  private static boolean addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
+  {
+    boolean res = false; // fail by default
     String variableID = "variable." + variableName;
-    Object partnerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
-    if (partnerName instanceof String)
+    Object partnerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : null;
+    if (partnerName == null) {
+      log.info("Unable to find partner in variable " + variableName);
+    } else if (partnerName instanceof String)
       {
         String customerIDPartner = null;
         String partnerNameStr = (String) partnerName;
@@ -5817,20 +6003,23 @@ public class EvolutionEngine
                 break;
               }
           }
-        log.trace("Will do action for partner " + customerIDPartner);
-        if (customerIDPartner != null)
-          {
+        if (customerIDPartner != null) {
+            log.trace("Will do action for partner " + customerIDPartner);
             ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDPartner, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
             actions.add(action);
+            res = true;
+          } else {
+            log.info("Error : need to do action for " + partnerNameStr + " but found no associated customerID");
           }
       }
     else
       {
-        log.info("expecting partner, found " + partnerName + " " + ((partnerName != null) ? partnerName.getClass().getCanonicalName() : "null"));
+        log.info("Expecting partner in variable " + variableName + " found " + partnerName + " " + ((partnerName != null) ? partnerName.getClass().getCanonicalName() : "null"));
       }
+    return res;
   }
 
-  private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions)
+  private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions, SubscriberEvaluationRequest subscriberEvaluationRequest)
   {
     for (Action action : actions)
       {
@@ -5845,7 +6034,7 @@ public class EvolutionEngine
             case ExecuteActionOtherSubscriber:
               ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber) action;
               if(executeActionOtherSubscriber.getOutstandingDeliveryRequestID() != null) { journeyState.setJourneyOutstandingDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID()); }
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getExecuteActionOtherSubscriberTopic(), StringKey.serde().serializer().serialize(Deployment.getExecuteActionOtherSubscriberTopic(), new StringKey(executeActionOtherSubscriber.getSubscriberID())), ExecuteActionOtherSubscriber.serde().serializer().serialize(Deployment.getExecuteActionOtherSubscriberTopic(), executeActionOtherSubscriber)));
+              subscriberState.getExecuteActionOtherSubscribers().add(executeActionOtherSubscriber);
               break;
 
             case JourneyRequest:
@@ -5868,19 +6057,24 @@ public class EvolutionEngine
               subscriberState.getSubscriberProfile().getTokens().add(token);
               String featureID = journey.getJourneyID();
               token.setFeatureID(featureID);
+              String nodeName = null;
+              if (subscriberEvaluationRequest.getJourneyNode() != null)
+                {
+                  nodeName = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+                }
               switch (token.getTokenStatus())
               {
                 case New:
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyToken"));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName));
                   break;
                 case Bound: // must record the token creation
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyNBO"));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, "JourneyNBO"));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, nodeName));
                   break;
                 case Redeemed: // must record the token creation & allocation
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyBestOffer"));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, "JourneyBestOffer"));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID, "JourneyBestOffer"));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID, nodeName));
                   break;
                 case Expired :
                   // TODO
@@ -5899,21 +6093,19 @@ public class EvolutionEngine
             case VoucherChange:
               if (action instanceof VoucherAction)
                 {
-                  String eventTopic = Deployment.getVoucherActionTopic();
                   VoucherAction event = (VoucherAction) action;
-                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(event.getSubscriberID())), VoucherAction.serde().serializer().serialize(eventTopic, event)));
+                  subscriberState.getVoucherActions().add(event);
                 }
               break;
               
             case TriggerEvent:
               JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
-              EvolutionEngineEventDeclaration eventDeclaration =  triggerEventAction.getEventDeclaration();
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), triggerEventAction.getEventToTrigger())));
+              subscriberState.getJourneyTriggerEventActions().add(triggerEventAction);
               break;
 
             case UpdateProfile:
               SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) action;
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+              subscriberState.getSubscriberProfileForceUpdates().add(subscriberProfileForceUpdate);
               break;
 
             default:
@@ -6230,7 +6422,7 @@ public class EvolutionEngine
         JourneyHistory history = iterator.next();
         if(history.getJourneyID().equals(journeyStatistic.getJourneyID())) 
           {
-            updatedHistory = new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory());
+            updatedHistory = new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory(), journeyStatistic.getLastConversionDate(), journeyStatistic.getConversionCount());
             iterator.remove();
             break;
           }
@@ -6242,7 +6434,7 @@ public class EvolutionEngine
       }    
     else 
       {
-        subscriberHistory.getJourneyHistory().add(new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory()));
+        subscriberHistory.getJourneyHistory().add(new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory(), journeyStatistic.getLastConversionDate(), journeyStatistic.getConversionCount()));
       }
     
     /*****************************************
@@ -6316,9 +6508,15 @@ public class EvolutionEngine
         result.addAll(subscriberState.getVoucherChanges());
         result.addAll(subscriberState.getProfileSegmentChangeEvents());
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
+        result.addAll(subscriberState.getExecuteActionOtherSubscribers());
+        result.addAll(subscriberState.getVoucherActions());
+        result.addAll(subscriberState.getJourneyTriggerEventActions());
+        result.addAll(subscriberState.getSubscriberProfileForceUpdates());
       }
-    // enrich with alternateIds all here
+    // enrich with needed output all here
     result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader, subscriberState.getSubscriberProfile().getTenantID()));
+    // as well as output wrapped in
+    subscriberState.getJourneyTriggerEventActions().forEach(journeyTriggerEventAction -> ((SubscriberStreamOutput)journeyTriggerEventAction.getEventToTrigger()).enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader, subscriberState.getSubscriberProfile().getTenantID()));
     return result;
   }
 
@@ -6341,6 +6539,8 @@ public class EvolutionEngine
     boolean isEvolutionEngineProcessor = Deployment.getDeliveryManagers().get(value.getDeliveryType()).isProcessedByEvolutionEngine();
     if(isEvolutionEngineProcessor && value.isPending()) return new KeyValue<>(new StringKey(value.getSubscriberID()), value);//loop back of request to be processed by evolution engine
   	if(isEvolutionEngineProcessor && !value.isPending() && value.getOriginatingRequest()) return new KeyValue<>(new StringKey(value.getSubscriberID()), value);// response to evolution engine directly (compare to response to purchase or commodityDeliveryManager I guess...)
+	// is the "hacky BDR" (not so hacky to me, refer comment at "stream branching")
+	if(value.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE) && !value.isPending()) return new KeyValue<>(new StringKey(value.getSubscriberID()), value);// response to evolution engine directly
 	return new KeyValue<>(new StringKey(value.getDeliveryRequestID()), value);//all the other
   }
   
@@ -6424,6 +6624,9 @@ public class EvolutionEngine
 
     JsonNode subscriberStateNode = deserializer.deserialize(null, converter.fromConnectData(null, SubscriberState.schema(),  SubscriberState.pack(subscriberState)));
 
+    converter.close(); // to make Eclipse happy
+    deserializer.close(); // to make Eclipse happy
+    
     /*****************************************
     *
     *  hack/massage triggerStateNodes to remove unwanted/misleading/spurious fields from currentTriggerState
@@ -6537,6 +6740,9 @@ public class EvolutionEngine
     //
 
     JsonNode extendedSubscriberProfileNode = deserializer.deserialize(null, converter.fromConnectData(null, ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().schema(),  ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().pack(extendedSubscriberProfile)));
+
+    converter.close(); // to make Eclipse happy
+    deserializer.close(); // to make Eclipse happy
 
     /*****************************************
     *
@@ -6716,7 +6922,7 @@ public class EvolutionEngine
     private KStreamsUniqueKeyServer uniqueKeyServer;
     private Date now;
     private List<String> subscriberTraceDetails;
-
+    
     /*****************************************
     *
     *  constructor
@@ -7683,7 +7889,7 @@ public class EvolutionEngine
       return Collections.<Action>singletonList(request);
     }
 
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String journeyID = (String) journeyNode.getNodeParameters().get("node.parameter.journey");
@@ -7790,6 +7996,15 @@ public class EvolutionEngine
       *****************************************/
 
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      WorkflowParameter workflowparam= (WorkflowParameter) journeyNode.getNodeParameters().get("node.parameter.workflow");
+      String workflowID =workflowparam.getWorkflowID();
+      if (workflowID != null) result.put("workflow", workflowID);
+      return result;
     }
   }
 
@@ -7943,7 +8158,9 @@ public class EvolutionEngine
 
     private EvolutionEngineEventDeclaration eventDeclaration;
     private HashMap<String, String> eventFieldMappings = new HashMap<>();
-    private Constructor<? extends EvolutionEngineEvent> eventConstructor = null; 
+    private Constructor<? extends EvolutionEngineEvent> eventConstructor;
+
+    public EvolutionEngineEventDeclaration getEventDeclaration() { return eventDeclaration; }
 
     /*****************************************
     *
@@ -7977,8 +8194,7 @@ public class EvolutionEngine
       
       try
       {
-        Class eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventDeclaration.getEventClassName());
-        eventConstructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+        eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
       }
     catch (Exception e)
       {
@@ -8033,7 +8249,7 @@ public class EvolutionEngine
     }
   }
   
-  public static class JourneyTriggerEventAction implements Action {
+  public static class JourneyTriggerEventAction extends SubscriberStreamOutput implements Action {
 
     private EvolutionEngineEventDeclaration eventDeclaration;
     private EvolutionEngineEvent eventToTrigger;
@@ -8114,6 +8330,8 @@ public class EvolutionEngine
       List<Action> actions = new ArrayList<Action>();
       SubscriberProfile subscriberProfile = subscriberEvaluationRequest.getSubscriberProfile();
       subscriberEvaluationRequest.getJourneyState().getVoucherChanges().clear();
+      Date now = SystemTime.getCurrentTime();
+      this.origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
       
       /*****************************************
       *
@@ -8122,29 +8340,18 @@ public class EvolutionEngine
       *****************************************/
 
       String voucherCode = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.voucher.code");
-      String supplier = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
+      String supplierDisplay = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
 
-      /*****************************************
-      *
-      *  operation
-      *
-      *****************************************/
-      
-      Date now = SystemTime.getCurrentTime();
-      VoucherAction voucherActionEvent = new VoucherAction(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage(), RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseCode(), operation.getExternalRepresentation());
-      
-      //
-      //  journey id
-      //
-      
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      
+
+      VoucherAction voucherActionEvent = new VoucherAction(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage(), RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseCode(), operation.getExternalRepresentation());
+
       if (operation == Operation.Redeem)
         {
           try
             {
-              VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
+              VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -8158,8 +8365,8 @@ public class EvolutionEngine
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
-            } 
-          catch (ThirdPartyManagerException e) 
+            }
+          catch (ThirdPartyManagerException e)
             {
               voucherActionEvent.setActionStatus(e.getMessage());
               voucherActionEvent.setActionStatusCode(e.getResponseCode());
@@ -8170,12 +8377,12 @@ public class EvolutionEngine
         {
           try
             {
-              VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS);
+              VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
-            } 
+            }
           catch (ThirdPartyManagerException e)
             {
               voucherActionEvent.setActionStatus(e.getMessage());
@@ -8184,15 +8391,10 @@ public class EvolutionEngine
           actions.add(voucherActionEvent);
         }
       
-      if (log.isDebugEnabled()) log.debug("VoucherActionManager - VoucherAction {}, journeyID {}, voucherActionEvent is {} and supplier is {}", operation, journeyID, voucherActionEvent, supplier);
-      
-      /*****************************************
-      *
-      *  return request
-      *
-      *****************************************/
+      if (log.isDebugEnabled()) log.debug("VoucherActionManager - VoucherAction {}, journeyID {}, voucherActionEvent is {} and supplier is {}", operation, journeyID, voucherActionEvent, supplierDisplay);
 
       return actions;
+
     }
   }
   

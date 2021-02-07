@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.evolving.nglm.evolution.retention.Cleanable;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -45,11 +47,13 @@ public class JourneyHistory implements Cleanable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_history");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("nodeHistory", SchemaBuilder.array(NodeHistory.schema()).schema());
     schemaBuilder.field("statusHistory", SchemaBuilder.array(StatusHistory.schema()).schema());
     schemaBuilder.field("rewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
+    schemaBuilder.field("lastConversionDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("conversionCount", Schema.INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -75,6 +79,8 @@ public class JourneyHistory implements Cleanable
   private List<NodeHistory> nodeHistory;
   private List<StatusHistory> statusHistory;
   private List<RewardHistory> rewardHistory; // List of each rewards attributions (thus we need to sum them if we want the total for every different rewardID)
+  private Date lastConversionDate;
+  private int conversionCount;
   
   /*****************************************
   *
@@ -86,6 +92,12 @@ public class JourneyHistory implements Cleanable
   public List<NodeHistory> getNodeHistory() { return nodeHistory; }
   public List<StatusHistory> getStatusHistory() { return statusHistory; }
   public List<RewardHistory> getRewardHistory() { return rewardHistory; }
+  public Date getLastConversionDate() { return lastConversionDate; }
+  public int getConversionCount() { return conversionCount; }
+  public void incrementConversions(Date date) { 
+    this.conversionCount += 1; 
+    this.lastConversionDate = date;
+  } 
   public Boolean getControlGroupStatus()
   {
     Boolean result = null;
@@ -126,6 +138,8 @@ public class JourneyHistory implements Cleanable
     struct.put("nodeHistory", packNodeHistory(journeyHistory.getNodeHistory()));
     struct.put("statusHistory", packStatusHistory(journeyHistory.getStatusHistory()));
     struct.put("rewardHistory", packRewardHistory(journeyHistory.getRewardHistory()));
+    struct.put("lastConversionDate", journeyHistory.getLastConversionDate());
+    struct.put("conversionCount", journeyHistory.getConversionCount());
     return struct;
   }
   
@@ -189,6 +203,8 @@ public class JourneyHistory implements Cleanable
     this.nodeHistory = new ArrayList<NodeHistory>();
     this.statusHistory = new ArrayList<StatusHistory>();
     this.rewardHistory = new ArrayList<RewardHistory>();
+    this.lastConversionDate = null;
+    this.conversionCount = 0;
   }
   
   /*****************************************
@@ -218,6 +234,12 @@ public class JourneyHistory implements Cleanable
       {
         this.rewardHistory.add(reward);
       }
+    
+    this.lastConversionDate = null;
+    if(journeyHistory.getLastConversionDate() != null) {
+      this.lastConversionDate = new Date(journeyHistory.getLastConversionDate().getTime());
+    }
+    this.conversionCount = journeyHistory.getConversionCount();
   }
   
   /*****************************************
@@ -226,12 +248,14 @@ public class JourneyHistory implements Cleanable
   *
   *****************************************/
 
-  public JourneyHistory(String journeyID, List<NodeHistory> nodeHistory, List<StatusHistory> statusHistory, List<RewardHistory> rewardHistory)
+  public JourneyHistory(String journeyID, List<NodeHistory> nodeHistory, List<StatusHistory> statusHistory, List<RewardHistory> rewardHistory, Date lastConversionDate, int conversionCount)
   {
     this.journeyID = journeyID;
     this.nodeHistory = nodeHistory;
     this.statusHistory = statusHistory;
     this.rewardHistory = rewardHistory;
+    this.lastConversionDate = lastConversionDate;
+    this.conversionCount = conversionCount;
   }
   
   /*****************************************
@@ -259,12 +283,14 @@ public class JourneyHistory implements Cleanable
     List<RewardHistory> rewardHistory =  unpackRewardHistory(schema.field("rewardHistory").schema(), valueStruct.get("rewardHistory"));
     List<NodeHistory> nodeHistory =  unpackNodeHistory(schema.field("nodeHistory").schema(), valueStruct.get("nodeHistory"));
     List<StatusHistory> statusHistory = unpackStatusHistory(schema.field("statusHistory").schema(), valueStruct.get("statusHistory"));
+    Date lastConversionDate = (schemaVersion >= 2) ? (Date) valueStruct.get("lastConversionDate") : null;
+    int conversionCount = (schemaVersion >= 2) ? valueStruct.getInt32("conversionCount") : 0;
     
     //
     //  return
     //
 
-    return new JourneyHistory(journeyID, nodeHistory, statusHistory, rewardHistory);
+    return new JourneyHistory(journeyID, nodeHistory, statusHistory, rewardHistory, lastConversionDate, conversionCount);
   }
   
   /*****************************************

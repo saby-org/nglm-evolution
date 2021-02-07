@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.datacubes.generator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +11,10 @@ import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
+import org.elasticsearch.search.aggregations.bucket.composite.DateHistogramValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.core.Deployment;
@@ -24,22 +28,21 @@ import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
-import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SubscriberMessageTemplatesMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_messages";
+  public static final String DATACUBE_ES_INDEX = "datacube_messages";
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_messages-";
-  private static final String METRIC_TOTAL_AMOUNT = "totalAmount";
 
   /*****************************************
   *
@@ -47,32 +50,28 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   private List<String> filterFields;
-  private List<AggregationBuilder> metricAggregations;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
-  private SalesChannelsMap salesChannelsMap;
-  private PaymentMeansMap paymentMeansMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
   private SubscriberMessageTemplatesMap subscriberMessageTemplatesMap;
 
-  private boolean previewMode;
+  private boolean hourlyMode;
   private String targetDay;
+  private String targetTimestamp;
 
   /*****************************************
   *
   * Constructors
   *
   *****************************************/
-  public MDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService)  
+  public MDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService)  
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();
-    this.salesChannelsMap = new SalesChannelsMap(salesChannelService);
-    this.paymentMeansMap = new PaymentMeansMap(paymentMeanService);
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
@@ -89,11 +88,8 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("templateID");
     this.filterFields.add("returnCode");
     this.filterFields.add("channelID");
+    this.filterFields.add("contactType");
     
-    //
-    // Data Aggregations
-    //
-    this.metricAggregations = new ArrayList<AggregationBuilder>();
   }
 
   /*****************************************
@@ -112,6 +108,15 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   @Override protected List<String> getFilterFields() { return filterFields; }
   
   @Override
+  protected CompositeValuesSourceBuilder<?> getSpecialSourceFilter() {
+    if(this.hourlyMode) {
+      return new DateHistogramValuesSourceBuilder("timestamp").field("eventDatetime").calendarInterval(DateHistogramInterval.HOUR);
+    } else {
+      return null;
+    }
+  }
+  
+  @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
     if(!isESIndexAvailable(getDataESIndex())) {
@@ -121,8 +126,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     
     offersMap.update();
     modulesMap.updateFromElasticsearch(elasticsearch);
-    salesChannelsMap.update();
-    paymentMeansMap.update();
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
@@ -146,6 +149,15 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     filters.put("channel", com.evolving.nglm.evolution.Deployment.getCommunicationChannels().get(channelID).getDisplay());
     
     DatacubeUtils.embelishReturnCode(filters);
+    
+    // Specials for timestamp (will not be display in filter but extracted later in DatacubeGenerator)
+    if(this.hourlyMode) {
+      Long time = (Long) filters.remove("timestamp");
+      // The timestamp retrieve from the Date Histogram is the START of the interval. 
+      // But here we want to timestamp at the END (+ 1hour -1ms)
+      Date date = new Date(time + 3600*1000 - 1);
+      filters.put("timestamp", RLMDateUtils.printTimestamp(date));
+    }
   }
 
   /*****************************************
@@ -153,26 +165,8 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Metrics settings
   *
   *****************************************/
-  @Override protected List<AggregationBuilder> getMetricAggregations() { return this.metricAggregations; }
-    
-  @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
-  {
-    HashMap<String, Object> metrics = new HashMap<String,Object>();
-    if (compositeBucket.getAggregations() == null) {
-      log.error("Unable to extract metrics, aggregation is missing.");
-      return metrics;
-    }
-    
-    ParsedSum dataTotalAmountBucket = compositeBucket.getAggregations().get(METRIC_TOTAL_AMOUNT);
-    if (dataTotalAmountBucket == null) {
-      log.error("Unable to extract totalAmount metric, aggregation is missing.");
-      return metrics;
-    }
-    metrics.put(METRIC_TOTAL_AMOUNT, (int) dataTotalAmountBucket.getValue());
-    
-    return metrics;
-  }
+  @Override protected List<AggregationBuilder> getMetricAggregations() { return Collections.emptyList(); }
+  @Override protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException { return Collections.emptyMap(); }
   
   /*****************************************
   *
@@ -180,10 +174,9 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   /**
-   * For the moment, we only publish with a period of the day (except for preview)
-   * In order to keep only one document per day (for each combination of filters), we use the following trick:
-   * We only use the day as a timestamp (without the hour) in the document ID definition.
-   * This way, preview documents will override each other till be overriden by the definitive one at 23:59:59.999 
+   * In order to override preview documents, we use the following trick: the timestamp used in the document ID must be 
+   * the timestamp of the definitive push (and not the time we publish it).
+   * This way, preview documents will override each other till be overriden by the definitive one running the day after.
    * 
    * Be careful, it only works if we ensure to publish the definitive one. 
    * Already existing combination of filters must be published even if there is 0 count inside, in order to 
@@ -191,17 +184,12 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
    */
   @Override
   protected String getDocumentID(Map<String,Object> filters, String timestamp) {
-    return this.extractDocumentIDFromFilter(filters, this.targetDay);
-  }
-  
-  /*****************************************
-  *
-  * Datacube name for logs
-  *
-  *****************************************/
-  @Override
-  protected String getDatacubeName() {
-    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
+    if(this.hourlyMode) {
+      // @rl: It also works in hourly mode because there is the real timestamp in filters !
+      return this.extractDocumentIDFromFilter(filters, this.targetTimestamp, "HOURLY");
+    } else {
+      return this.extractDocumentIDFromFilter(filters, this.targetTimestamp, "DAILY");
+    }
   }
   
   /*****************************************
@@ -215,16 +203,20 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
    * Timestamp is the last millisecond of the period (therefore included).
    * This way it shows that *count* is computed for this day (yesterday) but at the very end of the day.
    */
-  public void definitive()
+  public void dailyDefinitive()
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
-
-    this.previewMode = false;
+    
+    //
+    // Run configurations
+    //
+    this.hourlyMode = false;
     this.targetDay = RLMDateUtils.printDay(yesterday);
+    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
 
     //
     // Timestamp & period
@@ -240,19 +232,84 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
    * Timestamp is the last millisecond of the period (therefore included).
    * Because the day is still not ended, it won't be the definitive value of *count*.
    */
-  public void preview()
+  public void dailyPreview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-
-    this.previewMode = true;
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
+    
+    //
+    // Run configurations
+    //
+    this.hourlyMode = false;
     this.targetDay = RLMDateUtils.printDay(now);
+    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
 
     //
     // Timestamp & period
     //
     String timestamp = RLMDateUtils.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
+    
+    this.run(timestamp, targetPeriod);
+  }
+
+  /**
+   * The definitive datacube is generated on yesterday, for 24 periods of 1 hour (except for some special days)
+   * Rows will be timestamped at yesterday_XX:59:59.999+ZZZZ
+   * Timestamp is the last millisecond of the period (therefore included).
+   * This way it shows that *count* is computed for this hour but at the very end of it.
+   */
+  public void hourlyDefinitive()
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
+    
+    //
+    // Run configurations
+    //
+    this.hourlyMode = true;
+    this.targetDay = RLMDateUtils.printDay(yesterday);
+    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+
+    //
+    // Timestamp & period
+    //
+    String timestamp = null; // Should not be used, will be override.
+    long targetPeriod = 3600*1000; // 1 hour
+    
+    this.run(timestamp, targetPeriod);
+  }
+  
+  /**
+   * A preview is a datacube generation on the today's day. 
+   * Timestamp is the last millisecond of the period (therefore included).
+   * Because the day is still not ended, it won't be the definitive value of *count*.
+   * Even for hour periods that had already ended, because ODR can still be added with timestamp of previous hours.
+   */
+  public void hourlyPreview()
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
+    
+    //
+    // Run configurations
+    //
+    this.hourlyMode = true;
+    this.targetDay = RLMDateUtils.printDay(now);
+    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
+
+    //
+    // Timestamp & period
+    //
+    String timestamp = null; // Should not be used, will be override.
+    long targetPeriod = 3600*1000; // 1 hour
     
     this.run(timestamp, targetPeriod);
   }

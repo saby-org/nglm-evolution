@@ -11,6 +11,8 @@ import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
+
 import org.json.simple.JSONObject;
 import org.apache.commons.lang3.builder.HashCodeExclude;
 import org.apache.kafka.connect.data.Field;
@@ -166,6 +168,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(SegmentationDimensionFileImport.serde());
     guiManagedObjectSerdes.add(SegmentationDimensionRanges.serde());
     guiManagedObjectSerdes.add(Point.serde());
+    guiManagedObjectSerdes.add(ComplexObjectType.serde());
     guiManagedObjectSerdes.add(Offer.serde());
     guiManagedObjectSerdes.add(PresentationStrategy.serde());
     guiManagedObjectSerdes.add(ScoringStrategy.serde());
@@ -731,11 +734,11 @@ public abstract class GUIManagedObject
     {
       super(jsonRoot, epoch, tenantID);
     }
-    @Override public Map<String, List<String>>  getGUIDependencies() { return new HashMap<String, List<String>>(); }
+    @Override public Map<String, List<String>>  getGUIDependencies(int tenantID) { return new HashMap<String, List<String>>(); }
   }
   
   //public abstract Map<String, List<String>>  getGUIDependencies();
-  public Map<String, List<String>> getGUIDependencies()
+  public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     return new HashMap<String, List<String>>();
   }
@@ -752,5 +755,12 @@ public abstract class GUIManagedObject
   @Override public String toString()
   {
     return "guiManagedObjectID=" + guiManagedObjectID + ", guiManagedObjectName="  + guiManagedObjectName + ", guiManagedObjectDisplay=" + guiManagedObjectDisplay;
+  }
+  
+  public interface ElasticSearchMapping 
+  {
+    public String getESDocumentID();
+    public Map<String,Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService);
+    public String getESIndexName();
   }
 }

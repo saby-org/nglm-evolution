@@ -4,7 +4,7 @@
 #
 #########################################
 
-
+docker stack deploy -c $DEPLOY_ROOT/stack/stack-upgrade.yml ${DOCKER_STACK}-upgrade
 #
 #  wait for upgrade to complete
 #

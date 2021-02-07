@@ -45,9 +45,9 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   * Constructor
   *
   *****************************************/
-  public SimpleDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch) 
+  public SimpleDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter) 
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
   }
   
   /*****************************************
@@ -59,12 +59,15 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   // Filters settings
   //
   protected abstract List<String> getFilterFields();
+  protected CompositeValuesSourceBuilder<?> getSpecialSourceFilter() { // To be override only if needed
+    return null;
+  }
 
   //
   // Metrics settings
   //
   protected abstract List<AggregationBuilder> getMetricAggregations();
-  protected abstract Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException;
+  protected abstract Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException;
   
   /*****************************************
   *
@@ -97,6 +100,10 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
     for(String datacubeFilter: datacubeFilterFields) {
       TermsValuesSourceBuilder sourceTerms = new TermsValuesSourceBuilder(datacubeFilter).field(datacubeFilter).missingBucket(true);
       sources.add(sourceTerms);
+    }
+    CompositeValuesSourceBuilder<?> special = getSpecialSourceFilter();
+    if(special != null) {
+      sources.add(special);
     }
     CompositeAggregationBuilder compositeAggregation = AggregationBuilders.composite(compositeAggregationName, sources).size(ElasticsearchClientAPI.MAX_BUCKETS);
 
@@ -131,20 +138,20 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
     
     if (response.isTimedOut()
         || response.getFailedShards() > 0
-        || response.getSkippedShards() > 0
         || response.status() != RestStatus.OK) {
-      log.error("Elasticsearch search response return with bad status in {} generation.", getDatacubeName());
+      log.error("Elasticsearch search response return with bad status.");
+      log.error(response.toString());
       return result;
     }
     
     if(response.getAggregations() == null) {
-      log.error("Main aggregation is missing in {} search response.", getDatacubeName());
+      log.error("Main aggregation is missing in search response.");
       return result;
     }
     
     ParsedComposite compositeBuckets = response.getAggregations().get(compositeAggregationName);
     if(compositeBuckets == null) {
-      log.error("Composite buckets are missing in {} search response.", getDatacubeName());
+      log.error("Composite buckets are missing in search response.");
       return result;
     }
     
@@ -164,7 +171,7 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
       //
       // Extract metrics
       //
-      Map<String, Object> metrics = extractMetrics(bucket);
+      Map<String, Long> metrics = extractMetrics(bucket);
       
       //
       // Build row

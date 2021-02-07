@@ -91,7 +91,7 @@ case "${ENTRYPOINT}" in
     exec kafka-run-class -name ucgengine -loggc com.evolving.nglm.evolution.UCGEngine /app/runtime $BROKER_SERVERS $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT $ELASTICSEARCH_USERNAME $ELASTICSEARCH_USERPASSWORD
     ;;
   "evolutionengine")
-    exec kafka-run-class -name evolutionengine -loggc com.evolving.nglm.evolution.EvolutionEngine /app/runtime $BROKER_SERVERS $KEY $SUBSCRIBERPROFILE_HOST $SUBSCRIBERPROFILE_PORT $INTERNAL_PORT $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $EVOLUTIONENGINE_IN_MEMORY_STATE_STORES $EVOLUTIONENGINE_ROCKSDB_CACHE_MB $EVOLUTIONENGINE_ROCKSDB_MEMTABLE_MB
+    exec kafka-run-class -name evolutionengine -loggc com.evolving.nglm.evolution.EvolutionEngine /app/runtime $BROKER_SERVERS $KEY $SUBSCRIBERPROFILE_HOST $SUBSCRIBERPROFILE_PORT $INTERNAL_PORT $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS
     ;;
   "extractmanager")
     exec kafka-run-class -name extractmanager -loggc com.evolving.nglm.evolution.extracts.ExtractManager $BROKER_SERVERS $MASTER_ESROUTER_SERVER:${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_USERPASSWORD} $KAFKA_REPLICATION_FACTOR $SUBSCRIBER_PARTITIONS $KAFKA_STREAMS_STANDBY_REPLICAS

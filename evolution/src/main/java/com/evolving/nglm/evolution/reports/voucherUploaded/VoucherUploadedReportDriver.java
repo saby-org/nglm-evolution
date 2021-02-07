@@ -6,9 +6,11 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
 import java.util.Date;
+import java.util.List;
 
 public class VoucherUploadedReportDriver extends ReportDriver
 {
@@ -27,5 +29,19 @@ public class VoucherUploadedReportDriver extends ReportDriver
    
     log.debug("Finished with Journey Customer States Report");
 
+  }
+
+  @Override
+  public List<FilterObject> reportFilters()
+  {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<String> reportHeader()
+  {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

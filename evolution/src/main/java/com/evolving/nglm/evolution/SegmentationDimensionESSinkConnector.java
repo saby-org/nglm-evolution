@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -15,10 +14,9 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
-import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
+@Deprecated
 public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
 {
   private static DynamicCriterionFieldService dynamicCriterionFieldService;
@@ -40,6 +38,7 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
+  @Deprecated
   public static class SegmentationDimensionESSinkConnectorTask extends ChangeLogESSinkTask<SegmentationDimension>
   {
 

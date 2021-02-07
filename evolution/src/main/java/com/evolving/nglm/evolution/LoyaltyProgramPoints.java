@@ -614,7 +614,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
   }
 
 	@Override
-	public Map<String, List<String>> getGUIDependencies() {
+	public Map<String, List<String>> getGUIDependencies(int tenantID) {
 		Map<String, List<String>> result = new HashMap<String, List<String>>();
 		List<String> pointIDs = new ArrayList<String>();
 		List<String> charIDs = new ArrayList<String>();

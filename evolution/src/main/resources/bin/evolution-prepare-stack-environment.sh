@@ -1094,23 +1094,6 @@ do
 done
 
 #
-# Kafka Lag Exporter 
-#
-
-KAFKA_LAG_EXPORTER=`echo $KAFKA_LAG_EXPORTER | sed 's/ /\n/g' | uniq`
-KAFKA_LAG_EXPORTER_URL=
-KAFKA_LAG_EXPORTER_PORT=
-for TUPLE in $KAFKA_LAG_EXPORTER
-do  
-  export HOST=`echo $TUPLE | cut -d: -f2`
-  export PORT=`echo $TUPLE | cut -d: -f3`    
-  KAFKA_LAG_EXPORTER_URL="'$HOST:$PORT'"
-  KAFKA_LAG_EXPORTER_PORT="$PORT"
-done
-export KAFKA_LAG_EXPORTER_URL
-export KAFKA_LAG_EXPORTER_PORT
-
-#
 #  CSR mockup
 #
 

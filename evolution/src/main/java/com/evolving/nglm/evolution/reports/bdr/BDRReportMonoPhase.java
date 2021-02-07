@@ -61,9 +61,9 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   private static final String deliverableID = "deliverableID";
   private static final String deliverableQty = "deliverableQty";
   private static final String deliveryStatus = "deliveryStatus";
-  private static final String moduleName = "moduleName";
+  static final String moduleName = "moduleName";
   private static final String featureDisplay = "featureName";
-  private static final String deliverableDisplay = "deliverableName";
+  static final String deliverableDisplay = "deliverableName";
   private static final String subscriberID = "subscriberID";
   private static final String customerID = "customerID";
   private static final String deliverableExpirationDate = "deliverableExpirationDate";
@@ -155,7 +155,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
             addHeaders(writer, headerFieldsOrder, 1);
           }
         String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
-        log.info("Writing to csv file : " + line);
+        if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
       } 
     catch (IOException e)

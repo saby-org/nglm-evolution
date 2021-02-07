@@ -17,8 +17,10 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+@GUIDependencyDef(objectType = "mailTemplate", serviceClass = SubscriberMessageTemplateService.class, dependencies = {})
 public class MailTemplate extends SubscriberMessageTemplate
 {
   /*****************************************

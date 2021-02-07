@@ -76,6 +76,11 @@ public class DatacubeManager
   private static OfferObjectiveService offerObjectiveService;
   private static ElasticsearchClientAPI elasticsearchRestClient;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
+
+  //
+  // Datacube writer
+  //
+  private static DatacubeWriter datacubeWriter;
   
   //
   // Maps
@@ -83,16 +88,28 @@ public class DatacubeManager
   private static JourneysMap journeysMap;
   
   //
-  // Datacube generators
+  // Datacube generators - Those classes are NOT thread-safe and must be used by only one thread.
   //
-  private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacube;
-  private static ProgramsChangesDatacubeGenerator tierChangesDatacube;
   private static JourneyTrafficDatacubeGenerator trafficDatacube;
   private static JourneyRewardsDatacubeGenerator rewardsDatacube;
-  private static ODRDatacubeGenerator odrDatacube;
-  private static BDRDatacubeGenerator bdrDatacube;
-  private static MDRDatacubeGenerator mdrDatacube;
-  private static SubscriberProfileDatacubeGenerator subscriberProfileDatacube;
+  private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubePreview;
+  private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubeDefinitive;
+  private static ProgramsChangesDatacubeGenerator tierChangesDatacubePreview;
+  private static ProgramsChangesDatacubeGenerator tierChangesDatacubeDefinitive;
+  private static ODRDatacubeGenerator dailyOdrDatacubePreview;
+  private static ODRDatacubeGenerator dailyOdrDatacubeDefinitive;
+  private static ODRDatacubeGenerator hourlyOdrDatacubePreview;
+  private static ODRDatacubeGenerator hourlyOdrDatacubeDefinitive;
+  private static BDRDatacubeGenerator dailyBdrDatacubePreview;
+  private static BDRDatacubeGenerator dailyBdrDatacubeDefinitive;
+  private static BDRDatacubeGenerator hourlyBdrDatacubePreview;
+  private static BDRDatacubeGenerator hourlyBdrDatacubeDefinitive;
+  private static MDRDatacubeGenerator dailyMdrDatacubePreview;
+  private static MDRDatacubeGenerator dailyMdrDatacubeDefinitive;
+  private static MDRDatacubeGenerator hourlyMdrDatacubePreview;
+  private static MDRDatacubeGenerator hourlyMdrDatacubeDefinitive;
+  private static SubscriberProfileDatacubeGenerator subscriberProfileDatacubePreview;
+  private static SubscriberProfileDatacubeGenerator subscriberProfileDatacubeDefinitive;
   
   /*****************************************
   *
@@ -157,21 +174,38 @@ public class DatacubeManager
       }
     
     //
+    // Datacube writer
+    //
+    datacubeWriter = new DatacubeWriter(elasticsearchRestClient);
+    
+    //
     // Maps 
     //
     journeysMap = new JourneysMap(journeyService);
     
     //
-    // Datacube generators
+    // Datacube generators - one instance per usage (because it is not thread safe)
     //
-    loyaltyHistoryDatacube = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, loyaltyProgramService);
-    tierChangesDatacube = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, loyaltyProgramService);
-    trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, segmentationDimensionService, journeyService);
-    rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, segmentationDimensionService, journeyService);
-    odrDatacube = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    bdrDatacube = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    mdrDatacube = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
-    subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, segmentationDimensionService);
+    trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, datacubeWriter, segmentationDimensionService, journeyService);
+    rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, datacubeWriter, segmentationDimensionService, journeyService);
+    loyaltyHistoryDatacubePreview = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History(Preview)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    loyaltyHistoryDatacubeDefinitive = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History(Definitive)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    tierChangesDatacubePreview = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes(Preview)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    tierChangesDatacubeDefinitive = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes(Definitive)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    dailyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    hourlyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    hourlyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyBdrDatacubePreview = new BDRDatacubeGenerator("BDR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyBdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    hourlyBdrDatacubePreview = new BDRDatacubeGenerator("BDR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    hourlyBdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyMdrDatacubePreview = new MDRDatacubeGenerator("MDR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    dailyMdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    hourlyMdrDatacubePreview = new MDRDatacubeGenerator("MDR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    hourlyMdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    subscriberProfileDatacubePreview = new SubscriberProfileDatacubeGenerator("SubscriberProfile(Preview)", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
+    subscriberProfileDatacubeDefinitive = new SubscriberProfileDatacubeGenerator("SubscriberProfile(Definitive)", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
   }
 
   /*****************************************
@@ -186,23 +220,23 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, metrics can still change.
    */
   private static long scheduleLoyaltyProgramsPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "LoyaltyPrograms-preview";
+    String jobName = "LoyaltyPrograms-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        loyaltyHistoryDatacube.preview();
-        tierChangesDatacube.preview();
+        loyaltyHistoryDatacubePreview.preview();
+        tierChangesDatacubePreview.preview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -217,23 +251,23 @@ public class DatacubeManager
    * This will generated a datacube every day from the subscriberprofile snapshot index of the previous day.
    */
   private static long scheduleLoyaltyProgramsDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "LoyaltyPrograms-definitive";
+    String jobName = "LoyaltyPrograms-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getSystemTimeZone(),  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        loyaltyHistoryDatacube.definitive();
-        tierChangesDatacube.definitive();
+        loyaltyHistoryDatacubeDefinitive.definitive();
+        tierChangesDatacubeDefinitive.definitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -249,22 +283,22 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, metrics can still change.
    */
   private static long scheduleSubscriberProfilePreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "SubscriberProfile-preview";
+    String jobName = "SubscriberProfile-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        subscriberProfileDatacube.preview();
+        subscriberProfileDatacubePreview.preview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -279,22 +313,22 @@ public class DatacubeManager
    * This will generated a datacube every day from the subscriberprofile snapshot index of the previous day.
    */
   private static long scheduleSubscriberProfileDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "SubscriberProfile-definitive";
+    String jobName = "SubscriberProfile-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        subscriberProfileDatacube.definitive();
+        subscriberProfileDatacubeDefinitive.definitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -304,28 +338,28 @@ public class DatacubeManager
   }
   
   /*
-   * ODR preview
+   * ODR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the day
+   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new ODR can still be added.
    */
-  private static long scheduleODRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "ODR-preview";
+  private static long scheduleODRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "ODR-daily-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        odrDatacube.preview();
+        dailyOdrDatacubePreview.dailyPreview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -335,27 +369,89 @@ public class DatacubeManager
   }
   
   /*
-   * ODR definitive
+   * ODR daily definitive
    *
    * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
    */
-  private static long scheduleODRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "ODR-definitive";
+  private static long scheduleODRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "ODR-daily-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        odrDatacube.definitive();
+        dailyOdrDatacubeDefinitive.dailyDefinitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  
+  /*
+   * ODR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new ODR can still be added.
+   */
+  private static long scheduleODRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "ODR-hourly-preview";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyOdrDatacubePreview.hourlyPreview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * ODR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleODRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "ODR-hourly-definitive";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyOdrDatacubeDefinitive.hourlyDefinitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -365,28 +461,28 @@ public class DatacubeManager
   }
 
   /*
-   * BDR preview
+   * BDR daily preview
    *
    * This will generated a datacube preview of the day from the detailedrecords_bonuses-YYYY-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new BDR can still be added.
    */
-  private static long scheduleBDRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "BDR-preview";
+  private static long scheduleBDRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "BDR-daily-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        bdrDatacube.preview();
+        dailyBdrDatacubePreview.dailyPreview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -396,27 +492,88 @@ public class DatacubeManager
   }
   
   /*
-   * BDR definitive
+   * BDR daily definitive
    *
    * This will generated a datacube every day from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
    */
-  private static long scheduleBDRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "BDR-definitive";
+  private static long scheduleBDRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "BDR-daily-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        bdrDatacube.definitive();
+        dailyBdrDatacubeDefinitive.dailyDefinitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * BDR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_bonuses-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new BDR can still be added.
+   */
+  private static long scheduleBDRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "BDR-hourly-preview";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyBdrDatacubePreview.hourlyPreview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * BDR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleBDRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "BDR-hourly-definitive";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyBdrDatacubeDefinitive.hourlyDefinitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -426,28 +583,28 @@ public class DatacubeManager
   }
 
   /*
-   * MDR preview
+   * MDR daily preview
    *
    * This will generated a datacube preview of the day from the detailedrecords_messages-YYYY-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new MDR can still be added.
    */
-  private static long scheduleMDRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "MDR-preview";
+  private static long scheduleMDRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "MDR-daily-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        mdrDatacube.preview();
+        dailyMdrDatacubePreview.dailyPreview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -457,27 +614,88 @@ public class DatacubeManager
   }
   
   /*
-   * MDR definitive
+   * MDR daily definitive
    *
    * This will generated a datacube every day from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
    */
-  private static long scheduleMDRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "MDR-definitive";
+  private static long scheduleMDRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "MDR-daily-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
-        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
-        mdrDatacube.definitive();
+        dailyMdrDatacubeDefinitive.dailyDefinitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * MDR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_messages-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new MDR can still be added.
+   */
+  private static long scheduleMDRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "MDR-hourly-preview";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyMdrDatacubePreview.hourlyPreview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * MDR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleMDRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "MDR-hourly-definitive";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyMdrDatacubeDefinitive.hourlyDefinitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -494,16 +712,16 @@ public class DatacubeManager
    * /!\ Do not configure a cron period lower than 1 hour (require code changes)
    */
   private static long scheduleJourneyDatacubeDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "Journeys";
+    String jobName = "Journeys";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart()) 
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart()) 
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         // We need to push all journey datacubes at the same timestamp.
         // For the moment we truncate at the HOUR. 
@@ -512,16 +730,23 @@ public class DatacubeManager
         Date now = SystemTime.getCurrentTime();
         Date truncatedHour = RLMDateUtils.truncate(now, Calendar.HOUR, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         Date endOfLastHour = RLMDateUtils.addMilliseconds(truncatedHour, -1); // XX:59:59.999
-        
+       
         journeysMap.update();
+        
+        // Special: All those datacubes are still made sequentially, therefore we prevent any writing during it to optimize computation time.
+        datacubeWriter.pause();
+        
         for(String journeyID : journeysMap.keySet()) {
           trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
           rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
         }
+        
+        // Restart writing if allowed. Flush all data generated
+        datacubeWriter.restart();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -549,18 +774,24 @@ public class DatacubeManager
     //
     uniqueID = scheduleLoyaltyProgramsPreview(datacubeScheduler, uniqueID);
     uniqueID = scheduleSubscriberProfilePreview(datacubeScheduler, uniqueID);
-    uniqueID = scheduleODRPreview(datacubeScheduler, uniqueID);
-    uniqueID = scheduleBDRPreview(datacubeScheduler, uniqueID);
-    uniqueID = scheduleMDRPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRDailyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRHourlyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRDailyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRHourlyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRDailyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRHourlyPreview(datacubeScheduler, uniqueID);
     
     //
     // Definitives datacubes 
     //
     uniqueID = scheduleLoyaltyProgramsDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleSubscriberProfileDefinitive(datacubeScheduler, uniqueID);
-    uniqueID = scheduleODRDefinitive(datacubeScheduler, uniqueID);
-    uniqueID = scheduleBDRDefinitive(datacubeScheduler, uniqueID);
-    uniqueID = scheduleMDRDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRDailyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRHourlyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRDailyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRHourlyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRDailyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRHourlyDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleJourneyDatacubeDefinitive(datacubeScheduler, uniqueID);
 
     log.info("Starting scheduler");

@@ -22,16 +22,23 @@
   "kafkaRetentionDaysODR"             : 91,
   "kafkaRetentionDaysBDR"             : 91,
   "kafkaRetentionDaysMDR"             : 91,
+  "kafkaRetentionDaysTargets"         : 91,
 
   "CronFormat_comment": "minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
 
   "datacubeJobsScheduling" : {
-    "ODR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "ODR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "BDR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "BDR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "MDR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "MDR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "ODR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "ODR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "ODR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "ODR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "BDR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "BDR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "BDR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "BDR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "MDR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "MDR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "MDR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "MDR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
     "LoyaltyPrograms-preview"        : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
     "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
     "SubscriberProfile-preview"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
@@ -46,14 +53,16 @@
 
   "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   "elasticsearchScrollSize" : 1000,
-  "elasticsearchConnectionSettings" : {
-    "UCGEngine"                      : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "GUIManager"                     : { "connectTimeout" : 30000, "queryTimeout" : 7200000 },
-    "ThirdPartyManager"              : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "PurchaseFulfillmentManager"     : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "ReportManager"                  : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
-    "DatacubeManager"                : { "connectTimeout" : 30000, "queryTimeout" : 900000 }
-  },
+  "elasticsearchConnectionSettings" :
+    [
+      { "id" : "DatacubeManager",            "connectTimeout" : 30000, "queryTimeout" : 900000 },
+      { "id" : "GUIManager",                 "connectTimeout" : 30000, "queryTimeout" : 7200000 },
+      { "id" : "PreprocessorEngine",         "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "PurchaseFulfillmentManager", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "ReportManager",              "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "ThirdPartyManager",          "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "UCGEngine",                  "connectTimeout" : 30000, "queryTimeout" : 60000 }
+    ],
   "elasticSearchScrollKeepAlive" : 15,
   
   "elasticsearchDefaultShards" : 1,
@@ -105,6 +114,7 @@
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
   "segmentationDimensionTopic"                           : "${topic.segmentationdimension}",
   "pointTopic"                                           : "${topic.point}",
+  "complexObjectTypeTopic"                               : "${topic.complexobjecttype}",
   "paymentMeanTopic"                                     : "${topic.paymentMean}",
   "offerTopic"                                           : "${topic.offer}",
   "presentationStrategyTopic"                            : "${topic.presentationstrategy}",
@@ -183,6 +193,7 @@
   "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
   "tenantTopic"                                          : "${topic.tenant}",
+  "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
 
   "supportedDataTypes" :
     [
@@ -360,9 +371,9 @@
           "eventRule"  : "internal",
           "eventCriterionFields" : 
             [
-              { "id" : "event.vouchervalidation.vouchercode",          	"display" : "Voucher Code",       								"dataType" : "string",	 "retriever" : "getVoucherValidationVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.vouchervalidation.actionstatus", 	   		"display" : "Voucher Validation Status Details",				"dataType" : "string",	 "retriever" : "getVoucherValidationStatus",			"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.vouchervalidation.actionstatusCode", 	    "display" : "Voucher Validation Status Code",					"dataType" : "integer",	 "retriever" : "getVoucherValidationStatusCode",		"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+              { "id" : "event.vouchervalidation.vouchercode",          	"display" : "Voucher Validation - Voucher Code",       								"dataType" : "string",	 "retriever" : "getVoucherValidationVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.vouchervalidation.actionstatus", 	   		"display" : "Voucher Validation - Status Details",				"dataType" : "string",	 "retriever" : "getVoucherValidationStatus",			"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.vouchervalidation.actionstatusCode", 	    "display" : "Voucher Validation - Status Code",					"dataType" : "integer",	 "retriever" : "getVoucherValidationStatusCode",		"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
             ]
         },
         { 
@@ -372,9 +383,9 @@
           "eventRule"  : "internal",
           "eventCriterionFields" : 
             [
-              { "id" : "event.voucherredemption.vouchercode",          	"display" : "Voucher Code",       								"dataType" : "string",	 "retriever" : "getVoucherRedemptionVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.voucherredemption.actionstatus", 	   		"display" : "Voucher Redemption Status Details",				"dataType" : "string",	 "retriever" : "getVoucherRedemptionStatus",			"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.voucherredemption.actionstatusCode", 	   	"display" : "Voucher Redemption Status Code",					"dataType" : "integer",	 "retriever" : "getVoucherRedemptionStatusCode",		"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+              { "id" : "event.voucherredemption.vouchercode",          	"display" : "Voucher Redemption - Voucher Code",       								"dataType" : "string",	 "retriever" : "getVoucherRedemptionVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherredemption.actionstatus", 	   		"display" : "Voucher Redemption - Status Details",				"dataType" : "string",	 "retriever" : "getVoucherRedemptionStatus",			"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherredemption.actionstatusCode", 	   	"display" : "Voucher Redemption - Status Code",					"dataType" : "integer",	 "retriever" : "getVoucherRedemptionStatusCode",		"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
             ]
         },
         { 
@@ -384,8 +395,8 @@
           "eventRule"  : "standard",
           "eventCriterionFields" : 
             [
-              { "id" : "event.tokenType",      "display" : "Token Type",       "dataType" : "string", "retriever" : "getTokenType",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#tokenTypes#"] },
-              { "id" : "event.acceptedOfferId","display" : "Accepted Offer Id","dataType" : "string", "retriever" : "getAcceptedOfferId","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] }
+              { "id" : "event.tokenType",      "display" : "TokenRedeemed - Token Type",       "dataType" : "string", "retriever" : "getTokenType",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#tokenTypes#"] },
+              { "id" : "event.acceptedOfferId","display" : "TokenRedeemed - Accepted Offer","dataType" : "string", "retriever" : "getAcceptedOfferId","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] }
             ]
         },
         { 
@@ -413,16 +424,16 @@
           "eventRule"  : "internal",
           "eventCriterionFields" : 
             [
-              { "id" : "event.moduleID",             "display" : "Module Id",             "dataType" : "string", "retriever" : "getModuleId_BonusDelivery",             "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
-              { "id" : "event.featureID",            "display" : "Feature Id",            "dataType" : "string", "retriever" : "getFeatureId_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.returnCode",           "display" : "Return Code",           "dataType" : "integer","retriever" : "getReturnCode_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesBDR#"] },
-              { "id" : "event.returnCodeDetails",    "display" : "Return Code Details",   "dataType" : "string", "retriever" : "getReturnCodeDetails_BonusDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
-              { "id" : "event.origin",               "display" : "Origin",                "dataType" : "string", "retriever" : "getOrigin_BonusDelivery",               "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
-              { "id" : "event.providerId",           "display" : "Provider Id",           "dataType" : "string", "retriever" : "getProviderId_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#providerIds#"] },
-              { "id" : "event.deliverableId",        "display" : "Deliverable",           "dataType" : "string", "retriever" : "getDeliverableId_BonusDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliverableIds#"] },
-              { "id" : "event.deliverableQty",       "display" : "Deliverable Qty",       "dataType" : "integer","retriever" : "getDeliverableQty_BonusDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.deliverableExpiration","display" : "Deliverable Expiration","dataType" : "string", "retriever" : "getDeliverableExpiration_BonusDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.operation",            "display" : "Operation",             "dataType" : "string", "retriever" : "getOperation_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+              { "id" : "event.moduleID",             "display" : "BonusDelivery - Module",             "dataType" : "string", "retriever" : "getModuleId_BonusDelivery",             "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+              { "id" : "event.featureID",            "display" : "BonusDelivery - Feature",            "dataType" : "string", "retriever" : "getFeatureId_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",           "display" : "BonusDelivery - Return Code",           "dataType" : "integer","retriever" : "getReturnCode_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesBDR#"] },
+              { "id" : "event.returnCodeDetails",    "display" : "BonusDelivery - Return Code Details",   "dataType" : "string", "retriever" : "getReturnCodeDetails_BonusDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.origin",               "display" : "BonusDelivery - Origin",                "dataType" : "string", "retriever" : "getOrigin_BonusDelivery",               "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.providerId",           "display" : "BonusDelivery - Provider",           "dataType" : "string", "retriever" : "getProviderId_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#providerIds#"] },
+              { "id" : "event.deliverableId",        "display" : "BonusDelivery - Deliverable",           "dataType" : "string", "retriever" : "getDeliverableId_BonusDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliverableIds#"] },
+              { "id" : "event.deliverableQty",       "display" : "BonusDelivery - Deliverable Qty",       "dataType" : "integer","retriever" : "getDeliverableQty_BonusDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.deliverableExpiration","display" : "BonusDelivery - Deliverable Expiration","dataType" : "string", "retriever" : "getDeliverableExpiration_BonusDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.operation",            "display" : "BonusDelivery - Operation",             "dataType" : "string", "retriever" : "getOperation_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
            ]
         },      
         { 
@@ -432,22 +443,22 @@
           "eventRule"  : "internal",
           "eventCriterionFields" : 
             [
-              { "id" : "event.moduleID",         "display" : "Module Id",          "dataType" : "string", "retriever" : "getModuleId_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
-              { "id" : "event.featureID",        "display" : "Feature Id",         "dataType" : "string", "retriever" : "getFeatureId_OfferDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "integer","retriever" : "getReturnCode_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesODR#"] },
-              { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_OfferDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
-              { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_OfferDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
-              { "id" : "event.offerID",          "display" : "Offer Id",           "dataType" : "string", "retriever" : "getOfferID_OfferDelivery",          "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offerIDs#"] },
-              { "id" : "event.offerDisplay",     "display" : "Offer Display",      "dataType" : "string", "retriever" : "getOfferDisplay_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : ["#offers#"] },
-              { "id" : "event.offerQty",         "display" : "Offer Qty",          "dataType" : "integer","retriever" : "getOfferQty_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.salesChannelId",   "display" : "Sales Channel Id",   "dataType" : "string", "retriever" : "getSalesChannelId_OfferDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.offerPrice",       "display" : "Offer Price",        "dataType" : "integer","retriever" : "getOfferPrice_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.meanOfPayment",    "display" : "Mean Of Payment",    "dataType" : "string", "retriever" : "getMeanOfPayment_OfferDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#paymentMeans#"] },
-              { "id" : "event.offerContent",     "display" : "Offer Content",      "dataType" : "string", "retriever" : "getOfferContent_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.voucherCode",      "display" : "Voucher Code",       "dataType" : "string", "retriever" : "getVoucherCode_OfferDelivery",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.voucherPartnerId", "display" : "Voucher Partner Id", "dataType" : "string", "retriever" : "getVoucherPartnerId_OfferDelivery", "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.resellerName",     "display" : "Reseller Name",      "dataType" : "string", "retriever" : "getResellerName_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#resellers#"] },
-              { "id" : "event.supplierName",     "display" : "Supplier Name",      "dataType" : "string", "retriever" : "getSupplierName_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#suppliers#"] }
+              { "id" : "event.moduleID",         "display" : "OfferDelivery - Module",          "dataType" : "string", "retriever" : "getModuleId_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+              { "id" : "event.featureID",        "display" : "OfferDelivery - Feature",         "dataType" : "string", "retriever" : "getFeatureId_OfferDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",       "display" : "OfferDelivery - Return Code",        "dataType" : "integer","retriever" : "getReturnCode_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesODR#"] },
+              { "id" : "event.returnCodeDetails","display" : "OfferDelivery - Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_OfferDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.origin",           "display" : "OfferDelivery - Origin",             "dataType" : "string", "retriever" : "getOrigin_OfferDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.offerID",          "display" : "OfferDelivery - Offer Id",           "dataType" : "string", "retriever" : "getOfferID_OfferDelivery",          "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offerIDs#"] },
+              { "id" : "event.offerDisplay",     "display" : "OfferDelivery - Offer Display",      "dataType" : "string", "retriever" : "getOfferDisplay_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : ["#offers#"] },
+              { "id" : "event.offerQty",         "display" : "OfferDelivery - Offer Qty",          "dataType" : "integer","retriever" : "getOfferQty_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.salesChannelId",   "display" : "OfferDelivery - Sales Channel",   "dataType" : "string", "retriever" : "getSalesChannelId_OfferDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.offerPrice",       "display" : "OfferDelivery - Offer Price",        "dataType" : "integer", "tagFormat" : "currency", "retriever" : "getOfferPrice_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.meanOfPayment",    "display" : "OfferDelivery - Mean Of Payment",    "dataType" : "string", "retriever" : "getMeanOfPayment_OfferDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#paymentMeans#"] },
+              { "id" : "event.offerContent",     "display" : "OfferDelivery - Offer Content",      "dataType" : "string", "retriever" : "getOfferContent_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherCode",      "display" : "OfferDelivery - Voucher Code",       "dataType" : "string", "retriever" : "getVoucherCode_OfferDelivery",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherPartnerId", "display" : "OfferDelivery - Voucher Partner Id", "dataType" : "string", "retriever" : "getVoucherPartnerId_OfferDelivery", "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.resellerName",     "display" : "OfferDelivery - Reseller Name",      "dataType" : "string", "retriever" : "getResellerName_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#resellers#"] },
+              { "id" : "event.supplierName",     "display" : "OfferDelivery - Supplier Name",      "dataType" : "string", "retriever" : "getSupplierName_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#suppliers#"] }
             ]
         },      
         { 
@@ -457,12 +468,12 @@
           "eventRule"  : "internal",
           "eventCriterionFields" : 
             [
-              { "id" : "event.moduleID",         "display" : "Module Id",          "dataType" : "string", "retriever" : "getModuleId_MessageDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
-              { "id" : "event.featureID",        "display" : "Feature Id",         "dataType" : "string", "retriever" : "getFeatureId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "integer","retriever" : "getReturnCode_MessageDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesMDR#"] },
-              { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_MessageDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
-              { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_MessageDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
-              { "id" : "event.messageId",        "display" : "Message Id",         "dataType" : "string", "retriever" : "getMessageId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+              { "id" : "event.moduleID",         "display" : "MessageDelivery - Module",          "dataType" : "string", "retriever" : "getModuleId_MessageDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+              { "id" : "event.featureID",        "display" : "MessageDelivery - Feature",         "dataType" : "string", "retriever" : "getFeatureId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",       "display" : "MessageDelivery - Return Code",        "dataType" : "integer","retriever" : "getReturnCode_MessageDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesMDR#"] },
+              { "id" : "event.returnCodeDetails","display" : "MessageDelivery - Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_MessageDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.origin",           "display" : "MessageDelivery - Origin",             "dataType" : "string", "retriever" : "getOrigin_MessageDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.messageId",        "display" : "MessageDelivery - Message Id",         "dataType" : "string", "retriever" : "getMessageId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
            ]
         }
     ],
@@ -534,8 +545,6 @@
     ],
 
   "allThoseFollowingAreComingFromNGLMQA": "this is not yet OK, just a first try",
-
-  "autoApproveGuiObjects" : false,
 
   "propensityRule"                                       :
   {

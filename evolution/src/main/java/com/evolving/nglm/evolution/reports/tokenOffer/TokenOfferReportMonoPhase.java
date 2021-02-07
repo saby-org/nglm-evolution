@@ -202,7 +202,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                         addHeaders = false;
                       }
                     String line = ReportUtils.formatResult(result);
-                    log.trace("Writing to csv file : " + line);
+                    if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
                     writer.write(line.getBytes());
                   }
               }

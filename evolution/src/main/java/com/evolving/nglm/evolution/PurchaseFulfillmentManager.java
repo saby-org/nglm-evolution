@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -187,7 +188,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     this.elasticsearch = elasticsearch;
 
-    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
+    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints(), threadNumber);
     subscriberProfileService.start();
     
     dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "PurchaseMgr-dynamiccriterionfieldservice-"+deliveryManagerKey, Deployment.getDynamicCriterionFieldTopic(), false);
@@ -794,72 +795,79 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  offer
       //
 
-      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
+      guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
+      guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getGUIManagedObjectDisplay() : null);
+      guiPresentationMap.put(MODULEID, getModuleID());
+      guiPresentationMap.put(MODULENAME, getModule().toString());
+      guiPresentationMap.put(FEATUREID, getFeatureID());
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(ORIGIN, getOrigin());
+      guiPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
+      guiPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
+      guiPresentationMap.put(RETURNCODE, getReturnCode());
+      guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
+      guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
+      guiPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
+      guiPresentationMap.put(CUSTOMERID, getSubscriberID());
+      guiPresentationMap.put(OFFERID, getOfferID());
+      guiPresentationMap.put(OFFERQTY, getQuantity());
+
+      GUIManagedObject offerGMO = offerService.getStoredOffer(getOfferID(), true);
 
       //
       //  presentation
       //
       
-      if(offer != null)
+      if (offerGMO != null)
         {
-          guiPresentationMap.put(CUSTOMERID, getSubscriberID());
-          guiPresentationMap.put(OFFERID, getOfferID());
-          guiPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
-          guiPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
-          guiPresentationMap.put(OFFERQTY, getQuantity());
-          guiPresentationMap.put(OFFERSTOCK, offer.getStock());
-          if(offer.getOfferSalesChannelsAndPrices() != null){
-            for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
-              if(channel.getSalesChannelIDs() != null) {
-                for(String salesChannelID : channel.getSalesChannelIDs()) {
-                  if(salesChannelID.equals(getSalesChannelID())) {
-                    if(channel.getPrice() != null) {
-                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
-                      if(paymentMean != null) {
-                        guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
-                        guiPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
-                        guiPresentationMap.put(PAYMENTPROVIDERID, paymentMean.getFulfillmentProviderID());
+          guiPresentationMap.put(OFFERNAME, offerGMO.getJSONRepresentation().get("name"));
+          guiPresentationMap.put(OFFERDISPLAY, offerGMO.getJSONRepresentation().get("display"));
+
+          guiPresentationMap.put(OFFERSTOCK, offerGMO.getJSONRepresentation().get("presentationStock")); // in case we don't find the offer
+          
+          if (offerGMO instanceof Offer)
+            {
+              Offer offer = (Offer) offerGMO;
+              guiPresentationMap.put(OFFERSTOCK, offer.getStock());
+              if(offer.getOfferSalesChannelsAndPrices() != null){
+                for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
+                  if(channel.getSalesChannelIDs() != null) {
+                    for(String salesChannelID : channel.getSalesChannelIDs()) {
+                      if(salesChannelID.equals(getSalesChannelID())) {
+                        if(channel.getPrice() != null) {
+                          PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
+                          if(paymentMean != null) {
+                            guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+                            guiPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
+                            guiPresentationMap.put(PAYMENTPROVIDERID, paymentMean.getFulfillmentProviderID());
+                          }
+                        }
                       }
                     }
                   }
                 }
               }
-            }
-          }
 
-          StringBuilder sb = new StringBuilder();
-          if(offer.getOfferProducts() != null) {
-            for(OfferProduct offerProduct : offer.getOfferProducts()) {
-              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
+              StringBuilder sb = new StringBuilder();
+              if(offer.getOfferProducts() != null) {
+                for(OfferProduct offerProduct : offer.getOfferProducts()) {
+                  Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+                  sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
+                }
+              }
+              if(offer.getOfferVouchers() != null) {
+                for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
+                  Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
+                  sb.append(offerVoucher.getQuantity()+" ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(",");
+                }
+              }
+              String offerContent = null;
+              if(sb.length() >0){
+                offerContent = sb.toString().substring(0, sb.toString().length()-1);
+              }
+              guiPresentationMap.put(OFFERCONTENT, offerContent);
             }
-          }
-          if(offer.getOfferVouchers() != null) {
-            for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
-              Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
-              sb.append(offerVoucher.getQuantity()+" ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(",");
-            }
-          }
-          String offerContent = null;
-          if(sb.length() >0){
-            offerContent = sb.toString().substring(0, sb.toString().length()-1);
-          }
-          guiPresentationMap.put(OFFERCONTENT, offerContent);
-
-          guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
-          guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getGUIManagedObjectDisplay() : null);
-          guiPresentationMap.put(MODULEID, getModuleID());
-          guiPresentationMap.put(MODULENAME, getModule().toString());
-          guiPresentationMap.put(FEATUREID, getFeatureID());
-          guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(ORIGIN, getOrigin());
-          guiPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
-          guiPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
-          guiPresentationMap.put(RETURNCODE, getReturnCode());
-          guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
-          guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
-          guiPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
         }
     }
     
@@ -1163,7 +1171,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
         List<Date> purchaseHistory = offerPurchaseHistory.get(offerID);
         int alreadyPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
-        if (alreadyPurchased+purchaseRequest.getQuantity() > offer.getMaximumAcceptances())
+        // "Allow no more than 0 purchases" OR "within 0 days" <==> unlimited (no limit check)
+        if ((offer.getMaximumAcceptances() > 0 && offer.getMaximumAcceptancesPeriodDays() > 0) &&
+            (alreadyPurchased+purchaseRequest.getQuantity() > offer.getMaximumAcceptances()))
           {
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
@@ -1767,7 +1777,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
       purchaseStatus.incrementNewRequestCounter();
       String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
     }
     
@@ -1784,7 +1794,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0);
+          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
         }else{
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
@@ -1809,7 +1819,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
       purchaseStatus.incrementNewRequestCounter();
       String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
     }
     
@@ -1826,7 +1836,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0);
+          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
         }else{
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
@@ -2773,7 +2783,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       String offerID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.offerid");
       int quantity = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.quantity");
-      
+      String origin = null;
+      if (subscriberEvaluationRequest.getJourneyNode() != null)
+        {
+          origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
+        }
       /*****************************************
       *
       *  TEMP DEW HACK
@@ -2793,9 +2807,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
         {
           newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+          if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+            {
+              origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+            }
         }
       
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
+      String nodeName = subscriberEvaluationRequest.getJourneyNode().getNodeName();
 
       /*****************************************
       *
@@ -2803,12 +2822,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, origin, "", subscriberEvaluationRequest.getTenantID());
       request.setModuleID(newModuleID);
       request.setFeatureID(deliveryRequestSource);
 
       /*****************************************
-      *
+      *s
       *  return
       *
       *****************************************/
@@ -2816,7 +2835,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       return Collections.<Action>singletonList(request);
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String offerID = (String) journeyNode.getNodeParameters().get("node.parameter.offerid");
