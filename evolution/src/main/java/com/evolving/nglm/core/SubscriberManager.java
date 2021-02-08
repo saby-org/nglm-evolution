@@ -645,9 +645,14 @@ public class SubscriberManager
       {
         tenantID = ((UpdateAlternateID)autoProvisionEvent).getTenantID();   
       }
-    else {
-      log.warn("Can't retrieve tenantID: autoProvisionEvent " + autoProvisionEvent  + " currentAutoProvisionedSubscriber " + currentAutoProvisionedSubscriber);
-    }    
+    else if(autoProvisionEvent instanceof AutoProvisionSubscriberStreamEvent)
+      {
+        tenantID = ((AutoProvisionSubscriberStreamEvent)autoProvisionEvent).getTenantID();
+      }
+    else 
+      {
+        log.warn("Can't retrieve tenantID: autoProvisionEvent " + autoProvisionEvent  + " currentAutoProvisionedSubscriber " + currentAutoProvisionedSubscriber);
+      }    
 
     /****************************************
     *
