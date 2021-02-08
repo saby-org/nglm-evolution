@@ -608,12 +608,13 @@ public class ReportUtils {
   		int i = 0;
   		BufferedReader br = new BufferedReader(new FileReader(inputFile));
   		BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
+  		bw.write(br.readLine());
   		while ((strLine = br.readLine()) != null) 
   		{
   			if (i++ < topRows) 
   			{
-  				bw.write(strLine);
-  				bw.write("\n");
+  			  bw.write("\n");
+  			  bw.write(strLine);
   			}
   			else
   				break;
