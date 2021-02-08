@@ -113,7 +113,7 @@ public class JourneyState implements Cleanable
   private JourneyHistory journeyHistory;
   private Date journeyEndDate;
   private List<VoucherChange> voucherChanges;
-  private SubscriberJourneyStatus specialExitReason = null;
+  private SubscriberJourneyStatus specialExitReason;
   private int priority;
   private String sourceOrigin;
   public void setJourneyEndDate(Date journeyEndDate) { this.journeyEndDate = journeyEndDate; }
@@ -146,9 +146,10 @@ public class JourneyState implements Cleanable
   public Date getJourneyEndDate() { return journeyEndDate; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
   public Boolean isSpecialExit() { return specialExitReason != null; }
-  public SubscriberJourneyStatus getSpecialExitReason() {return specialExitReason;}
-  public int getPriority() {return priority;}  
+  public SubscriberJourneyStatus getSpecialExitReason() { return specialExitReason; }
+  public int getPriority() { return priority; }
   public String getsourceOrigin() { return sourceOrigin; }
+  
   /*****************************************
   *
   *  setters
@@ -161,11 +162,16 @@ public class JourneyState implements Cleanable
   public void setJourneyExitDate(Date journeyExitDate) { this.journeyExitDate = journeyExitDate; }
   public void setJourneyCloseDate(Date journeyCloseDate) { this.journeyCloseDate = journeyCloseDate; }
 
-  @Override public Date getExpirationDate(RetentionService retentionService) {
-    if(getJourneyExitDate()!=null) return getJourneyExitDate();//case subscriber ended the journey
-    return getJourneyEndDate();// case subscriber did not end the journey
+  @Override 
+  public Date getExpirationDate(RetentionService retentionService) {
+    if(getJourneyExitDate() != null) {
+      return getJourneyExitDate(); //case subscriber ended the journey
+    }
+    return getJourneyEndDate(); // case subscriber did not end the journey
   }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+  
+  @Override 
+  public Duration getRetention(RetentionType type, RetentionService retentionService) {
     return retentionService.getJourneyRetention(type,getJourneyID());
   }
 
@@ -197,6 +203,7 @@ public class JourneyState implements Cleanable
     this.voucherChanges = new ArrayList<VoucherChange>();
     this.priority = journey.getPriority();
     this.sourceOrigin = sourceOrigin;
+    this.specialExitReason = null;
   }
   
  

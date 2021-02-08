@@ -4759,7 +4759,7 @@ public class EvolutionEngine
             *****************************************/
 
             boolean enterJourney = true;
-            SubscriberJourneyStatus currentStatus=null;
+            SubscriberJourneyStatus currentStatus = null;
             boolean journeyMaxNumberOfCustomersReserved = false;
 
             /*****************************************
@@ -4901,14 +4901,14 @@ public class EvolutionEngine
                 *
                 *****************************************/
 
-                if (enterJourney && currentStatus==null)
+                if (enterJourney && currentStatus == null)
                   {
-                	for (JourneyObjective journeyObjective : allObjectives)
+                    for (JourneyObjective journeyObjective : allObjectives)
                       {
-                    	 if (permittedJourneys.get(journeyObjective) < 1)
-                          {                       
-                          currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
-                          context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
+                        if (permittedJourneys.get(journeyObjective) < 1)
+                          {
+                            currentStatus = SubscriberJourneyStatus.ObjectiveLimitReached;
+                            context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
                             break;
                           }
                       }
@@ -4920,7 +4920,7 @@ public class EvolutionEngine
                 *
                 **********************************************/
 
-                if (enterJourney && currentStatus==null)
+                if (enterJourney && currentStatus == null)
                   {
                     if (!stockService.reserve(journey,1))
                       {
@@ -5036,51 +5036,50 @@ public class EvolutionEngine
                 //
                 // confirm "stock reservation" (journey max number of customers limits)
                 //
-
-				if (journeyMaxNumberOfCustomersReserved) {
-					stockService.confirmReservation(journey, 1);
-				}
-
-				JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
-				JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory, sourceOrigin);
-
-				if (currentStatus != null) // EVPRO-530
-				{
-					// keep the current status only if it has not been kept before...
-				  boolean keep = true;
-				  for(JourneyState current : subscriberState.getRecentJourneyStates())
-				    {
-				      if(current.getJourneyID().equals(journey.getJourneyID()) && currentStatus.equals(current.getSpecialExitReason()))
-				        {
-				          keep = false;
-				          break;
-				        }
-				    }
-				  if(keep)
-				    {
-    				  journeyState.setJourneyNodeID(journey.getEndNodeID());
-    					journeyState.setSpecialExitReason(currentStatus);
-    					journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
-				    }
-				  else 
-				    {
-				      // just avoid the entry in the journey without status
-				      continue; // continue of the main journey loop
-				    }
-				}
-				
-				journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
-				boolean statusUpdated = journeyState.getJourneyHistory()
-						.addStatusInformation(SystemTime.getCurrentTime(), journeyState, false, currentStatus);
-				subscriberState.getJourneyStates().add(journeyState);
-				subscriberState.getJourneyStatisticWrappers()
-						.add(new JourneyStatistic(context, subscriberState.getSubscriberID(),
-										journeyState.getJourneyHistory(), journeyState, subscriberState
-												.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader),
-										subscriberState.getSubscriberProfile()));
-				subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),
-						Journey.getSubscriberJourneyStatus(journeyState));
-				subscriberStateUpdated = true;
+                
+                if (journeyMaxNumberOfCustomersReserved) {
+                  stockService.confirmReservation(journey, 1);
+                }
+                
+                JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
+                JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory, sourceOrigin);
+                
+                if (currentStatus != null) // EVPRO-530
+                {
+                  // keep the current status only if it has not been kept before...
+                  boolean keep = true;
+                  for(JourneyState current : subscriberState.getRecentJourneyStates())
+                    {
+                      if(current.getJourneyID().equals(journey.getJourneyID()) && currentStatus.equals(current.getSpecialExitReason()))
+                        {
+                          keep = false;
+                          break;
+                        }
+                    }
+                  if(keep)
+                    {
+                      journeyState.setJourneyNodeID(journey.getEndNodeID());
+                      journeyState.setSpecialExitReason(currentStatus);
+                      journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
+                    }
+                  else 
+                    {
+                      // just avoid the entry in the journey without status
+                      continue; // continue of the main journey loop
+                    }
+                }
+                
+                journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
+                boolean statusUpdated = journeyState.getJourneyHistory()
+                            .addStatusInformation(SystemTime.getCurrentTime(), journeyState, false, currentStatus);
+                subscriberState.getJourneyStates().add(journeyState);
+                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, 
+                                          subscriberState.getSubscriberID(),
+                                          journeyState.getJourneyHistory(),
+                                          journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader),
+                                          subscriberState.getSubscriberProfile()));
+                subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(), Journey.getSubscriberJourneyStatus(journeyState));
+                subscriberStateUpdated = true;
 
                 /*****************************************
                 *
@@ -5154,7 +5153,7 @@ public class EvolutionEngine
                           }
                         else
                           {
-                        	journeyResponse.setJourneyStatus(SubscriberJourneyStatus.NotEligible);
+                            journeyResponse.setJourneyStatus(SubscriberJourneyStatus.NotEligible);
                             journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
                           }
                         context.getSubscriberState().getJourneyResponses().add(journeyResponse);
@@ -5202,29 +5201,24 @@ public class EvolutionEngine
         *  inactive journey
         *
         *****************************************/
-        if(journeyState.isSpecialExit())
-        {
-        	inactiveJourneyStates.add(journeyState);
-            continue;
-        	
+        if(journeyState.isSpecialExit()) {
+          inactiveJourneyStates.add(journeyState);
+          continue;
         }
-        if (journey == null || journeyNode == null)
-          {
-
-            // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
-            if(journeyService.getInterruptedGUIManagedObject(journeyState.getJourneyID(), now)!=null){
-            	 if(journeyState.isSpecialExit())
-                context.subscriberTrace("ignoring inactive for now journey {0}", journeyState.getJourneyID());
-                continue;
-            }
-
-            if(journeyState.isSpecialExit())
-            journeyState.setJourneyExitDate(now);
-            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now));
-            inactiveJourneyStates.add(journeyState);
+        
+        if (journey == null || journeyNode == null) {
+          // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
+          if(journeyService.getInterruptedGUIManagedObject(journeyState.getJourneyID(), now) != null) {
+            context.subscriberTrace("ignoring inactive for now journey {0}", journeyState.getJourneyID());
             continue;
           }
+
+          journeyState.setJourneyExitDate(now);
+          boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
+          subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now));
+          inactiveJourneyStates.add(journeyState);
+          continue;
+        }
 
         /*****************************************
         *
