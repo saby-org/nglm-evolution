@@ -1071,12 +1071,14 @@ public class EvolutionEngine
 	  triggerEventsDeclarations.add(eventDeclaration);
 	  triggerEventsPredicates.add((key,value)->value.getEventDeclaration().getEventClass().equals(eventDeclaration.getEventClass()));
 	}
-	//branch and sink
-    Iterator<EvolutionEngineEventDeclaration> eventDeclarationIterator = triggerEventsDeclarations.iterator();
-    for(KStream<StringKey,JourneyTriggerEventAction> stream:journeyTriggerEventActionStream.branch(triggerEventsPredicates.toArray(new Predicate[triggerEventsPredicates.size()]))){
-      EvolutionEngineEventDeclaration eventDeclaration = eventDeclarationIterator.next();
-      KStream<StringKey,EvolutionEngineEvent> outputStream = stream.mapValues(value->value.getEventToTrigger());
-      outputStream.to(eventDeclaration.getEventTopic(),Produced.with(stringKeySerde,eventDeclaration.getEventSerde()));
+	//branch and sink if needed
+    if(!triggerEventsDeclarations.isEmpty()){
+      Iterator<EvolutionEngineEventDeclaration> eventDeclarationIterator = triggerEventsDeclarations.iterator();
+      for(KStream<StringKey,JourneyTriggerEventAction> stream:journeyTriggerEventActionStream.branch(triggerEventsPredicates.toArray(new Predicate[triggerEventsPredicates.size()]))){
+        EvolutionEngineEventDeclaration eventDeclaration = eventDeclarationIterator.next();
+        KStream<StringKey,EvolutionEngineEvent> outputStream = stream.mapValues(value->value.getEventToTrigger());
+        outputStream.to(eventDeclaration.getEventTopic(),Produced.with(stringKeySerde,eventDeclaration.getEventSerde()));
+      }
     }
 
     //
