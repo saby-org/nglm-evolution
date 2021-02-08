@@ -5835,7 +5835,7 @@ public class EvolutionEngine
 
   private static void addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
   {
-    String variableID = "variable." + variableName;
+    String variableID = "variable." + variableName;// if you have to modify this, you have to modify as well the param set in com.evolving.nglm.evolution.EvolutionEngine.VoucherActionManager.executeOnEntry()
     Object partnerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : null;
     if (partnerName == null) {
       log.info("Unable to find partner in variable " + variableName);
@@ -8162,6 +8162,8 @@ public class EvolutionEngine
 
       String voucherCode = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.voucher.code");
       String supplierDisplay = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
+      // special internal context variable set for supplier
+      if(supplierDisplay!=null && subscriberEvaluationRequest.getJourneyState().getJourneyParameters()!=null) subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put("variable."+INTERNAL_VARIABLE_SUPPLIER,supplierDisplay);
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
