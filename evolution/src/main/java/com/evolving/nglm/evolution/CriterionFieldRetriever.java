@@ -479,6 +479,11 @@ public abstract class CriterionFieldRetriever
             case "optoutdate":
               result = optOutDate;
               break;
+              
+            // Deprecated, i.e should not be used since EVPRO-665  
+            case "tierupdatetype":
+              result = tierUpdateType;
+              break;
 
             default:
               fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.([^.]+)$");

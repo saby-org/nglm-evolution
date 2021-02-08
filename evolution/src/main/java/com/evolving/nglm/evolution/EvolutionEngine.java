@@ -235,7 +235,7 @@ public class EvolutionEngine
           Map<String, Object> fileWithVariableEventCriteriaMap = new LinkedHashMap<String, Object>(); fileWithVariableEventCriteriaMap.put("id", "event.fileID"); fileWithVariableEventCriteriaMap.put("display", "Event FileID"); fileWithVariableEventCriteriaMap.put("dataType", "string"); fileWithVariableEventCriteriaMap.put("retriever", "getFileWithVariableID");
           Map<String, CriterionField> fileWithVariableEventCriterias = new LinkedHashMap<String, CriterionField>(); fileWithVariableEventCriterias.put((String) fileWithVariableEventCriteriaMap.get("id"), new CriterionField(JSONUtilities.encodeObject(fileWithVariableEventCriteriaMap)));
           fileWithVariableEventDeclaration = new EvolutionEngineEventDeclaration("FileWithVariableEvent", "com.evolving.nglm.evolution.FileWithVariableEvent", Deployment.getFileWithVariableEventTopic(), EventRule.Standard, fileWithVariableEventCriterias);
-        } 
+        }
       catch (GUIManagerException e)
         {
           e.printStackTrace();
@@ -4625,7 +4625,7 @@ public class EvolutionEngine
     *****************************************/
 
     List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now));
-    
+
     // Sort journeys by priorities, and randomize those with equal priorities
 
     // 1) sort randomly
@@ -4635,7 +4635,7 @@ public class EvolutionEngine
     //logCollectionPrioritiesJourneys("Before sort journeys", activeJourneys);
     Collections.sort(activeJourneys, ((j1, j2) -> j1.getPriority()-j2.getPriority()));
     //logCollectionPrioritiesJourneys("After sort journeys", activeJourneys);
-    
+
     /*****************************************
     *
     *  inclusion/exclusion lists
@@ -5007,11 +5007,11 @@ public class EvolutionEngine
                     sourceFeatureID = sourceFeatureIDFromWorkflowTriggering;
                     sourceOrigin = origin;
                   }
-                
+
                 //
                 //  bound file variables
                 //
-                
+
                 if (journey.getTargetingType() == TargetingType.FileVariables && evolutionEvent instanceof FileWithVariableEvent)
                   {
                     FileWithVariableEvent fileWithVariableEvent = (FileWithVariableEvent) evolutionEvent;
@@ -5036,14 +5036,14 @@ public class EvolutionEngine
                 //
                 // confirm "stock reservation" (journey max number of customers limits)
                 //
-                
+
                 if (journeyMaxNumberOfCustomersReserved) {
                   stockService.confirmReservation(journey, 1);
                 }
-                
+
                 JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
                 JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory, sourceOrigin);
-                
+
                 if (currentStatus != null) // EVPRO-530
                 {
                   // keep the current status only if it has not been kept before...
@@ -5062,18 +5062,18 @@ public class EvolutionEngine
                       journeyState.setSpecialExitReason(currentStatus);
                       journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
                     }
-                  else 
+                  else
                     {
                       // just avoid the entry in the journey without status
                       continue; // continue of the main journey loop
                     }
                 }
-                
+
                 journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
                 boolean statusUpdated = journeyState.getJourneyHistory()
                             .addStatusInformation(SystemTime.getCurrentTime(), journeyState, false, currentStatus);
                 subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, 
+                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context,
                                           subscriberState.getSubscriberID(),
                                           journeyState.getJourneyHistory(),
                                           journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader),
@@ -5175,7 +5175,7 @@ public class EvolutionEngine
     //
 
     List<JourneyState> inactiveJourneyStates = new ArrayList<JourneyState>();
-    
+
     List<JourneyState> orderedJourneyStates = new ArrayList<>();
     orderedJourneyStates.addAll(subscriberState.getJourneyStates());
 
@@ -5184,7 +5184,7 @@ public class EvolutionEngine
     //logCollectionPrioritiesJourneyStates("Before sort nodes", orderedJourneyStates);
     Collections.sort(orderedJourneyStates, ((j1, j2) -> j1.getPriority()-j2.getPriority()));
     //logCollectionPrioritiesJourneyStates("After sort nodes", orderedJourneyStates);
-    
+
     for (JourneyState journeyState : orderedJourneyStates)
       {
         /*****************************************
@@ -5205,7 +5205,7 @@ public class EvolutionEngine
           inactiveJourneyStates.add(journeyState);
           continue;
         }
-        
+
         if (journey == null || journeyNode == null) {
           // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
           if(journeyService.getInterruptedGUIManagedObject(journeyState.getJourneyID(), now) != null) {
@@ -5956,7 +5956,7 @@ public class EvolutionEngine
   private static boolean addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
   {
     boolean res = false; // fail by default
-    String variableID = "variable." + variableName;
+    String variableID = "variable." + variableName;// if you have to modify this, you have to modify as well the param set in com.evolving.nglm.evolution.EvolutionEngine.VoucherActionManager.executeOnEntry()
     Object partnerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : null;
     if (partnerName == null) {
       log.info("Unable to find partner in variable " + variableName);
@@ -6295,7 +6295,9 @@ public class EvolutionEngine
 
     if (subscriberStateOutputWrapper.getOriginalEvent() instanceof TimedEvaluation && ((TimedEvaluation)subscriberStateOutputWrapper.getOriginalEvent()).getPeriodicEvaluation())
       {
+        if(currentSubscriberHistory==null) return null;//this case trigger no update into topic at all
         subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory) || subscriberHistoryUpdated;
+        if(subscriberHistory.getJourneyHistory().isEmpty() && subscriberHistory.getDeliveryRequests().isEmpty()) return null;
       }
 
     if (subscriberStateOutputWrapper.getSubscriberState().getDeliveryResponse()!=null)
@@ -6596,7 +6598,7 @@ public class EvolutionEngine
 
     converter.close(); // to make Eclipse happy
     deserializer.close(); // to make Eclipse happy
-    
+
     /*****************************************
     *
     *  hack/massage triggerStateNodes to remove unwanted/misleading/spurious fields from currentTriggerState
@@ -7967,7 +7969,7 @@ public class EvolutionEngine
 
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
-    
+
     @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
     {
       Map<String, String> result = new HashMap<String, String>();
@@ -8302,7 +8304,7 @@ public class EvolutionEngine
       subscriberEvaluationRequest.getJourneyState().getVoucherChanges().clear();
       Date now = SystemTime.getCurrentTime();
       this.origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
-      
+
       /*****************************************
       *
       *  request arguments
@@ -8311,6 +8313,8 @@ public class EvolutionEngine
 
       String voucherCode = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.voucher.code");
       String supplierDisplay = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
+      // special internal context variable set for supplier
+      if(supplierDisplay!=null && subscriberEvaluationRequest.getJourneyState().getJourneyParameters()!=null) subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put("variable."+INTERNAL_VARIABLE_SUPPLIER,supplierDisplay);
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 

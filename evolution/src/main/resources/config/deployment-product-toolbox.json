@@ -1021,13 +1021,16 @@
           },
           {
             "id": "node.parameter.supplier",
-            "display": "Supplier Filter",
+            "display": "Supplier",
             "dataType": "string",
             "width": "100%",
             "multiple": false,
-            "mandatory": false,
-            "availableValues": [ "#suppliers#" ],
-            "defaultValue": null
+            "mandatory": true,
+            "availableValues": null,
+            "expressionFields" : [ "#suppliersDisplayExp#" ],
+            "expressionValuedParameter" : true,
+            "defaultValue": null,
+            "showContextVariables":true
           }
         ],
         "action":
@@ -1110,13 +1113,16 @@
           },
           {
             "id": "node.parameter.supplier",
-            "display": "Supplier Filter",
+            "display": "Supplier",
             "dataType": "string",
             "width": "100%",
             "multiple": false,
-            "mandatory": false,
-            "availableValues": [ "#suppliers#" ],
-            "defaultValue": null
+            "mandatory": true,
+            "availableValues": null,
+            "expressionFields" : [ "#suppliersDisplayExp#" ],
+            "expressionValuedParameter" : true,
+            "defaultValue": null,
+            "showContextVariables":true
           } 
         ],
         "action":
