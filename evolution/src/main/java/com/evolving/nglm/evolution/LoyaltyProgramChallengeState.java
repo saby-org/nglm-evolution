@@ -22,9 +22,7 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramLevelChange;
-import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
-import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
-import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 
 
 public class LoyaltyProgramChallengeState extends LoyaltyProgramState
@@ -50,7 +48,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     schemaBuilder.field("previousLevelName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("levelEnrollmentDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("scoreLevel", SchemaBuilder.int32().defaultValue(0).schema());
-    schemaBuilder.field("loyaltyProgramHistory", LoyaltyProgramHistory.schema());
+    schemaBuilder.field("loyaltyProgramChallengeHistory", LoyaltyProgramChallengeHistory.schema());
     schema = schemaBuilder.build();
   };
 
@@ -77,7 +75,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   private String previousLevelName;
   private Date levelEnrollmentDate;
   private int scoreLevel;
-  private LoyaltyProgramHistory loyaltyProgramHistory;
+  private LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory;
   
   /*****************************************
   *
@@ -89,7 +87,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   public String getPreviousLevelName() { return previousLevelName; }
   public Date getLevelEnrollmentDate() { return levelEnrollmentDate; }
   public int getScoreLevel() { return scoreLevel; }
-  public LoyaltyProgramHistory getLoyaltyProgramHistory() { return loyaltyProgramHistory; }
+  public LoyaltyProgramChallengeHistory getLoyaltyProgramChallengeHistory() { return loyaltyProgramChallengeHistory; }
 
   //
   //  setters
@@ -104,14 +102,14 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramChallengeState(LoyaltyProgramType loyaltyProgramType, long loyaltyProgramEpoch, String loyaltyProgramName, String loyaltyProgramID, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String levelName, String previousLevelName, Date levelEnrollmentDate, LoyaltyProgramHistory loyaltyProgramHistory)
+  public LoyaltyProgramChallengeState(LoyaltyProgramType loyaltyProgramType, long loyaltyProgramEpoch, String loyaltyProgramName, String loyaltyProgramID, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String levelName, String previousLevelName, Date levelEnrollmentDate, LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory)
   {
     super(loyaltyProgramType, loyaltyProgramEpoch, loyaltyProgramName, loyaltyProgramID, loyaltyProgramEnrollmentDate, loyaltyProgramExitDate);
     this.levelName = levelName;
     this.previousLevelName = previousLevelName;
     this.levelEnrollmentDate = levelEnrollmentDate;
     this.scoreLevel = 0;
-    this.loyaltyProgramHistory = loyaltyProgramHistory;
+    this.loyaltyProgramChallengeHistory = loyaltyProgramChallengeHistory;
   }
 
   /*****************************************
@@ -120,14 +118,14 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramChallengeState(SchemaAndValue schemaAndValue, String levelName, String previousLevelName, Date levelEnrollmentDate, int scoreLevel, LoyaltyProgramHistory loyaltyProgramHistory)
+  public LoyaltyProgramChallengeState(SchemaAndValue schemaAndValue, String levelName, String previousLevelName, Date levelEnrollmentDate, int scoreLevel, LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory)
   {
     super(schemaAndValue);
     this.levelName = levelName;
     this.previousLevelName = previousLevelName;
     this.levelEnrollmentDate = levelEnrollmentDate;
     this.scoreLevel = scoreLevel;
-    this.loyaltyProgramHistory = loyaltyProgramHistory;
+    this.loyaltyProgramChallengeHistory = loyaltyProgramChallengeHistory;
   }
 
   /*****************************************
@@ -145,7 +143,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     struct.put("previousLevelName", loyaltyProgramPointsState.getPreviousLevelName());
     struct.put("levelEnrollmentDate", loyaltyProgramPointsState.getLevelEnrollmentDate());
     struct.put("scoreLevel", loyaltyProgramPointsState.getScoreLevel());
-    struct.put("loyaltyProgramHistory", LoyaltyProgramHistory.serde().pack(loyaltyProgramPointsState.getLoyaltyProgramHistory()));
+    struct.put("loyaltyProgramChallengeHistory", LoyaltyProgramChallengeHistory.serde().pack(loyaltyProgramPointsState.getLoyaltyProgramChallengeHistory()));
     return struct;
   }
 
@@ -174,13 +172,13 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     String previousLevelName = valueStruct.getString("previousLevelName");
     Date levelEnrollmentDate = (Date) valueStruct.get("levelEnrollmentDate");
     int scoreLevel = valueStruct.getInt32("scoreLevel");
-    LoyaltyProgramHistory loyaltyProgramHistory = LoyaltyProgramHistory.serde().unpack(new SchemaAndValue(schema.field("loyaltyProgramHistory").schema(), valueStruct.get("loyaltyProgramHistory")));
+    LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = LoyaltyProgramChallengeHistory.serde().unpack(new SchemaAndValue(schema.field("loyaltyProgramChallengeHistory").schema(), valueStruct.get("loyaltyProgramChallengeHistory")));
     
     //  
     //  return
     //
 
-    return new LoyaltyProgramChallengeState(schemaAndValue, levelName, previousLevelName, levelEnrollmentDate, scoreLevel, loyaltyProgramHistory);
+    return new LoyaltyProgramChallengeState(schemaAndValue, levelName, previousLevelName, levelEnrollmentDate, scoreLevel, loyaltyProgramChallengeHistory);
   }
   
   /*****************************************
@@ -192,22 +190,22 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
   {
     Date now = SystemTime.getCurrentTime();
-    TierHistory lastTierEntered = null;
+    LevelHistory lastLevelEntered = null;
     
-    if (loyaltyProgramHistory != null)
+    if (loyaltyProgramChallengeHistory != null)
       {
-        lastTierEntered = loyaltyProgramHistory.getLastTierEntered();
+        lastLevelEntered = loyaltyProgramChallengeHistory.getLastLevelEntered();
       }
-    String fromLevel = (lastTierEntered == null ? null : lastTierEntered.getToTier());
+    String fromLevel = (lastLevelEntered == null ? null : lastLevelEntered.getToLevel());
 
     //
-    // get the tier informations
+    // get the level informations
     //
     
     LoyaltyProgramLevelChange loyaltyProgramLevelChange = LoyaltyProgramLevelChange.Unknown;
-    if (loyaltyProgramHistory != null)
+    if (loyaltyProgramChallengeHistory != null)
       {
-        String loyaltyProgramID = loyaltyProgramHistory.getLoyaltyProgramID();
+        String loyaltyProgramID = loyaltyProgramChallengeHistory.getLoyaltyProgramID();
         LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
         if (loyaltyProgram instanceof LoyaltyProgramChallenge)
           {
@@ -238,8 +236,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        LoyaltyProgramTierChange tierChangeType = LoyaltyProgramTierChange.fromExternalRepresentation(loyaltyProgramLevelChange.getExternalRepresentation());
-        loyaltyProgramHistory.addTierHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, tierChangeType);
+        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
         break;
 
       case Optout:
@@ -261,8 +258,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        tierChangeType = LoyaltyProgramTierChange.fromExternalRepresentation(loyaltyProgramLevelChange.getExternalRepresentation());
-        loyaltyProgramHistory.addTierHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, tierChangeType);
+        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
         break;
 
       default:

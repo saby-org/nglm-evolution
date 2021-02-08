@@ -496,8 +496,11 @@ public abstract class SubscriberProfile
                     loyalty.put("rewardTodayRedeemer", todayRedeemer);
                     loyalty.put("rewardYesterdayRedeemer", yesterdayRedeemer);
                   }
+                else if(loyaltyProgram instanceof LoyaltyProgramChallenge) 
+                  {
+                    throw new RuntimeException("RAJ K to do");
+                  }
               }
-            
             array.add(JSONUtilities.encodeObject(loyalty));
           }
       }
