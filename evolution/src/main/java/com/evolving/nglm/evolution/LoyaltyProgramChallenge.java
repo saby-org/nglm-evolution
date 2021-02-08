@@ -30,7 +30,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
-@GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic" })
+@GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "point" })
 public class LoyaltyProgramChallenge extends LoyaltyProgram
 {
 
@@ -87,6 +87,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
       schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("levels", SchemaBuilder.array(ChallengeLevel.schema()).schema());
+      schemaBuilder.field("scoreID", Schema.STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -123,6 +124,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   private JourneyScheduler journeyScheduler;
   private Integer lastCreatedOccurrenceNumber;
   private List<ChallengeLevel> levels = null;
+  private String scoreID;
 
   /*****************************************
    *
@@ -163,6 +165,11 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   public List<ChallengeLevel> getLevels()
   {
     return levels;
+  }
+  
+  public String getScoreID()
+  {
+    return scoreID;
   }
   
   /*****************************************
@@ -223,6 +230,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     this.levels = decodeLoyaltyProgramLevels(JSONUtilities.decodeJSONArray(jsonRoot, "levels", true));
+    this.scoreID = JSONUtilities.decodeString(jsonRoot, "scoreID", true);
 
     /*****************************************
      *
@@ -242,7 +250,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, List<ChallengeLevel> levels)
+  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, List<ChallengeLevel> levels, String scoreID)
   {
     super(schemaAndValue);
     this.createLeaderBoard = createLeaderBoard;
@@ -252,6 +260,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     this.journeyScheduler = scheduler;
     this.lastCreatedOccurrenceNumber = lastCreatedOccurrenceNumber;
     this.levels = levels;
+    this.scoreID = scoreID;
   }
 
   /*****************************************
@@ -272,6 +281,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     struct.put("scheduler", JourneyScheduler.serde().packOptional(loyaltyProgramChallenge.getJourneyScheduler()));
     struct.put("lastCreatedOccurrenceNumber", loyaltyProgramChallenge.getLastCreatedOccurrenceNumber());
     struct.put("levels", packLoyaltyProgramLevels(loyaltyProgramChallenge.getLevels()));
+    struct.put("scoreID", loyaltyProgramChallenge.getScoreID());
     return struct;
   }
 
@@ -319,12 +329,13 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     JourneyScheduler scheduler = JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("scheduler")));
     Integer lastCreatedOccurrenceNumber = valueStruct.getInt32("lastCreatedOccurrenceNumber");
     List<ChallengeLevel> levels = unpackLoyaltyProgramTiers(schema.field("levels").schema(), valueStruct.get("levels"));
+    String scoreID = valueStruct.getString("scoreID");
 
     //
     // return
     //
 
-    return new LoyaltyProgramChallenge(schemaAndValue, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, levels);
+    return new LoyaltyProgramChallenge(schemaAndValue, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, levels, scoreID);
   }
 
   /*****************************************
@@ -399,6 +410,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
         epochChanged = epochChanged || !Objects.equals(getRecurrenceId(), existingLoyaltyProgramChallenge.getRecurrenceId());
         epochChanged = epochChanged || !Objects.equals(getOccurrenceNumber(), existingLoyaltyProgramChallenge.getOccurrenceNumber());
         epochChanged = epochChanged || !Objects.equals(getJourneyScheduler(), existingLoyaltyProgramChallenge.getJourneyScheduler());
+        epochChanged = epochChanged || !Objects.equals(getScoreID(), existingLoyaltyProgramChallenge.getScoreID());
         return epochChanged;
       } else
       {
@@ -446,7 +458,9 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       schemaBuilder.field("scoreLevel", Schema.INT32_SCHEMA);
       schemaBuilder.field("scoreEventName", Schema.STRING_SCHEMA);
       schemaBuilder.field("numberOfscorePerEvent", Schema.INT32_SCHEMA);
-      schemaBuilder.field("levelUpAction", Schema.STRING_SCHEMA);
+      schemaBuilder.field("workflowChange", Schema.OPTIONAL_STRING_SCHEMA); //level up workflow
+      schemaBuilder.field("workflowScore", Schema.OPTIONAL_STRING_SCHEMA); //score workflow
+      schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA); //daily workflow
       schema = schemaBuilder.build();
     };
 
@@ -473,7 +487,9 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     private int scoreLevel = 0;
     private String scoreEventName;
     private int numberOfscorePerEvent = 0;
-    private String levelUpAction;
+    private String workflowChange = null;
+    private String workflowScore = null;
+    private String workflowDaily = null;
 
 
     /*****************************************
@@ -486,7 +502,9 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     public int getScoreLevel() { return scoreLevel; }
     public String getScoreEventName() { return scoreEventName; }
     public int getNumberOfscorePerEvent() { return numberOfscorePerEvent; }
-    public String getLevelUpAction() { return levelUpAction; }
+    public String getWorkflowChange()    {      return workflowChange;    }
+    public String getWorkflowScore()    {      return workflowScore;    }
+    public String getWorkflowDaily()    {      return workflowDaily;    }
 
 
     /*****************************************
@@ -495,13 +513,15 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
      *
      *****************************************/
 
-    public ChallengeLevel(String levelName, int scoreLevel, String scoreEventName, int numberOfscorePerEvent, String levelUpAction)
+    public ChallengeLevel(String levelName, int scoreLevel, String scoreEventName, int numberOfscorePerEvent, String workflowChange, String workflowScore, String workflowDaily)
     {
       this.levelName = levelName;
       this.scoreLevel = scoreLevel;
       this.scoreEventName = scoreEventName;
       this.numberOfscorePerEvent = numberOfscorePerEvent;
-      this.levelUpAction = levelUpAction;
+      this.workflowChange = workflowChange;
+      this.workflowScore = workflowScore;
+      this.workflowDaily = workflowDaily;
     }
 
     /*****************************************
@@ -518,7 +538,9 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       struct.put("scoreLevel", tier.getScoreLevel());
       struct.put("scoreEventName", tier.getScoreEventName());
       struct.put("numberOfscorePerEvent", tier.getNumberOfscorePerEvent());
-      struct.put("levelUpAction", tier.getLevelUpAction());
+      struct.put("workflowChange", tier.getWorkflowChange());
+      struct.put("workflowScore", tier.getWorkflowScore());
+      struct.put("workflowDaily", tier.getWorkflowDaily());
       return struct;
     }
 
@@ -547,13 +569,15 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       int scoreLevel = valueStruct.getInt32("scoreLevel");
       String scoreEventName = valueStruct.getString("scoreEventName");
       int numberOfscorePerEvent = valueStruct.getInt32("numberOfscorePerEvent");
-      String levelUpAction = valueStruct.getString("levelUpAction");
+      String workflowChange = valueStruct.getString("workflowChange");
+      String workflowScore = valueStruct.getString("workflowScore");
+      String workflowDaily = valueStruct.getString("workflowDaily");
 
       //
       //  return
       //
 
-      return new ChallengeLevel(levelName, scoreLevel, scoreEventName, numberOfscorePerEvent, levelUpAction);
+      return new ChallengeLevel(levelName, scoreLevel, scoreEventName, numberOfscorePerEvent, workflowChange, workflowScore, workflowDaily);
     }
 
     /*****************************************
@@ -574,7 +598,9 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       this.scoreLevel = JSONUtilities.decodeInteger(jsonRoot, "scoreLevel", true);
       this.scoreEventName = JSONUtilities.decodeString(jsonRoot, "scoreEventName", true);
       this.numberOfscorePerEvent = JSONUtilities.decodeInteger(jsonRoot, "numberOfscorePerEvent", true);
-      this.levelUpAction = JSONUtilities.decodeString(jsonRoot, "levelUpAction", true);
+      this.workflowChange = JSONUtilities.decodeString(jsonRoot, "workflowChange", false);
+      this.workflowScore = JSONUtilities.decodeString(jsonRoot, "workflowScore", false);
+      this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
     }
     
     /*****************************************
@@ -607,12 +633,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
           return LoyaltyProgramLevelChange.NoChange;
         }
    }
-    
-    @Override
-    public String toString()
-    {
-      return "ChallengeLevel [levelName=" + levelName + ", scoreLevel=" + scoreLevel + ", scoreEventName=" + scoreEventName + ", numberOfscorePerEvent=" + numberOfscorePerEvent + ", levelUpAction=" + levelUpAction + "]";
-    }
    
   }
   
@@ -627,6 +647,8 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> catalogcharacteristicIDs = new ArrayList<String>();
+    List<String> scoreID = new ArrayList<String>();
+    
     if (getCharacteristics() != null)
       {
         for (CatalogCharacteristicInstance catalogCharacteristicInstance : getCharacteristics())
@@ -634,6 +656,9 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
             catalogcharacteristicIDs.add(catalogCharacteristicInstance.getCatalogCharacteristicID());
           }
       }
+    if (getScoreID() != null) scoreID.add(getScoreID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+    
+    result.put("point", scoreID);
     result.put("catalogcharacteristic", catalogcharacteristicIDs);
     return result;
   }
