@@ -37,7 +37,7 @@ public class ContactPolicyCommunicationChannels
     CallToAction("callToAction", "Call to Action (Low priority - Limited)", DeliveryPriority.Standard, true),
     Response("response", "Response (High priority)", DeliveryPriority.High, false),
     Reminder("reminder", "Reminder (Low priority - Limited)", DeliveryPriority.Standard, true),
-    Announcement("announcement", "Announcement (Low priority - Limited)", DeliveryPriority.Standard, false),
+    Announcement("announcement", "Announcement (Low priority - Limited)", DeliveryPriority.Standard, true),
     ActionNotification("actionNotification", "Action Notification (High priority)", DeliveryPriority.High, false),
     Unknown("(unknown)", "Unknown (Low priority)", DeliveryPriority.Standard, false);
     private String externalRepresentation;
