@@ -207,4 +207,20 @@ public class RecordAlternateID
       }
     return result;
   }
+  @Override
+  public String toString()
+  {
+    return "RecordAlternateID [idField=" + idField + ", alternateID=" + alternateID + ", allSubscriberIDs= [";
+    if(allSubscriberIDs != null)
+      {
+        for(String s : allSubscriberIDs)
+          {
+            
+          }
+      }
+    
+    + allSubscriberIDs + "], eventDate=" + eventDate + ", subscriberAction=" + subscriberAction + ", tenantID=" + tenantID + "]";
+  }
+  
+  
 }

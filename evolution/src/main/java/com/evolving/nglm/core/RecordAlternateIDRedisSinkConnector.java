@@ -74,6 +74,8 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
       Schema recordAlternateIDValueSchema = sinkRecord.valueSchema();
       RecordAlternateID recordAlternateID = RecordAlternateID.unpack(new SchemaAndValue(recordAlternateIDValueSchema, recordAlternateIDValue));
           
+      log.info("Handle RecordAlternateID " +  recordAlternateID);
+      
       /****************************************
       *
       *  process all alternateIDs - one cacheEntry for each alternate ID:
@@ -90,7 +92,7 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
           //
           //  package list of subscriberIDs into byte array
           //
-
+          log.info("Size of recoredAlternateID " + recordAlternateID.getAllSubscriberIDs().size());
           byte[] subscriberIDBytes = new byte[2 + 8*recordAlternateID.getAllSubscriberIDs().size()];
           System.arraycopy(Shorts.toByteArray((short) recordAlternateID.getAllSubscriberIDs().size()), 0, subscriberIDBytes, 0, 2);
           int numberOfSubscriberIDs = 0;
