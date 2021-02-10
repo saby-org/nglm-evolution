@@ -210,16 +210,17 @@ public class RecordAlternateID
   @Override
   public String toString()
   {
-    return "RecordAlternateID [idField=" + idField + ", alternateID=" + alternateID + ", allSubscriberIDs= [";
+    String result =  "RecordAlternateID [idField=" + idField + ", alternateID=" + alternateID + ", allSubscriberIDs= [";
     if(allSubscriberIDs != null)
       {
         for(String s : allSubscriberIDs)
           {
-            
+            result = result + s + " ";
           }
       }
     
-    + allSubscriberIDs + "], eventDate=" + eventDate + ", subscriberAction=" + subscriberAction + ", tenantID=" + tenantID + "]";
+    result = result + "], eventDate=" + eventDate + ", subscriberAction=" + subscriberAction + ", tenantID=" + tenantID + "]";
+    return result;
   }
   
   

@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -95,11 +96,13 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
           log.info("Size of recoredAlternateID " + recordAlternateID.getAllSubscriberIDs().size());
           byte[] subscriberIDBytes = new byte[2 + 8*recordAlternateID.getAllSubscriberIDs().size()];
           System.arraycopy(Shorts.toByteArray((short) recordAlternateID.getAllSubscriberIDs().size()), 0, subscriberIDBytes, 0, 2);
+          log.info("first dump subscriberIDBytes " + Hex.encodeHexString( subscriberIDBytes ) );
           int numberOfSubscriberIDs = 0;
           for (String subscriberID : recordAlternateID.getAllSubscriberIDs())
             {
               try{
                 System.arraycopy(Longs.toByteArray(Long.parseLong(subscriberID)), 0, subscriberIDBytes, 2+numberOfSubscriberIDs*8, 8);
+                log.info("second dump subscriberIDBytes " + subscriberID + " : " + Hex.encodeHexString( subscriberIDBytes ) );
                 numberOfSubscriberIDs += 1;
               }catch (NumberFormatException ex){
                 log.error("ignoring not numerical subscriberID: {}",subscriberID);
@@ -107,12 +110,15 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
               }
             }
           
+          log.info("third dump subscriberIDBytes " + Hex.encodeHexString( subscriberIDBytes ) );
+          
+          
           //
           //  package alternateID into byte array
           //
 
           byte[] alternateIDBytes = (recordAlternateID.getAlternateID() != null) ? recordAlternateID.getAlternateID().getBytes(StandardCharsets.UTF_8) : null;
-          
+          log.info("alternateIDBytes dump " + Hex.encodeHexString( alternateIDBytes ) );
           //
           //  mapping: alternateID -> subscriberID
           //
@@ -132,7 +138,7 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
       *  return
       *
       ****************************************/
-
+    
       return cacheEntries;
     }
   }
