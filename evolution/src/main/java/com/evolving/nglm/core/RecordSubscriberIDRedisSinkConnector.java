@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -73,6 +74,8 @@ public class RecordSubscriberIDRedisSinkConnector extends SimpleRedisSinkConnect
       Schema recordSubscriberIDValueSchema = sinkRecord.valueSchema();
       RecordSubscriberID recordSubscriberID = RecordSubscriberID.unpack(new SchemaAndValue(recordSubscriberIDValueSchema, recordSubscriberIDValue));
           
+      log.info("RecordSubscriberIDRedisSinkTask recordSubscriberID " + recordSubscriberID);
+      
       /****************************************
       *
       *  process all subscriberIDs - one cacheEntry for each subscriber ID:
@@ -93,10 +96,9 @@ public class RecordSubscriberIDRedisSinkConnector extends SimpleRedisSinkConnect
             byte[] subscriberIDBytes = Longs.toByteArray(Long.parseLong(recordSubscriberID.getSubscriberID()));
             byte[] alternateIDBytes = (recordSubscriberID.getAlternateID() != null) ? recordSubscriberID.getAlternateID().getBytes(StandardCharsets.UTF_8) : null;
           
-            //
-            //   mapping: subscriberID -> alternateID (without TTL)
-            //
-          
+            log.info("RecordSubscriberIDRedisSinkTask subscriberIDBytes " + Hex.encodeHexString( subscriberIDBytes ) );
+            log.info("RecordSubscriberIDRedisSinkTask alternateIDBytes " + Hex.encodeHexString( alternateIDBytes ) );
+      
             Integer reverseDBIndex = alternateID.getReverseRedisCacheIndex();
             cacheEntries.add(new CacheEntry(subscriberIDBytes, alternateIDBytes, reverseDBIndex, null, recordSubscriberID.getTenantID()));
           }catch (NumberFormatException ex){
@@ -119,7 +121,15 @@ public class RecordSubscriberIDRedisSinkConnector extends SimpleRedisSinkConnect
       *  return
       *
       ****************************************/
-
+      
+      if(cacheEntries != null)
+        {
+          for(CacheEntry cacheEntry : cacheEntries)
+            {
+              log.info("RecordSubscriberIDRedisSinkTask cachEntry : " + cacheEntry );
+            }
+        }
+      
       return cacheEntries;
     }
   }

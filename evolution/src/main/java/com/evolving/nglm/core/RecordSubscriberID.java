@@ -181,4 +181,9 @@ public class RecordSubscriberID implements com.evolving.nglm.core.AutoProvisionS
 
     return new RecordSubscriberID(subscriberID, idField, alternateID, eventDate, subscriberAction, tenantID);
   }
+  @Override
+  public String toString()
+  {
+    return "RecordSubscriberID [subscriberID=" + subscriberID + ", idField=" + idField + ", alternateID=" + alternateID + ", eventDate=" + eventDate + ", subscriberAction=" + subscriberAction + ", tenantID=" + tenantID + "]";
+  }  
 }

@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigDef;
@@ -469,17 +470,33 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
                     {
                       pipeline.select(cacheEntry.getDBIndex());
                       if (pipelined && cacheEntry.getValue() != null)
-                        pipeline.set(cacheEntry.getKey(), cacheEntry.getValue());
+                        {
+                          byte[] value = cacheEntry.getValue();
+                          log.info("1 Cache Entry Value " + Hex.encodeHexString(value));
+                          pipeline.set(cacheEntry.getKey(), value);
+                        }
                       else if (pipelined && cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() != null)
-                        pipeline.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), cacheEntry.getTenantID()));
+                        {
+                          pipeline.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), cacheEntry.getTenantID()));
+                        }
                       else if (pipelined && cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() == null)
-                        pipeline.del(cacheEntry.getKey());
+                        {
+                          pipeline.del(cacheEntry.getKey());
+                        }
                       else if (cacheEntry.getValue() != null)
-                        jedis.set(cacheEntry.getKey(), cacheEntry.getValue());
+                        {
+                          byte[] value = cacheEntry.getValue();
+                          log.info("2 Cache Entry Value " + Hex.encodeHexString(value));
+                          jedis.set(cacheEntry.getKey(), value);
+                        }
                       else if (cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() != null)
-                        jedis.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), cacheEntry.getTenantID()));
+                        {
+                          jedis.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), cacheEntry.getTenantID()));
+                        }
                       else
-                        jedis.del(cacheEntry.getKey());
+                        {
+                          jedis.del(cacheEntry.getKey());
+                        }
                     }
                 }
             }
@@ -728,6 +745,12 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
       {
         this(key, value, null, null, tenantID);
       }
+      
+      @Override
+      public String toString()
+      {
+        return "CacheEntry [key=" + Arrays.toString(key) + ", value=" + Arrays.toString(value) + ", dbIndex=" + dbIndex + ", ttlOnDelete=" + ttlOnDelete + ", tenantID=" + tenantID + "]";
+      }      
     }
   }
   
@@ -759,5 +782,4 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
   {
     return Objects.equals(attribute, "true");
   }
-
 }

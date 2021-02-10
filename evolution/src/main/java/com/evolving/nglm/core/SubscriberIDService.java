@@ -137,7 +137,7 @@ public class SubscriberIDService
   *
   ****************************************/
   
-  public Map<String,String> getSubscriberIDs(String alternateIDName, List<String> alternateIDs) throws SubscriberIDServiceException
+  private Map<String,String> getSubscriberIDs(String alternateIDName, List<String> alternateIDs) throws SubscriberIDServiceException
   {
     /****************************************
     *
@@ -215,17 +215,30 @@ public class SubscriberIDService
     ****************************************/
 
     Map<String,String> result = new HashMap<String,String>();
+    Integer tenantID = null;
     for (int i = 0; i < binaryAlternateIDs.size(); i++)
       {
         String alternateID = new String(binaryAlternateIDs.get(i), StandardCharsets.UTF_8);
-        String subscriberID = null;
+        String subscriberID = null;        
         if (binarySubscriberIDs.get(i) != null)
           {
-            short numberOfSubscriberIDs = Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2));
+            int sizeModulo = binarySubscriberIDs.get(i).length % 8;
+            // after multitenancy, the length is 4 + 8* n before it was 2 + 8 * n
+            int tmpTenantID = sizeModulo == 4 ? /*after mutlitenancy*/ Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2)) : 1;
+            short numberOfSubscriberIDs = sizeModulo == 4 ? /* after multitenancy */ Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 4)) : Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2));
             if (numberOfSubscriberIDs > 1) throw new SubscriberIDServiceException("invariant violated - multiple subscriberIDs");
-            subscriberID = (numberOfSubscriberIDs == 1) ? Long.toString(Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 10))) : null;
+            subscriberID = (numberOfSubscriberIDs == 1) ? (sizeModulo == 4 ? Long.toString(Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 4, 12))) : Long.toString(Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 10))) ) : null;
+            if(tenantID == null)
+              {
+                tenantID = tmpTenantID;
+              }
+            else if(tenantID.intValue() != tmpTenantID)
+              {
+                log.warn("Dfferent tenantID for " + subscriberID);
+              }            
           }
         result.put(alternateID, subscriberID);
+        result.put("tenantID", ""+tenantID);
       }
 
     //

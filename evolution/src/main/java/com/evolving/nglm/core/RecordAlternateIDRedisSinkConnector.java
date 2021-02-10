@@ -15,6 +15,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.SimpleRedisSinkConnector.SimpleRedisSinkTask.CacheEntry;
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.Shorts;
 
@@ -75,7 +76,7 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
       Schema recordAlternateIDValueSchema = sinkRecord.valueSchema();
       RecordAlternateID recordAlternateID = RecordAlternateID.unpack(new SchemaAndValue(recordAlternateIDValueSchema, recordAlternateIDValue));
           
-      log.info("Handle RecordAlternateID " +  recordAlternateID);
+      log.info("RecordAlternateIDRedisSinkTask Handle RecordAlternateID " +  recordAlternateID);
       
       /****************************************
       *
@@ -93,32 +94,36 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
           //
           //  package list of subscriberIDs into byte array
           //
-          log.info("Size of recoredAlternateID " + recordAlternateID.getAllSubscriberIDs().size());
-          byte[] subscriberIDBytes = new byte[2 + 8*recordAlternateID.getAllSubscriberIDs().size()];
-          System.arraycopy(Shorts.toByteArray((short) recordAlternateID.getAllSubscriberIDs().size()), 0, subscriberIDBytes, 0, 2);
-          log.info("first dump subscriberIDBytes " + Hex.encodeHexString( subscriberIDBytes ) );
+          log.info("RecordAlternateIDRedisSinkTask Size of recoredAlternateID " + recordAlternateID.getAllSubscriberIDs().size());
+          byte[] subscriberIDBytes = new byte[2 + 2 + 8*recordAlternateID.getAllSubscriberIDs().size()]; // 2 for tenantID and 2 for number of alternate ID
+          System.arraycopy(Shorts.toByteArray((short) recordAlternateID.getTenantID()), 0, subscriberIDBytes, 0, 2);
+          System.arraycopy(Shorts.toByteArray((short) recordAlternateID.getAllSubscriberIDs().size()), 0, subscriberIDBytes, 2, 2);
+          log.info("RecordAlternateIDRedisSinkTask first dump subscriberIDBytes " + Hex.encodeHexString( subscriberIDBytes ) );
           int numberOfSubscriberIDs = 0;
           for (String subscriberID : recordAlternateID.getAllSubscriberIDs())
             {
               try{
-                System.arraycopy(Longs.toByteArray(Long.parseLong(subscriberID)), 0, subscriberIDBytes, 2+numberOfSubscriberIDs*8, 8);
-                log.info("second dump subscriberIDBytes " + subscriberID + " : " + Hex.encodeHexString( subscriberIDBytes ) );
+                System.arraycopy(Longs.toByteArray(Long.parseLong(subscriberID)), 0, subscriberIDBytes, 2 + 2 +numberOfSubscriberIDs*8, 8);
+                log.info("RecordAlternateIDRedisSinkTask second dump subscriberIDBytes " + subscriberID + " : " + Hex.encodeHexString( subscriberIDBytes ) );
                 numberOfSubscriberIDs += 1;
               }catch (NumberFormatException ex){
-                log.error("ignoring not numerical subscriberID: {}",subscriberID);
+                log.error("RecordAlternateIDRedisSinkTask ignoring not numerical subscriberID: {}",subscriberID);
                 return Collections.<CacheEntry>emptyList();
               }
             }
           
-          log.info("third dump subscriberIDBytes " + Hex.encodeHexString( subscriberIDBytes ) );
+          log.info("RecordAlternateIDRedisSinkTask third dump subscriberIDBytes " + Hex.encodeHexString( subscriberIDBytes ) );
           
+          // result mapping: 
+          // key = alternateIDBytes by example a msisdn : 3132313235353530313030
+          // value = subscriberIDBytes = <2 bytes tenantID><2 bytes number of alternate ID>< 8 bytes internal subscriber IDs (a bit wierd here there may have several sids..> by example 000200010000000000000064
           
           //
           //  package alternateID into byte array
           //
 
           byte[] alternateIDBytes = (recordAlternateID.getAlternateID() != null) ? recordAlternateID.getAlternateID().getBytes(StandardCharsets.UTF_8) : null;
-          log.info("alternateIDBytes dump " + Hex.encodeHexString( alternateIDBytes ) );
+          log.info("RecordAlternateIDRedisSinkTask alternateIDBytes dump " + Hex.encodeHexString( alternateIDBytes ) );
           //
           //  mapping: alternateID -> subscriberID
           //
@@ -129,7 +134,7 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
         }
       else
         {
-          log.error("ignoring unspecified alternateID: {}", recordAlternateID.getIDField());
+          log.error("RecordAlternateIDRedisSinkTask ignoring unspecified alternateID: {}", recordAlternateID.getIDField());
           cacheEntries = Collections.<CacheEntry>emptyList();
         }
 
@@ -139,6 +144,14 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
       *
       ****************************************/
     
+      if(cacheEntries != null)
+        {
+          for(CacheEntry cacheEntry : cacheEntries)
+            {
+              log.info("RecordSubscriberIDRedisSinkTask catchEntry : " + cacheEntry );
+            }
+        }
+      
       return cacheEntries;
     }
   }
