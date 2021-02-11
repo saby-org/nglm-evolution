@@ -8302,7 +8302,7 @@ public class GUIManager
         for (int i = 0; i < offerIDs.size(); i++)
           {
             String offerID = offerIDs.get(i).toString();
-            GUIManagedObject offer = offerService.getStoredOffer(offerID, includeArchived);
+            GUIManagedObject offer = offerService.getStoredOfferWithCurrentStocks(offerID, includeArchived);
             if (offer != null)
               {
                 offerObjects.add(offer);
@@ -8311,7 +8311,7 @@ public class GUIManager
       }
     else
       {
-        offerObjects = offerService.getStoredOffers(includeArchived);
+        offerObjects = offerService.getStoredOffersWithCurrentStocks(includeArchived);
       }
     for (GUIManagedObject offer : offerObjects)
       {        
@@ -8399,7 +8399,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject offer = offerService.getStoredOffer(offerID, includeArchived);
+    GUIManagedObject offer = offerService.getStoredOfferWithCurrentStocks(offerID, includeArchived);
     JSONObject offerJSON = offerService.generateResponseJSON(offer, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -8572,6 +8572,10 @@ public class GUIManager
         }
         Offer offer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
+        // if stock update, and no more stock, need to warn it
+        String responseMessage = null;
+        if(existingOffer instanceof Offer && !Objects.equals(((Offer) existingOffer).getStock(),offer.getStock()) && StockMonitor.getRemainingStock(offer)==0) responseMessage = "no remaining stock";
+
         /*****************************************
         *
         *  store
@@ -8594,6 +8598,7 @@ public class GUIManager
         response.put("valid", offer.getAccepted());
         response.put("processing", offerService.isActiveOffer(offer, now));
         response.put("responseCode", "ok");
+		if(responseMessage!=null) response.put("responseMessage",responseMessage);
         return JSONUtilities.encodeObject(response);
       }
     catch (JSONUtilitiesException|GUIManagerException e)
@@ -12349,7 +12354,7 @@ public class GUIManager
         for (int i = 0; i < productIDs.size(); i++)
           {
             String productID = productIDs.get(i).toString();
-            GUIManagedObject product = productService.getStoredProduct(productID, includeArchived);
+            GUIManagedObject product = productService.getStoredProductWithCurrentStocks(productID, includeArchived);
             if (product != null)
               {
                 productsObjects.add(product);
@@ -12358,7 +12363,7 @@ public class GUIManager
       }
     else
       {
-        productsObjects = productService.getStoredProducts(includeArchived);
+        productsObjects = productService.getStoredProductsWithCurrentStocks(includeArchived);
       }
     for (GUIManagedObject product : productsObjects)
       {
@@ -12420,7 +12425,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject product = productService.getStoredProduct(productID, includeArchived);
+    GUIManagedObject product = productService.getStoredProductWithCurrentStocks(productID, includeArchived);
     JSONObject productJSON = productService.generateResponseJSON(product, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -12555,6 +12560,10 @@ public class GUIManager
 
         Product product = new Product(jsonRoot, epoch, existingProduct, deliverableService, catalogCharacteristicService);
 
+		// if stock update, and no more stock, need to warn it
+		String responseMessage = null;
+		if(existingProduct instanceof Product && !Objects.equals(((Product) existingProduct).getStock(),product.getStock()) && StockMonitor.getRemainingStock(product)==0) responseMessage = "no remaining stock";
+
 
         /*****************************************
         *
@@ -12587,6 +12596,7 @@ public class GUIManager
         response.put("valid", product.getAccepted());
         response.put("processing", productService.isActiveProduct(product, now));
         response.put("responseCode", "ok");
+		if(responseMessage!=null) response.put("responseMessage",responseMessage);
         return JSONUtilities.encodeObject(response);
       }
     catch (JSONUtilitiesException|GUIManagerException e)
@@ -15530,7 +15540,7 @@ public class GUIManager
         for (int i = 0; i < voucherIDs.size(); i++)
           {
             String voucherID = voucherIDs.get(i).toString();
-            GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID, includeArchived);
+            GUIManagedObject voucher = voucherService.getStoredVoucherWithCurrentStocks(voucherID, includeArchived);
             if (voucher != null)
               {
                 voucherObjects.add(voucher);
@@ -15539,7 +15549,7 @@ public class GUIManager
       }
     else
       {
-        voucherObjects = voucherService.getStoredVouchers(includeArchived);
+        voucherObjects = voucherService.getStoredVouchersWithCurrentStocks(includeArchived);
       }
     for (GUIManagedObject voucher : voucherObjects)
       {
@@ -15741,10 +15751,13 @@ public class GUIManager
           return JSONUtilities.encodeObject(response);
         }
 
+		// if stock update, and no more stock, need to warn it
+		String responseMessage = null;
         Voucher voucher=null;
         if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
           voucher = new VoucherShared(jsonRoot, epoch, existingVoucher);
           if(log.isDebugEnabled()) log.debug("will put shared voucher "+voucher);
+		  if(existingVoucher instanceof VoucherShared && !Objects.equals(((VoucherShared) existingVoucher).getStock(),((VoucherShared)voucher).getStock()) && StockMonitor.getRemainingStock((VoucherShared)voucher)==0) responseMessage = "no remaining stock";
         }
         if(voucher==null && voucherType.getCodeType()==VoucherType.CodeType.Personal){
           voucher = new VoucherPersonal(jsonRoot, epoch, existingVoucher,voucherType);
@@ -15776,6 +15789,7 @@ public class GUIManager
         response.put("accepted", voucher.getAccepted());
         response.put("processing", voucherService.isActiveVoucher(voucher, now));
         response.put("responseCode", "ok");
+		if(responseMessage!=null) response.put("responseMessage",responseMessage);
         return JSONUtilities.encodeObject(response);
       }
     catch (JSONUtilitiesException|GUIManagerException e)

@@ -129,7 +129,7 @@
     <topic.subscriberprofileforceupdate_fileconnector>subscriberprofileforceupdate-fileconnector</topic.subscriberprofileforceupdate_fileconnector>
     <topic.executeactionothersubscriber>executeactionothersubscriber</topic.executeactionothersubscriber>
     <topic.voucheraction>voucheraction</topic.voucheraction>
-    <topic.filewithvariableevent>filewithvariableevent</topic.filewithvariableevent>  
+    <topic.filewithvariableevent>filewithvariableevent</topic.filewithvariableevent>
     <topic.tokenredeemed>tokenredeemed</topic.tokenredeemed>
     <topic.tokenredeemed_fileconnector>tokenredeemed-fileconnector</topic.tokenredeemed_fileconnector>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
