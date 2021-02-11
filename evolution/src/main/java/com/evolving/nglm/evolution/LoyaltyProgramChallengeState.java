@@ -93,8 +93,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   //  setters
   //
 
-  //public void setStatusPoints(int statusPoints) { this.statusPoints = statusPoints; }
-  //public void setRewardPoints(int rewardPoints) { this.rewardPoints = rewardPoints; }
+  public void setScoreLevel(int scoreLevel) { this.scoreLevel = scoreLevel; }
 
   /*****************************************
   *
