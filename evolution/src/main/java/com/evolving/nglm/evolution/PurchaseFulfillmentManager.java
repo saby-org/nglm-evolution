@@ -6,20 +6,21 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import com.evolving.nglm.core.*;
-import com.evolving.nglm.evolution.statistics.CounterStat;
-import com.evolving.nglm.evolution.statistics.StatBuilder;
-import com.evolving.nglm.evolution.statistics.StatsBuilders;
-import org.apache.http.HttpHost;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.RestClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -27,8 +28,13 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -36,6 +42,9 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 
 public class PurchaseFulfillmentManager extends DeliveryManager implements Runnable, CommodityDeliveryResponseHandler
 {
@@ -647,7 +656,110 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       return new PurchaseFulfillmentRequest(this);
     }
+    
+    /*****************************************
+    *
+    *  PurchaseFulfillmentRequest - esFields - minimal
+    *
+    *****************************************/
+    
+    public PurchaseFulfillmentRequest(Map<String, Object> esFields, SupplierService supplierService, OfferService offerService, ProductService productService, VoucherService voucherService, ResellerService resellerService)
+    {
+      //
+      //  super
+      //
+      
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
+      
+      //
+      //  this
+      //
+      
+      this.offerID = (String) esFields.get("offerID");
+      this.salesChannelID = (String) esFields.get("salesChannelID");
+      this.meanOfPayment = (String) esFields.get("meanOfPayment");
+      this.offerPrice = (Integer) esFields.get("offerPrice");
+      this.origin = (String) esFields.get("origin");
+      this.resellerID = (String) esFields.get("resellerID");
+      this.quantity = (Integer) esFields.get("offerQty");
+      
+      //
+      // derived
+      //
+      
+      GUIManagedObject offer = offerService.getStoredOffer(offerID);
+      Supplier supplier = getOfferSupplier(offer, supplierService, productService, voucherService);
+      this.supplierDisplay = "";
+      if (supplier != null) this.supplierDisplay = supplier.getGUIManagedObjectDisplay();
+      GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
+      this.resellerDisplay = "";
+      if (reseller != null) this.resellerDisplay = reseller.getGUIManagedObjectDisplay();
+      
+    }
 
+    private Supplier getOfferSupplier(GUIManagedObject offerUnchecked, SupplierService supplierService, ProductService productService, VoucherService voucherService)
+    {
+      Supplier result = null;
+      Date now = SystemTime.getCurrentTime();
+      if (offerUnchecked != null && offerUnchecked instanceof Offer)
+        {
+          Offer offer = (Offer) offerUnchecked;
+          boolean found = false;
+          Set<OfferProduct> offerProducts = offer.getOfferProducts();
+          if (offerProducts != null && !offerProducts.isEmpty())
+            {
+              for (OfferProduct offerProduct : offerProducts)
+                {
+                  String productID = offerProduct.getProductID();
+                  Product product = productService.getActiveProduct(productID, now);
+                  if (product != null)
+                    {
+                      String supplierID = product.getSupplierID();
+                      if (supplierID != null)
+                        {
+                          Supplier supplier = supplierService.getActiveSupplier(supplierID, now);
+                          if (supplier != null)
+                            {
+                              result = supplier;
+                              found = true;
+                              break; // only consider first valid one
+                            }
+                        }
+                    }
+                }
+            }
+         if (!found)
+            {
+              Set<OfferVoucher> offerVouchers = offer.getOfferVouchers();
+              if (offerVouchers != null && !offerVouchers.isEmpty())
+                {
+                  for (OfferVoucher offerVoucher : offerVouchers)
+                    {
+                      String voucherID = offerVoucher.getVoucherID();
+                      Voucher voucher = voucherService.getActiveVoucher(voucherID, now);
+                      if (voucher != null)
+                        {
+                          String supplierID = voucher.getSupplierID();
+                          if (supplierID != null)
+                            {
+                              Supplier supplier = supplierService.getActiveSupplier(supplierID, now);
+                              if (supplier != null)
+                                {
+                                  result = supplier;
+                                  found = true;
+                                  break; // only consider first valid one
+                                }
+                            }
+                        }
+                    }
+                }
+              
+            }
+        }
+      return result;
+    }
     /*****************************************
     *
     *  pack

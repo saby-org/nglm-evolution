@@ -6,6 +6,8 @@
 
 package com.evolving.nglm.evolution;
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
@@ -39,6 +41,11 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryRequest.class);
+  
+  protected static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
+  protected static DateFormat esDateFormat = new SimpleDateFormat(elasticSearchDateFormat);
+  protected static final String elasticSearchDefaultDateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+  protected static DateFormat esDefaultDateFormat = new SimpleDateFormat(elasticSearchDefaultDateFormat);
   
   //
   // this
@@ -344,6 +351,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public void setCorrelator(String correlator) { this.correlator = correlator; }
   public void setDeliveryStatus(DeliveryStatus deliveryStatus) { this.deliveryStatus = deliveryStatus; }
   public void setDeliveryDate(Date deliveryDate) { this.deliveryDate = deliveryDate; }
+  public void setCreationDate(Date creationDate) { this.creationDate = creationDate; }
   public void setEventID(String eventID) { this.eventID = eventID; }
   public void setFeatureID(String featureID) { this.featureID = featureID; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
@@ -766,6 +774,23 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
 	this.topicPartition = new TopicPartition("unknown",-1);
   }
 
+  /*****************************************
+  *
+  *  constructor -- esFields - minimal
+  *
+  *****************************************/
+  
+  public DeliveryRequest(Map<String, Object> esFields)
+  {
+    this.deliveryRequestID = (String) esFields.get("deliveryRequestID");
+    this.originatingDeliveryRequestID = (String) esFields.get("originatingDeliveryRequestID");
+    this.eventID = (String) esFields.get("eventID");
+    this.moduleID = (String) esFields.get("moduleID");
+    this.featureID = (String) esFields.get("featureID");
+    this.originatingRequest = true;
+    this.deliveryStatus = DeliveryStatus.Delivered; //RAJ K not in ES
+  }
+
   /****************************************
   *
   *  presentation utilities
@@ -804,7 +829,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     thirdPartyPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     thirdPartyPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(EVENTID, getEventID()); 
-    thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
@@ -1017,6 +1041,24 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
       }
     }
     return subscriberFields;
+  }
+  
+  public Date getDateFromESString(DateFormat dateFormat, String date)
+  {
+    if (date == null) return null;
+    else
+      {
+        try
+          {
+            return dateFormat.parse(date);
+          } 
+        catch (ParseException e)
+          {
+            if (log.isWarnEnabled()) log.warn("invalid date {} parse error", date);
+            return null;
+          }
+      }
+    
   }
 
 }

@@ -15,14 +15,14 @@ import com.evolving.nglm.evolution.reports.ReportUtils;
 public class NotificationReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(NotificationReportDriver.class);
+  public static final String ES_INDEX_NOTIFICATION_INITIAL = "detailedrecords_messages-";
 
   @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
   {
     log.debug("Processing " + report.getName());
-    String esIndexNotif = "detailedrecords_messages-";
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    NotificationReportMonoPhase.main(new String[] {elasticSearch, esIndexNotif, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    NotificationReportMonoPhase.main(new String[] {elasticSearch, ES_INDEX_NOTIFICATION_INITIAL, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
     log.debug("Finished with BDR Report");
   }
 
