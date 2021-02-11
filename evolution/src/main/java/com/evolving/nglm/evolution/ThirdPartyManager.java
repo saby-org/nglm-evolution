@@ -2216,9 +2216,10 @@ public class ThirdPartyManager
                   boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
                   SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                   SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID()+"");
-                  if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
-                  	customerStatusInJourney=profilejourneyStatus;	
-                 
+                  if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
+                    customerStatusInJourney = profilejourneyStatus;	
+                  }
+              
                   if (customerStatus != null)
                     {
                       SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
@@ -2507,9 +2508,10 @@ public class ThirdPartyManager
                   boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
                   SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                   SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID()+"");
-                  if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
-                  	customerStatusInJourney=profilejourneyStatus;	
-                 
+                  if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
+                    customerStatusInJourney=profilejourneyStatus;	
+                  }
+                  
                   if (customerStatus != null)
                     {
                       SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
@@ -4904,17 +4906,9 @@ public class ThirdPartyManager
     * argument
     *
     ****************************************/
-
-    //
-    //  subscriberID
-    //
-
-    String subscriberID = resolveSubscriberID(jsonRoot);
-
     //
     //  eventName
     //
-
 
     String eventName = JSONUtilities.decodeString(jsonRoot, "eventName", false);
     if (eventName == null || eventName.isEmpty())
@@ -4922,27 +4916,47 @@ public class ThirdPartyManager
         updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS, "-{eventName is missing}");
         return JSONUtilities.encodeObject(response);
       }
+    
+    EvolutionEngineEventDeclaration eventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
+    AutoProvisionEvent autoProvisionEvent = com.evolving.nglm.core.Deployment.getAutoProvisionEvents().get(eventName);
 
     //
-    //  eventBody
+    // subscriberParameter contains by example customerID,<internalSubscriberID> or msisdn,<msisdn> coming from the request
     //
 
     Pair<String, String> subscriberParameter = resolveSubscriberAlternateID(jsonRoot);
+    
+    //
+    //  eventBody
+    //
+    
     JSONObject eventBody = JSONUtilities.decodeJSONObject(jsonRoot, "eventBody");
-    eventBody.put(subscriberParameter.getFirstElement(), subscriberParameter.getSecondElement());
     if (eventBody == null)
       {
         updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS, "-{eventBody is missing}");
         return JSONUtilities.encodeObject(response);
       }
+    eventBody.put(subscriberParameter.getFirstElement(), subscriberParameter.getSecondElement());
 
-    /*****************************************
-    *
-    * Create Event object and push it its topic
-    *
-    *****************************************/
-
-    EvolutionEngineEventDeclaration eventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
+    //
+    //  subscriberID
+    //
+    String subscriberID = null;
+    try 
+    {
+      subscriberID = resolveSubscriberID(jsonRoot);
+    }
+    catch(ThirdPartyManagerException e)
+    {
+      // throw again the exception if the subscriberID is null and not an Autoprovision event
+      if(autoProvisionEvent == null) {
+        throw e;
+      }
+      else {
+        subscriberID = null;
+      }
+    }
+    
     if (eventDeclaration == null || eventDeclaration.getEventRule() == EvolutionEngineEventDeclaration.EventRule.Internal)
       {
         updateResponse(response, RESTAPIGenericReturnCodes.EVENT_NAME_UNKNOWN, "-{" + eventName + "}");
@@ -4969,8 +4983,20 @@ public class ThirdPartyManager
         SubscriberStreamOutput eev = null;
         try
           {
-            eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody });
-            eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+            // 3 cases to create the Event object:
+            // 1. subscriberID != null, it is given to the constructor,
+            // 2. subscriberID == null and event is an autoprovision event, so in this case, we provide in the constructor, the alternateID coming from the REST request
+            if(subscriberID != null)
+              {
+                eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody });
+                eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+              }
+            else if(autoProvisionEvent != null)
+              {
+                // means this is an autoprovision event, case 2...
+                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody });
+                eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);              
+              }
           }
         catch (Exception e)
           {
@@ -4978,7 +5004,12 @@ public class ThirdPartyManager
             return JSONUtilities.encodeObject(response);
           }
 
-        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberID)), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), (EvolutionEngineEvent)eev)));
+        // 2 cases to choose the topic
+        // 1. subscriberID != null, normal event topic is used,
+        // 2. subscriberID == null and event is an autoprovision event, autoprovision topic is used
+        String topic = eventDeclaration.getEventTopic();
+        if(subscriberID == null) { topic = autoProvisionEvent.getAutoProvisionTopic(); }
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID != null ? subscriberID : subscriberParameter.getSecondElement())), eventDeclaration.getEventSerde().serializer().serialize(topic, (EvolutionEngineEvent)eev)));
         updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS, "{event triggered}");
       }
 
@@ -6044,20 +6075,11 @@ public class ThirdPartyManager
         String param = JSONUtilities.decodeString(jsonRoot, id, false);
         if (param != null)
           {
-            try
-            {
-              alternateSubscriberID = subscriberIDService.getSubscriberID(id, param);
-              if (alternateSubscriberID == null)
-                {
-                  throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
-                }
-              alternateIDKey = id;
-              alternateIDValue = param;
-              break;
-            } catch (SubscriberIDServiceException e)
-            {
-              log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
-            }
+            alternateSubscriberID = param;
+            alternateIDKey = id;
+            alternateIDValue = param;
+            break;
+
           }
       }
     

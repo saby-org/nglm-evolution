@@ -112,7 +112,7 @@ public abstract class AbstractMOSMSVoucherDefaultEvent implements EvolutionEngin
     struct.put("sourceAddress", event.getSourceAddress());
     struct.put("destinationAddress", event.getDestinationAddress());
     struct.put("messageText", event.getMessageText());
-    if(event.isTransferred()!=null) struct.put("isTransfered", event.isTransferred());
+    if(event.isTransferred()!=null) struct.put("isTransferred", event.isTransferred());
     if(event.getVoucherCode()!=null) struct.put("voucherCode", event.getVoucherCode());
     if(event.getSenderSubscriberID()!=null) struct.put("senderSubscriberID", event.getSenderSubscriberID());
     if(event.getSupplierDisplay()!=null) struct.put("supplierDisplay", event.getSupplierDisplay());
@@ -177,6 +177,7 @@ public abstract class AbstractMOSMSVoucherDefaultEvent implements EvolutionEngin
     for(Supplier supplier:context.getSupplierService().getActiveSuppliers(SystemTime.getCurrentTime(), 0)){ // TODO EVPRO-99 put 0 for tenant to loop over all Suppliers, is it correct ?
       if(this.supplierDisplay.equals(supplier.getGUIManagedObjectDisplay())){
         supplierID=supplier.getSupplierID();
+        break;
       }
     }
     if(supplierID==null){

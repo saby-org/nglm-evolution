@@ -1250,8 +1250,10 @@ public class EvaluationCriterion
     //
 
     boolean result = true;
-    for (EvaluationCriterion criterion : criteria)
-    result = result && criterion.evaluate(evaluationRequest);
+    for (EvaluationCriterion criterion : criteria) 
+      {
+        result = result && criterion.evaluate(evaluationRequest);
+      }
       
     return result;
   }
