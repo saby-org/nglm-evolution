@@ -43,6 +43,7 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 
 public abstract class SubscriberProfile
 {
@@ -498,7 +499,30 @@ public abstract class SubscriberProfile
                   }
                 else if(loyaltyProgram instanceof LoyaltyProgramChallenge) 
                   {
-                    throw new RuntimeException("RAJ K to do");
+                    LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+                    LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) program.getValue();
+                    
+                    if(loyaltyProgramChallengeState.getLevelName() != null){ loyalty.put("levelName", loyaltyProgramChallengeState.getLevelName()); }
+                    if(loyaltyProgramChallengeState.getLevelEnrollmentDate() != null){ loyalty.put("levelUpdateDate", loyaltyProgramChallengeState.getLevelEnrollmentDate()); }
+                    if(loyaltyProgramChallengeState.getPreviousLevelName() != null){ loyalty.put("previousLevelName", loyaltyProgramChallengeState.getPreviousLevelName()); }
+                    ChallengeLevel level = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getLevelName());
+                    ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getPreviousLevelName());
+                    loyalty.put("levelChangeType", ChallengeLevel.changeFromLevelToLevel(previousLevel, level).getExternalRepresentation());
+                    if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
+                      { 
+                        String scorePointsID = loyaltyProgramChallenge.getScoreID();
+                        if(scorePointsID != null)
+                          {
+                            loyalty.put("scoreID", scorePointsID);
+                            GUIManagedObject point = pointService.getStoredPoint(scorePointsID);
+                            loyalty.put("scoreName", (point!=null)?(point.getJSONRepresentation().get("display").toString()):"");
+                            int score = 0;
+                            if(this.pointBalances.get(scorePointsID) != null){
+                              score = this.pointBalances.get(scorePointsID).getBalance(now);
+                            }
+                            loyalty.put("score", score);
+                          } 
+                      }
                   }
               }
             array.add(JSONUtilities.encodeObject(loyalty));

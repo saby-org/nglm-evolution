@@ -122,6 +122,7 @@ import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
@@ -18216,7 +18217,6 @@ public class GUIManager
           List<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
           for (String loyaltyProgramID : loyaltyPrograms.keySet())
             {
-
               //
               //  check loyalty program still exist
               //
@@ -18275,7 +18275,8 @@ public class GUIManager
                       if (pointBalance != null)
                         {
                           loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
-                        } else
+                        } 
+                      else
                         {
                           loyaltyProgramPresentation.put("statusPointsBalance", 0);
                         }
@@ -18323,6 +18324,7 @@ public class GUIManager
                       //
                       // history
                       //
+                      
                       ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
                       LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
                       if (history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty())
@@ -18340,12 +18342,64 @@ public class GUIManager
                       break;
                       
                     case CHALLENGE:
-                      throw new RuntimeException("RAJ K to do");
+                      LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+                      
+                      //
+                      // current tier
+                      //
 
-                    // case BADGES:
-                    // // TODO
-                    // break;
+                      if (loyaltyProgramChallengeState.getLevelName() != null)
+                        {
+                          loyaltyProgramPresentation.put("levelName", loyaltyProgramChallengeState.getLevelName());
+                        }
+                      if (loyaltyProgramChallengeState.getLevelEnrollmentDate() != null)
+                        {
+                          loyaltyProgramPresentation.put("levelEnrollmentDate", getDateString(loyaltyProgramChallengeState.getLevelEnrollmentDate()));
+                        }
+                      
+                      //
+                      // status point
+                      //
 
+                      LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+                      String scorePointID = loyaltyProgramChallenge.getScoreID();
+                      Point scorePoint = pointService.getActivePoint(scorePointID, now);
+                      if (scorePoint != null)
+                        {
+                          loyaltyProgramPresentation.put("scoreID", scorePoint.getPointID());
+                          loyaltyProgramPresentation.put("scoreName", scorePoint.getPointName());
+                          loyaltyProgramPresentation.put("scoreDisplay", scorePoint.getDisplay());
+                        }
+                      PointBalance score = baseSubscriberProfile.getPointBalances().get(scorePointID);
+                      if (score != null)
+                        {
+                          loyaltyProgramPresentation.put("score", score.getBalance(now));
+                        } 
+                      else
+                        {
+                          loyaltyProgramPresentation.put("score", 0);
+                        }
+                      
+                      //
+                      // history
+                      //
+                      
+                      ArrayList<JSONObject> loyaltyProgramChallengeHistoryJSON = new ArrayList<JSONObject>();
+                      LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory();
+                      if (loyaltyProgramChallengeHistory != null && loyaltyProgramChallengeHistory.getLevelHistory() != null && !loyaltyProgramChallengeHistory.getLevelHistory().isEmpty())
+                        {
+                          for (LevelHistory level : loyaltyProgramChallengeHistory.getLevelHistory())
+                            {
+                              HashMap<String, Object> levelHistoryJSON = new HashMap<String, Object>();
+                              levelHistoryJSON.put("fromLevel", level.getFromLevel());
+                              levelHistoryJSON.put("toLevel", level.getToLevel());
+                              levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate()));
+                              loyaltyProgramChallengeHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
+                            }
+                        }
+                      loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
+                      break;
+                      
                     default:
                       break;
                   }
