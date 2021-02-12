@@ -122,6 +122,8 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
@@ -474,11 +476,20 @@ public class GUIManager
 
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
+    getLoyaltyProgramChallengeList("getLoyaltyProgramChallengeList"),
+    
     getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
+    getLoyaltyProgramChallengeSummaryList("getLoyaltyProgramChallengeSummaryList"),
+    
     getLoyaltyProgram("getLoyaltyProgram"),
+    getLoyaltyProgramChallenge("getLoyaltyProgramChallenge"),
+    
     putLoyaltyProgram("putLoyaltyProgram"),
+    putLoyaltyProgramChallenge("putLoyaltyProgramChallenge"),
+    
     removeLoyaltyProgram("removeLoyaltyProgram"),
     setStatusLoyaltyProgram("setStatusLoyaltyProgram"),
+    
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
     getReseller("getReseller"),
@@ -2136,9 +2147,13 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeList", new APISimpleHandler(API.getLoyaltyProgramChallengeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramSummaryList", new APISimpleHandler(API.getLoyaltyProgramSummaryList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeSummaryList", new APISimpleHandler(API.getLoyaltyProgramChallengeSummaryList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgram", new APISimpleHandler(API.getLoyaltyProgram));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallenge", new APISimpleHandler(API.getLoyaltyProgramChallenge));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
+        restServer.createContext("/nglm-guimanager/putLoyaltyProgramChallenge", new APISimpleHandler(API.putLoyaltyProgramChallenge));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/setStatusLoyaltyProgram", new APISimpleHandler(API.setStatusLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
@@ -3800,19 +3815,35 @@ public class GUIManager
                   break;
 
                 case getLoyaltyProgramList:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.POINTS, true, includeArchived);
+                  break;
+                  
+                case getLoyaltyProgramChallengeList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, true, includeArchived);
                   break;
 
                 case getLoyaltyProgramSummaryList:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.POINTS, false, includeArchived);
+                  break;
+                  
+                case getLoyaltyProgramChallengeSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, false, includeArchived);
                   break;
 
                 case getLoyaltyProgram:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.POINTS, includeArchived);
+                  break;
+                  
+                case getLoyaltyProgramChallenge:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, includeArchived);
                   break;
 
                 case putLoyaltyProgram:
-                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.POINTS);
+                  break;
+                  
+                case putLoyaltyProgramChallenge:
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE);
                   break;
 
                 case removeLoyaltyProgram:
@@ -3822,7 +3853,7 @@ public class GUIManager
                 case setStatusLoyaltyProgram:
                   jsonResponse = guiManagerLoyaltyReporting.processSetStatusLoyaltyProgram(userID, jsonRoot);
                   break;
-
+                  
                 case getResellerList:
                   jsonResponse = processGetResellerList(userID, jsonRoot, true, includeArchived);
                   break;
@@ -19669,7 +19700,6 @@ public class GUIManager
           List<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
           for (String loyaltyProgramID : loyaltyPrograms.keySet())
             {
-
               //
               //  check loyalty program still exist
               //
@@ -19693,22 +19723,28 @@ public class GUIManager
                   loyaltyProgramPresentation.put("active", loyaltyProgram.getActive());
 
 
-                  switch (loyaltyProgramState.getLoyaltyProgramType()) {
+                  switch (loyaltyProgramState.getLoyaltyProgramType())
+                  {
                     case POINTS:
-
                       LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
 
                       //
-                      //  current tier
+                      // current tier
                       //
 
-                      if(loyaltyProgramPointsState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName()); }
-                      if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate())); }
+                      if (loyaltyProgramPointsState.getTierName() != null)
+                        {
+                          loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName());
+                        }
+                      if (loyaltyProgramPointsState.getTierEnrollmentDate() != null)
+                        {
+                          loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate()));
+                        }
 
                       //
-                      //  status point
+                      // status point
                       //
-                      
+
                       LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
                       String statusPointID = loyaltyProgramPoints.getStatusPointsID();
                       Point statusPoint = pointService.getActivePoint(statusPointID, now);
@@ -19719,17 +19755,17 @@ public class GUIManager
                           loyaltyProgramPresentation.put("statusPointDisplay", statusPoint.getDisplay());
                         }
                       PointBalance pointBalance = baseSubscriberProfile.getPointBalances().get(statusPointID);
-                      if(pointBalance != null)
+                      if (pointBalance != null)
                         {
                           loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
-                        }
+                        } 
                       else
                         {
                           loyaltyProgramPresentation.put("statusPointsBalance", 0);
                         }
-                      
+
                       //
-                      //  reward point informations
+                      // reward point informations
                       //
 
                       String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
@@ -19741,26 +19777,24 @@ public class GUIManager
                           loyaltyProgramPresentation.put("rewardsPointDisplay", rewardPoint.getDisplay());
                         }
                       PointBalance rewardBalance = baseSubscriberProfile.getPointBalances().get(rewardPointID);
-                      if(rewardBalance != null)
+                      if (rewardBalance != null)
                         {
                           loyaltyProgramPresentation.put("rewardsPointsBalance", rewardBalance.getBalance(now));
                           loyaltyProgramPresentation.put("rewardsPointsEarned", rewardBalance.getEarnedHistory().getAllTimeBucket());
                           loyaltyProgramPresentation.put("rewardsPointsConsumed", rewardBalance.getConsumedHistory().getAllTimeBucket());
                           loyaltyProgramPresentation.put("rewardsPointsExpired", rewardBalance.getExpiredHistory().getAllTimeBucket());
                           Date firstExpirationDate = rewardBalance.getFirstExpirationDate(now);
-                          if(firstExpirationDate != null)
+                          if (firstExpirationDate != null)
                             {
                               int firstExpirationQty = rewardBalance.getBalance(firstExpirationDate);
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(firstExpirationDate));
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", firstExpirationQty);
-                            }
-                          else
+                            } else
                             {
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now));
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
                             }
-                        }
-                      else
+                        } else
                         {
                           loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
                           loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
@@ -19771,27 +19805,84 @@ public class GUIManager
                         }
 
                       //
-                      //  history
+                      // history
                       //
+                      
                       ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
                       LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
-                      if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
-                        for(TierHistory tier : history.getTierHistory()){
-                          HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
-                          tierHistoryJSON.put("fromTier", tier.getFromTier());
-                          tierHistoryJSON.put("toTier", tier.getToTier());
-                          tierHistoryJSON.put("transitionDate", getDateString(tier.getTransitionDate()));
-                          loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+                      if (history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty())
+                        {
+                          for (TierHistory tier : history.getTierHistory())
+                            {
+                              HashMap<String, Object> tierHistoryJSON = new HashMap<String, Object>();
+                              tierHistoryJSON.put("fromTier", tier.getFromTier());
+                              tierHistoryJSON.put("toTier", tier.getToTier());
+                              tierHistoryJSON.put("transitionDate", getDateString(tier.getTransitionDate()));
+                              loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+                            }
                         }
-                      }
                       loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
-
                       break;
+                      
+                    case CHALLENGE:
+                      LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+                      
+                      //
+                      // current tier
+                      //
 
-//                    case BADGES:
-//                      // TODO
-//                      break;
+                      if (loyaltyProgramChallengeState.getLevelName() != null)
+                        {
+                          loyaltyProgramPresentation.put("levelName", loyaltyProgramChallengeState.getLevelName());
+                        }
+                      if (loyaltyProgramChallengeState.getLevelEnrollmentDate() != null)
+                        {
+                          loyaltyProgramPresentation.put("levelEnrollmentDate", getDateString(loyaltyProgramChallengeState.getLevelEnrollmentDate()));
+                        }
+                      
+                      //
+                      // status point
+                      //
 
+                      LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+                      String scorePointID = loyaltyProgramChallenge.getScoreID();
+                      Point scorePoint = pointService.getActivePoint(scorePointID, now);
+                      if (scorePoint != null)
+                        {
+                          loyaltyProgramPresentation.put("scoreID", scorePoint.getPointID());
+                          loyaltyProgramPresentation.put("scoreName", scorePoint.getPointName());
+                          loyaltyProgramPresentation.put("scoreDisplay", scorePoint.getDisplay());
+                        }
+                      PointBalance score = baseSubscriberProfile.getPointBalances().get(scorePointID);
+                      if (score != null)
+                        {
+                          loyaltyProgramPresentation.put("score", score.getBalance(now));
+                        } 
+                      else
+                        {
+                          loyaltyProgramPresentation.put("score", 0);
+                        }
+                      
+                      //
+                      // history
+                      //
+                      
+                      ArrayList<JSONObject> loyaltyProgramChallengeHistoryJSON = new ArrayList<JSONObject>();
+                      LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory();
+                      if (loyaltyProgramChallengeHistory != null && loyaltyProgramChallengeHistory.getLevelHistory() != null && !loyaltyProgramChallengeHistory.getLevelHistory().isEmpty())
+                        {
+                          for (LevelHistory level : loyaltyProgramChallengeHistory.getLevelHistory())
+                            {
+                              HashMap<String, Object> levelHistoryJSON = new HashMap<String, Object>();
+                              levelHistoryJSON.put("fromLevel", level.getFromLevel());
+                              levelHistoryJSON.put("toLevel", level.getToLevel());
+                              levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate()));
+                              loyaltyProgramChallengeHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
+                            }
+                        }
+                      loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
+                      break;
+                      
                     default:
                       break;
                   }

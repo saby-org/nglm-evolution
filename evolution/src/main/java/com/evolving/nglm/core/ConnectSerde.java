@@ -6,28 +6,30 @@
 
 package com.evolving.nglm.core;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.connect.data.*;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.FileWithVariableEvent;
-
 import io.confluent.connect.avro.AvroConverter;
-import kafka.log.Log;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ConnectSerde<T> implements Serde<T>
 {
+  
   /*****************************************
   *
   *  constructor
