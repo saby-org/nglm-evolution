@@ -21,6 +21,8 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.evolving.nglm.core.Deployment.jsonConfigPerTenant;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -563,6 +565,11 @@ public class Deployment
       {
         throw new RuntimeException("deployment", e);
       }
+  }
+  
+  public static Set<Integer> getTenantIDs()
+  {
+    return jsonConfigPerTenant.keySet();
   }
 
   public Deployment(int tenantID)
