@@ -267,7 +267,13 @@ public class SegmentationDimensionService extends GUIService
   //  getSegment
   //
 
-  public Segment getSegment(String segmentID, int tenantID) { synchronized (this) { return segmentsByIDByTenant.get(tenantID).get(segmentID); } }
+  public Segment getSegment(String segmentID, int tenantID) 
+    { 
+      synchronized (this) 
+        { 
+          return segmentsByIDByTenant.get(tenantID).get(segmentID); 
+        } 
+    }
 
   /*****************************************
   *
