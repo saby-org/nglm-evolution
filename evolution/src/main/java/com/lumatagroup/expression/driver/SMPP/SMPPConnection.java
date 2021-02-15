@@ -1,5 +1,6 @@
 package com.lumatagroup.expression.driver.SMPP;
 
+import com.evolving.nglm.evolution.*;
 import ie.omk.smpp.Connection;
 import ie.omk.smpp.NotBoundException;
 import ie.omk.smpp.event.ConnectionObserver;
@@ -15,16 +16,11 @@ import ie.omk.smpp.util.PacketStatus;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
-import com.evolving.nglm.evolution.DeliveryRequest;
-import com.evolving.nglm.evolution.INotificationRequest;
 import com.lumatagroup.expression.driver.SMPP.receiver.ReceiverWorkerThread;
 
 /**
@@ -72,6 +68,10 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 	private int messageIndex = 12;
 	
 	private HashMap<String, SubmitSMCorrectionDeliveryRequest> messageId2NotifBean = new HashMap<String, SubmitSMCorrectionDeliveryRequest>();
+
+	// retry sender, if not set, not retrying on-hold submit_sm in messageId2NotifBean on connection restart
+	private NotificationInterface retrySender = null;
+	protected synchronized void setRetrySender(NotificationInterface retrySender){this.retrySender=retrySender;}
 	
 	public SMPPConnection(String name, String address, String port, String system_id, String password, String system_type, boolean retry_connection, String time_between_reconnection, String time_between_connection_check, String receiver_thread_number, String magic_number_configuration ) {
 		this(name, TRANSCEIVER, address, port, system_id, password, system_type, retry_connection, time_between_reconnection, time_between_connection_check, receiver_thread_number, magic_number_configuration);
@@ -543,10 +543,14 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 			logger.info("SMPPConnection.restart Try to restart " + name);
 		}
 		boolean restart = false;
+		List<SubmitSMCorrectionDeliveryRequest> toResends = new ArrayList<>();
 		synchronized(this) {
 			if (!being_restarted) { // are we already restarting ?
 				being_restarted = true;
 				restart = true;
+				toResends.addAll(messageId2NotifBean.values());
+				logger.info("SMPPConnection.restart ["+this.name+"] called, "+toResends.size()+" un-acknowledged submit_sm in previous connection");
+				messageId2NotifBean.clear();
 			}
 		}
 		// out of synchro block, the code below must not be executed twice at the same time 
@@ -562,6 +566,17 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 					public void run() {
 						if (logger.isDebugEnabled()) logger.debug("SMPPConnection.TimerTask.restart ["+SMPPConnection.this.name+"] calling start to reconnect");
 						start();
+						if(!toResends.isEmpty()){
+							logger.info("SMPPConnection.restart ["+SMPPConnection.this.name+"] called while previous connection had "+toResends.size()+" on hold messages");
+							if(SMPPConnection.this.retrySender==null){
+								logger.warn("SMPPConnection.restart ["+SMPPConnection.this.name+"] no retry sender, this can lead to blocking situation");
+							}else{
+								for(SubmitSMCorrectionDeliveryRequest toResend:toResends){
+									logger.info("SMPPConnection.restart ["+SMPPConnection.this.name+"] resending delivery request "+toResend.getDeliveryRequest().getDeliveryRequestID());
+									retrySender.send(toResend.getDeliveryRequest());
+								}
+							}
+						}
 						being_restarted = false;
 					}
 				};
