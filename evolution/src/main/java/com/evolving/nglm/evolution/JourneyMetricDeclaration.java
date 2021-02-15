@@ -25,10 +25,7 @@ public class JourneyMetricDeclaration extends DeploymentManagedObject
   *  data
   *
   *****************************************/
-
   private String subscriberProfileMetricHistoryAccessor;
-  private int priorPeriodDays;
-  private int postPeriodDays;
   private String esFieldPrior;
   private String esFieldDuring;
   private String esFieldPost;
@@ -40,8 +37,6 @@ public class JourneyMetricDeclaration extends DeploymentManagedObject
   *****************************************/
 
   public String getSubscriberProfileMetricHistoryAccessor() { return subscriberProfileMetricHistoryAccessor; }
-  public int getPriorPeriodDays() { return priorPeriodDays; }
-  public int getPostPeriodDays() { return postPeriodDays; }
   public String getESFieldPrior() { return esFieldPrior; }
   public String getESFieldDuring() { return esFieldDuring; }
   public String getESFieldPost() { return esFieldPost; }
@@ -80,9 +75,7 @@ public class JourneyMetricDeclaration extends DeploymentManagedObject
     //
 
     super(jsonRoot);
-    this.subscriberProfileMetricHistoryAccessor = JSONUtilities.decodeString(jsonRoot, "subscriberProfileMetricHistoryAccessor", true); 
-    this.priorPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "priorPeriodDays", true);
-    this.postPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "postPeriodDays", true);
+    this.subscriberProfileMetricHistoryAccessor = JSONUtilities.decodeString(jsonRoot, "subscriberProfileMetricHistoryAccessor", true);
     this.esFieldPrior = JSONUtilities.decodeString(jsonRoot, "esFieldPrior", true);
     this.esFieldDuring = JSONUtilities.decodeString(jsonRoot, "esFieldDuring", true);
     this.esFieldPost = JSONUtilities.decodeString(jsonRoot, "esFieldPost", true);

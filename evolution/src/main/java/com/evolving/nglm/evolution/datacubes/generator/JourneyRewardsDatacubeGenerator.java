@@ -107,14 +107,8 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
       log.error("Error, unable to retrieve info for JourneyID=" + this.journeyID);
       return false;
     }
-    // Retrieve the number of day we should wait after EndDate to be sure that every JourneyMetrics is pushed.
-    int maximumPostPeriod = 0;
-    for(JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
-      if(maximumPostPeriod < journeyMetricDeclaration.getPostPeriodDays()) {
-        maximumPostPeriod = journeyMetricDeclaration.getPostPeriodDays();
-      }
-    }
-    maximumPostPeriod = maximumPostPeriod + 1; // Add 24 hours to be sure (due to truncation, see populateMetricsPost)
+    // Number of day needed after EndDate for JourneyMetrics to be pushed. - Add 24 hours to be sure (due to truncation, see populateMetricsPost)
+    int maximumPostPeriod = Deployment.getJourneyMetricConfiguration().getPostPeriodDays() + 1;
     Date stopDate = RLMDateUtils.addDays(journey.getEffectiveEndDate(), maximumPostPeriod, Deployment.getBaseTimeZone());
     if(publishDate.after(stopDate)) {
       log.info("JourneyID=" + this.journeyID + " has ended more than " + maximumPostPeriod + " days ago. No data will be published anymore.");

@@ -585,7 +585,7 @@ public class EvolutionEngine
 
     try
       {
-        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
           {
             journeyMetricDeclaration.validate();
           }
@@ -5105,6 +5105,9 @@ public class EvolutionEngine
                   {
                     boolean metricsUpdated = journeyState.populateMetricsPrior(subscriberState);
                     subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+
+                    // Create a JourneyMetric to be added to JourneyStatistic from journeyState
+                    subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
                   }
 
                 /*****************************************
@@ -5727,6 +5730,9 @@ public class EvolutionEngine
                       {
                         boolean metricsUpdated = journeyState.populateMetricsDuring(subscriberState);
                         subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+
+                        // Create a JourneyMetric to be added to JourneyStatistic from journeyState
+                        subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
                       }
                   }
 
@@ -5899,7 +5905,7 @@ public class EvolutionEngine
                 //  close ?
                 //
                 boolean closeJourney = true;
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
                   {
                     closeJourney = closeJourney && journeyState.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID());
                   }

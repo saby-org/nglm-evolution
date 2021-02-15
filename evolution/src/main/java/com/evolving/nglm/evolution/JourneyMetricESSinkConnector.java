@@ -72,15 +72,32 @@ public class JourneyMetricESSinkConnector extends SimpleESSinkConnector
       documentMap.put("journeyInstanceID", journeyMetric.getJourneyInstanceID());
       documentMap.put("journeyID", journeyMetric.getJourneyID());
       documentMap.put("subscriberID", journeyMetric.getSubscriberID());
-      documentMap.put("journeyExitDate", (journeyMetric.getJourneyExitDate() != null)? RLMDateUtils.printTimestamp(journeyMetric.getJourneyExitDate()) : null);
+      
+      // @rl: check null to prevent overriding fields with null ?
+      if(journeyMetric.getJourneyExitDate() != null) {
+        documentMap.put("journeyExitDate", (journeyMetric.getJourneyExitDate() != null)? RLMDateUtils.printTimestamp(journeyMetric.getJourneyExitDate()) : null);
+      }
 
       //
       //  metrics
       //
-      for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
-        documentMap.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.getJourneyMetricsPrior().get(journeyMetricDeclaration.getID()));
-        documentMap.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.getJourneyMetricsDuring().get(journeyMetricDeclaration.getID()));
-        documentMap.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.getJourneyMetricsPost().get(journeyMetricDeclaration.getID()));
+      for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
+        Long prior = journeyMetric.getJourneyMetricsPrior().get(journeyMetricDeclaration.getID());
+        Long during = journeyMetric.getJourneyMetricsDuring().get(journeyMetricDeclaration.getID());
+        Long post = journeyMetric.getJourneyMetricsPost().get(journeyMetricDeclaration.getID());
+        
+        if (prior != null) {
+          documentMap.put(journeyMetricDeclaration.getESFieldPrior(), prior);
+        }
+        // @rl: special. It's because we use during field as a temporary variable while still in the journey 
+        //   (to record the all-time value when entered to compare it to the exit value at the end of the journey)
+        //   Therefore, we should not push this temporary value with no meaning.
+        if (journeyMetric.getJourneyExitDate() != null && during != null) {
+          documentMap.put(journeyMetricDeclaration.getESFieldDuring(), during);
+        }
+        if (post != null) {
+          documentMap.put(journeyMetricDeclaration.getESFieldPost(), post);
+        }
       }
       
       return documentMap;

@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JourneyMetric extends SubscriberStreamOutput implements Comparable
+public class JourneyMetric extends SubscriberStreamOutput
 {
   /*****************************************
   *
@@ -57,7 +57,7 @@ public class JourneyMetric extends SubscriberStreamOutput implements Comparable
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("journeyExitDate", Timestamp.SCHEMA);
+    schemaBuilder.field("journeyExitDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("journeyMetricsPrior", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT64_SCHEMA).name("journeymetric_metrics_prior").schema());
     schemaBuilder.field("journeyMetricsDuring", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT64_SCHEMA).name("journeymetric_metrics_during").schema());
     schemaBuilder.field("journeyMetricsPost", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT64_SCHEMA).name("journeymetric_metrics_post").schema());

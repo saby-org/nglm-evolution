@@ -594,7 +594,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           AggregationBuilders.terms(JOURNEYSTATISTIC_STATUS_FIELD)
                              .field(JOURNEYSTATISTIC_STATUS_FIELD).size(MAX_BUCKETS);
       String field = "";
-      for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+      for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
         field = journeyMetricDeclaration.getESFieldPrior();
         aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders.sum(field).field(field));
         field = journeyMetricDeclaration.getESFieldDuring();
@@ -648,7 +648,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       for(Bucket bucket : buckets.getBuckets()) {
         Aggregations subAgg = bucket.getAggregations();
         Map<String, Long> result2 = new LinkedHashMap<>();
-        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPrior(),  subAgg, result2);
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldDuring(), subAgg, result2);
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPost(),   subAgg, result2);

@@ -380,19 +380,14 @@ public class JourneyState implements Cleanable
   public boolean populateMetricsPrior(SubscriberState subscriberState) 
   {
     boolean subscriberStateUpdated = false;
-    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
-      //
-      //  metricHistory
-      //
+    Date journeyEntryDay = RLMDateUtils.truncate(this.getJourneyEntryDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * Deployment.getJourneyMetricConfiguration().getPriorPeriodDays(), Deployment.getBaseTimeZone());
+    Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getBaseTimeZone());
+    
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
       MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
-
-      //
-      //  prior
-      //
-      Date journeyEntryDay = RLMDateUtils.truncate(this.getJourneyEntryDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-      Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * journeyMetricDeclaration.getPriorPeriodDays(), Deployment.getBaseTimeZone());
-      Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getBaseTimeZone());
       long priorMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
+      
       this.getJourneyMetricsPrior().put(journeyMetricDeclaration.getID(), priorMetricValue);
 
       //
@@ -413,7 +408,7 @@ public class JourneyState implements Cleanable
   public boolean populateMetricsDuring(SubscriberState subscriberState) 
   {
     boolean subscriberStateUpdated = false;
-    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
       MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
       
       // Check for journey metrics added while the journey was running
@@ -437,21 +432,16 @@ public class JourneyState implements Cleanable
   public boolean populateMetricsPost(SubscriberState subscriberState, Date now) 
   {
     boolean subscriberStateUpdated = false;
+    Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getBaseTimeZone());
+    Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, Deployment.getJourneyMetricConfiguration().getPostPeriodDays(), Deployment.getBaseTimeZone());
     
-    //
-    //  post metrics
-    //
-    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
-      if (! this.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID())) {
-        Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-        Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getBaseTimeZone());
-        Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, journeyMetricDeclaration.getPostPeriodDays(), Deployment.getBaseTimeZone());
-        if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getBaseTimeZone()))) {
-          MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
-          long postMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
-          this.getJourneyMetricsPost().put(journeyMetricDeclaration.getID(), postMetricValue);
-          subscriberStateUpdated = true;
-        }
+    if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getBaseTimeZone()))) {
+      for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
+        MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
+        long postMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
+        this.getJourneyMetricsPost().put(journeyMetricDeclaration.getID(), postMetricValue);
+        subscriberStateUpdated = true;
       }
     }
     
