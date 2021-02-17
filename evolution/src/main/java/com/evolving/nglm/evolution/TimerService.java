@@ -527,6 +527,7 @@ public class TimerService
             while (! stopRequested && subscriberStateStoreIterator.hasNext())
               {
                 SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
+                if(subscriberState==null) continue;//not sure of that, but seems we can have fresh "deleted" records back
                 for (TimedEvaluation timedEvaluation : subscriberState.getScheduledEvaluations())
                   {
                     schedule(timedEvaluation);
@@ -676,9 +677,10 @@ public class TimerService
               {
                 nbSubs++;
                 SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
+                if(subscriberState==null) continue;//not sure of that, but seems we can have fresh "deleted" records back
                 if (subscriberState.getLastEvaluationDate() == null || subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
                   {
-                    TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation, true);
+                    TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation, true, false);
                     sendTimedEvaluation(scheduledEvaluation);
                   }
               }
@@ -1024,6 +1026,7 @@ public class TimerService
                     //
 
                     SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
+                    if(subscriberState==null) continue;//not sure of that, but seems we can have fresh "deleted" records back
                     nbSubsEvaluated++;
 
                     if(log.isTraceEnabled()) log.trace("evaluateTargets starting for subscriber "+subscriberState.getSubscriberID());
@@ -1084,7 +1087,7 @@ public class TimerService
                     if (match)
                       {
                         if(log.isTraceEnabled()) log.trace("evaluateTargets match for subscriber "+subscriberState.getSubscriberID()+", generating an event");
-                        TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), now);
+                        TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), now, false, true);
                         sendTimedEvaluation(scheduledEvaluation);
                       }
                     else

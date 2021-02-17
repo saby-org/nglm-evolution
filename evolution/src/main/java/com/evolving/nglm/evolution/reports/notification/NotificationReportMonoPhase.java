@@ -364,8 +364,11 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
             for (String key : msgContentJSON.keySet())
               {
                 String value = (String) msgContentJSON.get(key);
-
-                boolean hasNewline = value.contains("\n");
+                boolean hasNewline = false;
+                if (value != null)
+                  {
+                    hasNewline = value.contains("\n");
+                  }
                 if (hasNewline)
                   {
                     value = value.replace("\n", " ");
