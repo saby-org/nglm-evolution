@@ -74,7 +74,7 @@ public class ComplexObjectUtils
     if(instances == null) { instances = new ArrayList<>(); profile.setComplexObjectInstances(instances);}
     
     ComplexObjectInstance instance = null;
-    for(ComplexObjectInstance current : instances) { if(current.getElementID().equals(elementID)) { instance = current; break; }}
+    for(ComplexObjectInstance current : instances) { if(current.getComplexObjectTypeID().equals(type.getComplexObjectTypeID()) && current.getElementID().equals(elementID)) { instance = current; break; }}
     if(instance == null)
       {
         instance = new ComplexObjectInstance(type.getComplexObjectTypeID(), elementID);

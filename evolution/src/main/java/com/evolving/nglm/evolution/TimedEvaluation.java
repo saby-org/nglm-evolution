@@ -38,10 +38,11 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("timed_evaluation");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("evaluationDate", Timestamp.SCHEMA);
     schemaBuilder.field("periodicEvaluation", SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("targetProvisioning", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schema = schemaBuilder.build();
   };
@@ -62,6 +63,7 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
   private String subscriberID;
   private Date evaluationDate;
   private boolean periodicEvaluation;
+  private boolean targetProvisioning;
   private ExtendedSubscriberProfile extendedSubscriberProfile;
 
   /*****************************************
@@ -76,18 +78,19 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
 
   public TimedEvaluation(String subscriberID, Date evaluationDate)
   {
-    this(subscriberID, evaluationDate, false);
+    this(subscriberID, evaluationDate, false, false);
   }
 
   //
   //  PeriodicEvaluation
   //
 
-  public TimedEvaluation(String subscriberID, Date evaluationDate, boolean periodicEvaluation)
+  public TimedEvaluation(String subscriberID, Date evaluationDate, boolean periodicEvaluation, boolean targetProvisioning)
   {
     this.subscriberID = subscriberID;
     this.evaluationDate = evaluationDate;
     this.periodicEvaluation = periodicEvaluation;
+    this.targetProvisioning = targetProvisioning;
     this.extendedSubscriberProfile = null;
   }
 
@@ -102,6 +105,7 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
     this.subscriberID = timedEvaluation.getSubscriberID();
     this.evaluationDate = timedEvaluation.getEvaluationDate();
     this.periodicEvaluation = timedEvaluation.getPeriodicEvaluation();
+    this.targetProvisioning = timedEvaluation.getTargetProvisioning();
     this.extendedSubscriberProfile = timedEvaluation.getExtendedSubscriberProfile();
   }
 
@@ -111,11 +115,12 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
   *
   *****************************************/
 
-  private TimedEvaluation(String subscriberID, Date evaluationDate, boolean periodicEvaluation, ExtendedSubscriberProfile extendedSubscriberProfile)
+  private TimedEvaluation(String subscriberID, Date evaluationDate, boolean periodicEvaluation, boolean targetProvisioning, ExtendedSubscriberProfile extendedSubscriberProfile)
   {
     this.subscriberID = subscriberID;
     this.evaluationDate = evaluationDate;
     this.periodicEvaluation = periodicEvaluation;
+    this.targetProvisioning = targetProvisioning;
     this.extendedSubscriberProfile = extendedSubscriberProfile;
   }
 
@@ -129,6 +134,7 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
   public Date getEvaluationDate() { return evaluationDate; }
   public Date getEventDate() { return evaluationDate; }
   public boolean getPeriodicEvaluation() { return periodicEvaluation; }
+  public boolean getTargetProvisioning() { return targetProvisioning; }
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
 
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
@@ -165,6 +171,7 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
     struct.put("subscriberID", timedEvaluation.getSubscriberID());
     struct.put("evaluationDate", timedEvaluation.getEvaluationDate());
     struct.put("periodicEvaluation", timedEvaluation.getPeriodicEvaluation());
+    struct.put("targetProvisioning", timedEvaluation.getTargetProvisioning());
     struct.put("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(timedEvaluation.getExtendedSubscriberProfile()));
     return struct;
   }
@@ -199,13 +206,14 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
     String subscriberID = valueStruct.getString("subscriberID");
     Date evaluationDate = (Date) valueStruct.get("evaluationDate");
     boolean periodicEvaluation = (schemaVersion >= 2) ? valueStruct.getBoolean("periodicEvaluation") : false;
+    boolean targetProvisioning = (schemaVersion >= 3 && schema.field("targetProvisioning")!=null) ? valueStruct.getBoolean("targetProvisioning") : false;
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
 
     //
     //  return
     //
 
-    return new TimedEvaluation(subscriberID, evaluationDate, periodicEvaluation, extendedSubscriberProfile);
+    return new TimedEvaluation(subscriberID, evaluationDate, periodicEvaluation, targetProvisioning, extendedSubscriberProfile);
   }
 
   /*****************************************
@@ -224,6 +232,7 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
         result = result && Objects.equals(subscriberID, entry.getSubscriberID());
         result = result && Objects.equals(evaluationDate, entry.getEvaluationDate());
         result = result && periodicEvaluation == entry.getPeriodicEvaluation();
+        result = result && targetProvisioning == entry.getTargetProvisioning();
         result = result && Objects.equals(extendedSubscriberProfile, entry.getExtendedSubscriberProfile());
       }
     return result;
@@ -260,11 +269,8 @@ public class TimedEvaluation implements EvolutionEngineEvent, Comparable
   @Override
   public String getEventName()
   {
-    if (periodicEvaluation == true) {
-      return "dailyRoutine";
-    }
-    else {
-      return "TimeOutEvent";
-    }
+    if (periodicEvaluation) return "dailyRoutine";
+    if (targetProvisioning) return "targetProvisioning";
+    return "TimeOutEvent";
   }
 }

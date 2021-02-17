@@ -9,14 +9,11 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
+import com.evolving.nglm.core.SystemTime;
+import org.apache.kafka.connect.data.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class SubscriberHistory implements StateStore
@@ -42,6 +39,7 @@ public class SubscriberHistory implements StateStore
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyHistory", SchemaBuilder.array(JourneyHistory.schema()).schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
+    schemaBuilder.field("lastCleaningDate", Timestamp.builder().optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -70,6 +68,7 @@ public class SubscriberHistory implements StateStore
   private int tenantID;
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyHistory> journeyHistory;
+  private Date lastCleaningDate;
 
   //
   //  in memory only
@@ -87,6 +86,9 @@ public class SubscriberHistory implements StateStore
   public int getTenantID() { return tenantID; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyHistory> getJourneyHistory() { return journeyHistory; }
+  public Date getLastCleaningDate() { return lastCleaningDate; }
+
+  public void setLastCleaningDate(Date lastCleaningDate) { this.lastCleaningDate = lastCleaningDate; }
 
   //
   //  kafkaRepresentation
@@ -107,6 +109,7 @@ public class SubscriberHistory implements StateStore
     this.tenantID = tenantID;
     this.deliveryRequests = new ArrayList<DeliveryRequest>();
     this.journeyHistory = new ArrayList<JourneyHistory>();
+    this.lastCleaningDate = SystemTime.getCurrentTime();
     this.kafkaRepresentation = null;
   }
 
@@ -116,12 +119,13 @@ public class SubscriberHistory implements StateStore
   *
   *****************************************/
 
-  private SubscriberHistory(String subscriberID, int tenantID, List<DeliveryRequest> deliveryRequests, List<JourneyHistory> journeyHistory)
+  private SubscriberHistory(String subscriberID, int tenantID, List<DeliveryRequest> deliveryRequests, List<JourneyHistory> journeyHistory, Date lastCleaningDate)
   {
     this.subscriberID = subscriberID;
     this.tenantID = tenantID;
     this.deliveryRequests = deliveryRequests;
     this.journeyHistory = journeyHistory;
+    this.lastCleaningDate = lastCleaningDate;
     this.kafkaRepresentation = null;
   }
 
@@ -136,6 +140,7 @@ public class SubscriberHistory implements StateStore
     this.subscriberID = subscriberHistory.getSubscriberID();
     this.tenantID = subscriberHistory.getTenantID();
     this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberHistory.getDeliveryRequests());
+    this.lastCleaningDate = subscriberHistory.getLastCleaningDate();
     this.kafkaRepresentation = null;
     
     //
@@ -163,6 +168,7 @@ public class SubscriberHistory implements StateStore
     struct.put("tenantID", (short)subscriberHistory.getTenantID());
     struct.put("deliveryRequests", packDeliveryRequests(subscriberHistory.getDeliveryRequests()));
     struct.put("journeyHistory", packJourneyHistory(subscriberHistory.getJourneyHistory()));
+    struct.put("lastCleaningDate", subscriberHistory.getLastCleaningDate());
     return struct;
   }
 
@@ -223,12 +229,13 @@ public class SubscriberHistory implements StateStore
     int tenantID = (schema.field("tenantID") != null) ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyHistory> journeyHistory = unpackJourneyHistory(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory"));
+    Date lastCleaningDate = (schemaVersion >= 2 && schema.field("lastCleaningDate")!=null) ? (Date) valueStruct.get("lastCleaningDate") : SystemTime.getCurrentTime();
 
     //  
     //  return
     //
 
-    return new SubscriberHistory(subscriberID, tenantID, deliveryRequests, journeyHistory);
+    return new SubscriberHistory(subscriberID, tenantID, deliveryRequests, journeyHistory, lastCleaningDate);
   }
     
   /*****************************************

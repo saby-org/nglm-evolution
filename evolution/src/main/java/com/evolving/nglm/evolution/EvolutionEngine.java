@@ -1727,7 +1727,7 @@ public class EvolutionEngine
     ****************************************/
 
     SubscriberStreamEvent evolutionEvent = evolutionHackyEvent.getOriginalEvent();
-    
+
     /****************************************
     *
     *  retrieve TenantID either from event or from SubscriberProfile
@@ -1746,11 +1746,11 @@ public class EvolutionEngine
           return null;
         }
       }
-    else 
+    else
       {
         tenantID = currentSubscriberState.getSubscriberProfile().getTenantID();
       }
-    
+
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
@@ -2280,7 +2280,7 @@ public class EvolutionEngine
   
   private static ParameterMap saveProfileSegmentChangeOldValues(SubscriberEvaluationRequest changeEventEvaluationRequest)
   {
-    if (!Deployment.getDeployment(changeEventEvaluationRequest.getTenantID()).getEnableProfileSegmentChange()) 
+    if (!Deployment.getDeployment(changeEventEvaluationRequest.getTenantID()).getEnableProfileSegmentChange())
       {
         return null;
       }
@@ -2616,7 +2616,7 @@ public class EvolutionEngine
   
   private static void updateSegmentChangeEvents(SubscriberState subscriberState, SubscriberProfile subscriberProfile, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileSegmentChangeOldValues, int tenantID)
   {    
-    if (!Deployment.getDeployment(tenantID).getEnableProfileSegmentChange()) 
+    if (!Deployment.getDeployment(tenantID).getEnableProfileSegmentChange())
       {
         return;
       }
@@ -2907,7 +2907,7 @@ public class EvolutionEngine
   private static boolean updateSubscriberProfile(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
   {
     int tenantID = context.getSubscriberState().getSubscriberProfile().getTenantID();
-    
+
     /*****************************************
     *
     *  result
@@ -3570,7 +3570,8 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),evolutionEvent.getClass().getSimpleName()).getStats().increment();
+    String eventName = (evolutionEvent instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent)evolutionEvent).getEventName() : evolutionEvent.getClass().getSimpleName();
+    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),eventName).getStats().increment();
 
     /*****************************************
     *
@@ -4651,7 +4652,6 @@ public class EvolutionEngine
     *****************************************/
 
     List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now, tenantID));
-
     // Sort journeys by priorities, and randomize those with equal priorities
 
     // 1) sort randomly
@@ -6319,11 +6319,11 @@ public class EvolutionEngine
           return currentSubscriberHistory;
       }
 
-    if (subscriberStateOutputWrapper.getOriginalEvent() instanceof TimedEvaluation && ((TimedEvaluation)subscriberStateOutputWrapper.getOriginalEvent()).getPeriodicEvaluation())
+    if (currentSubscriberHistory!=null && SystemTime.currentTimeMillis() > subscriberHistory.getLastCleaningDate().getTime() +  86_400_000/*scan for retention no more than once a day (no retention if no more event coming in)*/)
       {
-        if(currentSubscriberHistory==null) return null;//this case trigger no update into topic at all
-        subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory, subscriberStateOutputWrapper.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberHistoryUpdated;
+		subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory, subscriberStateOutputWrapper.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberHistoryUpdated;
         if(subscriberHistory.getJourneyHistory().isEmpty() && subscriberHistory.getDeliveryRequests().isEmpty()) return null;
+        subscriberHistory.setLastCleaningDate(SystemTime.getCurrentTime());
       }
 
     if (subscriberStateOutputWrapper.getSubscriberState().getDeliveryResponse()!=null)
@@ -6560,8 +6560,6 @@ public class EvolutionEngine
     if(value.getSubscriberState().getDeliveryResponse()!=null) return true;
     // to store journeyStatistic
     if(value.getSubscriberState().getJourneyStatisticWrappers()!=null && value.getSubscriberState().getJourneyStatisticWrappers().size()>0) return true;
-    // to let periodic go in history state store for data retention
-    if(value.getOriginalEvent() instanceof TimedEvaluation && ((TimedEvaluation)value.getOriginalEvent()).getPeriodicEvaluation()) return true;
     // for the cleanup
     if(value.getOriginalEvent() instanceof CleanupSubscriber) return true;
     // else filtered out

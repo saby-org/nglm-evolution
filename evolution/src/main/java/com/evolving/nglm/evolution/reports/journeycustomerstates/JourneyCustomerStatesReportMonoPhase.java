@@ -98,10 +98,21 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
               {
                 journeyInfo.put("sample", journeyStats.get("sample"));
               }
-
-            boolean statusNotified = (boolean) journeyStats.get("statusNotified");
-            boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
-            boolean statusConverted = (boolean) journeyStats.get("statusConverted");
+            boolean statusNotified = false;
+            boolean journeyComplete =false;
+            boolean statusConverted = false;
+            if (journeyStats.get("statusNotified") != null)
+              {
+                statusNotified = (boolean) journeyStats.get("statusNotified");
+              }
+            if (journeyStats.get("journeyComplete") != null)
+              {
+                journeyComplete = (boolean) journeyStats.get("journeyComplete");
+              }
+            if (journeyStats.get("statusConverted") != null)
+              {
+                statusConverted = (boolean) journeyStats.get("statusConverted");
+              }
             Boolean statusTargetGroup  = journeyStats.get("statusTargetGroup")  == null ? null : (boolean) journeyStats.get("statusTargetGroup");
             Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
             Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");

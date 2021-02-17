@@ -15,9 +15,9 @@
   "description": "",
   "editable": true,
   "gnetId": null,
-  "graphTooltip": 2,
-  "id": 38,
-  "iteration": 1606462589663,
+  "graphTooltip": 0,
+  "id": 6,
+  "iteration": 1611055677809,
   "links": [],
   "panels": [
     {
@@ -1894,7 +1894,7 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 10,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 17
@@ -1934,7 +1934,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -1943,15 +1944,24 @@
           "metrics": [
             {
               "field": "count",
+              "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.returnCode'].value == 'SUCCESS') { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'SUCCESS')) { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.returnCode'].value == 'SUCCESS') { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'SUCCESS')) { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
             }
           ],
           "query": "filter.feature:$journey AND filter.module:Journey_Manager",
@@ -1967,7 +1977,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -1976,15 +1987,24 @@
           "metrics": [
             {
               "field": "count",
+              "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.returnCode'].value == 'ERROR') { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'ERROR')){ total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.returnCode'].value == 'ERROR') { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'ERROR')){ total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
             }
           ],
           "query": "filter.feature:$journey AND filter.module:Journey_Manager",
@@ -2000,7 +2020,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -2009,15 +2030,24 @@
           "metrics": [
             {
               "field": "count",
+              "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.returnCode'].value == 'EXPIRED') { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'EXPIRED')) { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.returnCode'].value == 'EXPIRED') { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'EXPIRED')) { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
             }
           ],
           "query": "filter.feature:$journey AND filter.module:Journey_Manager",
@@ -2067,13 +2097,136 @@
       }
     },
     {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Messages",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "hiddenSeries": false,
+      "id": 51,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": false,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "filter.contactType",
+              "id": "4",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "10"
+              },
+              "type": "terms"
+            },
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "5",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": null,
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.feature:$journey AND filter.module:Journey_Manager",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Messages per contact type",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": "# contactType",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
       "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 26
       },
       "id": 45,
       "panels": [],
@@ -2092,7 +2245,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 27
       },
       "hiddenSeries": false,
       "id": 47,
@@ -2234,7 +2387,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 27
       },
       "hiddenSeries": false,
       "id": 17,
