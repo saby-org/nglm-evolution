@@ -1911,12 +1911,16 @@ public class EvaluationCriterion
     QueryBuilder insideQuery = null;
     boolean isNot = false;
     
-    switch (criterionOperator)
+    if(criterionOperator.equals(CriterionOperator.EmptyIntersectionOperator) || criterionOperator.equals(CriterionOperator.DoesNotContainOperator) || criterionOperator.equals(CriterionOperator.IsNotNullOperator))
+    	 isNot = true;
+    	switch (criterionOperator)
     {
-      case NotInSetOperator:
-        isNot = true;
-        // fallthrough
-      case IsInSetOperator:
+//      case NotInSetOperator:
+//        isNot = true;
+        // 
+      case EmptyIntersectionOperator:
+    	   NonEmptyIntersectionOperator:
+    		  
         /*
         {
           "query": {
