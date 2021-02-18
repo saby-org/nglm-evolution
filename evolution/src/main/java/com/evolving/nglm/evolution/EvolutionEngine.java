@@ -38,6 +38,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -629,6 +630,7 @@ public class EvolutionEngine
 
     Properties streamsProperties = ConfigUtils.envPropertiesWithPrefix("KAFKA_STREAMS");
     streamsProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationID);
+    streamsProperties.put(ConsumerConfig.GROUP_INSTANCE_ID_CONFIG, applicationID+"-"+evolutionEngineKey);
     streamsProperties.put(StreamsConfig.STATE_DIR_CONFIG, stateDirectory);
     streamsProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     streamsProperties.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, EvolutionEventTimestampExtractor.class.getName());

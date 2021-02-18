@@ -184,6 +184,8 @@ cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-evolutione
 #  evolutionengine
 #
 
+export EVOLUTION_ENGINE_REBALANCING_TIMEOUT_MS=${EVOLUTION_ENGINE_REBALANCING_TIMEOUT_MS:-600000}
+
 for TUPLE in $EVOLUTIONENGINE_CONFIGURATION
 do
    export KEY=`echo $TUPLE | cut -d: -f1`
