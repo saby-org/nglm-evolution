@@ -25530,10 +25530,16 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     Map<String, ResolvedFieldType> resolvedFieldTypes = new LinkedHashMap<String, ResolvedFieldType>();
     Map<String, List<JSONObject>> resolvedAvailableValues = new LinkedHashMap<String, List<JSONObject>>();
+    Map<ResolvedFieldType, ResolvedFieldType> resolvedFieldsTypesMap = new HashMap<>(); // no this is not rubish, this is to ensure we play always with the same instance...
     for (CriterionField criterionField : criterionFields.values())
       {
         List<JSONObject> availableValues = evaluateAvailableValues(criterionField, now, true);
-        resolvedFieldTypes.put(criterionField.getID(), new ResolvedFieldType(criterionField.getFieldDataType(), availableValues));
+        ResolvedFieldType resolvedFieldTypeInstance = resolvedFieldsTypesMap.get(new ResolvedFieldType(criterionField.getFieldDataType(), availableValues));
+        if(resolvedFieldTypeInstance == null) {
+          resolvedFieldTypeInstance = new ResolvedFieldType(criterionField.getFieldDataType(), availableValues);
+          resolvedFieldsTypesMap.put(resolvedFieldTypeInstance, resolvedFieldTypeInstance);
+        }
+        resolvedFieldTypes.put(criterionField.getID(), resolvedFieldTypeInstance);
         resolvedAvailableValues.put(criterionField.getID(), availableValues);
       }
 
@@ -25598,42 +25604,33 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             if (currentGroups != null)
               {
 
+                ResolvedFieldType resolvedFieldType = resolvedFieldsTypesMap.get(resolvedFieldTypes.get(criterionField.getID()));
+                List<JSONObject> singleton = resolvedFieldType.getAssociatedGroup();
                 List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
-                List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
-
-                
-                
-                
-                
-                
-                // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field
-                // criterionFieldJSON.put("singletonComparableFields", singleton);
-
-                // known group ?
-                String groupID = null;
-                for (String existingGroupID : currentGroups.keySet())
+                if(singleton == null)
                   {
-                    List<JSONObject> group = currentGroups.get(existingGroupID);
-                    // is group the same list as singleton ?
-                    if (singleton.size() != group.size()) continue; // cannot be the same
-                    // TODO should be able to optimize next line
-                    if (!singleton.containsAll(group)) continue;
-                    groupID = existingGroupID;
-                    break;
-                  }
-                if (groupID == null)
-                  {
-                    groupID = ""+nextGroupID;
-                    log.trace("Found new group : "+groupID+" with "+singleton.size()+" elements");
-                    currentGroups.put(groupID, singleton);
+                    // create the group for this ResolvedFieldType
+                    singleton = new ArrayList<>();
+                    resolvedFieldType.setAssociatedGroup(singleton);
+                    resolvedFieldType.setAssociatedGroupID(nextGroupID);
+                    currentGroups.put(""+nextGroupID, singleton);
                     nextGroupID++;
+                    for(CriterionField comparableField : defaultComparableFields)
+                      {
+                        JSONObject j = new JSONObject();
+                        j.put("id", comparableField.getID());
+                        j.put("display", comparableField.getDisplay());
+                        singleton.add(j);                        
+                      }
                   }
-                criterionFieldJSON.put("singletonComparableFieldsGroup", groupID);
-                criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
+                criterionFieldJSON.put("singletonComparableFieldsGroup", ""+resolvedFieldType.getAssociatedGroupID());
               }
             
             criterionFieldJSON.remove("includedComparableFields");
             criterionFieldJSON.remove("excludedComparableFields");
+            criterionFieldJSON.remove("epoch");
+            criterionFieldJSON.remove("updatedDate");
+            criterionFieldJSON.remove("createdDate");
 
             //
             //  evaluate available values for reference data
@@ -25803,67 +25800,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       }
 
     //
-    //  find list of explicitly included fields
-    //
-
-    List<String> requestedIncludedComparableFieldIDs = null;
-    if (criterionFieldJSON.get("includedComparableFields") != null)
-      {
-        requestedIncludedComparableFieldIDs = new ArrayList<String>();
-        for (String comparableField : comparableFields.keySet())
-          {
-            for (String fieldRegex : (List<String>) criterionFieldJSON.get("includedComparableFields"))
-              {
-                Pattern pattern = Pattern.compile("^" + fieldRegex + "$");
-                if (pattern.matcher(comparableField).matches())
-                  {
-                    requestedIncludedComparableFieldIDs.add(comparableField);
-                    break;
-                  }
-              }
-          }
-      }
-
-    //
-    //  find list of explicitly excluded fields
-    //
-
-    List<String> requestedExcludedComparableFieldIDs = null;
-    if (criterionFieldJSON.get("excludedComparableFields") != null)
-      {
-        requestedExcludedComparableFieldIDs = new ArrayList<String>();
-        for (String comparableField : comparableFields.keySet())
-          {
-            for (String fieldRegex : (List<String>) criterionFieldJSON.get("excludedComparableFields"))
-              {
-                Pattern pattern = Pattern.compile("^" + fieldRegex + "$");
-                if (pattern.matcher(comparableField).matches())
-                  {
-                    requestedExcludedComparableFieldIDs.add(comparableField);
-                    break;
-                  }
-              }
-          }
-      }
-
-    //
     //  resolve included/excluded fields
     //
 
-    List<String> includedComparableFieldIDs = requestedIncludedComparableFieldIDs != null ? requestedIncludedComparableFieldIDs : new ArrayList<String>(comparableFields.keySet());
-    Set<String> excludedComparableFieldIDs = requestedExcludedComparableFieldIDs != null ? new LinkedHashSet<String>(requestedExcludedComparableFieldIDs) : new HashSet<String>();
-
-    //
-    //  always exclude internal-only fields
-    //
-
-    for (CriterionField criterionField : comparableFields.values())
-      {
-        if (criterionField.getInternalOnly())
-          {
-            excludedComparableFieldIDs.add(criterionField.getID());
-          }
-      }
+    List<String> includedComparableFieldIDs = new ArrayList<String>(comparableFields.keySet());
 
     //
     //  evaluate
@@ -25873,7 +25813,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     for (String comparableFieldID : includedComparableFieldIDs)
       {
         CriterionField criterionField = comparableFields.get(comparableFieldID);
-        if ((!excludedComparableFieldIDs.contains(comparableFieldID)) && (singleton == criterionField.getFieldDataType().getSingletonType()))
+        if (singleton == criterionField.getFieldDataType().getSingletonType())
           {
             HashMap<String,Object> comparableFieldJSON = new HashMap<String,Object>();
             comparableFieldJSON.put("id", criterionField.getID());
@@ -28317,6 +28257,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     private CriterionDataType dataType;
     private Set<JSONObject> availableValues;
+    private List<JSONObject> associatedGroup; 
+    private int associatedGroupID;
 
     //
     //  accessors
@@ -28324,6 +28266,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     CriterionDataType getDataType() { return dataType; }
     Set<JSONObject> getAvailableValues() { return availableValues; }
+    List<JSONObject> getAssociatedGroup() { return associatedGroup; }
+    int getAssociatedGroupID() { return associatedGroupID; }
+    
+    void setAssociatedGroup(List<JSONObject> associatedGroup) { this.associatedGroup = associatedGroup; }
+    void setAssociatedGroupID(int associatedGroupID) { this.associatedGroupID = associatedGroupID; }
 
     //
     //  constructor
