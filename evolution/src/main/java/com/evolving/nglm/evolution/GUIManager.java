@@ -754,18 +754,12 @@ public class GUIManager
     *
     *****************************************/
 
-    String apiProcessKey = args[0];
-    String bootstrapServers = args[1];
-    int apiRestPort = parseInteger("apiRestPort", args[2]);
-    String elasticsearchServerHost = args[3];
-    int elasticsearchServerPort = parseInteger("elasticsearchServerPort", args[4]);
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("GUIManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("GUIManager").getQueryTimeout();
-    String userName = args[5];
-    String userPassword = args[6];
+    int apiRestPort = Integer.parseInt(args[0]);
     
     String nodeID = System.getProperty("nglm.license.nodeid");
 
+    String bootstrapServers = Deployment.getBrokerServers();
+	String apiProcessKey = "NOT_USED";
     String dynamicCriterionFieldTopic = Deployment.getDynamicCriterionFieldTopic();
     String journeyTopic = Deployment.getJourneyTopic();
     String journeyTemplateTopic = Deployment.getJourneyTemplateTopic();
@@ -817,7 +811,7 @@ public class GUIManager
     //  log
     //
 
-    log.info("main START: {} {} {} {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, elasticsearchServerHost, elasticsearchServerPort, nodeID, journeyTopic, segmentationDimensionTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic, subscriberMessageTemplateTopic);
+    log.info("main START: on port {}", apiRestPort);
 
     //
     //  license
@@ -865,7 +859,7 @@ public class GUIManager
 
     try
     {
-      elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
+      elasticsearch = new ElasticsearchClientAPI("GUIManager");
     }
     catch (ElasticsearchException e)
     {
@@ -1024,7 +1018,7 @@ public class GUIManager
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
-    deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
+    deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice", deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
     voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
@@ -2448,26 +2442,6 @@ public class GUIManager
 
       if (kafkaProducer != null) kafkaProducer.close();
     }
-  }
-
-  /*****************************************
-  *
-  *  parseInteger
-  *
-  *****************************************/
-
-  private int parseInteger(String field, String stringValue)
-  {
-    int result = 0;
-    try
-      {
-        result = Integer.parseInt(stringValue);
-      }
-    catch (NumberFormatException e)
-      {
-        throw new ServerRuntimeException("bad " + field + " argument", e);
-      }
-    return result;
   }
 
   /*****************************************

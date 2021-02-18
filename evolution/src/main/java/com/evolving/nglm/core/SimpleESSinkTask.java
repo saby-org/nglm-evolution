@@ -57,24 +57,18 @@ public abstract class SimpleESSinkTask extends SinkTask
   //
 
   protected static final Logger log = LoggerFactory.getLogger(SimpleESSinkTask.class);
-  private static int ConsecutiveRetryLimit = 20;
   
   //
   //  configuration
   //
 
   private String connectorName = null;
-  private String connectionHost = null;
-  private int connectionPort;
-  private String connectionUserName = null;
-  private String connectionUserPassword = null;
   private String indexName = null;
   private String pipelineName = null;    
   private int batchRecordCount;
   private long batchSize;
-  private int connectTimeout;
-  private int queryTimeout;
   private long closeTimeout;
+  private int retries;
   private int taskNumber;
 
   /*****************************************
@@ -140,19 +134,15 @@ public abstract class SimpleESSinkTask extends SinkTask
     *****************************************/
 
     connectorName = taskConfig.get("connectorName");
-    connectionHost = taskConfig.get("connectionHost");
-    connectionPort = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("connectionPort"));
-    connectionUserName = taskConfig.get("connectionUserName");
-    connectionUserPassword = taskConfig.get("connectionUserPassword");
     indexName = taskConfig.get("indexName");
     pipelineName = taskConfig.get("pipelineName");    
     batchRecordCount = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("batchRecordCount"));
     batchSize = SimpleESSinkConnector.parseLongConfig(taskConfig.get("batchSize"));
-    connectTimeout = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("connectTimeout"));
-    queryTimeout = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("queryTimeout"));
     closeTimeout = SimpleESSinkConnector.parseLongConfig(taskConfig.get("closeTimeout"));
+    retries = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("retries"));
     taskNumber = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("taskNumber"));
-    log.info("{} -- indexName: {}, connectionHost: {}, connectionPort: {}, connectionUserName: {}, connectionUserPassword: ********, batchRecordCount: {}, batchSize: {}, connectTimeout: {}, queryTimeout {}, closeTimeout: {}", connectorName, indexName, pipelineName, connectionHost, connectionPort, connectionUserName, batchRecordCount, batchSize, connectTimeout, queryTimeout, closeTimeout);
+    log.info("{} -- indexName: {}, pipelineName: {}, batchRecordCount: {}, batchSize: {}, closeTimeout: {}",
+            connectorName, indexName, pipelineName, batchRecordCount, batchSize, closeTimeout);
 
     /*****************************************
     *
@@ -162,7 +152,8 @@ public abstract class SimpleESSinkTask extends SinkTask
 
     try
       {
-        client = new ElasticsearchClientAPI(connectionHost, connectionPort, connectTimeout*1000, queryTimeout*1000, connectionUserName, connectionUserPassword);
+
+        client = new ElasticsearchClientAPI(connectorName);
 
         //
         //  bulkProcessor
@@ -200,7 +191,7 @@ public abstract class SimpleESSinkTask extends SinkTask
     *
     ****************************************/
 
-    if (bulkFailure != null) handleBulkFailure();
+    handleBulkFailure();
 
     /****************************************
     *
@@ -250,7 +241,7 @@ public abstract class SimpleESSinkTask extends SinkTask
     //  handle any failures
     //
 
-    if (bulkFailure != null) handleBulkFailure();
+    handleBulkFailure();
   }
 
   /*****************************************
@@ -277,9 +268,9 @@ public abstract class SimpleESSinkTask extends SinkTask
         //
 
         ConnectException connectException;
-        if (retry && consecutiveRetriableExceptionCount <= ConsecutiveRetryLimit)
+        if (retry && consecutiveRetriableExceptionCount <= retries)
           {
-            connectException = new RetriableException(connectorName + " -- bulk request failure", bulkFailure);
+            connectException = new RetriableException(connectorName + " -- bulk request failure "+consecutiveRetriableExceptionCount, bulkFailure);
             consecutiveRetriableExceptionCount += 1;
           }
         else
@@ -293,7 +284,11 @@ public abstract class SimpleESSinkTask extends SinkTask
         
         bulkFailure = null;
         throw connectException;
-      }    
+      }
+    else
+      {
+        consecutiveRetriableExceptionCount = 0;
+      }
   }
 
   /*****************************************
@@ -333,7 +328,7 @@ public abstract class SimpleESSinkTask extends SinkTask
             
     try
       {
-        if (client != null) client.close();
+        if (client != null) client.closeCleanly();
       }
     catch (IOException e)
       {

@@ -1,9 +1,7 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -17,12 +15,10 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.*;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.client.sniff.Sniffer;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -87,21 +83,21 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     }
     return "journeystatistic-" + journeyID.toLowerCase(); // same rule as JourneyStatisticESSinkConnector
   }
-  
+
   /*****************************************
   *
   * Constructor wrapper (because super() must be the first statement in a constructor)
   *
   *****************************************/
-  private static RestClientBuilder initRestClientBuilder(String serverHost, int serverPort, int connectTimeoutInMs, int queryTimeoutInMs, String userName, String userPassword) {
-    RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(serverHost, serverPort, "http"));
+  private static RestClientBuilder initRestClientBuilder(ElasticsearchConnectionSettings elasticsearchConnectionSettings) {
+    RestClientBuilder restClientBuilder = RestClient.builder(elasticsearchConnectionSettings.getHosts());
     restClientBuilder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback()
     {
       @Override
       public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder)
       {
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(userName, userPassword));
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(elasticsearchConnectionSettings.getUser(), elasticsearchConnectionSettings.getPassword()));
         return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
       }
     });
@@ -110,20 +106,51 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     {
       @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
       {
-        return requestConfigBuilder.setConnectTimeout(connectTimeoutInMs).setSocketTimeout(queryTimeoutInMs);
+        return requestConfigBuilder.setConnectTimeout(elasticsearchConnectionSettings.getConnectTimeout()).setSocketTimeout(elasticsearchConnectionSettings.getQueryTimeout());
       }
     });
     
     return restClientBuilder;
   }
+
+  public static HttpHost[] parseServersConf(String servers) throws IllegalArgumentException {
+
+    if (servers == null || servers.trim().isEmpty()) throw new IllegalArgumentException("bad servers conf for "+servers);
+
+    List<HttpHost> toRet = new ArrayList<>();
+    for(String serverString:servers.trim().split(",")) {
+      String[] server = serverString.split(":");
+      if(server.length!=2) throw new IllegalArgumentException("bad server conf for "+server);
+      try { toRet.add(new HttpHost(server[0],Integer.valueOf(server[1]),"http")); }
+      catch (NumberFormatException e) { throw new IllegalArgumentException("bad server port conf for "+server); }
+    }
+
+    return toRet.toArray(new HttpHost[toRet.size()]);
+
+  }
+
+  private Sniffer sniffer;// can be null if targeting only 1 host;
   
   /*****************************************
   *
-  * Constructor
+  * Constructors
   *
   *****************************************/
-  public ElasticsearchClientAPI(String serverHost, int serverPort, int connectTimeoutInMs, int queryTimeoutInMs, String userName, String userPassword) throws ElasticsearchStatusException, ElasticsearchException {
-    super(initRestClientBuilder(serverHost, serverPort, connectTimeoutInMs, queryTimeoutInMs, userName, userPassword));
+  public ElasticsearchClientAPI(String connectionSettingsConfigName) throws ElasticsearchStatusException, ElasticsearchException {
+    this(connectionSettingsConfigName,false);
+  }
+  public ElasticsearchClientAPI(String connectionSettingsConfigName, boolean forConnect/*this as a special default*/) throws ElasticsearchStatusException, ElasticsearchException {
+    super(initRestClientBuilder(Deployment.getElasticsearchConnectionSettings(connectionSettingsConfigName, forConnect)));
+    if(Deployment.getElasticsearchConnectionSettings(connectionSettingsConfigName, forConnect).getHosts().length>1) sniffer = Sniffer.builder(this.getLowLevelClient()).build();//if only 1 host provided, we do not put Sniffer (to keep the previous behavior ESRouter only)
+    log.info("new ElasticsearchClientAPI created from elasticsearchConnectionSetting "+connectionSettingsConfigName);
+  }
+
+  // this is dirty, but could not find a clean way to intercept the super close call (can not just override super method)
+  // anyway I don't think there is much valid reason to have instances with lifetime smaller than jvm, if so it need to be closed using this one
+  // ( so CAN NOT BE USED in a try-with-resources statement )
+  public void closeCleanly() throws IOException {
+    if(sniffer!=null) sniffer.close();
+    super.close();
   }
   
   /*****************************************

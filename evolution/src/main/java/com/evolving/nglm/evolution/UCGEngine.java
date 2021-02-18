@@ -197,16 +197,10 @@ public class UCGEngine
     *
     *  initialize elastic search rest client 
     *****************************************/
-    String elasticsearchServerHost = args[2];
-    Integer elasticsearchServerPort = Integer.parseInt(args[3]);
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("UCGEngine").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("UCGEngine").getQueryTimeout();
-    String userName = args[4];
-    String userPassword = args[5];
     
     try
       {
-        elasticsearchRestClient = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
+        elasticsearchRestClient = new ElasticsearchClientAPI("UCGEngine");
         subscriberGroupField = CriterionContext.Profile.getCriterionFields().get("subscriber.segments").getESField();
       }
     catch (ElasticsearchException e)

@@ -54,13 +54,15 @@
   "elasticsearchScrollSize" : 1000,
   "elasticsearchConnectionSettings" :
     [
-      { "id" : "DatacubeManager",            "connectTimeout" : 30000, "queryTimeout" : 900000 },
-      { "id" : "GUIManager",                 "connectTimeout" : 30000, "queryTimeout" : 7200000 },
-      { "id" : "PreprocessorEngine",         "connectTimeout" : 30000, "queryTimeout" : 60000 },
-      { "id" : "PurchaseFulfillmentManager", "connectTimeout" : 30000, "queryTimeout" : 60000 },
-      { "id" : "ReportManager",              "connectTimeout" : 30000, "queryTimeout" : 60000 },
-      { "id" : "ThirdPartyManager",          "connectTimeout" : 30000, "queryTimeout" : 60000 },
-      { "id" : "UCGEngine",                  "connectTimeout" : 30000, "queryTimeout" : 60000 }
+      { "id" : "default",                    "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "connectDefault",             "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "DatacubeManager",            "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 900000 },
+      { "id" : "GUIManager",                 "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 7200000 },
+      { "id" : "PreprocessorEngine",         "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "PurchaseFulfillmentManager", "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "ReportManager",              "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "ThirdPartyManager",          "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "UCGEngine",                  "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 }
     ],
   "elasticSearchScrollKeepAlive" : 60,
   

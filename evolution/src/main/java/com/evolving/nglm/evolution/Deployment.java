@@ -45,10 +45,6 @@ public class Deployment
   //  data
   //
 
-  private static String elasticSearchHost;
-  private static int elasticSearchPort;
-  private static String elasticSearchUserName;
-  private static String elasticSearchUserPassword;
   private static int topicSubscriberPartitions;
   private static int topicReplication;
   private static String topicMinInSyncReplicas;
@@ -302,10 +298,6 @@ public class Deployment
   //  evolution accessors
   //
 
-  public static String getElasticSearchHost() { return elasticSearchHost; }
-  public static int getElasticSearchPort() { return elasticSearchPort; }
-  public static String getElasticSearchUserName() { return  elasticSearchUserName; }
-  public static String getElasticSearchUserPassword() { return  elasticSearchUserPassword; }
   public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
   public static int getTopicSubscriberPartitions() { return topicSubscriberPartitions; }
@@ -473,7 +465,14 @@ public class Deployment
   public static String getDynamicCriterionFieldTopic() { return dynamicCriterionFieldsTopic; }
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
-  public static Map<String,ElasticsearchConnectionSettings> getElasticsearchConnectionSettings() { return elasticsearchConnectionSettings; }
+  public static ElasticsearchConnectionSettings getElasticsearchConnectionSettings(String name, boolean forConnect) {
+    ElasticsearchConnectionSettings toRet = elasticsearchConnectionSettings.get(name);
+    if(toRet==null) {
+      if(forConnect) return elasticsearchConnectionSettings.get("connectDefault");
+      toRet = elasticsearchConnectionSettings.get("default");
+    }
+    return toRet;
+  }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
@@ -737,19 +736,6 @@ public class Deployment
        *  configuration
        *
        *****************************************/
-
-      elasticSearchHost = System.getenv("ELASTICSEARCH_HOST");
-      elasticSearchPort = -1;
-      try
-        {
-          elasticSearchPort = Integer.parseInt(System.getenv("ELASTICSEARCH_PORT"));
-        }
-      catch (NumberFormatException e)
-        {
-          log.info("deployment : can not get/parse env conf ELASTICSEARCH_PORT");
-        }
-      elasticSearchUserName = System.getenv("ELASTICSEARCH_USERNAME");
-      elasticSearchUserPassword = System.getenv("ELASTICSEARCH_USERPASSWORD");
 
       //
       // kafka topics configuration
@@ -1942,7 +1928,7 @@ public class Deployment
           }
           
         }
-      catch (JSONUtilitiesException e)
+      catch (JSONUtilitiesException|IllegalArgumentException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
