@@ -26,6 +26,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.retention.Cleanable;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -158,8 +159,7 @@ public class JourneyState implements Cleanable
 
   public void setJourneyNodeID(String journeyNodeID, Date journeyNodeEntryDate) { this.journeyNodeID = journeyNodeID; this.journeyNodeEntryDate = journeyNodeEntryDate; this.journeyOutstandingDeliveryRequestID = null; }
   public void setJourneyOutstandingDeliveryRequestID(String journeyOutstandingDeliveryRequestID) { this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID; }
-  public void setsourceFeatureID(String sourceFeatureID) { this.sourceFeatureID = sourceFeatureID; };
-  public void setJourneyExitDate(Date journeyExitDate) { this.journeyExitDate = journeyExitDate; }
+  public void setsourceFeatureID(String sourceFeatureID) { this.sourceFeatureID = sourceFeatureID; }
   public void setJourneyCloseDate(Date journeyCloseDate) { this.journeyCloseDate = journeyCloseDate; }
 
   @Override 
@@ -173,6 +173,39 @@ public class JourneyState implements Cleanable
   @Override 
   public Duration getRetention(RetentionType type, RetentionService retentionService) {
     return retentionService.getJourneyRetention(type,getJourneyID());
+  }
+
+  /*****************************************
+  *
+  *  exitJourney
+  *
+  *****************************************/
+
+  /**
+   * @return true if subscriber state has been updated
+   */
+  public boolean setJourneyExitDate(Date journeyExitDate, SubscriberState subscriberState, Journey journey, EvolutionEventContext context) 
+  { 
+    this.journeyExitDate = journeyExitDate; 
+    
+    //
+    // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
+    //
+    
+    if(journey == null) {
+      return false;
+    } 
+    else if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign && journey.getFullStatistics()) {
+      boolean statusUpdated = this.populateMetricsDuring(subscriberState);
+      
+      // Create a JourneyMetric to be added to JourneyStatistic from journeyState
+      subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), this));
+      
+      return statusUpdated;
+    } 
+    else { 
+      return false;
+    }
   }
 
   /*****************************************
@@ -427,7 +460,9 @@ public class JourneyState implements Cleanable
 
   /**
    * populate journeyMetrics (post)
-   * @return true if subscriber state has been updated
+   * @return true if subscriber state has been updated 
+   *         (WARNING: here we return true if the post date is in the past, even if there is no journeyMetric (and therefore 
+   *         no modification of SubscriberState), because it is needed by the caller)
    */
   public boolean populateMetricsPost(SubscriberState subscriberState, Date now) 
   {
@@ -437,11 +472,12 @@ public class JourneyState implements Cleanable
     Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, Deployment.getJourneyMetricConfiguration().getPostPeriodDays(), Deployment.getBaseTimeZone());
     
     if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getBaseTimeZone()))) {
+      subscriberStateUpdated = true;
+      
       for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
         MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
         long postMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
         this.getJourneyMetricsPost().put(journeyMetricDeclaration.getID(), postMetricValue);
-        subscriberStateUpdated = true;
       }
     }
     
