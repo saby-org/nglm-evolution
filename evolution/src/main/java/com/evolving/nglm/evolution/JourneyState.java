@@ -412,6 +412,10 @@ public class JourneyState implements Cleanable
    */
   public boolean populateMetricsPrior(SubscriberState subscriberState) 
   {
+    if(!Deployment.getJourneyMetricConfiguration().isEnabled()) {
+      return false;
+    }
+    
     boolean subscriberStateUpdated = false;
     Date journeyEntryDay = RLMDateUtils.truncate(this.getJourneyEntryDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * Deployment.getJourneyMetricConfiguration().getPriorPeriodDays(), Deployment.getBaseTimeZone());
@@ -440,6 +444,10 @@ public class JourneyState implements Cleanable
    */
   public boolean populateMetricsDuring(SubscriberState subscriberState) 
   {
+    if(!Deployment.getJourneyMetricConfiguration().isEnabled()) {
+      return false;
+    }
+    
     boolean subscriberStateUpdated = false;
     for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
       MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
@@ -466,6 +474,10 @@ public class JourneyState implements Cleanable
    */
   public boolean populateMetricsPost(SubscriberState subscriberState, Date now) 
   {
+    if(!Deployment.getJourneyMetricConfiguration().isEnabled()) {
+      return true; // Special case, because we want to close the journey
+    }
+    
     boolean subscriberStateUpdated = false;
     Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getBaseTimeZone());

@@ -40,6 +40,8 @@ public class Deployment
   //
 
   private static final Logger log = LoggerFactory.getLogger(Deployment.class);
+  private static boolean loaded; // If the java class is statically loaded 
+  public static boolean isDeploymentLoaded() { return loaded; }
 
   //
   //  data
@@ -2380,19 +2382,37 @@ public class Deployment
       try
         {
           JSONObject journeyMetricConfigurationJSON = (JSONObject) jsonRoot.get("journeyMetrics");
-          int priorPeriodDays = JSONUtilities.decodeInteger(journeyMetricConfigurationJSON, "priorPeriodDays", true);
-          int postPeriodDays = JSONUtilities.decodeInteger(journeyMetricConfigurationJSON, "postPeriodDays", true);
-          Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
-          
-          JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(journeyMetricConfigurationJSON, "metrics", new JSONArray());
-          for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
-            {
-              JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
-              JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
-              journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+          if( journeyMetricConfigurationJSON.isEmpty() ) {
+            // JourneyMetric are therefore disabled
+            journeyMetricConfiguration = new JourneyMetricConfiguration();
+          } else {
+            int priorPeriodDays = JSONUtilities.decodeInteger(journeyMetricConfigurationJSON, "priorPeriodDays", true);
+            if(priorPeriodDays < 1) {
+              throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'priorPeriodDays' field cannot be negative or null.");
             }
-          
-          journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
+            
+            int postPeriodDays = JSONUtilities.decodeInteger(journeyMetricConfigurationJSON, "postPeriodDays", true);
+            if(postPeriodDays < 1) {
+              throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'postPeriodDays' field cannot be negative or null.");
+            }
+            
+            Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
+            
+            JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(journeyMetricConfigurationJSON, "metrics", new JSONArray());
+            if(journeyMetricDeclarationValues.isEmpty()) {
+              // JourneyMetric are therefore disabled
+              journeyMetricConfiguration = new JourneyMetricConfiguration();
+            } else {
+              for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
+                {
+                  JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
+                  JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
+                  journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+                }
+              
+              journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
+            }
+          }
         }
       catch (JSONUtilitiesException e)
         {
@@ -3338,7 +3358,13 @@ public class Deployment
             allTopics.put(declaration.getPreprocessTopic().getName(),declaration.getPreprocessTopic());
           }
         }
-
+      
+      
+      
+      //
+      // End of initialization 
+      //
+      loaded = true;
     }
 
   /*****************************************

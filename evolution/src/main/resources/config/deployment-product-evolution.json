@@ -1213,7 +1213,7 @@
       { "id" : "product.validity",        "display" : "Product Validity(days)",   "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                         "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" }
     ],
     
-    "journeyMetrics" : [],
+    "journeyMetrics" : {},
     
     "subscriberProfileDatacubeMetrics" : [],
     
