@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
@@ -153,6 +154,7 @@ public class LoyaltyProgramService extends GUIService
   {
     JSONObject responseJSON = super.generateResponseJSON(guiManagedObject, fullDetails, date);
     int tierCount = 0;
+    int levelCount = 0;
     if (guiManagedObject instanceof LoyaltyProgramPoints)
       {
         LoyaltyProgramPoints lp = (LoyaltyProgramPoints) guiManagedObject;
@@ -162,7 +164,17 @@ public class LoyaltyProgramService extends GUIService
             tierCount = tiers.size();
           }
       }
+    else if (guiManagedObject instanceof LoyaltyProgramChallenge)
+      {
+        LoyaltyProgramChallenge lc = (LoyaltyProgramChallenge) guiManagedObject;
+        List<ChallengeLevel> challengeLevels = lc.getLevels();
+        if (challengeLevels != null)
+          {
+            levelCount = challengeLevels.size();
+          }
+      }
     responseJSON.put("tierCount", tierCount);
+    responseJSON.put("levelCount", levelCount);
     return responseJSON;
   }
 

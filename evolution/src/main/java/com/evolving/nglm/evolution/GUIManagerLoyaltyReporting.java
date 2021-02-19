@@ -528,10 +528,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     loyaltyProgram = new LoyaltyProgramChallenge(elementRoot, epoch, existingElement, catalogCharacteristicService);
                     break;
 
-                  // case BADGES:
-                  // // TODO
-                  // break;
-
                   case Unknown:
                     throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", false));
                 }
@@ -626,9 +622,12 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     for (GUIManagedObject loyaltyProgram : loyaltyProgramObjects)
       {
         JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, now);
+        boolean recurrence = JSONUtilities.decodeBoolean(loyaltyProFull, "recurrence", Boolean.FALSE);
+        
         if (loyaltyProgramType == LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType")))
           {
             JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
+            loyaltyPro.put("recurrence", recurrence);
             try
               {
                 long membersCount = this.elasticsearch.getLoyaltyProgramCount(loyaltyProgram.getGUIManagedObjectID());
