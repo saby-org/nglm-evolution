@@ -19746,17 +19746,12 @@ public class GUIManager
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
                 
                 //
-                //  journey statistics from ES
+                //  journeys
                 //
                 
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerAvailableCampaigns, subscriberID, null, new ArrayList<QueryBuilder>());
-                List<SearchHit> hits = getESHits(searchRequest);
-                List<String> enteredJourneysID = new ArrayList<String>(hits.size());
-                for (SearchHit hit : hits)
-                  {
-                    Map<String, Object> esFields = hit.getSourceAsMap();
-                    enteredJourneysID.add((String) esFields.get("journeyID"));
-                  }
+                List<String> enteredJourneysID = new ArrayList<String>();
+                enteredJourneysID.addAll(subscriberProfile.getSubscriberJourneys().keySet());
+                enteredJourneysID.addAll(subscriberProfile.getSubscriberJourneysEnded().keySet()); // double check
                 
                 //
                 //  read the active journeys
@@ -30579,10 +30574,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         index = JourneyCustomerStatisticsReportDriver.JOURNEY_ES_INDEX + "*";
         break;
         
-      case getCustomerAvailableCampaigns:
-        index = JourneyCustomerStatisticsReportDriver.JOURNEY_ES_INDEX + "*";
-        break;
-
       default:
         break;
     }
