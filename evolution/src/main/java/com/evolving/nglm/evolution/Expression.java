@@ -2907,21 +2907,21 @@ public abstract class Expression
         case FirstWordFunction:
           if (words.length < 1) {
             log.info("Not enough words in " + phrase + " for " + function.getFunctionName());
-            throw new ExpressionEvaluationException();
+            res = ""; // EVPRO-880 return empty string if not enough words in argument
           } else
             res = words[0];
           break;
         case SecondWordFunction:
           if (words.length < 2) {
             log.info("Not enough words in " + phrase + " for " + function.getFunctionName());
-            throw new ExpressionEvaluationException();
+            res = ""; // EVPRO-880 return empty string if not enough words in argument
           } else
             res = words[1];
           break;
         case ThirdWordFunction:
           if (words.length < 3) {
             log.info("Not enough words in " + phrase + " for " + function.getFunctionName());
-            throw new ExpressionEvaluationException();
+            res = ""; // EVPRO-880 return empty string if not enough words in argument
           } else
             res = words[2];
           break;
