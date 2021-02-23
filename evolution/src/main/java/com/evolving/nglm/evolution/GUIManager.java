@@ -26164,25 +26164,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 }
             }
           break;
-          
-        case "deliverableINCreditIds":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
-                {
-                  if (deliverablesUnchecked.getAccepted())
-                    {
-                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
-                      if (deliverable.getGeneratedFromAccount()) {                      
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", deliverable.getGUIManagedObjectID());
-                      availableValue.put("display", deliverable.getGUIManagedObjectDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                      }
-                    }
-                }
-            }
-          break;
 
         case "deliverableNames":
           if (includeDynamic)
