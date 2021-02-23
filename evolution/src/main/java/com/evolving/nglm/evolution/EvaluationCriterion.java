@@ -1911,7 +1911,7 @@ public class EvaluationCriterion
     QueryBuilder insideQuery = null;
     boolean isNot = false;
    System.out.println("criteria operator:"+criterionOperator); 
-    if(criterionOperator.equals(CriterionOperator.EmptyIntersectionOperator) || criterionOperator.equals(CriterionOperator.DoesNotContainOperator) || criterionOperator.equals(CriterionOperator.IsNotNullOperator))
+    if(criterionOperator.equals(CriterionOperator.EmptyIntersectionOperator))
     	 isNot = true;
     	switch (criterionOperator)
     {
