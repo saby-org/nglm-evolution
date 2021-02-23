@@ -1910,16 +1910,16 @@ public class EvaluationCriterion
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;
     boolean isNot = false;
-    
-    if(criterionOperator.equals(CriterionOperator.EmptyIntersectionOperator) || criterionOperator.equals(CriterionOperator.DoesNotContainOperator) || criterionOperator.equals(CriterionOperator.IsNotNullOperator))
-    	 isNot = true;
+   System.out.println("criteria operator:"+criterionOperator); 
+//    if(criterionOperator.equals(CriterionOperator.EmptyIntersectionOperator) || criterionOperator.equals(CriterionOperator.DoesNotContainOperator) || criterionOperator.equals(CriterionOperator.IsNotNullOperator))
+//    	 isNot = true;
     	switch (criterionOperator)
     {
 //      case NotInSetOperator:
 //        isNot = true;
         // 
       case EmptyIntersectionOperator:
-    	   NonEmptyIntersectionOperator:
+      case NonEmptyIntersectionOperator:
     		  
         /*
         {
@@ -1974,11 +1974,13 @@ public class EvaluationCriterion
         insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
         break;
       }
+    	
     query = QueryBuilders.nestedQuery("subscriberJourneys", insideQuery, ScoreMode.Total);
     if (isNot)
       {
         query = QueryBuilders.boolQuery().mustNot(query);
       }
+    System.out.println("query is:"+query.toString());
     return query;
   }
 
