@@ -2250,6 +2250,8 @@ public class EvaluationCriterion
 
       case IsInSetOperator:
       case NotInSetOperator:
+      case EmptyIntersectionOperator:
+      case NonEmptyIntersectionOperator:
         /*
 {
   "query": {
