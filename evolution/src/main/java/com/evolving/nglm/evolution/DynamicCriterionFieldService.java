@@ -229,19 +229,24 @@ public class DynamicCriterionFieldService extends GUIService
   public void removeLoyaltyProgramCriterionFields(GUIManagedObject loyaltyProgram)
   {
     String prefix = "loyaltyprogram" + "." + loyaltyProgram.getGUIManagedObjectID() + ".";
-    removeDynamicCriterionField(prefix + "tier", null);
-    removeDynamicCriterionField(prefix + "rewardpoint.balance", null);
-    removeDynamicCriterionField(prefix + "statuspoint.balance", null);
-    
     if (loyaltyProgram instanceof LoyaltyProgramPoints)
       {
         LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+        
+        removeDynamicCriterionField(prefix + "tier", null);
+        removeDynamicCriterionField(prefix + "rewardpoint.balance", null);
+        removeDynamicCriterionField(prefix + "statuspoint.balance", null);
         String statusPointID = loyaltyProgramPoints.getStatusPointsID();
         String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
         removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpirydate", null);
         removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpirydate", null);
         removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpiryquantity", null);
         removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpiryquantity", null);
+      }
+    else if (loyaltyProgram instanceof LoyaltyProgramChallenge)
+      {
+        removeDynamicCriterionField(prefix + "level", null);
+        removeDynamicCriterionField(prefix + "score.balance", null);
       }
   }
 
