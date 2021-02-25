@@ -2278,7 +2278,7 @@ public class GUIManager
     long uniqueID = 0;
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
-    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob(uniqueID++, "Challenges Occurrence", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
+    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob(uniqueID++, "Challenges Occurrence", "5,10,15,30,45,59 * * * *", Deployment.getBaseTimeZone(), false); // RAJ K Cron fix
     
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
       {
