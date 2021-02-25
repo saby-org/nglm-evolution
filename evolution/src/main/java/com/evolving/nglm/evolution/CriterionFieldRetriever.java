@@ -37,6 +37,7 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 
 public abstract class CriterionFieldRetriever
 {
@@ -428,7 +429,6 @@ public abstract class CriterionFieldRetriever
   //  getLoyaltyProgramCriterionField (dynamic)
   //
 
-  //RAJ K TO DO
   public static Object getLoyaltyProgramCriterionField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
     //
@@ -454,7 +454,8 @@ public abstract class CriterionFieldRetriever
     
     ///
     // optin and optout should be valid even if the customer left the program already
-    ///
+    //
+    
     if (loyaltyProgramState != null)
       {
         if (loyaltyProgramState instanceof LoyaltyProgramPointsState)
@@ -462,6 +463,12 @@ public abstract class CriterionFieldRetriever
             LoyaltyProgramPointsState loyaltyProgramPointsStateOptInOptOut = (LoyaltyProgramPointsState) loyaltyProgramState;
             optInDate = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramEnrollmentDate();
             optOutDate = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramExitDate();            
+          }
+        else if (loyaltyProgramState instanceof LoyaltyProgramChallengeState)
+          {
+            LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+            optInDate = loyaltyProgramChallengeState.getLoyaltyProgramEnrollmentDate();
+            optOutDate = loyaltyProgramChallengeState.getLoyaltyProgramExitDate(); 
           }
       }
     //
@@ -498,94 +505,136 @@ public abstract class CriterionFieldRetriever
             break;
         }
       }
-
     else
       {
-
-        if (!(loyaltyProgramState instanceof LoyaltyProgramPointsState))
-          return null;
-        // retrieve
-        //
-        LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
-        TierHistory tierHistory = loyaltyProgramPointsState.getLoyaltyProgramHistory().getLastTierEntered(); 
-        tierUpdateType = tierHistory.getTierUpdateType().getExternalRepresentation();
-
-        switch (criterionFieldBaseName)
+        if (loyaltyProgramState instanceof LoyaltyProgramPointsState)
           {
-            case "tier":
-              result = loyaltyProgramPointsState.getTierName();
-              break;
+            //
+            //  retrieve
+            //
+            
+            LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
+            TierHistory tierHistory = loyaltyProgramPointsState.getLoyaltyProgramHistory().getLastTierEntered(); 
+            tierUpdateType = tierHistory.getTierUpdateType().getExternalRepresentation();
 
-            case "statuspoint.balance":
-              result = loyaltyProgramPointsState.getStatusPoints();
-              break;
+            switch (criterionFieldBaseName)
+              {
+                case "tier":
+                  result = loyaltyProgramPointsState.getTierName();
+                  break;
 
-            case "rewardpoint.balance":
-              result = loyaltyProgramPointsState.getRewardPoints();
-              break;
+                case "statuspoint.balance":
+                  result = loyaltyProgramPointsState.getStatusPoints();
+                  break;
 
-            case "tierupdatedate":
-              result = loyaltyProgramPointsState.getTierEnrollmentDate();
-              break;
+                case "rewardpoint.balance":
+                  result = loyaltyProgramPointsState.getRewardPoints();
+                  break;
 
-            case "optindate":
-              result = optInDate;
-              break;
+                case "tierupdatedate":
+                  result = loyaltyProgramPointsState.getTierEnrollmentDate();
+                  break;
 
-            case "optoutdate":
-              result = optOutDate;
-              break;
-              
-            // Deprecated, i.e should not be used since EVPRO-665  
-            case "tierupdatetype":
-              result = tierUpdateType;
-              break;
+                case "optindate":
+                  result = optInDate;
+                  break;
 
-            default:
-              fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.([^.]+)$");
-              fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
-              if (!fieldNameMatcher.find())
-                throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
-              String pointName = fieldNameMatcher.group(1);
-              String pointID = fieldNameMatcher.group(2);
-              String request = fieldNameMatcher.group(3);
-              Date evaluationDate = evaluationRequest.getEvaluationDate();
-              Map<String, PointBalance> pointBalances = evaluationRequest.getSubscriberProfile().getPointBalances();
+                case "optoutdate":
+                  result = optOutDate;
+                  break;
+                  
+                // Deprecated, i.e should not be used since EVPRO-665  
+                case "tierupdatetype":
+                  result = tierUpdateType;
+                  break;
 
-              Date earliestExpiration = evaluationDate;
-              int earliestExpiryQuantity = 0;
+                default:
+                  fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.([^.]+)$");
+                  fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
+                  if (!fieldNameMatcher.find())
+                    throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
+                  String pointName = fieldNameMatcher.group(1);
+                  String pointID = fieldNameMatcher.group(2);
+                  String request = fieldNameMatcher.group(3);
+                  Date evaluationDate = evaluationRequest.getEvaluationDate();
+                  Map<String, PointBalance> pointBalances = evaluationRequest.getSubscriberProfile().getPointBalances();
 
-              if (pointBalances == null)
-                {
-                  log.info("Error evaluating " + fieldName + " no pointBalances for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
-                }
-              else
-                {
-                  PointBalance pointBalance = pointBalances.get(pointID);
-                  if (pointBalance == null)
+                  Date earliestExpiration = evaluationDate;
+                  int earliestExpiryQuantity = 0;
+
+                  if (pointBalances == null)
                     {
-                      log.info("Error evaluating " + fieldName + " no pointBalance for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
+                      log.info("Error evaluating " + fieldName + " no pointBalances for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
                     }
                   else
                     {
-                      earliestExpiration = pointBalance.getFirstExpirationDate(evaluationDate);
-                      earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
+                      PointBalance pointBalance = pointBalances.get(pointID);
+                      if (pointBalance == null)
+                        {
+                          log.info("Error evaluating " + fieldName + " no pointBalance for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
+                        }
+                      else
+                        {
+                          earliestExpiration = pointBalance.getFirstExpirationDate(evaluationDate);
+                          earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
+                        }
                     }
-                }
 
-              switch (request)
-                {
-                  case "earliestexpirydate":
-                    result = earliestExpiration;
-                    break;
+                  switch (request)
+                    {
+                      case "earliestexpirydate":
+                        result = earliestExpiration;
+                        break;
 
-                  case "earliestexpiryquantity":
-                    result = earliestExpiryQuantity;
-                    break;
+                      case "earliestexpiryquantity":
+                        result = earliestExpiryQuantity;
+                        break;
 
-                  default:
-                    throw new CriterionException("Invalid criteria " + criterionFieldBaseName + " " + request + " for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
-                }
+                      default:
+                        throw new CriterionException("Invalid criteria " + criterionFieldBaseName + " " + request + " for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
+                    }
+              }
+          }
+        else if (loyaltyProgramState instanceof LoyaltyProgramChallengeState)      
+          {
+            //
+            //  retrieve
+            //
+            
+            LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+            LevelHistory levelHistory = loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory().getLastLevelEntered(); 
+            String levelUpdateType = levelHistory.getLevelUpdateType().getExternalRepresentation();
+
+            switch (criterionFieldBaseName)
+              {
+                case "level":
+                  result = loyaltyProgramChallengeState.getLevelName();
+                  break;
+
+                case "score.balance":
+                  result = loyaltyProgramChallengeState.getScoreLevel();
+                  break;
+
+                case "levelupdatedate":
+                  result = loyaltyProgramChallengeState.getLevelEnrollmentDate();
+                  break;
+
+                case "optindate":
+                  result = optInDate;
+                  break;
+
+                case "optoutdate":
+                  result = optOutDate;
+                  break;
+                  
+                // Deprecated, i.e should not be used since EVPRO-665  
+                case "levelUpdateType":
+                  result = levelUpdateType;
+                  break;
+
+                default:
+                  throw new CriterionException("Invalid criteria " + criterionFieldBaseName);
+              }
           }
       }
         

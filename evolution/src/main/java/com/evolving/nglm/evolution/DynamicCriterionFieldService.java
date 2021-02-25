@@ -142,15 +142,9 @@ public class DynamicCriterionFieldService extends GUIService
       }
     else if (loyaltyProgram instanceof LoyaltyProgramChallenge)
       {
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tier", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram)); // RAJ K TO DO
-        
-        LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "level", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "score.balance", CriterionDataType.IntegerCriterion, null);
-        String scoreID = loyaltyProgramChallenge.getScoreID();
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "score.earliestexpirydate",     "score." + scoreID + ".earliestexpirydate",     CriterionDataType.DateCriterion, null);
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "score.earliestexpiryquantity", "score." + scoreID + ".earliestexpiryquantity", CriterionDataType.IntegerCriterion, null);
-        // RAJ K TO DO
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierupdatedate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "levelupdatedate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
       }

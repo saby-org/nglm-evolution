@@ -29805,23 +29805,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                           int scoreToDebit = subscriberCurrnetScore - firstLevelScore;
                           scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
                           CommodityDeliveryManager.sendCommodityDeliveryRequest(baseSubscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Loyalty_Program.getExternalRepresentation(), challenge.getLoyaltyProgramID(), subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, scoreToDebit, null, null, DELIVERY_REQUEST_PRIORITY, "on executeOccouranceJob");
+                          //  down grade to level 1 : done
                         }
                     } 
                   catch (SubscriberProfileServiceException e)
                     {
                       log.error("SubscriberProfileServiceException {}", e.getMessage());
                     }
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  //  down grade to level 1 TO DO
-                  
                 }
-              
               lastCreatedOccurrenceNumber++;
               jsonRoot.put("occurrenceNumber", lastCreatedOccurrenceNumber);
               jsonRoot.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
