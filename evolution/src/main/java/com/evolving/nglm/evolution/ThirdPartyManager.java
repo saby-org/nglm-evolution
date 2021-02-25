@@ -2798,6 +2798,7 @@ public class ThirdPartyManager
                              levelHistoryJSON.put("fromLevel", level.getFromLevel());
                              levelHistoryJSON.put("toLevel", level.getToLevel());
                              levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate()));
+                             levelHistoryJSON.put("occouranceNumber", level.getOccurrenceNumber());
                              loyaltyProgramChallengeHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
                            }
                        }

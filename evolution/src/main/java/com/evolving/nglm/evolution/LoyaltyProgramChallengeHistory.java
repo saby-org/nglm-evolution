@@ -127,13 +127,11 @@ public class LoyaltyProgramChallengeHistory
   public LoyaltyProgramChallengeHistory(LoyaltyProgramChallengeHistory loyaltyProgramHistory)
   {
     this.loyaltyProgramID = loyaltyProgramHistory.getLoyaltyProgramID();
-    
     this.levelHistory = new ArrayList<LevelHistory>();
     for(LevelHistory stat : loyaltyProgramHistory.getLevelHistory())
       {
         this.levelHistory.add(stat);
       }
-    
   }
   
   /*****************************************
@@ -217,9 +215,9 @@ public class LoyaltyProgramChallengeHistory
   *
   *****************************************/
   
-  public void addLevelHistory(String fromLevel, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramLevelChange levelUpdateType) 
+  public void addLevelHistory(String fromLevel, String toLevel, Integer occurrenceNumber, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramLevelChange levelUpdateType) 
   {
-    LevelHistory levelHistory = new LevelHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, levelUpdateType);
+    LevelHistory levelHistory = new LevelHistory(fromLevel, toLevel, occurrenceNumber, enrollmentDate, deliveryRequestID, levelUpdateType);
     this.levelHistory.add(levelHistory);
 
   }
@@ -265,6 +263,7 @@ public class LoyaltyProgramChallengeHistory
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
       schemaBuilder.field("fromLevel", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("toLevel", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("transitionDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("levelUpdateType", Schema.OPTIONAL_STRING_SCHEMA);
@@ -295,6 +294,7 @@ public class LoyaltyProgramChallengeHistory
     private Date transitionDate;
     private String deliveryRequestID;
     private LoyaltyProgramLevelChange levelUpdateType;
+    private Integer occurrenceNumber;
     
     /*****************************************
     *
@@ -307,6 +307,7 @@ public class LoyaltyProgramChallengeHistory
     public Date getTransitionDate() { return transitionDate; }
     public String getDeliveryRequestID() { return deliveryRequestID; }
     public LoyaltyProgramLevelChange getLevelUpdateType() { return levelUpdateType; }
+    public Integer getOccurrenceNumber() { return occurrenceNumber; }
     
     /*****************************************
     *
@@ -320,6 +321,7 @@ public class LoyaltyProgramChallengeHistory
       Struct struct = new Struct(schema);
       struct.put("fromLevel", levelHistory.getToLevel());
       struct.put("toLevel", levelHistory.getToLevel());
+      struct.put("occurrenceNumber", levelHistory.getOccurrenceNumber());
       struct.put("transitionDate", levelHistory.getTransitionDate());
       struct.put("deliveryRequestID", levelHistory.getDeliveryRequestID());
       struct.put("levelUpdateType", levelHistory.getLevelUpdateType().getExternalRepresentation());
@@ -332,10 +334,11 @@ public class LoyaltyProgramChallengeHistory
     *
     *****************************************/
 
-    public LevelHistory(String fromLevel, String toLevel, Date transitionDate, String deliveryRequestID, LoyaltyProgramLevelChange levelUpdateType)
+    public LevelHistory(String fromLevel, String toLevel, Integer occurrenceNumber, Date transitionDate, String deliveryRequestID, LoyaltyProgramLevelChange levelUpdateType)
     {
       this.fromLevel = fromLevel;
       this.toLevel = toLevel;
+      this.occurrenceNumber = occurrenceNumber;
       this.transitionDate = transitionDate;
       this.deliveryRequestID = deliveryRequestID;
       this.levelUpdateType = levelUpdateType;
@@ -364,6 +367,7 @@ public class LoyaltyProgramChallengeHistory
       Struct valueStruct = (Struct) value;
       String fromLevel = valueStruct.getString("fromLevel");
       String toLevel = valueStruct.getString("toLevel");
+      Integer occurrenceNumber = valueStruct.getInt32("occurrenceNumber");
       Date transitionDate = (Date) valueStruct.get("transitionDate");
       String deliveryRequestID = valueStruct.getString("deliveryRequestID");
       LoyaltyProgramLevelChange loyaltyProgramLevelChange = LoyaltyProgramLevelChange.fromExternalRepresentation(valueStruct.getString("levelUpdateType"));
@@ -372,7 +376,7 @@ public class LoyaltyProgramChallengeHistory
       //  return
       //
 
-      return new LevelHistory(fromLevel, toLevel, transitionDate, deliveryRequestID, loyaltyProgramLevelChange);
+      return new LevelHistory(fromLevel, toLevel, occurrenceNumber, transitionDate, deliveryRequestID, loyaltyProgramLevelChange);
     }
     
     /*****************************************

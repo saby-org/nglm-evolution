@@ -19881,6 +19881,8 @@ public class GUIManager
                               levelHistoryJSON.put("fromLevel", level.getFromLevel());
                               levelHistoryJSON.put("toLevel", level.getToLevel());
                               levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate()));
+                              levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate()));
+                              levelHistoryJSON.put("occouranceNumber", level.getOccurrenceNumber());
                               loyaltyProgramChallengeHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
                             }
                         }

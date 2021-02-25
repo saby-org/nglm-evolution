@@ -202,6 +202,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     //
     
     LoyaltyProgramLevelChange loyaltyProgramLevelChange = LoyaltyProgramLevelChange.Unknown;
+    Integer occouranceNumber = null;
     if (loyaltyProgramChallengeHistory != null)
       {
         String loyaltyProgramID = loyaltyProgramChallengeHistory.getLoyaltyProgramID();
@@ -212,6 +213,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
             ChallengeLevel level = loyaltyProgramChallenge.getLevel(toLevel);
             ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(fromLevel);
             loyaltyProgramLevelChange = ChallengeLevel.changeFromLevelToLevel(level, previousLevel);
+            occouranceNumber = loyaltyProgramChallenge.getOccurrenceNumber();
           }
       }
     switch (operation)
@@ -235,7 +237,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
+        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
         break;
 
       case Optout:
@@ -257,7 +259,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
+        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
         break;
 
       default:
