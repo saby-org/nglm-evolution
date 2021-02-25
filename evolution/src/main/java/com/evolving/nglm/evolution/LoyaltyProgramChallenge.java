@@ -30,8 +30,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
-import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 @GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "point" })
 public class LoyaltyProgramChallenge extends LoyaltyProgram
@@ -44,10 +42,10 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   public enum LoyaltyProgramChallengeEventInfos
   {
     ENTERING("entering"),
-    OLD_TIER("oldLevel"),
-    NEW_TIER("newLevel"),
+    OLD_LEVEL("oldLevel"),
+    NEW_LEVEL("newLevel"),
     LEAVING("leaving"),
-    TIER_UPDATE_TYPE("levelUpdateType"),
+    LEVEL_UPDATE_TYPE("levelUpdateType"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private LoyaltyProgramChallengeEventInfos(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
