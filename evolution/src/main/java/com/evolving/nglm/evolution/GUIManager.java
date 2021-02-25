@@ -29746,19 +29746,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           // executeOccouranceJob
           //
 
-          if (!tmpOccouranceDates.isEmpty()) executeOccouranceJob(challenge, tmpOccouranceDates, challenge.getLastCreatedOccurrenceNumber());
+          if (!tmpOccouranceDates.isEmpty()) executeChallengeOccouranceJob(challenge, tmpOccouranceDates, challenge.getLastCreatedOccurrenceNumber());
         }
       if (log.isDebugEnabled()) log.debug("All ChallengesOccurrenceJob executed");
     }
    
     //
-    //  executeOccouranceJob
+    //  executeChallengeOccouranceJob
     //
     
-    private void executeOccouranceJob(LoyaltyProgramChallenge challenge, List<Date> tmpOccouranceDates, Integer lastCreatedOccurrenceNumber)
+    private void executeChallengeOccouranceJob(LoyaltyProgramChallenge challenge, List<Date> tmpOccouranceDates, Integer lastCreatedOccurrenceNumber)
     {
       long startTimeMili = SystemTime.getCurrentTime().getTime();
-      log.info("execute OccouranceJob for challenge {}, for date(s) {}", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates);
+      log.info("execute Challenge OccouranceJob for challenge {}, for date(s) {}", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates);
       ChallengeLevel firstLevel = challenge.getFirstLevel();
       String scoreID = challenge.getScoreID();
       
@@ -29806,7 +29806,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                           int subscriberCurrnetScore = baseSubscriberProfile.getPointBalances().get(scoreID).getBalance(SystemTime.getCurrentTime());
                           int scoreToDebit = subscriberCurrnetScore - firstLevelScore;
                           scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
-                          CommodityDeliveryManager.sendCommodityDeliveryRequest(baseSubscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Loyalty_Program.getExternalRepresentation(), challenge.getLoyaltyProgramID(), subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, scoreToDebit, null, null, DELIVERY_REQUEST_PRIORITY, "on executeOccouranceJob");
+                          CommodityDeliveryManager.sendCommodityDeliveryRequest(baseSubscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Loyalty_Program.getExternalRepresentation(), challenge.getLoyaltyProgramID(), subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, scoreToDebit, null, null, DELIVERY_REQUEST_PRIORITY, "for " + challenge.getLoyaltyProgramDisplay() + " - occurrenceNumber " + lastCreatedOccurrenceNumber + 1);
                           //  down grade to level 1 : done
                         }
                     } 
@@ -29828,7 +29828,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               e.printStackTrace();
             }
         }
-      log.info("executed OccouranceJob for challenge {}, for date(s) {} time taken {} milisec", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates, SystemTime.getCurrentTime().getTime() - startTimeMili);
+      log.info("executed Challenge OccouranceJob for challenge {}, for date(s) {} time taken {} milisec", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates, SystemTime.getCurrentTime().getTime() - startTimeMili);
     }
 
     //
