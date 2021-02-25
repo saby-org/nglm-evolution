@@ -219,6 +219,24 @@ public abstract class CriterionFieldRetriever
       }
   }
   
+  public static Object getProfileChallengeLoyaltyProgramChangeLevelOldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName)
+  {
+    ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent) (evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if (!fields[2].equals(event.getLoyaltyProgramID()))
+      {
+        return null;
+      }
+    if (event.getInfos().get(LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.ENTERING.getExternalRepresentation()) != null)
+      {
+        return LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.ENTERING.name();
+      } 
+    else
+      {
+        return event.getInfos().get(LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.OLD_LEVEL.getExternalRepresentation());
+      }
+  }
+  
   public static Object getProfilePointLoyaltyProgramChangeTierNewValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
     {
       // Check if this is for the good loyalty program...
@@ -236,6 +254,24 @@ public abstract class CriterionFieldRetriever
         }
     }
   
+  public static Object getProfileChallengeLoyaltyProgramChangeLevelNewValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  {
+    ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent) (evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if (!fields[2].equals(event.getLoyaltyProgramID()))
+      {
+        return null;
+      }
+    if (event.getInfos().get(LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.LEAVING.getExternalRepresentation()) != null)
+      {
+        return LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.LEAVING.name();
+      } 
+    else
+      {
+        return event.getInfos().get(LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.NEW_LEVEL.getExternalRepresentation());
+      }
+  }
+  
   public static Object getProfilePointLoyaltyProgramUpdated(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
     {
       // Check if this is for the good loyalty program...
@@ -244,6 +280,14 @@ public abstract class CriterionFieldRetriever
       if(! fields[2].equals(event.getLoyaltyProgramID())) { return null; }
       return event.getLoyaltyProgramID().equals(fieldName.substring(LoyaltyProgramPoints.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX.length()));
     }
+  
+  public static Object getProfileChallengeLoyaltyProgramUpdated(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  {
+    ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent)(evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if(! fields[2].equals(event.getLoyaltyProgramID())) { return null; }
+    return event.getLoyaltyProgramID().equals(fieldName.substring(LoyaltyProgramChallenge.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX.length()));
+  }
   
   public static Object getProfilePointLoyaltyProgramTierUpdateType(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
   {
@@ -254,6 +298,17 @@ public abstract class CriterionFieldRetriever
     if(! fields[1].equals(event.getLoyaltyProgramID())) { return null; }
     
     return event.getInfos().get(LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.TIER_UPDATE_TYPE.getExternalRepresentation());
+  }
+  
+  public static Object getProfileChallengeLoyaltyProgramLevelUpdateType(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  {
+    ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent) (evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if (!fields[1].equals(event.getLoyaltyProgramID()))
+      {
+        return null;
+      }
+    return event.getInfos().get(LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.LEVEL_UPDATE_TYPE.getExternalRepresentation());
   }
 
   //

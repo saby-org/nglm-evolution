@@ -130,6 +130,14 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   {
     return serde;
   }
+  
+  //
+  // constants
+  //
+
+  public final static String CRITERION_FIELD_NAME_OLD_PREFIX = "challengeLoyaltyProgramChange.old.";
+  public final static String CRITERION_FIELD_NAME_NEW_PREFIX = "challengeLoyaltyProgramChange.new.";
+  public final static String CRITERION_FIELD_NAME_IS_UPDATED_PREFIX = "challengeLoyaltyProgramChange.isupdated.";
 
   /*****************************************
    *
