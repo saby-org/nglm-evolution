@@ -373,6 +373,7 @@ public abstract class CriterionFieldRetriever
   //  getLoyaltyProgramCriterionField (dynamic)
   //
 
+  //RAJ K TO DO
   public static Object getLoyaltyProgramCriterionField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
     //

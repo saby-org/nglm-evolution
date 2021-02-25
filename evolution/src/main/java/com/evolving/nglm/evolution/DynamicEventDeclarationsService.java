@@ -23,6 +23,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramLevelChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.google.gson.JsonObject;
@@ -321,7 +322,11 @@ public class DynamicEventDeclarationsService extends GUIService
             result.put(criterionFieldUpdated.getID(), criterionFieldUpdated);
             result.put(criterionFieldTierUpdateType.getID(),  criterionFieldTierUpdateType);
             break;
-          }
+            
+          case CHALLENGE:
+          //RAJ K TO DO
+            break;
+          } 
       }
     return result;
   }  
@@ -339,7 +344,22 @@ public class DynamicEventDeclarationsService extends GUIService
     availableValuesField.add(LoyaltyProgramTierChange.Optout.getExternalRepresentation());
     availableValuesField.add(LoyaltyProgramTierChange.Upgrade.getExternalRepresentation());
     availableValuesField.add(LoyaltyProgramTierChange.Downgrade.getExternalRepresentation());
-    
+    return availableValuesField;
+  }
+  
+  /*****************************************
+  *
+  *  generateAvailableValuesForLevelUpdateType
+  *
+  *****************************************/
+
+  private JSONArray generateAvailableValuesForLevelUpdateType()
+  {
+    JSONArray availableValuesField = new JSONArray();
+    availableValuesField.add(LoyaltyProgramLevelChange.Optin.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramLevelChange.Optout.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramLevelChange.Upgrade.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramLevelChange.Downgrade.getExternalRepresentation());
     return availableValuesField;
   }
 
