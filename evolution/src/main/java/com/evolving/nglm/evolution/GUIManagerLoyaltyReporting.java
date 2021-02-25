@@ -209,6 +209,15 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         loyaltyProgramID = loyaltyProgramService.generateLoyaltyProgramID();
         jsonRoot.put("id", loyaltyProgramID);
       }
+    
+    //
+    // recurrence
+    //
+    
+    boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
+    String recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
+    if (recurrence && recurrenceID == null) jsonRoot.put("recurrenceId", loyaltyProgramID);
+    if (recurrence && JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false) == null) jsonRoot.put("lastCreatedOccurrenceNumber", 1);
 
     /*****************************************
     *

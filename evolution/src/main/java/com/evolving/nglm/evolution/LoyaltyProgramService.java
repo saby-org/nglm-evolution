@@ -23,8 +23,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +105,20 @@ public class LoyaltyProgramService extends GUIService
   public boolean isActiveLoyaltyProgram(GUIManagedObject loyaltyProgramUnchecked, Date date) { return isActiveGUIManagedObject(loyaltyProgramUnchecked, date); }
   public LoyaltyProgram getActiveLoyaltyProgram(String loyaltyProgramID, Date date) { return (LoyaltyProgram) getActiveGUIManagedObject(loyaltyProgramID, date); }
   public Collection<LoyaltyProgram> getActiveLoyaltyPrograms(Date date) { return (Collection<LoyaltyProgram>) getActiveGUIManagedObjects(date); }
+  public Collection<LoyaltyProgramChallenge> getActiveRecurrentChallenges(Date currentTime)
+  {
+    List<LoyaltyProgramChallenge> result = new ArrayList<LoyaltyProgramChallenge>();
+    Collection<LoyaltyProgram> loyaltyPrograms = getActiveLoyaltyPrograms(currentTime);
+    for (LoyaltyProgram program : loyaltyPrograms)
+      {
+        if (program.getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE)
+          {
+            LoyaltyProgramChallenge challenge = (LoyaltyProgramChallenge) program;
+            if (challenge.getRecurrence()) result.add(challenge);
+          }
+      }
+    return result;
+  }
 
   /*****************************************
   *

@@ -1,8 +1,11 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.http.HttpHost;
@@ -17,17 +20,21 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.Scroll;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -398,6 +405,99 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       e.printStackTrace();
       throw new ElasticsearchClientException(e.getMessage());
     }
+  }
+  
+  public List<String> getAlreadyOptInSubscriberIDs(String loyaltyProgramID) throws ElasticsearchClientException
+  {
+    List<String> result = new ArrayList<String>();
+    try
+      {
+        QueryBuilder queryLoyaltyProgramID = QueryBuilders.termQuery("loyaltyPrograms.programID", loyaltyProgramID);
+        QueryBuilder queryEmptyExitDate = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramExitDate"));
+        QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(queryLoyaltyProgramID).filter(queryEmptyExitDate), ScoreMode.Total);
+        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(query));
+        List<SearchHit> hits = getESHits(searchRequest);
+        for (SearchHit hit : hits)
+          {
+            result.add(hit.getId());
+          }
+        return result;
+      } 
+    catch (ElasticsearchClientException e)
+      { 
+        // forward
+        throw e;
+      } 
+    catch (ElasticsearchStatusException e)
+      {
+        if (e.status() == RestStatus.NOT_FOUND)
+          { 
+            // index not found
+            log.debug(e.getMessage());
+            return result;
+          }
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getDetailedMessage());
+      } 
+    catch (ElasticsearchException e)
+      {
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getDetailedMessage());
+      } 
+    catch (Exception e)
+      {
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getMessage());
+      }
+  }
+  
+  /*****************************************
+  *
+  *  getESHits
+  *
+  *****************************************/
+  
+  private List<SearchHit> getESHits(SearchRequest searchRequest) throws Exception
+  {
+    List<SearchHit> hits = new ArrayList<SearchHit>();
+    Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+    searchRequest.scroll(scroll);
+    searchRequest.source().size(1000);
+    try
+      {
+        SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId(); // always null
+        SearchHit[] searchHits = searchResponse.getHits().getHits();
+        while (searchHits != null && searchHits.length > 0)
+          {
+            //
+            //  add
+            //
+            
+            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
+            
+            //
+            //  scroll
+            //
+            
+            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
+            scrollRequest.scroll(scroll);
+            searchResponse = this.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+            scrollId = searchResponse.getScrollId();
+            searchHits = searchResponse.getHits().getHits();
+          }
+      } 
+    catch (IOException e)
+      {
+        log.error("IOException in ES qurery {}", e.getMessage());
+        throw e;
+      }
+    
+    //
+    //  return
+    //
+    
+    return hits;
   }
 
   public Map<String, Long> getDistributedRewards(String journeyID) throws ElasticsearchClientException
