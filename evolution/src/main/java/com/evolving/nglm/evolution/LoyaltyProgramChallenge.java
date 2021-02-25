@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -174,6 +175,17 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   public List<ChallengeLevel> getLevels()
   {
     return levels;
+  }
+  
+  public ChallengeLevel getFirstLevel()
+  {
+    ChallengeLevel result = null;
+    if (levels != null && !levels.isEmpty())
+      {
+        Collections.sort(levels);
+        result = levels.get(0);
+      }
+    return result;
   }
   
   public String getScoreID()
@@ -443,7 +455,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     return LoyaltyProgramType.CHALLENGE == getLoyaltyProgramType();
   }
   
-  public static class ChallengeLevel
+  public static class ChallengeLevel implements Comparable<ChallengeLevel>
   {
     //
     //  logger
@@ -646,6 +658,11 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
           return LoyaltyProgramLevelChange.NoChange;
         }
    }
+    @Override
+    public int compareTo(ChallengeLevel challengeLevel)
+    {
+      return this.scoreLevel - challengeLevel.getScoreLevel();
+    }
    
   }
   

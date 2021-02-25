@@ -3794,7 +3794,7 @@ public class EvolutionEngine
     for (LoyaltyProgramState loyaltyProgramState : subscriberProfile.getLoyaltyPrograms().values())
       {
         LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
-        if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramPoints)
+        if (loyaltyProgram != null)
           {
             if (loyaltyProgram instanceof LoyaltyProgramPoints)
               {

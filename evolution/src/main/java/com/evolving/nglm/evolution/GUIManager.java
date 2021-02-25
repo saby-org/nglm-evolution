@@ -123,6 +123,7 @@ import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -29754,7 +29755,33 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     
     private void executeOccouranceJob(LoyaltyProgramChallenge challenge, List<Date> tmpOccouranceDates, Integer lastCreatedOccurrenceNumber)
     {
-      if (log.isDebugEnabled()) log.debug("executeOccouranceJob for challenge {}, for dates {}", challenge, tmpOccouranceDates);
+      long startTimeMili = SystemTime.getCurrentTime().getTime();
+      log.info("execute OccouranceJob for challenge {}, for date(s) {}", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates);
+      ChallengeLevel firstLevel = challenge.getFirstLevel();
+      String scoreID = challenge.getScoreID();
+      
+      /*****************************************
+      *
+      *  resolve Deliverable
+      *
+      *****************************************/
+
+      Deliverable searchedBonus = null;
+      for (GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables())
+        {
+          if (storedDeliverable instanceof Deliverable && scoreID.equals(((Deliverable) storedDeliverable).getExternalAccountID()))
+            {
+                searchedBonus = (Deliverable) storedDeliverable;
+                break;
+            }
+        }
+      
+      if (searchedBonus == null)
+        {
+          log.error("unable to debit score as searchedBonus is null for scoreID {}", scoreID);
+          return;
+        }
+      
       for (Date recDate : tmpOccouranceDates)
         {
           JSONObject jsonRoot = (JSONObject) challenge.getJSONRepresentation().clone();
@@ -29767,9 +29794,31 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               List<String> alreadyOptInSubscriberIDs = elasticsearch.getAlreadyOptInSubscriberIDs(challenge.getLoyaltyProgramID());
               for (String subscriberID : alreadyOptInSubscriberIDs)
                 {
+                  try
+                    {
+                      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+                      if (firstLevel != null)
+                        {
+                          String deliveryRequestID = zuks.getStringKey();
+                          int firstLevelScore = firstLevel.getScoreLevel();
+                          int subscriberCurrnetScore = baseSubscriberProfile.getPointBalances().get(scoreID).getBalance(SystemTime.getCurrentTime());
+                          int scoreToDebit = subscriberCurrnetScore - firstLevelScore;
+                          scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
+                          CommodityDeliveryManager.sendCommodityDeliveryRequest(baseSubscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Loyalty_Program.getExternalRepresentation(), challenge.getLoyaltyProgramID(), subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, scoreToDebit, null, null, DELIVERY_REQUEST_PRIORITY, "on executeOccouranceJob");
+                        }
+                    } 
+                  catch (SubscriberProfileServiceException e)
+                    {
+                      log.error("SubscriberProfileServiceException {}", e.getMessage());
+                    }
                   
-                   // down grade to level 1 TO DO
-                  //  score set to 0? TO DO
+                  
+                  
+                  
+                  
+                  
+                  
+                  //  down grade to level 1 TO DO
                   
                 }
               
@@ -29786,7 +29835,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               e.printStackTrace();
             }
         }
-      if (log.isDebugEnabled()) log.debug("executedOccouranceJob for challenge {}, for dates {}", challenge, tmpOccouranceDates);
+      log.info("executed OccouranceJob for challenge {}, for date(s) {} time taken {} milisec", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates, SystemTime.getCurrentTime().getTime() - startTimeMili);
     }
 
     //
