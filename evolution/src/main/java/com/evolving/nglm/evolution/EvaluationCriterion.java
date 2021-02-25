@@ -1873,7 +1873,7 @@ public class EvaluationCriterion
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid special criterion field " + esField);
     String criterion = fieldNameMatcher.group(1);
     // TODO : necessary ? To be checked
-    if ((!criterionOperator.equals(CriterionOperator.IsNotNullOperator) || !criterionOperator.equals(CriterionOperator.IsNullOperator)) && !(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+    if (!(criterionOperator.equals(CriterionOperator.IsNotNullOperator) || criterionOperator.equals(CriterionOperator.IsNullOperator)) && !(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
     String value = "";
     switch (criterion)
     {
