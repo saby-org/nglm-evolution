@@ -249,6 +249,9 @@ public class Deployment
   private static int kafkaRetentionDaysTargets;
 
   private static boolean enableContactPolicyProcessing;
+  
+  //EVPRO-865  
+  private static String firstDayOfTheWeek;
 
   //extracts configuration
   private static String extractManagerZookeeperDir;
@@ -514,6 +517,9 @@ public class Deployment
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
   //EVPRO-574
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
+  
+  //EVPRO-865
+  public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
 
   // addProfileCriterionField
   //
@@ -3308,6 +3314,19 @@ public class Deployment
       try
         {
           recurrentCampaignCreationDaysRange = JSONUtilities.decodeInteger(jsonRoot, "recurrentCampaignCreationDaysRange", 3);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
+      //  firstDayOfTheWeek EVPRO-865
+      //
+
+      try
+        {
+          firstDayOfTheWeek = JSONUtilities.decodeString(jsonRoot, "firstDayOfTheWeek", false);
         }
       catch (JSONUtilitiesException e)
         {
