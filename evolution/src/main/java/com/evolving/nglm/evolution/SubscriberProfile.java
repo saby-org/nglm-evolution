@@ -507,6 +507,7 @@ public abstract class SubscriberProfile
                     ChallengeLevel level = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getLevelName());
                     ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getPreviousLevelName());
                     loyalty.put("levelChangeType", ChallengeLevel.changeFromLevelToLevel(previousLevel, level).getExternalRepresentation());
+                    loyalty.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber());
                     if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
                       { 
                         String scorePointsID = loyaltyProgramChallenge.getScoreID();
