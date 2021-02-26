@@ -1922,10 +1922,9 @@ public class EvaluationCriterion
     case IsNotNullOperator:
     case IsNullOperator:
     	   BoolQueryBuilder queryCompareBool = QueryBuilders.boolQuery();
-           for (String possibleValue : Arrays.asList(value.split(",")))
-             {
-               queryCompareBool = queryCompareBool.should(QueryBuilders.termQuery("subscriberJourneys.journeyID", possibleValue));
-             }
+          
+               queryCompareBool = queryCompareBool.should(QueryBuilders.termsQuery("subscriberJourneys.journeyID", value));
+             
            insideQuery=queryCompareBool;
            break;	
       case EmptyIntersectionOperator:
