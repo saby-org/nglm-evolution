@@ -7665,7 +7665,6 @@ public class GUIManager
             //
 
             campaignJSON = JSONUtilities.encodeObject(campaignJSONRepresentation);
-            log.debug("campaignJSON {}", campaignJSON);
 
             /****************************************
              *
