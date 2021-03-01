@@ -10,7 +10,7 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 
 import com.evolving.nglm.core.ConnectSerde;
-
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 

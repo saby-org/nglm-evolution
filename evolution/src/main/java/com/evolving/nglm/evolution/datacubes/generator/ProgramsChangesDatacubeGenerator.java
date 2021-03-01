@@ -26,11 +26,12 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
@@ -56,11 +57,20 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService)
+  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService, int tenantID, String timeZone)
   {
-    super(datacubeName, elasticsearch, datacubeWriter);
+    super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
     
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
+  }
+  
+  public ProgramsChangesDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
+    this(datacubeName,
+        datacubeManager.getElasticsearchClientAPI(),
+        datacubeManager.getDatacubeWriter(),
+        datacubeManager.getLoyaltyProgramService(),
+        tenantID,
+        Deployment.getDeployment(tenantID).getTimeZone());
   }
 
   /*****************************************
@@ -249,19 +259,19 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   public void definitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
+    Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone()); 
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());        // 00:00:00.000
+    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                     // 23:59:59.999
     this.targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     this.targetPeriodStartIncluded = beginningOfYesterday.getTime();
 
-    this.targetDay = RLMDateUtils.printDay(yesterday);
+    this.targetDay = this.printDay(yesterday);
 
     //
     // Timestamp & period
     //
-    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+    String timestamp = this.printTimestamp(endOfYesterday);
     
     this.run(timestamp, targetPeriod);
   }
@@ -274,16 +284,16 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   public void preview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone()); 
     this.targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     this.targetPeriodStartIncluded = beginningOfToday.getTime();
 
-    this.targetDay = RLMDateUtils.printDay(now);
+    this.targetDay = this.printDay(now);
 
     //
     // Timestamp & period
     //
-    String timestamp = RLMDateUtils.printTimestamp(now);
+    String timestamp = this.printTimestamp(now);
     
     this.run(timestamp, targetPeriod);
   }

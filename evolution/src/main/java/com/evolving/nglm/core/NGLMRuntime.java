@@ -119,11 +119,10 @@ public class NGLMRuntime
     //
     // Deployments initialization for all tenants
     //
-    
+    // TODO EVPRO-99 @rl why here ?
     for(Integer tenantID : Deployment.getTenantIDs())
       {
         Deployment.getDeployment(tenantID);
-        com.evolving.nglm.evolution.Deployment.getDeployment(tenantID);
       }
   }
 

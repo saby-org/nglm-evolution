@@ -16,6 +16,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.SystemTime;
@@ -158,10 +159,10 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       documentMap.put("targets", targets);
       documentMap.put("targetCount", targetCount);
       documentMap.put("objectives", objectives);
-      documentMap.put("startDate", RLMDateUtils.printTimestamp(journey.getEffectiveStartDate()));
-      documentMap.put("endDate", RLMDateUtils.printTimestamp(journey.getEffectiveEndDate()));
+      documentMap.put("startDate", RLMDateUtils.formatDateForElasticsearchDefault(journey.getEffectiveStartDate()));
+      documentMap.put("endDate", RLMDateUtils.formatDateForElasticsearchDefault(journey.getEffectiveEndDate()));
       documentMap.put("active", journey.getActive());
-      documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+      documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
       documentMap.put("status", journeyService.getJourneyStatus(journey).getExternalRepresentation());
 
       //

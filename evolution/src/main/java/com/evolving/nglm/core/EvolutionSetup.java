@@ -7,7 +7,6 @@
 package com.evolving.nglm.core;
 
 import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.kafka.Topic;
 import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
@@ -121,7 +120,7 @@ public class EvolutionSetup
       System.out.println("================================================================================");
       handleConnectors(connectorsFilePath);
     }
-    catch (Exception e) {
+    catch (Throwable e) {
       System.out.println("[ERROR]: " + e.getMessage());
       e.printStackTrace(System.out);
       System.out.println("");
@@ -954,7 +953,7 @@ public class EvolutionSetup
           String replace = getter.invoke(null).toString();
           result = result.replaceAll(Pattern.compile("Deployment\\."+call+"\\(\\)").pattern(), replace);
         }
-      catch(InvocationTargetException | NoSuchMethodException| IllegalAccessException e)
+      catch(InvocationTargetException | NoSuchMethodException| IllegalAccessException| NullPointerException e)
         {
           System.out.println(e.getMessage());
           e.printStackTrace(System.out);

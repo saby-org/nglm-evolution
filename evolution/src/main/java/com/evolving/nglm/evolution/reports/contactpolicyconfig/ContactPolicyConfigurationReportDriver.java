@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution.reports.contactpolicyconfig;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SystemTime;

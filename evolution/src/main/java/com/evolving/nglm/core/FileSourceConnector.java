@@ -1200,7 +1200,7 @@ public abstract class FileSourceConnector extends SourceConnector
       
   public static Date readDate(String token, String record, String format, Date defaultValue, int tenantID) throws IllegalArgumentException
   {
-    return readDate(token, record, format, Deployment.getDeployment(tenantID).getBaseTimeZone(), defaultValue);
+    return readDate(token, record, format, Deployment.getDeployment(tenantID).getTimeZone(), defaultValue);
   }
 
   //
@@ -1209,7 +1209,7 @@ public abstract class FileSourceConnector extends SourceConnector
       
   public static Date readDate(String token, String record, String format, int tenantID) throws IllegalArgumentException
   {
-    return readDate(token, record, format, Deployment.getDeployment(tenantID).getBaseTimeZone(), null);
+    return readDate(token, record, format, Deployment.getDeployment(tenantID).getTimeZone(), null);
   }
 
   /****************************************

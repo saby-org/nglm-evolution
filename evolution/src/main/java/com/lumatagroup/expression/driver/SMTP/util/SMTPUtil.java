@@ -60,7 +60,7 @@ public class SMTPUtil {
 		if (date == null) {
 	          throw new IllegalArgumentException("The date must not be null");
 	    }
-		SimpleDateFormat ft = new SimpleDateFormat (dateFormat);
+		SimpleDateFormat ft = new SimpleDateFormat (dateFormat); // WARNING, deprecated usage of SimpleDateFormat - See RLMDateUtils
 		String tz = Conf.getTimeZone();
 		if (logger.isDebugEnabled()) logger.debug("convertDateAsPattern tz = " + tz);
 		ft.setTimeZone(TimeZone.getTimeZone(tz));  // Dates in Dyn are expressed in UTC (tz should be "GMT")
@@ -73,7 +73,7 @@ public class SMTPUtil {
 		if (date == null) {
 	          throw new IllegalArgumentException("The date must not be null");
 	    }
-		SimpleDateFormat ft = new SimpleDateFormat (dateFormat);
+		SimpleDateFormat ft = new SimpleDateFormat (dateFormat); // WARNING, deprecated usage of SimpleDateFormat - See RLMDateUtils
 		res = ft.format(date);
 		if (logger.isDebugEnabled()) logger.debug("convertFromDateWithPattern END " + res);
 		return res;
@@ -85,7 +85,7 @@ public class SMTPUtil {
 		if (date == null) {
 	          throw new IllegalArgumentException("The date must not be null");
 	    }
-		SimpleDateFormat ft = new SimpleDateFormat (dateFormat);
+		SimpleDateFormat ft = new SimpleDateFormat (dateFormat); // WARNING, deprecated usage of SimpleDateFormat - See RLMDateUtils
 		try {
 			res = ft.parse(date);
 		} catch (ParseException e) {

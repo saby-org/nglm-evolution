@@ -1,16 +1,32 @@
 package com.evolving.nglm.evolution.datacubes;
 
 import com.evolving.nglm.evolution.ScheduledJob;
+import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 
 public abstract class AsyncScheduledJob extends ScheduledJob
 {
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
   private boolean running = false;
-  
-  public AsyncScheduledJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+
+  /*****************************************
+  *
+  *  constructors
+  *
+  *****************************************/
+  public AsyncScheduledJob(ScheduledJobConfiguration config)
   {
-    super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
+    super(config);
   }
-  
+
+  /*****************************************
+  *
+  *  methods
+  *
+  *****************************************/
   public void finish() {
     log.info("Job-{" + this.jobName + "}: Asynchronous job just finished.");
     this.running = false;

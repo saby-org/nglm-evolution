@@ -1,10 +1,9 @@
 
 {
-  "baseTimeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
-  "baseLanguage"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
-  "baseCountry"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
-  "APIresponseDateFormat"                    : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
-  "systemTimeZone"                           : "<_DEPLOYMENT_TIMEZONE_>",
+  "timeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
+  "language"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
+  "country"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
+  "APIresponseDateFormat"                : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
 
   "topicSubscriberPartitions" : "<_SUBSCRIBER_PARTITIONS_>",
   "topicReplication"          : "<_KAFKA_REPLICATION_FACTOR_>",
@@ -25,30 +24,31 @@
   "kafkaRetentionDaysTargets"         : 91,
 
   "CronFormat_comment": "minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
-
+  
   "datacubeJobsScheduling" : {
-    "ODR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "ODR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "ODR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "ODR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "BDR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "BDR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "BDR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "BDR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "MDR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "MDR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "MDR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "MDR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "LoyaltyPrograms-preview"        : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
-    "SubscriberProfile-preview"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "SubscriberProfile-definitive"   : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
-    "Journeys"                       : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "1 * * * *" }
+    "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "ODR-daily-definitive"           : { "type": "ODR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "ODR-hourly-preview"             : { "type": "ODR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "ODR-hourly-definitive"          : { "type": "ODR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "BDR-daily-preview"              : { "type": "BDR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "BDR-daily-definitive"           : { "type": "BDR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "BDR-hourly-preview"             : { "type": "BDR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "BDR-hourly-definitive"          : { "type": "BDR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "MDR-daily-preview"              : { "type": "MDR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "MDR-daily-definitive"           : { "type": "MDR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "MDR-hourly-preview"             : { "type": "MDR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "MDR-hourly-definitive"          : { "type": "MDR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "LoyaltyPrograms-preview"        : { "type": "LoyaltyPrograms-preview",      "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "LoyaltyPrograms-definitive"     : { "type": "LoyaltyPrograms-definitive",   "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
+    "SubscriberProfile-preview"      : { "type": "SubscriberProfile-preview",    "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "SubscriberProfile-definitive"   : { "type": "SubscriberProfile-definitive", "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
+    "Journeys"                       : { "type": "Journeys",                     "enabled": true,  "scheduledAtRestart": false, "cronEntry": "1 * * * *" }
   },
   "elasticsearchJobsScheduling" : {
-    "SubscriberProfileSnapshot"      : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
-    "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
-    "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
+    "SubscriberProfileSnapshot"      : { "type": "SubscriberProfileSnapshot",    "enabled": true,  "scheduledAtRestart": false, "cronEntry": "5 0 * * *" },
+    "JourneystatisticCleanUp"        : { "type": "JourneystatisticCleanUp",      "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 3 * * *" },
+    "ExpiredVoucherCleanUp"          : { "type": "ExpiredVoucherCleanUp",        "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 3 * * *" }
   },
 
   "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",

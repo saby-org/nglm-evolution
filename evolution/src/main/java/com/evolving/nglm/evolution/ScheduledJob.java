@@ -8,8 +8,6 @@ package com.evolving.nglm.evolution;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -17,21 +15,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.CronFormat;
-import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.utilities.UtilitiesException;
 
 public abstract class ScheduledJob implements Comparable<ScheduledJob>
 {
+  /*****************************************
+  *
+  *  static
+  *
+  *****************************************/
   protected static final Logger log = LoggerFactory.getLogger(ScheduledJob.class);
+  
+  private static Long currentUID = -1L;
+  private static long getNextUID() {
+    synchronized(currentUID)
+    {
+      currentUID = currentUID + 1;
+      return currentUID;
+    }
+  }
   
   /*****************************************
   *
   *  data
   *
   *****************************************/
-
   private long schedulingUniqueID;
   private Date nextGenerationDate;
   private CronFormat periodicGeneration;
@@ -41,13 +51,12 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
 
   /*****************************************
   *
-  *  constructor
+  *  constructors
   *
   *****************************************/
-
-  public ScheduledJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+  public ScheduledJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
   {
-    this.schedulingUniqueID = schedulingUniqueID;
+    this.schedulingUniqueID = getNextUID();
     this.properlyConfigured = true;
     this.jobName = jobName;
     try
@@ -65,23 +74,32 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
         this.properlyConfigured = false;
       }
   }
+  
+  /**
+   * Settings are retrieved directly from a ScheduledJobConfiguration
+   */
+  public ScheduledJob(ScheduledJobConfiguration settings)
+  {
+    this(settings.getJobID(), 
+        settings.getCronEntry(),
+        settings.getTimeZone(),
+        settings.isScheduledAtRestart());
+  }
 
   /*****************************************
   *
   *  accessors
   *
   *****************************************/
-  
   public Date getNextGenerationDate() { return this.nextGenerationDate; }
   public boolean isProperlyConfigured() { return this.properlyConfigured; }
-  public long getjobID() { return this.schedulingUniqueID; }
+  public long getSchedulingID() { return this.schedulingUniqueID; }
 
   /*****************************************
   *
   *  absract
   *
   *****************************************/
-
   protected abstract void run();
   
   /*****************************************
@@ -121,15 +139,14 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   *  generate
   *
   *****************************************/
-
   public void call() 
   {
-    log.info("Job-{" + this.jobName + "}: Start job scheduled for " + RLMDateUtils.printTimestamp(this.nextGenerationDate));
+    log.info("Job-{" + this.jobName + "}: Start job scheduled for " + RLMDateUtils.formatDateForElasticsearchDefault(this.nextGenerationDate));
     
     this.run(); // TODO: Maybe add scheduled date later, if needed.
     this.nextGenerationDate = periodicGeneration.next();
     
-    log.info("Job-{" + this.jobName + "}: Next call is scheduled for " + RLMDateUtils.printTimestamp(this.nextGenerationDate));
+    log.info("Job-{" + this.jobName + "}: Next call is scheduled for " + RLMDateUtils.formatDateForElasticsearchDefault(this.nextGenerationDate));
   }
 
   
@@ -138,9 +155,8 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   *  toString
   *
   *****************************************/
-  
   @Override
   public String toString() {
-    return "{ID:" + this.schedulingUniqueID + ", " + this.jobName + ": " + RLMDateUtils.printTimestamp(this.nextGenerationDate)  + "}";
+    return "{ID:" + this.schedulingUniqueID + ", " + this.jobName + ": " + RLMDateUtils.formatDateForElasticsearchDefault(this.nextGenerationDate)  + "}";
   }
 }

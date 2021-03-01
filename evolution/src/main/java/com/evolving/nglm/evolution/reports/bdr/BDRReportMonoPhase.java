@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deliverable;
@@ -27,7 +28,6 @@ import com.evolving.nglm.evolution.DeliverableService;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
@@ -47,7 +47,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   static
   {
     DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));  // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone()));  // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
   }
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
@@ -78,8 +78,8 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   private static final String deliveryRequestID = "deliveryRequestID";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String eventID = "eventID";
-  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
+  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
 
   private static List<String> headerFieldsOrder = new ArrayList<String>();
   static
@@ -385,7 +385,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     while(tempfromDate.getTime() < toDate.getTime())
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
       }
     return esIndexOdrList;
   }
@@ -404,15 +404,15 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     switch (reportPeriodUnit.toUpperCase())
     {
       case "DAYS":
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
         break;
 
       case "WEEKS":
-        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
         break;
 
       case "MONTHS":
-        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
         break;
 
       default:

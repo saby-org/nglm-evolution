@@ -18,6 +18,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -507,8 +508,8 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
         Date result = day;
         String[] splitTime = time.split(":");
         if (splitTime.length != 2) throw new ServerRuntimeException("bad daily window time field");
-        result = RLMDateUtils.setField(result, Calendar.HOUR_OF_DAY, Integer.valueOf(splitTime[0]), Deployment.getDeployment(tenantID).getBaseTimeZone());
-        result = RLMDateUtils.setField(result, Calendar.MINUTE, Integer.valueOf(splitTime[1]), Deployment.getDeployment(tenantID).getBaseTimeZone());
+        result = RLMDateUtils.setField(result, Calendar.HOUR_OF_DAY, Integer.valueOf(splitTime[0]), Deployment.getDeployment(tenantID).getTimeZone());
+        result = RLMDateUtils.setField(result, Calendar.MINUTE, Integer.valueOf(splitTime[1]), Deployment.getDeployment(tenantID).getTimeZone());
         return result;
       }
     }

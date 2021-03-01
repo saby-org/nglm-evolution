@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -384,7 +385,7 @@ public class VoucherPersonalESService{
         // search for some available vouchers
 
         SearchResponse response = null;
-        Date minExpiryDate=EvolutionUtilities.addTime(SystemTime.getCurrentTime(),Deployment.getMinExpiryDelayForVoucherDeliveryInHours(), EvolutionUtilities.TimeUnit.Hour,Deployment.getDeployment(tenantID).getBaseTimeZone());
+        Date minExpiryDate=EvolutionUtilities.addTime(SystemTime.getCurrentTime(),Deployment.getMinExpiryDelayForVoucherDeliveryInHours(), EvolutionUtilities.TimeUnit.Hour,Deployment.getDeployment(tenantID).getTimeZone());
         try{
           response=elasticsearch.search(VoucherPersonalES.getSearchAvailableVouchersRequest(myMaxPosition+1,index, voucherId, minExpiryDate),RequestOptions.DEFAULT);
         }catch (ElasticsearchStatusException e){

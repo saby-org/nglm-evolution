@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentManagedObject;
 
 import com.evolving.nglm.core.JSONUtilities;

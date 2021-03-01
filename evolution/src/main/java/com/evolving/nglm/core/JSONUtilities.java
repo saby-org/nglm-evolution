@@ -500,11 +500,16 @@ public class JSONUtilities
     return decodeBoolean(jsonObject, key, false, null);
   }
   
+  // /!\ WARNING the two following overload of decodeBoolean are subject to confusion and mistakes
+  // This require a refactoring.
+  // In the meantime, they should be used with caution (not really deprecated yet)
+  // If possible, add comment when using the first one with Boolean.TRUE / Boolean.False
+  @Deprecated
   public static Boolean decodeBoolean(JSONObject jsonObject, String key, Boolean defaultValue) throws JSONUtilitiesException
   {
     return decodeBoolean(jsonObject, key, false, defaultValue);
   }
-
+  @Deprecated
   public static Boolean decodeBoolean(JSONObject jsonObject, String key, boolean required) throws JSONUtilitiesException
   {
     return decodeBoolean(jsonObject, key, required, null);

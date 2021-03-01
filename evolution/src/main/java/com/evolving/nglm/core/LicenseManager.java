@@ -1410,7 +1410,8 @@ public class LicenseManager
     *  parseDateField
     *
     *****************************************/
-
+    // TODO EVPRO-99 remove ?
+    @Deprecated
     private Date parseDateField(String stringDate) throws JSONUtilitiesException
     {
       Date result = null;
@@ -1837,15 +1838,15 @@ public class LicenseManager
                 break;
 
               case "day":
-                alarmTime = RLMDateUtils.addDays(referenceTime, timeValue, Deployment.getSystemTimeZone());
+                alarmTime = RLMDateUtils.addDays(referenceTime, timeValue, Deployment.getDefault().getTimeZone());
                 break;
 
               case "week":
-                alarmTime = RLMDateUtils.addWeeks(referenceTime, timeValue, Deployment.getSystemTimeZone());
+                alarmTime = RLMDateUtils.addWeeks(referenceTime, timeValue, Deployment.getDefault().getTimeZone());
                 break;
 
               case "month":
-                alarmTime = RLMDateUtils.addMonths(referenceTime, timeValue, Deployment.getSystemTimeZone());
+                alarmTime = RLMDateUtils.addMonths(referenceTime, timeValue, Deployment.getDefault().getTimeZone());
                 break;
 
               default:

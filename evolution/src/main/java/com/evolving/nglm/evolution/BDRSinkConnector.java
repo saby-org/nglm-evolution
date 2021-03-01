@@ -1,7 +1,5 @@
 package com.evolving.nglm.evolution;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,6 +9,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
@@ -39,9 +38,6 @@ public class BDRSinkConnector extends SimpleESSinkConnector
   public static class BDRSinkConnectorTask extends StreamESSinkTask<CommodityDeliveryRequest>
   {
     private static final Logger log = LoggerFactory.getLogger(BDRSinkConnector.class);
-
-    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
-    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
     
     /*****************************************
     *
@@ -107,7 +103,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", commodityRequest.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(commodityRequest.getAlternateIDs(), documentMap);
-      documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null?dateFormat.format(commodityRequest.getEventDate()):"");
+      documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null? RLMDateUtils.formatDateForElasticsearchDefault(commodityRequest.getEventDate()):"");
       documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
       documentMap.put("eventID", commodityRequest.getEventID());

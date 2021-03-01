@@ -25,8 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.CriterionField;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Segment;
 import com.evolving.nglm.evolution.SegmentationDimension;
@@ -50,8 +50,8 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private final static int INDEX_SEGMENT_NAME = 1;
   private Map<Integer, Map<String, String>> allDimensionsMapPerTenant = new HashMap<>();
   private List<String> allProfileFields = new ArrayList<>();
-  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
+  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
   private Map<Integer, Map<String, String>> dimNameDisplayMappingPerTenant = new HashMap<>();
 
   /****************************************
@@ -291,7 +291,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
 
       synchronized (allDimensionsMapPerTenant)
       {
-        for(int tenantID : Deployment.getDeployments().keySet())
+        for(int tenantID : Deployment.getTenantIDs())
           {
             if(allDimensionsMapPerTenant.get(tenantID) == null) {  allDimensionsMapPerTenant.put(tenantID, new HashMap<>()); }
             allDimensionsMapPerTenant.get(tenantID).clear();

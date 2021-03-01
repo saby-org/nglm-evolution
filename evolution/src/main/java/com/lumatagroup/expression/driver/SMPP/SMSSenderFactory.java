@@ -7,9 +7,9 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SMSNotificationManager;
 import com.lumatagroup.expression.driver.SMPP.configuration.SMSC;
 import com.lumatagroup.expression.driver.SMPP.Util.SMPPUtil;

@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.ReferenceDataReader;
@@ -158,7 +159,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("vouchers", subscriberProfile.getVouchersJSON());
       documentMap.put("tokens", subscriberProfile.getTokensJSON());
       documentMap.put("subscriberJourneys", subscriberProfile.getSubscriberJourneysJSON());
-      documentMap.put("lastUpdateDate", RLMDateUtils.printTimestamp(now));
+      documentMap.put("lastUpdateDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
       documentMap.put("relationships", subscriberProfile.getSubscriberRelationsJSON());
       addToDocumentMap(documentMap, subscriberProfile, now);
       

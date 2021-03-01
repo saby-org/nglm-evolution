@@ -305,7 +305,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
               }
           }
         documentMap.put("segments",  segments);
-        documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+        documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
       }
     return documentMap;
   }

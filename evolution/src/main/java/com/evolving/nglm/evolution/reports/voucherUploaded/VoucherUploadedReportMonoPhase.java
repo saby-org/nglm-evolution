@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Supplier;
 import com.evolving.nglm.evolution.SupplierService;
 import com.evolving.nglm.evolution.Voucher;
@@ -128,8 +128,8 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
             if (voucherPersonal.get("expiryDate") != null)
               {
                 Object expiryDateObj = voucherPersonal.get("expiryDate");
-                SimpleDateFormat df = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-                df.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(voucher.getTenantID()).getBaseTimeZone()));
+                SimpleDateFormat df = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());    // TODO EVPRO-99
+                df.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(voucher.getTenantID()).getTimeZone()));
                 try
                   {
                     expiryDate = df.parse(ReportsCommonCode.parseDate((String) expiryDateObj));

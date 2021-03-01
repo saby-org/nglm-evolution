@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution.reports.offer;
 
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.*;
@@ -21,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;

@@ -32,11 +32,12 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
@@ -70,12 +71,21 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsHistoryDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService)
+  public ProgramsHistoryDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService, int tenantID, String timeZone)
   {
-    super(datacubeName, elasticsearch, datacubeWriter);
+    super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
 
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     //TODO: this.subscriberStatusDisplayMapping = new SubscriberStatusMap();
+  }
+  
+  public ProgramsHistoryDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
+    this(datacubeName,
+        datacubeManager.getElasticsearchClientAPI(),
+        datacubeManager.getDatacubeWriter(),
+        datacubeManager.getLoyaltyProgramService(),
+        tenantID,
+        Deployment.getDeployment(tenantID).getTimeZone());
   }
 
   /*****************************************
@@ -118,8 +128,8 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     // Therefore, we filter out those subscribers with missing data by looking for lastUpdateDate
     QueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders
         .rangeQuery("lastUpdateDate")
-        .gte(RLMDateUtils.printTimestamp(metricTargetDayStart))
-        .lt(RLMDateUtils.printTimestamp(metricTargetTwoDaysAfterStart)));
+        .gte(this.printTimestamp(metricTargetDayStart))
+        .lt(this.printTimestamp(metricTargetTwoDaysAfterStart)));
     
     //
     // Aggregations
@@ -139,8 +149,8 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     // Sub Aggregation DATE_BUCKETS (internal, won't be exported as a filter)
     //
     DateRangeAggregationBuilder dateBuckets = AggregationBuilders.dateRange("DATE_BUCKETS").field("lastUpdateDate")
-        .addRange(RLMDateUtils.printTimestamp(metricTargetDayStart), RLMDateUtils.printTimestamp(metricTargetDayAfterStart))
-        .addRange(RLMDateUtils.printTimestamp(metricTargetDayAfterStart), RLMDateUtils.printTimestamp(metricTargetTwoDaysAfterStart));
+        .addRange(this.printTimestamp(metricTargetDayStart), this.printTimestamp(metricTargetDayAfterStart))
+        .addRange(this.printTimestamp(metricTargetDayAfterStart), this.printTimestamp(metricTargetTwoDaysAfterStart));
     
     //
     // Rewards
@@ -432,15 +442,15 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   public void definitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone());
+    Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
     
     // Dates: YYYY-MM-dd 00:00:00.000
-    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());// TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
 
-    this.metricTargetDay = RLMDateUtils.printDay(yesterday);
+    this.metricTargetDay = this.printDay(yesterday);
     this.metricTargetDayStart = beginningOfYesterday;
     this.metricTargetDayAfterStart = beginningOfToday;
     this.metricTargetTwoDaysAfterStart = beginningOfTomorrow;
@@ -449,7 +459,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     // Timestamp & period
     //
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
-    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+    String timestamp = this.printTimestamp(endOfYesterday);
     long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     
     this.run(timestamp, targetPeriod);
@@ -463,15 +473,15 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   public void preview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date afterTomorrow = RLMDateUtils.addDays(now, 2, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
+    Date afterTomorrow = RLMDateUtils.addDays(now, 2, this.getTimeZone());
     
     // Dates: YYYY-MM-dd 00:00:00.000
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningDayAfterTomorrow = RLMDateUtils.truncate(afterTomorrow, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
+    Date beginningDayAfterTomorrow = RLMDateUtils.truncate(afterTomorrow, Calendar.DATE, this.getTimeZone());
     
-    this.metricTargetDay = RLMDateUtils.printDay(now);
+    this.metricTargetDay = this.printDay(now);
     this.metricTargetDayStart = beginningOfToday;
     this.metricTargetDayAfterStart = beginningOfTomorrow;
     this.metricTargetTwoDaysAfterStart = beginningDayAfterTomorrow;
@@ -479,7 +489,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     //
     // Timestamp & period
     //
-    String timestamp = RLMDateUtils.printTimestamp(now);
+    String timestamp = this.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     
     this.run(timestamp, targetPeriod);

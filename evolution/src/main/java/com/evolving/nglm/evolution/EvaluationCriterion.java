@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -947,22 +948,22 @@ public class EvaluationCriterion
                     case Instant:
                       break;
                     case Minute:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
                       break;
                     case Hour:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.HOUR, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.HOUR, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
                       break;
                     case Day:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
                       break;
                     case Week:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
                       break;
                     case Month:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MONTH, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MONTH, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
                       break;
                     case Year:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
                       break;
                   }
               }
@@ -970,10 +971,10 @@ public class EvaluationCriterion
               
           case AniversaryCriterion:
             {
-              evaluatedArgument = RLMDateUtils.truncate((Date) evaluatedArgument, Calendar.DATE, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
-              criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
-              int yearOfEvaluatedArgument = RLMDateUtils.getField((Date) evaluatedArgument, Calendar.YEAR, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
-              criterionFieldValue = RLMDateUtils.setField((Date) criterionFieldValue, Calendar.YEAR, yearOfEvaluatedArgument, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+              evaluatedArgument = RLMDateUtils.truncate((Date) evaluatedArgument, Calendar.DATE, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
+              criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
+              int yearOfEvaluatedArgument = RLMDateUtils.getField((Date) evaluatedArgument, Calendar.YEAR, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
+              criterionFieldValue = RLMDateUtils.setField((Date) criterionFieldValue, Calendar.YEAR, yearOfEvaluatedArgument, Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone());
               break;
             }
               
@@ -1526,7 +1527,7 @@ public class EvaluationCriterion
         case DateCriterion:
           script.append("def left; ");
           script.append("if (doc." + esField + ".size() != 0) { ");
-          script.append("def leftSF = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");
+          script.append("def leftSF = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");   // TODO EVPRO-99
           script.append("def leftMillis = doc." + esField + ".value.getMillis(); ");
           script.append("def leftCalendar = leftSF.getCalendar(); ");
           script.append("leftCalendar.setTimeInMillis(leftMillis); ");

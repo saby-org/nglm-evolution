@@ -169,9 +169,9 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
       documentMap.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
       documentMap.put("conversionCount", journeyStatistic.getConversionCount());
-      documentMap.put("lastConversionDate", journeyStatistic.getLastConversionDate() != null ? RLMDateUtils.printTimestamp(journeyStatistic.getLastConversionDate()) : null);
+      documentMap.put("lastConversionDate", journeyStatistic.getLastConversionDate() != null ? RLMDateUtils.formatDateForElasticsearchDefault(journeyStatistic.getLastConversionDate()) : null);
       documentMap.put("journeyComplete", journeyStatistic.getJourneyComplete());
-      documentMap.put("journeyExitDate", (journeyStatistic.getJourneyExitDate() != null)? RLMDateUtils.printTimestamp(journeyStatistic.getJourneyExitDate()) : null);
+      documentMap.put("journeyExitDate", (journeyStatistic.getJourneyExitDate() != null)? RLMDateUtils.formatDateForElasticsearchDefault(journeyStatistic.getJourneyExitDate()) : null);
       
       documentMap.put("nodeID", journeyStatistic.getToNodeID());
       if(journeyStatistic.getSpecialExitStatus() != null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty()) {

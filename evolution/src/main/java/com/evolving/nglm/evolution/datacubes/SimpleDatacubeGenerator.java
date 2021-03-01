@@ -45,9 +45,9 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   * Constructor
   *
   *****************************************/
-  public SimpleDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter) 
+  public SimpleDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, int tenantID, String timeZone) 
   {
-    super(datacubeName, elasticsearch, datacubeWriter);
+    super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
   }
   
   /*****************************************
