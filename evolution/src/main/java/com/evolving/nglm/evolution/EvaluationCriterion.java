@@ -1930,7 +1930,7 @@ public class EvaluationCriterion
            insideQuery=queryCompareBool;
            break;	
       case EmptyIntersectionOperator:
-    	  Object statusvalues = evaluateArgument(ExpressionDataType.StringSetExpression);
+    	  HashSet<String> statusvalues =  (HashSet<String>) evaluateArgument(ExpressionDataType.StringSetExpression);
     	  queryStatus= QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues);
     	  insideQuery = QueryBuilders.boolQuery().must(queryID).should(queryStatus);
         break;
@@ -1950,7 +1950,7 @@ public class EvaluationCriterion
 //        insideQuery = insideQueryBool;
 //        break;
       case NonEmptyIntersectionOperator:
-    	  Object statusvalues1 = evaluateArgument(ExpressionDataType.StringSetExpression);
+    	  HashSet<String> statusvalues1 = ( HashSet<String>)evaluateArgument(ExpressionDataType.StringSetExpression);
     	  queryStatus= QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues1));
     	  insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
         break;
