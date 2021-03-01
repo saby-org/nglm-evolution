@@ -103,6 +103,8 @@
   "purchaseTimeoutMsComment" : "timeout for completion when calling purchase in sync mode",
   "purchaseTimeoutMs" : 15000,
   
+  "nodesTransitionsHistorySize" : 10,
+  
   "cleanupSubscriberElasticsearchIndexes" :
   [
     "subscriberprofile"
