@@ -293,7 +293,9 @@ public class ReportMonoPhase
     }
     catch (IOException e1)
     {
-      log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage());
+      StringWriter stackTraceWriter = new StringWriter();
+      e1.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage() + " stack : {}" + stackTraceWriter.toString());
       res = false;
     }
     finally {
