@@ -1932,7 +1932,7 @@ public class EvaluationCriterion
       case EmptyIntersectionOperator:
     	  HashSet<String> statusvalues =  (HashSet<String>) evaluateArgument(ExpressionDataType.StringSetExpression);
     	  queryStatus= QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues);
-    	  insideQuery = QueryBuilders.boolQuery().must(queryID).should(queryStatus);
+    	  insideQuery = QueryBuilders.boolQuery().must(queryID).mustNot(queryStatus);
         break;
     		  
        
@@ -1951,7 +1951,7 @@ public class EvaluationCriterion
 //        break;
       case NonEmptyIntersectionOperator:
     	  HashSet<String> statusvalues1 = ( HashSet<String>)evaluateArgument(ExpressionDataType.StringSetExpression);
-    	  queryStatus= QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues1));
+    	  queryStatus= QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues1);
     	  insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
         break;
       default:
