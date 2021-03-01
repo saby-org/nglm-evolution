@@ -7482,7 +7482,7 @@ public class GUIManager
           }
         else
           {
-            targetingType = JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria");
+            targetingType = JSONUtilities.decodeString(existingBulkCampaignObject, "targetingType", "criteria");
           }
         if (jsonRoot.containsKey("priority"))
           {
@@ -7657,13 +7657,15 @@ public class GUIManager
             campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
 
             campaignJSONRepresentation.put("targetingFileVariableID", targetingFileVariableID);
-            campaignJSONRepresentation.put("targetFileVariables", targetFileVariablesJSON);
+            campaignJSONRepresentation.put("targetFileVariables", targetFileVariablesJSON);            
+            
 
             //
             // campaignJSON
             //
 
             campaignJSON = JSONUtilities.encodeObject(campaignJSONRepresentation);
+            log.debug("campaignJSON {}", campaignJSON);
 
             /****************************************
              *
