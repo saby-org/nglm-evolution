@@ -178,7 +178,6 @@ public class ReportMonoPhase
 
     elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
     try {
-
       fos = new FileOutputStream(file);
       writer = new ZipOutputStream(fos);
       ZipEntry entry = new ZipEntry(new File(csvfile).getName());
@@ -295,7 +294,7 @@ public class ReportMonoPhase
     {
       StringWriter stackTraceWriter = new StringWriter();
       e1.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage() + " stack : {}" + stackTraceWriter.toString());
+      log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
       res = false;
     }
     finally {
