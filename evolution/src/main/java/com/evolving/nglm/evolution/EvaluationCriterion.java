@@ -1878,15 +1878,15 @@ public class EvaluationCriterion
     switch (criterion)
     {
     case "Journey":
-        journeyName = String.join(", ", (HashSet) (argument.evaluate(null, null)));
+        journeyName = String.join(",", (HashSet) (argument.evaluate(null, null)));
         return QueryBuilders.matchAllQuery();
         
       case "Campaign":
-        campaignName = String.join(", ", (HashSet) (argument.evaluate(null, null)));
+        campaignName = String.join(",", (HashSet) (argument.evaluate(null, null)));
         return QueryBuilders.matchAllQuery();
         
       case "Bulkcampaign":
-        bulkcampaignName = String.join(", ",(HashSet) (argument.evaluate(null, null)));
+        bulkcampaignName = String.join(",",(HashSet) (argument.evaluate(null, null)));
         return QueryBuilders.matchAllQuery();
                 
       case "JourneyStatus":
