@@ -1905,7 +1905,7 @@ public class EvaluationCriterion
         throw new CriterionException("unknown criteria : " + esField);
     }
     
-    QueryBuilder queryID = QueryBuilders.termQuery("subscriberJourneys.journeyID", value);
+    QueryBuilder queryID = QueryBuilders.termsQuery("subscriberJourneys.journeyID", value.split(","));
     QueryBuilder queryStatus = null;
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;
@@ -1923,7 +1923,7 @@ public class EvaluationCriterion
     case IsNullOperator:
     	   BoolQueryBuilder queryCompareBool = QueryBuilders.boolQuery();
           
-               queryCompareBool = queryCompareBool.should(QueryBuilders.termsQuery("subscriberJourneys.journeyID", value));
+               queryCompareBool = queryCompareBool.should(QueryBuilders.termsQuery("subscriberJourneys.journeyID", value.split(",")));
              
            insideQuery=queryCompareBool;
            break;	
