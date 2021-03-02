@@ -386,9 +386,15 @@ public class SimpleSMSSender extends SMSSenderListener {
 		//DialogManagerMessage sms = expandedsms.getOriginalMsg();
 		logger.info("SimpleSMSSender.sendSMS("+text+")");
 
+		// BLOCKING TILL CONNECTION UP !!!
 		if (!conn.isConnected()) {
-			logger.info("SimpleSMSSender.sendSMS("+text+") cannot send SMS, connection is not established");
+			logger.info("SimpleSMSSender.sendSMS("+text+") cannot send SMS, connection is not established, blocking till established");
+			while (!conn.isConnected()) {
+				try { Thread.sleep(10L); } catch (InterruptedException e) {}
+			}
+			logger.info("SimpleSMSSender.sendSMS("+text+") connection established");
 		}
+
 		try {
 
 			if (desination==null || desination.length() == 0) {
