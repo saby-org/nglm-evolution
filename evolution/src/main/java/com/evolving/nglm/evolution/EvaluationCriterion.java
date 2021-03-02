@@ -1910,65 +1910,62 @@ public class EvaluationCriterion
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;
     boolean isNot = false;
-   System.out.println("criteria operator:"+criterionOperator); 
-//    if(criterionOperator.equals(CriterionOperator.EmptyIntersectionOperator) || criterionOperator.equals(CriterionOperator.IsNullOperator))
-//    	 isNot = true;
-    if(criterionOperator.equals(CriterionOperator.IsNullOperator))
-   	      isNot = true;
-    	switch (criterionOperator)
-    {
-//      case NotInSetOperator:
-//        isNot = true;
-        // 
-    	
-    case IsNotNullOperator:
-    case IsNullOperator:
-    	   BoolQueryBuilder queryCompareBool = QueryBuilders.boolQuery();
-          
-               queryCompareBool = queryCompareBool.should(QueryBuilders.termsQuery("subscriberJourneys.journeyID", value.split(",")));
-             
-           insideQuery=queryCompareBool;
-           break;	
-      case EmptyIntersectionOperator:
-    	  HashSet<String> statusvalues =  (HashSet<String>) evaluateArgument(ExpressionDataType.StringSetExpression);
-    	  queryStatus= QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues);
-    	  insideQuery = QueryBuilders.boolQuery().must(queryID).mustNot(queryStatus);
-        break;
-    		  
-       
-//        queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringSetExpression);
-//        if (!(queryStatus instanceof BoolQueryBuilder))
-//          {
-//            throw new CriterionException("BoolQueryBuilder expected, got " + queryStatus.getClass().getName());
-//          }
-//        BoolQueryBuilder boolQuery = (BoolQueryBuilder) queryStatus;
-//        BoolQueryBuilder insideQueryBool = QueryBuilders.boolQuery().must(queryID).minimumShouldMatch(1);
-//        for (QueryBuilder should : boolQuery.should())
-//          {
-//            insideQueryBool = insideQueryBool.should(should);
-//          }
-//        insideQuery = insideQueryBool;
-//        break;
-      case NonEmptyIntersectionOperator:
-    	  HashSet<String> statusvalues1 = ( HashSet<String>)evaluateArgument(ExpressionDataType.StringSetExpression);
-    	  queryStatus= QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues1);
-    	  insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
-        break;
-      default:
-        queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringExpression);
-        insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
-        break;
-      }
-    	
-   // if(insideQuery!=null)
-    query = QueryBuilders.nestedQuery("subscriberJourneys", insideQuery, ScoreMode.Total);
-    if (isNot)
-      {
-        query = QueryBuilders.boolQuery().mustNot(query);
-      }
-    System.out.println("query is:"+query.toString());
-    return query;
-  }
+	if (criterionOperator.equals(CriterionOperator.IsNullOperator))
+		isNot = true;
+	switch (criterionOperator) {
+	// case NotInSetOperator:
+	// isNot = true;
+	//
+
+	case IsNotNullOperator:
+	case IsNullOperator:
+		BoolQueryBuilder queryCompareBool = QueryBuilders.boolQuery();
+
+		queryCompareBool = queryCompareBool
+				.should(QueryBuilders.termsQuery("subscriberJourneys.journeyID", value.split(",")));
+
+		insideQuery = queryCompareBool;
+		break;
+	case EmptyIntersectionOperator:
+		HashSet<String> statusvalues = (HashSet<String>) evaluateArgument(ExpressionDataType.StringSetExpression);
+		queryStatus = QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues);
+		insideQuery = QueryBuilders.boolQuery().must(queryID).mustNot(queryStatus);
+		break;
+
+	// queryStatus = buildCompareQuery("subscriberJourneys.status",
+	// ExpressionDataType.StringSetExpression);
+	// if (!(queryStatus instanceof BoolQueryBuilder))
+	// {
+	// throw new CriterionException("BoolQueryBuilder expected, got " +
+	// queryStatus.getClass().getName());
+	// }
+	// BoolQueryBuilder boolQuery = (BoolQueryBuilder) queryStatus;
+	// BoolQueryBuilder insideQueryBool =
+	// QueryBuilders.boolQuery().must(queryID).minimumShouldMatch(1);
+	// for (QueryBuilder should : boolQuery.should())
+	// {
+	// insideQueryBool = insideQueryBool.should(should);
+	// }
+	// insideQuery = insideQueryBool;
+	// break;
+	case NonEmptyIntersectionOperator:
+		HashSet<String> statusvalues1 = (HashSet<String>) evaluateArgument(ExpressionDataType.StringSetExpression);
+		queryStatus = QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues1);
+		insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
+		break;
+	default:
+		queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringExpression);
+		insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
+		break;
+	}
+
+	// if(insideQuery!=null)
+	query = QueryBuilders.nestedQuery("subscriberJourneys", insideQuery, ScoreMode.Total);
+	if (isNot) {
+		query = QueryBuilders.boolQuery().mustNot(query);
+	}
+	return query;
+}
 
   /*****************************************
   *
