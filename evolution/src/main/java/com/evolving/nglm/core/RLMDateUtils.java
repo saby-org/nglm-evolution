@@ -60,6 +60,16 @@ public class RLMDateUtils
     return DAY_FORMAT.get().format(date);
   }
   
+  public static final ThreadLocal<DateFormat> WEEK_FORMAT = ThreadLocal.withInitial(()->{
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-ww");
+    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    return sdf;
+  });
+  
+  public static final String printWeek(Date date) {
+    return WEEK_FORMAT.get().format(date);
+  }
+  
   /*****************************************
   *
   *  utility methods

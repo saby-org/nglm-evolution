@@ -94,6 +94,7 @@ public class Deployment
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionDaysExpiredVouchers; 
   private static int elasticsearchRetentionDaysVDR;
+  private static int elasticsearchRetentionWeeksDatacubeJourneys;
 
   //
   //  accessors
@@ -150,6 +151,7 @@ public class Deployment
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
   public static int getElasticsearchRetentionDaysExpiredVouchers() { return elasticsearchRetentionDaysExpiredVouchers; }  
+  public static int getElasticsearchRetentionWeeksDatacubeJourneys() { return elasticsearchRetentionWeeksDatacubeJourneys; }
   public static Set<String> getCleanupSubscriberElasticsearchIndexes() { return cleanupSubscriberElasticsearchIndexes; }
   public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
   
@@ -858,6 +860,7 @@ public class Deployment
         elasticsearchRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysBulkCampaigns", true);
         elasticsearchRetentionDaysExpiredVouchers = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysExpiredVouchers", true);
         elasticsearchRetentionDaysVDR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysVDR", true);
+        elasticsearchRetentionWeeksDatacubeJourneys = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionWeeksDatacubeJourneys", true);
       }
     catch (JSONUtilitiesException|NumberFormatException e)
       {

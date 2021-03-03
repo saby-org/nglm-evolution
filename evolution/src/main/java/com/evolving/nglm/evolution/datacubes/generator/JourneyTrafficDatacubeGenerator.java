@@ -25,6 +25,7 @@ import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -48,6 +49,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   private List<String> basicFilterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
   private JourneysMap journeysMap;
+  private JourneyService journeyService;
   
   private String journeyID;
   private Date publishDate;
@@ -65,6 +67,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);
+    this.journeyService = journeyService;
     
     //
     // Filter fields
@@ -88,7 +91,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   
   @Override protected String getDatacubeESIndex() 
   { 
-    return DATACUBE_ES_INDEX_PREFIX + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID); 
+    return DATACUBE_ES_INDEX_PREFIX + DatacubeUtils.retrieveJourneyEndWeek(this.journeyID, this.journeyService);
   }
 
   /*****************************************

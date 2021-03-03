@@ -83,6 +83,9 @@
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
   "ESRetentionDaysVDR"              : 45,
+  
+  "comment": "WARNING: here it is in week",
+  "ESRetentionWeeksDatacubeJourneys": 3,
 
   "hourlyReportCronEntryString"   : "0 * * * *",
   "dailyReportCronEntryString"    : "5 2 * * *",

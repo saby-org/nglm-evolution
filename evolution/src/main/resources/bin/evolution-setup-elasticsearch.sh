@@ -245,7 +245,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/bdr
       "date_index_name" : {
         "field" : "eventDatetime",
         "index_name_prefix" : "detailedrecords_bonuses-",
-        "index_name_format" : "yyyy-MM-dd",
+        "index_name_format" : "YYYY-ww",
         "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
         "timezone" : "'$DEPLOYMENT_TIMEZONE'",
         "date_rounding" : "d"
@@ -324,7 +324,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/tok
       "date_index_name" : {
         "field" : "eventDatetime",
         "index_name_prefix" : "detailedrecords_tokens-",
-        "index_name_format" : "yyyy-MM-dd",
+        "index_name_format" : "YYYY-ww",
         "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
         "timezone" : "'$DEPLOYMENT_TIMEZONE'",
         "date_rounding" : "d"
@@ -415,7 +415,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr
       "date_index_name" : {
         "field" : "eventDatetime",
         "index_name_prefix" : "detailedrecords_offers-",
-        "index_name_format" : "yyyy-MM-dd",
+        "index_name_format" : "YYYY-ww",
         "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
         "timezone" : "'$DEPLOYMENT_TIMEZONE'",
         "date_rounding" : "d"
@@ -498,7 +498,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/vdr
       "date_index_name" : {
         "field" : "eventDatetime",
         "index_name_prefix" : "detailedrecords_vouchers-",
-        "index_name_format" : "yyyy-MM-dd",
+        "index_name_format" : "YYYY-ww",
         "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
         "timezone" : "'$DEPLOYMENT_TIMEZONE'",
         "date_rounding" : "d"
@@ -583,7 +583,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/mdr
       "date_index_name" : {
         "field" : "creationDate",
         "index_name_prefix" : "detailedrecords_messages-",
-        "index_name_format" : "yyyy-MM-dd",
+        "index_name_format" : "YYYY-ww",
         "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
         "timezone" : "'$DEPLOYMENT_TIMEZONE'",
         "date_rounding" : "d"
