@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -74,6 +75,10 @@ public class LoyaltyProgramChallengeHistory
   
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public List<LevelHistory> getLevelHistory() { return levelHistory; }
+  public List<LevelHistory> getAllLevelHistoryForThisPeriod(Integer occurrenceNumber) 
+  { 
+    return levelHistory.stream().filter(level -> level.getOccurrenceNumber() == occurrenceNumber).collect(Collectors.toList()); 
+  }
   
   /*****************************************
   *
@@ -215,7 +220,7 @@ public class LoyaltyProgramChallengeHistory
   *
   *****************************************/
   
-  public void addLevelHistory(String fromLevel, String toLevel, Integer occurrenceNumber, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramLevelChange levelUpdateType) 
+  public void addLevelHistory(String fromLevel, String toLevel, Integer occurrenceNumber, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramLevelChange levelUpdateType, Integer previousPeriodScore, String previousPeriodLevel, Date previousPeriodStartDate) 
   {
     LevelHistory levelHistory = new LevelHistory(fromLevel, toLevel, occurrenceNumber, enrollmentDate, deliveryRequestID, levelUpdateType);
     this.levelHistory.add(levelHistory);
@@ -267,6 +272,10 @@ public class LoyaltyProgramChallengeHistory
       schemaBuilder.field("transitionDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("levelUpdateType", Schema.OPTIONAL_STRING_SCHEMA);
+      
+      schemaBuilder.field("previousPeriodScore", Schema.OPTIONAL_INT32_SCHEMA);
+      schemaBuilder.field("previousPeriodLevel", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("previousPeriodStartDate", Timestamp.builder().optional().schema());
       schema = schemaBuilder.build();
     };
 
@@ -295,6 +304,9 @@ public class LoyaltyProgramChallengeHistory
     private String deliveryRequestID;
     private LoyaltyProgramLevelChange levelUpdateType;
     private Integer occurrenceNumber;
+    private Integer previousPeriodScore;
+    private String previousPeriodLevel;
+    private Date previousPeriodStartDate;
     
     /*****************************************
     *
@@ -308,6 +320,9 @@ public class LoyaltyProgramChallengeHistory
     public String getDeliveryRequestID() { return deliveryRequestID; }
     public LoyaltyProgramLevelChange getLevelUpdateType() { return levelUpdateType; }
     public Integer getOccurrenceNumber() { return occurrenceNumber; }
+    public Integer getPreviousPeriodScore() { return previousPeriodScore; }
+    public String getPreviousPeriodLevel() { return previousPeriodLevel; }
+    public Date getPreviousPeriodStartDate() { return previousPeriodStartDate; }
     
     /*****************************************
     *
