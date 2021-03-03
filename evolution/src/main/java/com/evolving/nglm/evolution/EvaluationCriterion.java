@@ -1910,13 +1910,10 @@ public class EvaluationCriterion
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;
     boolean isNot = false;
-	if (criterionOperator.equals(CriterionOperator.IsNullOperator))
-		isNot = true;
+    if (criterionOperator.equals(CriterionOperator.IsNullOperator)) {
+    	isNot = true;
+    }
 	switch (criterionOperator) {
-	// case NotInSetOperator:
-	// isNot = true;
-	//
-
 	case IsNotNullOperator:
 	case IsNullOperator:
 		BoolQueryBuilder queryCompareBool = QueryBuilders.boolQuery();
