@@ -26,6 +26,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 public class ComplexObjectInstance
 {
@@ -84,7 +85,7 @@ public class ComplexObjectInstance
 
   private String complexObjectTypeID;
   private String elementID;
-  private Map<String, ComplexObjectinstanceSubfieldValue> fieldValues; // key is the fieldName
+  private Map<String, DataModelFieldValue> fieldValues; // key is the fieldName
 
   /*****************************************
   *
@@ -95,7 +96,7 @@ public class ComplexObjectInstance
   
   public String getComplexObjectTypeID() { return complexObjectTypeID; }
   public String getElementID() { return elementID; }
-  public Map<String, ComplexObjectinstanceSubfieldValue> getFieldValues() { return fieldValues; }
+  public Map<String, DataModelFieldValue> getFieldValues() { return fieldValues; }
 
   //
   //  setters
@@ -103,7 +104,7 @@ public class ComplexObjectInstance
 
   public void setComplexObjectTypeID(String complexObjectTypeID) { this.complexObjectTypeID = complexObjectTypeID; }
   public void setElementID(String elementID) { this.elementID = elementID; }
-  public void setFieldValues(Map<String, ComplexObjectinstanceSubfieldValue> fieldValues) { this.fieldValues = fieldValues; }
+  public void setFieldValues(Map<String, DataModelFieldValue> fieldValues) { this.fieldValues = fieldValues; }
 
   /*****************************************
   *
@@ -193,17 +194,15 @@ public class ComplexObjectInstance
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
     if(complexObjectType == null) { /*Should not happen as the detection is done before calling Pack */ return new byte[] {}; };
     
-    return serialize(complexObjectType.getSubfields());
-    
+    return serialize(complexObjectType.getSubfields());    
   }
   
   private byte[] serialize(Map<Integer, ComplexObjectTypeSubfield> complexObjectTypeFields)
   {
-    ByteBuffer resultByteBuffer = ByteBuffer.allocate(1000000);  
-    
-    for(ComplexObjectinstanceSubfieldValue fieldValue : this.getFieldValues().values())
+    ByteBuffer resultByteBuffer = ByteBuffer.allocate(1000000);     
+    for(DataModelFieldValue fieldValue : this.getFieldValues().values())
       {
-        ComplexObjectTypeSubfield fieldType = complexObjectTypeFields.get(fieldValue.getPrivateSubfieldID());
+        ComplexObjectTypeSubfield fieldType = complexObjectTypeFields.get(fieldValue.getPrivateFieldID());
         if(fieldType != null)
           {
             if(fieldValue.getValue() == null) {/*no need to serialize*/ continue;}
@@ -348,13 +347,14 @@ public class ComplexObjectInstance
     resultByteBuffer.get(result);
     return result;
   }
+  
   /*****************************************
   *
   *  ComplexObjectinstanceFieldValue
   *
   *****************************************/
 
-  private Map<String, ComplexObjectinstanceSubfieldValue> unserializeFields(byte[] fieldValues)
+  private Map<String, DataModelFieldValue> unserializeFields(byte[] fieldValues)
   {
     
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
@@ -363,9 +363,9 @@ public class ComplexObjectInstance
     return deserialize(fieldValues, complexObjectType.getSubfields(), this.complexObjectTypeID);
   }
 
-  private static HashMap<String, ComplexObjectinstanceSubfieldValue> deserialize(byte[] fieldValues, Map<Integer, ComplexObjectTypeSubfield> complexObjectTypeFields, String complexObjectTypeID)
+  private static HashMap<String, DataModelFieldValue> deserialize(byte[] fieldValues, Map<Integer, ComplexObjectTypeSubfield> complexObjectTypeFields, String complexObjectTypeID)
   {
-    HashMap<String, ComplexObjectinstanceSubfieldValue> result = new HashMap<String, ComplexObjectinstanceSubfieldValue>();
+    HashMap<String, DataModelFieldValue> result = new HashMap<String, DataModelFieldValue>();
     ByteBuffer buffer = ByteBuffer.wrap(fieldValues);
     
     int maxPosition = fieldValues.length;
@@ -390,12 +390,12 @@ public class ComplexObjectInstance
           case BooleanCriterion:
             if(value[0] == 0) 
               {
-                ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, Boolean.FALSE);
+                DataModelFieldValue cofv = new DataModelFieldValue(fieldType.getSubfieldName(), fieldID, Boolean.FALSE);
                 result.put(fieldType.getSubfieldName(), cofv);
               }
             else if(value[0] == 1)
               {
-                ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, Boolean.TRUE);
+                DataModelFieldValue cofv = new DataModelFieldValue(fieldType.getSubfieldName(), fieldID, Boolean.TRUE);
                 result.put(fieldType.getSubfieldName(), cofv);                
               }
             else 
@@ -411,7 +411,7 @@ public class ComplexObjectInstance
               {
                 valueLong = (valueLong << 8) | (0xFF & value[i]);
               }
-            ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, valueLong);
+            DataModelFieldValue cofv = new DataModelFieldValue(fieldType.getSubfieldName(), fieldID, valueLong);
             result.put(fieldType.getSubfieldName(), cofv);  
             break;
             
@@ -422,13 +422,13 @@ public class ComplexObjectInstance
                 valueLong = (valueLong << 8) | (0xFF & value[i]);
               }
             Date d = new Date(valueLong);
-            cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, d);
+            cofv = new DataModelFieldValue(fieldType.getSubfieldName(), fieldID, d);
             result.put(fieldType.getSubfieldName(), cofv);  
            break;                
 
           case StringCriterion :
             String s = new String(value);
-            cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, s);
+            cofv = new DataModelFieldValue(fieldType.getSubfieldName(), fieldID, s);
             result.put(fieldType.getSubfieldName(), cofv);  
             break;
             
@@ -452,7 +452,7 @@ public class ComplexObjectInstance
               }
             if(stringSet != null) 
               {
-                cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, stringSet);
+                cofv = new DataModelFieldValue(fieldType.getSubfieldName(), fieldID, stringSet);
                 result.put(fieldType.getSubfieldName(), cofv); 
               }            
             break;
@@ -501,22 +501,22 @@ public class ComplexObjectInstance
     fieldTypes.put(fieldTypeDate.getPrivateID(), fieldTypeDate);
     System.out.println("date private field " + fieldTypeDate.getPrivateID());
     
-    Map<String, ComplexObjectinstanceSubfieldValue> values = new HashMap<>();
+    Map<String, DataModelFieldValue> values = new HashMap<>();
     ComplexObjectInstance instance = new ComplexObjectInstance("AComplexObjectName", "element1");    
 
-    ComplexObjectinstanceSubfieldValue value = new ComplexObjectinstanceSubfieldValue(fieldTypeInteger.getSubfieldName(), fieldTypeInteger.getPrivateID(), new Long(1556788992556635323L));
+    DataModelFieldValue value = new DataModelFieldValue(fieldTypeInteger.getSubfieldName(), fieldTypeInteger.getPrivateID(), new Long(1556788992556635323L));
     values.put(fieldTypeInteger.getSubfieldName(), value);
                                                                                                                    
-    value = new ComplexObjectinstanceSubfieldValue(fieldTypeString.getSubfieldName(), fieldTypeString.getPrivateID(), "brown");
+    value = new DataModelFieldValue(fieldTypeString.getSubfieldName(), fieldTypeString.getPrivateID(), "brown");
     values.put(fieldTypeString.getSubfieldName(), value);
 
-    value = new ComplexObjectinstanceSubfieldValue(fieldTypeString.getSubfieldName(), fieldTypeDate.getPrivateID(), date);
+    value = new DataModelFieldValue(fieldTypeString.getSubfieldName(), fieldTypeDate.getPrivateID(), date);
     values.put(fieldTypeDate.getSubfieldName(), value);
 
     instance.setFieldValues(values);
     byte[] ser = instance.serialize(fieldTypes);
     
-    HashMap<String, ComplexObjectinstanceSubfieldValue> unserValues = deserialize(ser, fieldTypes, "AComplexObjectName");
+    HashMap<String, DataModelFieldValue> unserValues = deserialize(ser, fieldTypes, "AComplexObjectName");
     
     System.out.println("Integer " + (unserValues.get(fieldTypeInteger.getPrivateID()).equals(values.get(fieldTypeInteger.getPrivateID()))));
     
