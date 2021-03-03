@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -49,6 +50,9 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     schemaBuilder.field("previousLevelName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("levelEnrollmentDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("scoreLevel", SchemaBuilder.int32().defaultValue(0).schema());
+    schemaBuilder.field("previousPeriodScore", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("previousPeriodLevel", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("previousPeriodStartDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("loyaltyProgramChallengeHistory", LoyaltyProgramChallengeHistory.schema());
     schema = schemaBuilder.build();
   };
@@ -76,6 +80,9 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   private String previousLevelName;
   private Date levelEnrollmentDate;
   private int scoreLevel;
+  private Integer previousPeriodScore;
+  private String previousPeriodLevel;
+  private Date previousPeriodStartDate;
   private LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory;
   
   /*****************************************
@@ -89,6 +96,9 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   public Date getLevelEnrollmentDate() { return levelEnrollmentDate; }
   public int getScoreLevel() { return scoreLevel; }
   public LoyaltyProgramChallengeHistory getLoyaltyProgramChallengeHistory() { return loyaltyProgramChallengeHistory; }
+  public Integer getPreviousPeriodScore() { return previousPeriodScore; }
+  public String getPreviousPeriodLevel() { return previousPeriodLevel; }
+  public Date getPreviousPeriodStartDate() { return previousPeriodStartDate; }
 
   //
   //  setters
@@ -238,7 +248,6 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        Integer previousPeriodScore = null; String previousPeriodLevel = null; Date previousPeriodStartDate = null;
         if (occouranceNumber != null && occouranceNumber != 1)
           {
             //
@@ -253,28 +262,32 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
             //
             
             List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
+            List<LevelHistory> lastPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber-1);
             if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
               {
                 //
                 // period change(entry to new period)
                 //
                 
-                previousPeriodLevel = fromLevel;
-                previousPeriodScore = previousScore;
+                this.previousPeriodLevel = fromLevel;
+                this.previousPeriodScore = previousScore;
                 
-              }
-            else
-              {
-                //
-                // period same
-                //
-                
-                previousPeriodLevel = thisPeroidLevels.get(0).getPreviousPeriodLevel();
-                previousPeriodScore = thisPeroidLevels.get(0).getPreviousPeriodScore();
+                if (lastPeroidLevels != null && !lastPeroidLevels.isEmpty())
+                  {
+                    List<LevelHistory> firstLevels = lastPeroidLevels.stream().filter(level -> level.getFromLevel().equals(loyaltyProgramChallenge.getFirstLevel().getLevelName())).collect(Collectors.toList());
+                    if (firstLevels != null && !firstLevels.isEmpty())
+                      {
+                        this.previousPeriodStartDate = firstLevels.get(0).getTransitionDate();
+                      }
+                  }
+                else
+                  {
+                    this.previousPeriodStartDate = loyaltyProgramChallenge.getEffectiveStartDate();
+                  }
               }
           }
         
-        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange, previousPeriodScore, previousPeriodLevel, previousPeriodStartDate);
+        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
         break;
 
       case Optout:
@@ -296,7 +309,6 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        previousPeriodScore = null; previousPeriodLevel = null; previousPeriodStartDate = null;
         if (occouranceNumber != null && occouranceNumber != 1)
           {
             //
@@ -311,28 +323,32 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
             //
             
             List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
-            if (thisPeroidLevels == null && thisPeroidLevels.isEmpty())
+            List<LevelHistory> lastPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber-1);
+            if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
               {
                 //
                 // period change(entry to new period)
                 //
                 
-                previousPeriodLevel = fromLevel;
-                previousPeriodScore = previousScore;
+                this.previousPeriodLevel = fromLevel;
+                this.previousPeriodScore = previousScore;
                 
-              }
-            else
-              {
-                //
-                // period same
-                //
-                
-                previousPeriodLevel = thisPeroidLevels.get(0).getPreviousPeriodLevel();
-                previousPeriodScore = thisPeroidLevels.get(0).getPreviousPeriodScore();
+                if (lastPeroidLevels != null && !lastPeroidLevels.isEmpty())
+                  {
+                    List<LevelHistory> firstLevels = lastPeroidLevels.stream().filter(level -> level.getFromLevel().equals(loyaltyProgramChallenge.getFirstLevel().getLevelName())).collect(Collectors.toList());
+                    if (firstLevels != null && !firstLevels.isEmpty())
+                      {
+                        this.previousPeriodStartDate = firstLevels.get(0).getTransitionDate();
+                      }
+                  }
+                else
+                  {
+                    this.previousPeriodStartDate = loyaltyProgramChallenge.getEffectiveStartDate();
+                  }
               }
           }
 
-        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange, previousPeriodScore, previousPeriodLevel, previousPeriodStartDate);
+        loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
         break;
 
       default:
