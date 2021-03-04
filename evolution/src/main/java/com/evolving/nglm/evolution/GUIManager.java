@@ -7328,6 +7328,9 @@ public class GUIManager
         JSONObject bulkCampaignInfo = new JSONObject();
         JSONArray bulkCampaignTargetCriteria = new JSONArray();
         int bulkCampaignPriority = Integer.MAX_VALUE;
+        String targetingType = null;
+        String targetingFileVariableID = null;
+        JSONArray targetFileVariablesJSON = new JSONArray();
         JSONObject campaignJSON = new JSONObject();
 
         if (jsonRoot.containsKey("name"))
@@ -7473,6 +7476,14 @@ public class GUIManager
             bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(existingBulkCampaignObject, "targetingCriteria",
                 true);
           }
+        if (jsonRoot.containsKey("targetingType"))
+          {
+            targetingType = JSONUtilities.decodeString(jsonRoot, "targetingType", false);
+          }
+        else
+          {
+            targetingType = JSONUtilities.decodeString(existingBulkCampaignObject, "targetingType", "criteria");
+          }
         if (jsonRoot.containsKey("priority"))
           {
             bulkCampaignPriority = JSONUtilities.decodeInteger(jsonRoot, "priority", false);
@@ -7538,6 +7549,26 @@ public class GUIManager
             lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(existingBulkCampaignObject,
                 "lastCreatedOccurrenceNumber", false);
           }
+        if (jsonRoot.containsKey("targetingFileVariableID"))
+          {
+            targetingFileVariableID = JSONUtilities.decodeString(jsonRoot, "targetingFileVariableID", false);
+
+          }
+        else
+          {
+            targetingFileVariableID = JSONUtilities.decodeString(existingBulkCampaignObject,
+                "targetingFileVariableID", false);
+          }
+        if (jsonRoot.containsKey("targetFileVariables"))
+          {
+            targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", false);
+          }
+        else
+          {
+            targetFileVariablesJSON = JSONUtilities.decodeJSONArray(existingBulkCampaignObject,
+                "targetFileVariables", false);
+          }
+        
         if (recurrence && lastCreatedOccurrenceNumber == null)
           lastCreatedOccurrenceNumber = 1;
 
@@ -7598,7 +7629,7 @@ public class GUIManager
             campaignJSONRepresentation.put("description", bulkCampaignDescription);
             campaignJSONRepresentation.put("effectiveStartDate", bulkCampaignEffectiveStartDate);
             campaignJSONRepresentation.put("effectiveEndDate", bulkCampaignEffectiveEndDate);
-            campaignJSONRepresentation.put("targetingType", "criteria");
+            campaignJSONRepresentation.put("targetingType", targetingType);
             campaignJSONRepresentation.put("targetID", bulkCampaignTargetIDs);
             campaignJSONRepresentation.put("boundParameters", bulkCampaignBoundParameters);
             campaignJSONRepresentation.put("appendUCG", appendUCG);
@@ -7624,6 +7655,10 @@ public class GUIManager
             if (journeyScheduler != null)
               campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
             campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
+
+            campaignJSONRepresentation.put("targetingFileVariableID", targetingFileVariableID);
+            campaignJSONRepresentation.put("targetFileVariables", targetFileVariablesJSON);            
+            
 
             //
             // campaignJSON
