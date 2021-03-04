@@ -153,7 +153,7 @@ public class SMPPPlugin implements SMSNotificationInterface
     if (sms_MO_event_name != null)  config.addProperty(SMPP_CONFIGS.sms_MO_event_name.toString(), sms_MO_event_name);  
     if (sms_MO_channel_name != null)  config.addProperty(SMPP_CONFIGS.sms_MO_channel_name.toString(), sms_MO_event_name);  
     smsSenderFactory = new SMSSenderFactory(config);
-    smsSenderFactory.init(smsNotificationManager);
+    smsSenderFactory.init(smsNotificationManager,null/*deprecated plugin, not fixing EVPRO-861*/);
     if(smsSenderFactory.getSMSSenders() == null || (smsSenderFactory.getSMSSenders() != null && smsSenderFactory.getSMSSenders().length == 0))
       {
         log.info("SMPP Driver Load NOT Successfully: no sender created");
