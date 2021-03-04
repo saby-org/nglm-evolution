@@ -115,7 +115,6 @@ public class Deployment
   private static String subscriberHistoryChangeLogTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
-  private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
@@ -371,7 +370,6 @@ public class Deployment
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
-  public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
@@ -1766,19 +1764,6 @@ public class Deployment
       try
         {
           journeyMetricTopic = JSONUtilities.decodeString(jsonRoot, "journeyMetricTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  deliverableSourceTopic
-      //
-
-      try
-        {
-          deliverableSourceTopic = JSONUtilities.decodeString(jsonRoot, "deliverableSourceTopic", true);
         }
       catch (JSONUtilitiesException e)
         {

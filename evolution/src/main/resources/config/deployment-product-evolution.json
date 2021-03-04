@@ -169,7 +169,6 @@
   "simulatedTimeTopic"                                   : "${topic.simulatedtime}",
   "journeyStatisticTopic"                                : "${topic.journeystatistic}",
   "journeyMetricTopic"                                   : "${topic.journeymetric}",
-  "deliverableSourceTopic"                               : "${topic.deliverable.source}",
   "presentationLogTopic"                                 : "${topic.presentationlog}",
   "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
   "subscriberMessageTemplateTopic"                       : "${topic.template.subscribermessage}",
