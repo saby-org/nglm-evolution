@@ -39,7 +39,7 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.5.1_1-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.5.2_0-NoTenancy-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.5.5</gui-fwk.version>
