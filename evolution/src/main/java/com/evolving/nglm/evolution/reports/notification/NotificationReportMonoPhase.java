@@ -655,7 +655,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
       default:
         break;
     }
-    if (fromDate != null) fromDate = RLMDateUtils.truncate(now, Calendar.DATE, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+    if (fromDate != null) fromDate = RLMDateUtils.truncate(fromDate, Calendar.DATE, com.evolving.nglm.core.Deployment.getBaseTimeZone());
     return fromDate;
   }
 }
