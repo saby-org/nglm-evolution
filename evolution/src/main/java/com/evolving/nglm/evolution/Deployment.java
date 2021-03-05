@@ -248,6 +248,9 @@ public class Deployment
   private static int kafkaRetentionDaysMDR;
   //EVPRO-574
   private static int kafkaRetentionDaysTargets;
+  
+  // EVPRO-886
+  private static int nodesTransitionsHistorySize;
 
   private static boolean enableContactPolicyProcessing;
   
@@ -520,6 +523,8 @@ public class Deployment
   
   //EVPRO-865
   public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
+  // EVPRO-886
+  public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
 
   // addProfileCriterionField
   //
@@ -3268,6 +3273,15 @@ public class Deployment
             throw new ServerRuntimeException("deployment", e);
           }
 
+      try
+        {
+          nodesTransitionsHistorySize = JSONUtilities.decodeInteger(jsonRoot, "nodesTransitionsHistorySize",10);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+        
       try
         {
           enableContactPolicyProcessing = JSONUtilities.decodeBoolean(jsonRoot, "enableContactPolicyProcessing", Boolean.TRUE);
