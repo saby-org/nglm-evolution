@@ -40,6 +40,8 @@ public class Deployment
   //
 
   private static final Logger log = LoggerFactory.getLogger(Deployment.class);
+  private static boolean loaded; // If the java class is statically loaded 
+  public static boolean isDeploymentLoaded() { return loaded; }
 
   //
   //  data
@@ -164,7 +166,7 @@ public class Deployment
   private static boolean generateSimpleProfileDimensions;
   private static Map<String,CommunicationChannel> communicationChannels = new LinkedHashMap<>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
-  private static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
+  private static JourneyMetricConfiguration journeyMetricConfiguration = null;
   private static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics = new LinkedHashMap<String,SubscriberProfileDatacubeMetric>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> baseProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -415,7 +417,7 @@ public class Deployment
   public static JSONArray getInitialComplexObjectJSONArray() { return initialComplexObjectJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
-  public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; }
+  public static JourneyMetricConfiguration getJourneyMetricConfiguration() { return journeyMetricConfiguration; }
   public static Map<String,SubscriberProfileDatacubeMetric> getSubscriberProfileDatacubeMetrics() { return subscriberProfileDatacubeMetrics; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getBaseProfileCriterionFields() { return baseProfileCriterionFields; }
@@ -2359,18 +2361,43 @@ public class Deployment
         }
 
       //
-      //  journeyMetricDeclarations
+      //  journeyMetricConfiguration
       //
 
       try
         {
-          JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", new JSONArray());
-          for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
-            {
-              JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
-              JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
-              journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+          JSONObject journeyMetricConfigurationJSON = (JSONObject) jsonRoot.get("journeyMetrics");
+          if( journeyMetricConfigurationJSON.isEmpty() ) {
+            // JourneyMetric are therefore disabled
+            journeyMetricConfiguration = new JourneyMetricConfiguration();
+          } else {
+            int priorPeriodDays = JSONUtilities.decodeInteger(journeyMetricConfigurationJSON, "priorPeriodDays", true);
+            if(priorPeriodDays < 1) {
+              throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'priorPeriodDays' field cannot be negative or null.");
             }
+            
+            int postPeriodDays = JSONUtilities.decodeInteger(journeyMetricConfigurationJSON, "postPeriodDays", true);
+            if(postPeriodDays < 1) {
+              throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'postPeriodDays' field cannot be negative or null.");
+            }
+            
+            Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
+            
+            JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(journeyMetricConfigurationJSON, "metrics", new JSONArray());
+            if(journeyMetricDeclarationValues.isEmpty()) {
+              // JourneyMetric are therefore disabled
+              journeyMetricConfiguration = new JourneyMetricConfiguration();
+            } else {
+              for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
+                {
+                  JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
+                  JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
+                  journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+                }
+              
+              journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
+            }
+          }
         }
       catch (JSONUtilitiesException e)
         {
@@ -3219,11 +3246,9 @@ public class Deployment
             kafkaRetentionDaysJourneys = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysJourneys",31);
             kafkaRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysCampaigns",31);
             // adjusting and warning if too low for journey metric feature to work
-            for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()){
-              if(journeyMetricDeclaration.getPostPeriodDays()>kafkaRetentionDaysCampaigns+2){
-                kafkaRetentionDaysCampaigns=journeyMetricDeclaration.getPostPeriodDays()+2;
-                log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric "+journeyMetricDeclaration.getID()+" postPeriodDays of "+journeyMetricDeclaration.getPostPeriodDays()+" (need at least 2 days more)");
-              }
+            if(Deployment.getJourneyMetricConfiguration().getPostPeriodDays() > kafkaRetentionDaysCampaigns+2){
+              kafkaRetentionDaysCampaigns = Deployment.getJourneyMetricConfiguration().getPostPeriodDays() + 2;
+              log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric postPeriodDays of "+Deployment.getJourneyMetricConfiguration().getPostPeriodDays()+" (need at least 2 days more)");
             }
             kafkaRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBulkCampaigns",7);
             kafkaRetentionDaysLoyaltyPrograms = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysLoyaltyPrograms",31);
@@ -3318,7 +3343,13 @@ public class Deployment
             allTopics.put(declaration.getPreprocessTopic().getName(),declaration.getPreprocessTopic());
           }
         }
-
+      
+      
+      
+      //
+      // End of initialization 
+      //
+      loaded = true;
     }
 
   /*****************************************

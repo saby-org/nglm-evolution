@@ -585,7 +585,7 @@ public class EvolutionEngine
 
     try
       {
-        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
           {
             journeyMetricDeclaration.validate();
           }
@@ -5061,7 +5061,8 @@ public class EvolutionEngine
                     {
                       journeyState.setJourneyNodeID(journey.getEndNodeID());
                       journeyState.setSpecialExitReason(currentStatus);
-                      journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
+                      boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
+                      subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                     }
                   else
                     {
@@ -5105,6 +5106,9 @@ public class EvolutionEngine
                   {
                     boolean metricsUpdated = journeyState.populateMetricsPrior(subscriberState);
                     subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+
+                    // Create a JourneyMetric to be added to JourneyStatistic from journeyState
+                    subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
                   }
 
                 /*****************************************
@@ -5214,7 +5218,8 @@ public class EvolutionEngine
             continue;
           }
 
-          journeyState.setJourneyExitDate(now);
+          boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
+          subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
           boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
           subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now));
           inactiveJourneyStates.add(journeyState);
@@ -5284,7 +5289,8 @@ public class EvolutionEngine
                               //  abort
                               //
 
-                              journeyState.setJourneyExitDate(now);
+                              boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
+                              subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                               boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
                               subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                               inactiveJourneyStates.add(journeyState);
@@ -5469,7 +5475,8 @@ public class EvolutionEngine
                                   //  abort
                                   //
 
-                                  journeyState.setJourneyExitDate(now);
+                                  boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
+                                  subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                                   boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
                                   subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                                   inactiveJourneyStates.add(journeyState);
@@ -5678,7 +5685,8 @@ public class EvolutionEngine
                                   //  abort
                                   //
 
-                                  journeyState.setJourneyExitDate(now);
+                                  boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
+                                  subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                                   boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
                                   subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                                   inactiveJourneyStates.add(journeyState);
@@ -5712,22 +5720,9 @@ public class EvolutionEngine
                     *
                     *****************************************/
 
-                    journeyState.setJourneyExitDate(now);
+                    boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
+                    subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                     inactiveJourneyStates.add(journeyState);
-
-                    /*****************************************
-                    *
-                    *  populate journeyMetrics (during)
-                    *
-                    *****************************************/
-                    //
-                    // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
-                    //
-                    if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign && journey.getFullStatistics())
-                      {
-                        boolean metricsUpdated = journeyState.populateMetricsDuring(subscriberState);
-                        subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
-                      }
                   }
 
                 /*****************************************
@@ -5884,43 +5879,37 @@ public class EvolutionEngine
       {
         if (journeyState.getJourneyCloseDate() == null)
           {
-            Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
-            
+            GUIManagedObject journey = journeyService.getStoredJourney(journeyState.getJourneyID(), true);
+
             //
-            // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
+            // Check if JourneyMetrics are enabled.
+            // JourneyMetrics should only be generated for Campaigns (not journeys nor bulk campaigns)
             //
-            // journey can be null if it has been removed in the meantime (happens with PTT tests, should not happen in prod)
-            if ((journey != null) && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) && journey.getFullStatistics())
-              {
-                boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now);
-                subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+            if (journey == null) {
+              log.warn("Unable to retrieve journey " + journeyState.getJourneyID() + ". It will be closed without publishing any JourneyMetrics.");
+
+              journeyState.setJourneyCloseDate(now);
+              subscriberStateUpdated = true;
+            }
+            else if ((journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) && ((Journey) journey).getFullStatistics()) {
+              boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now);
+              subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+              
+              if (metricsUpdated) {
+                // Create a JourneyMetric to be added to JourneyStatistic from journeyState
+                subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
                 
-                //
-                //  close ?
-                //
-                boolean closeJourney = true;
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
-                  {
-                    closeJourney = closeJourney && journeyState.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID());
-                  }
-                
-                if (closeJourney)
-                  {
-                    // Create a JourneyMetric to be added to JourneyStatistic from journeyState
-                    subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
-                    journeyState.setJourneyCloseDate(now);
-                    subscriberStateUpdated = true;
-                  }
-              }
-            else 
-              {
-                //
-                //  close journey if metrics disabled
-                //
-                if (journey == null) log.warn("journey " + journeyState.getJourneyID() + " cannot be found");
                 journeyState.setJourneyCloseDate(now);
                 subscriberStateUpdated = true;
               }
+            }
+            else {
+              //
+              // Close journey if JourneyMetrics are disabled
+              //
+              journeyState.setJourneyCloseDate(now);
+              subscriberStateUpdated = true;
+            }
           }
       }
 
