@@ -760,8 +760,7 @@ public class GUIManagerGeneral extends GUIManager
         FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
         filterArray = aggFilters.toArray(filterArray);
         aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
-        ((FiltersAggregationBuilder) aggregation).otherBucket(true);
-        ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
+        // "other" bucket is already taken care of by the logic of the code (there is always a "Others" segment, no need to add one)
         searchSourceBuilder.aggregation(aggregation);
 
         //
@@ -833,8 +832,7 @@ public class GUIManagerGeneral extends GUIManager
       FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
       filterArray = aggFilters.toArray(filterArray);
       aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
-      ((FiltersAggregationBuilder) aggregation).otherBucket(true);
-      ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
+      // "other" bucket is already taken care of by the logic of the code (there is always a "Others" segment, no need to add one)
       searchSourceBuilder.aggregation(aggregation);
 
       //
