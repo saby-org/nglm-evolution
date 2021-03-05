@@ -556,10 +556,10 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
     
-    List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
+    Set<String> esIndexWeeks = ReportCsvFactory.getEsIndexWeeks(fromDate, toDate);
     StringBuilder esIndexNotifList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexDate : esIndexWeeks)
       {
         if (!firstEntry) esIndexNotifList.append(",");
         String indexName = esIndexNotif + esIndexDate;
@@ -570,7 +570,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     log.info("Reading data from ES in (" + esIndexNotifList.toString() + ") indexes and writing to " + csvfile);
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.rangeQuery("creationDate").gte(fromDate).lte(toDate));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -655,6 +655,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
       default:
         break;
     }
+    if (fromDate != null) fromDate = RLMDateUtils.truncate(now, Calendar.DATE, com.evolving.nglm.core.Deployment.getBaseTimeZone());
     return fromDate;
   }
 }
