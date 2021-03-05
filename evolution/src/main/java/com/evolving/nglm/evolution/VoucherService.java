@@ -119,7 +119,7 @@ public class VoucherService extends GUIService {
   public Voucher getActiveVoucher(String voucherID, Date date) { return (Voucher) getActiveGUIManagedObject(voucherID, date); }
   public Collection<Voucher> getActiveVouchers(Date date) { return (Collection<Voucher>) getActiveGUIManagedObjects(date); }
 
-  //this call might trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls, hopefuly ES will manage to keep that call quick
+  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
   public GUIManagedObject getStoredVoucherWithCurrentStocks(String voucherID, boolean includeArchived){
 
     GUIManagedObject uncheckedVoucher = getStoredVoucher(voucherID,includeArchived);
@@ -134,10 +134,28 @@ public class VoucherService extends GUIService {
       }
       // add the current live status from ES
       voucherPersonalESService.populateVoucherFileWithStockInformation(voucher);
+      // sum up
+      int totalStock=0;
+      int totalRemaining=0;
+      for(VoucherFile voucherFile:voucher.getVoucherFiles()){
+        totalStock+=voucherFile.getVoucherFileStats().getStockImported();
+        totalRemaining+=voucherFile.getVoucherFileStats().getStockAvailable();
+      }
+      uncheckedVoucher.getJSONRepresentation().put("stock",totalStock);
+      uncheckedVoucher.getJSONRepresentation().put("remainingStock",totalRemaining);
       return voucher;
+    }else if(uncheckedVoucher instanceof VoucherShared){
+      uncheckedVoucher.getJSONRepresentation().put("remainingStock",StockMonitor.getRemainingStock((VoucherShared)uncheckedVoucher));
     }
 
     return uncheckedVoucher;
+  }
+  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  public Collection<GUIManagedObject> getStoredVouchersWithCurrentStocks(boolean includeArchived) {
+    Collection<GUIManagedObject> toRet = getStoredGUIManagedObjects(includeArchived);
+    // populate all with stocks info
+    toRet.forEach(voucher->getStoredVoucherWithCurrentStocks(voucher.getGUIManagedObjectID(),true));
+    return toRet;
   }
 
   public VoucherPersonalESService getVoucherPersonalESService() {return voucherPersonalESService;}
@@ -203,6 +221,7 @@ public class VoucherService extends GUIService {
    result.put("voucherTypeId", guiManagedObject.getJSONRepresentation().get("voucherTypeId"));
    result.put("supplierID", guiManagedObject.getJSONRepresentation().get("supplierID"));
    result.put("imageURL", guiManagedObject.getJSONRepresentation().get("imageURL"));
+   result.put("remainingStock", guiManagedObject.getJSONRepresentation().get("remainingStock"));
    return result;
  }
 

@@ -3024,7 +3024,7 @@ public class Deployment
       //  stockRefreshPeriod
       //
 
-      stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 30);
+      stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 5);
 
       //
       //  periodicEvaluationCronEntry
