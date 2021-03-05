@@ -239,7 +239,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
     this.publishDate = publishDate;
 
     Date tomorrow = RLMDateUtils.addDays(publishDate, 1, Deployment.getBaseTimeZone());
-    // Dates: YYYY-MM-dd 00:00:00.000
+    // Dates: yyyy-MM-dd 00:00:00.000
     Date beginningOfToday = RLMDateUtils.truncate(publishDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
     this.metricTargetDayStart = beginningOfToday;

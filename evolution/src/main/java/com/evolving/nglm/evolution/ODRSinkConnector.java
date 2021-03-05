@@ -14,6 +14,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
@@ -121,7 +122,18 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       Schema purchaseManagerValueSchema = sinkRecord.valueSchema();
       return PurchaseFulfillmentRequest.unpack(new SchemaAndValue(purchaseManagerValueSchema, purchaseManagertValue)); 
     }
+
+    /*****************************************
+    *
+    *  getDocumentIndexName
+    *
+    *****************************************/
     
+    @Override
+    protected String getDocumentIndexName(PurchaseFulfillmentRequest purchaseManager)
+    {
+      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(purchaseManager.getEventDate());
+    }
     
     /*****************************************
     *

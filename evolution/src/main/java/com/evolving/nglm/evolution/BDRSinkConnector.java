@@ -11,9 +11,11 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 
 
 public class BDRSinkConnector extends SimpleESSinkConnector
@@ -86,6 +88,18 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       Object commodityRequestValue = sinkRecord.value();
       Schema commodityRequestValueSchema = sinkRecord.valueSchema();
       return CommodityDeliveryRequest.unpack(new SchemaAndValue(commodityRequestValueSchema, commodityRequestValue));
+    }
+
+    /*****************************************
+    *
+    *  getDocumentIndexName
+    *
+    *****************************************/
+    
+    @Override
+    protected String getDocumentIndexName(CommodityDeliveryRequest commodityRequest)
+    {
+      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(commodityRequest.getEventDate());
     }
     
     /*****************************************

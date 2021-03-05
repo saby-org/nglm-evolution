@@ -257,7 +257,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetWeek = RLMDateUtils.printWeek(yesterday);
+    this.targetWeek = RLMDateUtils.printISOWeek(yesterday);
     this.targetWindowStart = beginningOfYesterday;
     this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
@@ -288,7 +288,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetWeek = RLMDateUtils.printWeek(now);
+    this.targetWeek = RLMDateUtils.printISOWeek(now);
     this.targetWindowStart = beginningOfToday;
     this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
@@ -320,7 +320,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetWeek = RLMDateUtils.printWeek(yesterday);
+    this.targetWeek = RLMDateUtils.printISOWeek(yesterday);
     this.targetWindowStart = beginningOfYesterday;
     this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
@@ -352,7 +352,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetWeek = RLMDateUtils.printWeek(now);
+    this.targetWeek = RLMDateUtils.printISOWeek(now);
     this.targetWindowStart = beginningOfToday;
     this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);

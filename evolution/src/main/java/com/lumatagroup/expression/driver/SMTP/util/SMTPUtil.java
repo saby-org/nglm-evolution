@@ -98,9 +98,9 @@ public class SMTPUtil {
 	/*
 	 From Dyn documentation https://help.dyn.com/date-formatting-for-the-api/
 	It is important to have the proper format for the date field in all API requests. We use basic ISO 8601 format for mixed date-time:
-		YYYY-MM-DDThh:mm:ss
+		yyyy-MM-DDThh:mm:ss
 	
-		    YYYY is the 4-digit year
+		    yyyy is the 4-digit year
 		    MM is the 2-digit month (zero-padded)
 		    DD is the 2-digit day (zero-padded)
 		    T is a constant to indicate that the time follows

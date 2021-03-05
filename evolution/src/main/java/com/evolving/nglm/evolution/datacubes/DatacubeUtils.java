@@ -58,7 +58,7 @@ public class DatacubeUtils
   
   public static String retrieveJourneyEndWeek(String journeyID, JourneyService journeyService) {
     GUIManagedObject object = journeyService.getStoredJourney(journeyID, true);
-    return RLMDateUtils.printWeek(object.getEffectiveEndDate());
+    return RLMDateUtils.printISOWeek(object.getEffectiveEndDate());
   }
 
 }

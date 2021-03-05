@@ -109,7 +109,7 @@ public class JourneyCleanUpTask
     // Removal of datacube indexes
     //
     Date datacubeJourneyExpirationDate = RLMDateUtils.addDays(now, -7*com.evolving.nglm.core.Deployment.getElasticsearchRetentionWeeksDatacubeJourneys(), Deployment.getBaseTimeZone());
-    String lastKeptWeek = RLMDateUtils.printWeek(datacubeJourneyExpirationDate);
+    String lastKeptWeek = RLMDateUtils.printISOWeek(datacubeJourneyExpirationDate);
     
     
     // Init list of weeks to check 
@@ -177,9 +177,9 @@ public class JourneyCleanUpTask
   }
 
   /**
-   * Retrieve all weeks (YYYY-ww) with active indexes in Elasticsearch from :
-   * - datacube_journeytraffic-{YYYY-ww}
-   * - datacube_journeyrewards-{YYYY-ww} 
+   * Retrieve all weeks (YYYY-'w'ww) with active indexes in Elasticsearch from :
+   * - datacube_journeytraffic-{YYYY-'w'ww}
+   * - datacube_journeyrewards-{YYYY-'w'ww} 
    * 
    * Those are all weeks that must be checked for clean up.
    * 
@@ -229,8 +229,8 @@ public class JourneyCleanUpTask
   
   /**
    * Remove the following indices from Elasticsearch:
-   * - datacube_journeytraffic-{YYYY-ww}
-   * - datacube_journeyrewards-{YYYY-ww}
+   * - datacube_journeytraffic-{YYYY-'w'ww}
+   * - datacube_journeyrewards-{YYYY-'w'ww}
    */
   private void cleanDatacubeIndices(String week) 
   {

@@ -235,27 +235,6 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $EL
 echo
 
 #
-#  manually create bdr pipeline
-#
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/bdr-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
-{
-  "description": "daily bdr index naming",
-  "processors" : [
-    {
-      "date_index_name" : {
-        "field" : "eventDatetime",
-        "index_name_prefix" : "detailedrecords_bonuses-",
-        "index_name_format" : "YYYY-ww",
-        "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
-        "timezone" : "'$DEPLOYMENT_TIMEZONE'",
-        "date_rounding" : "d"
-      }
-    }
-  ]
-}'
-echo
-
-#
 #  create a cleaning policy for tokens
 #
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/token_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
@@ -310,27 +289,6 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -u $
       "origin"        : { "type" : "keyword", "index" : "false" }
     }
   }
-}'
-echo
-
-#
-#  manually create token pipeline
-#
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/token-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
-{
-  "description": "daily token index naming",
-  "processors" : [
-    {
-      "date_index_name" : {
-        "field" : "eventDatetime",
-        "index_name_prefix" : "detailedrecords_tokens-",
-        "index_name_format" : "YYYY-ww",
-        "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
-        "timezone" : "'$DEPLOYMENT_TIMEZONE'",
-        "date_rounding" : "d"
-      }
-    }
-  ]
 }'
 echo
 
@@ -405,27 +363,6 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -u $EL
 echo
 
 #
-#  manually create odr pipeline
-#
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
-{
-  "description": "daily odr index naming",
-  "processors" : [
-    {
-      "date_index_name" : {
-        "field" : "eventDatetime",
-        "index_name_prefix" : "detailedrecords_offers-",
-        "index_name_format" : "YYYY-ww",
-        "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
-        "timezone" : "'$DEPLOYMENT_TIMEZONE'",
-        "date_rounding" : "d"
-      }
-    }
-  ]
-}'
-echo
-
-#
 #  create a cleaning policy for VDR
 #
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/vdr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
@@ -484,27 +421,6 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "expiryDate" : { "type" : "keyword" }
     }
   }
-}'
-echo
-
-#
-#  manually create vdr pipeline
-#
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/vdr-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
-{
-  "description": "daily vdr index naming",
-  "processors" : [
-    {
-      "date_index_name" : {
-        "field" : "eventDatetime",
-        "index_name_prefix" : "detailedrecords_vouchers-",
-        "index_name_format" : "YYYY-ww",
-        "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
-        "timezone" : "'$DEPLOYMENT_TIMEZONE'",
-        "date_rounding" : "d"
-      }
-    }
-  ]
 }'
 echo
 
@@ -569,27 +485,6 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "contactType" : { "type" : "keyword" }
     }
   }
-}'
-echo
-
-#
-#  manually create mdr pipeline
-#
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/mdr-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
-{
-  "description": "daily mdr index naming",
-  "processors" : [
-    {
-      "date_index_name" : {
-        "field" : "creationDate",
-        "index_name_prefix" : "detailedrecords_messages-",
-        "index_name_format" : "YYYY-ww",
-        "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
-        "timezone" : "'$DEPLOYMENT_TIMEZONE'",
-        "date_rounding" : "d"
-      }
-    }
-  ]
 }'
 echo
 

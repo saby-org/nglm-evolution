@@ -223,8 +223,7 @@ prepare-curl -XPOST $CONNECT_URL_ODR_ES/connectors -H "Content-Type: application
        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
        "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
        "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
-       "indexName" : "detailedrecords_offers",
-       "pipelineName" : "odr-daily",
+       "indexName" : "detailedrecords_offers-",
        "batchRecordCount" : "'$CONNECT_ES_ODR_BATCHRECORDCOUNT'",
        "batchSize" : "'$CONNECT_ES_ODR_BATCHSIZEMB'"
        }
@@ -250,8 +249,7 @@ prepare-curl -XPOST $CONNECT_URL_TOKENCHANGE_ES/connectors -H "Content-Type: app
         "connectionPort"   : "'$MASTER_ESROUTER_PORT'",
         "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
         "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
-        "indexName"        : "detailedrecords_tokens",
-        "pipelineName"     : "token-daily",
+        "indexName"        : "detailedrecords_tokens-",
         "batchRecordCount" : "'$CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT'",
         "batchSize"        : "'$CONNECT_ES_TOKENCHANGE_BATCHSIZEMB'"
       }
@@ -275,8 +273,7 @@ prepare-curl -XPOST $CONNECT_URL_BDR_ES/connectors -H "Content-Type: application
        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
        "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
        "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
-       "indexName" : "detailedrecords_bonuses",
-       "pipelineName" : "bdr-daily",
+       "indexName" : "detailedrecords_bonuses-",
        "batchRecordCount" : "'$CONNECT_ES_BDR_BATCHRECORDCOUNT'",
        "batchSize" : "'$CONNECT_ES_BDR_BATCHSIZEMB'"
        }
@@ -301,8 +298,7 @@ prepare-curl -XPOST $CONNECT_URL_NOTIFICATION_ES/connectors -H "Content-Type: ap
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
       "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
       "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
-      "indexName" : "detailedrecords_messages",
-      "pipelineName" : "mdr-daily",
+      "indexName" : "detailedrecords_messages-",
       "batchRecordCount" : "'$CONNECT_ES_NOTIFICATION_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_NOTIFICATION_BATCHSIZEMB'"
       }
@@ -381,8 +377,7 @@ prepare-curl -XPOST $CONNECT_URL_VDR_ES/connectors -H "Content-Type: application
        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
        "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
        "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
-       "indexName" : "detailedrecords_vouchers",
-       "pipelineName" : "vdr-daily",
+       "indexName" : "detailedrecords_vouchers-",
        "batchRecordCount" : "'$CONNECT_ES_VDR_BATCHRECORDCOUNT'",
        "batchSize" : "'$CONNECT_ES_VDR_BATCHSIZEMB'"
        }
