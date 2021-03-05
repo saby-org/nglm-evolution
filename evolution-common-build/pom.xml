@@ -25,13 +25,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.5.1_1-SNAPSHOT</version>
+    <version>1.5.2_0-NoTenancy-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.5.1_1-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.5.2_0-NoTenancy-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
     <gui.framework.version>${gui-fwk.version}</gui.framework.version>
 

@@ -27,7 +27,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.5.1_1-SNAPSHOT</version>
+    <version>1.5.2_0-NoTenancy-SNAPSHOT</version>
   </parent>
 
   <scm>
