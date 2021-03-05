@@ -466,7 +466,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and writing to " + csvfile);
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(fromDate).lte(toDate));
+    esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(fromDate).lte(toDate)); 
 
     String deliverableServiceTopic = Deployment.getDeliverableTopic();
     String offerTopic = Deployment.getOfferTopic();
