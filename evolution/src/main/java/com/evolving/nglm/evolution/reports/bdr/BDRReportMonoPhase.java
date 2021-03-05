@@ -5,7 +5,9 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -394,11 +396,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
     if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
-
-    //
-    //
-    //
-
     Date now = reportGenerationDate;
     Date fromDate = null;
     switch (reportPeriodUnit.toUpperCase())
@@ -418,6 +415,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       default:
         break;
     }
+    if (fromDate != null) fromDate = RLMDateUtils.truncate(now, Calendar.DATE, com.evolving.nglm.core.Deployment.getBaseTimeZone());
     return fromDate;
   }
   
@@ -454,10 +452,10 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
     
-    List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
+    Set<String> esIndexWeeks = ReportCsvFactory.getEsIndexWeeks(fromDate, toDate);
     StringBuilder esIndexBdrList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexDate : esIndexWeeks)
       {
         if (!firstEntry) esIndexBdrList.append(",");
         String indexName = esIndexBdr + esIndexDate;
@@ -468,7 +466,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and writing to " + csvfile);
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(fromDate).lte(toDate));
 
     String deliverableServiceTopic = Deployment.getDeliverableTopic();
     String offerTopic = Deployment.getOfferTopic();
