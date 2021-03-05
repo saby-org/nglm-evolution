@@ -129,7 +129,6 @@ public class EvolutionEngine
   static final String INTERNAL_ID_SUPPLIER = "InternalIDSupplier";
   static final String INTERNAL_ID_RESELLER = "InternalIDReseller";
 
-
   /*****************************************
   *
   *  enum
@@ -5033,6 +5032,8 @@ public class EvolutionEngine
                 *  enterJourney -- all journeys
                 *
                 *****************************************/
+                
+                boundParameters.put(CriterionContext.JOURNEY_DISPLAY_PARAMETER_ID, journey.getGUIManagedObjectDisplay());
 
                 //
                 // confirm "stock reservation" (journey max number of customers limits)

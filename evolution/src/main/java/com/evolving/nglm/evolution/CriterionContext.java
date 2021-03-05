@@ -68,6 +68,7 @@ public class CriterionContext
   public static final String EVALUATION_MONTH_ID = "evaluation.month";
   public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
   public static final String EVALUATION_ANIVERSARY_DAY_ID = "evaluation.aniversary.day";
+  public static final String JOURNEY_DISPLAY_PARAMETER_ID = "this.journey.display";
 
   /*****************************************
   *
@@ -350,8 +351,30 @@ public class CriterionContext
   private static CriterionField journeyActionDeliveryStatus;
   private static CriterionField journeyActionJourneyStatus;
   private static CriterionField journeyEndDate;
+  private static CriterionField journeyDisplay;
   static
   {
+    
+    //
+    //  journeyDisplay
+    //
+
+    try
+      {
+        Map<String,Object> journeyDisplayJSON = new LinkedHashMap<String,Object>();
+        journeyDisplayJSON.put("id", JOURNEY_DISPLAY_PARAMETER_ID);
+        journeyDisplayJSON.put("display", "Campaign");
+        journeyDisplayJSON.put("dataType", "string");
+        journeyDisplayJSON.put("retriever", "getJourneyParameter");
+        journeyDisplayJSON.put("internalOnly", false);
+        journeyDisplayJSON.put("tagMaxLength", 100);
+        journeyDisplay  = new CriterionField(JSONUtilities.encodeObject(journeyDisplayJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
     //
     //  journeyEntryDate
     //
@@ -536,6 +559,7 @@ public class CriterionContext
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
     this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
     this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
+    this.additionalCriterionFields.put(journeyDisplay.getID(), journeyDisplay);
     this.additionalCriterionFields.putAll(journeyParameters);
     for (CriterionField contextVariable : contextVariables.values())
       {
@@ -591,6 +615,7 @@ public class CriterionContext
 
         this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
         this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
+        this.additionalCriterionFields.put(journeyDisplay.getID(), journeyDisplay);
 
         //
         //  journey parameters
