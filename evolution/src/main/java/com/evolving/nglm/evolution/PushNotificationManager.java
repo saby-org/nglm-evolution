@@ -347,6 +347,30 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
 
     /*****************************************
     *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public PushNotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      
+      this.destination = (String) esFields.get("destination");
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.tags = tags;
+        }
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+    }
+    
+    /*****************************************
+    *
     *  copy
     *
     *****************************************/

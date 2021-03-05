@@ -260,6 +260,76 @@ public class JourneyHistory implements Cleanable
   
   /*****************************************
   *
+  *  minimal - ES
+  *
+  *****************************************/
+  
+  public JourneyHistory(Map<String, Object> esFields)
+  {
+    this.journeyID = (String) esFields.get("journeyID");
+    List<String> travelledNodes = (List<String>) esFields.get("nodeHistory");
+    List<String> journeyStatuses = (List<String>) esFields.get("statusHistory");
+    List<String> rewards = (List<String>) esFields.get("rewardHistory");
+    this.nodeHistory = getNodeHistoryFromESFields(travelledNodes);
+    this.statusHistory = getJourneyStatusesFromESFields(journeyStatuses);
+    this.rewardHistory = getRewardHistoryFromESFields(rewards);;
+  }
+  
+  //
+  //  getRewardHistoryFromESFields
+  //
+  
+  private List<RewardHistory> getRewardHistoryFromESFields(List<String> rewards)
+  {
+    List<RewardHistory> rewardHistoryHistories = new ArrayList<RewardHistory>();
+    if (rewards != null && !rewards.isEmpty())
+      {
+        for (String reward : rewards)
+          {
+            RewardHistory rh = new RewardHistory(reward);
+            rewardHistoryHistories.add(rh);
+          }
+      }
+    return rewardHistoryHistories;
+  }
+  
+  //
+  //  getJourneyStatusesFromESFields
+  //
+  
+  private List<StatusHistory> getJourneyStatusesFromESFields(List<String> journeyStatuses)
+  {
+    List<StatusHistory> statusHistoryHistories = new ArrayList<StatusHistory>();
+    if (journeyStatuses != null && !journeyStatuses.isEmpty())
+      {
+        for (String journeyStatus : journeyStatuses)
+          {
+            StatusHistory sh = new StatusHistory(journeyStatus);
+            statusHistoryHistories.add(sh);
+          }
+      }
+    return statusHistoryHistories;
+  }
+  
+  //
+  //  getNodeHistoryFromESFields
+  //
+  
+  private List<NodeHistory> getNodeHistoryFromESFields(List<String> travelledNodes)
+  {
+    List<NodeHistory> nodeHistories = new ArrayList<NodeHistory>();
+    if (travelledNodes != null && !travelledNodes.isEmpty())
+      {
+        for (String travelledNode : travelledNodes)
+          {
+            NodeHistory ns = new NodeHistory(travelledNode);
+            nodeHistories.add(ns);
+          }
+      }
+    return nodeHistories;
+  }
+  /*****************************************
+  *
   *  unpack
   *
   *****************************************/
@@ -790,6 +860,14 @@ public class JourneyHistory implements Cleanable
     {
       return rewardName + ";" + amount + ";" + (rewardDate!=null?rewardDate.getTime():null);
     }
+    
+    public RewardHistory(String reward)
+    {
+      String[] elements = reward.split("[;]", -1);
+      this.rewardName = handleNullStringFromES(elements[0]);
+      this.amount = Integer.parseInt(handleNullStringFromES(elements[1]));
+      this.rewardDate = elements[2] != null ? new Date(Long.parseLong(handleNullStringFromES(elements[2]))) : null;
+    }
   }
   
   public static class NodeHistory
@@ -931,7 +1009,20 @@ public class JourneyHistory implements Cleanable
     @Override
     public String toString()
     {
-      return fromNode + ";" + toNode + ";" + transitionDate.getTime();
+      return fromNode + ";" + toNode + ";" + transitionDate.getTime() + ";" + linkID;
+    }
+    
+    //
+    // NodeHistory - from toString (from ES)
+    //
+    
+    public NodeHistory(String travelledNode)
+    {
+      String[] elements = travelledNode.split("[;]", -1);
+      this.fromNode = handleNullStringFromES(elements[0]);
+      this.toNode = handleNullStringFromES(elements[1]);
+      this.transitionDate = new Date(Long.parseLong(handleNullStringFromES(elements[2])));
+      if (elements.length > 3) this.linkID = handleNullStringFromES(elements[3]);
     }
     
   }
@@ -1130,6 +1221,17 @@ public class JourneyHistory implements Cleanable
       return status + ";" + date.getTime();
     }
     
+    //
+    //  StatusHistory from toString (ES)
+    //
+    
+    public StatusHistory(String journeyStatus)
+    {
+      String[] elements = journeyStatus.split("[;]", -1);
+      this.status = handleNullStringFromES(elements[0]);
+      this.date = new Date(Long.parseLong(handleNullStringFromES(elements[1])));
+    }
+    
     /*****************************************
     *
     *  equals
@@ -1154,11 +1256,27 @@ public class JourneyHistory implements Cleanable
         return false;
       return true;
     }
+    
+    public boolean  isConverted()
+    {
+      boolean result = false;
+      result = result || SubscriberJourneyStatus.ControlGroupConverted.getExternalRepresentation().equals(status);
+      result = result || SubscriberJourneyStatus.ConvertedNotified.getExternalRepresentation().equals(status);
+      result = result || SubscriberJourneyStatus.ConvertedNotNotified.getExternalRepresentation().equals(status);
+      result = result || SubscriberJourneyStatus.UniversalControlGroupConverted.getExternalRepresentation().equals(status);
+      return result;
+    }
   }
 
   @Override
   public String toString()
   {
     return "JourneyHistory [" + (journeyID != null ? "journeyID=" + journeyID + ", " : "") + (nodeHistory != null ? "nodeHistory=" + nodeHistory + ", " : "") + (statusHistory != null ? "statusHistory=" + statusHistory + ", " : "") + (rewardHistory != null ? "rewardHistory=" + rewardHistory : "") + "]";
+  }
+  
+  public static String handleNullStringFromES(String esVal)
+  {
+    if (esVal != null && "null".equalsIgnoreCase(esVal)) return null;
+    else return esVal;
   }
 }

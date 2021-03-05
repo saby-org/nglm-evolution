@@ -230,6 +230,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       documentMap.put("returnCode", code);
       documentMap.put("returnCodeDetails", purchaseManager.getOfferDeliveryReturnCodeDetails());
       documentMap.put("vouchers", voucherList);
+      documentMap.put("creationDate", purchaseManager.getCreationDate()!=null?dateFormat.format(purchaseManager.getCreationDate()):"");
       
       return documentMap;
     }

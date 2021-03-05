@@ -142,6 +142,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", mailNotification.getContactType());
+        documentMap.put("destination", mailNotification.getDestination());
       }
       else if (notification instanceof SMSNotificationManagerRequest) {
         SMSNotificationManagerRequest smsNotification = (SMSNotificationManagerRequest) notification;
@@ -172,6 +173,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", smsNotification.getContactType());
+        documentMap.put("destination", smsNotification.getDestination());
       }
       else if (notification instanceof NotificationManagerRequest) {
         NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
@@ -198,6 +200,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         String channelID = notifNotification.getChannelID();
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", notifNotification.getContactType());
+        documentMap.put("destination", notifNotification.getDestination());
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
@@ -225,6 +228,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", pushNotification.getContactType());
+        documentMap.put("destination", pushNotification.getDestination());
       }
       
       return documentMap;

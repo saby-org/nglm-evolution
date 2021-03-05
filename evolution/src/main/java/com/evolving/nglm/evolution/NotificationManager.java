@@ -241,6 +241,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       ParameterMap parameterMap = getNotificationParameters();
       if(parameterMap==null) parameterMap=new ParameterMap();
       parameterMap.put("node.parameter.sourceaddress",sourceAddress);
+      this.notificationParameters = parameterMap;
     }
 
     /*****************************************
@@ -463,6 +464,34 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         this.notificationParameters = notificationManagerRequest.getNotificationParameters();
         this.contactType = notificationManagerRequest.getContactType();
       }
+
+    /*****************************************
+    *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public NotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      
+      this.destination = (String) esFields.get("destination");
+      setSourceAddressParam((String) esFields.get("source"));
+      setSubscriberID((String) esFields.get("subscriberID"));
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.tags = tags;
+        }
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+      this.channelID = (String) esFields.get("channelID");
+    //NOT in ES this.notificationParameters = esFields.get("");
+    }
 
     /*****************************************
      *

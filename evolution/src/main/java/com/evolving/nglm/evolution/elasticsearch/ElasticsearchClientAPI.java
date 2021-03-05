@@ -1,8 +1,11 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.http.HttpHost;
@@ -25,6 +28,8 @@ import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -763,5 +768,22 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       e.printStackTrace();
       throw new ElasticsearchClientException(e.getMessage());
     }
+  }
+  
+  public List<String> getAllIndices(String indexPrefix)
+  {
+    List<String> result = new ArrayList<String>();
+    try
+      {
+        GetIndexResponse getIndexResponse = this.indices().get(new GetIndexRequest(indexPrefix + "*"), RequestOptions.DEFAULT);
+        String[] indices = getIndexResponse.getIndices();
+        if (indices != null && indices.length > 0) result = Arrays.asList(indices);
+      } 
+    catch (IOException e)
+      {
+        if (log.isErrorEnabled()) log.error("elastic search getAllIndices error, {}", e.getMessage());
+        e.printStackTrace();
+      }
+    return result;
   }
 }
