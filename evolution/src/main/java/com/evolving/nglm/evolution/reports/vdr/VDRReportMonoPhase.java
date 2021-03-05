@@ -411,7 +411,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     ReportCsvFactory reportFactory = new VDRReportMonoPhase();
     if (log.isInfoEnabled()) log.info("Reading data from ES in (" + esIndexVDRList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexVDRList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(fromDate).lte(toDate));
+    esIndexWithQuery.put(esIndexVDRList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.printTimestamp(fromDate)).lte(RLMDateUtils.printTimestamp(toDate)));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();

@@ -558,7 +558,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       }
     log.info("Reading data from ES in (" + esIndexOdrList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(fromDate).lte(toDate));
+    esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.printTimestamp(fromDate)).lte(RLMDateUtils.printTimestamp(toDate)));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
