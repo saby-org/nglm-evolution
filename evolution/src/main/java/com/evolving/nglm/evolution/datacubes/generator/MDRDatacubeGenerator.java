@@ -111,7 +111,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   protected QueryBuilder getSubsetQuery() 
   {
     return QueryBuilders.boolQuery().must(QueryBuilders
-        .rangeQuery("eventDatetime")
+        .rangeQuery("creationDate")
         .gte(RLMDateUtils.printTimestamp(this.targetWindowStart))
         .lt(RLMDateUtils.printTimestamp(this.targetWindowEnd))); // End not included
   }
@@ -126,7 +126,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   @Override
   protected CompositeValuesSourceBuilder<?> getSpecialSourceFilter() {
     if(this.hourlyMode) {
-      return new DateHistogramValuesSourceBuilder("timestamp").field("eventDatetime").calendarInterval(DateHistogramInterval.HOUR);
+      return new DateHistogramValuesSourceBuilder("timestamp").field("creationDate").calendarInterval(DateHistogramInterval.HOUR);
     } else {
       return null;
     }
