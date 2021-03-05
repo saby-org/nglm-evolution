@@ -66,13 +66,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
   //
 
   private String connectorName = null;
-  private String connectionHost = null;
-  private String connectionPort = null;
-  private String connectionUserName = null;
-  private String connectionUserPassword = null;
   private String maxSubscribersPerRequest = null;
-  private String connectTimeout = null;
-  private String queryTimeout = null;
   private String closeTimeout = null;
 
   //
@@ -86,8 +80,6 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
   //
 
   private static final String DEFAULT_MAXSUBSCRIBERSPERREQUEST = "500";
-  private static final String DEFAULT_CONNECTTIMEOUT = "5";
-  private static final String DEFAULT_QUERYTIMEOUT = "60";
   private static final String DEFAULT_CLOSETIMEOUT = "30";
   
   /****************************************
@@ -134,56 +126,12 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
     *****************************************/
 
     //
-    //  configuration -- connectionHost
-    //
-
-    connectionHost = properties.get("connectionHost");
-    if (connectionHost == null || connectionHost.trim().length() == 0) throw new ConnectException("CleanupSubscriberESSinkConnector configuration must specify 'connectionHost'");
-
-    //
-    //  configuration -- connectionPort
-    //
-
-    connectionPort = properties.get("connectionPort");
-    if (! validIntegerConfig(connectionPort)) throw new ConnectException("CleanupSubscriberESSinkConnector configuration field 'connectionPort' is a required integer");    
-    
-    //
-    //  configuration -- connectionUserName
-    //
-
-    connectionUserName = properties.get("connectionUserName");
-    if (connectionUserName == null || connectionUserName.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionUserName'");
-    
-    //
-    //  configuration -- connectionUserPassword
-    //
-
-    connectionUserPassword = properties.get("connectionUserPassword");
-    if (connectionUserPassword == null || connectionUserPassword.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionUserPassword'");
-
-    //
     //  configuration -- maxSubscribersPerRequest
     //
 
     String maxSubscribersPerRequestString = properties.get("maxSubscribersPerRequest");
     maxSubscribersPerRequest = (maxSubscribersPerRequestString != null && maxSubscribersPerRequestString.trim().length() > 0) ? maxSubscribersPerRequestString : DEFAULT_MAXSUBSCRIBERSPERREQUEST;
     if (! validIntegerConfig(maxSubscribersPerRequest)) throw new ConnectException("CleanupSubscriberESSinkConnector configuration field 'maxSubscribersPerRequest' must be an integer");
-    
-    //
-    //  configuration -- connectTimeout
-    //
-
-    String connectTimeoutString = properties.get("connectTimeout");
-    connectTimeout = (connectTimeoutString != null && connectTimeoutString.trim().length() > 0) ? connectTimeoutString : DEFAULT_CONNECTTIMEOUT;
-    if (! validIntegerConfig(connectTimeout)) throw new ConnectException("CleanupSubscriberESSinkConnector configuration field 'connectTimeout' must be an integer");
-
-    //
-    //  configuration -- queryTimeout
-    //
-
-    String queryTimeoutString = properties.get("queryTimeout");
-    queryTimeout = (queryTimeoutString != null && queryTimeoutString.trim().length() > 0) ? queryTimeoutString : DEFAULT_QUERYTIMEOUT;
-    if (! validIntegerConfig(queryTimeout)) throw new ConnectException("CleanupSubscriberESSinkConnector configuration field 'queryTimeout' must be an integer");
 
     //
     //  configuration -- closeTimeout
@@ -241,13 +189,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       {
         Map<String, String> taskConfig = new HashMap<>();
         taskConfig.put("connectorName", connectorName);
-        taskConfig.put("connectionHost", connectionHost);
-        taskConfig.put("connectionPort", connectionPort);
-        taskConfig.put("connectionUserName", connectionUserName);
-        taskConfig.put("connectionUserPassword", connectionUserPassword);
         taskConfig.put("maxSubscribersPerRequest", maxSubscribersPerRequest);
-        taskConfig.put("connectTimeout", connectTimeout);
-        taskConfig.put("queryTimeout", queryTimeout);
         taskConfig.put("closeTimeout", closeTimeout);
         taskConfig.put("taskNumber", Integer.toString(i));
         result.add(taskConfig);
@@ -290,13 +232,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
   @Override public ConfigDef config()
   {
     ConfigDef result = new ConfigDef();
-    result.define("connectionHost", Type.STRING, Importance.HIGH, "elastic search hostname");
-    result.define("connectionPort", Type.STRING, Importance.HIGH, "elastic search http port");
-    result.define("connectionUserName", Type.STRING, Importance.HIGH, "elastic search username for authentication");
-    result.define("connectionUserPassword", Type.STRING, Importance.HIGH, "elastic search password for authentication");
     result.define("maxSubscribersPerRequest", Type.STRING, DEFAULT_MAXSUBSCRIBERSPERREQUEST, Importance.LOW, "number of subscriber ids to submit in a single request");
-    result.define("connectTimeout", Type.STRING, DEFAULT_CONNECTTIMEOUT, Importance.MEDIUM, "timeout to wait for connection, in seconds");
-    result.define("queryTimeout", Type.STRING, DEFAULT_QUERYTIMEOUT, Importance.MEDIUM, "timeout to wait for query, in seconds");
     result.define("closeTimeout", Type.STRING, DEFAULT_CLOSETIMEOUT, Importance.MEDIUM, "timeout to wait for records to finish when stopping, in seconds");
     return result;
   }
@@ -430,13 +366,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
     //
 
     private String connectorName = null;
-    private String connectionHost = null;
-    private int connectionPort;
-    private String connectionUserName = null;
-    private String connectionUserPassword = null;
     private int maxSubscribersPerRequest;
-    private int connectTimeout;
-    private int queryTimeout;
     private long closeTimeout;
     private int taskNumber;
 
@@ -490,16 +420,10 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       *****************************************/
 
       connectorName = taskConfig.get("connectorName");
-      connectionHost = taskConfig.get("connectionHost");
-      connectionUserName = taskConfig.get("connectionUserName");
-      connectionUserPassword = taskConfig.get("connectionUserPassword");
-      connectionPort = CleanupSubscriberESSinkConnector.parseIntegerConfig(taskConfig.get("connectionPort"));
       maxSubscribersPerRequest = CleanupSubscriberESSinkConnector.parseIntegerConfig(taskConfig.get("maxSubscribersPerRequest"));
-      connectTimeout = CleanupSubscriberESSinkConnector.parseIntegerConfig(taskConfig.get("connectTimeout"));
-      queryTimeout = CleanupSubscriberESSinkConnector.parseIntegerConfig(taskConfig.get("queryTimeout"));
       closeTimeout = CleanupSubscriberESSinkConnector.parseLongConfig(taskConfig.get("closeTimeout"));
       taskNumber = CleanupSubscriberESSinkConnector.parseIntegerConfig(taskConfig.get("taskNumber"));
-      log.info("{} -- connectionHost: {}, connectionPort: {}, maxSubscribersPerRequest: {}, connectTimeout: {}, queryTimeout {}, closeTimeout: {}", connectorName, connectionHost, connectionPort, maxSubscribersPerRequest, connectTimeout, queryTimeout, closeTimeout);
+      log.info("{} -- maxSubscribersPerRequest: {}, closeTimeout: {}", connectorName, maxSubscribersPerRequest, closeTimeout);
 
       /*****************************************
       *
@@ -509,7 +433,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
       try
         {
-          client = new ElasticsearchClientAPI(connectionHost, connectionPort, connectTimeout*1000, queryTimeout*1000, connectionUserName, connectionUserPassword);
+          client = new ElasticsearchClientAPI(connectorName);
         }
       catch (ElasticsearchException e)
         {
@@ -648,7 +572,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
       try
         {
-          if (client != null) client.close();
+          if (client != null) client.closeCleanly();
         }
       catch (IOException e)
         {

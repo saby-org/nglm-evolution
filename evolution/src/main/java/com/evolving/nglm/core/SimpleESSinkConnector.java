@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Importance;
@@ -16,10 +17,7 @@ import org.apache.kafka.connect.sink.SinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class SimpleESSinkConnector extends SinkConnector
 {
@@ -40,17 +38,12 @@ public abstract class SimpleESSinkConnector extends SinkConnector
   //
 
   private String connectorName = null;
-  private String connectionHost = null;
-  private String connectionPort = null;
-  private String connectionUserName = null;
-  private String connectionUserPassword = null;
   private String indexName = null;
   private String pipelineName = null;  
   private String batchRecordCount = null;
   private String batchSize = null;
-  private String connectTimeout = null;
-  private String queryTimeout = null;
   private String closeTimeout = null;
+  private String retries = null;
 
   //
   //  version
@@ -64,10 +57,9 @@ public abstract class SimpleESSinkConnector extends SinkConnector
 
   private static final String DEFAULT_BATCHRECORDCOUNT = "-1";
   private static final String DEFAULT_BATCHSIZE = "5";
-  private static final String DEFAULT_CONNECTTIMEOUT = "5";
-  private static final String DEFAULT_QUERYTIMEOUT = "60";
   private static final String DEFAULT_CLOSETIMEOUT = "30";
   private static final String DEFAULT_PIPELINENAME = "";
+  private static final String DEFAULT_RETRIES = Integer.MAX_VALUE+"";
   
   /****************************************
   *
@@ -88,65 +80,13 @@ public abstract class SimpleESSinkConnector extends SinkConnector
 
   @Override public void start(Map<String, String> properties)
   {
-    /*****************************************
-    *
-    *  log
-    *
-    *****************************************/
-
-    //
-    //  configuration -- connectorName
-    //
 
     connectorName = properties.get("name");
-
-    //
-    //  log -- start
-    //
-
     log.info("{} -- Connector.start() START", connectorName);
-
-    /*****************************************
-    *
-    *  configuration
-    *
-    *****************************************/
-
-    //
-    //  configuration -- connectionHost
-    //
-
-    connectionHost = properties.get("connectionHost");
-    if (connectionHost == null || connectionHost.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionHost'");
-
-    //
-    //  configuration -- connectionPort
-    //
-
-    connectionPort = properties.get("connectionPort");
-    if (! validIntegerConfig(connectionPort, true)) throw new ConnectException("SimpleESSinkConnector configuration field 'connectionPort' is a required integer");    
-    
-    //
-    //  configuration -- connectionUserName
-    //
-
-    connectionUserName = properties.get("connectionUserName");
-    if (connectionUserName == null || connectionUserName.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionUserName'");
-    
-    //
-    //  configuration -- connectionUserPassword
-    //
-
-    connectionUserPassword = properties.get("connectionUserPassword");
-    if (connectionUserPassword == null || connectionUserPassword.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionUserPassword'");
-
-    //
-    //  configuration -- indexName
-    //
 
     indexName = properties.get("indexName");
     if (indexName == null || indexName.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'indexName'");
-    
+
     //
     //  configuration -- pipelineName(optional)
     //
@@ -170,28 +110,20 @@ public abstract class SimpleESSinkConnector extends SinkConnector
     if (! validLongConfig(batchSize, true)) throw new ConnectException("SimpleESSinkConnector configuration field 'batchSize' must be a long");
 
     //
-    //  configuration -- connectTimeout
-    //
-
-    String connectTimeoutString = properties.get("connectTimeout");
-    connectTimeout = (connectTimeoutString != null && connectTimeoutString.trim().length() > 0) ? connectTimeoutString : DEFAULT_CONNECTTIMEOUT;
-    if (! validIntegerConfig(connectTimeout, true)) throw new ConnectException("SimpleESSinkConnector configuration field 'connectTimeout' must be an integer");
-
-    //
-    //  configuration -- queryTimeout
-    //
-
-    String queryTimeoutString = properties.get("queryTimeout");
-    queryTimeout = (queryTimeoutString != null && queryTimeoutString.trim().length() > 0) ? queryTimeoutString : DEFAULT_QUERYTIMEOUT;
-    if (! validIntegerConfig(queryTimeout, true)) throw new ConnectException("SimpleESSinkConnector configuration field 'queryTimeout' must be an integer");
-
-    //
     //  configuration -- closeTimeout
     //
 
     String closeTimeoutString = properties.get("closeTimeout");
     closeTimeout = (closeTimeoutString != null && closeTimeoutString.trim().length() > 0) ? closeTimeoutString : DEFAULT_CLOSETIMEOUT;
     if (! validLongConfig(closeTimeout, true)) throw new ConnectException("SimpleESSinkConnector configuration field 'closeTimeout' must be a long");
+
+    //
+    //  configuration -- retries
+    //
+
+    String retriesString = properties.get("retries");
+    retries = (retriesString != null && retriesString.trim().length() > 0) ? retriesString : DEFAULT_RETRIES;
+    if (! validIntegerConfig(retries, true)) throw new ConnectException("SimpleESSinkConnector configuration field 'retries' must be a integer");
     
     /*****************************************
     *
@@ -238,17 +170,12 @@ public abstract class SimpleESSinkConnector extends SinkConnector
       {
         Map<String, String> taskConfig = new HashMap<>();
         taskConfig.put("connectorName", connectorName);
-        taskConfig.put("connectionHost", connectionHost);
-        taskConfig.put("connectionPort", connectionPort);
-        taskConfig.put("connectionUserName", connectionUserName);
-        taskConfig.put("connectionUserPassword", connectionUserPassword);
         taskConfig.put("indexName", indexName);
         taskConfig.put("pipelineName", pipelineName);
         taskConfig.put("batchRecordCount", batchRecordCount);
         taskConfig.put("batchSize", batchSize);
-        taskConfig.put("connectTimeout", connectTimeout);
-        taskConfig.put("queryTimeout", queryTimeout);
         taskConfig.put("closeTimeout", closeTimeout);
+        taskConfig.put("retries", retries);
         taskConfig.put("taskNumber", Integer.toString(i));
         result.add(taskConfig);
       }
@@ -290,17 +217,12 @@ public abstract class SimpleESSinkConnector extends SinkConnector
   @Override public ConfigDef config()
   {
     ConfigDef result = new ConfigDef();
-    result.define("connectionHost", Type.STRING, Importance.HIGH, "elastic search hostname");
-    result.define("connectionPort", Type.STRING, Importance.HIGH, "elastic search http port");
-    result.define("connectionUserName", Type.STRING, Importance.HIGH, "elastic search username for authentication");
-    result.define("connectionUserPassword", Type.STRING, Importance.HIGH, "elastic search password for authentication");
     result.define("indexName", Type.STRING, Importance.HIGH, "index name");
     result.define("pipelineName", Type.STRING, DEFAULT_PIPELINENAME, Importance.MEDIUM, "pipeline name");        
     result.define("batchRecordCount", Type.STRING, DEFAULT_BATCHRECORDCOUNT, Importance.MEDIUM, "number of records to trigger a batch");
     result.define("batchSize", Type.STRING, DEFAULT_BATCHSIZE, Importance.MEDIUM, "size of records to trigger a batch, in MB");
-    result.define("connectTimeout", Type.STRING, DEFAULT_CONNECTTIMEOUT, Importance.MEDIUM, "timeout to wait for connection, in seconds");
-    result.define("queryTimeout", Type.STRING, DEFAULT_QUERYTIMEOUT, Importance.MEDIUM, "timeout to wait for query, in seconds");
     result.define("closeTimeout", Type.STRING, DEFAULT_CLOSETIMEOUT, Importance.MEDIUM, "timeout to wait for records to finish when stopping, in seconds");
+	result.define("retries", Type.STRING, DEFAULT_RETRIES, Importance.MEDIUM, "number of retries on transient failures");
     return result;
   }
 

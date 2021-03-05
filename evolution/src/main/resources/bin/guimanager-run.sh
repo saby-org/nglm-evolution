@@ -46,7 +46,7 @@ echo deployment complete
 case "${ENTRYPOINT}" in
 
   "guimanager")
-    exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager 001 $BROKER_SERVERS $GUIMANAGER_PORT $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT $ELASTICSEARCH_USERNAME $ELASTICSEARCH_USERPASSWORD
+    exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager $GUIMANAGER_PORT
     ;;
   "reportmanager")
     exec kafka-run-class -name reportmanager -loggc com.evolving.nglm.evolution.reports.ReportManager $BROKER_SERVERS ${MASTER_ESROUTER_SERVER}:${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_USERPASSWORD} $KAFKA_REPLICATION_FACTOR $SUBSCRIBER_PARTITIONS $KAFKA_STREAMS_STANDBY_REPLICAS
@@ -55,13 +55,13 @@ case "${ENTRYPOINT}" in
     exec kafka-run-class -name reportscheduler -loggc com.evolving.nglm.evolution.reports.ReportScheduler
     ;;
   "thirdpartymanager")
-    exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager $KEY $BROKER_SERVERS $API_PORT $GUI_FWK_API_SERVER $THREADPOOL_SIZE $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT $ELASTICSEARCH_USERNAME $ELASTICSEARCH_USERPASSWORD $GUIMANAGER_HOST $GUIMANAGER_PORT
+    exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager $KEY $API_PORT $GUI_FWK_API_SERVER $THREADPOOL_SIZE $GUIMANAGER_HOST $GUIMANAGER_PORT
     ;;
   "dnboproxy")
     exec kafka-run-class -name dnboproxy -loggc com.evolving.nglm.evolution.DNBOProxy $KEY $API_PORT $DNBOPROXY_THREADS
     ;;
   "datacubemanager")  
-    exec kafka-run-class -name datacubemanager -loggc com.evolving.nglm.evolution.datacubes.DatacubeManager /app/runtime $BROKER_SERVERS 001 $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT $ELASTICSEARCH_USERNAME $ELASTICSEARCH_USERPASSWORD
+    exec kafka-run-class -name datacubemanager -loggc com.evolving.nglm.evolution.datacubes.DatacubeManager
     ;;
   "notificationmanagermail")
     exec kafka-run-class -name notificationmanagermail -loggc com.evolving.nglm.evolution.MailNotificationManager $KEY $PLUGIN_NAME $PLUGIN_CONFIGURATION
@@ -85,10 +85,10 @@ case "${ENTRYPOINT}" in
     exec kafka-run-class -name commodityDeliveryManager -loggc com.evolving.nglm.evolution.CommodityDeliveryManager $KEY $COMMODITYDELIVERYMANAGER_INSTANCES
     ;;
   "purchasefulfillment")
-    exec kafka-run-class -name purchaseFulfillmentManager -loggc com.evolving.nglm.evolution.PurchaseFulfillmentManager $KEY $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT $ELASTICSEARCH_USERNAME $ELASTICSEARCH_USERPASSWORD
+    exec kafka-run-class -name purchaseFulfillmentManager -loggc com.evolving.nglm.evolution.PurchaseFulfillmentManager $KEY
     ;;
   "ucgengine")
-    exec kafka-run-class -name ucgengine -loggc com.evolving.nglm.evolution.UCGEngine /app/runtime $BROKER_SERVERS $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT $ELASTICSEARCH_USERNAME $ELASTICSEARCH_USERPASSWORD
+    exec kafka-run-class -name ucgengine -loggc com.evolving.nglm.evolution.UCGEngine
     ;;
   "evolutionengine")
     exec kafka-run-class -name evolutionengine -loggc com.evolving.nglm.evolution.EvolutionEngine /app/runtime $BROKER_SERVERS $KEY $SUBSCRIBERPROFILE_HOST $SUBSCRIBERPROFILE_PORT $INTERNAL_PORT $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS

@@ -320,19 +320,14 @@ public class ThirdPartyManager
      *****************************************/
 
     String apiProcessKey = args[0];
-    String bootstrapServers = args[1];
-    int apiRestPort = parseInteger("apiRestPort", args[2]);
-    String fwkServer = args[3];
-    int threadPoolSize = parseInteger("threadPoolSize", args[4]);
-    String elasticsearchServerHost = args[5];
-    int elasticsearchServerPort = Integer.parseInt(args[6]);
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ThirdPartyManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ThirdPartyManager").getQueryTimeout();
-    String userName = args[7];
-    String userPassword = args[8];
-    String guimanagerHost = args[9];
-    int guimanagerPort = Integer.parseInt(args[10]);
+    int apiRestPort = Integer.parseInt(args[1]);
+    String fwkServer = args[2];
+    int threadPoolSize = Integer.parseInt(args[3]);
+    String guimanagerHost = args[4];
+    int guimanagerPort = Integer.parseInt(args[5]);
+
     String nodeID = System.getProperty("nglm.license.nodeid");
+    String bootstrapServers = Deployment.getBrokerServers();
     String offerTopic = Deployment.getOfferTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String journeyTopic = Deployment.getJourneyTopic();
@@ -394,7 +389,7 @@ public class ThirdPartyManager
 
     try
     {
-      elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
+      elasticsearch = new ElasticsearchClientAPI("ThirdPartyManager");
     }
     catch (ElasticsearchException e)
     {
@@ -714,26 +709,6 @@ public class ThirdPartyManager
 
       if (kafkaProducer != null) kafkaProducer.close();
     }
-  }
-
-  /*****************************************
-   *
-   *  parseInteger
-   *
-   *****************************************/
-
-  private int parseInteger(String field, String stringValue)
-  {
-    int result = 0;
-    try
-    {
-      result = Integer.parseInt(stringValue);
-    }
-    catch (NumberFormatException e)
-    {
-      throw new ServerRuntimeException("bad " + field + " argument", e);
-    }
-    return result;
   }
 
   /*****************************************

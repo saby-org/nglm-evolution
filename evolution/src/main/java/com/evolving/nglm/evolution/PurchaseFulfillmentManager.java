@@ -1392,12 +1392,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     String deliveryManagerKey = args[0];
-    String elasticsearchServerHost = args[1];
-    int elasticsearchServerPort = Integer.parseInt(args[2]);
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("PurchaseFulfillmentManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("PurchaseFulfillmentManager").getQueryTimeout();
-    String userName = args[3];
-    String userPassword = args[4];
 
     //
     //  instance  
@@ -1408,7 +1402,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     ElasticsearchClientAPI elasticsearch;
     try
     {
-      elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
+      elasticsearch = new ElasticsearchClientAPI("PurchaseFulfillmentManager");
     }
     catch (ElasticsearchException e)
     {

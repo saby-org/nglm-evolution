@@ -118,15 +118,8 @@ public class DatacubeManager
   *****************************************/
   public DatacubeManager(String[] args)
   {
-    String bootstrapServers = args[1];
-    String applicationID = "datacubemanager";
-    String instanceID = args[2];
-    String elasticsearchServerHost = args[3];
-    Integer elasticsearchServerPort = Integer.parseInt(args[4]);
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("DatacubeManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("DatacubeManager").getQueryTimeout();
-    String userName = args[5];
-    String userPassword = args[6];
+
+    String bootstrapServers = Deployment.getBrokerServers();
     
     //
     // Shutdown hook
@@ -141,24 +134,24 @@ public class DatacubeManager
     //
     // Services
     //
-    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, applicationID + "dynamiccriterionfieldservice-" + instanceID, Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "NOT_USED", Deployment.getDynamicCriterionFieldTopic(), false);
     dynamicCriterionFieldService.start();
     CriterionContext.initialize(dynamicCriterionFieldService); // Workaround: CriterionContext must be initialized before creating the JourneyService. (explain ?)
-    journeyService = new JourneyService(bootstrapServers, applicationID + "-journeyservice-" + instanceID, Deployment.getJourneyTopic(), false);
+    journeyService = new JourneyService(bootstrapServers, "NOT_USED", Deployment.getJourneyTopic(), false);
     journeyService.start();
-    loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, applicationID + "-loyaltyProgramService-" + instanceID, Deployment.getLoyaltyProgramTopic(), false);
+    loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "NOT_USED", Deployment.getLoyaltyProgramTopic(), false);
     loyaltyProgramService.start();
-    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, applicationID + "-segmentationdimensionservice-" + instanceID, Deployment.getSegmentationDimensionTopic(), false);
+    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "NOT_USED", Deployment.getSegmentationDimensionTopic(), false);
     segmentationDimensionService.start();
-    offerService = new OfferService(bootstrapServers, applicationID + "-offer-" + instanceID, Deployment.getOfferTopic(), false);
+    offerService = new OfferService(bootstrapServers, "NOT_USED", Deployment.getOfferTopic(), false);
     offerService.start();
-    salesChannelService = new SalesChannelService(bootstrapServers, applicationID + "-saleschannel-" + instanceID, Deployment.getSalesChannelTopic(), false);
+    salesChannelService = new SalesChannelService(bootstrapServers, "NOT_USED", Deployment.getSalesChannelTopic(), false);
     salesChannelService.start();
-    paymentMeanService = new PaymentMeanService(bootstrapServers, applicationID + "-paymentmeanservice-" + instanceID, Deployment.getPaymentMeanTopic(), false);
+    paymentMeanService = new PaymentMeanService(bootstrapServers, "NOT_USED", Deployment.getPaymentMeanTopic(), false);
     paymentMeanService.start();
-    offerObjectiveService = new OfferObjectiveService(bootstrapServers, applicationID + "-offerobjectiveservice-" + instanceID, Deployment.getOfferObjectiveTopic(), false);
+    offerObjectiveService = new OfferObjectiveService(bootstrapServers, "NOT_USED", Deployment.getOfferObjectiveTopic(), false);
     offerObjectiveService.start();
-    subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, applicationID + "-subscribermessagetemplateservice-" + instanceID, Deployment.getSubscriberMessageTemplateTopic(), false);
+    subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "NOT_USED", Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
     
     //
@@ -166,7 +159,7 @@ public class DatacubeManager
     //
     try
       {
-        elasticsearchRestClient = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
+        elasticsearchRestClient = new ElasticsearchClientAPI("DatacubeManager");
       }
     catch (ElasticsearchException e)
       {
