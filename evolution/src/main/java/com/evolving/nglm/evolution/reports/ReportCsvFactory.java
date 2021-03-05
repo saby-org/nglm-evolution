@@ -58,7 +58,7 @@ public interface ReportCsvFactory
     Set<String> esIndexList = new HashSet<String>();
     while(tempfromDate.getTime() < toDate.getTime())
       {
-        esIndexList.add(RLMDateUtils.printWeek(tempfromDate));
+        esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
       }
     return esIndexList;
