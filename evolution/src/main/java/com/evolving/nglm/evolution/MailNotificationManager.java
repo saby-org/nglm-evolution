@@ -391,6 +391,33 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
 
     /*****************************************
     *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public MailNotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      
+      this.destination = (String) esFields.get("destination");
+      this.fromAddress = (String) esFields.get("source");
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.subjectTags = tags.get("subjectTags");
+          this.htmlBodyTags = tags.get("htmlBodyTags");
+          this.textBodyTags = tags.get("textBodyTags");
+        }
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+    }
+    
+    /*****************************************
+    *
     *  copy
     *
     *****************************************/

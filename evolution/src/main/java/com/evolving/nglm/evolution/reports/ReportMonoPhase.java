@@ -143,42 +143,8 @@ public class ReportMonoPhase
     ZipOutputStream writer = null;
     boolean res = true;
 
-    // ESROUTER can have two access points
-    // need to cut the string to get at least one
-    String node = null;
-    int port = 0;
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
-    String username = null;
-    String password = null;
-
-    if (esNode.contains(","))
-      {
-        String[] split = esNode.split(",");
-        if (split[0] != null)
-          {
-            Scanner s = new Scanner(split[0]);
-            s.useDelimiter(":");
-            node = s.next();
-            port = s.nextInt();
-            username = s.next();
-            password = s.next();
-            s.close();
-          }
-      } else
-        {
-          Scanner s = new Scanner(esNode);
-          s.useDelimiter(":");
-          node = s.next();
-          port = s.nextInt();
-          username = s.next();
-          password = s.next();
-          s.close();
-        }
-
-    elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
+    elasticsearchReaderClient = new ElasticsearchClientAPI("ReportManager");
     try {
-
       fos = new FileOutputStream(file);
       writer = new ZipOutputStream(fos);
       ZipEntry entry = new ZipEntry(new File(csvfile).getName());
@@ -293,7 +259,9 @@ public class ReportMonoPhase
     }
     catch (IOException e1)
     {
-      log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage());
+      StringWriter stackTraceWriter = new StringWriter();
+      e1.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
       res = false;
     }
     finally {
@@ -323,7 +291,7 @@ public class ReportMonoPhase
         }
       try
       {
-        if (elasticsearchReaderClient != null) elasticsearchReaderClient.close();
+        if (elasticsearchReaderClient != null) elasticsearchReaderClient.closeCleanly();
       }
       catch (IOException e)
       {
@@ -357,42 +325,8 @@ public class ReportMonoPhase
 
         // holding the zip writers of tmp files
         Map<String,ZipOutputStream> tmpZipFiles = new HashMap<>();
-        
-        // ESROUTER can have two access points
-        // need to cut the string to get at least one
-        String node = null;
-        int port = 0;
-        int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
-        int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
-        String username = null;
-        String password = null;
-        
-        if (esNode.contains(","))
-          {
-            String[] split = esNode.split(",");
-            if (split[0] != null)
-              {
-                Scanner s = new Scanner(split[0]);
-                s.useDelimiter(":");
-                node = s.next();
-                port = s.nextInt();
-                username = s.next();
-                password = s.next();
-                s.close();
-              }
-          }
-        else
-          {
-            Scanner s = new Scanner(esNode);
-            s.useDelimiter(":");
-            node = s.next();
-            port = s.nextInt();
-            username = s.next();
-            password = s.next();
-            s.close();
-          }
 
-        elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
+        elasticsearchReaderClient = new ElasticsearchClientAPI("ReportManager");
         try {
           int i = 0;
           int scroolKeepAlive = getScrollKeepAlive();
@@ -565,7 +499,7 @@ public class ReportMonoPhase
         } finally {
           try
           {
-            if (elasticsearchReaderClient != null) elasticsearchReaderClient.close();
+            if (elasticsearchReaderClient != null) elasticsearchReaderClient.closeCleanly();
           }
           catch (IOException e)
           {

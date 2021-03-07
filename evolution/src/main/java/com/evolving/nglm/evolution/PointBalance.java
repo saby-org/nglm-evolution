@@ -71,7 +71,7 @@ public class PointBalance
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("point_balance");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("expirationDates", SchemaBuilder.array(Timestamp.SCHEMA));
     schemaBuilder.field("points", SchemaBuilder.array(Schema.INT32_SCHEMA));
     schemaBuilder.field("earnedHistory", MetricHistory.schema());

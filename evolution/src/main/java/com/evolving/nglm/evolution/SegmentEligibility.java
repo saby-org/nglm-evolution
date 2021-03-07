@@ -165,9 +165,12 @@ public class SegmentEligibility implements Segment
     {
       //this is not follow code formating convention to be more readable.
       //the method equals from EvaluationCriterion cannot be used to get diff because contains Ojects.equals on types that are not override equals
-      if(!eligilitySegment.getProfileCriteria().stream().anyMatch(p -> (p.getCriterionOperator().equals(criterion.getCriterionOperator())
-                                                                    && (p.getArgumentExpression().equals(criterion.getArgumentExpression())))
-                                                                    && (p.getCriterionField().equals(criterion.getCriterionField())))) return false;
+      // some operators have no argument ("is known/is not known"), need to take care of that special case
+      if(!eligilitySegment.getProfileCriteria().stream().anyMatch(
+          p -> (   p.getCriterionOperator().equals(criterion.getCriterionOperator())
+                && (  ((p.getArgumentExpression() == null) && (criterion.getArgumentExpression() == null))
+                    || p.getArgumentExpression().equals(criterion.getArgumentExpression()))
+                && p.getCriterionField().equals(criterion.getCriterionField())))) return false;
     }
     return true;
   }

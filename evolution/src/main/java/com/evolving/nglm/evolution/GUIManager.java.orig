@@ -8390,7 +8390,11 @@ public class GUIManager
       }
     else
       {
-        offerObjects = offerService.getStoredOffersWithCurrentStocks(includeArchived, tenantID);
+<<<<<<< HEAD
+        offerObjects = offerService.getStoredOffers(includeArchived, tenantID);
+=======
+        offerObjects = offerService.getStoredOffersWithCurrentStocks(includeArchived);
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
       }
     for (GUIManagedObject offer : offerObjects)
       {        
@@ -12442,7 +12446,11 @@ public class GUIManager
       }
     else
       {
-        productsObjects = productService.getStoredProductsWithCurrentStocks(includeArchived, tenantID);
+<<<<<<< HEAD
+        productsObjects = productService.getStoredProducts(includeArchived, tenantID);
+=======
+        productsObjects = productService.getStoredProductsWithCurrentStocks(includeArchived);
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
       }
     for (GUIManagedObject product : productsObjects)
       {
@@ -15628,7 +15636,11 @@ public class GUIManager
       }
     else
       {
-        voucherObjects = voucherService.getStoredVouchersWithCurrentStocks(includeArchived, tenantID);
+<<<<<<< HEAD
+        voucherObjects = voucherService.getStoredVouchers(includeArchived, tenantID);
+=======
+        voucherObjects = voucherService.getStoredVouchersWithCurrentStocks(includeArchived);
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
       }
     for (GUIManagedObject voucher : voucherObjects)
       {
@@ -18511,19 +18523,123 @@ public class GUIManager
             else
               {
                 List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
+<<<<<<< HEAD
+                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
+                  {
+                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+
+                    //
+                    // filterBDRs
+                    //
+
+                    List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.BDR).collect(Collectors.toList());
+
+                    //
+                    // prepare dates
+                    //
+
+                    Date startDate = null;
+
+                    if (startDateReq == null || startDateReq.isEmpty())
+                      {
+                        startDate = new Date(0L);
+                      }
+                    else
+                      {
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                      }
+                    
+                    //
+                    // filter on moduleID
+                    //
+
+                    if (moduleID != null)
+                      {
+                        BDRs = BDRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on featureID
+                    //
+
+                    if (featureID != null)
+                      {
+                        BDRs = BDRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on deliverableIDs
+                    //
+                    
+                    if(deliverableIDs != null)
+                      {
+                        List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                        for(DeliveryRequest deliveryRequest : BDRs)
+                          {
+                            if(deliveryRequest instanceof CommodityDeliveryRequest)
+                              {
+                                CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
+                                if(checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                                  {
+                                    result.add(deliveryRequest);
+                                  }
+                              }
+                            else if(deliveryRequest instanceof EmptyFulfillmentRequest) 
+                              {
+                                EmptyFulfillmentRequest request = (EmptyFulfillmentRequest) deliveryRequest;
+                                if(checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                                  {
+                                    result.add(deliveryRequest);
+                                  }
+                              }
+                            else if(deliveryRequest instanceof INFulfillmentRequest) 
+                              {
+                                INFulfillmentRequest request = (INFulfillmentRequest) deliveryRequest;
+                                if(checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                                  {
+                                    result.add(deliveryRequest);
+                                  }
+                              }
+                            else if(deliveryRequest instanceof PointFulfillmentRequest) 
+                              {
+                                PointFulfillmentRequest request = (PointFulfillmentRequest) deliveryRequest;
+                                if(checkDeliverableIDs(deliverableIDs, request.getPointID()))
+                                  {
+                                    result.add(deliveryRequest);
+                                  }
+                              }
+                          }
+                        BDRs = result;
+                      }
+
+                    //
+                    // filter and prepare json
+                    //
+
+                    for (DeliveryRequest bdr : BDRs)
+                      {
+                        if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
+                          {
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                            BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
+                          }
+                      }
+=======
                 
                 //
                 // read history
                 //
 
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone()), filters, tenantID);
+                SearchRequest searchRequest = getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone()), filters);
                 List<SearchHit> hits = getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
                     Map<String, Object> esFields = hit.getSourceAsMap();
                     CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
-                    Map<String, Object> esbdrMap = commodityDeliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                    Map<String, Object> esbdrMap = commodityDeliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                     BDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
                   }
 
                 //
@@ -18624,13 +18740,80 @@ public class GUIManager
                 List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
                 
                 List<DeliveryRequest> ODRs = new ArrayList<DeliveryRequest>();
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone()), filters, tenantID);
+                SearchRequest searchRequest = getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone()), filters);
                 List<SearchHit> hits = getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
+<<<<<<< HEAD
+                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+
+                    //
+                    // filter ODRs
+                    //
+
+                    List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.ODR).collect(Collectors.toList());
+
+                    //
+                    // prepare dates
+                    //
+
+                    Date startDate = null;
+
+                    if (startDateReq == null || startDateReq.isEmpty())
+                      {
+                        startDate = new Date(0L);
+                      }
+                    else
+                      {
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                      }
+                    
+                    //
+                    // filter on moduleID
+                    //
+
+                    if (moduleID != null)
+                      {
+                        ODRs = ODRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on featureID
+                    //
+
+                    if (featureID != null)
+                      {
+                        ODRs = ODRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on offerID
+                    //
+
+                    if (offerID != null)
+                      {
+                        List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                        for (DeliveryRequest request : ODRs)
+                          {
+                            if(request instanceof PurchaseFulfillmentRequest)
+                              {
+                                if(offerID.equals(((PurchaseFulfillmentRequest)request).getOfferID()))
+                                  {
+                                    result.add(request);
+                                  }
+                              }
+                          }
+                        ODRs = result;
+                      }
+                    
+                    //
+                    // filter on salesChannelID
+                    //
+=======
                     PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
                     ODRs.add(purchaseFulfillmentRequest);
                   }
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
 
                 //
                 // filter on paymentMeanID * NOT in ES SHOULD BE FILTER AS IT IS *
@@ -18659,6 +18842,23 @@ public class GUIManager
                                   }
                               }
                           }
+<<<<<<< HEAD
+                        ODRs = result;
+                      }
+                    
+                    //
+                    // filter using dates and prepare json
+                    //
+                    
+                    for (DeliveryRequest odr : ODRs)
+                      {
+                        if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
+                          {                            
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                            ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
+                          }
+=======
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
                       }
                     ODRs = result;
                   }
@@ -18669,7 +18869,7 @@ public class GUIManager
 
                 for (DeliveryRequest odr : ODRs)
                   {
-                    Map<String, Object> presentationMap = odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                    Map<String, Object> presentationMap = odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                     ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                   }
 
@@ -18768,13 +18968,16 @@ public class GUIManager
             else
               {
                 List<JSONObject> messagesJson = new ArrayList<JSONObject>();
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone()), filters, tenantID);
+                SearchRequest searchRequest = getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone()), filters);
                 List<SearchHit> hits = getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
                     String channelID = (String) hit.getSourceAsMap().get("channelID");
                     if (channelID != null && !channelID.isEmpty())
                       {
+<<<<<<< HEAD
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
+=======
                         String deliveryType = null;
                         for (String deliveryTypeInMap : Deployment.getDeliveryTypeCommunicationChannelIDMap().keySet())
                           {
@@ -18793,14 +18996,43 @@ public class GUIManager
                                 DeliveryRequest notification = getNotificationDeliveryRequest(requestClass, hit);
                                 if (notification != null)
                                   {
-                                    Map<String, Object> esNotificationMap = notification.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                                    Map<String, Object> esNotificationMap = notification.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                                     messagesJson.add(JSONUtilities.encodeObject(esNotificationMap));
                                   }
                               }
                           }
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
                       }
                   }
 
+<<<<<<< HEAD
+                      }
+                    
+                    //
+                    // filter on featureID
+                    //
+
+                    if (featureID != null)
+                      {
+                        messages = messages.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
+                      }
+
+                    //
+                    // filter using dates and prepare json
+                    //
+
+                    for (DeliveryRequest message : messages)
+                      {
+                        if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
+                          {
+                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                            messagesJson.add(JSONUtilities.encodeObject(messageMap));
+                          }
+                      }
+                  }
+
+=======
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
                 //
                 // prepare response
                 //
@@ -18889,7 +19121,7 @@ public class GUIManager
             else
               {
                 List<JSONObject> journeysJson = new ArrayList<JSONObject>();
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerJourneys, subscriberID, journeyStartDate, filters, tenantID);
+                SearchRequest searchRequest = getSearchRequest(API.getCustomerJourneys, subscriberID, journeyStartDate, filters);
                 List<SearchHit> hits = getESHits(searchRequest);
                 Map<String, JourneyHistory> journeyHistoryMap = new HashMap<String, JourneyHistory>(hits.size());
                 for (SearchHit hit : hits)
@@ -18903,12 +19135,21 @@ public class GUIManager
                 // read campaigns
                 //
 
-                Collection<GUIManagedObject> stroeRawJourneys = journeyService.getStoredJourneys(true, tenantID);
+<<<<<<< HEAD
+                    Collection<GUIManagedObject> stroeRawJourneys = journeyService.getStoredJourneys(true, tenantID);
+                    List<Journey> storeJourneys = new ArrayList<Journey>();
+                    for (GUIManagedObject storeJourney : stroeRawJourneys)
+                      {
+                        if (storeJourney instanceof Journey ) storeJourneys.add( (Journey) storeJourney);
+                      }
+=======
+                Collection<GUIManagedObject> stroeRawJourneys = journeyService.getStoredJourneys(true);
                 List<Journey> storeJourneys = new ArrayList<Journey>();
                 for (GUIManagedObject storeJourney : stroeRawJourneys)
                   {
                     if (storeJourney instanceof Journey) storeJourneys.add((Journey) storeJourney);
                   }
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
 
                 //
                 // filter Journeys
@@ -18945,7 +19186,7 @@ public class GUIManager
                     // read objective
                     //
 
-                    Collection<JourneyObjective> activejourneyObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime(), tenantID);
+                    Collection<JourneyObjective> activejourneyObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime());
 
                     //
                     // filter activejourneyObjective by name
@@ -18967,9 +19208,13 @@ public class GUIManager
                 for (Journey storeJourney : storeJourneys)
                   {
 
+<<<<<<< HEAD
+                        Collection<JourneyObjective> activejourneyObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime(), tenantID);
+=======
                     //
                     // subsLatestStatistic
                     //
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
 
                     JourneyHistory subsLatestStatistic = journeyHistoryMap.get(storeJourney.getJourneyID());
 
@@ -19030,10 +19275,10 @@ public class GUIManager
                                                                                                                                                                     // generateJSON
                                                                                                                                                                     // only
                                                                                                                                                                     // once?
-                    journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate(), tenantID));
-                    journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate(), tenantID));
-                    journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate(), tenantID));
-                    journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService) != null ? getDateString(subsLatestStatistic.getJourneyExitDate(journeyService), tenantID) : "");
+                    journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
+                    journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
+                    journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                    journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService) != null ? getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)) : "");
                     journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
 
                     List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -19059,9 +19304,54 @@ public class GUIManager
                             resultCharacteristics.add(characteristics);
                           }
 
+<<<<<<< HEAD
+                        //
+                        // prepare response
+                        //
+
+                        Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
+                        journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
+                        journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
+                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));     // @rl: maybe generateJSON only once?
+                        journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate(), tenantID));
+                        journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate(), tenantID));
+                        journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate(), tenantID));
+                        journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService), tenantID):"");
+                        journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
+                        
+                        List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
+                        for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
+                          {
+                            List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
+                            JSONObject result = new JSONObject();
+                            
+                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
+                            result.put("active", journeyObjective.getActive());
+                            result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
+                            result.put("display", journeyObjective.getJSONRepresentation().get("display"));
+                            result.put("readOnly", journeyObjective.getReadOnly());
+                            result.put("name", journeyObjective.getGUIManagedObjectName());
+                            result.put("contactPolicyID", journeyObjective.getContactPolicyID());
+                            result.put("id", journeyObjective.getGUIManagedObjectID());
+                            
+                            for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+                              {
+                                JSONObject characteristics = new JSONObject();
+                                characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                                characteristics.put("value", catalogCharacteristicInstance.getValue());
+                                resultCharacteristics.add(characteristics);
+                              }
+                            
+                            result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
+                            resultObjectives.add(result);
+                          }
+                        
+                        journeyResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
+=======
                         result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
                         resultObjectives.add(result);
                       }
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
 
                     journeyResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
 
@@ -19071,9 +19361,25 @@ public class GUIManager
                     currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : (storeJourney.getJourneyNode(nodeHistory.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(nodeHistory.getToNodeID()).getNodeName()));
                     JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
+<<<<<<< HEAD
+                        List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
+                        for (NodeHistory journeyHistories : subsLatestStatistic.getNodeHistory())
+                          {
+                            Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
+                            nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
+                            nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
+                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
+                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
+                            nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate(), tenantID));
+                            nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
+                            nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
+                            nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
+                          }
+=======
                     //
                     // node history
                     //
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
 
                     List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
                     for (NodeHistory journeyHistories : subsLatestStatistic.getNodeHistory())
@@ -19083,7 +19389,7 @@ public class GUIManager
                         nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
                         nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
                         nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
-                        nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate(), tenantID));
+                        nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
                         nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                         nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                         nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
@@ -19179,7 +19485,7 @@ public class GUIManager
               {
                 List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
                 
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerCampaigns, subscriberID, campaignStartDate, filters, tenantID);
+                SearchRequest searchRequest = getSearchRequest(API.getCustomerCampaigns, subscriberID, campaignStartDate, filters);
                 List<SearchHit> hits = getESHits(searchRequest);
                 Map<String, JourneyHistory> journeyHistoryMap = new HashMap<String, JourneyHistory>(hits.size());
                 for (SearchHit hit : hits)
@@ -19193,12 +19499,21 @@ public class GUIManager
                 // read campaigns
                 //
 
-                Collection<GUIManagedObject> storeRawCampaigns = journeyService.getStoredJourneys(true, tenantID);
+<<<<<<< HEAD
+                    Collection<GUIManagedObject> storeRawCampaigns = journeyService.getStoredJourneys(true, tenantID);
+                    List<Journey> storeCampaigns = new ArrayList<Journey>();
+                    for (GUIManagedObject storeCampaign : storeRawCampaigns)
+                      {
+                        if (storeCampaign instanceof Journey) storeCampaigns.add( (Journey) storeCampaign);
+                      }
+=======
+                Collection<GUIManagedObject> storeRawCampaigns = journeyService.getStoredJourneys(true);
                 List<Journey> storeCampaigns = new ArrayList<Journey>();
                 for (GUIManagedObject storeCampaign : storeRawCampaigns)
                   {
                     if (storeCampaign instanceof Journey) storeCampaigns.add((Journey) storeCampaign);
                   }
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
 
                 //
                 // filter campaigns
@@ -19235,7 +19550,7 @@ public class GUIManager
                     // read objective
                     //
 
-                    Collection<JourneyObjective> activecampaignObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime(), tenantID);
+                    Collection<JourneyObjective> activecampaignObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime());
 
                     //
                     // lookup activecampaignObjective by name
@@ -19244,9 +19559,17 @@ public class GUIManager
                     List<JourneyObjective> campaignObjectives = activecampaignObjectives.stream().filter(journeyObj -> campaignObjectiveName.equals(journeyObj.getJSONRepresentation().get("display"))).collect(Collectors.toList());
                     JourneyObjective exactCampaignObjective = campaignObjectives.size() > 0 ? campaignObjectives.get(0) : null;
 
+<<<<<<< HEAD
+                        //
+                        //  read objective
+                        //
+
+                        Collection<JourneyObjective> activecampaignObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime(), tenantID);
+=======
                     //
                     // filter
                     //
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
 
                     if (exactCampaignObjective == null)
                       storeCampaigns = new ArrayList<Journey>();
@@ -19314,10 +19637,10 @@ public class GUIManager
                     campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                     campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
                     campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
-                    campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate(), tenantID));
-                    campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate(), tenantID));
-                    campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate(), tenantID));
-                    campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService) != null ? getDateString(subsLatestStatistic.getJourneyExitDate(journeyService), tenantID) : "");
+                    campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
+                    campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
+                    campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                    campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService) != null ? getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)) : "");
                     campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
 
                     List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -19348,7 +19671,49 @@ public class GUIManager
                         resultObjectives.add(result);
                       }
 
+<<<<<<< HEAD
+                        Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
+                        campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
+                        campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
+                        campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
+                        campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate(), tenantID));
+                        campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate(), tenantID));
+                        campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate(), tenantID));
+                        campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService), tenantID):"");
+                        campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
+                        
+                        List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
+                        for (JourneyObjectiveInstance journeyObjectiveInstance : storeCampaign.getJourneyObjectiveInstances())
+                          {
+                            List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
+                            JSONObject result = new JSONObject();
+                            
+                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
+                            result.put("active", journeyObjective.getActive());
+                            result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
+                            result.put("display", journeyObjective.getJSONRepresentation().get("display"));
+                            result.put("readOnly", journeyObjective.getReadOnly());
+                            result.put("name", journeyObjective.getGUIManagedObjectName());
+                            result.put("contactPolicyID", journeyObjective.getContactPolicyID());
+                            result.put("id", journeyObjective.getGUIManagedObjectID());
+                            
+                            for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+                              {
+                                JSONObject characteristics = new JSONObject();
+                                characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                                String catalogCharacteristicValue = "" + catalogCharacteristicInstance.getValue();
+                                characteristics.put("value", catalogCharacteristicValue);
+                                resultCharacteristics.add(characteristics);
+                              }
+                            
+                            result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
+                            resultObjectives.add(result);
+                          }
+                        
+                        campaignResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
+=======
                     campaignResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
 
                     Map<String, Object> currentState = new HashMap<String, Object>();
                     NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
@@ -19360,6 +19725,26 @@ public class GUIManager
                     // node history
                     //
 
+<<<<<<< HEAD
+                        List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
+                        for (NodeHistory journeyHistories : subsLatestStatistic.getNodeHistory())
+                          {
+                            Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
+                            nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
+                            nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
+                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
+                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
+                            nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate(), tenantID));
+                            nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
+                            nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
+                            nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
+                          }
+                        campaignResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
+                        campaignResponseMap.put("journeyComplete", journeyComplete);
+                        campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
+                        campaignResponseMap.put("currentState", currentStateJson);
+                        campaignsJson.add(JSONUtilities.encodeObject(campaignResponseMap));
+=======
                     List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
                     for (NodeHistory journeyHistories : subsLatestStatistic.getNodeHistory())
                       {
@@ -19368,10 +19753,11 @@ public class GUIManager
                         nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
                         nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
                         nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
-                        nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate(), tenantID));
+                        nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
                         nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                         nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                         nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
                       }
                     campaignResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
                     campaignResponseMap.put("journeyComplete", campaignComplete);
@@ -19818,8 +20204,16 @@ public class GUIManager
               } 
             else
               {
+<<<<<<< HEAD
+                Date now = SystemTime.getCurrentTime();
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
+                SubscriberHistory subscriberHistory = subscriberProfile.getSubscriberHistory();
+                Map<String, List<JourneyHistory>> campaignStatisticsMap = new HashMap<String, List<JourneyHistory>>();
+
+=======
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
                 
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
                 //
                 //  journeys
                 //
@@ -25445,13 +25839,18 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     Map<ResolvedFieldType, ResolvedFieldType> resolvedFieldsTypesMap = new HashMap<>(); // no this is not rubish, this is to ensure we play always with the same instance...
     for (CriterionField criterionField : criterionFields.values())
       {
+<<<<<<< HEAD
         List<JSONObject> availableValues = evaluateAvailableValues(criterionField, now, true, tenantID);
+        resolvedFieldTypes.put(criterionField.getID(), new ResolvedFieldType(criterionField.getFieldDataType(), availableValues));
+=======
+        List<JSONObject> availableValues = evaluateAvailableValues(criterionField, now, true);
         ResolvedFieldType resolvedFieldTypeInstance = resolvedFieldsTypesMap.get(new ResolvedFieldType(criterionField.getFieldDataType(), availableValues));
         if(resolvedFieldTypeInstance == null) {
           resolvedFieldTypeInstance = new ResolvedFieldType(criterionField.getFieldDataType(), availableValues);
           resolvedFieldsTypesMap.put(resolvedFieldTypeInstance, resolvedFieldTypeInstance);
         }
         resolvedFieldTypes.put(criterionField.getID(), resolvedFieldTypeInstance);
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
         resolvedAvailableValues.put(criterionField.getID(), availableValues);
       }
 
@@ -28227,6 +28626,195 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   /*****************************************
   *
+<<<<<<< HEAD
+  *  class DeliverableSourceService
+  *
+  *****************************************/
+
+  protected class DeliverableSourceService
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private volatile boolean stopRequested = false;
+    private String deliverableSourceTopic;
+    private KafkaConsumer<byte[], byte[]> deliverableSourceConsumer;
+    Thread deliverableSourceReaderThread = null;
+
+    //
+    //  serdes
+    //
+
+    private ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
+    private ConnectSerde<DeliverableSource> deliverableSourceSerde = DeliverableSource.serde();
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public DeliverableSourceService(String bootstrapServers, String groupID, String deliverableSourceTopic)
+    {
+      //
+      // set up consumer
+      //
+
+      Properties consumerProperties = new Properties();
+      consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+      consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, groupID);
+      consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+      consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+      consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+      consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+      GUIService.setCommonConsumerProperties(consumerProperties);
+      deliverableSourceConsumer = new KafkaConsumer<>(consumerProperties);
+
+      //
+      //  subscribe to topic
+      //
+
+      deliverableSourceConsumer.subscribe(Arrays.asList(deliverableSourceTopic));
+    }
+
+    /*****************************************
+    *
+    *  start
+    *
+    *****************************************/
+
+    public void start()
+    {
+      Runnable deliverableSourceReader = new Runnable() { @Override public void run() { readDeliverableSource(deliverableSourceConsumer); } };
+      deliverableSourceReaderThread = new Thread(deliverableSourceReader, "DeliverableSourceReader");
+      deliverableSourceReaderThread.start();
+    }
+
+    /*****************************************
+    *
+    *  stop
+    *
+    *****************************************/
+
+    public synchronized void stop()
+    {
+      //
+      //  mark stopRequested
+      //
+
+      stopRequested = true;
+
+      //
+      //  wake sleeping polls (if necessary)
+      //
+
+      if (deliverableSourceConsumer != null) deliverableSourceConsumer.wakeup();
+
+      //
+      //  wait for threads to finish
+      //
+
+      try
+        {
+          if (deliverableSourceReaderThread != null) deliverableSourceReaderThread.join();
+        }
+      catch (InterruptedException e)
+        {
+          // nothing
+        }
+
+      //
+      //  close
+      //
+
+      if (deliverableSourceConsumer != null) deliverableSourceConsumer.close();
+    }
+
+    /****************************************
+    *
+    *  readDeliverableSource
+    *
+    ****************************************/
+
+    private void readDeliverableSource(KafkaConsumer<byte[], byte[]> consumer)
+    {
+      do
+        {
+          //
+          //  poll
+          //
+
+          ConsumerRecords<byte[], byte[]> deliverableSourceRecords;
+          try
+            {
+              deliverableSourceRecords = consumer.poll(5000);
+            }
+          catch (WakeupException e)
+            {
+              deliverableSourceRecords = ConsumerRecords.<byte[], byte[]>empty();
+            }
+
+          //
+          //  processing?
+          //
+
+          if (stopRequested) continue;
+
+          //
+          //  process
+          //
+
+          Date now = SystemTime.getCurrentTime();
+          for (ConsumerRecord<byte[], byte[]> deliverableSourceRecord : deliverableSourceRecords)
+            {
+              //
+              //  parse
+              //
+
+              DeliverableSource deliverableSource = null;
+              try
+                {
+                  deliverableSource = deliverableSourceSerde.deserializer().deserialize(deliverableSourceRecord.topic(), deliverableSourceRecord.value());
+                }
+              catch (SerializationException e)
+                {
+                  log.info("error reading deliverableSource: {}", e.getMessage());
+                }
+              if (deliverableSource != null) log.info("read deliverableSource {}", deliverableSource);
+
+              //
+              //  process
+              //
+
+              if (deliverableSource != null)
+                {
+                  int tenantID = JSONUtilities.decodeInteger(deliverableSource.getDeliverableJSON(), "tenantID", true);
+                  GUIManagedObject existingGUIManagedObject = deliverableService.getStoredDeliverableByName(deliverableSource.getName(), tenantID);
+                  if (existingGUIManagedObject != null)
+                    {
+                      deliverableSource.setID(existingGUIManagedObject.getGUIManagedObjectID());
+                    }
+                  guiManagerGeneral.processPutDeliverable("0", deliverableSource.getDeliverableJSON(), tenantID);
+                }
+            }
+              
+          //
+          //  commit offsets
+          //
+
+          consumer.commitSync();
+        }
+      while (!stopRequested);
+    }
+  }
+
+  /*****************************************
+  *
+=======
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
   *  class RenamedProfileCriterionField
   *
   *****************************************/
@@ -30313,7 +30901,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   {
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     response.put("evolutionVersion", com.evolving.nglm.core.Deployment.getEvolutionVersion());
+<<<<<<< HEAD
     response.put("customerVersion", com.evolving.nglm.core.Deployment.getDeployment(tenantID).getCustomerVersion());
+    
+=======
+    response.put("customerVersion", com.evolving.nglm.core.Deployment.getCustomerVersion());
+>>>>>>> origin/release_1.5.1_1_1.5.2_0_withoutTenancy
     return JSONUtilities.encodeObject(response);
   }
   
@@ -30323,12 +30916,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
    * 
    ********************************/
   
-  private SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters, int tenantID)
+  private SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters)
   {
     SearchRequest searchRequest = null;
     String index = null;
     BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("subscriberID", subscriberId));
-    Date indexFilterDate = RLMDateUtils.addDays(SystemTime.getCurrentTime(), -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date indexFilterDate = RLMDateUtils.addDays(SystemTime.getCurrentTime(), -7, Deployment.getBaseTimeZone());
     
     //
     //  filters
@@ -30346,7 +30939,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
+                List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
                 index = getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
               }
@@ -30367,7 +30960,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
+                List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
                 index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
               }
@@ -30388,7 +30981,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
+                List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
                 index = getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
               }

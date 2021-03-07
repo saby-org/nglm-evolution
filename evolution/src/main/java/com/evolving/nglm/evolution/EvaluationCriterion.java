@@ -1880,22 +1880,22 @@ public class EvaluationCriterion
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid special criterion field " + esField);
     String criterion = fieldNameMatcher.group(1);
     // TODO : necessary ? To be checked
-    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+    if (!(criterionOperator.equals(CriterionOperator.IsNotNullOperator) || criterionOperator.equals(CriterionOperator.IsNullOperator)) && !(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
     String value = "";
     switch (criterion)
     {
-      case "Journey":
-        journeyName = (String) (argument.evaluate(null, null));
+    case "Journey":
+        journeyName = String.join(",", (HashSet) (argument.evaluate(null, null)));
         return QueryBuilders.matchAllQuery();
         
       case "Campaign":
-        campaignName = (String) (argument.evaluate(null, null));
+        campaignName = String.join(",", (HashSet) (argument.evaluate(null, null)));
         return QueryBuilders.matchAllQuery();
         
       case "Bulkcampaign":
-        bulkcampaignName = (String) (argument.evaluate(null, null));
+        bulkcampaignName = String.join(",",(HashSet) (argument.evaluate(null, null)));
         return QueryBuilders.matchAllQuery();
-        
+                
       case "JourneyStatus":
         value = journeyName;
         break;
@@ -1912,78 +1912,64 @@ public class EvaluationCriterion
         throw new CriterionException("unknown criteria : " + esField);
     }
     
-    QueryBuilder queryID = QueryBuilders.termQuery("subscriberJourneys.journeyID", value);
+    QueryBuilder queryID = QueryBuilders.termsQuery("subscriberJourneys.journeyID", value.split(","));
     QueryBuilder queryStatus = null;
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;
     boolean isNot = false;
-    
-    switch (criterionOperator)
-    {
-      case NotInSetOperator:
-        isNot = true;
-        // fallthrough
-      case IsInSetOperator:
-        /*
-        {
-          "query": {
-            "nested" :
-            {
-              "path" : "subscriberJourneys",
-              "query" :{
-                "bool": {
-                  "must": [
-                    {
-                      "term": {
-                        "subscriberJourneys.journeyID": "1104"
-                      }
-                    }
-                  ],
-                  "should": [
-                    {
-                      "term": {
-                        "subscriberJourneys.status": "other"
-                      }
-                    },
-                    {
-                      "term": {
-                        "subscriberJourneys.status": "entered"
-                      }
-                    }
-                  ],
-                  "minimum_should_match": 1
-                }
-              }
-            }
-          }
-        }
-        */
-        queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringSetExpression);
-        if (!(queryStatus instanceof BoolQueryBuilder))
-          {
-            throw new CriterionException("BoolQueryBuilder expected, got " + queryStatus.getClass().getName());
-          }
-        BoolQueryBuilder boolQuery = (BoolQueryBuilder) queryStatus;
-        BoolQueryBuilder insideQueryBool = QueryBuilders.boolQuery().must(queryID).minimumShouldMatch(1);
-        for (QueryBuilder should : boolQuery.should())
-          {
-            insideQueryBool = insideQueryBool.should(should);
-          }
-        insideQuery = insideQueryBool;
-        break;
-        
-      default:
-        queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringExpression);
-        insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
-        break;
-      }
-    query = QueryBuilders.nestedQuery("subscriberJourneys", insideQuery, ScoreMode.Total);
-    if (isNot)
-      {
-        query = QueryBuilders.boolQuery().mustNot(query);
-      }
-    return query;
-  }
+    if (criterionOperator.equals(CriterionOperator.IsNullOperator)) {
+    	isNot = true;
+    }
+	switch (criterionOperator) {
+	case IsNotNullOperator:
+	case IsNullOperator:
+		BoolQueryBuilder queryCompareBool = QueryBuilders.boolQuery();
+
+		queryCompareBool = queryCompareBool
+				.should(QueryBuilders.termsQuery("subscriberJourneys.journeyID", value.split(",")));
+
+		insideQuery = queryCompareBool;
+		break;
+	case EmptyIntersectionOperator:
+		HashSet<String> statusvalues = (HashSet<String>) evaluateArgument(ExpressionDataType.StringSetExpression);
+		queryStatus = QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues);
+		insideQuery = QueryBuilders.boolQuery().must(queryID).mustNot(queryStatus);
+		break;
+
+	// queryStatus = buildCompareQuery("subscriberJourneys.status",
+	// ExpressionDataType.StringSetExpression);
+	// if (!(queryStatus instanceof BoolQueryBuilder))
+	// {
+	// throw new CriterionException("BoolQueryBuilder expected, got " +
+	// queryStatus.getClass().getName());
+	// }
+	// BoolQueryBuilder boolQuery = (BoolQueryBuilder) queryStatus;
+	// BoolQueryBuilder insideQueryBool =
+	// QueryBuilders.boolQuery().must(queryID).minimumShouldMatch(1);
+	// for (QueryBuilder should : boolQuery.should())
+	// {
+	// insideQueryBool = insideQueryBool.should(should);
+	// }
+	// insideQuery = insideQueryBool;
+	// break;
+	case NonEmptyIntersectionOperator:
+		HashSet<String> statusvalues1 = (HashSet<String>) evaluateArgument(ExpressionDataType.StringSetExpression);
+		queryStatus = QueryBuilders.termsQuery("subscriberJourneys.status", statusvalues1);
+		insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
+		break;
+	default:
+		queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringExpression);
+		insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
+		break;
+	}
+
+	// if(insideQuery!=null)
+	query = QueryBuilders.nestedQuery("subscriberJourneys", insideQuery, ScoreMode.Total);
+	if (isNot) {
+		query = QueryBuilders.boolQuery().mustNot(query);
+	}
+	return query;
+}
 
   /*****************************************
   *
@@ -2251,6 +2237,8 @@ public class EvaluationCriterion
 
       case IsInSetOperator:
       case NotInSetOperator:
+      case EmptyIntersectionOperator:
+      case NonEmptyIntersectionOperator:
         /*
 {
   "query": {

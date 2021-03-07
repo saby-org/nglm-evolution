@@ -70,6 +70,7 @@ public class CriterionContext
   private static HashMap<Integer, CriterionContext> DynamicProfile;
   private static HashMap<Integer, CriterionContext> FullDynamicProfile;
   private static HashMap<Integer, CriterionContext> Presentation;
+  public static final String JOURNEY_DISPLAY_PARAMETER_ID = "this.journey.display";
 
   /*****************************************
   *
@@ -359,8 +360,30 @@ public class CriterionContext
   private static CriterionField journeyActionDeliveryStatus;
   private static CriterionField journeyActionJourneyStatus;
   private static CriterionField journeyEndDate;
+  private static CriterionField journeyDisplay;
   static
   {
+    
+    //
+    //  journeyDisplay
+    //
+
+    try
+      {
+        Map<String,Object> journeyDisplayJSON = new LinkedHashMap<String,Object>();
+        journeyDisplayJSON.put("id", JOURNEY_DISPLAY_PARAMETER_ID);
+        journeyDisplayJSON.put("display", "Campaign");
+        journeyDisplayJSON.put("dataType", "string");
+        journeyDisplayJSON.put("retriever", "getJourneyParameter");
+        journeyDisplayJSON.put("internalOnly", false);
+        journeyDisplayJSON.put("tagMaxLength", 100);
+        journeyDisplay  = new CriterionField(JSONUtilities.encodeObject(journeyDisplayJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
     //
     //  journeyEntryDate
     //
@@ -577,7 +600,7 @@ public class CriterionContext
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion_context");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("criterionContextType", Schema.STRING_SCHEMA);
     schemaBuilder.field("additionalCriterionFields", SchemaBuilder.array(CriterionField.schema()).schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
@@ -642,6 +665,7 @@ public class CriterionContext
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
     this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
     this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
+    this.additionalCriterionFields.put(journeyDisplay.getID(), journeyDisplay);
     this.additionalCriterionFields.putAll(journeyParameters);
     for (CriterionField contextVariable : contextVariables.values())
       {
@@ -702,6 +726,7 @@ public class CriterionContext
 
         this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
         this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
+        this.additionalCriterionFields.put(journeyDisplay.getID(), journeyDisplay);
 
         //
         //  journey parameters

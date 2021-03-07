@@ -48,15 +48,13 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static Map<Integer, Deployment> deploymentsPerTenant = new HashMap<>();
   private static Object lock = new Object();
   
+  private static boolean loaded; // If the java class is statically loaded 
+  public static boolean isDeploymentLoaded() { return loaded; }
 
   //
   //  data
   //
-  
-  private static String elasticSearchHost;
-  private static int elasticSearchPort;
-  private static String elasticSearchUserName;
-  private static String elasticSearchUserPassword;
+
   private static int topicSubscriberPartitions;
   private static int topicReplication;
   private static String topicMinInSyncReplicas;
@@ -123,7 +121,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static String subscriberHistoryChangeLogTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
-  private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
@@ -173,7 +170,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private boolean generateSimpleProfileDimensions;
   private static Map<String,CommunicationChannel> communicationChannels = new LinkedHashMap<>();
   private Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
-  private static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
+  private static JourneyMetricConfiguration journeyMetricConfiguration = null;
   private static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics = new LinkedHashMap<String,SubscriberProfileDatacubeMetric>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> baseProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -255,9 +252,15 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static int kafkaRetentionDaysMDR;
   //EVPRO-574
   private static int kafkaRetentionDaysTargets;
+  
+  // EVPRO-886
+  private static int nodesTransitionsHistorySize;
 
 
   private  boolean enableContactPolicyProcessing;
+  
+  //EVPRO-865  
+  private static String firstDayOfTheWeek;
 
   //extracts configuration
   private  static String extractManagerZookeeperDir;
@@ -287,10 +290,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   //  evolution accessors
   //
 
-  public static String getElasticSearchHost() { return elasticSearchHost; }
-  public static int getElasticSearchPort() { return elasticSearchPort; }
-  public static String getElasticSearchUserName() { return  elasticSearchUserName; }
-  public static String getElasticSearchUserPassword() { return  elasticSearchUserPassword; }
   public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
   public static int getTopicSubscriberPartitions() { return topicSubscriberPartitions; }
@@ -356,7 +355,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
-  public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
@@ -402,7 +400,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static JSONArray getInitialComplexObjectJSONArray() { return initialComplexObjectJSONArray; }
   public boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
-  public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; } // EVPRO-99 check for tenant and static
+  public static JourneyMetricConfiguration getJourneyMetricConfiguration() { return journeyMetricConfiguration; }
   public static Map<String,SubscriberProfileDatacubeMetric> getSubscriberProfileDatacubeMetrics() { return subscriberProfileDatacubeMetrics; } // EVPRO-99 check for tenant and static 
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; } // EVPRO-99 check for tenant and static
   public static Map<String,CriterionField> getBaseProfileCriterionFields() { return baseProfileCriterionFields; }
@@ -457,7 +455,14 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static String getDynamicCriterionFieldTopic() { return dynamicCriterionFieldsTopic; }
   public Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public Map<String,BillingMode> getBillingModes() { return billingModes; }
-  public static Map<String,ElasticsearchConnectionSettings> getElasticsearchConnectionSettings() { return elasticsearchConnectionSettings; }
+  public static ElasticsearchConnectionSettings getElasticsearchConnectionSettings(String name, boolean forConnect) {
+    ElasticsearchConnectionSettings toRet = elasticsearchConnectionSettings.get(name);
+    if(toRet==null) {
+      if(forConnect) return elasticsearchConnectionSettings.get("connectDefault");
+      toRet = elasticsearchConnectionSettings.get("default");
+    }
+    return toRet;
+  }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
@@ -499,6 +504,11 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
   //EVPRO-574
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
+  
+  //EVPRO-865
+  public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
+  // EVPRO-886
+  public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
 
   // addProfileCriterionField
   //
@@ -737,19 +747,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
        *  configuration
        *
        *****************************************/
-
-      elasticSearchHost = System.getenv("ELASTICSEARCH_HOST");
-      elasticSearchPort = -1;
-      try
-        {
-          elasticSearchPort = Integer.parseInt(System.getenv("ELASTICSEARCH_PORT"));
-        }
-      catch (NumberFormatException e)
-        {
-          log.info("deployment : can not get/parse env conf ELASTICSEARCH_PORT");
-        }
-      elasticSearchUserName = System.getenv("ELASTICSEARCH_USERNAME");
-      elasticSearchUserPassword = System.getenv("ELASTICSEARCH_USERPASSWORD");
 
       //
       // kafka topics configuration
@@ -1772,19 +1769,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         }
 
       //
-      //  deliverableSourceTopic
-      //
-
-      try
-        {
-          deliverableSourceTopic = JSONUtilities.decodeString(jsonRoot, "deliverableSourceTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  presentationLogTopic
       //
 
@@ -1941,7 +1925,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           }
           
         }
-      catch (JSONUtilitiesException e)
+      catch (JSONUtilitiesException|IllegalArgumentException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
@@ -2373,18 +2357,43 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         }
 
       //
-      //  journeyMetricDeclarations
+      //  journeyMetricConfiguration
       //
 
       try
         {
-          JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", new JSONArray());
-          for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
-            {
-              JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
-              JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
-              journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+          JSONObject journeyMetricConfigurationJSON = (JSONObject) jsonRoot.get("journeyMetrics");
+          if( journeyMetricConfigurationJSON.isEmpty() ) {
+            // JourneyMetric are therefore disabled
+            journeyMetricConfiguration = new JourneyMetricConfiguration();
+          } else {
+            int priorPeriodDays = JSONUtilities.decodeInteger(journeyMetricConfigurationJSON, "priorPeriodDays", true);
+            if(priorPeriodDays < 1) {
+              throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'priorPeriodDays' field cannot be negative or null.");
             }
+            
+            int postPeriodDays = JSONUtilities.decodeInteger(journeyMetricConfigurationJSON, "postPeriodDays", true);
+            if(postPeriodDays < 1) {
+              throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'postPeriodDays' field cannot be negative or null.");
+            }
+            
+            Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
+            
+            JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(journeyMetricConfigurationJSON, "metrics", new JSONArray());
+            if(journeyMetricDeclarationValues.isEmpty()) {
+              // JourneyMetric are therefore disabled
+              journeyMetricConfiguration = new JourneyMetricConfiguration();
+            } else {
+              for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
+                {
+                  JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
+                  JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
+                  journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+                }
+              
+              journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
+            }
+          }
         }
       catch (JSONUtilitiesException e)
         {
@@ -3005,7 +3014,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
       //  stockRefreshPeriod
       //
 
-      stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 30);
+      stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 5);
 
       //
       //  periodicEvaluationCronEntry
@@ -3233,11 +3242,9 @@ public class Deployment extends com.evolving.nglm.core.Deployment
             kafkaRetentionDaysJourneys = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysJourneys",31);
             kafkaRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysCampaigns",31);
             // adjusting and warning if too low for journey metric feature to work
-            for (JourneyMetricDeclaration journeyMetricDeclaration : getJourneyMetricDeclarations().values()){
-              if(journeyMetricDeclaration.getPostPeriodDays()>kafkaRetentionDaysCampaigns+2){
-                kafkaRetentionDaysCampaigns=journeyMetricDeclaration.getPostPeriodDays()+2;
-                log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric "+journeyMetricDeclaration.getID()+" postPeriodDays of "+journeyMetricDeclaration.getPostPeriodDays()+" (need at least 2 days more)");
-              }
+            if(Deployment.getJourneyMetricConfiguration().getPostPeriodDays() > kafkaRetentionDaysCampaigns+2){
+              kafkaRetentionDaysCampaigns = Deployment.getJourneyMetricConfiguration().getPostPeriodDays() + 2;
+              log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric postPeriodDays of "+Deployment.getJourneyMetricConfiguration().getPostPeriodDays()+" (need at least 2 days more)");
             }
             kafkaRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBulkCampaigns",7);
             kafkaRetentionDaysLoyaltyPrograms = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysLoyaltyPrograms",31);
@@ -3251,6 +3258,15 @@ public class Deployment extends com.evolving.nglm.core.Deployment
             throw new ServerRuntimeException("deployment", e);
           }
 
+      try
+        {
+          nodesTransitionsHistorySize = JSONUtilities.decodeInteger(jsonRoot, "nodesTransitionsHistorySize",10);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+        
       try
         {
           enableContactPolicyProcessing = JSONUtilities.decodeBoolean(jsonRoot, "enableContactPolicyProcessing", Boolean.TRUE);
@@ -3312,6 +3328,19 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+      
+      //
+      //  firstDayOfTheWeek EVPRO-865
+      //
+
+      try
+        {
+          firstDayOfTheWeek = JSONUtilities.decodeString(jsonRoot, "firstDayOfTheWeek", false);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
       //
       // all dynamic topics
@@ -3332,7 +3361,13 @@ public class Deployment extends com.evolving.nglm.core.Deployment
             allTopics.put(declaration.getPreprocessTopic().getName(),declaration.getPreprocessTopic());
           }
         }
-
+      
+      
+      
+      //
+      // End of initialization 
+      //
+      loaded = true;
     }
   
   

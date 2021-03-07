@@ -380,7 +380,7 @@ public class UploadedFileService extends GUIService
                                 processViolations(violations, new GUIManagerException("invalidAlternateId", header));
                               }
                             fileHeader.add(header);
-                            uploadededFile.setCustomerAlternateID(header);
+                            ((UploadedFile) guiManagedObject).setCustomerAlternateID(header);
                             isFirstColumn = false;
                           }
                         else
@@ -415,12 +415,16 @@ public class UploadedFileService extends GUIService
                             CriterionDataType CriterionDataType = EvaluationCriterion.CriterionDataType.fromExternalRepresentation(dataType);
                             validateValue(variableName, CriterionDataType, value, lineNumber, violations);
                           }
+                        else
+                          {
+                            if (value.isEmpty()) processViolations(violations, new GUIManagerException("badFieldValue", "''(empty)" + "," + ((UploadedFile) guiManagedObject).getCustomerAlternateID() + "," + lineNumber));
+                          }
                         isFirstColumn = false;
                         index++;
                       }
                   }
               }
-            if (uploadededFile.getNumberOfLines() == null) uploadededFile.setNumberOfLines(lineNumber - 1);
+            if (((UploadedFile) guiManagedObject).getNumberOfLines() == null) ((UploadedFile) guiManagedObject).setNumberOfLines(lineNumber - 1);
             if (violations.size() > 0) prepareAndThrowViolations(violations);
           } 
         catch (IOException e)

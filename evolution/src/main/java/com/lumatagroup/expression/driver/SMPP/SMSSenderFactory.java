@@ -3,6 +3,7 @@ package com.lumatagroup.expression.driver.SMPP;
 import java.util.ArrayList;
 import java.util.Properties;
 
+import com.evolving.nglm.evolution.NotificationInterface;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.SMSNotificationManager;
 import com.lumatagroup.expression.driver.SMPP.configuration.SMSC;
 import com.lumatagroup.expression.driver.SMPP.Util.SMPPUtil;
 import com.lumatagroup.expression.driver.SMPP.Util.SMPPUtil.SMPP_CONFIGS;
@@ -34,7 +34,7 @@ public class SMSSenderFactory {
         if (logger.isInfoEnabled()) logger.info("SMSSenderFactory.ctor");
     }
 
-	public void init(DeliveryManagerForNotifications smsNotificationManager) {
+	public void init(DeliveryManagerForNotifications smsNotificationManager, NotificationInterface plugin) {
 		if (logger.isDebugEnabled()) logger.debug("SMSSenderFactory.init");
         
         if (smppDriverConfigurationMap == null || smppDriverConfigurationMap.getSize() == 0) {
@@ -77,6 +77,7 @@ public class SMSSenderFactory {
 					
 					//@formatter:on					
 					senders.add(sender);
+					conn.setRetrySender(plugin);
 					String redisServer = Deployment.getRedisSentinels();
 			    subscriberIDService = new SubscriberIDService(redisServer);
 			    

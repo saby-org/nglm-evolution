@@ -127,6 +127,10 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
                 result.put("relationships", "");
               }
           }
+        else
+          {
+            result.put("relationships", "");
+          }
 
         result.putAll(allDimensionsMapPerTenant.get(tenantID)); // all dimensions have empty segments
         for (String field : allProfileFields)

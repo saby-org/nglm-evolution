@@ -6,10 +6,14 @@
 
 package com.evolving.nglm.evolution;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -54,7 +58,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
   private static final Logger log = LoggerFactory.getLogger(GUIManagerLoyaltyReporting.class);
 
-  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -62,7 +66,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     super.contactPolicyService = contactPolicyService;
     super.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
     super.deliverableService = deliverableService;
-    super.deliverableSourceService = deliverableSourceService;
     super.exclusionInclusionTargetService = exclusionInclusionTargetService;
     super.journeyObjectiveService = journeyObjectiveService;
     super.journeyService = journeyService;
@@ -759,11 +762,19 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             responseCode = "Cant find report with that name";
           }
 
+          String finalFileName = reportFile.getAbsolutePath();
+              
           File filterOutTmpFile = reportFile;
           File percentageOutTmpFile = reportFile;
           File topRowsOutTmpFile = reportFile;
           File headerOutTmpFile = reportFile;
           File finalZipFile = null;
+          File internalFile = null;
+          
+          boolean isFilters = false;
+          boolean isPercentage = false;
+          boolean isTop = false;
+          boolean isHeader = false;
 
           if(reportFile != null) {
             if(reportFile.length() > 0) {
@@ -855,6 +866,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                         }
 
                       ReportUtils.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                      isFilters = true;
                     }
                   else
                     {
@@ -864,6 +876,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   if (percentage != null) 
                     {
                       ReportUtils.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
+                      isPercentage = true;
                     }
                   else
                     {
@@ -873,6 +886,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   if (topRows != null) 
                     {
                       ReportUtils.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
+                      isTop = true;
                     }
                   else
                     {
@@ -888,15 +902,56 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                           columnNames.add(nameOfColumn);
                         }
                       ReportUtils.subsetOfCols(topRowsOutTmpFile.getAbsolutePath(), headerOutTmpFile.getAbsolutePath(), columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                      isHeader = true;
                     }
                   else
                     {
                       headerOutTmpFile = topRowsOutTmpFile;
                     }
 
-                  finalZipFile = File.createTempFile("reportFinal.", ".zip");
+                  finalFileName = finalFileName.substring(0, finalFileName.length()-8);
+                  
+                  if(isFilters) {
+                    finalFileName = finalFileName+"_Filter";
+                  }
+                  
+                  if(isPercentage) {
+                    finalFileName = finalFileName+"_Percentage";
+                  }
+                  
+                  if(isTop) {
+                    finalFileName = finalFileName+"_Top";
+                  }
+                  
+                  if(isHeader) {
+                    finalFileName = finalFileName+"_Column";
+                  }
+                  
+                  
+                  internalFile = File.createTempFile(finalFileName + ".", ".csv");
+                                 
+                  try
+                  {
+                      String strLine;
+                      BufferedReader br = new BufferedReader(new FileReader(headerOutTmpFile));
+                      BufferedWriter bw = new BufferedWriter(new FileWriter(internalFile));
+                      while ((strLine = br.readLine()) != null) 
+                      {
+                              bw.write(strLine);
+                              bw.write("\n");
+                          }
+                      br.close();
+                      bw.close();
+                
+                  }
+                  catch (FileNotFoundException e) 
+                  {
+                      log.error("File doesn't exist", e);
+                  }
+                  
+                  finalZipFile = File.createTempFile(finalFileName + ".", ".zip");
                   String finalZipFileName = finalZipFile.getAbsolutePath();
-                  ReportUtils.zipFile(headerOutTmpFile.getAbsolutePath(), finalZipFileName);
+                  ReportUtils.zipFile(internalFile.getAbsolutePath(), finalZipFileName);
                   reportFile = new File(finalZipFileName);
                 }
 
@@ -920,13 +975,14 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }
 
               if (filters != null || percentage != null || topRows != null || header != null)
-                {
-                  if (filterOutTmpFile != null) filterOutTmpFile.delete();
-                  if (percentageOutTmpFile != null) percentageOutTmpFile.delete();
-                  if (topRowsOutTmpFile != null) topRowsOutTmpFile.delete();
-                  if (headerOutTmpFile != null) headerOutTmpFile.delete();
-                  if (finalZipFile != null) finalZipFile.delete();
-                }
+              {
+                if (filterOutTmpFile != null) filterOutTmpFile.delete();
+                if (percentageOutTmpFile != null) percentageOutTmpFile.delete();
+                if (topRowsOutTmpFile != null) topRowsOutTmpFile.delete();
+                if (headerOutTmpFile != null) headerOutTmpFile.delete();
+                if (finalZipFile != null) finalZipFile.delete();
+                if (internalFile != null) internalFile.delete();
+              }
 
             } else {
               responseCode = "Report size is 0, report file is empty";

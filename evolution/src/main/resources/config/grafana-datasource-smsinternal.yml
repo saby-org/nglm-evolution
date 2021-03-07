@@ -7,6 +7,11 @@ datasources:
   access: proxy
   database: "messagegatewaysmsinternal"
   url: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
+  basicAuth: true
+  withCredentials: true
+  basicAuthUser: admin
+  secureJsonData:
+    basicAuthPassword: "<_ELASTICSEARCH_ADMIN_PASSWORD_>"
   jsonData:
     timeField: "eventDate"
     esVersion: 70

@@ -169,7 +169,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
       log.warn("Usage : CustomerPointDetailsMonoPhase <EsNode> <IndexSubscriber> <csvfile> <defaultReportPeriodQuantity> <defaultReportPeriodUnit>");
       return;
     }
-    
+
     String esNode             = args[0];
     String esIndexSubscriber  = args[1];
     String csvfile            = args[2];

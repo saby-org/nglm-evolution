@@ -11,6 +11,9 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 
+import com.evolving.nglm.evolution.zookeeper.Configuration;
+import com.evolving.nglm.evolution.zookeeper.ZookeeperEvolution;
+import com.evolving.nglm.evolution.zookeeper.ZookeeperJSONObject;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -341,7 +344,7 @@ public class StockMonitor implements Runnable
   /*****************************************
   *
   *  run
-  *   -- periodic (30 seconds)
+  *   -- periodic, every stockRefreshPeriod sec
   *   -- updatedStockableItems.size() > 0
   *   -- stockMonitorKeys.watcher fires
   *   -- running = false
@@ -395,7 +398,7 @@ public class StockMonitor implements Runnable
                 periodicCheck = true;
                 while (now.compareTo(nextProcessingTime) >= 0)
                   {
-                    nextProcessingTime = RLMDateUtils.addSeconds(nextProcessingTime, 30);
+                    nextProcessingTime = RLMDateUtils.addSeconds(nextProcessingTime, Deployment.getStockRefreshPeriod());
                   }
               }
 
@@ -436,6 +439,10 @@ public class StockMonitor implements Runnable
                   {
                     // ignore
                   }
+              }
+            else
+              {
+                log.warn("StockMonitor.processStock() - took {} ms while the configured refresh period is {} sec", Deployment.getStockRefreshPeriod()*1000+now.getTime()-nextProcessingTime.getTime(), Deployment.getStockRefreshPeriod());
               }
           }
       }
@@ -1129,6 +1136,22 @@ public class StockMonitor implements Runnable
     }
   }
 
+  public static Integer getRemainingStock(StockableItem stockableItem){
+  	if(stockableItem.getStock()==null) return null;//no stock, infinite
+    ReaderStock readerStock = ZookeeperEvolution.getZookeeperEvolutionInstance().read(Configuration.NODE.STOCK_STOCKS.node().newChild(stockableItem.getStockableItemID()),new ReaderStock(new Stock(stockableItem)));
+    if(readerStock==null || readerStock.stock==null) return stockableItem.getStock();//not yet any consumed
+    return Math.max(0,stockableItem.getStock() - readerStock.stock.getStockConsumed());//below 0 (can happen if stock modified) means 0 remaining
+  }
+  // just to not change old Stock class for the reader changes
+  private static class ReaderStock extends ZookeeperJSONObject<ReaderStock>{
+    Stock stock;
+    ReaderStock(Stock stock){ this.stock=stock; }
+    @Override protected ReaderStock fromJson(JSONObject jsonObject) { return new ReaderStock(new Stock(jsonObject,-1)); }
+    @Override protected JSONObject toJson() { return this.stock.toJSON(); }
+    @Override protected ReaderStock updateAtomic(ReaderStock storedInZookeeperObject) { return storedInZookeeperObject; }//not used
+    @Override protected void onUpdateAtomicSucces() { }//not used
+  }
+
   /*****************************************
   *
   *  class LocalAllocation
@@ -1287,171 +1310,4 @@ public class StockMonitor implements Runnable
     }
   }
 
-  /*****************************************
-  *
-  *  example main
-  *
-  *****************************************/
-
-  public static void main(String[] args) throws Exception
-  {
-    /*****************************************
-    *
-    *  setup
-    *
-    *****************************************/
-
-    //
-    //  NGLMRuntime
-    //
-
-    NGLMRuntime.initialize(true);
-
-    //
-    //  arguments
-    //
-
-    if (args.length < 2)
-      {
-        System.out.println("bad arguments");
-        System.exit(0);
-      }
-
-    //
-    //  parse arguments
-    //
-    
-      
-    String stockMonitorKey = args[0];
-    String productID = args[1];
-
-    //
-    //  productService
-    //
-
-    ProductService productService = new ProductService(Deployment.getBrokerServers(), "example-productservice-" + stockMonitorKey, Deployment.getProductTopic(), false);
-    productService.start();
-
-    //
-    //  stockMonitor
-    //
-
-    StockMonitor stockMonitor = new StockMonitor(stockMonitorKey, productService);
-    stockMonitor.start();
-
-    //
-    //  product
-    //
-
-    Date now = SystemTime.getCurrentTime();
-    Product product = productService.getActiveProduct(productID, now);
-    if (product == null)
-      {
-        System.out.println("no active product: " + productID);
-        System.exit(0);
-      }
-      
-    //
-    //  main loop
-    //
-
-    NGLMRuntime.addShutdownHook(new ShutdownHook(stockMonitor));
-    Random random = new Random();
-    while (true)
-      {
-        //
-        //  use
-        //
-
-        int quantity = random.nextInt(3) + 1;
-
-        //
-        //  reserve
-        //
-
-        boolean approved = stockMonitor.reserve(product, quantity);
-        System.out.println("reserve " + (approved ? "approved" : "rejected") + ": " + quantity);
-
-        //
-        //  sleep
-        //
-
-        try
-          {
-            Thread.sleep((random.nextInt(3) + 1) * 1000);
-          }
-        catch (InterruptedException e)
-          {
-          }
-
-        //
-        //  confirm/void
-        //
-
-        if (approved)
-          {
-            if (random.nextInt(3) <= 1)
-              {
-                System.out.println("confirm: " + quantity);
-                stockMonitor.confirmReservation(product, quantity);
-              }
-            else
-              {
-                System.out.println("void: " + quantity);
-                stockMonitor.voidReservation(product, quantity);
-              }
-          }
-
-        //
-        //  sleep
-        //
-
-        //
-        //  sleep
-        //
-
-        try
-          {
-            Thread.sleep((random.nextInt(3) + 1) * 1000);
-          }
-        catch (InterruptedException e)
-          {
-          }
-      }
-  }
-
-  /*****************************************
-  *
-  *  class ShutdownHook
-  *
-  *****************************************/
-
-  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
-  {
-    //
-    //  data
-    //
-
-    private StockMonitor stockMonitor;
-
-    //
-    //  constructor
-    //
-
-    private ShutdownHook(StockMonitor stockMonitor)
-    {
-      this.stockMonitor = stockMonitor;
-    }
-
-    //
-    //  shutdown
-    //
-
-    @Override public void shutdown(boolean normalShutdown)
-    {
-      log.info("Stopping stockMonitor");
-      stockMonitor.close();
-      log.info("Stopped stockMonitor");
-    }
-  }
 }

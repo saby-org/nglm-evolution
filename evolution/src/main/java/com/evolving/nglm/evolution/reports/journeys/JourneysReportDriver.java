@@ -83,40 +83,8 @@ public class JourneysReportDriver extends ReportDriver
     
     journeyObjectiveService = new JourneyObjectiveService(kafkaNode, "journeysreportcsvwriter-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
     journeyObjectiveService.start();
-    
-    // ESROUTER can have two access points
-    // need to cut the string to get at least one
-    String node = null;
-    int port = 0;
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
-    String username = null;
-    String password = null;
-    
-    if (elasticSearch.contains(","))
-      {
-        String[] split = elasticSearch.split(",");
-        if (split[0] != null)
-          {
-            Scanner s = new Scanner(split[0]);
-            s.useDelimiter(":");
-            node = s.next();
-            port = s.nextInt();
-            username = s.next();
-            password = s.next();
-            s.close();
-          }
-      } else
-        {
-          Scanner s = new Scanner(elasticSearch);
-          s.useDelimiter(":");
-          node = s.next();
-          port = s.nextInt();
-          username = s.next();
-          password = s.next();
-          s.close();
-        }
-    ElasticsearchClientAPI elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
+
+    ElasticsearchClientAPI elasticsearchReaderClient = new ElasticsearchClientAPI("ReportManager");
 
     ReportsCommonCode.initializeDateFormats();
     
@@ -248,7 +216,7 @@ public class JourneysReportDriver extends ReportDriver
         {
           try
           {
-            elasticsearchReaderClient.close();
+            elasticsearchReaderClient.closeCleanly();
           }
           catch (IOException e)
           {

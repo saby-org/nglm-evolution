@@ -29,7 +29,7 @@ public class Preprocessor {
 	private static ElasticsearchClientAPI elasticsearchClientAPI;
 	static {
 		try {
-			elasticsearchClientAPI = new ElasticsearchClientAPI(Deployment.getElasticSearchHost(), Deployment.getElasticSearchPort(), Deployment.getElasticsearchConnectionSettings().get("PreprocessorEngine").getConnectTimeout(), Deployment.getElasticsearchConnectionSettings().get("PreprocessorEngine").getQueryTimeout(), Deployment.getElasticSearchUserName(), Deployment.getElasticSearchUserPassword());
+			elasticsearchClientAPI = new ElasticsearchClientAPI("PreprocessorEngine");
 		} catch (ElasticsearchException e) {
 			throw new ServerRuntimeException("could not initialize elasticsearch client", e);
 		}

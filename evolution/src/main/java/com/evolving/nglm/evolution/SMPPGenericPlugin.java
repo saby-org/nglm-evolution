@@ -157,7 +157,7 @@ public class SMPPGenericPlugin implements NotificationInterface
     if (sms_MO_event_name != null)  config.addProperty(SMPP_CONFIGS.sms_MO_event_name.toString(), sms_MO_event_name);  
     if (sms_MO_channel_name != null)  config.addProperty(SMPP_CONFIGS.sms_MO_channel_name.toString(), sms_MO_event_name);  
     smsSenderFactory = new SMSSenderFactory(config);
-    smsSenderFactory.init(smsNotificationManager);
+    smsSenderFactory.init(smsNotificationManager,this);
     if(smsSenderFactory.getSMSSenders() == null || (smsSenderFactory.getSMSSenders() != null && smsSenderFactory.getSMSSenders().length == 0))
       {
         log.info("SMPP Driver Load NOT Successfully: no sender created");

@@ -81,7 +81,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                 journeyInfo.put("journeyID", journey.getJourneyID());
                 journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                 journeyInfo.put("journeyType", journey.getTargetingType());
-                journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("toNodeID")).getNodeName());
+                journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("nodeID")).getNodeName());
                 
                 // No need to do all that anymore, "status" is already correct in ES
                 /*
@@ -114,7 +114,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                 journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
                 journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
                   {
                     journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
                     journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
