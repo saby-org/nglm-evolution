@@ -8182,7 +8182,14 @@ public class EvolutionEngine
       
       try
       {
-        eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+        if(AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventDeclaration.getEventClass())) 
+          {
+            eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class, int.class});
+          }
+        else 
+          {
+            eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+          }        
       }
     catch (Exception e)
       {
