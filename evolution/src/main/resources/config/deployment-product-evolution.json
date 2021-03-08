@@ -57,7 +57,7 @@
       { "id" : "GUIManager",                 "connectTimeout" : 30000, "queryTimeout" : 7200000 },
       { "id" : "PreprocessorEngine",         "connectTimeout" : 30000, "queryTimeout" : 60000 },
       { "id" : "PurchaseFulfillmentManager", "connectTimeout" : 30000, "queryTimeout" : 60000 },
-      { "id" : "ReportManager",              "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "ReportManager",              "connectTimeout" : 30000, "queryTimeout" : 120000 },
       { "id" : "ThirdPartyManager",          "connectTimeout" : 30000, "queryTimeout" : 60000 },
       { "id" : "UCGEngine",                  "connectTimeout" : 30000, "queryTimeout" : 60000 }
     ],
