@@ -48,7 +48,7 @@ public interface ReportCsvFactory
   
   /*******************************
    * 
-   * will return in yyyy-ww format
+   * will return in yyyy-wxx format
    * 
    *******************************/
   
