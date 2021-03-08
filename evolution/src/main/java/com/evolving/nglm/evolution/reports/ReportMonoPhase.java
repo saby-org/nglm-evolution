@@ -686,7 +686,7 @@ public class ReportMonoPhase
       }
   }
 
-  private int getScrollSize()
+  public static int getScrollSize()
   {
     int scrollSize = com.evolving.nglm.core.Deployment.getElasticsearchScrollSize();
     if (scrollSize == 0)
@@ -697,7 +697,7 @@ public class ReportMonoPhase
     return scrollSize;
   }
 
-  private int getScrollKeepAlive()
+  public static int getScrollKeepAlive()
   {
     int scrollKeepAlive = com.evolving.nglm.core.Deployment.getElasticSearchScrollKeepAlive();
     if (scrollKeepAlive == 0)

@@ -166,6 +166,7 @@ public class JourneysReportDriver extends ReportDriver
                   String journeyRewards = null;
                   String journeyStates = null;
 
+                  String displayForDatacubes = journey.getGUIManagedObjectDisplay() != null ? journey.getGUIManagedObjectDisplay() : journeyID;
                   Map<String, Long> journeyStatusCount = elasticsearchReaderClient.getJourneyStatusCount(journeyID);
                   for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
                     Long statusCount = journeyStatusCount.get(states.getDisplay());
@@ -179,17 +180,11 @@ public class JourneysReportDriver extends ReportDriver
                   }
                   journeyStates = sbStates.toString().substring(0, sbStates.toString().length()-1);
 
-                  Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID);
-                  for (String rewards : distributedRewards.keySet()) {
-                    if (pointService.getStoredPoint(rewards) != null) {
-                      String rewardName = pointService.getStoredPoint(rewards).getGUIManagedObjectDisplay();
-                      sbRewards.append(rewardName).append(",");
-                    }
-                    else {
-                      sbRewards.append("").append(",");
-                    }
-                    journeyRewards = (sbRewards.length() > 0)? sbRewards.toString().substring(0, sbRewards.toString().length()-1) : "";
+                  Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID, displayForDatacubes);
+                  for (String rewardName : distributedRewards.keySet()) {
+                    sbRewards.append(rewardName).append(",");
                   }
+                  journeyRewards = (sbRewards.length() > 0)? sbRewards.toString().substring(0, sbRewards.toString().length()-1) : "";
                   journeyInfo.put("customerStates", journeyStates);
                   journeyInfo.put("customerStatuses", journeyStatus);         
                   journeyInfo.put("listOfCommodities", journeyRewards);          

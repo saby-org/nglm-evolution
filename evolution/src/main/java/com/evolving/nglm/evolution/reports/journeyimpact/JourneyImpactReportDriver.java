@@ -135,9 +135,10 @@ public class JourneyImpactReportDriver extends ReportDriver
             journeyInfo2.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
             String journeyRewards = "";
+            String displayForDatacubes = journey.getGUIManagedObjectDisplay() != null ? journey.getGUIManagedObjectDisplay() : journeyID;
             try
             {
-              Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID);
+              Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID, displayForDatacubes);
               StringBuilder sbRewards = new StringBuilder();
               for (Entry<String, Long> rewards : distributedRewards.entrySet())
                 {
