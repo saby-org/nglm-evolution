@@ -49,8 +49,8 @@
     <gui-opc.version>1.5.10</gui-opc.version>
     <gui-iar.version>1.5.1</gui-iar.version>
     <gui-opr.version>1.5.2</gui-opr.version>
-    <gui-stg.version>1.5.9</gui-stg.version>
-    <gui-sbm.version>1.5.6</gui-sbm.version>
+    <gui-stg.version>1.5.12</gui-stg.version>
+    <gui-sbm.version>1.5.8</gui-sbm.version>
     <gui-lpm.version>1.5.8</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.5</gui-audit.version>

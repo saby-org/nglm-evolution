@@ -14,7 +14,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
-import com.evolving.nglm.evolution.complexobjects.ComplexObjectinstanceSubfieldValue;
+import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -789,9 +789,9 @@ public abstract class CriterionFieldRetriever
           }
       }
     if(instance == null) { return null; }
-    Map<String, ComplexObjectinstanceSubfieldValue> values = instance.getFieldValues();
+    Map<String, DataModelFieldValue> values = instance.getFieldValues();
     if(values == null) { return null; }
-    ComplexObjectinstanceSubfieldValue elementValue = values.get(subfieldName);
+    DataModelFieldValue elementValue = values.get(subfieldName);
     if(elementValue == null) { return null; }
     return elementValue.getValue();   
   }

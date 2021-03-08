@@ -11,6 +11,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SubscriberProfile;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectException.ComplexObjectUtilsReturnCodes;
+import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 public class ComplexObjectUtils
 {  
@@ -81,14 +82,14 @@ public class ComplexObjectUtils
         instances.add(instance);        
       }
     
-    Map<String, ComplexObjectinstanceSubfieldValue> valueSubFields = instance.getFieldValues();
+    Map<String, DataModelFieldValue> valueSubFields = instance.getFieldValues();
     if(value == null)
       {
         valueSubFields.remove(subfieldType.getSubfieldName());
       }
     else 
       {
-        ComplexObjectinstanceSubfieldValue valueSubField = new ComplexObjectinstanceSubfieldValue(subfieldType.getSubfieldName(), subfieldType.getPrivateID(), value);
+        DataModelFieldValue valueSubField = new DataModelFieldValue(subfieldType.getSubfieldName(), subfieldType.getPrivateID(), value);
         if(valueSubFields == null) { valueSubFields = new HashMap<>(); instance.setFieldValues(valueSubFields); }
         valueSubFields.put(subfieldType.getSubfieldName(), valueSubField);
       }
@@ -164,9 +165,9 @@ public class ComplexObjectUtils
     ComplexObjectInstance instance = null;
     for(ComplexObjectInstance current : instances) { if(current.getElementID().equals(elementID)) { instance = current; break; }}
     if(instance == null) { return null; }
-    Map<String, ComplexObjectinstanceSubfieldValue> values = instance.getFieldValues();
+    Map<String, DataModelFieldValue> values = instance.getFieldValues();
     if(values == null) { return null; }
-    ComplexObjectinstanceSubfieldValue value = values.get(subfieldName);
+    DataModelFieldValue value = values.get(subfieldName);
     if(value == null) { return null; }    
     return value.getValue();
   }
