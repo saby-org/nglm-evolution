@@ -135,6 +135,7 @@ public class JourneysReportDriver extends ReportDriver
         log.info("journeys list size : " + nbJourneys);
 
         boolean addHeaders = true;
+        int ignoredExceptions = -3; // we display 3 INFO exception before moving to DEBUG level
         for (GUIManagedObject guiManagedObject : journeys)
           {
             try
@@ -204,10 +205,14 @@ public class JourneysReportDriver extends ReportDriver
             }
             catch (IOException | ElasticsearchClientException e)
             {
-              log.info("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
+              if (ignoredExceptions++ < 0) {
+                log.info("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
+              } else {
+                log.debug("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
+              }
             }
           }
-        log.info("WriteCompleted ");
+        log.info("WriteCompleted, " + (ignoredExceptions+3) + " exceptions");
         log.info("csv Writer closed");
       }
     catch (IOException e)

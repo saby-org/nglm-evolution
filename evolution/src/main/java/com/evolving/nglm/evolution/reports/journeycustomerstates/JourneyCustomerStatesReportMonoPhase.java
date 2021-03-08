@@ -230,7 +230,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
         JourneyNode journeyNode = journey.getJourneyNode(split[index]);
         if (journeyNode == null)
           {
-            log.info("unknown journey node with name " + split[index]);
+            log.info("unknown journey node with name " + split[index] + " in journey " + journey.getGUIManagedObjectDisplay());
           }
         else
           {
