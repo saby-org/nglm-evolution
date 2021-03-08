@@ -696,6 +696,18 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
       this.resellerDisplay = "";
       if (reseller != null) this.resellerDisplay = reseller.getGUIManagedObjectDisplay();
+      if (esFields.get("vouchers") != null)
+        {
+          List<VoucherDelivery> voucherDeliveries = new ArrayList<VoucherDelivery>();
+          List<Map <String, Object>> voucherESList = (List<Map<String, Object>>) esFields.get("vouchers");
+          for (Map<String, Object> voucher : voucherESList)
+            {
+              String voucherCode = (String) voucher.get("voucherCode");
+              VoucherDelivery voucherDelivery = new VoucherDelivery(null, null, voucherCode, null, null); //minimal
+              voucherDeliveries.add(voucherDelivery);
+            }
+          this.voucherDeliveries = voucherDeliveries;
+        }
       
     }
 
