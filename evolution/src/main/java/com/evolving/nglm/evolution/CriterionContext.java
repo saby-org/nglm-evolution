@@ -902,7 +902,7 @@ public class CriterionContext
     Struct valueStruct = (Struct) value;
     CriterionContextType criterionContextType = CriterionContextType.fromExternalRepresentation(valueStruct.getString("criterionContextType"));
     Map<String,CriterionField> additionalCriterionFields = (schemaVersion >= 2) ? unpackAdditionalCriterionFields(schema.field("additionalCriterionFields").schema(), valueStruct.get("additionalCriterionFields")) : unpackAdditionalCriterionFields(schema.field("journeyCriterionFields").schema(), valueStruct.get("journeyCriterionFields"));
-    int tenantID = valueStruct.getInt16("tenantID");
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
     //
     //  return
     //
