@@ -550,10 +550,28 @@ public class EvolutionSetup
                 if(connectorName.equals("notification_es_sink_connector")){
                   for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
                     if(cc.getDeliveryManagerDeclaration()!=null){
+                      // this is for generic communication channels in fact...
                       for(Topic topic:cc.getDeliveryManagerDeclaration().getResponseTopics()){
                         toAdd.add(topic.getName());
+                        System.out.println("Prepare to add topic for notification_es_sink_connector: " + topic.getName());
                       }
                     }
+                    else
+                      {
+                        // for old channels // TODO remove asap // let retrieve the configuration through deliveryType
+                        DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(cc.getDeliveryType());
+                        if(dmd != null)
+                          {
+                            for(Topic topic:dmd.getResponseTopics()){
+                              toAdd.add(topic.getName());
+                              System.out.println("Prepare to add topic for old channels notification_es_sink_connector: " + topic.getName());
+                            }
+                          }
+                        else
+                          {
+                            System.out.println("notification_es_sink_connector Don't retrieve deliveryManager config for " + cc.getDeliveryType());
+                          }
+                      }
                   }
                 }else if(connectorName.equals("bdr_es_sink_connector")){
                   DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
