@@ -1662,7 +1662,7 @@ public class ThirdPartyManager
 
     Deliverable searchedBonus = null;
     for(GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables(tenantID)){
-      if(storedDeliverable instanceof Deliverable && (((Deliverable) storedDeliverable).getDeliverableName().equals(bonusName))){
+      if(storedDeliverable instanceof Deliverable && (((Deliverable) storedDeliverable).getDeliverableDisplay().equals(bonusName))){
         searchedBonus = (Deliverable)storedDeliverable;
       }
     }
@@ -1687,7 +1687,7 @@ public class ThirdPartyManager
       Date now = SystemTime.getCurrentTime();
       for (Point point : pointService.getActivePoints(now, tenantID))
         {
-          if (bonusName.equals(point.getGUIManagedObjectName()))
+          if (bonusName.equals(point.getGUIManagedObjectDisplay()))
             {
               pointID = point.getGUIManagedObjectID();
               break;
@@ -1712,7 +1712,7 @@ public class ThirdPartyManager
     *****************************************/
 
     response.put("deliveryRequestID", deliveryRequestID);
-    response.put("responseCode", "ok");
+    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -1771,7 +1771,7 @@ public class ThirdPartyManager
 
     PaymentMean searchedBonus = null;
     for(GUIManagedObject storedPaymentMean : paymentMeanService.getStoredPaymentMeans(tenantID)){
-      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanName().equals(bonusName))){
+      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanDisplay().equals(bonusName))){
         searchedBonus = (PaymentMean)storedPaymentMean;
       }
     }
@@ -1803,7 +1803,7 @@ public class ThirdPartyManager
     *****************************************/
 
     response.put("deliveryRequestID", deliveryRequestID);
-    response.put("responseCode", "ok");
+    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
     return JSONUtilities.encodeObject(response);
   }
  
