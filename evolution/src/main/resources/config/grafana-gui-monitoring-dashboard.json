@@ -4397,11 +4397,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "Subscriber Seniority",
-          "value": "Subscriber Seniority"
-        },
+        "current": {},
         "datasource": "SubscriberProfile",
         "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
         "description": null,
