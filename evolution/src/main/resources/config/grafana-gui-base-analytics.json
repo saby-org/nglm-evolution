@@ -15,63 +15,74 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 2,
-  "id": null,
-  "iteration": 1586509848694,
+  "id": 40,
+  "iteration": 1615279432318,
   "links": [],
   "panels": [
     {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
       "datasource": "SubscriberProfile",
       "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
-        "h": 16,
-        "w": 11,
+        "h": 9,
+        "w": 24,
         "x": 0,
         "y": 0
       },
+      "hiddenSeries": false,
       "id": 30,
-      "options": {
-        "displayMode": "gradient",
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "max": 2000,
-            "min": 0,
-            "thresholds": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ],
-            "title": "$__cell_0 $__cell_1 $__cell_2",
-            "unit": "locale"
-          },
-          "override": {},
-          "values": true
-        },
-        "orientation": "horizontal"
+      "interval": null,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
       },
-      "pluginVersion": "6.5.2",
+      "lines": false,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
       "targets": [
         {
           "bucketAggs": [
             {
               "fake": true,
               "field": "filter.stratum.$dimension1",
-              "id": "4",
-              "settings": {
-                "min_doc_count": 1,
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "10"
-              },
-              "type": "terms"
-            },
-            {
-              "fake": true,
-              "field": "filter.stratum.$dimension2",
               "id": "5",
               "settings": {
                 "min_doc_count": 1,
@@ -83,6 +94,70 @@
             },
             {
               "fake": true,
+              "field": "timestamp",
+              "id": "4",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "refId": "A",
+          "timeField": "timestamp"
+        },
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "filter.stratum.$dimension2",
+              "id": "3",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "10"
+              },
+              "type": "terms"
+            },
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": false,
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "refId": "B",
+          "timeField": "timestamp"
+        },
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
               "field": "filter.stratum.$dimension3",
               "id": "3",
               "settings": {
@@ -92,136 +167,123 @@
                 "size": "10"
               },
               "type": "terms"
-            }
-          ],
-          "metrics": [
+            },
             {
-              "field": "count",
-              "id": "1",
-              "meta": {},
-              "settings": {},
-              "type": "sum"
-            }
-          ],
-          "refId": "A",
-          "timeField": "timestamp"
-        }
-      ],
-      "timeFrom": "1d",
-      "timeShift": null,
-      "title": "Number of Customers by Dimensions",
-      "type": "bargauge"
-    },
-    {
-      "datasource": "SubscriberProfile",
-      "description": "",
-      "gridPos": {
-        "h": 5,
-        "w": 12,
-        "x": 11,
-        "y": 0
-      },
-      "id": 80,
-      "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "max": 100,
-            "min": 0,
-            "thresholds": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ],
-            "title": "$__cell_0",
-            "unit": "locale"
-          },
-          "override": {},
-          "values": true
-        },
-        "orientation": "horizontal",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "pluginVersion": "6.5.2",
-      "targets": [
-        {
-          "bucketAggs": [
-            {
-              "fake": true,
-              "field": "filter.stratum.$dimension1",
-              "id": "3",
+              "field": "timestamp",
+              "id": "2",
               "settings": {
+                "interval": "1s",
                 "min_doc_count": 1,
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "10"
+                "trimEdges": 0
               },
-              "type": "terms"
+              "type": "date_histogram"
             }
           ],
           "metrics": [
             {
               "field": "count",
+              "hide": false,
               "id": "1",
               "meta": {},
               "settings": {},
               "type": "sum"
             }
           ],
-          "refId": "A",
+          "refId": "C",
           "timeField": "timestamp"
         }
       ],
+      "thresholds": [],
       "timeFrom": "1d",
+      "timeRegions": [],
       "timeShift": null,
-      "title": "Number of Customers by $dimension1",
-      "type": "gauge"
+      "title": "Number of Customers by Dimension",
+      "tooltip": {
+        "shared": false,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "series",
+        "name": null,
+        "show": true,
+        "values": [
+          "current"
+        ]
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:360",
+          "format": "locale",
+          "label": "Customer",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:361",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": 1000
+      }
     },
     {
+      "aliasColors": {},
+      "breakPoint": "50%",
+      "cacheTimeout": null,
+      "combine": {
+        "label": "Others",
+        "threshold": 0
+      },
       "datasource": "SubscriberProfile",
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          }
+        },
+        "overrides": []
+      },
+      "fontSize": "80%",
+      "format": "short",
       "gridPos": {
-        "h": 5,
-        "w": 12,
-        "x": 11,
-        "y": 5
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 9
       },
       "id": 82,
-      "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "max": 100,
-            "min": 0,
-            "thresholds": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ],
-            "title": "$__cell_0",
-            "unit": "locale"
-          },
-          "override": {},
-          "values": true
-        },
-        "orientation": "auto",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+      "interval": null,
+      "legend": {
+        "show": true,
+        "values": true
       },
-      "pluginVersion": "6.5.2",
+      "legendType": "Right side",
+      "links": [],
+      "nullPointMode": "connected",
+      "pieType": "pie",
+      "pluginVersion": "7.4.0",
+      "strokeWidth": 1,
       "targets": [
         {
+          "alias": "",
           "bucketAggs": [
             {
-              "field": "filter.stratum.$dimension2",
+              "field": "filter.stratum.$dimension1",
               "id": "2",
               "settings": {
                 "min_doc_count": 1,
@@ -230,6 +292,16 @@
                 "size": "10"
               },
               "type": "terms"
+            },
+            {
+              "field": "timestamp",
+              "id": "3",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": "1",
+                "trimEdges": "0"
+              },
+              "type": "date_histogram"
             }
           ],
           "metrics": [
@@ -248,112 +320,63 @@
       ],
       "timeFrom": "1d",
       "timeShift": null,
-      "title": "Number of Customers by $dimension2",
-      "type": "gauge"
-    },
-    {
-      "datasource": "SubscriberProfile",
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 11,
-        "y": 10
-      },
-      "id": 84,
-      "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "max": 100,
-            "min": 0,
-            "thresholds": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ],
-            "title": "$__cell_0",
-            "unit": "locale"
-          },
-          "override": {},
-          "values": true
-        },
-        "orientation": "auto",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "pluginVersion": "6.5.2",
-      "targets": [
-        {
-          "bucketAggs": [
-            {
-              "field": "filter.stratum.$dimension3",
-              "id": "2",
-              "settings": {
-                "min_doc_count": 1,
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "10"
-              },
-              "type": "terms"
-            }
-          ],
-          "metrics": [
-            {
-              "field": "count",
-              "id": "1",
-              "meta": {},
-              "settings": {},
-              "type": "sum"
-            }
-          ],
-          "refId": "A",
-          "timeField": "timestamp"
-        }
-      ],
-      "timeFrom": "1d",
-      "timeShift": null,
-      "title": "Number of Customers by $dimension3",
-      "type": "gauge"
+      "title": "Number of Customers by $dimension1",
+      "type": "grafana-piechart-panel",
+      "valueName": "current"
     },
     {
       "aliasColors": {},
       "bars": false,
+      "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
       "datasource": "SubscriberProfile",
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 10,
-        "w": 23,
-        "x": 0,
-        "y": 16
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 9
       },
       "hiddenSeries": false,
-      "id": 29,
+      "hideTimeOverride": false,
+      "id": 86,
+      "interval": null,
       "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
         "min": false,
+        "rightSide": true,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
+      "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
-      "points": false,
+      "points": true,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
@@ -375,9 +398,119 @@
               "type": "terms"
             },
             {
-              "fake": true,
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "auto",
+                "min_doc_count": "1",
+                "trimEdges": "0"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Evolution of the Number of Customers by $dimension1 over $interval",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1009",
+          "format": "short",
+          "label": "Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1010",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "breakPoint": "50%",
+      "cacheTimeout": null,
+      "combine": {
+        "label": "Others",
+        "threshold": 0
+      },
+      "datasource": "SubscriberProfile",
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          }
+        },
+        "overrides": []
+      },
+      "fontSize": "80%",
+      "format": "short",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 17
+      },
+      "id": 85,
+      "interval": null,
+      "legend": {
+        "show": true,
+        "values": true
+      },
+      "legendType": "Right side",
+      "links": [],
+      "nullPointMode": "connected",
+      "pieType": "pie",
+      "pluginVersion": "7.4.0",
+      "strokeWidth": 1,
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [
+            {
               "field": "filter.stratum.$dimension2",
-              "id": "5",
+              "id": "2",
               "settings": {
                 "min_doc_count": 1,
                 "order": "desc",
@@ -386,6 +519,322 @@
               },
               "type": "terms"
             },
+            {
+              "field": "timestamp",
+              "id": "3",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": "1",
+                "trimEdges": "0"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": "1d",
+      "timeShift": null,
+      "title": "Number of Customers by $dimension2",
+      "type": "grafana-piechart-panel",
+      "valueName": "current"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "SubscriberProfile",
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 17
+      },
+      "hiddenSeries": false,
+      "id": 87,
+      "interval": null,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "filter.stratum.$dimension2",
+              "id": "3",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "10"
+              },
+              "type": "terms"
+            },
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "refId": "B",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Evolution of the Number of Customers by $dimension2 over $interval",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1009",
+          "format": "short",
+          "label": "Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1010",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "breakPoint": "50%",
+      "cacheTimeout": null,
+      "combine": {
+        "label": "Others",
+        "threshold": 0
+      },
+      "datasource": "SubscriberProfile",
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          }
+        },
+        "overrides": []
+      },
+      "fontSize": "80%",
+      "format": "short",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 25
+      },
+      "id": 84,
+      "interval": null,
+      "legend": {
+        "show": true,
+        "values": true
+      },
+      "legendType": "Right side",
+      "links": [],
+      "nullPointMode": "connected",
+      "pieType": "pie",
+      "pluginVersion": "7.4.0",
+      "strokeWidth": 1,
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [
+            {
+              "field": "filter.stratum.$dimension3",
+              "id": "2",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "10"
+              },
+              "type": "terms"
+            },
+            {
+              "field": "timestamp",
+              "id": "3",
+              "settings": {
+                "interval": "auto",
+                "min_doc_count": "1",
+                "trimEdges": "0"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": false,
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": "1d",
+      "timeShift": null,
+      "title": "Number of Customers by $dimension3",
+      "type": "grafana-piechart-panel",
+      "valueName": "current"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "SubscriberProfile",
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 25
+      },
+      "hiddenSeries": false,
+      "id": 88,
+      "interval": null,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "bucketAggs": [
             {
               "fake": true,
               "field": "filter.stratum.$dimension3",
@@ -418,7 +867,7 @@
               "type": "sum"
             }
           ],
-          "refId": "A",
+          "refId": "C",
           "timeField": "timestamp"
         }
       ],
@@ -426,7 +875,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Evolution of the Number of Customers by Dimensions",
+      "title": "Evolution of the Number of Customers by $dimension3 over $interval",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -442,14 +891,16 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:1009",
           "format": "short",
-          "label": null,
+          "label": "Count",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
+          "$$hashKey": "object:1010",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -470,127 +921,76 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 33
       },
       "id": 75,
       "panels": [],
       "repeat": "metrics",
+      "scopedVars": {
+        "metrics": {
+          "selected": false,
+          "text": "Recharge amount of the day",
+          "value": "Recharge amount of the day"
+        }
+      },
       "title": "$metrics",
       "type": "row"
     },
     {
       "cacheTimeout": null,
-      "columns": [],
       "datasource": "SubscriberProfile",
-      "fontSize": "100%",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {
-        "h": 11,
-        "w": 23,
+        "h": 12,
+        "w": 24,
         "x": 0,
-        "y": 27
+        "y": 34
       },
       "hideTimeOverride": false,
       "id": 39,
+      "interval": null,
       "links": [],
-      "options": {},
-      "pageSize": null,
-      "pluginVersion": "6.5.2",
-      "showHeader": true,
-      "sort": {
-        "col": 5,
-        "desc": true
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Count"
+          }
+        ]
       },
-      "styles": [
-        {
-          "alias": "Segment",
-          "colorMode": null,
-          "colors": [
-            "#FF780A",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "link": false,
-          "mappingType": 1,
-          "pattern": "filter.stratum.(.*)",
-          "thresholds": [],
-          "type": "string",
-          "unit": "none"
-        },
-        {
-          "alias": "Number of Customers",
-          "colorMode": null,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 0,
-          "mappingType": 1,
-          "pattern": "Sum count",
-          "thresholds": [],
-          "type": "number",
-          "unit": "none"
-        },
-        {
-          "alias": "Sum of KPI",
-          "colorMode": null,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 3,
-          "mappingType": 1,
-          "pattern": "Sum metric..*",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Average of KPI",
-          "colorMode": null,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Bucket Script",
-          "thresholds": [],
-          "type": "number",
-          "unit": "none"
-        },
-        {
-          "alias": "",
-          "colorMode": null,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "/.*/",
-          "thresholds": [],
-          "type": "string",
-          "unit": "short"
+      "pluginVersion": "7.4.0",
+      "scopedVars": {
+        "metrics": {
+          "selected": false,
+          "text": "Recharge amount of the day",
+          "value": "Recharge amount of the day"
         }
-      ],
+      },
       "targets": [
         {
-          "alias": "{{field}}",
+          "alias": "",
           "bucketAggs": [
             {
               "fake": true,
               "field": "filter.stratum.$dimension1",
-              "id": "6",
+              "id": "8",
               "settings": {
                 "min_doc_count": 1,
                 "order": "desc",
@@ -600,11 +1000,10 @@
               "type": "terms"
             },
             {
-              "fake": true,
               "field": "filter.stratum.$dimension2",
-              "id": "7",
+              "id": "9",
               "settings": {
-                "min_doc_count": 1,
+                "min_doc_count": "1",
                 "order": "desc",
                 "orderBy": "_term",
                 "size": "10"
@@ -612,11 +1011,10 @@
               "type": "terms"
             },
             {
-              "fake": true,
               "field": "filter.stratum.$dimension3",
-              "id": "3",
+              "id": "10",
               "settings": {
-                "min_doc_count": 1,
+                "min_doc_count": "1",
                 "order": "desc",
                 "orderBy": "_term",
                 "size": "10"
@@ -668,11 +1066,28 @@
       "timeFrom": "1d",
       "timeShift": null,
       "title": "Average of $metrics",
-      "transform": "table",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Bucket Script": "Average per Subscriber",
+              "Sum count": "Number of Customers",
+              "Sum metric.custom.$metrics": "Sum of Selected Metrics",
+              "filter.stratum.$dimension1": "Dimension 1",
+              "filter.stratum.$dimension2": "Dimension 2",
+              "filter.stratum.$dimension3": "Dimension 3"
+            }
+          }
+        }
+      ],
       "type": "table"
     }
   ],
-  "schemaVersion": 21,
+  "refresh": false,
+  "schemaVersion": 27,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -682,6 +1097,8 @@
         "current": {},
         "datasource": "SubscriberProfile",
         "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "First Dimension",
@@ -704,6 +1121,8 @@
         "current": {},
         "datasource": "SubscriberProfile",
         "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Second Dimension",
@@ -726,6 +1145,8 @@
         "current": {},
         "datasource": "SubscriberProfile",
         "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Third Dimension",
@@ -748,6 +1169,8 @@
         "current": {},
         "datasource": "SubscriberProfile",
         "definition": "{\"find\" : \"fields\", \"type\": \"number\"}",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Metrics",
@@ -764,11 +1187,83 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
+      },
+      {
+        "auto": true,
+        "auto_count": 1,
+        "auto_min": "",
+        "current": {},
+        "description": null,
+        "error": null,
+        "hide": 2,
+        "label": null,
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
       }
     ]
   },
   "time": {
-    "from": "now-5y",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {
@@ -786,7 +1281,7 @@
     ]
   },
   "timezone": "",
-  "title": "Base Analytics Dashboard",
-  "uid": "I8cPGquZk",
-  "version": 2
+  "title": "Business - Base Analytics Dashboard",
+  "uid": "I8cPGquZkkk",
+  "version": 73
 }
