@@ -633,13 +633,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         long membersCount = 0L;
         JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, now);
         boolean recurrence = JSONUtilities.decodeBoolean(loyaltyProFull, "recurrence", Boolean.FALSE);
-        String status = JSONUtilities.decodeString(loyaltyProFull, "status");
+        boolean active = JSONUtilities.decodeBoolean(loyaltyProFull, "active", Boolean.TRUE);
         
         if (loyaltyProgramType == LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType")))
           {
             JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
             loyaltyPro.put("recurrence", recurrence);
-            loyaltyPro.put("status", status);
+            loyaltyPro.put("active", active);
             try
               {
                 membersCount = this.elasticsearch.getLoyaltyProgramCount(loyaltyProgram.getGUIManagedObjectID());
