@@ -178,7 +178,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
   JSONObject processPutLoyaltyProgram(String userID, JSONObject jsonRoot, LoyaltyProgramType loyaltyProgramType)
   {
-    log.info("RAJ K processPutLoyaltyProgram jsonRoot {} loyaltyProgramType {}", jsonRoot, loyaltyProgramType);
     /****************************************
     *
     *  response
@@ -280,12 +279,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         *  store
         *
         *****************************************/
-        log.info("RAJ K processPutLoyaltyProgram dryRun {}", dryRun);
         if (!dryRun)
           {
 
             loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID);
-            log.info("RAJ K processPutLoyaltyProgram putLoyaltyProgram {}", loyaltyProgram);
 
             /*****************************************
              *
@@ -293,7 +290,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
              *
              *****************************************/
 
-            log.info("RAJ K processPutLoyaltyProgram addLoyaltyProgramCriterionFields {}");
             dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram, (existingLoyaltyProgram == null));
 
             /*****************************************
