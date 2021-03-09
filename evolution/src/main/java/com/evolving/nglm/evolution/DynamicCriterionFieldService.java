@@ -22,6 +22,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
@@ -124,6 +125,7 @@ public class DynamicCriterionFieldService extends GUIService
 
   public void addLoyaltyProgramCriterionFields(LoyaltyProgram loyaltyProgram, boolean newLoyaltyProgram) throws GUIManagerException
   {
+    log.info("RAJ K addLoyaltyProgramCriterionFields {} ", loyaltyProgram.getJSONRepresentation());
     if (loyaltyProgram instanceof LoyaltyProgramPoints)
       {
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tier", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
@@ -195,6 +197,7 @@ public class DynamicCriterionFieldService extends GUIService
     //  put
     //
 
+    log.info("RAJ K putGUIManagedObject {} ", criterionField.getJSONRepresentation());
     putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newLoyaltyProgram, null);
   }
 
@@ -215,6 +218,13 @@ public class DynamicCriterionFieldService extends GUIService
               availableValuesField.add(tier.getTierName());  
             }
           break;
+          
+        case CHALLENGE:
+          for (ChallengeLevel level : ((LoyaltyProgramChallenge) loyaltyProgram).getLevels())
+            {
+              availableValuesField.add(level.getLevelName());  
+            }
+          break;
       }
     return availableValuesField;
   }
@@ -228,6 +238,7 @@ public class DynamicCriterionFieldService extends GUIService
 
   public void removeLoyaltyProgramCriterionFields(GUIManagedObject loyaltyProgram)
   {
+    log.info("RAJ K removeLoyaltyProgramCriterionFields {} ", loyaltyProgram.getJSONRepresentation());
     String prefix = "loyaltyprogram" + "." + loyaltyProgram.getGUIManagedObjectID() + ".";
     if (loyaltyProgram instanceof LoyaltyProgramPoints)
       {
@@ -427,7 +438,9 @@ public class DynamicCriterionFieldService extends GUIService
   *
   *****************************************/
 
-  public void removeDynamicCriterionField(String dynamicCriterionFieldID, String userID) { removeGUIManagedObject(dynamicCriterionFieldID, SystemTime.getCurrentTime(), userID); }
+  public void removeDynamicCriterionField(String dynamicCriterionFieldID, String userID) { 
+    log.info("RAJ K dynamicCriterionFieldID {} ", dynamicCriterionFieldID);
+    removeGUIManagedObject(dynamicCriterionFieldID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

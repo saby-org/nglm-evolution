@@ -290,8 +290,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
              *
              *****************************************/
 
-            dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram,
-                (existingLoyaltyProgram == null));
+            dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram, (existingLoyaltyProgram == null));
 
             /*****************************************
              *
