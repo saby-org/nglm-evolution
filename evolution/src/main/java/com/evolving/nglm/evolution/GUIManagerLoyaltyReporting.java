@@ -630,17 +630,19 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     for (GUIManagedObject loyaltyProgram : loyaltyProgramObjects)
       {
+        long membersCount = 0L;
         JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, now);
         boolean recurrence = JSONUtilities.decodeBoolean(loyaltyProFull, "recurrence", Boolean.FALSE);
+        String status = JSONUtilities.decodeString(loyaltyProFull, "status");
         
         if (loyaltyProgramType == LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType")))
           {
             JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
             loyaltyPro.put("recurrence", recurrence);
+            loyaltyPro.put("status", status);
             try
               {
-                long membersCount = this.elasticsearch.getLoyaltyProgramCount(loyaltyProgram.getGUIManagedObjectID());
-                loyaltyPro.put("programsMembersCount", membersCount);
+                membersCount = this.elasticsearch.getLoyaltyProgramCount(loyaltyProgram.getGUIManagedObjectID());
               } 
             catch (ElasticsearchClientException e)
               {
@@ -648,6 +650,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 e.printStackTrace(new PrintWriter(stackTraceWriter, true));
                 log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
+            loyaltyPro.put("programsMembersCount", membersCount);
             loyaltyProgramList.add(loyaltyPro);
           }
       }
