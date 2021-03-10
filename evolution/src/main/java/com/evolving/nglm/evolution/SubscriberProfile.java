@@ -467,6 +467,9 @@ public abstract class SubscriberProfile
                     Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
                     Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
                     loyalty.put("tierChangeType", Tier.changeFromTierToTier(previousTier, tier).getExternalRepresentation());
+                    
+                    boolean todayRedeemer = false;
+                    boolean yesterdayRedeemer = false;
                     if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
                       { 
                         String rewardPointsID = loyaltyProgramPoints.getRewardPointsID();
@@ -477,7 +480,10 @@ public abstract class SubscriberProfile
                             loyalty.put("rewardPointName", (point!=null)?(point.getJSONRepresentation().get("display").toString()):"");
                             int balance = 0;
                             if(this.pointBalances.get(rewardPointsID) != null){
-                              balance = this.pointBalances.get(rewardPointsID).getBalance(now);
+                              PointBalance pointBalance = this.pointBalances.get(rewardPointsID);
+                              balance = pointBalance.getBalance(now);
+                              todayRedeemer = pointBalance.getConsumedHistory().getToday(now) > 0;
+                              yesterdayRedeemer = pointBalance.getConsumedHistory().getYesterday(now) > 0;
                             }
                             loyalty.put("rewardPointBalance", balance);
                           }
@@ -494,6 +500,8 @@ public abstract class SubscriberProfile
                             loyalty.put("statusPointBalance", balance);
                           } 
                       }
+                    loyalty.put("rewardTodayRedeemer", todayRedeemer);
+                    loyalty.put("rewardYesterdayRedeemer", yesterdayRedeemer);
                   }
               }
             
