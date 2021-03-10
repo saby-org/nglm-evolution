@@ -782,6 +782,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   
   public DeliveryRequest(Map<String, Object> esFields)
   {
+    this.subscriberID = (String) esFields.get("subscriberID");
     this.deliveryRequestID = (String) esFields.get("deliveryRequestID");
     this.originatingDeliveryRequestID = (String) esFields.get("originatingDeliveryRequestID");
     this.eventID = (String) esFields.get("eventID");
