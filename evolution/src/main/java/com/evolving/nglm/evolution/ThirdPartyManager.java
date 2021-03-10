@@ -1216,7 +1216,7 @@ public class ThirdPartyManager
 
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -1288,7 +1288,7 @@ public class ThirdPartyManager
     String subscriberID = resolveSubscriberID(jsonRoot);
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -1416,7 +1416,7 @@ public class ThirdPartyManager
 
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -1554,7 +1554,7 @@ public class ThirdPartyManager
 
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
       if (baseSubscriberProfile == null)
         {
           response.put("responseCode", "CustomerNotFound");
@@ -1680,7 +1680,7 @@ public class ThirdPartyManager
     
     String deliveryRequestID = zuks.getStringKey();
     try {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit validityPeriodType = null;
       int validityPeriod = 0;      
       String pointID = null;
@@ -1789,7 +1789,7 @@ public class ThirdPartyManager
     
     String deliveryRequestID = zuks.getStringKey();
     try {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
     } catch (SubscriberProfileServiceException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
@@ -1849,7 +1849,7 @@ public class ThirdPartyManager
     String subscriberID = resolveSubscriberID(jsonRoot);
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -1944,7 +1944,7 @@ public class ThirdPartyManager
      *****************************************/
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -2213,7 +2213,7 @@ public class ThirdPartyManager
      *****************************************/
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -2480,7 +2480,7 @@ public class ThirdPartyManager
     *****************************************/
    try
    {
-     SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+     SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
      if (baseSubscriberProfile == null)
        {
          updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -3070,7 +3070,7 @@ public class ThirdPartyManager
      *****************************************/
     try
     {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (subscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -3199,7 +3199,7 @@ public class ThirdPartyManager
     SubscriberProfile baseSubscriberProfile = null;
     try
     {
-      baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -3553,7 +3553,7 @@ public class ThirdPartyManager
     *****************************************/
    try
    {
-     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
      if (subscriberProfile == null)
        {
          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -3870,7 +3870,7 @@ public class ThirdPartyManager
     *****************************************/
    try
    {
-     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
      if (subscriberProfile == null)
        {
          updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -4088,7 +4088,7 @@ public class ThirdPartyManager
     String deliveryRequestID = "";
     try
     {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (subscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -4341,7 +4341,7 @@ public class ThirdPartyManager
     PurchaseFulfillmentRequest purchaseResponse=null;
     try
     {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
     
       if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
         updateResponse(response, RESTAPIGenericReturnCodes.INACTIVE_RESELLER);
@@ -4528,7 +4528,7 @@ public class ThirdPartyManager
 
     try
     {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (subscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -4676,7 +4676,7 @@ public class ThirdPartyManager
 
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -4898,7 +4898,7 @@ public class ThirdPartyManager
     SubscriberProfile baseSubscriberProfile = null;
     try
     {
-      baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
       if (baseSubscriberProfile == null)
         {
           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
@@ -5144,7 +5144,7 @@ public class ThirdPartyManager
     
     SubscriberProfile subscriberProfile=null;
     try{
-      subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
     } catch (SubscriberProfileServiceException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);

@@ -55,11 +55,11 @@ public class SubscriberState implements StateStore
 
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_state");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(11));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(12));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
       schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
-      schemaBuilder.field("recentJourneyStates", SchemaBuilder.array(JourneyState.schema()).schema());
+      schemaBuilder.field("journeyEndedStates", SchemaBuilder.array(JourneyEndedState.schema()).schema());
       schemaBuilder.field("scheduledEvaluations", SchemaBuilder.array(TimedEvaluation.schema()).optional());
       schemaBuilder.field("reScheduledDeliveryRequests", SchemaBuilder.array(ReScheduledDeliveryRequest.schema()).defaultValue(Collections.<ReScheduledDeliveryRequest>emptyList()).schema());
       schemaBuilder.field("workflowTriggering", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
@@ -97,7 +97,7 @@ public class SubscriberState implements StateStore
   private String subscriberID;
   private SubscriberProfile subscriberProfile;
   private Set<JourneyState> journeyStates;
-  private Set<JourneyState> recentJourneyStates;
+  private Set<JourneyEndedState> journeyEndedStates;
   private SortedSet<TimedEvaluation> scheduledEvaluations;
   private Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests;
   private List<String> workflowTriggering; // List of workflow to trigger on some event: <EventClassName>:<long eventDate>:<WorkflowID>:<sourceFeatureID>
@@ -128,7 +128,6 @@ public class SubscriberState implements StateStore
   private List<TokenChange> tokenChanges;
   private Map<String,MetricHistory> notificationHistory;
   private List<VoucherChange> voucherChanges;
-  private DeliveryRequest deliveryResponse;
   private List<ExecuteActionOtherSubscriber> executeActionOtherSubscribers;
   private List<VoucherAction> voucherActions;
   private List<EvolutionEngine.JourneyTriggerEventAction> journeyTriggerEventActions;
@@ -139,6 +138,11 @@ public class SubscriberState implements StateStore
 
   private byte[] kafkaRepresentation = null;
 
+  //TODO: remove once all got EVPRO-885 running (it is unpack once to migrate data, then not pack back)
+  private Set<JourneyState> recentJourneyStates;
+  @Deprecated public Set<JourneyState> getOldRecentJourneyStates() { return recentJourneyStates; }
+
+
   /****************************************
    *
    *  accessors - basic
@@ -148,7 +152,7 @@ public class SubscriberState implements StateStore
   public String getSubscriberID() { return subscriberID; }
   public SubscriberProfile getSubscriberProfile() { return subscriberProfile; }
   public Set<JourneyState> getJourneyStates() { return journeyStates; }
-  public Set<JourneyState> getRecentJourneyStates() { return recentJourneyStates; }
+  public Set<JourneyEndedState> getJourneyEndedStates() { return journeyEndedStates; }
   public SortedSet<TimedEvaluation> getScheduledEvaluations() { return scheduledEvaluations; }
   public Set<ReScheduledDeliveryRequest> getReScheduledDeliveryRequests() { return reScheduledDeliveryRequests; }
   public List<String> getWorkflowTriggering() { return workflowTriggering; }
@@ -173,7 +177,6 @@ public class SubscriberState implements StateStore
   public List<TokenChange> getTokenChanges() { return tokenChanges; }
   public Map<String,MetricHistory> getNotificationHistory() { return notificationHistory; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
-  public DeliveryRequest getDeliveryResponse() { return deliveryResponse; }
   public List<ExecuteActionOtherSubscriber> getExecuteActionOtherSubscribers() { return executeActionOtherSubscribers; }
   public List<VoucherAction> getVoucherActions() { return voucherActions; }
   public List<EvolutionEngine.JourneyTriggerEventAction> getJourneyTriggerEventActions() { return journeyTriggerEventActions; }
@@ -196,7 +199,6 @@ public class SubscriberState implements StateStore
   public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
   public void setExternalAPIOutput(ExternalAPIOutput externalAPIOutput) { this.externalAPIOutput = externalAPIOutput; }
   public void setTokenChanges(List<TokenChange> tokenChanges) { this.tokenChanges = tokenChanges; }
-  public void setDeliveryResponse(DeliveryRequest deliveryResponse) { this.deliveryResponse = deliveryResponse; }
   public void setTrackingID(UUID trackingID)
   {
     if(trackingID == null)
@@ -250,6 +252,7 @@ public class SubscriberState implements StateStore
         this.subscriberID = subscriberID;
         this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileConstructor().newInstance(subscriberID, tenantID);
         this.journeyStates = new HashSet<JourneyState>();
+        this.journeyEndedStates = new HashSet<>();
         this.recentJourneyStates = new HashSet<JourneyState>();
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>();
         this.reScheduledDeliveryRequests = new HashSet<ReScheduledDeliveryRequest>();
@@ -297,13 +300,13 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<UUID> trackingIDs, Map<String,MetricHistory> notificationHistory)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyEndedState> journeyEndedStates, Set<JourneyState> oldRecentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<UUID> trackingIDs, Map<String,MetricHistory> notificationHistory)
   {
     // stored
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
     this.journeyStates = journeyStates;
-    this.recentJourneyStates = recentJourneyStates;
+    this.journeyEndedStates = journeyEndedStates;
     this.scheduledEvaluations = scheduledEvaluations;
     this.reScheduledDeliveryRequests = reScheduledDeliveryRequests;
     this.workflowTriggering = workflowTriggering;
@@ -334,79 +337,8 @@ public class SubscriberState implements StateStore
     this.voucherActions = new ArrayList<>();
     this.journeyTriggerEventActions = new ArrayList<>();
     this.subscriberProfileForceUpdates = new ArrayList<>();
-  }
-
-  /*****************************************
-   *
-   *  constructor (copy)
-   *
-   *****************************************/
-
-  public SubscriberState(SubscriberState subscriberState)
-  {
-    try
-      {
-        //
-        //  simple fields
-        //
-
-        this.subscriberID = subscriberState.getSubscriberID();
-        this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileCopyConstructor().newInstance(subscriberState.getSubscriberProfile());
-        this.recentJourneyStates = new HashSet<JourneyState>(subscriberState.getRecentJourneyStates());
-        this.scheduledEvaluations = new TreeSet<TimedEvaluation>(subscriberState.getScheduledEvaluations());
-        this.reScheduledDeliveryRequests = new HashSet<ReScheduledDeliveryRequest>(subscriberState.getReScheduledDeliveryRequests());
-        this.workflowTriggering = new ArrayList<>(subscriberState.getWorkflowTriggering());
-        this.ucgRuleID = subscriberState.getUCGRuleID();
-        this.ucgEpoch = subscriberState.getUCGEpoch();
-        this.ucgRefreshDay = subscriberState.getUCGRefreshDay();
-        this.lastEvaluationDate = subscriberState.getLastEvaluationDate();
-        this.kafkaRepresentation = null;
-        this.trackingIDs = subscriberState.getTrackingIDs();
-        
-        //
-        //  deep copy of journey states
-        //
-
-        this.journeyStates = new HashSet<JourneyState>();
-        for (JourneyState journeyState : subscriberState.getJourneyStates())
-          {
-            this.journeyStates.add(new JourneyState(journeyState));
-          }
-
-        //
-        // shallow copy of all temporary lists. Elements of those lists are considered immutable.
-        // Observation: a cleaning of those temporary lists is made after the only call to this copy constructor. 
-        //
-        
-        this.journeyRequests = new ArrayList<JourneyRequest>(subscriberState.getJourneyRequests());
-        this.journeyResponses = new ArrayList<JourneyRequest>(subscriberState.getJourneyResponses());
-        this.loyaltyProgramRequests = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramRequests());
-        this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramResponses());
-        this.pointFulfillmentResponses= new ArrayList<PointFulfillmentRequest>(subscriberState.getPointFulfillmentResponses());
-        this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
-        this.journeyStatisticWrappers = new ArrayList<JourneyStatistic>(subscriberState.getJourneyStatisticWrappers());
-        this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
-        this.profileChangeEvents= new ArrayList<ProfileChangeEvent>(subscriberState.getProfileChangeEvents());
-        this.profileSegmentChangeEvents= new ArrayList<ProfileSegmentChangeEvent>(subscriberState.getProfileSegmentChangeEvents());
-        this.profileLoyaltyProgramChangeEvents= new ArrayList<ProfileLoyaltyProgramChangeEvent>(subscriberState.getProfileLoyaltyProgramChangeEvents());
-        this.subscriberTrace = subscriberState.getSubscriberTrace();
-        this.externalAPIOutput = subscriberState.getExternalAPIOutput();
-        this.tokenChanges = subscriberState.getTokenChanges();
-        this.notificationHistory = subscriberState.getNotificationHistory();
-        this.voucherChanges = subscriberState.getVoucherChanges();
-        this.executeActionOtherSubscribers = subscriberState.getExecuteActionOtherSubscribers();
-        this.voucherActions = subscriberState.getVoucherActions();
-        this.journeyTriggerEventActions = subscriberState.getJourneyTriggerEventActions();
-        this.subscriberProfileForceUpdates = subscriberState.getSubscriberProfileForceUpdates();
-      }
-    catch (InvocationTargetException e)
-      {
-        throw new RuntimeException(e.getCause());
-      }
-    catch (InstantiationException|IllegalAccessException e)
-      {
-        throw new RuntimeException(e);
-      }
+    // for data migration purpose only, can be removed once all market run EVPRO-885
+    this.recentJourneyStates = oldRecentJourneyStates;
   }
 
   /*****************************************
@@ -422,7 +354,7 @@ public class SubscriberState implements StateStore
     struct.put("subscriberID", subscriberState.getSubscriberID());
     struct.put("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().pack(subscriberState.getSubscriberProfile()));
     struct.put("journeyStates", packJourneyStates(subscriberState.getJourneyStates()));
-    struct.put("recentJourneyStates", packJourneyStates(subscriberState.getRecentJourneyStates()));
+    struct.put("journeyEndedStates", packJourneyEndedStates(subscriberState.getJourneyEndedStates()));
     struct.put("scheduledEvaluations", packScheduledEvaluations(subscriberState.getScheduledEvaluations()));
     struct.put("reScheduledDeliveryRequests", packReScheduledDeliveryRequests(subscriberState.getReScheduledDeliveryRequests()));
     struct.put("workflowTriggering", subscriberState.getWorkflowTriggering() != null ? subscriberState.getWorkflowTriggering() : new ArrayList<>());
@@ -447,6 +379,22 @@ public class SubscriberState implements StateStore
     for (JourneyState journeyState : journeyStates)
       {
         result.add(JourneyState.pack(journeyState));
+      }
+    return result;
+  }
+
+  /*****************************************
+   *
+   *  packJourneyEndeds
+   *
+   *****************************************/
+
+  private static List<Object> packJourneyEndedStates(Set<JourneyEndedState> journeyEndedStates)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (JourneyEndedState journeyEndedState : journeyEndedStates)
+      {
+        result.add(JourneyEndedState.pack(journeyEndedState));
       }
     return result;
   }
@@ -531,7 +479,6 @@ public class SubscriberState implements StateStore
     String subscriberID = valueStruct.getString("subscriberID");
     SubscriberProfile subscriberProfile = SubscriberProfile.getSubscriberProfileSerde().unpack(new SchemaAndValue(schema.field("subscriberProfile").schema(), valueStruct.get("subscriberProfile")));
     Set<JourneyState> journeyStates = unpackJourneyStates(schema.field("journeyStates").schema(), valueStruct.get("journeyStates"));
-    Set<JourneyState> recentJourneyStates = unpackJourneyStates(schema.field("recentJourneyStates").schema(), valueStruct.get("recentJourneyStates"));
     SortedSet<TimedEvaluation> scheduledEvaluations = (schemaVersion >= 10) ? unpackScheduledEvaluations(schema.field("scheduledEvaluations").schema(), valueStruct.get("scheduledEvaluations")) : new TreeSet<>();
     Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequest = (schemaVersion >= 7) ? unpackReScheduledDeliveryRequests(schema.field("reScheduledDeliveryRequests").schema(), valueStruct.get("reScheduledDeliveryRequests")) : new HashSet<ReScheduledDeliveryRequest>();
     List<String> workflowTriggering = schema.field("workflowTriggering") != null ? (ArrayList<String>) valueStruct.get("workflowTriggering") : new ArrayList<>();
@@ -542,11 +489,26 @@ public class SubscriberState implements StateStore
     List<UUID> trackingIDs = schemaVersion >= 4 ? EvolutionUtilities.getUUIDsFromBytes(valueStruct.getBytes("trackingID")) : null;
     Map<String,MetricHistory> notificationHistory = schemaVersion >= 6 ? unpackNotificationHistory(valueStruct.get("notificationHistory")) : new HashMap<>();
 
+    Set<JourneyState> oldRecentJourneyStates = new HashSet<>();
+    Set<JourneyEndedState> journeyEndedStates = new HashSet<>();
+    if(schema.field("journeyEndedStates")!=null){
+      // the new way
+      journeyEndedStates = unpackJourneyEndedStates(schema.field("journeyEndedStates").schema(), valueStruct.get("journeyEndedStates"));
+    }else{
+      // or the unpack for the old way
+      oldRecentJourneyStates = unpackJourneyStates(schema.field("recentJourneyStates").schema(), valueStruct.get("recentJourneyStates"));
+      for(JourneyState oldJourneyState:oldRecentJourneyStates){
+        // object is there only for journey metrics now, I'm assuming we still need it only if there is prior or during metrics data, but not yet post
+        if( (!oldJourneyState.getJourneyMetricsPrior().isEmpty() || !oldJourneyState.getJourneyMetricsDuring().isEmpty()) && oldJourneyState.getJourneyMetricsPost().isEmpty() ){
+          journeyEndedStates.add(oldJourneyState.getJourneyEndedState());
+        }
+      }
+    }
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, trackingIDs, notificationHistory);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, journeyEndedStates, oldRecentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, trackingIDs, notificationHistory);
   }
 
   /*****************************************
@@ -573,6 +535,39 @@ public class SubscriberState implements StateStore
       {
         JourneyState journeyState = JourneyState.unpack(new SchemaAndValue(journeyStateSchema, state));
         result.add(journeyState);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+   *
+   *  unpackJourneyEndedStates
+   *
+   *****************************************/
+
+  private static Set<JourneyEndedState> unpackJourneyEndedStates(Schema schema, Object value)
+  {
+    //
+    //  get schema for JourneyEndedState
+    //
+
+    Schema journeyEndedStateSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Set<JourneyEndedState> result = new HashSet<>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object state : valueArray)
+      {
+        JourneyEndedState journeyEndedState = JourneyEndedState.unpack(new SchemaAndValue(journeyEndedStateSchema, state));
+        result.add(journeyEndedState);
       }
 
     //

@@ -140,7 +140,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(9));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(10));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -159,7 +159,6 @@ public abstract class SubscriberProfile
     schemaBuilder.field("vouchers", SchemaBuilder.array(VoucherProfileStored.voucherProfileStoredSchema()).name("subscriber_profile_vouchers").optional().schema());
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
-    schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
@@ -237,7 +236,6 @@ public abstract class SubscriberProfile
   private List<VoucherProfileStored> vouchers; // vouchers action rely on this being ordered (soonest expiry date first)
   private String languageID;
   private ExtendedSubscriberProfile extendedSubscriberProfile;
-  private SubscriberHistory subscriberHistory;
   private Map<String,Integer> exclusionInclusionTargets; 
   private List<ComplexObjectInstance> complexObjectInstances; 
   private Map<String, List<Date>> offerPurchaseHistory;
@@ -271,7 +269,6 @@ public abstract class SubscriberProfile
   public List<VoucherProfileStored> getVouchers() { return vouchers; }
   public String getLanguageID() { return languageID; }
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
-  public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
   public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
@@ -1331,7 +1328,6 @@ public abstract class SubscriberProfile
   public void setTokens(List<Token> tokens){ this.tokens = tokens; }
   public void setLanguageID(String languageID) { this.languageID = languageID; }
   public void setExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile) { this.extendedSubscriberProfile = extendedSubscriberProfile; }
-  public void setSubscriberHistory(SubscriberHistory subscriberHistory) { this.subscriberHistory = subscriberHistory; }
 
   //
   //  setEvolutionSubscriberStatus
@@ -1445,7 +1441,6 @@ public abstract class SubscriberProfile
     this.vouchers = new LinkedList<>();
     this.languageID = null;
     this.extendedSubscriberProfile = null;
-    this.subscriberHistory = null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
     this.complexObjectInstances = new ArrayList<>();
     this.offerPurchaseHistory = new HashMap<>();
@@ -1489,7 +1484,6 @@ public abstract class SubscriberProfile
     List<VoucherProfileStored> vouchers = (schemaVersion >= 5) ? unpackVouchers(schema.field("vouchers").schema(), valueStruct.get("vouchers")) : Collections.<VoucherProfileStored>emptyList();
     String languageID = valueStruct.getString("language");
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
-    SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
     List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
@@ -1516,7 +1510,6 @@ public abstract class SubscriberProfile
     this.vouchers = vouchers;
     this.languageID = languageID;
     this.extendedSubscriberProfile = extendedSubscriberProfile;
-    this.subscriberHistory = subscriberHistory;
     this.exclusionInclusionTargets = exclusionInclusionTargets;
     this.complexObjectInstances = complexObjectInstances;
     this.offerPurchaseHistory = offerPurchaseHistory;
@@ -1834,7 +1827,6 @@ public abstract class SubscriberProfile
     this.vouchers = new LinkedList<VoucherProfileStored>(subscriberProfile.getVouchers());
     this.languageID = subscriberProfile.getLanguageID();
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
-    this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
     this.complexObjectInstances = subscriberProfile.getComplexObjectInstances();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
@@ -1867,7 +1859,6 @@ public abstract class SubscriberProfile
     struct.put("vouchers", packVouchers(subscriberProfile.getVouchers()));
     struct.put("language", subscriberProfile.getLanguageID());
     struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
-    struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
@@ -2272,7 +2263,6 @@ public abstract class SubscriberProfile
     b.append("," + universalControlGroup);
     b.append("," + languageID);
     b.append("," + extendedSubscriberProfile);
-    b.append("," + (subscriberHistory != null ? subscriberHistory.getDeliveryRequests().size() : null));
     b.append("," + tenantID);
     return b.toString();
   }

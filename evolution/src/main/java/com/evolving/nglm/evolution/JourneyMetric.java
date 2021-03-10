@@ -114,16 +114,21 @@ public class JourneyMetric extends SubscriberStreamOutput
   *
   *****************************************/
 
-  public JourneyMetric(EvolutionEventContext context, String subscriberID, JourneyState journeyState)
+  public JourneyMetric(EvolutionEventContext context, String subscriberID, JourneyEndedState journeyEndedState)
   {
     this.journeyMetricID = context.getUniqueKey();
-    this.journeyInstanceID = journeyState.getJourneyInstanceID();
-    this.journeyID = journeyState.getJourneyID();
+    this.journeyInstanceID = journeyEndedState.getJourneyInstanceID();
+    this.journeyID = journeyEndedState.getJourneyID();
     this.subscriberID = subscriberID;
-    this.journeyExitDate = journeyState.getJourneyExitDate();
-    this.journeyMetricsPrior = new HashMap<String,Long>(journeyState.getJourneyMetricsPrior());
-    this.journeyMetricsDuring = new HashMap<String,Long>(journeyState.getJourneyMetricsDuring());
-    this.journeyMetricsPost = new HashMap<String,Long>(journeyState.getJourneyMetricsPost());
+    this.journeyExitDate = journeyEndedState.getJourneyExitDate();
+    this.journeyMetricsPrior = new HashMap<String,Long>(journeyEndedState.getJourneyMetricsPrior());
+    this.journeyMetricsDuring = new HashMap<String,Long>(journeyEndedState.getJourneyMetricsDuring());
+    this.journeyMetricsPost = new HashMap<String,Long>(journeyEndedState.getJourneyMetricsPost());
+  }
+
+  public JourneyMetric(EvolutionEventContext context, String subscriberID, JourneyState journeyState)
+  {
+    this(context,subscriberID,journeyState.getJourneyEndedState());
   }
 
   /*****************************************

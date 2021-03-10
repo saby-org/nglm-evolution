@@ -117,8 +117,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static String subscriberStateChangeLogTopic;
   private static String extendedSubscriberProfileChangeLog;
   private static String extendedSubscriberProfileChangeLogTopic;
-  private static String subscriberHistoryChangeLog;
-  private static String subscriberHistoryChangeLogTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
   private static String presentationLogTopic;
@@ -243,13 +241,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static int propensityWriterRefreshPeriodMs;
   private static int kafkaRetentionDaysExpiredTokens;
   private static int kafkaRetentionDaysExpiredVouchers;
-  private static int kafkaRetentionDaysJourneys;
-  private static int kafkaRetentionDaysCampaigns;
-  private static int kafkaRetentionDaysBulkCampaigns;
   private static int kafkaRetentionDaysLoyaltyPrograms;
-  private static int kafkaRetentionDaysODR;
-  private static int kafkaRetentionDaysBDR;
-  private static int kafkaRetentionDaysMDR;
   //EVPRO-574
   private static int kafkaRetentionDaysTargets;
   
@@ -351,8 +343,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getExtendedSubscriberProfileChangeLog() { return extendedSubscriberProfileChangeLog; }
   public static String getExtendedSubscriberProfileChangeLogTopic() { return extendedSubscriberProfileChangeLogTopic; }
-  public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
-  public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
@@ -484,13 +474,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
   public int getKafkaRetentionDaysExpiredTokens() { return kafkaRetentionDaysExpiredTokens; }
   public static int getKafkaRetentionDaysExpiredVouchers() { return kafkaRetentionDaysExpiredVouchers; }
-  public static int getKafkaRetentionDaysJourneys() { return kafkaRetentionDaysJourneys; }
-  public static int getKafkaRetentionDaysCampaigns() { return kafkaRetentionDaysCampaigns; }
-  public static int getKafkaRetentionDaysBulkCampaigns() { return kafkaRetentionDaysBulkCampaigns; }
   public static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
-  public static int getKafkaRetentionDaysODR() { return kafkaRetentionDaysODR; }
-  public static int getKafkaRetentionDaysBDR() { return kafkaRetentionDaysBDR; }
-  public static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
   public boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
   public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
   public static String getExtractManagerOutputPath() { return extractManagerOutputPath; } // TODO EVPRO-99 check tenant ?
@@ -1710,32 +1694,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
       try
         {
           extendedSubscriberProfileChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  subscriberHistoryChangeLog
-      //
-
-      try
-        {
-          subscriberHistoryChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLog", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  subscriberHistoryChangeLogTopic
-      //
-
-      try
-        {
-          subscriberHistoryChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLogTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -3239,18 +3197,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           {
             kafkaRetentionDaysExpiredTokens = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysExpiredTokens",31);
             kafkaRetentionDaysExpiredVouchers = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysExpiredVouchers",31);
-            kafkaRetentionDaysJourneys = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysJourneys",31);
-            kafkaRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysCampaigns",31);
-            // adjusting and warning if too low for journey metric feature to work
-            if(Deployment.getJourneyMetricConfiguration().getPostPeriodDays() > kafkaRetentionDaysCampaigns+2){
-              kafkaRetentionDaysCampaigns = Deployment.getJourneyMetricConfiguration().getPostPeriodDays() + 2;
-              log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric postPeriodDays of "+Deployment.getJourneyMetricConfiguration().getPostPeriodDays()+" (need at least 2 days more)");
-            }
-            kafkaRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBulkCampaigns",7);
             kafkaRetentionDaysLoyaltyPrograms = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysLoyaltyPrograms",31);
-            kafkaRetentionDaysODR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysODR",91);
-            kafkaRetentionDaysBDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBDR",91);
-            kafkaRetentionDaysMDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysMDR",91);
             kafkaRetentionDaysTargets = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysTargets",91);
           }
         catch (JSONUtilitiesException|NumberFormatException e)

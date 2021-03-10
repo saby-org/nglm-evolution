@@ -28,7 +28,7 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 
-public abstract class DeliveryRequest extends SubscriberStreamOutput implements EvolutionEngineEvent, Action, Comparable, Cleanable
+public abstract class DeliveryRequest extends SubscriberStreamOutput implements EvolutionEngineEvent, Action, Comparable
 {
   /*****************************************
   *
@@ -378,34 +378,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID);
   public abstract void resetDeliveryRequestAfterReSchedule();
   public ActivityType getActivityType() { return ActivityType.Other; }
-
-  @Override public Date getExpirationDate(RetentionService retentionService) { return getDeliveryDate(); }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
-    switch (type){
-      case KAFKA_DELETION:
-        switch (getActivityType()){
-          case BDR:
-            return Duration.ofDays(Deployment.getKafkaRetentionDaysBDR());
-          case ODR:
-            return Duration.ofDays(Deployment.getKafkaRetentionDaysODR());
-          case Messages:
-            return Duration.ofDays(Deployment.getKafkaRetentionDaysMDR());
-        }
-    }
-    if(log.isDebugEnabled()) log.debug("no retention applying for "+getActivityType()+" of type "+type);
-    return null;
-  }
-
-  // if false, not going in SubscriberHistoryStateStore
-  public boolean isToStoreInHistoryStateStore(){
-    // store only response
-    boolean toStore = !getDeliveryStatus().equals(DeliveryStatus.Pending);
-    // store only those types
-    toStore = toStore && (getActivityType()==ActivityType.BDR || getActivityType()==ActivityType.ODR || getActivityType()==ActivityType.Messages);
-    // filter DeliveryRequest response that are related to a parent... keep history only if we are for the parent here...
-    toStore = toStore && (getOriginatingSubscriberID() == null || getOriginatingSubscriberID().startsWith(ORIGIN));
-    return toStore;
-  }
 
   /*****************************************
   *

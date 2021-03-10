@@ -15,13 +15,7 @@
 
   "kafkaRetentionDaysExpiredTokens"   : 31,
   "kafkaRetentionDaysExpiredVouchers" : 31,
-  "kafkaRetentionDaysJourneys"        : 31,
-  "kafkaRetentionDaysCampaigns"       : 31,
-  "kafkaRetentionDaysBulkCampaigns"   : 7,
   "kafkaRetentionDaysLoyaltyPrograms" : 31,
-  "kafkaRetentionDaysODR"             : 91,
-  "kafkaRetentionDaysBDR"             : 91,
-  "kafkaRetentionDaysMDR"             : 91,
   "kafkaRetentionDaysTargets"         : 91,
   
   "firstDayOfTheWeek"                 : "Monday",
@@ -164,8 +158,6 @@
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
   "extendedSubscriberProfileChangeLog"                   : "${changelog.evolutionengine.extendedsubscriberprofile}",
   "extendedSubscriberProfileChangeLogTopic"              : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
-  "subscriberHistoryChangeLog"                           : "${changelog.evolutionengine.subscriberhistory}",
-  "subscriberHistoryChangeLogTopic"                      : "${changelog.evolutionengine.subscriberhistory.topic}",
   "tokenChangeTopic"                                     : "${topic.tokenchange}",
   "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
   "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",
