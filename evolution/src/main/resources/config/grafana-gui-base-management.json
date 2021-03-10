@@ -15,53 +15,48 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 2,
-  "id": null,
-  "iteration": 1586509803759,
+  "id": 41,
+  "iteration": 1615280023170,
   "links": [],
   "panels": [
     {
       "aliasColors": {},
-      "bars": true,
-      "dashLength": 10,
-      "dashes": false,
+      "breakPoint": "50%",
+      "cacheTimeout": null,
+      "combine": {
+        "label": "Others",
+        "threshold": 0
+      },
       "datasource": "SubscriberProfile",
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fontSize": "80%",
+      "format": "short",
       "gridPos": {
-        "h": 9,
-        "w": 12,
+        "h": 8,
+        "w": 8,
         "x": 0,
         "y": 0
       },
-      "hiddenSeries": false,
       "hideTimeOverride": false,
       "id": 6,
+      "interval": null,
       "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
+        "show": true,
+        "values": true
       },
-      "lines": false,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pluginVersion": "6.5.2",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
+      "legendType": "Right side",
+      "links": [],
+      "nullPointMode": "connected",
+      "pieType": "pie",
+      "pluginVersion": "7.4.0",
       "repeat": null,
       "repeatDirection": "v",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "strokeWidth": 1,
       "targets": [
         {
           "alias": "",
@@ -103,49 +98,11 @@
           "timeField": "timestamp"
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "Number of Customers by $dimensions",
-      "tooltip": {
-        "shared": false,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "series",
-        "name": null,
-        "show": true,
-        "values": [
-          "current"
-        ]
-      },
-      "yaxes": [
-        {
-          "format": "locale",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "grafana-piechart-panel",
+      "valueName": "current"
     },
     {
       "aliasColors": {},
@@ -153,33 +110,47 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "SubscriberProfile",
-      "fill": 4,
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
+        "h": 8,
+        "w": 16,
+        "x": 8,
         "y": 0
       },
       "hiddenSeries": false,
       "id": 2,
       "legend": {
-        "alignAsTable": false,
+        "alignAsTable": true,
         "avg": false,
-        "current": false,
+        "current": true,
         "max": false,
         "min": false,
+        "rightSide": true,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": true,
       "linewidth": 2,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": true,
       "renderer": "flot",
@@ -187,6 +158,7 @@
       "repeatDirection": "v",
       "seriesOverrides": [
         {
+          "$$hashKey": "object:3130",
           "alias": "Total",
           "bars": true,
           "color": "#96D98D",
@@ -241,13 +213,12 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Number of Customers by $dimensions",
+      "title": "Evolution of the Number of Customers by $dimensions over $interval",
       "tooltip": {
         "shared": true,
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -258,15 +229,17 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:2217",
           "decimals": null,
           "format": "locale",
-          "label": "Number of Customers",
+          "label": "Count",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
+          "$$hashKey": "object:2218",
           "format": "locale",
           "label": "",
           "logBase": 1,
@@ -287,37 +260,53 @@
       "dashes": false,
       "datasource": "SubscriberProfile",
       "description": "",
-      "fill": 4,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 8
       },
       "hiddenSeries": false,
       "id": 34,
       "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
         "min": false,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
       "repeat": "metrics",
       "repeatDirection": "v",
+      "scopedVars": {
+        "metrics": {
+          "selected": false,
+          "text": "Recharge amount of the day",
+          "value": "Recharge amount of the day"
+        }
+      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
@@ -411,7 +400,6 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -422,14 +410,16 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:2505",
           "format": "locale",
-          "label": null,
+          "label": "Count",
           "logBase": 1,
           "max": null,
           "min": "0",
           "show": true
         },
         {
+          "$$hashKey": "object:2506",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -450,37 +440,53 @@
       "dashes": false,
       "datasource": "SubscriberProfile",
       "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 8
       },
       "hiddenSeries": false,
       "id": 75,
       "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
         "min": false,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": false,
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
       "repeat": "metrics",
       "repeatDirection": "v",
+      "scopedVars": {
+        "metrics": {
+          "selected": false,
+          "text": "Recharge amount of the day",
+          "value": "Recharge amount of the day"
+        }
+      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": true,
@@ -514,6 +520,7 @@
           "metrics": [
             {
               "field": "metric.custom.$metrics",
+              "hide": false,
               "id": "4",
               "inlineScript": null,
               "meta": {},
@@ -545,7 +552,6 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -556,14 +562,16 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:2652",
           "format": "locale",
-          "label": null,
+          "label": "Count",
           "logBase": 1,
           "max": null,
           "min": "0",
           "show": true
         },
         {
+          "$$hashKey": "object:2653",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -579,7 +587,7 @@
     }
   ],
   "refresh": false,
-  "schemaVersion": 21,
+  "schemaVersion": 27,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -589,6 +597,8 @@
         "current": {},
         "datasource": "SubscriberProfile",
         "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Dimensions",
@@ -611,6 +621,8 @@
         "current": {},
         "datasource": "SubscriberProfile",
         "definition": "{\"find\" : \"fields\", \"type\": \"number\"}",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Metrics",
@@ -627,6 +639,78 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
+      },
+      {
+        "auto": true,
+        "auto_count": 1,
+        "auto_min": "",
+        "current": {},
+        "description": null,
+        "error": null,
+        "hide": 2,
+        "label": null,
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
       }
     ]
   },
@@ -649,7 +733,7 @@
     ]
   },
   "timezone": "",
-  "title": "Base Management Dashboard",
-  "uid": "qe7KMqXWk",
-  "version": 2
+  "title": "Business - Base Management Dashboard",
+  "uid": "qe7KMqXWkkk",
+  "version": 23
 }
