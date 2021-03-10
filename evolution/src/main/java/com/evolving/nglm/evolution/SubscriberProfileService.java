@@ -1,20 +1,9 @@
-/****************************************************************************
-*
-*  SubscriberProfileService.java
-*
-****************************************************************************/
-
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -24,24 +13,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.connect.json.JsonConverter;
-import org.apache.kafka.connect.json.JsonDeserializer;
 
 import org.json.simple.JSONObject;
-
-import redis.clients.jedis.BinaryJedis;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.JedisSentinelPool;
-import redis.clients.jedis.exceptions.JedisException;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,25 +24,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.regex.PatternSyntaxException;
 
 public abstract class SubscriberProfileService
 {
@@ -108,23 +70,9 @@ public abstract class SubscriberProfileService
   public void start() {}
   public void stop() {}
 
-  /*****************************************
-  *
-  *  getSubscriberProfile
-  *
-  *****************************************/
+  public abstract SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile) throws SubscriberProfileServiceException;
 
-  //
-  //  getSubscriberProfile (optionally w/ history)
-  //
-
-  public abstract SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory) throws SubscriberProfileServiceException;
-
-  //
-  //  getSubscriberProfile (no history)
-  //
-
-  public SubscriberProfile getSubscriberProfile(String subscriberID) throws SubscriberProfileServiceException { return getSubscriberProfile(subscriberID, false, false); }
+  public SubscriberProfile getSubscriberProfile(String subscriberID) throws SubscriberProfileServiceException { return getSubscriberProfile(subscriberID, false); }
   
   /*****************************************
   *
@@ -193,15 +141,6 @@ public abstract class SubscriberProfileService
       httpClientBuilder.setConnectionManager(httpClientConnectionManager);
       this.httpClient = httpClientBuilder.build();
     }
-
-    //
-    //  legacy historical constructor(removed for now)
-    //
-    
-//    public EngineSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String subscriberProfileEndpoints)
-//    {
-//      this(subscriberProfileEndpoints);
-//    }
     
     /*****************************************
     *
@@ -209,7 +148,7 @@ public abstract class SubscriberProfileService
     *
     *****************************************/
 
-    @Override public SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory) throws SubscriberProfileServiceException
+    @Override public SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile) throws SubscriberProfileServiceException
     {
       /****************************************
       *
@@ -238,7 +177,6 @@ public abstract class SubscriberProfileService
       request.put("apiVersion", 1);
       request.put("subscriberID", subscriberID);
       request.put("includeExtendedSubscriberProfile", includeExtendedSubscriberProfile);
-      request.put("includeHistory", includeHistory);
       JSONObject requestJSON = JSONUtilities.encodeObject(request);
 
       /*****************************************
@@ -423,142 +361,4 @@ public abstract class SubscriberProfileService
     }
   }
 
-  /*****************************************
-  *
-  *  example main
-  *
-  *****************************************/
-
-  public static void main(String[] args) throws Exception
-  {
-    /*****************************************
-    *
-    *  setup
-    *
-    *****************************************/
-
-    //
-    //  NGLMRuntime
-    //
-
-    NGLMRuntime.initialize();
-
-    //
-    //  arguments
-    //
-    
-    Set<String> subscriberIDs = new HashSet<String>();
-    for (int i=0; i<args.length; i++)
-      {
-        subscriberIDs.add(args[i]);
-      }
-
-    //
-    //  instantiate offer service
-    //
-
-    OfferService offerService = new OfferService(Deployment.getBrokerServers(), "example-offerservice-001", Deployment.getOfferTopic(), false);
-    offerService.start();
-
-    //
-    //  instantiate subscriberGroupEpochReader
-    //
-    
-    ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("example", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
-
-    //
-    //  instantiate service
-    //
-    
-    SubscriberProfileService subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints(), 1);
-
-    //
-    //  start
-    //
-
-    subscriberProfileService.start();
-    
-    /*****************************************
-    *
-    *  json converter (for toString)
-    *
-    *****************************************/
-
-    JsonConverter converter = new JsonConverter();
-    Map<String, Object> converterConfigs = new HashMap<String, Object>();
-    converterConfigs.put("schemas.enable","false");
-    converter.configure(converterConfigs, false);
-    JsonDeserializer deserializer = new JsonDeserializer();
-    deserializer.configure(Collections.<String, Object>emptyMap(), false);
-
-    /*****************************************
-    *
-    *  main loop
-    *
-    *****************************************/
-
-    while (true)
-      {
-        try
-          {
-            Date now = SystemTime.getCurrentTime();
-            for (String subscriberID : subscriberIDs)
-              {
-                SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, true);
-                if (subscriberProfile != null)
-                  {
-                    //
-                    //  evaluationRequest
-                    //
-
-                    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, subscriberProfile.getTenantID());
-
-                    //
-                    //  print subscriberProfile
-                    //
-
-                    System.out.println(subscriberProfile.getSubscriberID() + ": " + subscriberProfile.toString(subscriberGroupEpochReader));
-
-                    //
-                    //  active offers
-                    //
-
-                    for (Offer offer : offerService.getActiveOffers(now, 1)) // tenant id 1 for this example
-                      {
-                        boolean qualifiedOffer = offer.evaluateProfileCriteria(evaluationRequest);
-                        System.out.println("  offer: " + offer.getOfferID() + " " + (qualifiedOffer ? "true" : "false"));
-                      }
-
-                    //
-                    //  traceDetails
-                    //
-
-                    for (String traceDetail : evaluationRequest.getTraceDetails())
-                      {
-                        System.out.println("  trace: " + traceDetail);
-                      }
-                  }
-                else
-                  {
-                    System.out.println(subscriberID + ": not found");
-                  }
-              }
-
-            //
-            //  sleep
-            //
-            
-            System.out.println("sleeping 10 seconds ...");
-            Thread.sleep(10*1000L);
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            System.out.println(stackTraceWriter.toString());
-            System.out.println("sleeping 1 second ...");
-            Thread.sleep(1*1000L);
-          }
-      }
-  }
 }

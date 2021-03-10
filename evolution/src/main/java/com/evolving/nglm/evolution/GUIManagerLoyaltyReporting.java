@@ -1504,7 +1504,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
     try
       {
-        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
         if (subscriberProfile == null)
           {
             response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());

@@ -27,7 +27,7 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 
-public class JourneyHistory implements Cleanable
+public class JourneyHistory
 {
 
   protected static final Logger log = LoggerFactory.getLogger(JourneyHistory.class);
@@ -116,13 +116,6 @@ public class JourneyHistory implements Cleanable
     for (StatusHistory statusHistory : getStatusHistory()) { if (statusHistory.getStatusTargetGroup() != null) result = statusHistory.getStatusTargetGroup(); }
     return result;
   }
-
-  @Override public Date getExpirationDate(RetentionService retentionService) {
-    return getJourneyExitDate(retentionService.getJourneyService());
-  }
-  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
-    return retentionService.getJourneyRetention(type,getJourneyID());
-  }
   
   /*****************************************
   *
@@ -168,7 +161,9 @@ public class JourneyHistory implements Cleanable
   private static List<Object> packNodeHistory(List<NodeHistory> nodeHistory)
   {
     List<Object> result = new ArrayList<Object>();
-    for (NodeHistory node : nodeHistory)
+    // we keep only X last node transition, lets assume negative number is infinite
+    int lastX = Deployment.getNodesTransitionsHistorySize() < 0 ? nodeHistory.size() : Deployment.getNodesTransitionsHistorySize();
+    for (NodeHistory node : nodeHistory.subList(Math.max(nodeHistory.size() - lastX, 0), nodeHistory.size()))
       {
         result.add(NodeHistory.pack(node));
       }
