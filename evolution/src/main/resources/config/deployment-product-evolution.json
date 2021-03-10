@@ -62,7 +62,7 @@
       { "id" : "GUIManager",                 "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 7200000 },
       { "id" : "PreprocessorEngine",         "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
       { "id" : "PurchaseFulfillmentManager", "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
-      { "id" : "ReportManager",              "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
+      { "id" : "ReportManager",              "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 120000 },
       { "id" : "ThirdPartyManager",          "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
       { "id" : "UCGEngine",                  "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 }
     ],

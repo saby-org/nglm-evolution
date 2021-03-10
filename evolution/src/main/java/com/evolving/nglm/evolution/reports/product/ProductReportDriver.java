@@ -165,7 +165,7 @@ public class ProductReportDriver extends ReportDriver
           {
             List<Map<String, Object>> productTypeJSON = new ArrayList<>();
             JSONArray elements = (JSONArray) recordJson.get("productTypes");
-            log.info("productType Size: " + elements.size());
+            log.debug("productType Size: " + elements.size());
             for (int i = 0; i < elements.size(); i++)
               {
                 JSONObject element = (JSONObject) elements.get(i);

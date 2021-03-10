@@ -1,7 +1,15 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -16,9 +24,11 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.*;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.sniff.Sniffer;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -26,6 +36,8 @@ import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.Scroll;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -36,11 +48,15 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
+import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
 {
@@ -275,19 +291,26 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       throw new ElasticsearchClientException(e.getMessage());
     }
   }
+  
+  
+
+  // @return map<STATUS,count>
+  public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
+    return getGeneric("STATUS", JOURNEYSTATISTIC_STATUS_FIELD, journeyID);
+  }
 
   // @return map<STATUS,count>
   public Map<String, Long> getJourneyBonusesCount(String journeyDisplay) throws ElasticsearchClientException {
-    return getJourneyGenericDeliveryCount(journeyDisplay, BDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_bdr
+    return getJourneyGenericDeliveryCount(journeyDisplay, "returnCode", BDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_bdr
   }
 
   // @return map<STATUS,count>
   public Map<String, Long> getJourneyMessagesCount(String journeyDisplay) throws ElasticsearchClientException {
-    return getJourneyGenericDeliveryCount(journeyDisplay, MDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_messages
+    return getJourneyGenericDeliveryCount(journeyDisplay, "returnCode", MDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_messages
   }
   
   // @return map<STATUS,count>
-  private Map<String, Long> getJourneyGenericDeliveryCount(String journeyDisplay, String datacubeIndex) throws ElasticsearchClientException {
+  private Map<String, Long> getJourneyGenericDeliveryCount(String journeyDisplay, String campaignFilter, String datacubeIndex) throws ElasticsearchClientException {
     try {
       Map<String, Long> result = new HashMap<String, Long>();
   
@@ -364,6 +387,142 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     }
   }
   
+  // @return map<REWARD,count>
+  public Map<String, Long> getDistributedRewards(String journeyID, String journeyDisplay) throws ElasticsearchClientException {
+
+    // find list of rewards given by this journey
+    
+    List<String> rewards = new ArrayList<>();
+    try {
+      //
+      // Build Elasticsearch query
+      // 
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(QueryBuilders.boolQuery()
+              .filter(QueryBuilders.termQuery("journeyID", journeyID))); 
+      String mappingIndex = "mapping_journeyrewards";
+      SearchRequest searchRequest = new SearchRequest(mappingIndex).source(searchSourceRequest);
+      
+      int scroolKeepAlive = ReportMonoPhase.getScrollKeepAlive();
+      Scroll scroll = new Scroll(TimeValue.timeValueSeconds(scroolKeepAlive));
+      searchRequest.source().size(ReportMonoPhase.getScrollSize());
+      searchRequest.scroll(scroll);
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+      String scrollId = searchResponse.getScrollId();
+      SearchHit[] searchHits = searchResponse.getHits().getHits();
+      while (searchHits != null && searchHits.length > 0)
+        {
+          if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
+          for (SearchHit searchHit : searchHits)
+            {
+              Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+              if (sourceMap != null) {
+                Object reward = sourceMap.get("reward");
+                if (reward instanceof String) {
+                  rewards.add((String) reward);
+                }
+              }
+            }
+          SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+          scrollRequest.scroll(scroll);
+          searchResponse = this.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+          scrollId = searchResponse.getScrollId();
+          searchHits = searchResponse.getHits().getHits();
+        }
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getMessage());
+    }
+    
+    // do aggregation per reward (without painless script)
+    
+    try {
+      Map<String, Long> result = new HashMap<String, Long>();
+  
+      //
+      // Build Elasticsearch query
+      // 
+      String index = "datacube_journeyrewards-" + journeyID.toLowerCase();
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(QueryBuilders.boolQuery()
+              .filter(QueryBuilders.termQuery("filter.journey", journeyDisplay))) 
+          .size(0);
+
+      for(String reward : rewards) 
+        {
+          searchSourceRequest.aggregation(AggregationBuilders.sum(reward).field("metric.reward." + reward));
+        }
+      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
+      
+      //
+      // Send request & retrieve response synchronously (blocking call)
+      // 
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+
+      //
+      // Check search response
+      //
+      if (searchResponse.status() == RestStatus.NOT_FOUND) {
+        return result; // empty map
+      }
+
+      // TODO checking status seems useless because it raises exception
+      if (searchResponse.isTimedOut()
+          || searchResponse.getFailedShards() > 0) {
+            throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+      }
+
+      Aggregations aggregations = searchResponse.getAggregations();
+      if (aggregations != null) {
+        for (String reward : rewards) 
+          {
+            ParsedSum sum = aggregations.get(reward);
+            if (sum == null) {
+              log.error("Sum aggregation missing in search response for " + reward);
+            }
+            else {
+              result.put(reward, (long) sum.getValue());
+            }
+          }
+      }
+      return result;
+    }
+    catch (ElasticsearchClientException e) { // forward
+      throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getMessage());
+    }
+  }
+  
   public long getSpecialExitCount(String journeyID) throws ElasticsearchClientException{
 	  long count = 0;
 	  if(journeyID==null)return count;
@@ -387,9 +546,12 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       log.debug("Sum aggregation of special exit is for journey id:"+journeyID+" is:" + count); 
 	  return count;
   }
+  
+  /*
   public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
     return getGeneric("STATUS", JOURNEYSTATISTIC_STATUS_FIELD, journeyID);
   }
+  */
 
   public long getLoyaltyProgramCount(String loyaltyProgramID) throws ElasticsearchClientException
   {
@@ -429,123 +591,6 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     }
   }
 
-  public Map<String, Long> getDistributedRewards(String journeyID) throws ElasticsearchClientException
-  {
-    Map<String, Long> result = new HashMap<>();
-    try {
-      
-      /*
-       *  1) get list of rewards with :
-       *  
-       *  utiliser l'objet java map xxrewards
-       *  qui est utilisé dans datacube_journeyrewards
-       *  update it before use :
-       *   this.journeyRewardsList.update(this.journeyID, this.getDataESIndex());
- 
-      2) build a request containing all rewards, to journeystatistic-JJJJJJ
-      
-           {
-              "size": 0,
-              "aggs": {
-                "GigaBytes": {
-                  "sum": {
-                    "field": "rewards.GigaBytes"
-                  }
-                },
-                "disp_PTT_100138": {
-                  "sum": {
-                    "field": "rewards.disp_PTT_100138"
-                  }
-                }
-              }
-            }
-            
-           *   result :
-              
-              "aggregations": {
-                "disp_PTT_100138": {
-                  "value": 4.0
-                },
-                "GigaBytes": {
-                  "value": 20.0
-                }
-              }
-       */
-      
-      //
-      // Build Elasticsearch query
-      // 
-      String index = getJourneyIndex(journeyID);
-      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
-          .query(QueryBuilders.matchAllQuery())
-          .size(0);
-
-      JourneyRewardsMap journeyRewardsList = new JourneyRewardsMap(this);
-      journeyRewardsList.update(journeyID, index);
-      
-      for(String reward : journeyRewardsList.getRewards()) 
-        {
-          searchSourceRequest.aggregation(AggregationBuilders.sum(reward).field(JOURNEYSTATISTIC_REWARD_FIELD + "." + reward));
-        }
-      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
-      
-      //
-      // Send request & retrieve response synchronously (blocking call)
-      // 
-      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
-
-      //
-      // Check search response
-      //
-      if (searchResponse.status() == RestStatus.NOT_FOUND) {
-        return result; // empty map
-      }
-
-      // TODO checking status seems useless because it raises exception
-      if (searchResponse.isTimedOut()
-          || searchResponse.getFailedShards() > 0) {
-            throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
-      }
-
-      Aggregations aggregations = searchResponse.getAggregations();
-      if (aggregations != null) {
-        for (String reward : journeyRewardsList.getRewards()) 
-          {
-            ParsedSum sum = aggregations.get(reward);
-            if (sum == null) {
-              log.error("Sum aggregation missing in search response for " + reward);
-            }
-            else {
-              result.put(reward, (long) sum.getValue());
-            }
-          }
-      }
-      return result;
-    }
-    catch (ElasticsearchClientException e) { // forward
-      throw e;
-    }
-    catch (ElasticsearchStatusException e)
-    {
-      if(e.status() == RestStatus.NOT_FOUND) { // index not found
-        log.debug(e.getMessage());
-        return result;
-      }
-      throw new ElasticsearchClientException(e.getDetailedMessage());
-    }
-    catch (ElasticsearchException e) {
-      throw new ElasticsearchClientException(e.getDetailedMessage());
-    }
-    catch (IOException e)
-      {
-        log.debug(e.getLocalizedMessage());
-        throw new ElasticsearchClientException(e.getLocalizedMessage());
-      }
-  }
-
-  
-  
-  
   public Map<String, Map<String, Long>> getMetricsPerStatus(String journeyID) throws ElasticsearchClientException
   {
     Map<String, Map<String, Long>> result = new LinkedHashMap<>();

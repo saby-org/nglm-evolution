@@ -33,7 +33,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX_PREFIX = "datacube_journeytraffic-";
+  public static final String DATACUBE_ES_INDEX_PREFIX = "datacube_journeytraffic-";
   private static final String DATA_ES_INDEX_PREFIX = "journeystatistic-";
   private static final String FILTER_STRATUM_PREFIX = "subscriberStratum.";
   private static final String METRIC_CONVERSION_COUNT = "metricConversionCount";
