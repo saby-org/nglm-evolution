@@ -17,6 +17,7 @@ dnboproxy-<_KEY_>:
     KEY: <_KEY_>
     API_PORT: <_API_PORT_>
     DNBOPROXY_THREADS: <_DNBOPROXY_THREADS_>
+    GUI_FWK_API_SERVER: <_GUI_FWK_API_SERVER_>
     TRACE_LEVEL: <_TRACE_LEVEL_>
     KAFKA_DEBUG: <_DNBOPROXY_DEBUG_>
     JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_DEBUG_PORT_>,suspend=n
