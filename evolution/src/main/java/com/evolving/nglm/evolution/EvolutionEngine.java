@@ -310,6 +310,7 @@ public class EvolutionEngine
     String presentationLogTopic = Deployment.getPresentationLogTopic();
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
+    String workflowEventTopic = Deployment.getWorkflowEventTopic();
 
     //
     //  changelogs
@@ -713,6 +714,7 @@ public class EvolutionEngine
     final ConnectSerde<TokenChange> tokenChangeSerde = TokenChange.serde();
     final ConnectSerde<VoucherChange> voucherChangeSerde = VoucherChange.serde();
     final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
+    final ConnectSerde<WorkflowEvent> workflowEventSerde = WorkflowEvent.serde();
 
     //
     //  special serdes
@@ -777,7 +779,8 @@ public class EvolutionEngine
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(Deployment.getProfileSegmentChangeEventTopic(), Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
-
+    KStream<StringKey, WorkflowEvent> workflowEventStream = builder.stream(workflowEventTopic, Consumed.with(stringKeySerde, workflowEventSerde));
+    
     //
     //  timedEvaluationStreams
     //
@@ -921,6 +924,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileSegmentChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) workflowEventStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     evolutionEventStreams.addAll(deliveryManagerRequestToProcessStreams);
@@ -970,8 +974,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof ExecuteActionOtherSubscriber),
         (key,value) -> (value instanceof VoucherAction),
         (key,value) -> (value instanceof JourneyTriggerEventAction),
-        (key,value) -> (value instanceof SubscriberProfileForceUpdate)
-    );
+        (key,value) -> (value instanceof SubscriberProfileForceUpdate),
+        (key,value) -> (value instanceof WorkflowEvent));
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[1];
@@ -990,6 +994,7 @@ public class EvolutionEngine
     KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
 
+    KStream<StringKey, WorkflowEvent> workflowEventsStream = (KStream<StringKey, WorkflowEvent>) branchedEvolutionEngineOutputs[14];
     /*****************************************
     *
     *  subscriberHistory -- update
@@ -1024,7 +1029,7 @@ public class EvolutionEngine
     profileLoyaltyProgramChangeEventsStream.to(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     tokenChangeStream.to(Deployment.getTokenChangeTopic(), Produced.with(stringKeySerde, tokenChangeSerde));
     voucherChangeStream.to(Deployment.getVoucherChangeResponseTopic(), Produced.with(stringKeySerde, voucherChangeSerde));
-	executeActionOtherSubscriberStream.map((key,value)->new KeyValue<>(new StringKey(value.getSubscriberID()),value)).to(Deployment.getExecuteActionOtherSubscriberTopic(), Produced.with(stringKeySerde, executeActionOtherSubscriberSerde));
+	  executeActionOtherSubscriberStream.map((key,value)->new KeyValue<>(new StringKey(value.getSubscriberID()),value)).to(Deployment.getExecuteActionOtherSubscriberTopic(), Produced.with(stringKeySerde, executeActionOtherSubscriberSerde));
     voucherActionStream.to(Deployment.getVoucherActionTopic(), Produced.with(stringKeySerde, voucherActionSerde));
     subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
 
@@ -1826,6 +1831,15 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = executeActionOtherSubscriber(context, evolutionEvent, context.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
+    *  update workflow
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateWorkflows(context, evolutionEvent) || subscriberStateUpdated;
+
 
     /*****************************************
     *
@@ -2324,6 +2338,7 @@ public class EvolutionEngine
           }
       }
   }
+  
 
   /*****************************************
    *
@@ -2376,7 +2391,7 @@ public class EvolutionEngine
             }
             if(expiryDate==null){
               log.error("voucher "+voucherDelivery.getVoucherCode()+" for "+subscriberProfile.getSubscriberID()+" could not compute an expiryDate !! "+voucher.getVoucherID());
-            }else{
+            }else{              
               voucherDelivery.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
             }
 
@@ -2549,6 +2564,47 @@ public class EvolutionEngine
       subscriberUpdated=true;
     }
 
+    return subscriberUpdated;
+  }
+  
+  /*****************************************
+  *
+  *  updateWorkflows
+  *
+  *****************************************/
+
+ private static boolean updateWorkflows(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    boolean subscriberUpdated = false;
+
+    // first process the new ones coming with purchase response event
+    if (evolutionEvent instanceof WorkflowEvent)
+      {
+
+        WorkflowEvent workflowEvent = (WorkflowEvent) evolutionEvent;
+        String workflowID = workflowEvent.getWorkflowID();
+        if (workflowID == null)
+          {
+            if (log.isDebugEnabled()) {
+              log.warn("Worflow is empty");
+            }
+          }
+
+        String toBeAdded = evolutionEvent.getClass().getName() + ":" + evolutionEvent.getEventDate().getTime() + ":"
+            + workflowID + ":" + workflowEvent.getFeatureID();
+        List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
+        if (workflowTriggering.contains(toBeAdded))
+          {
+            if (log.isDebugEnabled())
+              {
+                log.warn("triggerLoyaltyWorflow already has " + toBeAdded);
+              }
+          }
+        workflowTriggering.add(toBeAdded);
+        subscriberUpdated=true;
+      }
     return subscriberUpdated;
   }
 

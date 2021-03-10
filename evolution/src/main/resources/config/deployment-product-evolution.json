@@ -199,6 +199,7 @@
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
   "tenantTopic"                                          : "${topic.tenant}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
+  "workflowEventTopic"                                   : "${topic.workflowEvent}",
 
   "supportedDataTypes" :
     [

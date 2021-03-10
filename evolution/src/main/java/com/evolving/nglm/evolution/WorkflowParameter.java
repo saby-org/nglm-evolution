@@ -111,7 +111,7 @@ public class WorkflowParameter
 
     this.workflowID = JSONUtilities.decodeString(jsonRoot, "workflowID", true);
     Journey workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());
-    workflow = (workflow.getGUIManagedObjectType() == GUIManagedObjectType.Workflow || workflow.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow) ? workflow : null;
+    workflow = (workflow.getGUIManagedObjectType() == GUIManagedObjectType.Workflow || workflow.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow || workflow.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow) ? workflow : null;
     if (workflow == null)
       {
         throw new GUIManagerException("unknown workflow", workflowID);

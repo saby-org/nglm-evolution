@@ -51,13 +51,14 @@ public class Product extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("product");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliverableID", Schema.STRING_SCHEMA);
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("productTypes", SchemaBuilder.array(ProductTypeInstance.schema()).schema());
     schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("workflowID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -85,6 +86,7 @@ public class Product extends GUIManagedObject implements StockableItem
   private Integer stock;
   private Set<ProductTypeInstance> productTypes;
   private boolean simpleOffer;
+  private String workflowID;
 
   //
   //  derived
@@ -106,6 +108,7 @@ public class Product extends GUIManagedObject implements StockableItem
   public Set<ProductTypeInstance> getProductTypes() { return productTypes;  }
   public String getStockableItemID() { return stockableItemID; }
   public boolean getSimpleOffer() { return simpleOffer; }
+  public String getWorkflowID() { return workflowID; }
 
   /*****************************************
   *
@@ -113,7 +116,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, String workflowID)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
@@ -122,6 +125,7 @@ public class Product extends GUIManagedObject implements StockableItem
     this.productTypes = productTypes;
     this.stockableItemID = "product-" + getProductID();
     this.simpleOffer = simpleOffer;
+    this.workflowID = workflowID;
   }
 
   /*****************************************
@@ -140,6 +144,7 @@ public class Product extends GUIManagedObject implements StockableItem
     struct.put("stock", product.getStock());
     struct.put("productTypes", packProductTypes(product.getProductTypes()));
     struct.put("simpleOffer", product.getSimpleOffer());
+    struct.put("workflowID", product.getWorkflowID());
     return struct;
   }
   
@@ -185,11 +190,12 @@ public class Product extends GUIManagedObject implements StockableItem
     Integer stock = valueStruct.getInt32("stock");
     Set<ProductTypeInstance> productTypes = unpackProductTypes(schema.field("productTypes").schema(), valueStruct.get("productTypes"));
     boolean simpleOffer = (schemaVersion >= 2) ? valueStruct.getBoolean("simpleOffer") : false;
+    String workflowID = (schema.field("workflowID") != null) ? valueStruct.getString("workflowID") : null;
     //
     //  return
     //
 
-    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer);
+    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, workflowID);
   }
   
   /*****************************************
@@ -259,6 +265,7 @@ public class Product extends GUIManagedObject implements StockableItem
     this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService);
     this.stockableItemID = "product-" + getProductID();
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
+    this.workflowID = JSONUtilities.decodeString(jsonRoot, "workflowId", false);
 
     //
     //  deliverable
@@ -303,6 +310,7 @@ public class Product extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(stock, existingProduct.getStock());
         epochChanged = epochChanged || ! Objects.equals(productTypes, existingProduct.getProductTypes());
         epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingProduct.getSimpleOffer());
+        epochChanged = epochChanged || ! Objects.equals(workflowID, existingProduct.getWorkflowID());
         return epochChanged;
       }
     else

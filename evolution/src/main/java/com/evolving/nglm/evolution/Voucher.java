@@ -24,13 +24,14 @@ public abstract class Voucher extends GUIManagedObject {
   static {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("voucher");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),3));
     for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
     schemaBuilder.field("voucherTypeId", Schema.STRING_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("recommendedPrice", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("workflowID", Schema.OPTIONAL_STRING_SCHEMA);
     commonSchema = schemaBuilder.build();
   }
 
@@ -42,6 +43,7 @@ public abstract class Voucher extends GUIManagedObject {
   private Integer unitaryCost;
   private Integer recommendedPrice;
   private boolean simpleOffer;
+  private String workflowID;
 
   public String getVoucherID() { return getGUIManagedObjectID(); }
   public String getVoucherName() { return getGUIManagedObjectName(); }
@@ -51,6 +53,7 @@ public abstract class Voucher extends GUIManagedObject {
   public Integer getUnitaryCost() { return unitaryCost; }
   public Integer getRecommendedPrice() { return recommendedPrice; }
   public boolean getSimpleOffer() { return simpleOffer; }
+  public String getWorkflowID() { return workflowID; }
 
 
   public static Object packCommon(Struct struct, Voucher voucher) {
@@ -60,6 +63,7 @@ public abstract class Voucher extends GUIManagedObject {
     struct.put("unitaryCost", voucher.getUnitaryCost());
     struct.put("recommendedPrice", voucher.getRecommendedPrice());
     struct.put("simpleOffer", voucher.getSimpleOffer());
+    struct.put("workflowID", voucher.getWorkflowID());
     return struct;
   }
 
@@ -74,6 +78,7 @@ public abstract class Voucher extends GUIManagedObject {
     this.unitaryCost = valueStruct.getInt32("unitaryCost");
     this.recommendedPrice = valueStruct.getInt32("recommendedPrice");
     this.simpleOffer = (schemaVersion >= 2) ? valueStruct.getBoolean("simpleOffer") : false;
+    this.workflowID = (schema.field("workflowID") != null) ? valueStruct.getString("workflowID") : null;
   }
 
   public Voucher(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException {
@@ -87,6 +92,7 @@ public abstract class Voucher extends GUIManagedObject {
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", false);
     this.recommendedPrice = JSONUtilities.decodeInteger(jsonRoot, "recommendedPrice", false);
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
+    this.workflowID = JSONUtilities.decodeString(jsonRoot, "workflowId", false);
 
     if (epochChanged(existingVoucher)) {
       this.setEpoch(epoch);
@@ -102,6 +108,7 @@ public abstract class Voucher extends GUIManagedObject {
       epochChanged = epochChanged || ! Objects.equals(unitaryCost, existingVoucher.getUnitaryCost());
       epochChanged = epochChanged || ! Objects.equals(recommendedPrice, existingVoucher.getRecommendedPrice());
       epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingVoucher.getSimpleOffer());
+      epochChanged = epochChanged || ! Objects.equals(workflowID, existingVoucher.getWorkflowID());
       return epochChanged;
     }else{
       return true;

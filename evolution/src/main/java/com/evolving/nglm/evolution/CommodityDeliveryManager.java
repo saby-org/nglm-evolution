@@ -1733,6 +1733,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
               origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
             }
         }
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
+        {
+          newModuleID = Module.Offer_Catalog.getExternalRepresentation();
+        }
       
       // retrieve the featureID that is the origin of this delivery request:
       // - If the Journey related to JourneyState is not a Workflow, then featureID = JourneyState.getID

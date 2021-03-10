@@ -188,10 +188,13 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
   private List<EvaluationCriterion> journeyUniversalEligibilityCriteria = new ArrayList<>();
   private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
+
   private Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
   private Map<String,ToolboxSection> workflowToolbox = new LinkedHashMap<String,ToolboxSection>();
   private Map<String,ToolboxSection> loyaltyWorkflowToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private Map<String,ToolboxSection> catalogWorkflowToolbox = new LinkedHashMap<String,ToolboxSection>();
+
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private CommunicationChannelTimeWindow defaultNotificationTimeWindowsMap;
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -230,6 +233,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static int purchaseTimeoutMs;
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
+  private static String workflowEventTopic;
   private static String hourlyReportCronEntryString;
   private static String dailyReportCronEntryString;
   private static String weeklyReportCronEntryString;
@@ -424,6 +428,8 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
   public Map<String,ToolboxSection> getLoyaltyWorkflowToolbox() { return loyaltyWorkflowToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; } // TODO EVPRO-99 check for tenant and static
+  public Map<String,ToolboxSection> getCatalogWorkflowToolbox() { return catalogWorkflowToolbox; }
+  
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
   public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; } // TODO EVPRO-99 check for tenant and static
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; } // TODO EVPRO-99 check for tenant and static
@@ -471,8 +477,11 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static Map<String,String> getDeliveryTypeCommunicationChannelIDMap(){ return deliveryTypeCommunicationChannelIDMap; };  // TODO EVPRO-99 how communication channels are handled into multitenancy ??
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
+
   public static int getMinExpiryDelayForVoucherDeliveryInHours() { return minExpiryDelayForVoucherDeliveryInHours; } // TODO EVPRO-99 check for tenant and static
   public static int getImportVoucherFileBulkSize() { return importVoucherFileBulkSize; } // TODO EVPRO-99 check for tenant and static
+  public static String getWorkflowEventTopic() { return workflowEventTopic; }
+
   public static int getNumberConcurrentVoucherAllocationToES() { return numberConcurrentVoucherAllocationToES; }
   public static int getVoucherESCacheCleanerFrequencyInSec() { return voucherESCacheCleanerFrequencyInSec; }
   public static String getHourlyReportCronEntryString() { return hourlyReportCronEntryString; }
@@ -2079,6 +2088,19 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+      
+      //
+      //  workflowEventTopic
+      //
+
+      try
+        {
+          workflowEventTopic = JSONUtilities.decodeString(jsonRoot, "workflowEventTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
       //
       //  baseLanguageID
@@ -2931,6 +2953,53 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           for (int i=0; i<loyaltyWorkflowToolboxSectionValues.size(); i++)
             {
               JSONObject workflowToolboxSectionValueJSON = (JSONObject) loyaltyWorkflowToolboxSectionValues.get(i);
+              ToolboxSection loyaltyWorkflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
+              loyaltyWorkflowToolbox.put(loyaltyWorkflowToolboxSection.getID(), loyaltyWorkflowToolboxSection);
+            }
+
+          // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
+          for(CommunicationChannel cc : getCommunicationChannels().values())
+            {
+              if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null)
+                {
+                  ToolboxSection section = loyaltyWorkflowToolbox.get(cc.getWorkflowGUINodeSectionID());
+                  if(section == null) {
+                    log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                  }
+                  else {
+                    JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+                    if(items != null) {
+                      JSONObject item = new JSONObject();
+                      item.put("id", cc.getToolboxID());
+                      item.put("name", cc.getName());
+                      // ensure this box effectively exists
+                      if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                        items.add(item);
+                      }
+                      else {
+                        log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      }
+                    }
+                    section.getJSONRepresentation().put("items", items);
+                  }
+                }
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
+      //  catalogWorkflowToolboxSections
+      //
+
+      try
+        {
+          JSONArray catalogWorkflowToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogWorkflowToolbox", new JSONArray());
+          for (int i=0; i<catalogWorkflowToolboxSectionValues.size(); i++)
+            {
+              JSONObject workflowToolboxSectionValueJSON = (JSONObject) catalogWorkflowToolboxSectionValues.get(i);
               ToolboxSection loyaltyWorkflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
               loyaltyWorkflowToolbox.put(loyaltyWorkflowToolboxSection.getID(), loyaltyWorkflowToolboxSection);
             }

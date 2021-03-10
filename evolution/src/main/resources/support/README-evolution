@@ -118,6 +118,11 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http:
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id":"1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyWorkflow; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyWorkflow; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflowList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflowSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id":"1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflow; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCatalogWorkflow; echo
+
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_ELIGIBILITY.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_FILE.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_RANGES.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
