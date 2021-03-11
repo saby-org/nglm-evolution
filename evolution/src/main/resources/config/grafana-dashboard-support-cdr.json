@@ -1,0 +1,1089 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 21,
+  "iteration": 1615460311975,
+  "links": [],
+  "panels": [
+    {
+      "dashboardFilter": "",
+      "dashboardTags": [],
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "folderId": null,
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 16,
+      "limit": 10,
+      "nameFilter": "CDR",
+      "onlyAlertsOnDashboard": false,
+      "show": "current",
+      "sortOrder": 1,
+      "stateFilter": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Alert",
+      "type": "alertlist"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "id": 18,
+      "panels": [],
+      "title": "File Connector",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-core",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "hiddenSeries": false,
+      "id": 7,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "kafka_burrow_total_lag{group=~\"fileconnector-($connector)_file_connector.*\"}",
+          "hide": false,
+          "legendFormat": "{{ group }}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "CDR Current File Lag / Backlog",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "fileconnector-",
+            "renamePattern": ""
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "_file_connector",
+            "renamePattern": " "
+          }
+        }
+      ],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:8073",
+          "format": "short",
+          "label": "Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:8074",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 9,
+      "interval": "1d",
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {
+          "valueSize": 18
+        }
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "avg(increase(com_evolving_nglm_core_filesourcetask_totalrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]) * 100 / (increase(com_evolving_nglm_core_filesourcetask_totalrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]) + increase(com_evolving_nglm_core_filesourcetask_errorrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]))) by (connectorName)",
+          "legendFormat": "{{connectorName}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Total Record $interval - status OK",
+      "type": "bargauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 1,
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 10,
+      "interval": "1d",
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {
+          "valueSize": 18
+        }
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "avg(increase(com_evolving_nglm_core_filesourcetask_errorrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]) * 100 / (increase(com_evolving_nglm_core_filesourcetask_totalrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]) + increase(com_evolving_nglm_core_filesourcetask_errorrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]))) by (connectorName)",
+          "legendFormat": "{{connectorName}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Total Record $interval - status KO",
+      "type": "bargauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "hiddenSeries": false,
+      "id": 13,
+      "interval": "",
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_core_filesourcetask_filesprocessedcount{connectorName=~\"($connector)_file_connector\"}[5m])) by (connectorName)",
+          "legendFormat": "{{connectorName}}",
+          "refId": "A"
+        },
+        {
+          "legendFormat": "{{connectorName}}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": " $connector File - Current / Second",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "_file_connector",
+            "renamePattern": " "
+          }
+        }
+      ],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2324",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2325",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "hiddenSeries": false,
+      "id": 12,
+      "interval": "",
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(increase(com_evolving_nglm_core_filesourcetaskrecord_recordcount{recordType=~\"$connector.*\"}[10m])) by (recordType)",
+          "hide": false,
+          "legendFormat": "{{ recordType }}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": " $connector Record - Current / Second",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:262",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:263",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                1
+              ],
+              "type": "lt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "B",
+                "1h",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "Graph : Number CDR file - last hour\n\nMissing some CDR Data Feeds is since 1 hour.\n\nPlease connect to grafana : Support - CDR dashboard to identity node.",
+        "name": "CDR - Number File - last hour alert",
+        "noDataState": "no_data",
+        "notifications": [
+          {
+            "uid": "Nmr_UQ6Wz"
+          }
+        ]
+      },
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-core",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "hiddenSeries": false,
+      "id": 14,
+      "interval": "",
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": false,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(increase(com_evolving_nglm_core_filesourcetask_filesprocessedcount{connectorName=~\"($connector)_file_connector\"}[1h])) by (connectorName)",
+          "instant": false,
+          "legendFormat": "{{connectorName}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(com_evolving_nglm_core_filesourcetask_filesprocessedcount{connectorName=~\".*_file_connector\"}[1h])) by (connectorName)",
+          "hide": true,
+          "instant": false,
+          "legendFormat": "{{connectorName}}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "lt",
+          "value": 1,
+          "visible": true
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "ALERT - Number CDR File - Last Hour",
+      "tooltip": {
+        "shared": false,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "series",
+        "name": null,
+        "show": true,
+        "values": [
+          "current"
+        ]
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:13284",
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:13285",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "id": 20,
+      "panels": [],
+      "title": "Stream Connector",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 12,
+        "w": 14,
+        "x": 0,
+        "y": 37
+      },
+      "hiddenSeries": false,
+      "id": 24,
+      "interval": "",
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_core_streamsourcetask_totalrecordcount{connectorName=~\"$stream_connector.*\"}[10m])) by (instance, connectorName)",
+          "interval": "",
+          "legendFormat": "{{instance}} {{ connectorName }}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": " $connector Record - Current / Second",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "ja-evo-kk-02:7061",
+            "renamePattern": ""
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "_stream_connector",
+            "renamePattern": " "
+          }
+        }
+      ],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:8158",
+          "format": "short",
+          "label": "Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:8159",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 14,
+        "y": 37
+      },
+      "id": 21,
+      "interval": "1d",
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {
+          "valueSize": 18
+        }
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "avg(increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{connectorName=~\"($stream_connector)_stream_connector\"}[$interval]) * 100 / (increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{connectorName=~\"($stream_connector)_stream_connector\"}[$interval]) + increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{connectorName=~\"($stream_connector)_stream_connector\"}[$interval]))) by (connectorName)",
+          "hide": false,
+          "legendFormat": "{{connectorName}}",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Total Record over $interval - status OK",
+      "type": "bargauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 19,
+        "y": 37
+      },
+      "id": 22,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {
+          "valueSize": 18
+        }
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "avg(increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{connectorName=~\"($stream_connector)_stream_connector\"}[$interval]) * 100 / (increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{connectorName=~\"($stream_connector)_stream_connector\"}[$interval]) + increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{connectorName=~\"($stream_connector)_stream_connector\"}[$interval]))) by (connectorName)",
+          "legendFormat": "{{connectorName}}",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Total Record over $interval - status KO",
+      "type": "bargauge"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 27,
+  "style": "light",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus-core",
+        "definition": "com_evolving_nglm_core_filesourcetask_filesprocessedcount",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "CDR Source",
+        "multi": false,
+        "name": "connector",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "adjustment",
+            "value": "adjustment"
+          },
+          {
+            "selected": false,
+            "text": "cainer",
+            "value": "cainer"
+          },
+          {
+            "selected": false,
+            "text": "data",
+            "value": "data"
+          },
+          {
+            "selected": false,
+            "text": "lifecycle",
+            "value": "lifecycle"
+          },
+          {
+            "selected": false,
+            "text": "recharge",
+            "value": "recharge"
+          },
+          {
+            "selected": false,
+            "text": "sms",
+            "value": "sms"
+          },
+          {
+            "selected": false,
+            "text": "voice",
+            "value": "voice"
+          }
+        ],
+        "query": "com_evolving_nglm_core_filesourcetask_filesprocessedcount",
+        "refresh": 0,
+        "regex": ".*connectorName=\"([^/\"]*)_file_connector\".*",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": "",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus-core",
+        "definition": "com_evolving_nglm_core_streamsourcetask_totalrecordcount",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "Stream Source",
+        "multi": false,
+        "name": "stream_connector",
+        "options": [],
+        "query": {
+          "query": "com_evolving_nglm_core_streamsourcetask_totalrecordcount",
+          "refId": "prometheus-core-stream_connector-Variable-Query"
+        },
+        "refresh": 1,
+        "regex": ".*connectorName=\"([^/\"]*)_stream_connector\".*",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "auto": true,
+        "auto_count": 1,
+        "auto_min": "",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval"
+        },
+        "description": null,
+        "error": null,
+        "hide": 2,
+        "label": null,
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          }
+        ],
+        "query": "1m",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now/d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "Support - CDR",
+  "uid": "TRgeC5uWk",
+  "version": 37
+}
