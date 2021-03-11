@@ -90,6 +90,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("operation");
     this.filterFields.add("deliverableID");
     this.filterFields.add("returnCode");
+    this.filterFields.add("origin");
     
     //
     // Data Aggregations
