@@ -3180,6 +3180,12 @@ public class EvolutionEngine
           {
             log.info("pointFulfillmentRequest failed (no such point): {}", pointFulfillmentRequest.getPointID());
             pointFulfillmentResponse.setDeliveryStatus(DeliveryStatus.Failed);
+            
+            //
+            //  return delivery response
+            //
+
+            context.getSubscriberState().getPointFulfillmentResponses().add(pointFulfillmentResponse);
           }
 
         //
