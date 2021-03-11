@@ -559,10 +559,10 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     Set<String> esIndexWeeks = ReportCsvFactory.getEsIndexWeeks(fromDate, toDate);
     StringBuilder esIndexNotifList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexWeeks)
+    for (String esIndexWk : esIndexWeeks)
       {
         if (!firstEntry) esIndexNotifList.append(",");
-        String indexName = esIndexNotif + esIndexDate;
+        String indexName = esIndexNotif + esIndexWk;
         esIndexNotifList.append(indexName);
         firstEntry = false;
       }
@@ -627,6 +627,25 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     return esIndexOdrList;
   }
   
+  public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates)
+  {
+    if (includeBothDates)
+      {
+        Date tempfromDate = fromDate;
+        List<String> esIndexOdrList = new ArrayList<String>();
+        while(tempfromDate.getTime() <= toDate.getTime())
+          {
+            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+          }
+        return esIndexOdrList;
+      }
+    else
+      {
+        return getEsIndexDates(fromDate, toDate);
+      }
+  }
+  
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   { 
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
@@ -657,5 +676,30 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     }
     if (fromDate != null) fromDate = RLMDateUtils.truncate(fromDate, Calendar.DATE, com.evolving.nglm.core.Deployment.getBaseTimeZone());
     return fromDate;
+  }
+  
+  public static String getESAllIndices(String esIndexInitial)
+  {
+    return esIndexInitial + "*";
+  }
+  
+  /*********************
+   * 
+   * getESIndices
+   *
+   ********************/
+  
+  public static String getESIndices(String esIndex, List<String> esIndexDates)
+  {
+    StringBuilder esIndexList = new StringBuilder();
+    boolean firstEntry = true;
+    for (String esIndexDate : esIndexDates)
+      {
+        if (!firstEntry) esIndexList.append(",");
+        String indexName = esIndex + esIndexDate;
+        esIndexList.append(indexName);
+        firstEntry = false;
+      }
+    return esIndexList.toString();
   }
 }

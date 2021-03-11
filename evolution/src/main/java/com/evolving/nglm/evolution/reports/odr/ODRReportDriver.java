@@ -15,14 +15,14 @@ import com.evolving.nglm.evolution.reports.ReportUtils;
 public class ODRReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(ODRReportDriver.class);
+  public static final String ES_INDEX_ODR_INITIAL = "detailedrecords_offers-";
 
   @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
   {
     log.debug("Processing " + report.getName());
-    String esIndexOdr = "detailedrecords_offers-";
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    ODRReportMonoPhase.main(new String[] { elasticSearch, esIndexOdr, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    ODRReportMonoPhase.main(new String[] { elasticSearch, ES_INDEX_ODR_INITIAL, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
     log.debug("Finished with ODR Report");
   }
 

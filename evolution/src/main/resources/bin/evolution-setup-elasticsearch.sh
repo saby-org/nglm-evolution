@@ -221,6 +221,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $EL
       "deliverableID" : { "type" : "keyword" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "deliverableExpiration" : { "type" : "date" },
+      "creationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "deliverableQty" : { "type" : "integer", "index" : "false" },
       "operation" : { "type" : "keyword" },
       "moduleID" : { "type" : "keyword" },
@@ -340,6 +341,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -u $EL
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+      "creationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "deliveryRequestID" : { "type" : "keyword" },
       "eventID" : { "type" : "keyword" },
       "offerID" : { "type" : "keyword" },
@@ -476,6 +478,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "creationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "deliveryDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "messageID" : { "type" : "keyword" },
+      "destination" : { "type" : "keyword" }, 
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
       "origin" : { "type" : "keyword", "index" : "false" },

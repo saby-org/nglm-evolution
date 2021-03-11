@@ -608,6 +608,38 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
     /*****************************************
     *
+    *  constructor -- esFields
+    *
+    *****************************************/
+    
+    public CommodityDeliveryRequest(Map<String, Object> esFields)
+    {
+      //
+      //  super
+      //
+      
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
+      
+      //
+      //  this
+      //
+      
+      this.providerID = (String) esFields.get("providerID");
+      this.commodityID = (String) esFields.get("deliverableID");
+      String esOperation = (String) esFields.get("operation");
+      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(esOperation != null ? esOperation.toLowerCase() : esOperation);
+      this.amount = (int) esFields.get("deliverableQty");
+      this.validityPeriodType = TimeUnit.Year;
+      this.validityPeriodQuantity = 1;
+      this.deliverableExpirationDate = getDateFromESString(esDefaultDateFormat, (String) esFields.get("deliverableExpirationDate"));
+      CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
+      this.commodityDeliveryStatus = commodityDeliveryStatus;
+      this.statusMessage = (String) esFields.get("returnCodeDetails");
+    }
+    /*****************************************
+    *
     *  copy
     *
     *****************************************/
@@ -758,8 +790,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getGUIManagedObjectDisplay() : getCommodityID()));
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
-      thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
-      thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
       thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, getModule().toString());

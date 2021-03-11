@@ -401,10 +401,10 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     Set<String> esIndexWeeks = getEsIndexWeeks(fromDate, toDate);
     StringBuilder esIndexVDRList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexWeeks)
+    for (String esIndexWk : esIndexWeeks)
       {
         if (!firstEntry) esIndexVDRList.append(",");
-        String indexName = esIndexVDR + esIndexDate;
+        String indexName = esIndexVDR + esIndexWk;
         esIndexVDRList.append(indexName);
         firstEntry = false;
       }
