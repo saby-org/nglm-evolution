@@ -135,6 +135,7 @@ public class JourneysReportDriver extends ReportDriver
         log.info("journeys list size : " + nbJourneys);
 
         boolean addHeaders = true;
+        int ignoredExceptions = -3; // we display 3 INFO exception before moving to DEBUG level
         for (GUIManagedObject guiManagedObject : journeys)
           {
             try
@@ -168,6 +169,7 @@ public class JourneysReportDriver extends ReportDriver
                   String journeyRewards = null;
                   String journeyStates = null;
 
+                  String displayForDatacubes = journey.getGUIManagedObjectDisplay() != null ? journey.getGUIManagedObjectDisplay() : journeyID;
                   Map<String, Long> journeyStatusCount = elasticsearchReaderClient.getJourneyStatusCount(journeyID);
                   for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
                     Long statusCount = journeyStatusCount.get(states.getDisplay());
@@ -181,17 +183,11 @@ public class JourneysReportDriver extends ReportDriver
                   }
                   journeyStates = sbStates.toString().substring(0, sbStates.toString().length()-1);
 
-                  Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID);
-                  for (String rewards : distributedRewards.keySet()) {
-                    if (pointService.getStoredPoint(rewards) != null) {
-                      String rewardName = pointService.getStoredPoint(rewards).getGUIManagedObjectDisplay();
-                      sbRewards.append(rewardName).append(",");
-                    }
-                    else {
-                      sbRewards.append("").append(",");
-                    }
-                    journeyRewards = (sbRewards.length() > 0)? sbRewards.toString().substring(0, sbRewards.toString().length()-1) : "";
+                  Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID, displayForDatacubes);
+                  for (String rewardName : distributedRewards.keySet()) {
+                    sbRewards.append(rewardName).append(",");
                   }
+                  journeyRewards = (sbRewards.length() > 0)? sbRewards.toString().substring(0, sbRewards.toString().length()-1) : "";
                   journeyInfo.put("customerStates", journeyStates);
                   journeyInfo.put("customerStatuses", journeyStatus);         
                   journeyInfo.put("listOfCommodities", journeyRewards);          
@@ -209,10 +205,14 @@ public class JourneysReportDriver extends ReportDriver
             }
             catch (IOException | ElasticsearchClientException e)
             {
-              log.info("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
+              if (ignoredExceptions++ < 0) {
+                log.info("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
+              } else {
+                log.debug("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
+              }
             }
           }
-        log.info("WriteCompleted ");
+        log.info("WriteCompleted, " + (ignoredExceptions+3) + " exceptions");
         log.info("csv Writer closed");
       }
     catch (IOException e)
