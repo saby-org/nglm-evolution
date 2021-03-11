@@ -30628,7 +30628,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   
   private String getExistingIndices(String indexCSV, String defaulteValue)
   {
-    log.info("RAJ K getExistingIndices indexCSV {} defaulteValue {}", indexCSV, defaulteValue);
     String result = null;
     StringBuilder existingIndexes = new StringBuilder();
     boolean firstEntry = true;
@@ -30637,7 +30636,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       {
         for (String index : indexCSV.split(","))
           {
-            log.info("RAJ K getExistingIndices checking if exsist index {} ", index);
             if(index.endsWith("*")) 
               {
                 if (!firstEntry) existingIndexes.append(",");
@@ -30647,7 +30645,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               }
             else
               {
-                log.info("RAJ K getExistingIndices checking if exsist index {} ", index);
                 GetIndexRequest request = new GetIndexRequest(index);
                 request.local(false); 
                 request.humanReadable(true); 
@@ -30655,7 +30652,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 try
                 {
                   boolean exists = elasticsearch.indices().exists(request, RequestOptions.DEFAULT);
-                  log.info("RAJ K getExistingIndices checking if exsist index {} exists {} ", index, exists);
                   if (exists) 
                     {
                       if (!firstEntry) existingIndexes.append(",");
