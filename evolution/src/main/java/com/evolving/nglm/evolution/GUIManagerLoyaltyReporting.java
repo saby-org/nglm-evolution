@@ -40,6 +40,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -638,7 +639,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         if (loyaltyProgramType == LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType")))
           {
             JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
-            loyaltyPro.put("recurrence", recurrence);
             loyaltyPro.put("active", active);
             try
               {
@@ -651,6 +651,21 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
             loyaltyPro.put("programsMembersCount", membersCount);
+            
+            //
+            //  CHALLENGE fields
+            //
+            
+            if (loyaltyProgramType == LoyaltyProgramType.CHALLENGE)
+              {
+                loyaltyPro.put("recurrence", recurrence);
+                if (loyaltyProgram instanceof LoyaltyProgramChallenge)
+                  {
+                    ChallengeLevel lastLevel = ((LoyaltyProgramChallenge) loyaltyProgram).getLastLevel();
+                    loyaltyPro.put("topScore", lastLevel == null ? new Integer(0) : lastLevel.getScoreLevel());
+                  }
+              }
+            
             loyaltyProgramList.add(loyaltyPro);
           }
       }

@@ -212,6 +212,17 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     return result;
   }
   
+  public ChallengeLevel getLastLevel()
+  {
+    ChallengeLevel result = null;
+    if (levels != null && !levels.isEmpty())
+      {
+        Collections.sort(levels, Collections.reverseOrder());
+        result = levels.get(0);
+      }
+    return result;
+  }
+  
   public String getScoreID()
   {
     return scoreID;
