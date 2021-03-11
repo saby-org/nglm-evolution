@@ -505,7 +505,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   {
     Date tempfromDate = fromDate;
     Set<String> esIndexList = new HashSet<String>();
-    while(tempfromDate.getTime() < toDate.getTime())
+    while(tempfromDate.getTime() <= toDate.getTime())
       {
         esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
