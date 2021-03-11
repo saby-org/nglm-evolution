@@ -6705,7 +6705,7 @@ public class ThirdPartyManager
           {
             if (indexFilterDate.before(startDate))
               {
-                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, indexFilterDate, true);
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexWks);
                 index = getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
               }
@@ -6726,7 +6726,7 @@ public class ThirdPartyManager
           {
             if (indexFilterDate.before(startDate))
               {
-                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, indexFilterDate, true);
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexWks);
                 index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
               }
@@ -6747,7 +6747,7 @@ public class ThirdPartyManager
           {
             if (indexFilterDate.before(startDate))
               {
-                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, indexFilterDate, true);
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
                 String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexWks);
                 index = getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
               }
