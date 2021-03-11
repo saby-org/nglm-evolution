@@ -659,16 +659,14 @@ public class SubscriberState implements StateStore
   private static Map<String,MetricHistory> unpackNotificationHistory(SchemaAndValue schemaAndValue)
   {
 
-    Schema schema = schemaAndValue.schema();
-    Object value = schemaAndValue.value();
-    Struct valueStruct = (Struct) value;
+    List<Struct> schemasAndValues = (List<Struct>) schemaAndValue.value();
 
     Map<String,MetricHistory> result = new HashMap<>();
-    List<Object> valueMap = (List<Object>) value;
-    for (Object notificationHistoryObject : valueMap)
+    for (Struct value : schemasAndValues)
       {
-        String channelID = valueStruct.getString("channelID");
-        MetricHistory metricHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("metricHistory").schema(),valueStruct.get("metricHistory")));
+        Schema schema = value.schema();
+        String channelID = value.getString("channelID");
+        MetricHistory metricHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("metricHistory").schema(),value.get("metricHistory")));
         result.put(channelID,metricHistory);
       }
     return result;

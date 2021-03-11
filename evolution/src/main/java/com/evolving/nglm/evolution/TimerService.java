@@ -24,6 +24,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
@@ -448,7 +449,7 @@ public class TimerService
     *
     *****************************************/
 
-    if (kafkaProducer != null) kafkaProducer.close();
+    try { if (kafkaProducer != null) kafkaProducer.close(); } catch (InterruptException e) { }
   }
 
   /*****************************************
