@@ -635,26 +635,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     return esIndexOdrList;
   }
   
-  public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates)
-  {
-    if (includeBothDates)
-      {
-        Date tempfromDate = fromDate;
-        List<String> esIndexOdrList = new ArrayList<String>();
-        while(tempfromDate.getTime() <= toDate.getTime())
-          {
-            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
-          }
-        return esIndexOdrList;
-      }
-    else
-      {
-        return getEsIndexDates(fromDate, toDate);
-      }
-  }
-
-
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
@@ -698,14 +678,14 @@ public class ODRReportMonoPhase implements ReportCsvFactory
    *
    ********************/
   
-  public static String getESIndices(String esIndexOdr, List<String> esIndexDates)
+  public static String getESIndices(String esIndexOdr, Set<String> esIndexWks)
   {
     StringBuilder esIndexOdrList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexWk : esIndexWks)
       {
         if (!firstEntry) esIndexOdrList.append(",");
-        String indexName = esIndexOdr + esIndexDate;
+        String indexName = esIndexOdr + esIndexWks;
         esIndexOdrList.append(indexName);
         firstEntry = false;
       }

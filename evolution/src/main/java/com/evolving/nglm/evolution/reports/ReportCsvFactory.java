@@ -63,4 +63,29 @@ public interface ReportCsvFactory
       }
     return esIndexList;
   }
+  
+  /*******************************
+  * 
+  * will return in yyyy-wxx format
+  * 
+  *******************************/
+  
+  public static Set<String> getEsIndexWeeks(final Date fromDate, Date toDate, boolean includeBothDates)
+  {
+    if (includeBothDates)
+      {
+        Date tempfromDate = fromDate;
+        Set<String> esIndexList = new HashSet<String>();
+        while(tempfromDate.getTime() <= toDate.getTime())
+          {
+            esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+          }
+        return esIndexList;
+      }
+    else
+      {
+        return getEsIndexWeeks(fromDate, toDate);
+      }
+  }
 }
