@@ -8147,6 +8147,7 @@ public class EvolutionEngine
     private EvolutionEngineEventDeclaration eventDeclaration;
     private HashMap<String, String> eventFieldMappings = new HashMap<>();
     private Constructor<? extends EvolutionEngineEvent> eventConstructor;
+    private boolean isAutoProvisionSubscriberStreamEvent;
 
     public EvolutionEngineEventDeclaration getEventDeclaration() { return eventDeclaration; }
 
@@ -8182,7 +8183,7 @@ public class EvolutionEngine
       
       try
       {
-        if(AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventDeclaration.getEventClass())) 
+        if(isAutoProvisionSubscriberStreamEvent = AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventDeclaration.getEventClass())) 
           {
             eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class, int.class});
           }
@@ -8225,13 +8226,16 @@ public class EvolutionEngine
       
       try 
         {
-          EvolutionEngineEvent event = eventConstructor.newInstance(subscriberID, SystemTime.getCurrentTime(), eventJSON);
+          EvolutionEngineEvent event;
+          event = (isAutoProvisionSubscriberStreamEvent)?
+              eventConstructor.newInstance(subscriberID, SystemTime.getCurrentTime(), eventJSON, subscriberEvaluationRequest.getTenantID()):
+              eventConstructor.newInstance(subscriberID, SystemTime.getCurrentTime(), eventJSON);
+
           JourneyTriggerEventAction action = new JourneyTriggerEventAction();
           action.setEventDeclaration(eventDeclaration);
           action.setEventToTrigger(event);
           
-          return Collections.<Action>singletonList(action);
-          
+          return Collections.<Action>singletonList(action);         
 
         }
       catch(Exception e)
