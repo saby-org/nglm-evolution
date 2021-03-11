@@ -986,7 +986,7 @@
       "description"         : "Description of the ODR Report",
       "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
       "availableScheduling" : [ "none","daily" ],
-      "defaultReportPeriodQuantity" : 1,
+      "defaultReportPeriodQuantity" : 21,
       "defaultReportPeriodUnit"     : "DAYS"
     },
     {
