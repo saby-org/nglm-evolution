@@ -17,7 +17,7 @@
   "gnetId": 763,
   "graphTooltip": 0,
   "id": 32,
-  "iteration": 1615468249755,
+  "iteration": 1615549554695,
   "links": [],
   "panels": [
     {
@@ -707,8 +707,8 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
+        "h": 6,
+        "w": 5,
         "x": 0,
         "y": 22
       },
@@ -718,10 +718,12 @@
       "mappingType": 1,
       "mappingTypes": [
         {
+          "$$hashKey": "object:885",
           "name": "value to text",
           "value": 1
         },
         {
+          "$$hashKey": "object:886",
           "name": "range to text",
           "value": 2
         }
@@ -763,12 +765,112 @@
       "valueFontSize": "70%",
       "valueMaps": [
         {
+          "$$hashKey": "object:888",
           "op": "=",
           "text": "N/A",
           "value": "null"
         }
       ],
       "valueName": "avg"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "prometheus-core",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 0,
+          "mappings": [
+            {
+              "id": 0,
+              "op": "=",
+              "text": "N/A",
+              "type": 1,
+              "value": "null"
+            },
+            {
+              "from": "",
+              "id": 1,
+              "text": "Master",
+              "to": "",
+              "type": 1,
+              "value": "1"
+            },
+            {
+              "from": "",
+              "id": 2,
+              "text": "Slave",
+              "to": "",
+              "type": 1,
+              "value": "5"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "rgb(234, 99, 57)",
+                "value": 2.4
+              },
+              {
+                "color": "rgb(173, 7, 27)",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 5,
+        "y": 22
+      },
+      "id": 19,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 26,
+          "valueSize": 26
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "redis_instance_info{addr=\"$addr\", role=\"master\"}==1 or (redis_instance_info{addr=\"$addr\", role=\"slave\"}==1)+4",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "{{role}}",
+          "metric": "",
+          "refId": "A",
+          "step": 60
+        }
+      ],
+      "title": "Role",
+      "type": "stat"
     },
     {
       "cacheTimeout": null,
@@ -798,9 +900,9 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
+        "h": 6,
+        "w": 5,
+        "x": 10,
         "y": 22
       },
       "hideTimeOverride": true,
@@ -892,9 +994,9 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
+        "h": 6,
+        "w": 9,
+        "x": 15,
         "y": 22
       },
       "hideTimeOverride": true,
@@ -979,7 +1081,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 29
+        "y": 28
       },
       "hiddenSeries": false,
       "id": 10,
@@ -1092,7 +1194,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 29
+        "y": 28
       },
       "hiddenSeries": false,
       "id": 1,
@@ -1213,7 +1315,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 38
       },
       "hiddenSeries": false,
       "id": 7,
@@ -1329,7 +1431,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 39
+        "y": 38
       },
       "hiddenSeries": false,
       "id": 2,
@@ -1518,5 +1620,5 @@
   "timezone": "browser",
   "title": "DevOps - Redis",
   "uid": "ecSaFcDMz",
-  "version": 30
+  "version": 37
 }
