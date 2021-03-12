@@ -16,7 +16,7 @@
   "editable": true,
   "gnetId": 6483,
   "graphTooltip": 1,
-  "id": 17,
+  "id": null,
   "iteration": 1615468178263,
   "links": [
     {
@@ -7925,7 +7925,7 @@
           }
         ],
         "query": "5m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
-        "refresh": 2,
+        "refresh": 1,
         "skipUrlSync": false,
         "type": "interval"
       },
