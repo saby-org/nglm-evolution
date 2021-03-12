@@ -108,7 +108,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   //  number of threads
   //
   
-  private static final int threadNumber = 1;   //TODO : make this configurable (would even be better if it is used)
+  private static final int threadNumber = 50;   //TODO : make this configurable (would even be better if it is used)
   
   /*****************************************
   *
@@ -170,11 +170,20 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     //
     //  threads
     //
+    try 
+    {
+      for(int i = 0; i < threadNumber; i++)
+        {
+          Thread t = new Thread(this, "INFufillmentManagerThread_"+i);
+          threads.add(t);
+          t.start();
+        }
+    }
+    catch(Exception e)
+    {
+      log.warn("Could not start threads ", e);
+    }
     
-    for(int i = 0; i < threadNumber; i++)
-      {
-        threads.add(new Thread(this, "INFufillmentManagerThread_"+i));
-      }
     
     //
     //  startDelivery
