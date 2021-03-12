@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 28,
+  "id": null,
   "iteration": 1615460882434,
   "links": [],
   "panels": [
@@ -1428,7 +1428,7 @@
           }
         ],
         "query": "15s,30s,1m,2m,3m,5m,7m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
-        "refresh": 2,
+        "refresh": 1,
         "skipUrlSync": false,
         "type": "interval"
       },
@@ -1457,7 +1457,7 @@
           "query": "label_values(com_evolving_nglm_evolution_notificationdelivery_count_total,channel)",
           "refId": "prometheus-application-channel-Variable-Query"
         },
-        "refresh": 2,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,

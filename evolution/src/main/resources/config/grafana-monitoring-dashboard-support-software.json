@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 22,
+  "id": null,
   "iteration": 1615460573588,
   "links": [],
   "panels": [
@@ -3892,7 +3892,7 @@
           "query": "up{job!~\"kafkalagexporter|notificationmanager.*\"}",
           "refId": "prometheus-application-application_job-Variable-Query"
         },
-        "refresh": 2,
+        "refresh": 1,
         "regex": "/.*job=\"([^\"]*).*/",
         "skipUrlSync": false,
         "sort": 1,
@@ -3972,7 +3972,7 @@
           }
         ],
         "query": "up{job!~\"burrow|prometheus-core|suspenseprocesor\"}",
-        "refresh": 0,
+        "refresh": 1,
         "regex": "/.*job=\"([^\"]*).*/",
         "skipUrlSync": false,
         "sort": 1,
@@ -4003,7 +4003,7 @@
           "query": "up",
           "refId": "prometheus-environment-node-Variable-Query"
         },
-        "refresh": 2,
+        "refresh": 1,
         "regex": "/.*instance=\"ja-evo-([^\"]*):.*/",
         "skipUrlSync": false,
         "sort": 1,

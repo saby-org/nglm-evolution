@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 21,
+  "id": null,
   "iteration": 1615460311975,
   "links": [],
   "panels": [
@@ -990,7 +990,7 @@
           }
         ],
         "query": "com_evolving_nglm_core_filesourcetask_filesprocessedcount",
-        "refresh": 0,
+        "refresh": 1,
         "regex": ".*connectorName=\"([^/\"]*)_file_connector\".*",
         "skipUrlSync": false,
         "sort": 1,
@@ -1058,7 +1058,7 @@
           }
         ],
         "query": "1m",
-        "refresh": 2,
+        "refresh": 1,
         "skipUrlSync": false,
         "type": "interval"
       }
