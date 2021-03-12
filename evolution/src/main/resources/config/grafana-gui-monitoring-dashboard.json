@@ -4329,7 +4329,7 @@
           }
         ],
         "query": "1m",
-        "refresh": 2,
+        "refresh": 1,
         "skipUrlSync": false,
         "type": "interval"
       },
@@ -4385,7 +4385,7 @@
           "query": "messagegateway",
           "refId": "prometheus-application-channel_name-Variable-Query"
         },
-        "refresh": 2,
+        "refresh": 1,
         "regex": "/.*channel_name=\"([^\"]*).*/",
         "skipUrlSync": false,
         "sort": 0,
@@ -4455,7 +4455,7 @@
           }
         ],
         "query": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
-        "refresh": 0,
+        "refresh": 1,
         "regex": "/filter.stratum.(.*)/",
         "skipUrlSync": false,
         "sort": 0,
