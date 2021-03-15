@@ -23,7 +23,7 @@ public class NotificationReportDriver extends ReportDriver
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     NotificationReportMonoPhase.main(new String[] {elasticSearch, ES_INDEX_NOTIFICATION_INITIAL, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
-    log.debug("Finished with BDR Report");
+    log.debug("Finished with Notification Report");
   }
 
   @Override

@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 
@@ -53,6 +54,12 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
       Object tokenChangeValue = sinkRecord.value();
       Schema tokenChangeValueSchema = sinkRecord.valueSchema();
       return TokenChange.unpack(new SchemaAndValue(tokenChangeValueSchema, tokenChangeValue));
+    }
+    
+    @Override
+    protected String getDocumentIndexName(TokenChange tokenChange)
+    {
+      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(tokenChange.getEventDate());
     }
 
     @Override public Map<String,Object> getDocumentMap(TokenChange tokenChange)

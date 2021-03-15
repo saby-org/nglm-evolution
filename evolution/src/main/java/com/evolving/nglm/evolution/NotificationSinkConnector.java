@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
@@ -99,6 +100,32 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
 
       return (MessageDelivery) Deployment.getDeliveryManagers().get(type).getRequestSerde().unpack(new SchemaAndValue(notificationValueSchema, notificationValue));
 
+    }
+
+    /*****************************************
+    *
+    *  getDocumentIndexName
+    *
+    *****************************************/
+    
+    @Override
+    protected String getDocumentIndexName(MessageDelivery notification)
+    {
+      Date timestamp;
+      if (notification instanceof MailNotificationManagerRequest) {
+        timestamp = ((MailNotificationManagerRequest) notification).getCreationDate();
+      }
+      else if (notification instanceof SMSNotificationManagerRequest) {
+        timestamp = ((SMSNotificationManagerRequest) notification).getCreationDate();
+      }
+      else if (notification instanceof NotificationManagerRequest) {
+        timestamp = ((NotificationManagerRequest) notification).getCreationDate();
+      }
+      else {
+        timestamp = ((PushNotificationManagerRequest) notification).getCreationDate();
+      }
+      
+      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(timestamp);
     }
     
     /*****************************************

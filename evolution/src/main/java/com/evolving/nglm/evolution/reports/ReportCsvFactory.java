@@ -9,12 +9,15 @@ package com.evolving.nglm.evolution.reports;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.zip.ZipOutputStream;
 
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 
 /**
@@ -42,4 +45,47 @@ public interface ReportCsvFactory
   default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)  {}
   default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement, int tenantID) {return null;}
   default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map) {return null;}
+  
+  /*******************************
+   * 
+   * will return in yyyy-wxx format
+   * 
+   *******************************/
+  
+  public static Set<String> getEsIndexWeeks(final Date fromDate, Date toDate)
+  {
+    Date tempfromDate = fromDate;
+    Set<String> esIndexList = new HashSet<String>();
+    while(tempfromDate.getTime() < toDate.getTime())
+      {
+        esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+      }
+    return esIndexList;
+  }
+  
+  /*******************************
+  * 
+  * will return in yyyy-wxx format
+  * 
+  *******************************/
+  
+  public static Set<String> getEsIndexWeeks(final Date fromDate, Date toDate, boolean includeBothDates)
+  {
+    if (includeBothDates)
+      {
+        Date tempfromDate = fromDate;
+        Set<String> esIndexList = new HashSet<String>();
+        while(tempfromDate.getTime() <= toDate.getTime())
+          {
+            esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+          }
+        return esIndexList;
+      }
+    else
+      {
+        return getEsIndexWeeks(fromDate, toDate);
+      }
+  }
 }

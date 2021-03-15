@@ -32,11 +32,14 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.zip.ZipOutputStream;
 
@@ -395,22 +398,20 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
 
-    List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
+    Set<String> esIndexWeeks = getEsIndexWeeks(fromDate, toDate);
     StringBuilder esIndexVDRList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexWk : esIndexWeeks)
       {
-        if (!firstEntry)
-          esIndexVDRList.append(",");
-        String indexName = esIndexVDR + esIndexDate;
+        if (!firstEntry) esIndexVDRList.append(",");
+        String indexName = esIndexVDR + esIndexWk;
         esIndexVDRList.append(indexName);
         firstEntry = false;
       }
     ReportCsvFactory reportFactory = new VDRReportMonoPhase();
-    if (log.isInfoEnabled())
-      log.info("Reading data from ES in (" + esIndexVDRList.toString() + ")  index and writing to " + csvfile);
+    if (log.isInfoEnabled()) log.info("Reading data from ES in (" + esIndexVDRList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexVDRList.toString(), QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexVDRList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.printTimestamp(fromDate)).lte(RLMDateUtils.printTimestamp(toDate)));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -493,14 +494,29 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       }
     return esIndexVDRList;
   }
-
-  private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit,
-      Integer reportPeriodQuantity)
+  
+  /*******************************
+   * 
+   * will return in yyyy-ww format
+   * 
+   *******************************/
+  
+  public static Set<String> getEsIndexWeeks(final Date fromDate, Date toDate)
   {
-    reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1)
-        : reportPeriodQuantity;
-    if (reportPeriodUnit == null)
-      reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
+    Date tempfromDate = fromDate;
+    Set<String> esIndexList = new HashSet<String>();
+    while(tempfromDate.getTime() <= toDate.getTime())
+      {
+        esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone());
+      }
+    return esIndexList;
+  }
+
+  private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
+  {
+    reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
+    if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
 
     //
     //
@@ -509,25 +525,23 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     Date now = reportGenerationDate;
     Date fromDate = null;
     switch (reportPeriodUnit.toUpperCase())
-      {
-        case "DAYS":
-          fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity,
-              Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-          break;
+    {
+      case "DAYS":
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getSystemTimeZone());
+        break;
 
-        case "WEEKS":
-          fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity,
-              Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-          break;
+      case "WEEKS":
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getSystemTimeZone());
+        break;
 
-        case "MONTHS":
-          fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity,
-              Deployment.getSystemTimeZone());
-          break;
+      case "MONTHS":
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getSystemTimeZone());
+        break;
 
-        default:
-          break;
-      }
+      default:
+        break;
+    }
+    if (fromDate != null) fromDate = RLMDateUtils.truncate(fromDate, Calendar.DATE, Deployment.getSystemTimeZone());
     return fromDate;
   }
 }

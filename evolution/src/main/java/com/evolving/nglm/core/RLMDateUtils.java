@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -58,6 +59,22 @@ public class RLMDateUtils
   
   public static final String printDay(Date date) {
     return DAY_FORMAT.get().format(date);
+  }
+  
+  // IMPORTANTE NOTES : 
+  // Here we use YYYY (Week year) because 2021-01-03 must display 2020-53 for instance
+  // We also use Locale.FRANCE just to enforce ISO Week system (Monday as first day of week, minimum of 4 days for the first week of year, 1 to 53)
+  // DO NOT USE Locale.US as it use non-standard Week system !
+  // Always keep Local.FRANCE to enforce ISO week system, even if in another LOCALE (it should not have other impact than that)
+  // DO ONLY USE this print for internal purpose as ISO week may not be the convention specified by the tenant.
+  public static final ThreadLocal<DateFormat> WEEK_FORMAT = ThreadLocal.withInitial(()->{
+    SimpleDateFormat sdf = new SimpleDateFormat("YYYY-'w'ww", Locale.FRANCE);
+    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    return sdf;
+  });
+  
+  public static final String printISOWeek(Date date) {
+    return WEEK_FORMAT.get().format(date);
   }
   
   /*****************************************

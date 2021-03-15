@@ -5,7 +5,9 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -390,34 +392,10 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     return esIndexOdrList;
   }
   
-  public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates, int tenantID)
-  {
-    if (includeBothDates)
-      {
-        Date tempfromDate = fromDate;
-        List<String> esIndexOdrList = new ArrayList<String>();
-        while(tempfromDate.getTime() <= toDate.getTime())
-          {
-            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          }
-        return esIndexOdrList;
-      }
-    else
-      {
-        return getEsIndexDates(fromDate, toDate);
-      }
-  }
-  
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
     if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
-
-    //
-    //
-    //
-
     Date now = reportGenerationDate;
     Date fromDate = null;
     switch (reportPeriodUnit.toUpperCase())
@@ -437,6 +415,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       default:
         break;
     }
+    if (fromDate != null) fromDate = RLMDateUtils.truncate(fromDate, Calendar.DATE, Deployment.getSystemTimeZone());
     return fromDate;
   }
   
@@ -473,14 +452,21 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
     
-    List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
-    String esIndices = getESIndices(esIndexBdr, esIndexDates);
-    
+    Set<String> esIndexWeeks = ReportCsvFactory.getEsIndexWeeks(fromDate, toDate);
+    StringBuilder esIndexBdrList = new StringBuilder();
+    boolean firstEntry = true;
+    for (String esIndexWk : esIndexWeeks)
+      {
+        if (!firstEntry) esIndexBdrList.append(",");
+        String indexName = esIndexBdr + esIndexWk;
+        esIndexBdrList.append(indexName);
+        firstEntry = false;
+      }
 
-    log.info("Reading data from ES in (" + esIndices + ") and writing to " + csvfile);
+    log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and writing to " + csvfile);
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndices, QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.printTimestamp(fromDate)).lte(RLMDateUtils.printTimestamp(toDate))); 
 
     String deliverableServiceTopic = Deployment.getDeliverableTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -544,14 +530,14 @@ public class BDRReportMonoPhase implements ReportCsvFactory
    *
    ********************/
   
-  public static String getESIndices(String esIndexBdr, List<String> esIndexDates)
+  public static String getESIndices(String esIndexBdr, Set<String> esIndexWeeks)
   {
     StringBuilder esIndexBdrList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexWk : esIndexWeeks)
       {
         if (!firstEntry) esIndexBdrList.append(",");
-        String indexName = esIndexBdr + esIndexDate;
+        String indexName = esIndexBdr + esIndexWk;
         esIndexBdrList.append(indexName);
         firstEntry = false;
       }

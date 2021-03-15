@@ -556,13 +556,13 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
     
-    List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
+    Set<String> esIndexWeeks = ReportCsvFactory.getEsIndexWeeks(fromDate, toDate);
     StringBuilder esIndexNotifList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexWk : esIndexWeeks)
       {
         if (!firstEntry) esIndexNotifList.append(",");
-        String indexName = esIndexNotif + esIndexDate;
+        String indexName = esIndexNotif + esIndexWk;
         esIndexNotifList.append(indexName);
         firstEntry = false;
       }
@@ -570,7 +570,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     log.info("Reading data from ES in (" + esIndexNotifList.toString() + ") indexes and writing to " + csvfile);
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.printTimestamp(fromDate)).lte(RLMDateUtils.printTimestamp(toDate)));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -674,6 +674,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
       default:
         break;
     }
+    if (fromDate != null) fromDate = RLMDateUtils.truncate(fromDate, Calendar.DATE, com.evolving.nglm.core.Deployment.getBaseTimeZone());
     return fromDate;
   }
   
@@ -688,14 +689,14 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
    *
    ********************/
   
-  public static String getESIndices(String esIndex, List<String> esIndexDates)
+  public static String getESIndices(String esIndex, Set<String> esIndexWks)
   {
     StringBuilder esIndexList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexWk : esIndexWks)
       {
         if (!firstEntry) esIndexList.append(",");
-        String indexName = esIndex + esIndexDate;
+        String indexName = esIndex + esIndexWk;
         esIndexList.append(indexName);
         firstEntry = false;
       }

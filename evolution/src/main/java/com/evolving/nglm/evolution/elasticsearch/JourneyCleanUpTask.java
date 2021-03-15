@@ -59,9 +59,13 @@ public class JourneyCleanUpTask
   public void start() 
   {
     Date now = SystemTime.getCurrentTime();
-    Date journeyExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysJourneys(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ??? 
-    Date campaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysCampaigns(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date bulkCampaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysBulkCampaigns(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    
+    //
+    // Removal of journeystatistic indexes
+    //
+    Date journeyExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysJourneys(), Deployment.getSystemTimeZone());
+    Date campaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysCampaigns(), Deployment.getSystemTimeZone());
+    Date bulkCampaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysBulkCampaigns(), Deployment.getSystemTimeZone());
     
     // Init list of indices to check 
     Set<String> lowerCaseIDs = getESLowerCaseJourneyIDs();
@@ -98,8 +102,26 @@ public class JourneyCleanUpTask
       }
       
       // Indices deletion
-      removeAllRelatedIndices(lowerCaseJourneyID);
+      cleanJourneyIndex(lowerCaseJourneyID);
     }
+    
+    //
+    // Removal of datacube indexes
+    //
+    Date datacubeJourneyExpirationDate = RLMDateUtils.addDays(now, -7*com.evolving.nglm.core.Deployment.getElasticsearchRetentionWeeksDatacubeJourneys(), Deployment.getSystemTimeZone());
+    String lastKeptWeek = RLMDateUtils.printISOWeek(datacubeJourneyExpirationDate);
+    
+    
+    // Init list of weeks to check 
+    Set<String> weeks = getActiveWeeks();
+
+    for(String week: weeks) {
+      if(compare(week, lastKeptWeek) < 0) {
+        // Indices deletion
+        cleanDatacubeIndices(week);
+      }
+    }
+    
   }
 
   /*****************************************
@@ -130,8 +152,6 @@ public class JourneyCleanUpTask
   /**
    * Retrieve journeyIDs from current active Elasticsearch indexes: 
    * - journeystatistic-{journeyID}
-   * - datacube_journeytraffic-{journeyID}
-   * - datacube_journeyrewards-{journeyID} 
    * 
    * Those are all journeyIDs that must be checked for clean up.
    * 
@@ -142,8 +162,6 @@ public class JourneyCleanUpTask
     Set<String> lowerCaseIDs = new HashSet<String>();
 
     Pattern journeystatisticPattern = Pattern.compile("journeystatistic-(.*)");
-    Pattern journeytrafficPattern = Pattern.compile("datacube_journeytraffic-(.*)");
-    Pattern journeyrewardsPattern = Pattern.compile("datacube_journeyrewards-(.*)");
     //
     // Check for journeystatistic indexes
     //
@@ -155,6 +173,25 @@ public class JourneyCleanUpTask
       }
     }
     
+    return lowerCaseIDs;
+  }
+
+  /**
+   * Retrieve all weeks (YYYY-'w'ww) with active indexes in Elasticsearch from :
+   * - datacube_journeytraffic-{YYYY-'w'ww}
+   * - datacube_journeyrewards-{YYYY-'w'ww} 
+   * 
+   * Those are all weeks that must be checked for clean up.
+   * 
+   * @return Set of weeks (set in order to avoid duplicates).
+   */
+  private Set<String> getActiveWeeks() 
+  {
+    Set<String> weeks = new HashSet<String>();
+    
+    Pattern journeytrafficPattern = Pattern.compile("datacube_journeytraffic-(.*)");
+    Pattern journeyrewardsPattern = Pattern.compile("datacube_journeyrewards-(.*)");
+    
     //
     // Check for datacube_journeytraffic indexes
     //
@@ -162,7 +199,7 @@ public class JourneyCleanUpTask
     for(String index : journeytrafficIndices) {
       Matcher matcher = journeytrafficPattern.matcher(index);
       if(matcher.matches()) {
-        lowerCaseIDs.add(matcher.group(1));
+        weeks.add(matcher.group(1));
       }
     }
       
@@ -173,26 +210,44 @@ public class JourneyCleanUpTask
     for(String index : journeyrewardsIndices) {
       Matcher matcher = journeyrewardsPattern.matcher(index);
       if(matcher.matches()) {
-        lowerCaseIDs.add(matcher.group(1));
+        weeks.add(matcher.group(1));
       }
     }
     
-    return lowerCaseIDs;
+    return weeks;
   }
   
   /**
    * Remove the following indices from Elasticsearch:
    * - journeystatistic-{journeyID}
-   * - datacube_journeytraffic-{journeyID}
-   * - datacube_journeyrewards-{journeyID} 
    */
-  private void removeAllRelatedIndices(String lowerCaseJourneyID) 
+  private void cleanJourneyIndex(String lowerCaseJourneyID) 
   {
     removeIndex("journeystatistic-"+lowerCaseJourneyID);
-    removeIndex("datacube_journeytraffic-"+lowerCaseJourneyID);
-    removeIndex("datacube_journeyrewards-"+lowerCaseJourneyID);
   }
 
+  
+  /**
+   * Remove the following indices from Elasticsearch:
+   * - datacube_journeytraffic-{YYYY-'w'ww}
+   * - datacube_journeyrewards-{YYYY-'w'ww}
+   */
+  private void cleanDatacubeIndices(String week) 
+  {
+    removeIndex("datacube_journeytraffic-"+week);
+    removeIndex("datacube_journeyrewards-"+week);
+  }
+  
+  /**
+   * @return 0 if same week 
+   *        -1 if week1 is strictly before week2 
+   *         1 if week1 is strictly after week2  
+   */
+  private int compare(String week1, String week2) 
+  {
+    return week1.compareTo(week2);
+  }
+  
   /*****************************************
   *
   * Elasticsearch client

@@ -113,6 +113,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver;
@@ -6711,15 +6712,15 @@ public class ThirdPartyManager
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexWks);
                 index = getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
               }
             else
               {
                 index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
               }
-            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(esDateFormat.format(startDate)));
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.printTimestamp(startDate) /*esDateFormat.format(startDate)*/));
           }
         else
           {
@@ -6732,15 +6733,15 @@ public class ThirdPartyManager
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexWks);
                 index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
               }
             else
               {
                 index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
               }
-            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(esDateFormat.format(startDate)));
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.printTimestamp(startDate) /*esDateFormat.format(startDate)*/));
           }
         else
           {
@@ -6753,15 +6754,15 @@ public class ThirdPartyManager
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexWks);
                 index = getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
               }
             else
               {
                 index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
               }
-            query = query.filter(QueryBuilders.rangeQuery("creationDate").gte(esDateFormat.format(startDate)));
+            query = query.filter(QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.printTimestamp(startDate) /*esDateFormat.format(startDate)*/));
           }
         else
           {

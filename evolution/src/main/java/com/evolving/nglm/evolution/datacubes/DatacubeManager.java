@@ -333,7 +333,7 @@ public class DatacubeManager
   /*
    * ODR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of the day from the detailedrecords_offers-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new ODR can still be added.
    */
   private static long scheduleODRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
@@ -364,7 +364,7 @@ public class DatacubeManager
   /*
    * ODR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_offers-yyyy-MM-dd index of the previous day.
    */
   private static long scheduleODRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
     String jobName = "ODR-daily-definitive";
@@ -395,7 +395,7 @@ public class DatacubeManager
   /*
    * ODR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of every hour from the detailedrecords_offers-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new ODR can still be added.
    */
   private static long scheduleODRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
@@ -426,7 +426,7 @@ public class DatacubeManager
   /*
    * ODR hourly definitive
    *
-   * This will generated a datacube of every hour from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube of every hour from the detailedrecords_offers-yyyy-MM-dd index of the previous day.
    */
   private static long scheduleODRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
     String jobName = "ODR-hourly-definitive";
@@ -456,7 +456,7 @@ public class DatacubeManager
   /*
    * BDR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_bonuses-YYYY-MM-dd index of the day
+   * This will generated a datacube preview of the day from the detailedrecords_bonuses-yyyy-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new BDR can still be added.
    */
   private static long scheduleBDRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
@@ -487,7 +487,7 @@ public class DatacubeManager
   /*
    * BDR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_bonuses-yyyy-MM-dd index of the previous day.
    */
   private static long scheduleBDRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
     String jobName = "BDR-daily-definitive";
@@ -517,7 +517,7 @@ public class DatacubeManager
   /*
    * BDR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_bonuses-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of every hour from the detailedrecords_bonuses-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new BDR can still be added.
    */
   private static long scheduleBDRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
@@ -548,7 +548,7 @@ public class DatacubeManager
   /*
    * BDR hourly definitive
    *
-   * This will generated a datacube of every hour from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube of every hour from the detailedrecords_bonuses-yyyy-MM-dd index of the previous day.
    */
   private static long scheduleBDRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
     String jobName = "BDR-hourly-definitive";
@@ -578,7 +578,7 @@ public class DatacubeManager
   /*
    * MDR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_messages-YYYY-MM-dd index of the day
+   * This will generated a datacube preview of the day from the detailedrecords_messages-yyyy-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new MDR can still be added.
    */
   private static long scheduleMDRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
@@ -609,7 +609,7 @@ public class DatacubeManager
   /*
    * MDR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_messages-yyyy-MM-dd index of the previous day.
    */
   private static long scheduleMDRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
     String jobName = "MDR-daily-definitive";
@@ -639,7 +639,7 @@ public class DatacubeManager
   /*
    * MDR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_messages-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of every hour from the detailedrecords_messages-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new MDR can still be added.
    */
   private static long scheduleMDRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
@@ -670,7 +670,7 @@ public class DatacubeManager
   /*
    * MDR hourly definitive
    *
-   * This will generated a datacube of every hour from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube of every hour from the detailedrecords_messages-yyyy-MM-dd index of the previous day.
    */
   private static long scheduleMDRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
     String jobName = "MDR-hourly-definitive";

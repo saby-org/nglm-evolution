@@ -203,8 +203,11 @@ prepare-curl -XPOST $CONNECT_URL_ODR_ES/connectors -H "Content-Type: application
        {
        "connector.class" : "com.evolving.nglm.evolution.ODRSinkConnector",
        "tasks.max" : '$CONNECT_ES_ODR_SINK_TASKS',
-       "indexName" : "detailedrecords_offers",
-       "pipelineName" : "odr-daily",
+       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+       "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+       "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
+       "indexName" : "detailedrecords_offers-",
        "batchRecordCount" : "'$CONNECT_ES_ODR_BATCHRECORDCOUNT'",
        "batchSize" : "'$CONNECT_ES_ODR_BATCHSIZEMB'"
        }
@@ -226,8 +229,11 @@ prepare-curl -XPOST $CONNECT_URL_TOKENCHANGE_ES/connectors -H "Content-Type: app
         "connector.class"  : "com.evolving.nglm.evolution.TokenChangeESSinkConnector",
         "tasks.max"        : '$CONNECT_ES_TOKENCHANGE_SINK_TASKS',
         "topics"           : "${topic.tokenchange}",
-        "indexName"        : "detailedrecords_tokens",
-        "pipelineName"     : "token-daily",
+        "connectionHost"   : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort"   : "'$MASTER_ESROUTER_PORT'",
+        "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+        "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
+        "indexName"        : "detailedrecords_tokens-",
         "batchRecordCount" : "'$CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT'",
         "batchSize"        : "'$CONNECT_ES_TOKENCHANGE_BATCHSIZEMB'"
       }
@@ -247,8 +253,11 @@ prepare-curl -XPOST $CONNECT_URL_BDR_ES/connectors -H "Content-Type: application
        {
        "connector.class" : "com.evolving.nglm.evolution.BDRSinkConnector",
        "tasks.max" : '$CONNECT_ES_BDR_SINK_TASKS',
-       "indexName" : "detailedrecords_bonuses",
-       "pipelineName" : "bdr-daily",
+       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+       "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+       "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
+       "indexName" : "detailedrecords_bonuses-",
        "batchRecordCount" : "'$CONNECT_ES_BDR_BATCHRECORDCOUNT'",
        "batchSize" : "'$CONNECT_ES_BDR_BATCHSIZEMB'"
        }
@@ -269,8 +278,11 @@ prepare-curl -XPOST $CONNECT_URL_NOTIFICATION_ES/connectors -H "Content-Type: ap
       {
       "connector.class" : "com.evolving.nglm.evolution.NotificationSinkConnector",
       "tasks.max" : '$CONNECT_ES_NOTIFICATION_SINK_TASKS',
-      "indexName" : "detailedrecords_messages",
-      "pipelineName" : "mdr-daily",
+      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
+      "indexName" : "detailedrecords_messages-",
       "batchRecordCount" : "'$CONNECT_ES_NOTIFICATION_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_NOTIFICATION_BATCHSIZEMB'"
       }
@@ -341,8 +353,11 @@ prepare-curl -XPOST $CONNECT_URL_VDR_ES/connectors -H "Content-Type: application
        "connector.class" : "com.evolving.nglm.evolution.VDRSinkConnector",
        "tasks.max" : '$CONNECT_ES_VDR_SINK_TASKS',
        "topics" : "${topic.voucherchange.response}",
-       "indexName" : "detailedrecords_vouchers",
-       "pipelineName" : "vdr-daily",
+       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+       "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+       "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
+       "indexName" : "detailedrecords_vouchers-",
        "batchRecordCount" : "'$CONNECT_ES_VDR_BATCHRECORDCOUNT'",
        "batchSize" : "'$CONNECT_ES_VDR_BATCHSIZEMB'"
        }

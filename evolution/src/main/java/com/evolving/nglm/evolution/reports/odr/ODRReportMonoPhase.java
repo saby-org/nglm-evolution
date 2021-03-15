@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -545,19 +546,19 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
     
-    List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
+    Set<String> esIndexWeeks = ReportCsvFactory.getEsIndexWeeks(fromDate, toDate);
     StringBuilder esIndexOdrList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexWk : esIndexWeeks)
       {
         if (!firstEntry) esIndexOdrList.append(",");
-        String indexName = esIndexOdr + esIndexDate;
+        String indexName = esIndexOdr + esIndexWk;
         esIndexOdrList.append(indexName);
         firstEntry = false;
       }
     log.info("Reading data from ES in (" + esIndexOdrList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.printTimestamp(fromDate)).lte(RLMDateUtils.printTimestamp(toDate)));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -634,26 +635,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     return esIndexOdrList;
   }
   
-  public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates, int tenantID)
-  {
-    if (includeBothDates)
-      {
-        Date tempfromDate = fromDate;
-        List<String> esIndexOdrList = new ArrayList<String>();
-        while(tempfromDate.getTime() <= toDate.getTime())
-          {
-            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          }
-        return esIndexOdrList;
-      }
-    else
-      {
-        return getEsIndexDates(fromDate, toDate);
-      }
-  }
-
-
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
@@ -682,6 +663,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       default:
         break;
     }
+    if (fromDate != null) fromDate = RLMDateUtils.truncate(fromDate, Calendar.DATE, Deployment.getSystemTimeZone());
     return fromDate;
   }
   
@@ -696,14 +678,14 @@ public class ODRReportMonoPhase implements ReportCsvFactory
    *
    ********************/
   
-  public static String getESIndices(String esIndexOdr, List<String> esIndexDates)
+  public static String getESIndices(String esIndexOdr, Set<String> esIndexWks)
   {
     StringBuilder esIndexOdrList = new StringBuilder();
     boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
+    for (String esIndexWk : esIndexWks)
       {
         if (!firstEntry) esIndexOdrList.append(",");
-        String indexName = esIndexOdr + esIndexDate;
+        String indexName = esIndexOdr + esIndexWks;
         esIndexOdrList.append(indexName);
         firstEntry = false;
       }

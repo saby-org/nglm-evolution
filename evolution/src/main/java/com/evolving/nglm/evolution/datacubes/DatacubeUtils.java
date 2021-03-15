@@ -5,7 +5,10 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
+import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
@@ -51,6 +54,11 @@ public class DatacubeUtils
           break;
       }
     filters.put("feature", featureDisplay);
+  }
+  
+  public static String retrieveJourneyEndWeek(String journeyID, JourneyService journeyService) {
+    GUIManagedObject object = journeyService.getStoredJourney(journeyID, true);
+    return RLMDateUtils.printISOWeek(object.getEffectiveEndDate());
   }
 
 }

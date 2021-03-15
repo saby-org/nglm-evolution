@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -66,7 +68,9 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   private JourneysMap journeysMap;
 
   private boolean hourlyMode;
-  private String targetDay;
+  private String targetWeek;
+  private Date targetWindowStart;
+  private Date targetWindowEnd;
   private String targetTimestamp;
 
   /*****************************************
@@ -115,7 +119,20 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
-  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDay); }
+  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetWeek); }
+  
+  //
+  // Target day
+  //
+  @Override
+  protected QueryBuilder getSubsetQuery() 
+  {
+    return QueryBuilders.boolQuery().must(QueryBuilders
+        .rangeQuery("eventDatetime")
+        .gte(RLMDateUtils.printTimestamp(this.targetWindowStart))
+        .lt(RLMDateUtils.printTimestamp(this.targetWindowEnd))); // End not included
+  }
+  
 
   /*****************************************
   *
@@ -260,7 +277,9 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetDay = RLMDateUtils.printDay(yesterday);
+    this.targetWeek = RLMDateUtils.printISOWeek(yesterday);
+    this.targetWindowStart = beginningOfYesterday;
+    this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
 
     //
@@ -289,7 +308,9 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetDay = RLMDateUtils.printDay(now);
+    this.targetWeek = RLMDateUtils.printISOWeek(now);
+    this.targetWindowStart = beginningOfToday;
+    this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
 
     //
@@ -310,15 +331,18 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   public void hourlyDefinitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone());
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
     
     //
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetDay = RLMDateUtils.printDay(yesterday);
+    this.targetWeek = RLMDateUtils.printISOWeek(yesterday);
+    this.targetWindowStart = beginningOfYesterday;
+    this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
 
     //
@@ -339,15 +363,18 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   public void hourlyPreview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000
     Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
     
     //
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetDay = RLMDateUtils.printDay(now);
+    this.targetWeek = RLMDateUtils.printISOWeek(now);
+    this.targetWindowStart = beginningOfToday;
+    this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
 
     //
