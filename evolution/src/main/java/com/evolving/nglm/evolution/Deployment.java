@@ -249,6 +249,9 @@ public class Deployment
   private static int kafkaRetentionDaysTargets;
 
   private static boolean enableContactPolicyProcessing;
+  
+  //EVPRO-865  
+  private static String firstDayOfTheWeek;
 
   //extracts configuration
   private static String extractManagerZookeeperDir;
@@ -297,6 +300,8 @@ public class Deployment
   public static String getSubscriberTraceControlAssignSubscriberIDTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAssignSubscriberIDTopic(); }
   public static String getSubscriberTraceTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceTopic(); }
   public static Map<String, AlternateID> getAlternateIDs() { return com.evolving.nglm.core.Deployment.getAlternateIDs(); }
+//EVPRO-865
+  public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
 
   //
   //  evolution accessors
@@ -514,7 +519,8 @@ public class Deployment
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
   //EVPRO-574
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
-
+  
+  
   // addProfileCriterionField
   //
   public static void addProfileCriterionField(String key, CriterionField criterion) { profileCriterionFields.put(key, criterion); }
@@ -2018,6 +2024,20 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+      
+      //
+      //  firstDayOfTheWeek EVPRO-865
+      //
+
+      try
+        {
+          firstDayOfTheWeek = JSONUtilities.decodeString(jsonRoot, "firstDayOfTheWeek", false);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
 
       //
       //  partnerTypes
