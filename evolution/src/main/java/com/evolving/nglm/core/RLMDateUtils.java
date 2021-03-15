@@ -69,7 +69,7 @@ public class RLMDateUtils
   // DO ONLY USE this print for internal purpose as ISO week may not be the convention specified by the tenant.
   public static final ThreadLocal<DateFormat> WEEK_FORMAT = ThreadLocal.withInitial(()->{
     SimpleDateFormat sdf = new SimpleDateFormat("YYYY-'w'ww", Locale.FRANCE);
-    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));
     return sdf;
   });
   

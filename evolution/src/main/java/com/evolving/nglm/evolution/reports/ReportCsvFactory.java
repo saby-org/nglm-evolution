@@ -59,7 +59,7 @@ public interface ReportCsvFactory
     while(tempfromDate.getTime() < toDate.getTime())
       {
         esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone());
       }
     return esIndexList;
   }
@@ -79,7 +79,7 @@ public interface ReportCsvFactory
         while(tempfromDate.getTime() <= toDate.getTime())
           {
             esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
-            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone());
           }
         return esIndexList;
       }
