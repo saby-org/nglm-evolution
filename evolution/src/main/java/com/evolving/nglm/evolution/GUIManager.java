@@ -6877,7 +6877,7 @@ public class GUIManager
     Date targetDay;
     try {
       Date startDate = GUIManagedObject.parseDateField(bulkCampaignEffectiveStartDate);
-      targetDay = RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getBaseTimeZone());
+      targetDay = RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     } catch (JSONUtilitiesException e) {
       response.put("responseCode", "invalidStartDate");
       return JSONUtilities.encodeObject(response);
@@ -6890,7 +6890,7 @@ public class GUIManager
     long plannedCapacity = 0;
     for (GUIManagedObject journey : journeyService.getStoredJourneys(false)) {
       if ( journey.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign) && journey.getEffectiveStartDate() != null) {
-        Date startDate = RLMDateUtils.truncate(journey.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone());
+        Date startDate = RLMDateUtils.truncate(journey.getEffectiveStartDate(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
         Object templateIDObj = journey.getJSONRepresentation().get("journeyTemplateID"); // only in JSON representation
         String templateID = (templateIDObj != null && templateIDObj instanceof String) ? (String) templateIDObj : null;
         
@@ -29188,7 +29188,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     {
       if (log.isDebugEnabled()) log.debug("creating recurrent campaigns");
       String tz = Deployment.getBaseTimeZone();
-      final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+      final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), tz);
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
       Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
@@ -29297,7 +29297,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               boolean exists = false;
               for (Journey subJourney : recurrentSubJourneys)
                 {
-                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone(), Deployment.getFirstDayOfTheWeek()) == 0;
                   if (exists) break;
                 }
               if (!exists && limitCount > 0)
@@ -29326,7 +29326,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       String timeZone = Deployment.getBaseTimeZone();
       Date rawEffectiveEntryPeriodEndDate = recurrentJourney.getRawEffectiveEntryPeriodEndDate();
-      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
+      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE,Deployment.getFirstDayOfTheWeek(), timeZone), Deployment.getBaseTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       boolean active = recurrentJourney.getActive();
       for (Date startDate : journeyCreationDates)
@@ -29351,8 +29351,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           Date recRawEffectiveEntryPeriodEndDate = null;
           if (rawEffectiveEntryPeriodEndDate != null)
             {
-              int daysBetweenEntryPeriodEndDateAndStartDate = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(rawEffectiveEntryPeriodEndDate, Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
-              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.addDays(RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone), daysBetweenEntryPeriodEndDateAndStartDate, timeZone);
+              int daysBetweenEntryPeriodEndDateAndStartDate = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), timeZone), RLMDateUtils.truncate(rawEffectiveEntryPeriodEndDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), timeZone), Deployment.getBaseTimeZone());
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.addDays(RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), timeZone), daysBetweenEntryPeriodEndDateAndStartDate, timeZone);
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, timeZone), timeZone);
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.MINUTE, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.MINUTE, timeZone), timeZone);
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.SECOND, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.SECOND, timeZone), timeZone);
@@ -29472,7 +29472,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     {
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
           return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
         }
       else
@@ -29491,7 +29491,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     
     private Date getLastDate(Date now, int dayOf)
     {
-      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
           Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
@@ -29540,7 +29540,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     {
       if (log.isDebugEnabled()) log.debug("deleting expired targets");
       String tz = Deployment.getBaseTimeZone();
-      final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+      final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), tz);
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
       Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
@@ -29643,7 +29643,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               boolean exists = false;
               for (Journey subJourney : recurrentSubJourneys)
                 {
-                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone(),Deployment.getFirstDayOfTheWeek()) == 0;
                   if (exists) break;
                 }
               if (!exists && limitCount > 0)
@@ -29671,7 +29671,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     {
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       String timeZone = Deployment.getBaseTimeZone();
-      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
+      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(),timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), timeZone), Deployment.getBaseTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       for (Date startDate : journeyCreationDates)
         {
@@ -29800,7 +29800,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     {
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
           return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
         }
       else
@@ -29819,7 +29819,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     
     private Date getLastDate(Date now, int dayOf)
     {
-      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
           Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());

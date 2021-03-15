@@ -571,7 +571,7 @@ public class ReportService extends GUIService
   private Set<Date> compareAndGetDates(Report report, Set<Date> generatedDates)
   {
     Set<Date> result = new HashSet<Date>();
-    final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getBaseTimeZone());
+    final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     for (SchedulingInterval schedulingInterval : report.getEffectiveScheduling())
       {
         if(log.isDebugEnabled()) log.debug("compareAndGetDates schedulingInterval {}", schedulingInterval);
@@ -669,7 +669,7 @@ public class ReportService extends GUIService
                   {
                     lastWeekReportDate = RLMDateUtils.addWeeks(now, -1, Deployment.getBaseTimeZone());
                   }
-                lastWeekReportDate = RLMDateUtils.truncate(lastWeekReportDate, Calendar.DATE, Deployment.getBaseTimeZone());
+                lastWeekReportDate = RLMDateUtils.truncate(lastWeekReportDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
                 result.add(lastWeekReportDate);
               }
             break;
@@ -697,7 +697,7 @@ public class ReportService extends GUIService
                   {
                     lastMonthReportDate = RLMDateUtils.addMonths(now, -1, Deployment.getBaseTimeZone());
                   }
-                lastMonthReportDate = RLMDateUtils.truncate(lastMonthReportDate, Calendar.DATE, Deployment.getBaseTimeZone());
+                lastMonthReportDate = RLMDateUtils.truncate(lastMonthReportDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
                 result.add(lastMonthReportDate);
               }
             break;
@@ -750,7 +750,7 @@ public class ReportService extends GUIService
         SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getReportManagerDateFormat());
         sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
         result = sdf.parse(reportDateString);
-        result = RLMDateUtils.truncate(result, Calendar.DATE, Deployment.getBaseTimeZone());
+        result = RLMDateUtils.truncate(result, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
       } 
     catch (Exception e)
       {

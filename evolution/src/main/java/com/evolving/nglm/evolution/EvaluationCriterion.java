@@ -940,22 +940,22 @@ public class EvaluationCriterion
                     case Instant:
                       break;
                     case Minute:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MINUTE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
                       break;
                     case Hour:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.HOUR, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
                       break;
                     case Day:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
                       break;
                     case Week:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DAY_OF_WEEK, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
                       break;
                     case Month:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
                       break;
                     case Year:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
                       break;
                   }
               }
@@ -963,8 +963,8 @@ public class EvaluationCriterion
               
           case AniversaryCriterion:
             {
-              evaluatedArgument = RLMDateUtils.truncate((Date) evaluatedArgument, Calendar.DATE, Deployment.getBaseTimeZone());
-              criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getBaseTimeZone());
+              evaluatedArgument = RLMDateUtils.truncate((Date) evaluatedArgument, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+              criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
               int yearOfEvaluatedArgument = RLMDateUtils.getField((Date) evaluatedArgument, Calendar.YEAR, Deployment.getBaseTimeZone());
               criterionFieldValue = RLMDateUtils.setField((Date) criterionFieldValue, Calendar.YEAR, yearOfEvaluatedArgument, Deployment.getBaseTimeZone());
               break;

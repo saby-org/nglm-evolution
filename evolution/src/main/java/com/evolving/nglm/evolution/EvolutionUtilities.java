@@ -68,15 +68,17 @@ public class EvolutionUtilities
   public static Date addTime(Date baseTime, int amount, TimeUnit timeUnit, String timeZone, RoundingSelection roundingSelection)
   {
     Date result = baseTime;
+    String firstDayOfTheWeek = com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek();
+    
     switch (timeUnit)
       {
         case Instant:
           switch (roundingSelection) {
           case RoundUp:
-            result = RLMDateUtils.ceiling(result, Calendar.MILLISECOND, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.ceiling(result, Calendar.MILLISECOND, firstDayOfTheWeek, timeZone);
             break;
           case RoundDown:
-            result = RLMDateUtils.truncate(result, Calendar.MILLISECOND, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.truncate(result, Calendar.MILLISECOND, firstDayOfTheWeek, timeZone);
             break;
           default :
             break;
@@ -87,10 +89,10 @@ public class EvolutionUtilities
         case Minute:
           switch (roundingSelection) {
           case RoundUp:
-            result = RLMDateUtils.ceiling(result, Calendar.MINUTE, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.ceiling(result, Calendar.MINUTE, firstDayOfTheWeek, timeZone);
             break;
           case RoundDown:
-            result = RLMDateUtils.truncate(result, Calendar.MINUTE, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.truncate(result, Calendar.MINUTE, firstDayOfTheWeek, timeZone);
             break;
           default :
             break;
@@ -101,10 +103,10 @@ public class EvolutionUtilities
         case Hour:
           switch (roundingSelection) {
           case RoundUp:
-            result = RLMDateUtils.ceiling(result, Calendar.HOUR, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.ceiling(result, Calendar.HOUR, firstDayOfTheWeek, timeZone);
             break;
           case RoundDown:
-            result = RLMDateUtils.truncate(result, Calendar.HOUR, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.truncate(result, Calendar.HOUR, firstDayOfTheWeek, timeZone);
             break;
           default :
             break;
@@ -115,10 +117,10 @@ public class EvolutionUtilities
         case Day:
           switch (roundingSelection) {
           case RoundUp:
-            result = RLMDateUtils.ceiling(result, Calendar.DATE, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.ceiling(result, Calendar.DATE, firstDayOfTheWeek, timeZone);
             break;
           case RoundDown:
-            result = RLMDateUtils.truncate(result, Calendar.DATE, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.truncate(result, Calendar.DATE, firstDayOfTheWeek, timeZone);
             break;
           default :
             break;
@@ -129,10 +131,10 @@ public class EvolutionUtilities
         case Week:
           switch (roundingSelection) {
           case RoundUp:
-            result = RLMDateUtils.ceiling(result, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.ceiling(result, Calendar.DAY_OF_WEEK, firstDayOfTheWeek, timeZone);
             break;
           case RoundDown:
-            result = RLMDateUtils.truncate(result, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.truncate(result, Calendar.DAY_OF_WEEK, firstDayOfTheWeek, timeZone);
             break;
           default :
             break;
@@ -143,10 +145,10 @@ public class EvolutionUtilities
         case Month:
           switch (roundingSelection) {
           case RoundUp:
-            result = RLMDateUtils.ceiling(result, Calendar.MONTH, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.ceiling(result, Calendar.MONTH, firstDayOfTheWeek, timeZone);
             break;
           case RoundDown:
-            result = RLMDateUtils.truncate(result, Calendar.MONTH, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.truncate(result, Calendar.MONTH, firstDayOfTheWeek, timeZone);
             break;
           default :
             break;
@@ -157,10 +159,10 @@ public class EvolutionUtilities
         case Year:
           switch (roundingSelection) {
           case RoundUp:
-            result = RLMDateUtils.ceiling(result, Calendar.YEAR, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.ceiling(result, Calendar.YEAR, firstDayOfTheWeek, timeZone);
             break;
           case RoundDown:
-            result = RLMDateUtils.truncate(result, Calendar.YEAR, Calendar.SUNDAY, timeZone);
+            result = RLMDateUtils.truncate(result, Calendar.YEAR, firstDayOfTheWeek, timeZone);
             break;
           default :
             break;

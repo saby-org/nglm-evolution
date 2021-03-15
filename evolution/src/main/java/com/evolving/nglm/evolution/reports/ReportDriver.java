@@ -93,7 +93,7 @@ public abstract class ReportDriver
   
   public String getSubscriberProfileIndex(final Date requestedDate)
   {
-    if (0 == RLMDateUtils.truncatedCompareTo(requestedDate, SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getBaseTimeZone()))
+    if (0 == RLMDateUtils.truncatedCompareTo(requestedDate, SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getBaseTimeZone(),Deployment.getFirstDayOfTheWeek()))
       {
         return "subscriberprofile";
       }

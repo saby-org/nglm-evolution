@@ -243,7 +243,7 @@ public class MetricHistory
     this.monthlyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfMonthlyBuckets, MINIMUM_MONTH_BUCKETS));
     this.allTimeBucket = (metricHistoryMode == MetricHistoryMode.Standard) ? 0L : -1L;
     this.baseDay = EPOCH;
-    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
+    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
     this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
     this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
@@ -289,7 +289,7 @@ public class MetricHistory
     this.monthlyBuckets = monthlyBuckets;
     this.allTimeBucket = allTimeBucket;
     this.baseDay = baseDay;
-    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
+    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
     this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
     this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
@@ -685,8 +685,8 @@ public class MetricHistory
     
     Date now = SystemTime.getCurrentTime();
     Date effectiveDate = date.before(now) ? date : now;
-    Date day = RLMDateUtils.truncate(effectiveDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-    Date beginningOfCurrentMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(effectiveDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date beginningOfCurrentMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
 
     /****************************************
     *
@@ -754,7 +754,7 @@ public class MetricHistory
         dailyBuckets = newDailyBuckets;
         monthlyBuckets = newMonthlyBuckets;
         baseDay = day;
-        beginningOfBaseMonth = RLMDateUtils.truncate(baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
+        beginningOfBaseMonth = RLMDateUtils.truncate(baseDay, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
         beginningOfDailyValues = RLMDateUtils.addDays(baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
         beginningOfMonthlyValues = RLMDateUtils.addMonths(beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
         endOfMonthlyValues = RLMDateUtils.addDays(beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
@@ -921,7 +921,7 @@ public class MetricHistory
     //
 
     startDay = Objects.equals(startDay, NGLMRuntime.BEGINNING_OF_TIME) ? null : startDay;
-    if (startDay != null && ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+    if (startDay != null && ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone())))
       {
         throw new IllegalArgumentException("startDay must be on a day boundary");
       }
@@ -931,7 +931,7 @@ public class MetricHistory
     //
     
     endDay = Objects.equals(endDay, NGLMRuntime.END_OF_TIME) ? null : endDay;
-    if (endDay != null && ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+    if (endDay != null && ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone())))
       {
         throw new IllegalArgumentException("endDay must be on a day boundary");
       }
@@ -1438,7 +1438,7 @@ public class MetricHistory
     //  startDay
     //
 
-    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone())))
       {
         throw new IllegalArgumentException("startDay must be on a day boundary");
       }
@@ -1447,7 +1447,7 @@ public class MetricHistory
     //  endDay
     //
     
-    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone())))
       {
         throw new IllegalArgumentException("endDay must be on a day boundary");
       }
@@ -1573,7 +1573,7 @@ public class MetricHistory
     //  startDay
     //
 
-    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone())))
       {
         throw new IllegalArgumentException("startDay must be on a day boundary");
       }
@@ -1582,7 +1582,7 @@ public class MetricHistory
     //  endDay
     //
     
-    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone())))
       {
         throw new IllegalArgumentException("endDay must be on a day boundary");
       }
@@ -1708,7 +1708,7 @@ public class MetricHistory
 
   private Long getPreviousNDays(Date evaluationDate, int numberOfDays)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -numberOfDays, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return this.getValue(startDay, endDay);
@@ -1720,7 +1720,7 @@ public class MetricHistory
 
   public Long getToday(Date evaluationDate)
   {
-    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     return this.getValue(today, today);
   }
 
@@ -1730,9 +1730,34 @@ public class MetricHistory
 
   public Long getYesterday(Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     Date endDay = startDay;
+    return this.getValue(startDay, endDay);
+  }
+  
+  //
+  //  getThisWeek
+  //
+
+  public Long getThisWeek(Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DAY_OF_WEEK, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date startDay = day;
+    Date endDay = RLMDateUtils.addDays(day, 7, Deployment.getBaseTimeZone());
+    return this.getValue(startDay, endDay);
+  }
+  
+  
+  //
+  //  getThisMonth
+
+  public Long getThisMonth(Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date startDay = day;
+    int totalDays = Calendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH);
+    Date endDay = RLMDateUtils.addDays(day, totalDays, Deployment.getBaseTimeZone());
     return this.getValue(startDay, endDay);
   }
 
@@ -1769,8 +1794,8 @@ public class MetricHistory
 
   public Long getPreviousMonth(Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
-    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, 0, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getBaseTimeZone());
     return this.getValue(startDay, endDay);
@@ -1791,7 +1816,7 @@ public class MetricHistory
 
   private Long getCountIfZeroOrNotPrevious90Days(Date evaluationDate, MetricHistory.Criteria zeroOrNot)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return this.countIf(startDay, endDay, zeroOrNot);
@@ -1821,7 +1846,7 @@ public class MetricHistory
 
   private Long getAggregateIfZeroOrNotPrevious90Days(MetricHistory criteriaMetricHistory, Date evaluationDate, MetricHistory.Criteria zeroOrNot)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return this.aggregateIf(startDay, endDay, zeroOrNot, criteriaMetricHistory);
@@ -1867,8 +1892,8 @@ public class MetricHistory
     //
 
     int numberOfMonths = 3;
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
-    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, 0, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
     long[] valuesByMonth = new long[numberOfMonths];
     for (int i=0; i<numberOfMonths; i++)
       {

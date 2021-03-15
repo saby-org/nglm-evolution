@@ -160,7 +160,7 @@ public class ContactPolicyProcessor
                   break;
               }
             //start date null means that no valid interval defined for processing list. An exception will be thrown that will be handled at upper level
-            if (requestMetricHistory.getValue(RLMDateUtils.truncate(startDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone()), RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())) >= limit.getMaxMessages())
+            if (requestMetricHistory.getValue(RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone()), RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone())) >= limit.getMaxMessages())
               {
                 returnValue = true;
                 break;

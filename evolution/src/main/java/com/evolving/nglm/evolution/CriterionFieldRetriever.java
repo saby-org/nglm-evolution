@@ -624,7 +624,11 @@ public abstract class CriterionFieldRetriever
                       case "yesterday"  : value = metric.getYesterday(evaluationDate); break;
                       case "last7days"  : value = metric.getPrevious7Days(evaluationDate); break;
                       case "last30days" : value = metric.getPrevious30Days(evaluationDate); break;
-                      default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days)");
+                      case "today"      : value = metric.getToday(evaluationDate); break;
+                      case "thisWeek"   : value = metric.getThisWeek(evaluationDate); break;
+                      case "thisMonth"  : value = metric.getThisMonth(evaluationDate); break;
+                      
+                      default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days, thisWeek, thisMonth)");
                     }
                     if (value > Integer.MAX_VALUE && value < Integer.MIN_VALUE)
                       {

@@ -293,7 +293,7 @@ public class CommunicationChannel extends GUIManagedObject
       if (communicationChannel != null && timeWindow != null)
         {
           effectiveDeliveryDate = NGLMRuntime.END_OF_TIME;
-          Date today = RLMDateUtils.truncate(now, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+          Date today = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
           for (int i=0; i<8; i++)
             {
               //

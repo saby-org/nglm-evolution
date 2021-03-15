@@ -728,7 +728,7 @@ public class DatacubeManager
         // Therefore, we must not configure a cron period lower than 1 hour
         // If we want a lower period we will need to retrieve the schedule due date from the job !
         Date now = SystemTime.getCurrentTime();
-        Date truncatedHour = RLMDateUtils.truncate(now, Calendar.HOUR, Deployment.getBaseTimeZone());
+        Date truncatedHour = RLMDateUtils.truncate(now, Calendar.HOUR, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
         Date endOfLastHour = RLMDateUtils.addMilliseconds(truncatedHour, -1); // XX:59:59.999
        
         journeysMap.update();
