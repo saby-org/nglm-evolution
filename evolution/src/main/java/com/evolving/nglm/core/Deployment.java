@@ -94,8 +94,6 @@ public class Deployment
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionDaysExpiredVouchers; 
   private static int elasticsearchRetentionDaysVDR;
-  //EVPRO-865  
- // private static String firstDayOfTheWeek;
 
   //
   //  accessors
@@ -130,9 +128,6 @@ public class Deployment
   public static String getSubscriberTraceTopic() { return subscriberTraceTopic; }
   public static String getSimulatedTimeTopic() { return simulatedTimeTopic; }
   public static Map<String,AutoProvisionEvent> getAutoProvisionEvents() { return autoProvisionEvents; }
-  
-  //EVPRO-865
-  //public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
 
   // ELASTICSEARCH 
   public static String getElasticsearchDateFormat() { return elasticsearchDateFormat; }
@@ -831,19 +826,6 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
-    
-    //
-    //  firstDayOfTheWeek EVPRO-865
-    //
-
- /*   try
-      {
-        firstDayOfTheWeek = JSONUtilities.decodeString(jsonRoot, "firstDayOfTheWeek", false);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }*/
     
     //
     // Elasticsearch
