@@ -42,6 +42,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
+import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -911,6 +912,23 @@ public abstract class SubscriberProfile
           }
       }
     
+  //prepare complexObjectInstances
+    ArrayList<JSONObject> complexObjectInstancesjson = new ArrayList<JSONObject>();
+    if(getComplexObjectInstances()!=null) {
+    for (ComplexObjectInstance instance : getComplexObjectInstances())
+    {
+    	HashMap<String,Object> json = new HashMap<String,Object>();
+        json.put("complexObjectTypeID", instance.getComplexObjectTypeID());
+        json.put("elementID", instance.getElementID());
+        HashMap<String,Object> subFieldValuesMap = new HashMap<String,Object>();
+        for (Map.Entry<String,DataModelFieldValue> entry : instance.getFieldValues().entrySet()) {
+        	subFieldValuesMap.put(entry.getKey(), entry.getValue().getValue());
+        	}
+        json.put("subFieldValues", subFieldValuesMap);
+        complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
+    }
+    }
+    
     //prepare Inclusion/Exclusion list
     
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
@@ -1042,6 +1060,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
+    generalDetailsPresentation.put("complexObjectInstances", JSONUtilities.encodeArray(complexObjectInstancesjson));
     // prepare basic kpiPresentation (if any)
     //
 

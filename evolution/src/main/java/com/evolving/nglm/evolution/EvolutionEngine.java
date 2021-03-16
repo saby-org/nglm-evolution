@@ -6,29 +6,42 @@
 
 package com.evolving.nglm.evolution;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
-import com.evolving.nglm.evolution.preprocessor.Preprocessor;
-import com.evolving.nglm.evolution.propensity.PropensityService;
-import com.evolving.nglm.evolution.retention.RetentionService;
-import com.evolving.nglm.evolution.statistics.CounterStat;
-import com.evolving.nglm.evolution.statistics.DurationStat;
-import com.evolving.nglm.evolution.statistics.StatBuilder;
-import com.evolving.nglm.evolution.statistics.StatsBuilders;
-import io.confluent.kafka.formatter.AvroMessageFormatter;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -49,11 +62,22 @@ import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
-import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Predicate;
+import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.processor.TaskMetadata;
 import org.apache.kafka.streams.processor.ThreadMetadata;
 import org.apache.kafka.streams.processor.TimestampExtractor;
-import org.apache.kafka.streams.state.*;
+import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
+import org.apache.kafka.streams.state.QueryableStoreTypes;
+import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
+import org.apache.kafka.streams.state.RocksDBConfigSetter;
+import org.apache.kafka.streams.state.Stores;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -93,7 +117,6 @@ import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
@@ -103,12 +126,23 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
-import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectException;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectUtils;
+import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
+import com.evolving.nglm.evolution.preprocessor.Preprocessor;
+import com.evolving.nglm.evolution.propensity.PropensityService;
+import com.evolving.nglm.evolution.retention.RetentionService;
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.DurationStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -118,6 +152,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import io.confluent.kafka.formatter.AvroMessageFormatter;
 
 public class EvolutionEngine
 {
@@ -2635,6 +2671,12 @@ public class EvolutionEngine
     *****************************************/
 
     SubscriberProfile subscriberProfile = context.getSubscriberState().getSubscriberProfile();
+    try {
+		ComplexObjectUtils.setComplexObjectValue(subscriberProfile, "ComplexObjectExample", "Example1", "integerExample", 100);
+	} catch (ComplexObjectException e2) {
+		// TODO Auto-generated catch block
+		e2.printStackTrace();
+	}   
     ExtendedSubscriberProfile extendedSubscriberProfile = context.getExtendedSubscriberProfile();
     boolean subscriberProfileUpdated = false;
 
