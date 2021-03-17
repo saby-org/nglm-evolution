@@ -914,19 +914,20 @@ public abstract class SubscriberProfile
     
   //prepare complexObjectInstances
     ArrayList<JSONObject> complexObjectInstancesjson = new ArrayList<JSONObject>();
-    if(getComplexObjectInstances()!=null) {
-    for (ComplexObjectInstance instance : getComplexObjectInstances())
-    {
-    	HashMap<String,Object> json = new HashMap<String,Object>();
-        json.put("complexObjectTypeID", instance.getComplexObjectTypeID());
-        json.put("elementID", instance.getElementID());
-        HashMap<String,Object> subFieldValuesMap = new HashMap<String,Object>();
-        for (Map.Entry<String,DataModelFieldValue> entry : instance.getFieldValues().entrySet()) {
-        	subFieldValuesMap.put(entry.getKey(), entry.getValue().getValue());
-        	}
-        json.put("subFieldValues", subFieldValuesMap);
-        complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
-    }
+	HashMap<String,HashMap<String,HashMap<String,Object>>> json = new HashMap<String,HashMap<String,HashMap<String,Object>>>();
+    if(getComplexObjectInstances()!=null && getComplexObjectInstances().size()>0) {
+    	for (ComplexObjectInstance instance : getComplexObjectInstances())
+    	{ 	if(!json.containsKey(instance.getComplexObjectTypeID()))
+    		json.put(instance.getComplexObjectTypeID(), new HashMap<String,HashMap<String,Object>>());
+    	HashMap<String,HashMap<String,Object>>  elements=(HashMap<String,HashMap<String,Object>>) json.get(instance.getComplexObjectTypeID());
+    	if(!elements.containsKey(instance.getElementID()))
+    		elements.put(instance.getElementID(), new HashMap<String,Object>());
+    	HashMap<String,Object> elementVal=elements.get(instance.getElementID());
+    	for (Map.Entry<String,DataModelFieldValue> entry : instance.getFieldValues().entrySet()) {
+    		elementVal.put(entry.getKey(), entry.getValue().getValue());
+    	}       
+    	}
+    	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
     }
     
     //prepare Inclusion/Exclusion list

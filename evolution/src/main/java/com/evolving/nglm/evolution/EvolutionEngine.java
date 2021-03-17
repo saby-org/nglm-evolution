@@ -2671,12 +2671,6 @@ public class EvolutionEngine
     *****************************************/
 
     SubscriberProfile subscriberProfile = context.getSubscriberState().getSubscriberProfile();
-    try {
-		ComplexObjectUtils.setComplexObjectValue(subscriberProfile, "ComplexObjectExample", "Example1", "integerExample", 100);
-	} catch (ComplexObjectException e2) {
-		// TODO Auto-generated catch block
-		e2.printStackTrace();
-	}   
     ExtendedSubscriberProfile extendedSubscriberProfile = context.getExtendedSubscriberProfile();
     boolean subscriberProfileUpdated = false;
 
