@@ -1698,7 +1698,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  public static SubscriberState updateSubscriberState(StringKey aggKey, SubscriberStateOutputWrapper evolutionHackyEvent, SubscriberState currentSubscriberState)
+  public static SubscriberState updateSubscriberState(StringKey aggKey, SubscriberStateOutputWrapper evolutionHackyEvent, SubscriberState previousSubscriberState)
   {
 
     SubscriberStreamEvent evolutionEvent = evolutionHackyEvent.getOriginalEvent();
@@ -1709,7 +1709,7 @@ public class EvolutionEngine
     *
     ****************************************/
     int tenantID;
-    if(currentSubscriberState == null)
+    if(previousSubscriberState == null)
       {
         // ensure this event is of type Auto
         if(evolutionEvent instanceof AutoProvisionSubscriberStreamEvent)
@@ -1723,23 +1723,24 @@ public class EvolutionEngine
       }
     else
       {
-        tenantID = currentSubscriberState.getSubscriberProfile().getTenantID();
+        tenantID = previousSubscriberState.getSubscriberProfile().getTenantID();
       }
 
     // NO MORE DEEP COPY !!!!
 	// previous one or new empty
-    SubscriberState subscriberState = (currentSubscriberState != null) ? currentSubscriberState : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
+    SubscriberState subscriberState = (previousSubscriberState != null) ? previousSubscriberState : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
     // keep the previous stored byte[]
-    byte[] storedBefore = (currentSubscriberState != null) ? currentSubscriberState.getKafkaRepresentation() : new byte[0];
+    byte[] storedBefore = (previousSubscriberState != null) ? previousSubscriberState.getKafkaRepresentation() : new byte[0];// this empty means as well subscriber was not existing before
     // need to save the previous scheduled evaluation
 	Set<TimedEvaluation> scheduledEvaluationsBefore = new TreeSet<>(subscriberState.getScheduledEvaluations());
 	// and clean it
 	subscriberState.getScheduledEvaluations().clear();
 
+    boolean subscriberStateUpdated = previousSubscriberState == null;
+
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
     EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, SystemTime.getCurrentTime());
-    boolean subscriberStateUpdated = currentSubscriberState == null;
 
     if(log.isTraceEnabled()) log.trace("updateSubscriberState on event "+evolutionEvent.getClass().getSimpleName()+ " for "+evolutionEvent.getSubscriberID());
 
@@ -1754,12 +1755,12 @@ public class EvolutionEngine
     switch (evolutionEvent.getSubscriberAction())
       {
         case Cleanup:
-          updateScheduledEvaluations((currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet(), Collections.<TimedEvaluation>emptySet());
+          updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
           return null;
           
         case Delete:
-          SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
-          return currentSubscriberState;
+          SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+          return subscriberState;
       }
     
     /*****************************************
@@ -2898,6 +2899,12 @@ public class EvolutionEngine
           {
             log.info("pointFulfillmentRequest failed (no such point): {}", pointFulfillmentRequest.getPointID());
             pointFulfillmentResponse.setDeliveryStatus(DeliveryStatus.Failed);
+            
+            //
+            //  return delivery response
+            //
+
+            context.getSubscriberState().getPointFulfillmentResponses().add(pointFulfillmentResponse);
           }
 
         //
@@ -7612,6 +7619,7 @@ public class EvolutionEngine
     private EvolutionEngineEventDeclaration eventDeclaration;
     private HashMap<String, String> eventFieldMappings = new HashMap<>();
     private Constructor<? extends EvolutionEngineEvent> eventConstructor;
+    private boolean isAutoProvisionSubscriberStreamEvent;
 
     public EvolutionEngineEventDeclaration getEventDeclaration() { return eventDeclaration; }
 
@@ -7647,7 +7655,7 @@ public class EvolutionEngine
       
       try
       {
-        if(AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventDeclaration.getEventClass())) 
+        if(isAutoProvisionSubscriberStreamEvent = AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventDeclaration.getEventClass())) 
           {
             eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class, int.class});
           }
@@ -7690,13 +7698,16 @@ public class EvolutionEngine
       
       try 
         {
-          EvolutionEngineEvent event = eventConstructor.newInstance(subscriberID, SystemTime.getCurrentTime(), eventJSON);
+          EvolutionEngineEvent event;
+          event = (isAutoProvisionSubscriberStreamEvent)?
+              eventConstructor.newInstance(subscriberID, SystemTime.getCurrentTime(), eventJSON, subscriberEvaluationRequest.getTenantID()):
+              eventConstructor.newInstance(subscriberID, SystemTime.getCurrentTime(), eventJSON);
+
           JourneyTriggerEventAction action = new JourneyTriggerEventAction();
           action.setEventDeclaration(eventDeclaration);
           action.setEventToTrigger(event);
           
-          return Collections.<Action>singletonList(action);
-          
+          return Collections.<Action>singletonList(action);         
 
         }
       catch(Exception e)

@@ -486,11 +486,7 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 	
 	@Override
 	public boolean isConnected() {
-		return (running && isStarted());
-	}
-	
-	private boolean isStarted() {
-		return (started && trans != null);
+		return (running && started && trans!=null && trans.isBound());
 	}
 	
 	/**
