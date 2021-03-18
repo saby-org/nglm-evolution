@@ -39,7 +39,7 @@ public class GUIManagedObjectDependencyHelper
   *
   ****************************************/
   
-  public static void createDependencyTreeMAP(Map<String, GUIDependencyModelTree> guiDependencyModelTreeMap, GUIDependencyModelTree guiDependencyModelTree, Set<String>  dependencies, String objectID, List<JSONObject> dependencyListOutput, boolean fiddleTest, List<GUIService> guiServiceList) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
+  public static void createDependencyTreeMAP(Map<String, GUIDependencyModelTree> guiDependencyModelTreeMap, GUIDependencyModelTree guiDependencyModelTree, Set<String>  dependencies, String objectID, List<JSONObject> dependencyListOutput, boolean fiddleTest, List<GUIService> guiServiceList, int tenantID) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
   {
     log.info("createDependencyTreeMAP for {} - ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectType(), objectID, dependencies);
     for (String dependency : dependencies)
@@ -56,8 +56,8 @@ public class GUIManagedObjectDependencyHelper
         
         Class serviceClass = guiDependencyModelTreeMap.get(dependency.toLowerCase()).getServiceClass();
         Object serviceObject  = getService(guiServiceList, serviceClass);
-        Method retriver = serviceClass.getSuperclass().getDeclaredMethod("getStoredGUIManagedObjects", null);
-        Collection<GUIManagedObject> storedObjectList = (Collection<GUIManagedObject>) retriver.invoke(serviceObject, null);
+        Method retriver = serviceClass.getSuperclass().getDeclaredMethod("getStoredGUIManagedObjects", int.class);
+        Collection<GUIManagedObject> storedObjectList = (Collection<GUIManagedObject>) retriver.invoke(serviceObject, tenantID);
         
         //
         //  containerObjectList
@@ -99,7 +99,7 @@ public class GUIManagedObjectDependencyHelper
             //  recursion
             //
             
-            if (netxGUIDependencyModelTree!= null) createDependencyTreeMAP(guiDependencyModelTreeMap, netxGUIDependencyModelTree, netxGUIDependencyModelTree.getDependencyList(), nextObjectID, nextDependencyOutputList, fiddleTest, guiServiceList);
+            if (netxGUIDependencyModelTree!= null) createDependencyTreeMAP(guiDependencyModelTreeMap, netxGUIDependencyModelTree, netxGUIDependencyModelTree.getDependencyList(), nextObjectID, nextDependencyOutputList, fiddleTest, guiServiceList, tenantID);
             
             //
             // dependentMap
