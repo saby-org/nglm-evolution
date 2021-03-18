@@ -5515,7 +5515,7 @@ public class GUIManagerGeneral extends GUIManager
             //  createDependencyTreeMAP
             //
             
-            GUIManagedObjectDependencyHelper.createDependencyTreeMAP(guiDependencyModelTreeMap, guiDependencyModelTree, guiDependencyModelTree.getDependencyList(), objectID, dependentList, fiddleTest, guiServiceList);
+            GUIManagedObjectDependencyHelper.createDependencyTreeMAP(guiDependencyModelTreeMap, guiDependencyModelTree, guiDependencyModelTree.getDependencyList(), objectID, dependentList, fiddleTest, guiServiceList, tenantID);
             
             //
             //  response
