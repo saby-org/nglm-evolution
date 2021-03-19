@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -21,6 +23,7 @@ import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.*;
@@ -28,6 +31,10 @@ import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.sniff.Sniffer;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -38,6 +45,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -402,17 +410,32 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
               .filter(QueryBuilders.termQuery("journeyID", journeyID))); 
       String mappingIndex = "mapping_journeyrewards";
       SearchRequest searchRequest = new SearchRequest(mappingIndex).source(searchSourceRequest);
-      
+
+      // Read all docs from ES, on esIndex[i]
+      // Write to topic, one message per document
       int scroolKeepAlive = ReportMonoPhase.getScrollKeepAlive();
       Scroll scroll = new Scroll(TimeValue.timeValueSeconds(scroolKeepAlive));
       searchRequest.source().size(ReportMonoPhase.getScrollSize());
       searchRequest.scroll(scroll);
+
+      //
+      // Send request & retrieve response synchronously (blocking call)
+      // 
       SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
-      String scrollId = searchResponse.getScrollId();
-      SearchHit[] searchHits = searchResponse.getHits().getHits();
-      while (searchHits != null && searchHits.length > 0)
-        {
-          if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
+      String scrollId = searchResponse.getScrollId(); // always null
+
+      //
+      // Check search response
+      //
+      // @rl TODO checking status seems useless because it raises exception
+      if (searchResponse.isTimedOut()
+          || searchResponse.getFailedShards() > 0) {
+      
+      SearchHits hits = searchResponse.getHits();
+      if (hits != null) {
+        SearchHit[] searchHits = hits.getHits();
+        while (searchHits != null && searchHits.length > 0) {
+          if (log.isDebugEnabled()) log.debug("processing " + searchHits.length + " hits");
           for (SearchHit searchHit : searchHits)
             {
               Map<String, Object> sourceMap = searchHit.getSourceAsMap();
@@ -429,6 +452,15 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           scrollId = searchResponse.getScrollId();
           searchHits = searchResponse.getHits().getHits();
         }
+      }
+      if (scrollId != null)
+        {
+          ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+          clearScrollRequest.addScrollId(scrollId);
+          clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+          scrollId = null;
+        }
+      }
     }
     catch (ElasticsearchStatusException e)
     {
@@ -436,15 +468,21 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         log.debug(e.getMessage());
         return new HashMap<String, Long>();
       }
-      e.printStackTrace();
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.info("Error in getDistributedRewards : " + e.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
       throw new ElasticsearchClientException(e.getDetailedMessage());
     }
     catch (ElasticsearchException e) {
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getDetailedMessage());
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.info("Error in getDistributedRewards : " + e.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
+      throw new ElasticsearchClientException(e.getMessage());
     }
     catch (Exception e) {
-      e.printStackTrace();
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.info("Error in getDistributedRewards : " + e.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
       throw new ElasticsearchClientException(e.getMessage());
     }
     
@@ -510,15 +548,21 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         log.debug(e.getMessage());
         return new HashMap<String, Long>();
       }
-      e.printStackTrace();
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.info("Error in getDistributedRewards : " + e.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
       throw new ElasticsearchClientException(e.getDetailedMessage());
     }
     catch (ElasticsearchException e) {
-      e.printStackTrace();
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.info("Error in getDistributedRewards : " + e.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
       throw new ElasticsearchClientException(e.getDetailedMessage());
     }
     catch (Exception e) {
-      e.printStackTrace();
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.info("Error in getDistributedRewards : " + e.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
       throw new ElasticsearchClientException(e.getMessage());
     }
   }

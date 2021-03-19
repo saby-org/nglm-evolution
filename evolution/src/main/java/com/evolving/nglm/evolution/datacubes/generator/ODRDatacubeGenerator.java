@@ -97,6 +97,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("salesChannelID");
     this.filterFields.add("meanOfPayment");
     this.filterFields.add("returnCode");
+    this.filterFields.add("origin");
     
     //
     // Data Aggregations

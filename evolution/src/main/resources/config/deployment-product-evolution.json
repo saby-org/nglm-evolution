@@ -22,7 +22,7 @@
   "kafkaRetentionDaysODR"             : 91,
   "kafkaRetentionDaysBDR"             : 91,
   "kafkaRetentionDaysMDR"             : 91,
-  "kafkaRetentionDaysTargets"         : 91,
+  "kafkaRetentionDaysTargets"         : 7,
   
   "firstDayOfTheWeek"                 : "Monday",
 

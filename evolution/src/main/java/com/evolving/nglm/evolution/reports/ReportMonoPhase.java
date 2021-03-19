@@ -637,7 +637,7 @@ public class ReportMonoPhase
       {
         scrollKeepAlive = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_KEEP_ALIVE;
       }
-    log.info("Using " + scrollKeepAlive + " as scroll keep alive in Elastic Search");
+    log.trace("Using " + scrollKeepAlive + " as scroll keep alive in Elastic Search");
     return scrollKeepAlive;
   }
 
