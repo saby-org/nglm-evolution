@@ -177,7 +177,9 @@ public class JourneysReportDriver extends ReportDriver
 
                   Map<String, Long> nodeSubscribersCount = elasticsearchReaderClient.getJourneyNodeCount(journeyID);
                   for (JourneyNode journeyNode : journey.getJourneyNodes().values()) {
-                    sbStates.append(journeyNode.getNodeName()).append("=").append(nodeSubscribersCount.get(journeyNode.getNodeID())).append(",");
+                    Long count = nodeSubscribersCount.get(journeyNode.getNodeID());
+                    String countStr = (count == null) ? "0" : count.toString();
+                    sbStates.append(journeyNode.getNodeName()).append("=").append(countStr).append(",");
                   }
                   journeyStates = sbStates.toString().substring(0, sbStates.toString().length()-1);
 
