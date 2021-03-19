@@ -45,7 +45,7 @@ public class PaymentMeansMap extends GUIManagedObjectMap<PaymentMean>
   *****************************************/
   public String getProviderID(String display, String fieldName)
   {
-    Collection<GUIManagedObject> paymentMeans = getCollection(0);
+    Collection<GUIManagedObject> paymentMeans = getCollection(0); 
     String id = null;
     if (paymentMeans != null)
       {
