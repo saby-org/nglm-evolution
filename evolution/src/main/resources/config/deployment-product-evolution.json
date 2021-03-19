@@ -16,7 +16,7 @@
   "kafkaRetentionDaysExpiredTokens"   : 31,
   "kafkaRetentionDaysExpiredVouchers" : 31,
   "kafkaRetentionDaysLoyaltyPrograms" : 31,
-  "kafkaRetentionDaysTargets"         : 91,
+  "kafkaRetentionDaysTargets"         : 7,
   
   "firstDayOfTheWeek"                 : "Monday",
 
