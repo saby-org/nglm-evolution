@@ -130,7 +130,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   //  variables
   //
 
-  private static final int threadNumber = 1;   //TODO : make this configurable (would even be better if it is used)
+  private static final int threadNumber = 50;   //TODO : make this configurable (would even be better if it is used)
 
   /*****************************************
   *
@@ -239,7 +239,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     for(int i = 0; i < threadNumber; i++)
       {
-        threads.add(new Thread(this, "PurchaseFulfillmentManagerThread_"+i));
+        Thread t = new Thread(this, "PurchaseFulfillmentManagerThread_"+i);
+        threads.add(t);
+        t.start();
       }
     
     //

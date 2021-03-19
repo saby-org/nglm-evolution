@@ -49,7 +49,7 @@ public class OfferReportDriver extends ReportDriver
     Random r = new Random();
     int apiProcessKey = r.nextInt(999);
 
-    log.info("apiProcessKey" + apiProcessKey);
+    log.trace("apiProcessKey " + apiProcessKey);
 
     offerService = new OfferService(kafka, "offerReportDriver-offerService-" + apiProcessKey, Deployment.getOfferTopic(), false);
     offerService.start();

@@ -45,7 +45,7 @@ public class ProductReportDriver extends ReportDriver
     Random r = new Random();
     int apiProcessKey = r.nextInt(999);
 
-    log.info("apiProcessKey" + apiProcessKey);
+    log.trace("apiProcessKey " + apiProcessKey);
 
     boolean header = true;
     int first = 0;
@@ -211,7 +211,7 @@ public class ProductReportDriver extends ReportDriver
                 headers = headers.substring(0, headers.length() - 1);
                 writer.write(headers.getBytes());
                 writer.write("\n".getBytes());
-                log.info("product headers :", headers);
+                log.debug("product headers :", headers);
                 addHeaders = false;
               }
             String line = ReportUtils.formatResult(productFields);
@@ -224,19 +224,19 @@ public class ProductReportDriver extends ReportDriver
 
     if (last)
       {
-        log.info("Last offer record  inserted into csv");
+        log.info("Last offer record inserted into csv");
         writeCompleted(writer);
       }
   }
 
   private void writeCompleted(ZipOutputStream writer) throws IOException, InterruptedException
   {
-    log.info(" writeCompleted ");
-    log.info("product Service {}", productService.toString());
+    log.trace("writeCompleted ");
+    log.trace("product Service {}", productService.toString());
     writer.flush();
     writer.closeEntry();
     writer.close();
-    log.info("csv Writer closed");
+    log.trace("csv Writer closed");
   }
 
 

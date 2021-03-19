@@ -69,7 +69,7 @@ public class JourneysReportDriver extends ReportDriver
     Random r = new Random();
     int apiProcessKey = r.nextInt(999);
 
-    log.info("apiProcessKey" + apiProcessKey);
+    log.trace("apiProcessKey " + apiProcessKey);
 
     String journeyTopic = Deployment.getJourneyTopic();
     String pointTopic = Deployment.getPointTopic();
