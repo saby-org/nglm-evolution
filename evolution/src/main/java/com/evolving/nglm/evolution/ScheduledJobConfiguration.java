@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentJSONReader;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.datacubes.mapping.ModuleInformation.ModuleFeature;
@@ -61,7 +62,7 @@ public class ScheduledJobConfiguration
   * Constructors
   *
   *****************************************/
-  public ScheduledJobConfiguration(String jobID, Type type, boolean enabled, boolean scheduledAtRestart, String cronEntry, int tenantID) 
+  public ScheduledJobConfiguration(String jobID, Type type, boolean enabled, boolean scheduledAtRestart, String cronEntry, int tenantID, String timeZone) 
   {
     this.jobID = jobID;
     this.type = type;
@@ -69,17 +70,18 @@ public class ScheduledJobConfiguration
     this.scheduledAtRestart = scheduledAtRestart;
     this.cronEntry = cronEntry;
     this.tenantID = tenantID;
-    this.timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+    this.timeZone = timeZone;
   }
   
-  public ScheduledJobConfiguration(String jobID, int tenantID, JSONObject jsonRoot) throws JSONUtilitiesException 
+  public ScheduledJobConfiguration(String jobID, DeploymentJSONReader jsonReader, int tenantID, String timeZone) throws JSONUtilitiesException 
   {
     this(jobID,
-        Type.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "type", true)),
-        JSONUtilities.decodeBoolean(jsonRoot, "enabled", true),
-        JSONUtilities.decodeBoolean(jsonRoot, "scheduledAtRestart", true),
-        JSONUtilities.decodeString(jsonRoot, "cronEntry", true),
-        tenantID);
+        Type.fromExternalRepresentation(jsonReader.decodeString("type")),
+        jsonReader.decodeBoolean("enabled"),
+        jsonReader.decodeBoolean("scheduledAtRestart"),
+        jsonReader.decodeString("cronEntry"),
+        tenantID,
+        timeZone);
   }
 
   /*****************************************

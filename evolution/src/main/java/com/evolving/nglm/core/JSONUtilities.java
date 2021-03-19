@@ -674,6 +674,51 @@ public class JSONUtilities
     return result;
   }
 
+  
+  /****************************************
+  *
+  * json copy
+  * This copy is intended to be close to a DEEP COPY
+  * BUT for "primitive" types (that are still Objects here) it is only a copy by reference
+  *
+  ****************************************/
+  public static JSONObject jsonCopyMap(JSONObject source) 
+  {
+    JSONObject result = new JSONObject();
+    for(Object key : source.keySet()) {
+      Object value = source.get(key);
+      result.put(key, jsonCopy(value));
+    }
+    
+    return result;
+  }
+  
+  public static JSONArray jsonCopyArray(JSONArray source) {
+    JSONArray result = new JSONArray();
+    for(Object value : result) {
+      result.add(jsonCopy(value));
+    }
+    
+    return result;
+  }
+  
+  private static Object jsonCopy(Object source) {
+    if(source instanceof JSONObject) {
+      return jsonCopyMap((JSONObject) source);
+    }
+    else if(source instanceof JSONArray) {
+      return jsonCopyArray((JSONArray) source);
+    }
+    else {
+      return source; // WARNING : HERE IT IS ONLY A COPY BY REFERENCE
+    }
+  }
+  
+  /****************************************
+  *
+  *  jsonMerge
+  *
+  ****************************************/
   // this merge 2 JSON objects :
   // - merging non shared attributes together
   // - overriding shared attributes of 1st arg "initialJson" with ones from 2nd arg "overriderJson"

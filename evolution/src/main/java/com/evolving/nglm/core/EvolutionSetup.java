@@ -92,6 +92,15 @@ public class EvolutionSetup
       HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
       httpClientBuilder.setConnectionManager(httpClientConnectionManager);
       httpClient = httpClientBuilder.build();
+      
+      //
+      // Deployment.json load & check
+      //
+      System.out.println("");
+      System.out.println("================================================================================");
+      System.out.println("= DEPLOYMENT CHECK                                                             =");
+      System.out.println("================================================================================");
+      Deployment.getDefault();
   
       //
       // kafka topics

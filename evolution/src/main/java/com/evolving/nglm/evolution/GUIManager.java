@@ -811,7 +811,6 @@ public class GUIManager
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
-    String tenantTopic = "tenant";
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 

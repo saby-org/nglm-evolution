@@ -2,8 +2,7 @@ package com.evolving.nglm.core;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -11,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -29,20 +27,15 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.evolution.BillingMode;
 import com.evolving.nglm.evolution.CallingChannelProperty;
 import com.evolving.nglm.evolution.CatalogCharacteristicUnit;
 import com.evolving.nglm.evolution.CommunicationChannel;
-import com.evolving.nglm.evolution.CommunicationChannelTimeWindow;
-import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.CriterionField;
 import com.evolving.nglm.evolution.CriterionFieldRetriever;
 import com.evolving.nglm.evolution.CustomerMetaData;
 import com.evolving.nglm.evolution.DNBOMatrixVariable;
 import com.evolving.nglm.evolution.DeliveryManagerAccount;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
-import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.EvolutionEngine;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration;
 import com.evolving.nglm.evolution.EvolutionEngineExtension;
@@ -58,17 +51,12 @@ import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
 import com.evolving.nglm.evolution.OfferProperty;
 import com.evolving.nglm.evolution.PartnerType;
 import com.evolving.nglm.evolution.ProfileChangeEvent;
-import com.evolving.nglm.evolution.PropensityRule;
-import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.ScoringEngine;
 import com.evolving.nglm.evolution.ScoringType;
 import com.evolving.nglm.evolution.SubscriberProfile;
-import com.evolving.nglm.evolution.SupportedCurrency;
 import com.evolving.nglm.evolution.SupportedDataType;
 import com.evolving.nglm.evolution.SupportedLanguage;
 import com.evolving.nglm.evolution.SupportedRelationship;
-import com.evolving.nglm.evolution.SupportedTimeUnit;
 import com.evolving.nglm.evolution.SupportedTokenCodesFormat;
 import com.evolving.nglm.evolution.SupportedVoucherCodePattern;
 import com.evolving.nglm.evolution.ThirdPartyMethodAccessLevel;
@@ -86,7 +74,13 @@ import com.evolving.nglm.evolution.kafka.Topic;
 public class DeploymentCommon
 {
   protected static final Logger log = LoggerFactory.getLogger(DeploymentCommon.class);
-  protected static Map<Integer, JSONObject> jsonConfigPerTenant = new HashMap<>();
+  
+  private static Map<Integer, JSONObject> jsonConfigPerTenant;
+  private static Map<Integer, Deployment> deploymentsPerTenant; // Will contains instance of Deployment class from nglm-project.
+  
+  public static Set<Integer> getTenantIDs() { return jsonConfigPerTenant.keySet(); }
+  public static Deployment getDeployment(int tenantID) { return deploymentsPerTenant.get(tenantID); }
+  public static Deployment getDefault() { return getDeployment(0); }
   
   /**
    * Static initialization of DeploymentCommon 
@@ -101,24 +95,26 @@ public class DeploymentCommon
     try
       {
         //
+        // Init variables 
+        //
+        jsonConfigPerTenant = new HashMap<>();
+        deploymentsPerTenant = new HashMap<>();
+            
+        //
         // Extract jsonRoot from Zookeeper
         //
         JSONObject brutJsonRoot = getBrutJsonRoot();
-    
-        //
-        // Build & store every version of jsonRoot per tenant
-        //
-        buildJsonPerTenant(brutJsonRoot);
         
         //
-        // Get jsonRoot for tenantID = 0 (common settings)
+        // Remove comments fields
         //
-        JSONObject commonJsonRoot = jsonConfigPerTenant.get(0); 
+        JSONObject noCommentsJsonRoot = removeComments(brutJsonRoot);
+        DeploymentJSONReader commonJsonReader = new DeploymentJSONReader(noCommentsJsonRoot);
         
         //
         // Init settings that will be needed for the initialization of GUIManagedObject static code
         //
-        initializeCoreSettings(commonJsonRoot);
+        loadCoreSettings(commonJsonReader);
         
         //
         // Init of static GUIManagedObject
@@ -129,13 +125,69 @@ public class DeploymentCommon
         GUIManagedObject.commonSchema();
         
         //
-        // Init of all other common settings
+        // Init of all other common settings (nglm-product)
         //
-        initializeCommonSettings(jsonConfigPerTenant.get(0));
+        loadProductCommonSettings(commonJsonReader);
+        
+        //
+        // Init of all other common settings (nglm-project)
+        //
+        Class<? extends Deployment> projectDeploymentClass = getProjectDeploymentClass();
+        Method loadProjectCommonSettings = projectDeploymentClass.getMethod("loadProjectCommonSettings", DeploymentJSONReader.class);
+        loadProjectCommonSettings.invoke(null, commonJsonReader);
+        
+        //
+        // Build remaining json after common variable extraction
+        // Meaning that this json does only contain variables that can be override.
+        //
+        JSONObject remainingJsonRoot = commonJsonReader.buildRemaining();
+    
+        //
+        // Build & store every version of jsonRoot per tenant
+        //
+        buildJsonPerTenant(remainingJsonRoot);
+        
+        //
+        // Check that at least one tenant is defined
+        //
+        if(getTenantIDs().size() <= 1) {
+          throw new ServerRuntimeException("You need to define at least one tenant in your deployment JSON settings");
+        }
+        
+        //
+        // Load all tenant Deployment instance 
+        //
+        for(Integer tenantID : getTenantIDs()) {
+          Deployment deployment = projectDeploymentClass.newInstance();
+          
+          //
+          // Retrieve jsonRoot
+          //
+          JSONObject jsonRoot = jsonConfigPerTenant.get(tenantID);
+          DeploymentJSONReader jsonReader = new DeploymentJSONReader(jsonRoot);
+          
+          //
+          // Load variables (nglm-product and nglm-project)
+          //
+          deployment.loadProductTenantSettings(jsonReader, tenantID);
+          deployment.loadProjectTenantSettings(jsonReader, tenantID);
+          
+          //
+          // Display warnings (unused fields, forbidden overrides)
+          //
+          if(tenantID != 0) { // Do not display for default, some tenant variables have no "default" meaning
+            jsonReader.checkUnusedFields("jsonRoot(tenant "+tenantID+")");
+          }
+          
+          //
+          // Save it
+          //
+          deploymentsPerTenant.put(tenantID, deployment);
+        }
       } 
     catch (Exception e)
       {
-        throw new RuntimeException("Unable to run DeploymentCommon static initialization.", e);
+        throw new ServerRuntimeException("Unable to run DeploymentCommon static initialization.", e);
       }
   }
   
@@ -148,6 +200,17 @@ public class DeploymentCommon
   // /!\ WARNING: DO NOT INSTANTIATE ANY VARIABLE HERE. BECAUSE IT IS VERY BAD PRACTICE, PLUS
   // IT WILL BE READ AFTER THE STATIC MAIN BLOC AND THEREFORE WILL OVERRIDE THE VALUE AFTERWARDS,
   // RESULTING IN A NULL POINTER EXCEPTION, OR WORSE.
+  
+  //
+  // Core 
+  //
+  private static String projectDeploymentClassName;
+  private static String criterionFieldRetrieverClassName;
+  private static String evolutionEngineExtensionClassName;
+  private static String guiManagerExtensionClassName;
+  private static String subscriberProfileClassName;
+  private static String extendedSubscriberProfileClassName;
+  private static String evolutionEngineExternalAPIClassName;
   
   //
   // System
@@ -315,12 +378,6 @@ public class DeploymentCommon
   private static String subscriberGroupLoaderAlternateID;
   private static String getCustomerAlternateID;
   private static boolean subscriberGroupLoaderAutoProvision;
-  private static String criterionFieldRetrieverClassName;
-  private static String evolutionEngineExtensionClassName;
-  private static String guiManagerExtensionClassName;
-  private static String subscriberProfileClassName;
-  private static String extendedSubscriberProfileClassName;
-  private static String evolutionEngineExternalAPIClassName;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents;
   private static Map<String,CriterionField> profileChangeDetectionCriterionFields;
   private static Map<String,CriterionField> profileChangeGeneratedCriterionFields;
@@ -411,6 +468,7 @@ public class DeploymentCommon
   * Common accessors
   *
   *****************************************/
+  
   //
   // System
   //
@@ -569,11 +627,6 @@ public class DeploymentCommon
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
   public static String getGetCustomerAlternateID() { return getCustomerAlternateID; }  // EVPRO-99 check for tenant and static
   public static boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
-  public static String getCriterionFieldRetrieverClassName() { return criterionFieldRetrieverClassName; }
-  public static String getEvolutionEngineExtensionClassName() { return evolutionEngineExtensionClassName; }
-  public static String getGUIManagerExtensionClassName() { return guiManagerExtensionClassName; }
-  public static String getSubscriberProfileClassName() { return subscriberProfileClassName; }
-  public static String getExtendedSubscriberProfileClassName() { return extendedSubscriberProfileClassName; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
   public static boolean getEnableProfileSegmentChange() { return enableProfileSegmentChange; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
@@ -676,13 +729,14 @@ public class DeploymentCommon
   * Load all variables need by static code (GUIManagedObject init)
   *
   ****************************************/
-  private static void initializeCoreSettings(JSONObject jsonRoot) throws Exception {
-    criterionFieldRetrieverClassName = JSONUtilities.decodeString(jsonRoot, "criterionFieldRetrieverClass", true);
-    evolutionEngineExtensionClassName = JSONUtilities.decodeString(jsonRoot, "evolutionEngineExtensionClass", true);
-    guiManagerExtensionClassName = JSONUtilities.decodeString(jsonRoot, "guiManagerExtensionClass", false);
-    subscriberProfileClassName = JSONUtilities.decodeString(jsonRoot, "subscriberProfileClass", true);
-    extendedSubscriberProfileClassName = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileClass", true);
-    evolutionEngineExternalAPIClassName = JSONUtilities.decodeString(jsonRoot, "externalAPIClass", false);
+  private static void loadCoreSettings(DeploymentJSONReader jsonReader) throws Exception {
+    projectDeploymentClassName = jsonReader.decodeString("projectDeploymentClass");
+    criterionFieldRetrieverClassName = jsonReader.decodeString("criterionFieldRetrieverClass");
+    evolutionEngineExtensionClassName = jsonReader.decodeString("evolutionEngineExtensionClass");
+    guiManagerExtensionClassName = jsonReader.decodeString("guiManagerExtensionClass");
+    subscriberProfileClassName = jsonReader.decodeString("subscriberProfileClass");
+    extendedSubscriberProfileClassName = jsonReader.decodeString("extendedSubscriberProfileClass");
+    evolutionEngineExternalAPIClassName = jsonReader.decodeString("externalAPIClass");
   }
   
   /****************************************
@@ -690,13 +744,18 @@ public class DeploymentCommon
   * Load all common variables from JSONObject
   *
   ****************************************/
-  private static void initializeCommonSettings(JSONObject jsonRoot) throws Exception {
+  // This method needs to be overriden in nglm-project, even with nothing inside if there is nothing to do.
+  protected static void loadProjectCommonSettings(DeploymentJSONReader jsonReader) throws Exception {
+    throw new ServerRuntimeException("loadProjectCommonSettings methods needs to be overriden in your project Deployment class.");
+  }
+  
+  private static void loadProductCommonSettings(DeploymentJSONReader jsonReader) throws Exception {
     //
     // System
     //
-    licenseManagement = JSONUtilities.decodeJSONObject(jsonRoot, "licenseManagement", true);
-    evolutionVersion = JSONUtilities.decodeString(jsonRoot, "evolutionVersion", true);
-    customerVersion = JSONUtilities.decodeString(jsonRoot, "customerVersion", true);
+    licenseManagement = jsonReader.decodeJSONObject("licenseManagement"); // EVPRO-99
+    evolutionVersion = jsonReader.decodeString("evolutionVersion");
+    customerVersion = jsonReader.decodeString("customerVersion");
     
     //
     // Elasticsearch
@@ -715,42 +774,143 @@ public class DeploymentCommon
     elasticsearchUserName = System.getenv("ELASTICSEARCH_USERNAME");
     elasticsearchUserPassword = System.getenv("ELASTICSEARCH_USERPASSWORD");
     
-    elasticsearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchScrollSize", true);
-    elasticSearchScrollKeepAlive = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollKeepAlive", 0);
+    elasticsearchScrollSize = jsonReader.decodeInteger("elasticsearchScrollSize");
+    elasticSearchScrollKeepAlive = jsonReader.decodeInteger("elasticSearchScrollKeepAlive");
     // Shards & replicas
-    elasticsearchDefaultShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchDefaultShards", true);
-    elasticsearchDefaultReplicas = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchDefaultReplicas", true);
-    elasticsearchSubscriberprofileShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchSubscriberprofileShards", elasticsearchDefaultShards);
-    elasticsearchSubscriberprofileReplicas = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchSubscriberprofileReplicas",elasticsearchDefaultReplicas);
-    elasticsearchSnapshotShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchSnapshotShards", elasticsearchDefaultShards);
-    elasticsearchSnapshotReplicas = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchSnapshotReplicas",elasticsearchDefaultReplicas);
-    elasticsearchLiveVoucherShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchLiveVoucherShards", elasticsearchDefaultShards);
-    elasticsearchLiveVoucherReplicas = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchLiveVoucherReplicas",elasticsearchDefaultReplicas);
+    elasticsearchDefaultShards = jsonReader.decodeInteger("elasticsearchDefaultShards");
+    elasticsearchDefaultReplicas = jsonReader.decodeInteger("elasticsearchDefaultReplicas");
+    elasticsearchSubscriberprofileShards = jsonReader.decodeInteger("elasticsearchSubscriberprofileShards");
+    elasticsearchSubscriberprofileReplicas = jsonReader.decodeInteger("elasticsearchSubscriberprofileReplicas");
+    elasticsearchSnapshotShards = jsonReader.decodeInteger("elasticsearchSnapshotShards");
+    elasticsearchSnapshotReplicas = jsonReader.decodeInteger("elasticsearchSnapshotReplicas");
+    elasticsearchLiveVoucherShards = jsonReader.decodeInteger("elasticsearchLiveVoucherShards");
+    elasticsearchLiveVoucherReplicas = jsonReader.decodeInteger("elasticsearchLiveVoucherReplicas");
     // Retention days
-    elasticsearchRetentionDaysODR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysODR", true);
-    elasticsearchRetentionDaysBDR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysBDR", true);
-    elasticsearchRetentionDaysMDR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysMDR", true);
-    elasticsearchRetentionDaysTokens = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysTokens", true);
-    elasticsearchRetentionDaysSnapshots = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysSnapshots", true);
-    elasticsearchRetentionDaysVDR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysVDR", true);
-
+    elasticsearchRetentionDaysODR = jsonReader.decodeInteger("ESRetentionDaysODR");
+    elasticsearchRetentionDaysBDR = jsonReader.decodeInteger("ESRetentionDaysBDR");
+    elasticsearchRetentionDaysMDR = jsonReader.decodeInteger("ESRetentionDaysMDR");
+    elasticsearchRetentionDaysTokens = jsonReader.decodeInteger("ESRetentionDaysTokens");
+    elasticsearchRetentionDaysSnapshots = jsonReader.decodeInteger("ESRetentionDaysSnapshots");
+    elasticsearchRetentionDaysVDR = jsonReader.decodeInteger("ESRetentionDaysVDR");
+    
+    journeyMetricDeclarations = jsonReader.decodeMapFromArray(JourneyMetricDeclaration.class, "journeyMetrics");
+    
     //
+    // Kafka
     //
-    // ????????????????????????????????????????????????????????????????????????
-    //
-    //  alternateIDs
-    //
-    alternateIDs = new LinkedHashMap<String,AlternateID>();
-    JSONArray alternateIDValues = JSONUtilities.decodeJSONArray(jsonRoot, "alternateIDs", false);
-    if (alternateIDValues != null)
-      {
-        for (int i=0; i<alternateIDValues.size(); i++)
-          {
-            JSONObject alternateIDJSON = (JSONObject) alternateIDValues.get(i);
-            AlternateID alternateID = new AlternateID(alternateIDJSON);
-            alternateIDs.put(alternateID.getID(), alternateID);
-          }
+    topicSubscriberPartitions = Integer.parseInt(jsonReader.decodeString("topicSubscriberPartitions"));
+    topicReplication = Integer.parseInt(jsonReader.decodeString("topicReplication"));
+    topicMinInSyncReplicas = jsonReader.decodeString("topicMinInSyncReplicas");
+    topicRetentionShortMs = ""+(jsonReader.decodeInteger("topicRetentionShortHour") * 3600 * 1000L);
+    topicRetentionMs = ""+(jsonReader.decodeInteger("topicRetentionDay") * 24 * 3600 * 1000L);
+    topicRetentionLongMs = ""+(jsonReader.decodeInteger("topicRetentionLongDay") * 24 * 3600 * 1000L);
+    kafkaRetentionDaysExpiredTokens = jsonReader.decodeInteger("kafkaRetentionDaysExpiredTokens");
+    kafkaRetentionDaysExpiredVouchers = jsonReader.decodeInteger("kafkaRetentionDaysExpiredVouchers");
+    kafkaRetentionDaysJourneys = jsonReader.decodeInteger("kafkaRetentionDaysJourneys");
+    kafkaRetentionDaysCampaigns = jsonReader.decodeInteger("kafkaRetentionDaysCampaigns");
+    // adjusting and warning if too low for journey metric feature to work
+    for (JourneyMetricDeclaration journeyMetricDeclaration : getJourneyMetricDeclarations().values()){
+      if(journeyMetricDeclaration.getPostPeriodDays() > kafkaRetentionDaysCampaigns + 2){
+        kafkaRetentionDaysCampaigns = journeyMetricDeclaration.getPostPeriodDays() + 2;
+        log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric "+journeyMetricDeclaration.getID()+" postPeriodDays of "+journeyMetricDeclaration.getPostPeriodDays()+" (need at least 2 days more)");
       }
+    }
+    kafkaRetentionDaysBulkCampaigns = jsonReader.decodeInteger("kafkaRetentionDaysBulkCampaigns");
+    kafkaRetentionDaysLoyaltyPrograms = jsonReader.decodeInteger("kafkaRetentionDaysLoyaltyPrograms");
+    kafkaRetentionDaysODR = jsonReader.decodeInteger("kafkaRetentionDaysODR");
+    kafkaRetentionDaysBDR = jsonReader.decodeInteger("kafkaRetentionDaysBDR");
+    kafkaRetentionDaysMDR = jsonReader.decodeInteger("kafkaRetentionDaysMDR");
+    kafkaRetentionDaysTargets = jsonReader.decodeInteger("kafkaRetentionDaysTargets");
+    maxPollIntervalMs = jsonReader.decodeInteger("maxPollIntervalMs");
+    purchaseTimeoutMs = jsonReader.decodeInteger("purchaseTimeoutMs");
+    
+    //
+    // Topics
+    //
+    subscriberTraceControlTopic = jsonReader.decodeString("subscriberTraceControlTopic");
+    subscriberTraceControlAssignSubscriberIDTopic = jsonReader.decodeString("subscriberTraceControlAssignSubscriberIDTopic");
+    subscriberTraceTopic = jsonReader.decodeString("subscriberTraceTopic");
+    simulatedTimeTopic = jsonReader.decodeString("simulatedTimeTopic");
+    assignSubscriberIDsTopic = jsonReader.decodeString("assignSubscriberIDsTopic");
+    updateExternalSubscriberIDTopic = jsonReader.decodeString("updateExternalSubscriberIDTopic");
+    assignExternalSubscriberIDsTopic = jsonReader.decodeString("assignExternalSubscriberIDsTopic");
+    recordSubscriberIDTopic = jsonReader.decodeString("recordSubscriberIDTopic");
+    recordAlternateIDTopic = jsonReader.decodeString("recordAlternateIDTopic");
+    autoProvisionedSubscriberChangeLog = jsonReader.decodeString("autoProvisionedSubscriberChangeLog");
+    autoProvisionedSubscriberChangeLogTopic = jsonReader.decodeString("autoProvisionedSubscriberChangeLogTopic");
+    rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic = jsonReader.decodeString("rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic");
+    cleanupSubscriberTopic = jsonReader.decodeString("cleanupSubscriberTopic");
+    journeyTopic = jsonReader.decodeString("journeyTopic");
+    journeyTemplateTopic = jsonReader.decodeString("journeyTemplateTopic");
+    segmentationDimensionTopic = jsonReader.decodeString("segmentationDimensionTopic");
+    pointTopic = jsonReader.decodeString("pointTopic");
+    complexObjectTypeTopic = jsonReader.decodeString("complexObjectTypeTopic");
+    offerTopic = jsonReader.decodeString("offerTopic");
+    reportTopic = jsonReader.decodeString("reportTopic");
+    paymentMeanTopic = jsonReader.decodeString("paymentMeanTopic");
+    presentationStrategyTopic = jsonReader.decodeString("presentationStrategyTopic");
+    scoringStrategyTopic = jsonReader.decodeString("scoringStrategyTopic");
+    callingChannelTopic = jsonReader.decodeString("callingChannelTopic");
+    salesChannelTopic = jsonReader.decodeString("salesChannelTopic");
+    supplierTopic = jsonReader.decodeString("supplierTopic");
+    resellerTopic = jsonReader.decodeString("resellerTopic");
+    productTopic = jsonReader.decodeString("productTopic");
+    catalogCharacteristicTopic = jsonReader.decodeString("catalogCharacteristicTopic");
+    contactPolicyTopic = jsonReader.decodeString("contactPolicyTopic");
+    journeyObjectiveTopic = jsonReader.decodeString("journeyObjectiveTopic");
+    offerObjectiveTopic = jsonReader.decodeString("offerObjectiveTopic");
+    productTypeTopic = jsonReader.decodeString("productTypeTopic");
+    ucgRuleTopic = jsonReader.decodeString("ucgRuleTopic");
+    deliverableTopic = jsonReader.decodeString("deliverableTopic");
+    tokenTypeTopic = jsonReader.decodeString("tokenTypeTopic");
+    voucherTypeTopic = jsonReader.decodeString("voucherTypeTopic");
+    voucherTopic = jsonReader.decodeString("voucherTopic");
+    subscriberMessageTemplateTopic = jsonReader.decodeString("subscriberMessageTemplateTopic");
+    guiAuditTopic = jsonReader.decodeString("guiAuditTopic");
+    subscriberGroupTopic = jsonReader.decodeString("subscriberGroupTopic");
+    subscriberGroupAssignSubscriberIDTopic = jsonReader.decodeString("subscriberGroupAssignSubscriberIDTopic");
+    subscriberGroupEpochTopic = jsonReader.decodeString("subscriberGroupEpochTopic");
+    ucgStateTopic = jsonReader.decodeString("ucgStateTopic");
+    renamedProfileCriterionFieldTopic = jsonReader.decodeString("renamedProfileCriterionFieldTopic");
+    uploadedFileTopic = jsonReader.decodeString("uploadedFileTopic");
+    targetTopic = jsonReader.decodeString("targetTopic");
+    exclusionInclusionTargetTopic = jsonReader.decodeString("exclusionInclusionTargetTopic");
+    dnboMatrixTopic = jsonReader.decodeString("dnboMatrixTopic");
+    dynamicEventDeclarationsTopic = jsonReader.decodeString("dynamicEventDeclarationsTopic");
+    dynamicCriterionFieldsTopic = jsonReader.decodeString("dynamicCriterionFieldTopic");
+    communicationChannelBlackoutTopic = jsonReader.decodeString("communicationChannelBlackoutTopic");
+    communicationChannelTimeWindowTopic = jsonReader.decodeString("communicationChannelTimeWindowTopic");
+    communicationChannelTopic = jsonReader.decodeString("communicationChannelTopic");
+    tokenChangeTopic = jsonReader.decodeString("tokenChangeTopic");
+    loyaltyProgramTopic = jsonReader.decodeString("loyaltyProgramTopic");
+    timedEvaluationTopic = jsonReader.decodeString("timedEvaluationTopic");
+    evaluateTargetsTopic = jsonReader.decodeString("evaluateTargetsTopic");
+    subscriberProfileForceUpdateTopic = jsonReader.decodeString("subscriberProfileForceUpdateTopic");
+    executeActionOtherSubscriberTopic = jsonReader.decodeString("executeActionOtherSubscriberTopic");
+    subscriberStateChangeLog = jsonReader.decodeString("subscriberStateChangeLog");
+    subscriberStateChangeLogTopic = jsonReader.decodeString("subscriberStateChangeLogTopic");
+    extendedSubscriberProfileChangeLog = jsonReader.decodeString("extendedSubscriberProfileChangeLog");
+    extendedSubscriberProfileChangeLogTopic = jsonReader.decodeString("extendedSubscriberProfileChangeLogTopic");
+    subscriberHistoryChangeLog = jsonReader.decodeString("subscriberHistoryChangeLog");
+    subscriberHistoryChangeLogTopic = jsonReader.decodeString("subscriberHistoryChangeLogTopic");
+    journeyStatisticTopic = jsonReader.decodeString("journeyStatisticTopic");
+    journeyMetricTopic = jsonReader.decodeString("journeyMetricTopic");
+    deliverableSourceTopic = jsonReader.decodeString("deliverableSourceTopic");
+    presentationLogTopic = jsonReader.decodeString("presentationLogTopic");
+    acceptanceLogTopic = jsonReader.decodeString("acceptanceLogTopic");
+    segmentContactPolicyTopic = jsonReader.decodeString("segmentContactPolicyTopic");
+    profileChangeEventTopic = jsonReader.decodeString("profileChangeEventTopic");
+    profileSegmentChangeEventTopic = jsonReader.decodeString("profileSegmentChangeEventTopic");
+    profileLoyaltyProgramChangeEventTopic = jsonReader.decodeString("profileLoyaltyProgramChangeEventTopic");
+    voucherActionTopic = jsonReader.decodeString("voucherActionTopic");
+    fileWithVariableEventTopic = jsonReader.decodeString("fileWithVariableEventTopic");
+    tokenRedeemedTopic = jsonReader.decodeString("tokenRedeemedTopic");
+    criterionFieldAvailableValuesTopic = jsonReader.decodeString("criterionFieldAvailableValuesTopic");
+    sourceAddressTopic = jsonReader.decodeString("sourceAddressTopic");
+    voucherChangeRequestTopic = jsonReader.decodeString("voucherChangeRequestTopic");
+    voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
+    
+    alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     
     //
     //  externalSubscriberID
@@ -766,155 +926,18 @@ public class DeploymentCommon
           }
       }
     
-    //
-    //  journeyMetricDeclarations
-    //
-    journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
-    JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", new JSONArray());
-    for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
-      {
-        JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
-        JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
-        journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
-      }
-    
-    
-    //
-    // Kafka
-    //
-    topicSubscriberPartitions = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "topicSubscriberPartitions", true));
-    topicReplication = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "topicReplication", true));
-    topicMinInSyncReplicas = JSONUtilities.decodeString(jsonRoot, "topicMinInSyncReplicas", true);
-    topicRetentionShortMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionShortHour", true) * 3600 * 1000L);
-    topicRetentionMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionDay", true) * 24 * 3600 * 1000L);
-    topicRetentionLongMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionLongDay", true) * 24 * 3600 * 1000L);
-    kafkaRetentionDaysExpiredTokens = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysExpiredTokens",31);
-    kafkaRetentionDaysExpiredVouchers = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysExpiredVouchers",31);
-    kafkaRetentionDaysJourneys = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysJourneys",31);
-    kafkaRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysCampaigns",31);
-    // adjusting and warning if too low for journey metric feature to work
-    for (JourneyMetricDeclaration journeyMetricDeclaration : getJourneyMetricDeclarations().values()){
-      if(journeyMetricDeclaration.getPostPeriodDays() > kafkaRetentionDaysCampaigns + 2){
-        kafkaRetentionDaysCampaigns = journeyMetricDeclaration.getPostPeriodDays() + 2;
-        log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric "+journeyMetricDeclaration.getID()+" postPeriodDays of "+journeyMetricDeclaration.getPostPeriodDays()+" (need at least 2 days more)");
-      }
-    }
-    kafkaRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBulkCampaigns",7);
-    kafkaRetentionDaysLoyaltyPrograms = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysLoyaltyPrograms",31);
-    kafkaRetentionDaysODR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysODR",91);
-    kafkaRetentionDaysBDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBDR",91);
-    kafkaRetentionDaysMDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysMDR",91);
-    kafkaRetentionDaysTargets = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysTargets",91);
-    
-    //
-    // Topics
-    //
-    subscriberTraceControlTopic = JSONUtilities.decodeString(jsonRoot, "subscriberTraceControlTopic", "subscribertracecontrol");
-    subscriberTraceControlAssignSubscriberIDTopic = JSONUtilities.decodeString(jsonRoot, "subscriberTraceControlAssignSubscriberIDTopic", "subscribertracecontrol-assignsubscriberid");
-    subscriberTraceTopic = JSONUtilities.decodeString(jsonRoot, "subscriberTraceTopic", "subscribertrace");
-    simulatedTimeTopic = JSONUtilities.decodeString(jsonRoot, "simulatedTimeTopic", "simulatedtime");
-    assignSubscriberIDsTopic = JSONUtilities.decodeString(jsonRoot, "assignSubscriberIDsTopic", (alternateIDs.size() > 0));
-    updateExternalSubscriberIDTopic = JSONUtilities.decodeString(jsonRoot, "updateExternalSubscriberIDTopic", (alternateIDs.size() > 0));
-    assignExternalSubscriberIDsTopic = JSONUtilities.decodeString(jsonRoot, "assignExternalSubscriberIDsTopic", (alternateIDs.size() > 0));
-    recordSubscriberIDTopic = JSONUtilities.decodeString(jsonRoot, "recordSubscriberIDTopic", (alternateIDs.size() > 0));
-    recordAlternateIDTopic = JSONUtilities.decodeString(jsonRoot, "recordAlternateIDTopic", (alternateIDs.size() > 0));
-    autoProvisionedSubscriberChangeLog = JSONUtilities.decodeString(jsonRoot, "autoProvisionedSubscriberChangeLog", (alternateIDs.size() > 0));
-    autoProvisionedSubscriberChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "autoProvisionedSubscriberChangeLogTopic", (alternateIDs.size() > 0));
-    rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic = JSONUtilities.decodeString(jsonRoot, "rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic", (alternateIDs.size() > 0));
-    cleanupSubscriberTopic = JSONUtilities.decodeString(jsonRoot, "cleanupSubscriberTopic", true);
-    journeyTopic = JSONUtilities.decodeString(jsonRoot, "journeyTopic", true);
-    journeyTemplateTopic = JSONUtilities.decodeString(jsonRoot, "journeyTemplateTopic", true);
-    segmentationDimensionTopic = JSONUtilities.decodeString(jsonRoot, "segmentationDimensionTopic", true);
-    pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
-    complexObjectTypeTopic = JSONUtilities.decodeString(jsonRoot, "complexObjectTypeTopic", true);
-    offerTopic = JSONUtilities.decodeString(jsonRoot, "offerTopic", true);
-    reportTopic = JSONUtilities.decodeString(jsonRoot, "reportTopic", true);
-    paymentMeanTopic = JSONUtilities.decodeString(jsonRoot, "paymentMeanTopic", true);
-    presentationStrategyTopic = JSONUtilities.decodeString(jsonRoot, "presentationStrategyTopic", true);
-    scoringStrategyTopic = JSONUtilities.decodeString(jsonRoot, "scoringStrategyTopic", true);
-    callingChannelTopic = JSONUtilities.decodeString(jsonRoot, "callingChannelTopic", true);
-    salesChannelTopic = JSONUtilities.decodeString(jsonRoot, "salesChannelTopic", true);
-    supplierTopic = JSONUtilities.decodeString(jsonRoot, "supplierTopic", true);
-    resellerTopic = JSONUtilities.decodeString(jsonRoot, "resellerTopic", true);
-    productTopic = JSONUtilities.decodeString(jsonRoot, "productTopic", true);
-    catalogCharacteristicTopic = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicTopic", true);
-    contactPolicyTopic = JSONUtilities.decodeString(jsonRoot, "contactPolicyTopic", true);
-    journeyObjectiveTopic = JSONUtilities.decodeString(jsonRoot, "journeyObjectiveTopic", true);
-    offerObjectiveTopic = JSONUtilities.decodeString(jsonRoot, "offerObjectiveTopic", true);
-    productTypeTopic = JSONUtilities.decodeString(jsonRoot, "productTypeTopic", true);
-    ucgRuleTopic = JSONUtilities.decodeString(jsonRoot, "ucgRuleTopic", true);
-    deliverableTopic = JSONUtilities.decodeString(jsonRoot, "deliverableTopic", true);
-    tokenTypeTopic = JSONUtilities.decodeString(jsonRoot, "tokenTypeTopic", true);
-    voucherTypeTopic = JSONUtilities.decodeString(jsonRoot, "voucherTypeTopic", true);
-    voucherTopic = JSONUtilities.decodeString(jsonRoot, "voucherTopic", true);
-    subscriberMessageTemplateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberMessageTemplateTopic", true);
-    guiAuditTopic = JSONUtilities.decodeString(jsonRoot, "guiAuditTopic", true);
-    subscriberGroupTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupTopic", true);
-    subscriberGroupAssignSubscriberIDTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupAssignSubscriberIDTopic", true);
-    subscriberGroupEpochTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupEpochTopic", true);
-    ucgStateTopic = JSONUtilities.decodeString(jsonRoot, "ucgStateTopic", true);
-    renamedProfileCriterionFieldTopic = JSONUtilities.decodeString(jsonRoot, "renamedProfileCriterionFieldTopic", true);
-    uploadedFileTopic = JSONUtilities.decodeString(jsonRoot, "uploadedFileTopic", true);
-    targetTopic = JSONUtilities.decodeString(jsonRoot, "targetTopic", true);
-    exclusionInclusionTargetTopic = JSONUtilities.decodeString(jsonRoot, "exclusionInclusionTargetTopic", true);
-    dnboMatrixTopic = JSONUtilities.decodeString(jsonRoot, "dnboMatrixTopic", true);
-    dynamicEventDeclarationsTopic = JSONUtilities.decodeString(jsonRoot, "dynamicEventDeclarationsTopic", true);
-    dynamicCriterionFieldsTopic = JSONUtilities.decodeString(jsonRoot, "dynamicCriterionFieldTopic", true);
-    communicationChannelBlackoutTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelBlackoutTopic", true);
-    communicationChannelTimeWindowTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelTimeWindowTopic", true);
-    communicationChannelTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelTopic", true);
-    tokenChangeTopic = JSONUtilities.decodeString(jsonRoot, "tokenChangeTopic", true);
-    loyaltyProgramTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramTopic", true);
-    timedEvaluationTopic = JSONUtilities.decodeString(jsonRoot, "timedEvaluationTopic", true);
-    evaluateTargetsTopic = JSONUtilities.decodeString(jsonRoot, "evaluateTargetsTopic", true);
-    subscriberProfileForceUpdateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberProfileForceUpdateTopic", true);
-    executeActionOtherSubscriberTopic = JSONUtilities.decodeString(jsonRoot, "executeActionOtherSubscriberTopic", true);
-    subscriberStateChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberStateChangeLog", true);
-    subscriberStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberStateChangeLogTopic", true);
-    extendedSubscriberProfileChangeLog = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLog", true);
-    extendedSubscriberProfileChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLogTopic", true);
-    subscriberHistoryChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLog", true);
-    subscriberHistoryChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLogTopic", true);
-    journeyStatisticTopic = JSONUtilities.decodeString(jsonRoot, "journeyStatisticTopic", true);
-    journeyMetricTopic = JSONUtilities.decodeString(jsonRoot, "journeyMetricTopic", true);
-    deliverableSourceTopic = JSONUtilities.decodeString(jsonRoot, "deliverableSourceTopic", true);
-    presentationLogTopic = JSONUtilities.decodeString(jsonRoot, "presentationLogTopic", true);
-    acceptanceLogTopic = JSONUtilities.decodeString(jsonRoot, "acceptanceLogTopic", true);
-    segmentContactPolicyTopic = JSONUtilities.decodeString(jsonRoot, "segmentContactPolicyTopic", true);
-    profileChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileChangeEventTopic", true);
-    profileSegmentChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileSegmentChangeEventTopic", true);
-    profileLoyaltyProgramChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileLoyaltyProgramChangeEventTopic", true);
-    voucherActionTopic = JSONUtilities.decodeString(jsonRoot, "voucherActionTopic", true);
-    fileWithVariableEventTopic = JSONUtilities.decodeString(jsonRoot, "fileWithVariableEventTopic", true);
-    tokenRedeemedTopic = JSONUtilities.decodeString(jsonRoot, "tokenRedeemedTopic", true);
-    criterionFieldAvailableValuesTopic = JSONUtilities.decodeString(jsonRoot, "criterionFieldAvailableValuesTopic", true);
-    sourceAddressTopic = JSONUtilities.decodeString(jsonRoot, "sourceAddressTopic", true);
-    voucherChangeRequestTopic = JSONUtilities.decodeString(jsonRoot, "voucherChangeRequestTopic", true);
-    voucherChangeResponseTopic = JSONUtilities.decodeString(jsonRoot, "voucherChangeResponseTopic", true);
-    
-    
-    
-
-    //
-    // TODO EVPRO-99 A TRIER (sortir de Common & retirer static)
-    //
-    
-    
     // Elasticsearch connection settings
     elasticsearchConnectionSettings = new LinkedHashMap<String,ElasticsearchConnectionSettings>();
-    for (Object elasticsearchConnectionSettingsObject:JSONUtilities.decodeJSONArray(jsonRoot, "elasticsearchConnectionSettings", true).toArray()){
+    for (Object elasticsearchConnectionSettingsObject: jsonReader.decodeJSONArray("elasticsearchConnectionSettings").toArray()){
       ElasticsearchConnectionSettings elasticsearchConnectionSetting = new ElasticsearchConnectionSettings((JSONObject) elasticsearchConnectionSettingsObject);
       elasticsearchConnectionSettings.put(elasticsearchConnectionSetting.getId(), elasticsearchConnectionSetting);
     }
     //  cleanupSubscriberElasticsearchIndexes
     cleanupSubscriberElasticsearchIndexes = new HashSet<String>();
-    JSONArray subscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "cleanupSubscriberElasticsearchIndexes", new JSONArray());
-    for (int i=0; i<subscriberESIndexesJSON.size(); i++)
-      {
-        cleanupSubscriberElasticsearchIndexes.add((String) subscriberESIndexesJSON.get(i));
-      }
-    
-    
+    JSONArray subscriberESIndexesJSON = jsonReader.decodeJSONArray("cleanupSubscriberElasticsearchIndexes");
+    for (int i=0; i<subscriberESIndexesJSON.size(); i++) {
+      cleanupSubscriberElasticsearchIndexes.add((String) subscriberESIndexesJSON.get(i));
+    }
     
     //
     // httpServerScalingFactor
@@ -941,52 +964,26 @@ public class DeploymentCommon
       log.warn("Deployment: subscriberprofile.endpoints : '" + getSubscriberProfileEndpoints() + "' seems wrong");
       evolutionEngineInstanceNumbers = 1;
     }
-    
-    log.info("Hello 1");
 
-    subscriberGroupLoaderAlternateID = JSONUtilities.decodeString(jsonRoot, "subscriberGroupLoaderAlternateID", false);
-    getCustomerAlternateID = JSONUtilities.decodeString(jsonRoot, "getCustomerAlternateID", true);
-    subscriberGroupLoaderAutoProvision = JSONUtilities.decodeBoolean(jsonRoot, "subscriberGroupLoaderAutoProvision", Boolean.FALSE);
-    enableProfileSegmentChange = JSONUtilities.decodeBoolean(jsonRoot, "enableProfileSegmentChange", Boolean.FALSE);
-    
-    log.info("Hello 2");
+    subscriberGroupLoaderAlternateID = jsonReader.decodeOptionalString("subscriberGroupLoaderAlternateID"); // if null, disable feature
+    getCustomerAlternateID = jsonReader.decodeString("getCustomerAlternateID");
+    subscriberGroupLoaderAutoProvision = jsonReader.decodeBoolean("subscriberGroupLoaderAutoProvision");
+    enableProfileSegmentChange = jsonReader.decodeBoolean("enableProfileSegmentChange");
 
     //
     // subscriberTrace
     //
-    subscriberTraceControlAlternateID = JSONUtilities.decodeString(jsonRoot, "subscriberTraceControlAlternateID", false);
-    subscriberTraceControlAutoProvision = JSONUtilities.decodeBoolean(jsonRoot, "subscriberTraceControlAutoProvision", Boolean.FALSE);
+    subscriberTraceControlAlternateID = jsonReader.decodeOptionalString("subscriberTraceControlAlternateID"); // if null, disable feature TODO EVPRO-99 a tester !
+    subscriberTraceControlAutoProvision = jsonReader.decodeBoolean("subscriberTraceControlAutoProvision");
+    autoProvisionEvents = jsonReader.decodeMapFromArray(AutoProvisionEvent.class, "autoProvisionEvents");
     
-    
-    //
-    // Topics
-    //
-    
-    maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 300000);
-    purchaseTimeoutMs = JSONUtilities.decodeInteger(jsonRoot, "purchaseTimeoutMs", 15000);
-    
-    
-    //
-    //  autoProvisionEvents
-    //
-    autoProvisionEvents = new LinkedHashMap<String,AutoProvisionEvent>();
-    JSONArray autoProvisionEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "autoProvisionEvents", false);
-    if (autoProvisionEventValues != null)
-      {
-        for (int i=0; i<autoProvisionEventValues.size(); i++)
-          {
-            JSONObject autoProvisionEventJSON = (JSONObject) autoProvisionEventValues.get(i);
-            AutoProvisionEvent autoProvisionEvent = new AutoProvisionEvent(autoProvisionEventJSON);
-            autoProvisionEvents.put(autoProvisionEvent.getID(), autoProvisionEvent);
-          }
-      }
     //
     //  evolutionEngineEvents
     //
     
     //  deployment-level events
     evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
-    JSONArray evolutionEngineEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionEngineEvents", true);
+    JSONArray evolutionEngineEventValues = jsonReader.decodeJSONArray("evolutionEngineEvents");
     for (int i=0; i<evolutionEngineEventValues.size(); i++)
       {
         JSONObject evolutionEngineEventJSON = (JSONObject) evolutionEngineEventValues.get(i);
@@ -995,7 +992,7 @@ public class DeploymentCommon
       }
 
     // core-level events
-    JSONArray evolutionEngineCoreEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionEngineCoreEvents", true);
+    JSONArray evolutionEngineCoreEventValues = jsonReader.decodeJSONArray("evolutionEngineCoreEvents");
     for (int i=0; i<evolutionEngineCoreEventValues.size(); i++)
       {
         JSONObject evolutionEngineEventJSON = (JSONObject) evolutionEngineCoreEventValues.get(i);
@@ -1007,171 +1004,71 @@ public class DeploymentCommon
     //  communicationChannels
     //
     communicationChannels = new LinkedHashMap<>();
-    JSONArray communicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
+    JSONArray communicationChannelsJSONArray = jsonReader.decodeJSONArray("communicationChannels");
     for (int i=0; i<communicationChannelsJSONArray.size(); i++)
       {
         JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);
-        // TODO EVPRO-99 : why tenantID=1 here ?
+        // TODO EVPRO-99 : why tenantID=1 here ? // TODO EVPRO-99 Replace JSONUtilities
         CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON, JSONUtilities.decodeInteger(communicationChannelJSON, "tenantID", 1));
         communicationChannels.put(communicationChannel.getID(), communicationChannel);
       }
     
-    propensityInitialisationPresentationThreshold = JSONUtilities.decodeInteger(jsonRoot, "propensityInitialisationPresentationThreshold", true);
-    propensityInitialisationDurationInDaysThreshold = JSONUtilities.decodeInteger(jsonRoot, "propensityInitialisationDurationInDaysThreshold", true);
-    subscriberProfileRegistrySubject = JSONUtilities.decodeString(jsonRoot, "subscriberProfileRegistrySubject", true);
+    propensityInitialisationPresentationThreshold = jsonReader.decodeInteger("propensityInitialisationPresentationThreshold");
+    propensityInitialisationDurationInDaysThreshold = jsonReader.decodeInteger("propensityInitialisationDurationInDaysThreshold");
+    subscriberProfileRegistrySubject = jsonReader.decodeString("subscriberProfileRegistrySubject");
 
     //
     //  journeyTemplateCapacities
     //
     journeyTemplateCapacities = new LinkedHashMap<String,Long>();    
-    JSONObject journeyTemplateCapacitiesJSON = JSONUtilities.decodeJSONObject(jsonRoot, "journeyTemplateCapacities", true);
+    JSONObject journeyTemplateCapacitiesJSON = jsonReader.decodeJSONObject("journeyTemplateCapacities");
     for (Object key : journeyTemplateCapacitiesJSON.keySet())
       {
         journeyTemplateCapacities.put((String) key, (Long) journeyTemplateCapacitiesJSON.get(key));
       }
     
-    //
-    //  externalAPITopics
-    //
-    externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();
-    JSONArray externalAPITopicValues = JSONUtilities.decodeJSONArray(jsonRoot, "externalAPITopics", false);
-    if (externalAPITopicValues != null)
-      {
-        for (int i=0; i<externalAPITopicValues.size(); i++)
-          {
-            JSONObject externalAPITopicJSON = (JSONObject) externalAPITopicValues.get(i);
-            ExternalAPITopic externalAPITopic = new ExternalAPITopic(externalAPITopicJSON);
-            externalAPITopics.put(externalAPITopic.getID(), externalAPITopic);
-          }
-      }
-
-    //
-    //  partnerTypes
-    //
-    partnerTypes = new LinkedHashMap<String,PartnerType>();
-    JSONArray partnerTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "partnerTypes", true);
-    for (int i=0; i<partnerTypeValues.size(); i++)
-      {
-        JSONObject partnerTypesJSON = (JSONObject) partnerTypeValues.get(i);
-        PartnerType partnerType = new PartnerType(partnerTypesJSON);
-        partnerTypes.put(partnerType.getID(), partnerType);
-      }
-
-    //
-    //  supportedTokenCodesFormats
-    //
-    supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
-    JSONArray supportedTokenCodesFormatsValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTokenCodesFormats", new JSONArray());
-    for (int i=0; i<supportedTokenCodesFormatsValues.size(); i++)
-      {
-        JSONObject supportedTokenCodesFormatJSON = (JSONObject) supportedTokenCodesFormatsValues.get(i);
-        SupportedTokenCodesFormat supportedTokenCodesFormat = new SupportedTokenCodesFormat(supportedTokenCodesFormatJSON);
-        supportedTokenCodesFormats.put(supportedTokenCodesFormat.getID(), supportedTokenCodesFormat);
-      }
+    externalAPITopics = jsonReader.decodeMapFromArray(ExternalAPITopic.class, "externalAPITopics");
+    partnerTypes = jsonReader.decodeMapFromArray(PartnerType.class, "partnerTypes");
+    supportedTokenCodesFormats = jsonReader.decodeMapFromArray(SupportedTokenCodesFormat.class, "supportedTokenCodesFormats");
+    supportedVoucherCodePatternList = jsonReader.decodeMapFromArray(SupportedVoucherCodePattern.class, "supportedVoucherCodePatternList");
+    supportedRelationships = jsonReader.decodeMapFromArray(SupportedRelationship.class, "supportedRelationships");
+    callingChannelProperties = jsonReader.decodeMapFromArray(CallingChannelProperty.class, "callingChannelProperties");
+    catalogCharacteristicUnits = jsonReader.decodeMapFromArray(CatalogCharacteristicUnit.class, "catalogCharacteristicUnits");    
+    supportedDataTypes = jsonReader.decodeMapFromArray(SupportedDataType.class, "supportedDataTypes");
+    subscriberProfileDatacubeMetrics = jsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "subscriberProfileDatacubeMetrics");
     
-    //
-    //  voucherCodePatternList
-    //
-    supportedVoucherCodePatternList = new LinkedHashMap<String,SupportedVoucherCodePattern>();
-    JSONArray voucherCodePatternListValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedVoucherCodePatternList", new JSONArray());
-    for (int i=0; i<voucherCodePatternListValues.size(); i++)
-      {
-        JSONObject voucherCodePatternListJSON = (JSONObject) voucherCodePatternListValues.get(i);
-        SupportedVoucherCodePattern voucherCodePattern = new SupportedVoucherCodePattern(voucherCodePatternListJSON);
-        supportedVoucherCodePatternList.put(voucherCodePattern.getID(), voucherCodePattern);
-      }
+    initialCallingChannelsJSONArray = jsonReader.decodeJSONArray("initialCallingChannels");
+    initialSalesChannelsJSONArray = jsonReader.decodeJSONArray("initialSalesChannels");
+    initialSourceAddressesJSONArray = jsonReader.decodeJSONArray("initialSourceAddresses");
+    initialSuppliersJSONArray = jsonReader.decodeJSONArray("initialSuppliers");
+    initialPartnersJSONArray = jsonReader.decodeJSONArray("initialPartners");
+    initialProductsJSONArray = jsonReader.decodeJSONArray("initialProducts");
+    initialReportsJSONArray = jsonReader.decodeJSONArray("initialReports");
+    initialCatalogCharacteristicsJSONArray = jsonReader.decodeJSONArray("initialCatalogCharacteristics");
+    initialContactPoliciesJSONArray = jsonReader.decodeJSONArray("initialContactPolicies");
+    initialJourneyTemplatesJSONArray = jsonReader.decodeJSONArray("initialJourneyTemplates");
+    initialJourneyObjectivesJSONArray = jsonReader.decodeJSONArray("initialJourneyObjectives");
+    initialOfferObjectivesJSONArray = jsonReader.decodeJSONArray("initialOfferObjectives");
+    initialProductTypesJSONArray = jsonReader.decodeJSONArray("initialProductTypes");
+    initialTokenTypesJSONArray = jsonReader.decodeJSONArray("initialTokenTypes");
+    initialVoucherCodeFormatsJSONArray = jsonReader.decodeJSONArray("initialVoucherCodeFormats");
+    initialSegmentationDimensionsJSONArray = jsonReader.decodeJSONArray("initialSegmentationDimensions");
+    initialComplexObjectJSONArray = jsonReader.decodeJSONArray("initialComplexObjects");
+
+    generateSimpleProfileDimensions = jsonReader.decodeBoolean("generateSimpleProfileDimensions"); // TODO EVPRO-99 move in Deployment ?
     
-    //
-    //  supportedRelationships
-    //
-    supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
-    JSONArray supportedRelationshipValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedRelationships", new JSONArray());
-    for (int i=0; i<supportedRelationshipValues.size(); i++)
-      {
-        JSONObject supportedRelationshipJSON = (JSONObject) supportedRelationshipValues.get(i);
-        SupportedRelationship supportedRelationship = new SupportedRelationship(supportedRelationshipJSON);
-        supportedRelationships.put(supportedRelationship.getID(), supportedRelationship);
-      }
 
-    //
-    //  callingChannelProperties
-    //
-    callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
-    JSONArray callingChannelPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelProperties", true);
-    for (int i=0; i<callingChannelPropertyValues.size(); i++)
-      {
-        JSONObject callingChannelPropertyJSON = (JSONObject) callingChannelPropertyValues.get(i);
-        CallingChannelProperty callingChannelProperty = new CallingChannelProperty(callingChannelPropertyJSON);
-        callingChannelProperties.put(callingChannelProperty.getID(), callingChannelProperty);
-      }
-
-    //
-    //  catalogCharacteristicUnits
-    //
-    catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
-    JSONArray catalogCharacteristicUnitValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristicUnits", new JSONArray());
-    for (int i=0; i<catalogCharacteristicUnitValues.size(); i++)
-      {
-        JSONObject catalogCharacteristicUnitJSON = (JSONObject) catalogCharacteristicUnitValues.get(i);
-        CatalogCharacteristicUnit catalogCharacteristicUnit = new CatalogCharacteristicUnit(catalogCharacteristicUnitJSON);
-        catalogCharacteristicUnits.put(catalogCharacteristicUnit.getID(), catalogCharacteristicUnit);
-      }
-    
-    initialCallingChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCallingChannels", new JSONArray());
-    initialSalesChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSalesChannels", new JSONArray());
-    initialSourceAddressesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSourceAddresses", new JSONArray());
-    initialSuppliersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSuppliers", new JSONArray());
-    initialPartnersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialPartners", new JSONArray());
-    initialProductsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProducts", new JSONArray());
-    initialReportsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialReports", new JSONArray());
-    initialCatalogCharacteristicsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogCharacteristics", new JSONArray());
-    initialContactPoliciesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialContactPolicies", new JSONArray());
-    initialJourneyTemplatesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyTemplates", new JSONArray());
-    initialJourneyObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyObjectives", new JSONArray());
-    initialOfferObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialOfferObjectives", new JSONArray());
-    initialProductTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProductTypes", new JSONArray());
-    initialTokenTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialTokenTypes", new JSONArray());
-    initialVoucherCodeFormatsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialVoucherCodeFormats", new JSONArray());
-    initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
-    initialComplexObjectJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialComplexObjects", new JSONArray());
-
-    generateSimpleProfileDimensions = JSONUtilities.decodeBoolean(jsonRoot, "generateSimpleProfileDimensions", Boolean.TRUE);
-    
-    //
-    //  supportedDataTypes
-    //
-    supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
-    JSONArray supportedDataTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedDataTypes", new JSONArray());
-    for (int i=0; i<supportedDataTypeValues.size(); i++)
-      {
-        JSONObject supportedDataTypeJSON = (JSONObject) supportedDataTypeValues.get(i);
-        SupportedDataType supportedDataType = new SupportedDataType(supportedDataTypeJSON);
-        supportedDataTypes.put(supportedDataType.getID(), supportedDataType);
-      }
-
-    //
-    //  subscriberProfileDatacubeMetrics
-    //
-    subscriberProfileDatacubeMetrics = new LinkedHashMap<String,SubscriberProfileDatacubeMetric>();
-    JSONArray jsonArray = JSONUtilities.decodeJSONArray(jsonRoot, "subscriberProfileDatacubeMetrics", new JSONArray());
-    for (int i=0; i<jsonArray.size(); i++)
-      {
-        JSONObject jsonObject = (JSONObject) jsonArray.get(i);
-        SubscriberProfileDatacubeMetric subscriberProfileDatacubeMetric = new SubscriberProfileDatacubeMetric(jsonObject);
-        subscriberProfileDatacubeMetrics.put(subscriberProfileDatacubeMetric.getID(), subscriberProfileDatacubeMetric);
-      }
 
     //
     //  profileCriterionFields
     //
     profileCriterionFields = new LinkedHashMap<String,CriterionField>();
     baseProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
-    extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
     profileChangeDetectionCriterionFields = new HashMap<>();
     profileChangeGeneratedCriterionFields = new HashMap<>();
     
     //  profileCriterionFields (evolution)
-    JSONArray evCriterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionProfileCriterionFields", new JSONArray());
+    JSONArray evCriterionFieldValues = jsonReader.decodeJSONArray("evolutionProfileCriterionFields");
     for (int i=0; i<evCriterionFieldValues.size(); i++)
       {
         JSONObject criterionFieldJSON = (JSONObject) evCriterionFieldValues.get(i);
@@ -1189,7 +1086,7 @@ public class DeploymentCommon
       }
 
     //  profileCriterionFields (deployment)
-    JSONArray deplCriterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriterionFields", new JSONArray());
+    JSONArray deplCriterionFieldValues = jsonReader.decodeJSONArray("profileCriterionFields");
     for (int i=0; i<deplCriterionFieldValues.size(); i++)
       {
         JSONObject criterionFieldJSON = (JSONObject) deplCriterionFieldValues.get(i);
@@ -1211,98 +1108,26 @@ public class DeploymentCommon
     EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profile update", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
     evolutionEngineEvents.put(profileChangeEvent.getName(), profileChangeEvent);
 
-    //
-    //  extendedProfileCriterionFields
-    //
-    JSONArray extCriterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "extendedProfileCriterionFields", new JSONArray());
-    for (int i=0; i<extCriterionFieldValues.size(); i++)
-      {
-        JSONObject criterionFieldJSON = (JSONObject) extCriterionFieldValues.get(i);
-        CriterionField criterionField = new CriterionField(criterionFieldJSON);
-        extendedProfileCriterionFields.put(criterionField.getID(), criterionField);
-      }
+    extendedProfileCriterionFields = jsonReader.decodeMapFromArray(CriterionField.class, "extendedProfileCriterionFields");
+    presentationCriterionFields = jsonReader.decodeMapFromArray(CriterionField.class, "presentationCriterionFields");
 
-    //
-    //  presentationCriterionFields
-    //
-    presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
-    JSONArray presCriterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationCriterionFields", new JSONArray());
-    for (int i=0; i<presCriterionFieldValues.size(); i++)
-      {
-        JSONObject criterionFieldJSON = (JSONObject) presCriterionFieldValues.get(i);
-        CriterionField criterionField = new CriterionField(criterionFieldJSON);
-        presentationCriterionFields.put(criterionField.getID(), criterionField);
-      }
-    
-    //
-    //  offerProperties
-    //
-    offerProperties = new LinkedHashMap<String,OfferProperty>();
-    JSONArray offerPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerProperties", new JSONArray());
-    for (int i=0; i<offerPropertyValues.size(); i++)
-      {
-        JSONObject offerPropertyJSON = (JSONObject) offerPropertyValues.get(i);
-        OfferProperty offerProperty = new OfferProperty(offerPropertyJSON);
-        offerProperties.put(offerProperty.getID(), offerProperty);
-      }
-    
-    //
-    //  scoringEngines
-    //
-    scoringEngines = new LinkedHashMap<String,ScoringEngine>();
-    JSONArray scoringEngineValues = JSONUtilities.decodeJSONArray(jsonRoot, "scoringEngines", new JSONArray());
-    for (int i=0; i<scoringEngineValues.size(); i++)
-      {
-        JSONObject scoringEngineJSON = (JSONObject) scoringEngineValues.get(i);
-        ScoringEngine scoringEngine = new ScoringEngine(scoringEngineJSON);
-        scoringEngines.put(scoringEngine.getID(), scoringEngine);
-      }
+    offerProperties = jsonReader.decodeMapFromArray(OfferProperty.class, "offerProperties");
+    scoringEngines = jsonReader.decodeMapFromArray(ScoringEngine.class, "scoringEngines");
+    scoringTypes = jsonReader.decodeMapFromArray(ScoringType.class, "scoringTypes");
+    dnboMatrixVariables = jsonReader.decodeMapFromArray(DNBOMatrixVariable.class, "dnboMatrixVariables");
+    offerOptimizationAlgorithms = jsonReader.decodeMapFromArray(OfferOptimizationAlgorithm.class, "offerOptimizationAlgorithms");
 
-    //
-    //  offerOptimizationAlgorithms
-    //
-    offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
-    JSONArray offerOptimizationAlgorithmValuesCommon = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithmsCommon", new JSONArray());
-    JSONArray offerOptimizationAlgorithmValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithms", new JSONArray());
-    offerOptimizationAlgorithmValues.addAll(offerOptimizationAlgorithmValuesCommon);
-    for (int i=0; i<offerOptimizationAlgorithmValues.size(); i++)
-      {
-        JSONObject offerOptimizationAlgorithmJSON = (JSONObject) offerOptimizationAlgorithmValues.get(i);
-        OfferOptimizationAlgorithm offerOptimizationAlgorithm = new OfferOptimizationAlgorithm(offerOptimizationAlgorithmJSON);
-        offerOptimizationAlgorithms.put(offerOptimizationAlgorithm.getID(), offerOptimizationAlgorithm);
-      }
-
-    //
-    //  scoringTypes
-    //
-    scoringTypes = new LinkedHashMap<String,ScoringType>();
-    JSONArray scoringTypesValues = JSONUtilities.decodeJSONArray(jsonRoot, "scoringTypes", new JSONArray());
-    for (int i=0; i<scoringTypesValues.size(); i++)
-      {
-        JSONObject scoringTypeJSON = (JSONObject) scoringTypesValues.get(i);
-        ScoringType scoringType = new ScoringType(scoringTypeJSON);
-        scoringTypes.put(scoringType.getID(), scoringType);
-      }
-
-    //
-    //  dnboMatrixVariable
-    //
-    dnboMatrixVariables = new LinkedHashMap<String,DNBOMatrixVariable>();
-    JSONArray dnboMatrixVariableValues = JSONUtilities.decodeJSONArray(jsonRoot, "dnboMatrixVariables", new JSONArray());
-    for (int i=0; i<dnboMatrixVariableValues.size(); i++)
-      {
-        JSONObject dnboMatrixJSON = (JSONObject) dnboMatrixVariableValues.get(i);
-        DNBOMatrixVariable dnboMatrixvariable = new DNBOMatrixVariable(dnboMatrixJSON);
-        dnboMatrixVariables.put(dnboMatrixvariable.getID(), dnboMatrixvariable);
-      }
-
+    // (About offerOptimizationAlgorithmsCommon) 
+    // !REMINDER Merge mecanism of deployment.json files already merge array of JSONObject.
+    // Therefore it is not needed to split in parts Common, Deployment, Tenant, etc.
+    // TO BE REMOVED : JSONArray offerOptimizationAlgorithmValuesCommon = jsonReader.decodeJSONArray("offerOptimizationAlgorithmsCommon");
 
     //
     //  deliveryManagers/fulfillmentProviders
     //
     deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
     fulfillmentProviders = new LinkedHashMap<String,DeliveryManagerDeclaration>();
-    JSONArray deliveryManagerValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", new JSONArray());
+    JSONArray deliveryManagerValues = jsonReader.decodeJSONArray("deliveryManagers");
     for (int i=0; i<deliveryManagerValues.size(); i++)
       {
         JSONObject deliveryManagerJSON = (JSONObject) deliveryManagerValues.get(i);
@@ -1328,7 +1153,7 @@ public class DeploymentCommon
     //  deliveryManagerAccounts
     //
     deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
-    JSONArray deliveryManagerAccountValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagerAccounts", new JSONArray());
+    JSONArray deliveryManagerAccountValues = jsonReader.decodeJSONArray("deliveryManagerAccounts");
     for (int i=0; i<deliveryManagerAccountValues.size(); i++)
       {
         JSONObject deliveryManagerAccountJSON = (JSONObject) deliveryManagerAccountValues.get(i);
@@ -1341,14 +1166,7 @@ public class DeploymentCommon
     //
     //  nodeTypes
     //
-    nodeTypes = new LinkedHashMap<String,NodeType>();
-    JSONArray nodeTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "nodeTypes", new JSONArray());
-    for (int i=0; i<nodeTypeValues.size(); i++)
-      {
-        JSONObject nodeTypeJSON = (JSONObject) nodeTypeValues.get(i);
-        NodeType nodeType = new NodeType(nodeTypeJSON);
-        nodeTypes.put(nodeType.getID(), nodeType);
-      }
+    nodeTypes = jsonReader.decodeMapFromArray(NodeType.class, "nodeTypes");
     // Add generated Node Types:
     // * Generic Notification Manager
     ArrayList<String> notificationNodeTypesAsString = NotificationManager.getNotificationNodeTypes();
@@ -1377,18 +1195,11 @@ public class DeploymentCommon
       }
     }
 
-    //
-    //  journeyToolboxSections
-    //
-    journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
-    JSONArray journeyToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyToolbox", new JSONArray());
-    for (int i=0; i<journeyToolboxSectionValues.size(); i++)
-      {
-        JSONObject journeyToolboxSectionValueJSON = (JSONObject) journeyToolboxSectionValues.get(i);
-        ToolboxSection journeyToolboxSection = new ToolboxSection(journeyToolboxSectionValueJSON);
-        journeyToolbox.put(journeyToolboxSection.getID(), journeyToolboxSection);
-      }
-
+    journeyToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "journeyToolbox");
+    campaignToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "campaignToolbox");
+    workflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "workflowToolbox");
+    loyaltyWorkflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "loyaltyWorkflowToolbox");
+    
     // Iterate over the communication channels and, for generic ones, let enrich, if needed the journey toolbox
     for(CommunicationChannel cc : getCommunicationChannels().values())
       {
@@ -1399,7 +1210,7 @@ public class DeploymentCommon
               log.warn("Deployment: Can't retrieve Journey ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
             }
             else {
-              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
               if(items != null) {
                 JSONObject item = new JSONObject();
                 item.put("id", cc.getToolboxID());
@@ -1417,18 +1228,6 @@ public class DeploymentCommon
           }
       }
 
-    //
-    //  campaignToolboxSections
-    //
-    campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
-    JSONArray campaignToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "campaignToolbox", new JSONArray());
-    for (int i=0; i<campaignToolboxSectionValues.size(); i++)
-      {
-        JSONObject campaignToolboxSectionValueJSON = (JSONObject) campaignToolboxSectionValues.get(i);
-        ToolboxSection campaignToolboxSection = new ToolboxSection(campaignToolboxSectionValueJSON);
-        campaignToolbox.put(campaignToolboxSection.getID(), campaignToolboxSection);
-      }
-
     // Iterate over the communication channels and, for generic ones, let enrich, if needed the campaign toolbox
     for(CommunicationChannel cc : getCommunicationChannels().values())
       {
@@ -1439,7 +1238,7 @@ public class DeploymentCommon
               log.warn("Deployment: Can't retrieve Campaign ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
             }
             else {
-              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
               if(items != null) {
                 JSONObject item = new JSONObject();
                 item.put("id", cc.getToolboxID());
@@ -1456,18 +1255,6 @@ public class DeploymentCommon
             }
           }
       }
-    
-    //
-    //  workflowToolboxSections
-    //
-    workflowToolbox = new LinkedHashMap<String,ToolboxSection>();
-    JSONArray workflowToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "workflowToolbox", new JSONArray());
-    for (int i=0; i<workflowToolboxSectionValues.size(); i++)
-      {
-        JSONObject workflowToolboxSectionValueJSON = (JSONObject) workflowToolboxSectionValues.get(i);
-        ToolboxSection workflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
-        workflowToolbox.put(workflowToolboxSection.getID(), workflowToolboxSection);
-      }
 
     // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
     for(CommunicationChannel cc : getCommunicationChannels().values())
@@ -1479,7 +1266,7 @@ public class DeploymentCommon
               log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
             }
             else {
-              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
               if(items != null) {
                 JSONObject item = new JSONObject();
                 item.put("id", cc.getToolboxID());
@@ -1496,18 +1283,6 @@ public class DeploymentCommon
             }
           }
       }
-    
-    //
-    //  loyaltyWorkflowToolboxSections
-    //
-    loyaltyWorkflowToolbox = new LinkedHashMap<String,ToolboxSection>();
-    JSONArray loyaltyWorkflowToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "loyaltyWorkflowToolbox", new JSONArray());
-    for (int i=0; i<loyaltyWorkflowToolboxSectionValues.size(); i++)
-      {
-        JSONObject workflowToolboxSectionValueJSON = (JSONObject) loyaltyWorkflowToolboxSectionValues.get(i);
-        ToolboxSection loyaltyWorkflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
-        loyaltyWorkflowToolbox.put(loyaltyWorkflowToolboxSection.getID(), loyaltyWorkflowToolboxSection);
-      }
 
     // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
     for(CommunicationChannel cc : getCommunicationChannels().values())
@@ -1519,7 +1294,7 @@ public class DeploymentCommon
               log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
             }
             else {
-              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
               if(items != null) {
                 JSONObject item = new JSONObject();
                 item.put("id", cc.getToolboxID());
@@ -1541,68 +1316,55 @@ public class DeploymentCommon
     //  thirdPartyMethodPermissions
     //
     thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
-    JSONArray thirdPartyMethodPermissions = JSONUtilities.decodeJSONArray(jsonRoot, "thirdPartyMethodPermissions", new JSONArray());
+    JSONArray thirdPartyMethodPermissions = jsonReader.decodeJSONArray("thirdPartyMethodPermissions");
     for (int i=0; i<thirdPartyMethodPermissions.size(); i++)
       {
         JSONObject thirdPartyMethodPermissionsJSON = (JSONObject) thirdPartyMethodPermissions.get(i);
-        String methodName = JSONUtilities.decodeString(thirdPartyMethodPermissionsJSON, "methodName", Boolean.TRUE);
+        String methodName = JSONUtilities.decodeString(thirdPartyMethodPermissionsJSON, "methodName", Boolean.TRUE);  // TODO EVPRO-99 remove JSONUtilities
         ThirdPartyMethodAccessLevel thirdPartyMethodAccessLevel = new ThirdPartyMethodAccessLevel(thirdPartyMethodPermissionsJSON);
         thirdPartyMethodPermissionsMap.put(methodName, thirdPartyMethodAccessLevel);
       }
 
-    authResponseCacheLifetimeInMinutes = JSONUtilities.decodeInteger(jsonRoot, "authResponseCacheLifetimeInMinutes", false);
-    reportManagerMaxMessageLength = JSONUtilities.decodeInteger(jsonRoot, "reportManagerMaxMessageLength", 200);
-    stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 30);
-    periodicEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "periodicEvaluationCronEntry", false);
-    ucgEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "ucgEvaluationCronEntry", false);
+    authResponseCacheLifetimeInMinutes = jsonReader.decodeInteger("authResponseCacheLifetimeInMinutes");
+    stockRefreshPeriod = jsonReader.decodeInteger("stockRefreshPeriod");
+    periodicEvaluationCronEntry = jsonReader.decodeString("periodicEvaluationCronEntry");
+    ucgEvaluationCronEntry = jsonReader.decodeString("ucgEvaluationCronEntry");
 
     //
     //  Reports
     //
-    JSONObject reportManager = JSONUtilities.decodeJSONObject(jsonRoot, "reportManager", false);
-    if (reportManager != null)
-      {
-        reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir", true);
-        reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath", "/app/reports");
-        reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat", "yyyy-MM-dd_HH-mm-ss_SSSS");
-        reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", "csv");
-        reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", ";");
-        reportManagerFieldSurrounder = JSONUtilities.decodeString(reportManager, "reportManagerFieldSurrounder", "'");
-        reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", System.getProperty("java.io.tmpdir"));
-        reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties", "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000");
-      }
-    else
-      {
-        reportManagerZookeeperDir = getZookeeperRoot() + File.separator + "reports";
-        reportManagerOutputPath = "/app/reports";
-        reportManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
-        reportManagerFileExtension = "csv";
-        reportManagerCsvSeparator = ";";
-        reportManagerFieldSurrounder = "'";
-        reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
-        reportManagerTopicsCreationProperties = "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000";
-      }
-    if (reportManagerFieldSurrounder.length() > 1)
-      {
-        log.warn("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
-        reportManagerFieldSurrounder = reportManagerFieldSurrounder.substring(0, 1);
-      }
-
-    customerMetaData = new CustomerMetaData(JSONUtilities.decodeJSONObject(jsonRoot, "customerMetaData", true));
-
-    //
-    //  uploadedFileSeparator
-    //
-    uploadedFileSeparator = JSONUtilities.decodeString(jsonRoot, "uploadedFileSeparator", false);
-    if(uploadedFileSeparator == null) {
-      uploadedFileSeparator = ";";
+    JSONObject reportManager = jsonReader.decodeJSONObject("reportManager");
+    reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir"); // TODO EVPRO-99 JSONUtilities
+    reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath");
+    reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat");
+    reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension");
+    reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator");
+    reportManagerFieldSurrounder = JSONUtilities.decodeString(reportManager, "reportManagerFieldSurrounder");
+    reportManagerMaxMessageLength = JSONUtilities.decodeInteger(reportManager, "reportManagerMaxMessageLength");
+    reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir");
+    reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties");
+    if (reportManagerFieldSurrounder.length() > 1) {
+      throw new ServerRuntimeException("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
     }
 
     //
-    //  APIresponseDateFormat
+    // configuration for extracts
     //
-    APIresponseDateFormat = JSONUtilities.decodeString(jsonRoot, "APIresponseDateFormat", false);
-    if (null == APIresponseDateFormat) APIresponseDateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZ" ;
+    JSONObject extractManager = jsonReader.decodeJSONObject("extractManager");
+    extractManagerZookeeperDir = JSONUtilities.decodeString(extractManager, "extractManagerZookeeperDir"); // TODO EVPRO-99 JSONUtilities
+    extractManagerOutputPath = JSONUtilities.decodeString(extractManager, "extractManagerOutputPath");
+    extractManagerDateFormat = JSONUtilities.decodeString(extractManager, "extractManagerDateFormat");
+    extractManagerFileExtension = JSONUtilities.decodeString(extractManager, "extractManagerFileExtension");
+    extractManagerCsvSeparator = JSONUtilities.decodeString(extractManager, "extractManagerCsvSeparator");
+    extractManagerFieldSurrounder = JSONUtilities.decodeString(extractManager, "extractManagerFieldSurrounder");
+    if (extractManagerFieldSurrounder.length() > 1) {
+      throw new ServerRuntimeException("extractManagerFieldSurrounder is not a single character, this would lead to errors in the extracts, truncating, please fix this : " + extractManagerFieldSurrounder);
+    }
+    
+    customerMetaData = new CustomerMetaData(jsonReader.decodeJSONObject("customerMetaData"));
+
+    uploadedFileSeparator = jsonReader.decodeString("uploadedFileSeparator");
+    APIresponseDateFormat = jsonReader.decodeString("APIresponseDateFormat");
 
     //
     //  deliveryTypeCommunicationChannelMap
@@ -1619,63 +1381,35 @@ public class DeploymentCommon
           }
       }
     
-    hourlyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "hourlyReportCronEntryString", true);
-    dailyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "dailyReportCronEntryString", true);
-    weeklyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "weeklyReportCronEntryString", true);
-    monthlyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "monthlyReportCronEntryString", true);
-    enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
+    hourlyReportCronEntryString = jsonReader.decodeString("hourlyReportCronEntryString");
+    dailyReportCronEntryString = jsonReader.decodeString("dailyReportCronEntryString");
+    weeklyReportCronEntryString = jsonReader.decodeString("weeklyReportCronEntryString");
+    monthlyReportCronEntryString = jsonReader.decodeString("monthlyReportCronEntryString");
+    enableEvaluateTargetRandomness = jsonReader.decodeBoolean("enableEvaluateTargetRandomness");
     
     //
     // conf for elasticsearch & voucher
     //
     // we won't deliver a voucher that expiry in less than X hours from now :
-    minExpiryDelayForVoucherDeliveryInHours = JSONUtilities.decodeInteger(jsonRoot, "minExpiryDelayForVoucherDeliveryInHours",4);
+    minExpiryDelayForVoucherDeliveryInHours = jsonReader.decodeInteger("minExpiryDelayForVoucherDeliveryInHours");
     // the bulk size when importing voucher file into ES
-    importVoucherFileBulkSize = JSONUtilities.decodeInteger(jsonRoot, "importVoucherFileBulkSize",5000);
+    importVoucherFileBulkSize = jsonReader.decodeInteger("importVoucherFileBulkSize");
     // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
-    voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
+    voucherESCacheCleanerFrequencyInSec = jsonReader.decodeInteger("voucherESCacheCleanerFrequencyInSec");
     // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
-    numberConcurrentVoucherAllocationToES = JSONUtilities.decodeInteger(jsonRoot, "numberConcurrentVoucherAllocationToES",10);
+    numberConcurrentVoucherAllocationToES = jsonReader.decodeInteger("numberConcurrentVoucherAllocationToES");
 
     //
     // conf for propensity service
     //
     // period in ms global propensity state will be read from zookeeper :
-    propensityReaderRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityReaderRefreshPeriodMs",10000);
+    propensityReaderRefreshPeriodMs = jsonReader.decodeInteger("propensityReaderRefreshPeriodMs");
     // period in ms local propensity state will be write to zookeeper :
-    propensityWriterRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityWriterRefreshPeriodMs",10000);
+    propensityWriterRefreshPeriodMs = jsonReader.decodeInteger("propensityWriterRefreshPeriodMs");
 
-    enableContactPolicyProcessing = JSONUtilities.decodeBoolean(jsonRoot, "enableContactPolicyProcessing", Boolean.TRUE);
-
-    //
-    // configuration for extracts
-    //
-    JSONObject extractManager = JSONUtilities.decodeJSONObject(jsonRoot, "extractManager", false);
-    if (extractManager != null)
-      {
-        extractManagerZookeeperDir = JSONUtilities.decodeString(extractManager, "extractManagerZookeeperDir", true);
-        extractManagerOutputPath = JSONUtilities.decodeString(extractManager, "extractManagerOutputPath", "/app/extracts");
-        extractManagerDateFormat = JSONUtilities.decodeString(extractManager, "extractManagerDateFormat", "yyyy-MM-dd_HH-mm-ss_SSSS");
-        extractManagerFileExtension = JSONUtilities.decodeString(extractManager, "extractManagerFileExtension", "csv");
-        extractManagerCsvSeparator = JSONUtilities.decodeString(extractManager, "extractManagerCsvSeparator", ";");
-        extractManagerFieldSurrounder = JSONUtilities.decodeString(extractManager, "extractManagerFieldSurrounder", "'");
-      }
-    else
-      {
-        extractManagerZookeeperDir = getZookeeperRoot() + File.separator + "extracts";
-        extractManagerOutputPath = "/app/extracts";
-        extractManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
-        extractManagerFileExtension = "csv";
-        extractManagerCsvSeparator = ";";
-        extractManagerFieldSurrounder = "'";
-      }
-    if (extractManagerFieldSurrounder.length() > 1)
-      {
-        log.warn("extractManagerFieldSurrounder is not a single character, this would lead to errors in the extracts, truncating, please fix this : " + extractManagerFieldSurrounder);
-        extractManagerFieldSurrounder = extractManagerFieldSurrounder.substring(0, 1);
-      }
+    enableContactPolicyProcessing = jsonReader.decodeBoolean("enableContactPolicyProcessing");
     
-    recurrentCampaignCreationDaysRange = JSONUtilities.decodeInteger(jsonRoot, "recurrentCampaignCreationDaysRange", 3);
+    recurrentCampaignCreationDaysRange = jsonReader.decodeInteger("recurrentCampaignCreationDaysRange");
     
     //
     // all dynamic topics
@@ -1706,6 +1440,19 @@ public class DeploymentCommon
   * Utils
   *
   *****************************************/
+  public static Class<? extends Deployment> getProjectDeploymentClass()
+  {
+    try
+      {
+        Class<? extends Deployment> projectDeploymentClass = (Class<? extends Deployment>) Class.forName(projectDeploymentClassName);
+        return projectDeploymentClass;
+      }
+    catch (ClassNotFoundException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
+  
   public static Class<? extends CriterionFieldRetriever> getCriterionFieldRetrieverClass()
   {
     try
@@ -2155,6 +1902,28 @@ public class DeploymentCommon
       }
   }
   
+  /**
+   * Comments are root fields with ".comments" at the end.
+   * /!\ Therefore, comments cannot be put inside objects. 
+   */
+  private static JSONObject removeComments(JSONObject brutJsonRoot) 
+  {
+    ArrayList<String> keysToRemove = new ArrayList<>();
+    for(Object key : brutJsonRoot.keySet())
+      {
+        if(key instanceof String && ((String) key).endsWith(".comment"))
+          {
+            keysToRemove.add((String)key);
+          }
+      }
+    // remove comments
+    for(String key : keysToRemove)
+      {
+        brutJsonRoot.remove(key);
+      }
+    
+    return brutJsonRoot;
+  }
   /*****************************************
   *
   * store JSONObject for every tenant
@@ -2167,13 +1936,20 @@ public class DeploymentCommon
     //
     
     ArrayList<JSONObject> tenantSpecificConfigurations = new ArrayList<>();
+    ArrayList<String> keysToRemove = new ArrayList<>();
     for(Object key : brutJsonRoot.keySet())
       {
-        if(key instanceof String && ((String)key).startsWith("tenantConfiguration"))
+        if(key instanceof String && ((String) key).startsWith("tenantConfiguration"))
           {
             JSONObject tenantConfiguration = (JSONObject) brutJsonRoot.get(key);
-            tenantSpecificConfigurations.add(tenantConfiguration);            
+            tenantSpecificConfigurations.add(tenantConfiguration);
+            keysToRemove.add((String)key);
           }
+      }
+    // remove tenantSpecific configurations
+    for(String key : keysToRemove)
+      {
+        brutJsonRoot.remove(key);
       }
     
     // also add fake tenant 0 (for static configurations of Deployment)
@@ -2186,40 +1962,21 @@ public class DeploymentCommon
     //
     for(JSONObject tenantSpecificConfiguration : tenantSpecificConfigurations)
       {
-        //
-        // first get global jsonRoot that contains also the tenant specific configuration
-        //
-        
-        JSONObject brutJSONObject = getBrutJsonRoot();
-        
-        //
-        // remove tenantSpecific configurations
-        //
-        
-        ArrayList<String> keysToRemove = new ArrayList<>();
-        for(Object key : brutJSONObject.keySet())
-          {
-            if(key instanceof String && ((String)key).startsWith("tenantConfiguration"))
-              {
-                keysToRemove.add((String)key);
-              }
-          }
-        for(String keyToRemove : keysToRemove)
-          {
-            brutJSONObject.remove(keyToRemove);        
-          }
+        // Close to a deep copy (except for primitive values that need to be read only)
+        JSONObject brutJSONCopy = JSONUtilities.jsonCopyMap(brutJsonRoot);
         
         //
         // now merge the tenant specific configuration with the brut configuration, so that we have the effective JSONRoot configuration for the current tenant
         //
         
-        JSONObject tenantJSON = JSONUtilities.jsonMergerOverrideOrAdd(brutJSONObject,tenantSpecificConfiguration,(brut,tenant) -> brut.get("id")!=null && tenant.get("id")!=null && brut.get("id").equals(tenant.get("id")));//json object in array match thanks to "id" field only
+        JSONObject tenantJSON = JSONUtilities.jsonMergerOverrideOrAdd(brutJSONCopy,tenantSpecificConfiguration,(brut,tenant) -> brut.get("id")!=null && tenant.get("id")!=null && brut.get("id").equals(tenant.get("id")));//json object in array match thanks to "id" field only
         
         //
         // get the tenantID
         //
         
         int tenantID = JSONUtilities.decodeInteger(tenantJSON, "tenantID", true);
+        tenantJSON.remove("tenantID");
         
         //
         // let reference the tenantJSONObject configuration available for all subclasses of Deployment

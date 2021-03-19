@@ -50,7 +50,9 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+/* IF COPY/PASTE FROM ANOTHER DeploymentManagedObject OBJECT
+ * DO NOT FORGET TO ADD IT TO THE DeploymentManagedObject FACTORY
+ * SEE DeploymentManagedObject.create */
 public class CriterionField extends DeploymentManagedObject
 {
   /*****************************************

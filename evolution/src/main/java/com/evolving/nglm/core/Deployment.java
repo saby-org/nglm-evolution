@@ -50,47 +50,6 @@ public class Deployment extends DeploymentCommon
   *****************************************/
   protected static final Logger log = LoggerFactory.getLogger(Deployment.class);
   
-  private static Map<Integer, Deployment> deploymentsPerTenant = new HashMap<>();
-  private static Object lock = new Object();
-
-  /*****************************************
-  *
-  * Static accessors
-  *
-  *****************************************/
-  
-  public static Set<Integer> getTenantIDs() { return jsonConfigPerTenant.keySet(); }
-  // TODO EVPRO-99 rl : la plupart du temps quand on call getDefault ça signifie qu'on ne regardera jamais l'info specifique tenant
-  // Il faut donc empecher quelle soit override par le tenant inutilement : Lacher un warning
-  public static Deployment getDefault() { return getDeployment(0); }
-  
-  // TODO EVPRO-99 ok but, we will load all of them every time at the beginning no matter what.. (example datacubes manager load every tenant..)
-  public static Deployment getDeployment(int tenantID)
-  {
-    Deployment result = deploymentsPerTenant.get(tenantID);
-    if(result == null)
-      {
-        synchronized(lock)
-          {
-            result = deploymentsPerTenant.get(tenantID);
-            if(result == null)
-              {
-                /////// TOOOOOOOOOOOODOOOOOOOO MOVE THIS OUT, INIT AT THE BEGINING, THROW - CRASH EVERYTHING
-                try
-                  {
-                    result = new Deployment(tenantID);
-                  } catch (Exception e)
-                  {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                  }
-                deploymentsPerTenant.put(tenantID, result);
-              }
-          }
-      }
-    return deploymentsPerTenant.get(tenantID);
-  }
-  
   /*****************************************
   *
   * Properties
@@ -121,10 +80,10 @@ public class Deployment extends DeploymentCommon
   //
   private CommunicationChannelTimeWindow defaultNotificationTimeWindowsMap;
   private Map<String,BillingMode> billingModes;
-  private PropensityRule propensityRule;
   private Map<String,SupportedCurrency> supportedCurrencies;
   private Map<String,SupportedTimeUnit> supportedTimeUnits;
-  private static List<EvaluationCriterion> journeyUniversalEligibilityCriteria;
+  private List<EvaluationCriterion> journeyUniversalEligibilityCriteria;
+  private PropensityRule propensityRule;
   
   
   /*****************************************
@@ -158,72 +117,59 @@ public class Deployment extends DeploymentCommon
   //
   public CommunicationChannelTimeWindow getDefaultNotificationDailyWindows() { return defaultNotificationTimeWindowsMap; }
   public Map<String,BillingMode> getBillingModes() { return billingModes; }
-  public PropensityRule getPropensityRule() { return propensityRule; }
   public Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public List<EvaluationCriterion> getJourneyUniversalEligibilityCriteria() { return journeyUniversalEligibilityCriteria; } 
+  public PropensityRule getPropensityRule() { return propensityRule; }
   
   /*****************************************
   *
-  * Constructor
+  * Constructor (needs to be empty for newInstance calls)
   *
   *****************************************/  
-  public Deployment(int tenantID) throws Exception
-  {    
-    load(tenantID);
-    /*
-    try
-      {
-      } 
-    catch (RuntimeException|NoSuchMethodException|IllegalAccessException|ClassNotFoundException|GUIManagerException e)
-      {
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.error("Error while loading Deployment from JSON. {}", stackTraceWriter.toString());
-      } */
+  public Deployment(){}
+  
+  /*****************************************
+  *
+  * loaders
+  *
+  *****************************************/
+  // This method needs to be overriden in nglm-project
+  protected void loadProjectTenantSettings(DeploymentJSONReader jsonReader, int tenantID) throws Exception {
+    throw new ServerRuntimeException("loadProjectTenantSettings methods needs to be overriden in your project Deployment class.");
   }
   
-  private void load(int tenantID) throws Exception
-  { 
-    JSONObject jsonRoot = jsonConfigPerTenant.get(tenantID);
-    
-    //System.out.println(jsonRoot.toJSONString());
-    
+  protected void loadProductTenantSettings(DeploymentJSONReader jsonReader, int tenantID) throws Exception
+  {
     //
     // Local information
     //
-    
-    timeZone = JSONUtilities.decodeString(jsonRoot, "timeZone", true);
+    timeZone = jsonReader.decodeString("timeZone");
     zoneId = ZoneId.of(timeZone);
-    language = JSONUtilities.decodeString(jsonRoot, "language", true);
-    country = JSONUtilities.decodeString(jsonRoot, "country", true);
-    // supportedLanguages
-    supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
-    JSONArray supportedLanguageValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedLanguages", true);
-    for (int i=0; i<supportedLanguageValues.size(); i++)
-      {
-        JSONObject supportedLanguageJSON = (JSONObject) supportedLanguageValues.get(i);
-        SupportedLanguage supportedLanguage = new SupportedLanguage(supportedLanguageJSON);
-        supportedLanguages.put(supportedLanguage.getID(), supportedLanguage);
-      }
+    language = jsonReader.decodeString("language");
+    country = jsonReader.decodeString("country");
+    supportedLanguages = jsonReader.decodeMapFromArray(SupportedLanguage.class, "supportedLanguages");
     baseLanguageID = getSupportedLanguageID(getLanguage(), supportedLanguages);
+    billingModes = jsonReader.decodeMapFromArray(BillingMode.class, "billingModes");
+    supportedCurrencies = jsonReader.decodeMapFromArray(SupportedCurrency.class, "supportedCurrencies");
+    supportedTimeUnits = jsonReader.decodeMapFromArray(SupportedTimeUnit.class, "supportedTimeUnits");
     
     //
     // Elasticsearch settings
     //
-    elasticsearchRetentionDaysJourneys = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysJourneys", true);
-    elasticsearchRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysCampaigns", true);
-    elasticsearchRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysBulkCampaigns", true);
-    elasticsearchRetentionDaysExpiredVouchers = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysExpiredVouchers", true);
+    elasticsearchRetentionDaysJourneys = jsonReader.decodeInteger("ESRetentionDaysJourneys");
+    elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
+    elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
+    elasticsearchRetentionDaysExpiredVouchers = jsonReader.decodeInteger("ESRetentionDaysExpiredVouchers");
     
     // Datacubes jobs
     if(tenantID == 0) {
       datacubeJobsScheduling = null; // because datacube jobs make no sense for "tenant 0".
     } else {
       datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
-      JSONObject datacubeJobsSchedulingJSON = JSONUtilities.decodeJSONObject(jsonRoot, "datacubeJobsScheduling", true);
+      DeploymentJSONReader datacubeJobsSchedulingJSON = jsonReader.get("datacubeJobsScheduling");
       for (Object key : datacubeJobsSchedulingJSON.keySet()) {
-        datacubeJobsScheduling.put((String) key, new ScheduledJobConfiguration((String) key, tenantID, (JSONObject) datacubeJobsSchedulingJSON.get(key)));
+        datacubeJobsScheduling.put((String) key, new ScheduledJobConfiguration((String) key, datacubeJobsSchedulingJSON.get(key), tenantID, timeZone));
       }
     }
     
@@ -232,9 +178,9 @@ public class Deployment extends DeploymentCommon
       elasticsearchJobsScheduling = null; // because elasticsearch jobs make no sense for "tenant 0".
     } else {
       elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
-      JSONObject elasticsearchJobsSchedulingJSON = JSONUtilities.decodeJSONObject(jsonRoot, "elasticsearchJobsScheduling", true);
+      DeploymentJSONReader elasticsearchJobsSchedulingJSON = jsonReader.get("elasticsearchJobsScheduling");
       for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
-        elasticsearchJobsScheduling.put((String) key, new ScheduledJobConfiguration((String) key, tenantID, (JSONObject) elasticsearchJobsSchedulingJSON.get(key)));
+        elasticsearchJobsScheduling.put((String) key, new ScheduledJobConfiguration((String) key, elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone));
       }
     }
     
@@ -243,52 +189,19 @@ public class Deployment extends DeploymentCommon
     //
   
     //  notificationDailyWindows
-    JSONObject defaultTimeWindowJSON = (JSONObject) jsonRoot.get("notificationDailyWindows");
-    if(defaultTimeWindowJSON != null)
-      {
-        defaultTimeWindowJSON.put("id", "default");
-        defaultTimeWindowJSON.put("name", "default");
-        defaultTimeWindowJSON.put("display", "default");
-        defaultTimeWindowJSON.put("active", true);
-        defaultTimeWindowJSON.put("communicationChannelID", "default");
-      }
+    JSONObject defaultTimeWindowJSON = jsonReader.decodeJSONObject("notificationDailyWindows");
+    defaultTimeWindowJSON.put("id", "default");
+    defaultTimeWindowJSON.put("name", "default");
+    defaultTimeWindowJSON.put("display", "default");
+    defaultTimeWindowJSON.put("active", true);
+    defaultTimeWindowJSON.put("communicationChannelID", "default");
     defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null, tenantID);
-  
-    //  billingModes
-    billingModes = new LinkedHashMap<String,BillingMode>();
-    JSONArray billingModeValues = JSONUtilities.decodeJSONArray(jsonRoot, "billingModes", true);
-    for (int i=0; i<billingModeValues.size(); i++)
-      {
-        JSONObject billingModesJSON = (JSONObject) billingModeValues.get(i);
-        BillingMode billingMode = new BillingMode(billingModesJSON);
-        billingModes.put(billingMode.getID(), billingMode);
-      }
     
-    propensityRule = new PropensityRule((JSONObject) jsonRoot.get("propensityRule"));
-  
-    //  supportedCurrencies
-    supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
-    JSONArray supportedCurrencyValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedCurrencies", true);
-    for (int i=0; i<supportedCurrencyValues.size(); i++)
-      {
-        JSONObject supportedCurrencyJSON = (JSONObject) supportedCurrencyValues.get(i);
-        SupportedCurrency supportedCurrency = new SupportedCurrency(supportedCurrencyJSON);
-        supportedCurrencies.put(supportedCurrency.getID(), supportedCurrency);
-      }
+    propensityRule = new PropensityRule(jsonReader.decodeJSONObject("propensityRule"));
     
-    //  supportedTimeUnits
-    supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
-    JSONArray supportedTimeUnitValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTimeUnits", true);
-    for (int i=0; i<supportedTimeUnitValues.size(); i++)
-      {
-        JSONObject supportedTimeUnitJSON = (JSONObject) supportedTimeUnitValues.get(i);
-        SupportedTimeUnit supportedTimeUnit = new SupportedTimeUnit(supportedTimeUnitJSON);
-        supportedTimeUnits.put(supportedTimeUnit.getID(), supportedTimeUnit);
-      }
-
     //  journeyUniversalEligibilityCriteria
     journeyUniversalEligibilityCriteria = new ArrayList<>();
-    JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalEligibilityCriteria", new JSONArray());
+    JSONArray evaluationCriterionValues = jsonReader.decodeJSONArray("journeyUniversalEligibilityCriteria");
     for (int i=0; i<evaluationCriterionValues.size(); i++)
       {
         JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
