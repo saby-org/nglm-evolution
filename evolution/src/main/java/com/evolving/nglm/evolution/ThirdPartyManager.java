@@ -1527,7 +1527,7 @@ public class ThirdPartyManager
     if(bonusName != null && !bonusName.isEmpty())
       {
         for(GUIManagedObject storedPoint : pointService.getStoredPoints(tenantID)){
-          if(storedPoint instanceof Point && (((Point) storedPoint).getPointName().equals(bonusName))){
+          if(storedPoint instanceof Point && (((Point) storedPoint).getDisplay().equals(bonusName))){
             searchedPoint = (Point)storedPoint;
           }
         }
