@@ -100,7 +100,7 @@ public class EvolutionSetup
       System.out.println("================================================================================");
       System.out.println("= DEPLOYMENT CHECK                                                             =");
       System.out.println("================================================================================");
-      Deployment.getDefault();
+      Deployment.initialize();
   
       //
       // kafka topics

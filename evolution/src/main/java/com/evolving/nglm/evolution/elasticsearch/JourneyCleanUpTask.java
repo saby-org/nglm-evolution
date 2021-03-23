@@ -28,6 +28,7 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 
+// TODO rl-EVPRO-99
 public class JourneyCleanUpTask
 {
   protected static final Logger log = LoggerFactory.getLogger(JourneyCleanUpTask.class);
@@ -115,8 +116,8 @@ public class JourneyCleanUpTask
    * in the system. The goal is to be able to retrieve the "real" journeyID 
    * from the lowerCase one extracted from Elasticsearch.
    * 
-   * We do not retrieve archived journeys. Therefore, if a journey has been
-   * deleted, because it will not be in this map, this will automatically call
+   * We do not retrieve archived journeys. If a journey has been deleted, 
+   * it will therefore not be in this map and that will automatically call
    * a clean-up on all related ES indices.
    */
   private Map<String, String> getLowerCaseMatchingIDs()

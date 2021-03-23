@@ -77,7 +77,8 @@ public class DeploymentCommon
   
   private static Map<Integer, JSONObject> jsonConfigPerTenant;
   private static Map<Integer, Deployment> deploymentsPerTenant; // Will contains instance of Deployment class from nglm-project.
-  
+
+  public static void initialize() { /* Just to be sure the static bloc is read. */ }
   public static Set<Integer> getTenantIDs() { return jsonConfigPerTenant.keySet(); }
   public static Deployment getDeployment(int tenantID) { return deploymentsPerTenant.get(tenantID); }
   public static Deployment getDefault() { return getDeployment(0); }
@@ -202,7 +203,7 @@ public class DeploymentCommon
   // RESULTING IN A NULL POINTER EXCEPTION, OR WORSE.
   
   //
-  // Core 
+  // Core (Classes)
   //
   private static String projectDeploymentClassName;
   private static String criterionFieldRetrieverClassName;
@@ -211,7 +212,6 @@ public class DeploymentCommon
   private static String subscriberProfileClassName;
   private static String extendedSubscriberProfileClassName;
   private static String evolutionEngineExternalAPIClassName;
-  
   //
   // System
   //
@@ -346,16 +346,10 @@ public class DeploymentCommon
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
   //
+  // Others
   //
-  // ??????????????????????????????????????????????????????????????
   private static Map<String,AlternateID> alternateIDs;
   private static String externalSubscriberID;
-  
-  
-  
-  //
-  // TODO EVPRO-99 A TRIER (sortir de Common & retirer static)
-  //
   private static String reportManagerZookeeperDir;
   private static String reportManagerOutputPath;
   private static String reportManagerDateFormat;
@@ -609,14 +603,10 @@ public class DeploymentCommon
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
   //
+  // Others
   //
-  // ????????????????????????????????????????????????????????????????????????
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getExternalSubscriberID() { return externalSubscriberID; }
-
-  //
-  // TODO EVPRO-99 A TRIER (sortir de Common)
-  //
   public static String getSubscriberTraceControlAlternateID() { return subscriberTraceControlAlternateID; }
   public static boolean getSubscriberTraceControlAutoProvision() { return subscriberTraceControlAutoProvision; }
   public static Map<String,AutoProvisionEvent> getAutoProvisionEvents() { return autoProvisionEvents; }
@@ -744,7 +734,7 @@ public class DeploymentCommon
   * Load all common variables from JSONObject
   *
   ****************************************/
-  // This method needs to be overriden in nglm-project, even with nothing inside if there is nothing to do.
+  // This method needs to be overriden in nglm-project (even with nothing inside if there is nothing to do).
   protected static void loadProjectCommonSettings(DeploymentJSONReader jsonReader) throws Exception {
     throw new ServerRuntimeException("loadProjectCommonSettings methods needs to be overriden in your project Deployment class.");
   }
@@ -760,7 +750,7 @@ public class DeploymentCommon
     //
     // Elasticsearch
     //
-    // TODO EVPRO-99 @rl getenv
+    // TODO EVPRO-99 getenv
     elasticsearchHost = System.getenv("ELASTICSEARCH_HOST");
     elasticsearchPort = -1;
     try
@@ -942,7 +932,7 @@ public class DeploymentCommon
     //
     // httpServerScalingFactor
     //  
-    // TODO EVPRO-99 @rl : wtf ? getenv ? rly
+    // TODO EVPRO-99 @rl : stop getenv ...
     httpServerScalingFactor = 1;
     try 
       {
@@ -1057,8 +1047,6 @@ public class DeploymentCommon
 
     generateSimpleProfileDimensions = jsonReader.decodeBoolean("generateSimpleProfileDimensions"); // TODO EVPRO-99 move in Deployment ?
     
-
-
     //
     //  profileCriterionFields
     //
@@ -1408,7 +1396,6 @@ public class DeploymentCommon
     propensityWriterRefreshPeriodMs = jsonReader.decodeInteger("propensityWriterRefreshPeriodMs");
 
     enableContactPolicyProcessing = jsonReader.decodeBoolean("enableContactPolicyProcessing");
-    
     recurrentCampaignCreationDaysRange = jsonReader.decodeInteger("recurrentCampaignCreationDaysRange");
     
     //

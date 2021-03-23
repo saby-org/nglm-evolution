@@ -1410,7 +1410,6 @@ public class LicenseManager
     *  parseDateField
     *
     *****************************************/
-    // TODO EVPRO-99 remove ?
     @Deprecated
     private Date parseDateField(String stringDate) throws JSONUtilitiesException
     {

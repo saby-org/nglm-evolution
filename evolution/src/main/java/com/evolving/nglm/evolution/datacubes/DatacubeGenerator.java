@@ -37,7 +37,7 @@ import com.evolving.nglm.core.RLMDateUtils.DatePattern;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 /**
- * DatacubeGenerator is NOT thread-safe !
+ * DatacubeGenerator is NOT thread-safe ! - Should only be used in mono-thread.
  */
 public abstract class DatacubeGenerator
 {
