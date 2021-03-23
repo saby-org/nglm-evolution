@@ -144,7 +144,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
     GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived);
     JSONObject loyaltyProgramJSON = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, SystemTime.getCurrentTime());
-    if (loyaltyProgramType != LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true))) loyaltyProgram = null;
+    if (loyaltyProgramType != LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProgramJSON, "loyaltyProgramType", true))) loyaltyProgram = null;
 
     /*****************************************
     *
