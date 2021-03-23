@@ -542,6 +542,7 @@ public class ReportManager implements Watcher
   
   private boolean handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine)
   {
+    long startReport = System.currentTimeMillis();
     log.trace("---> Starting report " + reportName + " " + restOfLine);
     boolean allOK = true;
     String[] params = null;
@@ -632,6 +633,7 @@ public class ReportManager implements Watcher
         log.error("Error : " + e.getLocalizedMessage(), e);
         reportManagerStatistics.incrementFailureCount();
       }
+    log.info("Finished report " + reportName + " took " + (System.currentTimeMillis() - startReport) + " ms");
     return allOK;
   }
 

@@ -951,7 +951,8 @@
     "reportManagerFieldSurrounder": "'",
     "reportManagerMaxMessageLength": 200,
     "reportManagerStreamsTempDir" : "/tmp",
-    "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000"
+    "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000",
+    "journeysReportMaxParallelThreads" : 10
   },
   
   "initialReports" :
@@ -1086,6 +1087,20 @@
       "display"             : "Voucher Stock Report",
       "description"         : "Description of personal vouchers uploaded into solutions",
       "class"               : "com.evolving.nglm.evolution.reports.voucherUploaded.VoucherUploadedReportDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeyCustomerStatesReportMultithread",
+      "display"             : "Journey Customer States Report Multithread",
+      "description"         : "Description of the Journey Customer States Report Multithread",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriverMultithread",
+      "availableScheduling" : [ "none", "daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeyCustomerStatisticsReportMultithread",
+      "display"             : "Journey Customer Statistics Report Multithread",
+      "description"         : "Description of the Journey Customer Statistics Report Multithread",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriverMultithread",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
