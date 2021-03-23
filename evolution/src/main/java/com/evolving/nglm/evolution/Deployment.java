@@ -249,6 +249,7 @@ public class Deployment
   private static int kafkaRetentionDaysODR;
   private static int kafkaRetentionDaysBDR;
   private static int kafkaRetentionDaysMDR;
+  private static int journeysReportMaxParallelThreads;
 
   private static boolean enableContactPolicyProcessing;
 
@@ -512,6 +513,7 @@ public class Deployment
   public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; }
   public static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
+  public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
 
   // addProfileCriterionField
   //
@@ -2952,7 +2954,7 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
-
+      
       //
       //  stockRefreshPeriod
       //
@@ -2988,6 +2990,7 @@ public class Deployment
               reportManagerFieldSurrounder = JSONUtilities.decodeString(reportManager, "reportManagerFieldSurrounder", "'");
               reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", System.getProperty("java.io.tmpdir"));
               reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties", "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000");
+              journeysReportMaxParallelThreads = JSONUtilities.decodeInteger(reportManager, "journeysReportMaxParallelThreads", 10);
             }
           else
             {
@@ -2999,6 +3002,7 @@ public class Deployment
               reportManagerFieldSurrounder = "'";
               reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
               reportManagerTopicsCreationProperties = "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000";
+              journeysReportMaxParallelThreads = 10;
             }
           if (reportManagerFieldSurrounder.length() > 1)
             {
