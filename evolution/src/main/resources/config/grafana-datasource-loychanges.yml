@@ -5,7 +5,7 @@ datasources:
   org_id: 1
   type: elasticsearch
   access: proxy
-  database: "datacube_loyaltyprogramschanges"
+  database: "t*_datacube_loyaltyprogramschanges"
   url: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
   basicAuth: true
   withCredentials: true
