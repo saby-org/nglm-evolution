@@ -110,7 +110,7 @@ public class PointService extends GUIService
   {
     GUIManagedObject result = null;
     GUIManagedObject guiManagedObject = getStoredGUIManagedObject(pointID);
-    if (guiManagedObject.getAccepted())
+    if (guiManagedObject != null && guiManagedObject.getAccepted())
       {
         if (!((Point) guiManagedObject).isScoreType())
           {
@@ -127,7 +127,7 @@ public class PointService extends GUIService
   {
     GUIManagedObject result = null;
     GUIManagedObject guiManagedObject = getStoredGUIManagedObject(pointID, includeArchived);
-    if (guiManagedObject.getAccepted())
+    if (guiManagedObject != null && guiManagedObject.getAccepted())
       {
         if (!((Point) guiManagedObject).isScoreType())
           {
@@ -206,7 +206,7 @@ public class PointService extends GUIService
   {
     GUIManagedObject result = null;
     GUIManagedObject guiManagedObject = getStoredGUIManagedObject(scoreID);
-    if (guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
+    if (guiManagedObject != null && guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
       {
         result = guiManagedObject;
       }
@@ -217,7 +217,7 @@ public class PointService extends GUIService
   {
     GUIManagedObject result = null;
     GUIManagedObject guiManagedObject = getStoredGUIManagedObject(scoreID, includeArchived);
-    if (guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
+    if (guiManagedObject != null && guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
       {
         result = guiManagedObject;
       }
