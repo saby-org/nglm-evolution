@@ -116,6 +116,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap.put("subscriberID", mailNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(mailNotification.getAlternateIDs(), documentMap);
+        documentMap.put("tenantID", mailNotification.getTenantID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", mailNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
@@ -147,6 +148,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap.put("subscriberID", smsNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(smsNotification.getAlternateIDs(), documentMap);
+        documentMap.put("tenantID", smsNotification.getTenantID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
@@ -177,6 +179,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap.put("subscriberID", notifNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(notifNotification.getAlternateIDs(), documentMap);
+        documentMap.put("tenantID", notifNotification.getTenantID());
         documentMap.put("deliveryRequestID", notifNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", notifNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
@@ -203,6 +206,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap.put("subscriberID", pushNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(pushNotification.getAlternateIDs(), documentMap);
+        documentMap.put("tenantID", pushNotification.getTenantID());
         documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", pushNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");

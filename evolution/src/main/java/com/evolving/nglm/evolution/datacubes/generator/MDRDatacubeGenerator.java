@@ -42,7 +42,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  public static final String DATACUBE_ES_INDEX = "datacube_messages";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_messages";
+  public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_messages-";
 
   /*****************************************
@@ -111,8 +112,8 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Elasticsearch indices settings
   *
   *****************************************/
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
   @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDay); }
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
 
   /*****************************************
   *

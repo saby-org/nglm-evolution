@@ -56,6 +56,7 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
       
       documentMap.put(ES_FIELD_TOKEN_CODE, tokenChange.getTokenCode());
       documentMap.put(ES_FIELD_SUBSCRIBER_ID, tokenChange.getSubscriberID());
+      documentMap.put("tenantID", -1); // TODO EVPRO-99 should be mapped to tenantID.
       documentMap.put("action", tokenChange.getAction());
       documentMap.put("eventDatetime", tokenChange.getEventDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(tokenChange.getEventDate()):"");
       documentMap.put("eventID", tokenChange.getEventID());

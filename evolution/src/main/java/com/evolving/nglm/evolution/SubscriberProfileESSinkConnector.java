@@ -144,6 +144,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
 
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", subscriberProfile.getSubscriberID());
+      documentMap.put("tenantID", subscriberProfile.getTenantID());
       documentMap.put("evaluationDate", now); // @rl TODO: has the exact same content as lastUpdateDate, wrong date format (no timezone), is it used somewhere ? Purpose seems to be the date of evaluation of every metricHistory. Keep only one, maybe remove this one, if not used ?
       documentMap.put("evolutionSubscriberStatus", (subscriberProfile.getEvolutionSubscriberStatus() != null) ? subscriberProfile.getEvolutionSubscriberStatus().getExternalRepresentation() : null);
       documentMap.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);

@@ -4327,6 +4327,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     // documentMap
     //
     documentMap.put("journeyID", this.getJourneyID());
+    documentMap.put("tenantID", this.getTenantID());
     documentMap.put("display", this.getGUIManagedObjectDisplay());
     documentMap.put("description", (description != null)? description: "");
     documentMap.put("type", this.getGUIManagedObjectType().getExternalRepresentation());

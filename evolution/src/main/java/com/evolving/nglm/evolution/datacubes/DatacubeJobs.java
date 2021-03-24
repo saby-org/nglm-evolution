@@ -62,6 +62,13 @@ public class DatacubeJobs
         throw new ServerRuntimeException("Trying to create a datacube scheduled job of unknown type.");
     }
   }
+
+  /*****************************************
+   *
+   * Utils
+   *
+   *****************************************/
+  private static String NAME_PREFIX(ScheduledJobConfiguration config) { return "T"+config.getTenantID()+"-"; }
   
   /*****************************************
    * Loyalty programs preview  
@@ -71,8 +78,8 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob LoyaltyProgramsPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubePreview = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History(Preview)", config.getTenantID(), datacubeManager);
-    ProgramsChangesDatacubeGenerator tierChangesDatacubePreview = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes(Preview)", config.getTenantID(), datacubeManager);
+    ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubePreview = new ProgramsHistoryDatacubeGenerator(NAME_PREFIX(config)+"LoyaltyPrograms:History(Preview)", config.getTenantID(), datacubeManager);
+    ProgramsChangesDatacubeGenerator tierChangesDatacubePreview = new ProgramsChangesDatacubeGenerator(NAME_PREFIX(config)+"LoyaltyPrograms:Changes(Preview)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -92,8 +99,8 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob LoyaltyProgramsDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubeDefinitive = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History(Definitive)", config.getTenantID(), datacubeManager);
-    ProgramsChangesDatacubeGenerator tierChangesDatacubeDefinitive = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes(Definitive)", config.getTenantID(), datacubeManager);
+    ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacubeDefinitive = new ProgramsHistoryDatacubeGenerator(NAME_PREFIX(config)+"LoyaltyPrograms:History(Definitive)", config.getTenantID(), datacubeManager);
+    ProgramsChangesDatacubeGenerator tierChangesDatacubeDefinitive = new ProgramsChangesDatacubeGenerator(NAME_PREFIX(config)+"LoyaltyPrograms:Changes(Definitive)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -114,7 +121,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob SubscriberProfilePreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    SubscriberProfileDatacubeGenerator subscriberProfileDatacubePreview = new SubscriberProfileDatacubeGenerator("SubscriberProfile(Preview)", config.getTenantID(), datacubeManager);
+    SubscriberProfileDatacubeGenerator subscriberProfileDatacubePreview = new SubscriberProfileDatacubeGenerator(NAME_PREFIX(config)+"SubscriberProfile(Preview)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -133,7 +140,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob SubscriberProfileDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    SubscriberProfileDatacubeGenerator subscriberProfileDatacubeDefinitive = new SubscriberProfileDatacubeGenerator("SubscriberProfile(Definitive)", config.getTenantID(), datacubeManager);
+    SubscriberProfileDatacubeGenerator subscriberProfileDatacubeDefinitive = new SubscriberProfileDatacubeGenerator(NAME_PREFIX(config)+"SubscriberProfile(Definitive)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -153,7 +160,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob ODRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    ODRDatacubeGenerator dailyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Daily(Preview)", config.getTenantID(), datacubeManager);
+    ODRDatacubeGenerator dailyOdrDatacubePreview = new ODRDatacubeGenerator(NAME_PREFIX(config)+"ODR:Daily(Preview)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -172,7 +179,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob ODRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    ODRDatacubeGenerator dailyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Daily(Definitive)", config.getTenantID(), datacubeManager);
+    ODRDatacubeGenerator dailyOdrDatacubeDefinitive = new ODRDatacubeGenerator(NAME_PREFIX(config)+"ODR:Daily(Definitive)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -193,7 +200,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob ODRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    ODRDatacubeGenerator hourlyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Hourly(Preview)", config.getTenantID(), datacubeManager);
+    ODRDatacubeGenerator hourlyOdrDatacubePreview = new ODRDatacubeGenerator(NAME_PREFIX(config)+"ODR:Hourly(Preview)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -212,7 +219,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob ODRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    ODRDatacubeGenerator hourlyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Hourly(Definitive)", config.getTenantID(), datacubeManager);
+    ODRDatacubeGenerator hourlyOdrDatacubeDefinitive = new ODRDatacubeGenerator(NAME_PREFIX(config)+"ODR:Hourly(Definitive)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -232,7 +239,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob BDRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    BDRDatacubeGenerator dailyBdrDatacubePreview = new BDRDatacubeGenerator("BDR:Daily(Preview)", config.getTenantID(), datacubeManager);
+    BDRDatacubeGenerator dailyBdrDatacubePreview = new BDRDatacubeGenerator(NAME_PREFIX(config)+"BDR:Daily(Preview)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -251,7 +258,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob BDRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    BDRDatacubeGenerator dailyBdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR:Daily(Definitive)", config.getTenantID(), datacubeManager);
+    BDRDatacubeGenerator dailyBdrDatacubeDefinitive = new BDRDatacubeGenerator(NAME_PREFIX(config)+"BDR:Daily(Definitive)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -271,7 +278,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob BDRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    BDRDatacubeGenerator hourlyBdrDatacubePreview = new BDRDatacubeGenerator("BDR:Hourly(Preview)", config.getTenantID(), datacubeManager);
+    BDRDatacubeGenerator hourlyBdrDatacubePreview = new BDRDatacubeGenerator(NAME_PREFIX(config)+"BDR:Hourly(Preview)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -290,7 +297,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob BDRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    BDRDatacubeGenerator hourlyBdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR:Hourly(Definitive)", config.getTenantID(), datacubeManager);
+    BDRDatacubeGenerator hourlyBdrDatacubeDefinitive = new BDRDatacubeGenerator(NAME_PREFIX(config)+"BDR:Hourly(Definitive)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -310,7 +317,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob MDRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    MDRDatacubeGenerator dailyMdrDatacubePreview = new MDRDatacubeGenerator("MDR:Daily(Preview)", config.getTenantID(), datacubeManager);
+    MDRDatacubeGenerator dailyMdrDatacubePreview = new MDRDatacubeGenerator(NAME_PREFIX(config)+"MDR:Daily(Preview)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -329,7 +336,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob MDRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    MDRDatacubeGenerator dailyMdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR:Daily(Definitive)", config.getTenantID(), datacubeManager);
+    MDRDatacubeGenerator dailyMdrDatacubeDefinitive = new MDRDatacubeGenerator(NAME_PREFIX(config)+"MDR:Daily(Definitive)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -349,7 +356,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob MDRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    MDRDatacubeGenerator hourlyMdrDatacubePreview = new MDRDatacubeGenerator("MDR:Hourly(Preview)", config.getTenantID(), datacubeManager);
+    MDRDatacubeGenerator hourlyMdrDatacubePreview = new MDRDatacubeGenerator(NAME_PREFIX(config)+"MDR:Hourly(Preview)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -368,7 +375,7 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob MDRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    MDRDatacubeGenerator hourlyMdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR:Hourly(Definitive)", config.getTenantID(), datacubeManager);
+    MDRDatacubeGenerator hourlyMdrDatacubeDefinitive = new MDRDatacubeGenerator(NAME_PREFIX(config)+"MDR:Hourly(Definitive)", config.getTenantID(), datacubeManager);
     
     return new AsyncScheduledJob(config)
     {
@@ -389,8 +396,8 @@ public class DatacubeJobs
    *****************************************/
   private static ScheduledJob JourneyDatacubeDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
-    JourneyTrafficDatacubeGenerator trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", config.getTenantID(), datacubeManager);
-    JourneyRewardsDatacubeGenerator rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", config.getTenantID(), datacubeManager);
+    JourneyTrafficDatacubeGenerator trafficDatacube = new JourneyTrafficDatacubeGenerator(NAME_PREFIX(config)+"Journey:Traffic", config.getTenantID(), datacubeManager);
+    JourneyRewardsDatacubeGenerator rewardsDatacube = new JourneyRewardsDatacubeGenerator(NAME_PREFIX(config)+"Journey:Rewards", config.getTenantID(), datacubeManager);
     DatacubeWriter datacubeWriter = datacubeManager.getDatacubeWriter();
     JourneysMap journeysMap = datacubeManager.getJourneysMap();
     
@@ -413,8 +420,10 @@ public class DatacubeJobs
         datacubeWriter.pause();
         
         for(String journeyID : journeysMap.keySet()) {
-          trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
-          rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+          if(journeysMap.getTenant(journeyID) == config.getTenantID()) { // only journeys of this tenant
+            trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+            rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+          }
         }
         
         // Restart writing if allowed. Flush all data generated

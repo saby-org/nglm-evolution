@@ -44,7 +44,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  public static final String DATACUBE_ES_INDEX = "datacube_bdr";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_bdr";
+  public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_bonuses-";
   private static final String METRIC_TOTAL_QUANTITY = "totalQty";
 
@@ -119,8 +120,8 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Elasticsearch indices settings
   *
   *****************************************/
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
   @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDay); }
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
 
   /*****************************************
   *

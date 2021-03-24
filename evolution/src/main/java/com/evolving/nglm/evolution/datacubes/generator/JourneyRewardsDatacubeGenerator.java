@@ -31,7 +31,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX_PREFIX = "datacube_journeyrewards-";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_journeyrewards-";
+  public static final String DATACUBE_ES_INDEX_PREFIX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX_PREFIX = "journeystatistic-";
   private static final String FILTER_STRATUM_PREFIX = "subscriberStratum.";
 
@@ -89,7 +90,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   
   @Override protected String getDatacubeESIndex() 
   { 
-    return DATACUBE_ES_INDEX_PREFIX + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID);
+    return DATACUBE_ES_INDEX_PREFIX(this.tenantID) + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID);
   }
 
   /*****************************************

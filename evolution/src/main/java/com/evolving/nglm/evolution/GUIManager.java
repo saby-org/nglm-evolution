@@ -5547,8 +5547,8 @@ public class GUIManager
                 
                 // DeliveriesCount 
                 if(showDeliveriesCount) {
-                  Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay);
-                  Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay);
+                  Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay, journey.getTenantID());
+                  Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay, journey.getTenantID());
                   
                   long messagesSuccess = 0;
                   long messagesFailure = 0;

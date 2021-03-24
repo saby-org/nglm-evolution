@@ -32,7 +32,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_subscriberprofile";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_subscriberprofile";
+  public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String FILTER_STRATUM_PREFIX = "stratum.";
   private static final String METRIC_PREFIX = "metric_";
@@ -83,7 +84,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   @Override protected String getDataESIndex() { return DATA_ES_INDEX; }
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
   
   //
   // Subset of subscriberprofile
@@ -94,9 +95,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   // For a while, it is possible a document in subscriberprofile index miss many product fields required by datacube generation.
   // Therefore, we filter out those subscribers with missing data
   @Override
-  protected QueryBuilder getSubsetQuery() 
+  protected List<QueryBuilder> getFilterQueries() 
   {
-    return QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
+    return Collections.singletonList(QueryBuilders.existsQuery("lastUpdateDate"));
   }
   
   

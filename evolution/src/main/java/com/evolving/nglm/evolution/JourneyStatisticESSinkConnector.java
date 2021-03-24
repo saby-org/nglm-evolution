@@ -156,6 +156,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("journeyID", journeyStatistic.getJourneyID());
       documentMap.put("subscriberID", journeyStatistic.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(journeyStatistic.getAlternateIDs(), documentMap);
+      documentMap.put("tenantID", journeyStatistic.getTenantID());
       documentMap.put("transitionDate", journeyStatistic.getTransitionDate());
       documentMap.put("nodeHistory", journeyNode);
       documentMap.put("statusHistory", journeyStatus);

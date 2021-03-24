@@ -23,6 +23,9 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
+/**
+ * REMOVED, see Journey.class@getESDocumentMap
+ */
 @Deprecated
 public class JourneyESSinkConnector extends SimpleESSinkConnector
 {

@@ -13,6 +13,7 @@ import java.util.Map;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -45,7 +46,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_loyaltyprogramshistory";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_loyaltyprogramshistory";
+  public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String DATA_POINT_EARNED = "_Earned";
   private static final String DATA_POINT_REDEEMED = "_Redeemed";
@@ -94,7 +96,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   *
   *****************************************/
   @Override protected String getDataESIndex() { return DATA_ES_INDEX; }
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
 
   /*****************************************
   *
@@ -126,10 +128,12 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     // Those comes when the SubscriberProfile sink connector push them.
     // For a while, it is possible a document in subscriberprofile index miss many product fields required by datacube generation.
     // Therefore, we filter out those subscribers with missing data by looking for lastUpdateDate
-    QueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    query.filter().add(QueryBuilders
         .rangeQuery("lastUpdateDate")
         .gte(this.printTimestamp(metricTargetDayStart))
         .lt(this.printTimestamp(metricTargetTwoDaysAfterStart)));
+    query.filter().add(QueryBuilders.termQuery("tenantID", this.tenantID)); // filter to keep only tenant related items !
     
     //
     // Aggregations
@@ -271,6 +275,9 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
           filters.replace(key, UNDEFINED_BUCKET_VALUE); // @rl especially for "redeemer" till it is implemented
         }
       }
+      
+      // Special filter: tenantID 
+      filters.put("tenantID", this.tenantID);
       
       // Remove redeemer, the right one will be added later
       Boolean redeemerToday = (Boolean) filters.remove("redeemerToday");

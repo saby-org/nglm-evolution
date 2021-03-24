@@ -69,4 +69,15 @@ public class JourneysMap extends GUIManagedObjectMap<Journey>
       return 0;
     }
   }
+  
+  public int getTenant(String journeyID)
+  {
+    Journey journey = this.guiManagedObjects.get(journeyID);
+    if(journey != null) {
+      return journey.getTenantID();
+    } else {
+      log.error("Could not retrieve tenantID from journeyID "+ journeyID);
+      return 0;
+    }
+  }
 }

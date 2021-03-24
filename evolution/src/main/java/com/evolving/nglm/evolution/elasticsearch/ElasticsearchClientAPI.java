@@ -248,13 +248,13 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   }
 
   // @return map<STATUS,count>
-  public Map<String, Long> getJourneyBonusesCount(String journeyDisplay) throws ElasticsearchClientException {
-    return getJourneyGenericDeliveryCount(journeyDisplay, BDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_bdr
+  public Map<String, Long> getJourneyBonusesCount(String journeyDisplay, int tenantID) throws ElasticsearchClientException {
+    return getJourneyGenericDeliveryCount(journeyDisplay, BDRDatacubeGenerator.DATACUBE_ES_INDEX(tenantID));  // tX_datacube_bdr
   }
 
   // @return map<STATUS,count>
-  public Map<String, Long> getJourneyMessagesCount(String journeyDisplay) throws ElasticsearchClientException {
-    return getJourneyGenericDeliveryCount(journeyDisplay, MDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_messages
+  public Map<String, Long> getJourneyMessagesCount(String journeyDisplay, int tenantID) throws ElasticsearchClientException {
+    return getJourneyGenericDeliveryCount(journeyDisplay, MDRDatacubeGenerator.DATACUBE_ES_INDEX(tenantID));  // tX_datacube_messages
   }
   
   // @return map<STATUS,count>

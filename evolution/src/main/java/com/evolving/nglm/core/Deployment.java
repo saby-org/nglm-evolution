@@ -169,7 +169,9 @@ public class Deployment extends DeploymentCommon
       datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
       DeploymentJSONReader datacubeJobsSchedulingJSON = jsonReader.get("datacubeJobsScheduling");
       for (Object key : datacubeJobsSchedulingJSON.keySet()) {
-        datacubeJobsScheduling.put((String) key, new ScheduledJobConfiguration((String) key, datacubeJobsSchedulingJSON.get(key), tenantID, timeZone));
+        // Change jobID (add tenantID) otherwise they will override themselves in DatacubeManager.
+        String newKey = "T" + tenantID + "_" + ((String) key);
+        datacubeJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, datacubeJobsSchedulingJSON.get(key), tenantID, timeZone));
       }
     }
     
@@ -180,7 +182,8 @@ public class Deployment extends DeploymentCommon
       elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
       DeploymentJSONReader elasticsearchJobsSchedulingJSON = jsonReader.get("elasticsearchJobsScheduling");
       for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
-        elasticsearchJobsScheduling.put((String) key, new ScheduledJobConfiguration((String) key, elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone));
+        String newKey = "T" + tenantID + "_" + ((String) key); // TODO EVPRO-99 by tenant ????
+        elasticsearchJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone));
       }
     }
     

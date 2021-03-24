@@ -137,6 +137,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", purchaseManager.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(purchaseManager.getAlternateIDs(), documentMap);
+      documentMap.put("tenantID", purchaseManager.getTenantID());
       documentMap.put("deliveryRequestID", purchaseManager.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", purchaseManager.getOriginatingDeliveryRequestID());
       documentMap.put("eventDatetime", purchaseManager.getEventDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(purchaseManager.getEventDate()):"");

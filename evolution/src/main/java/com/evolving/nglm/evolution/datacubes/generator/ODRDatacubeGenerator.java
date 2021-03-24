@@ -46,7 +46,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_odr";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_odr";
+  public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_offers-";
   private static final String METRIC_TOTAL_AMOUNT = "totalAmount";
 
@@ -129,8 +130,8 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   * Elasticsearch indices settings
   *
   *****************************************/
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
   @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDay); }
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
 
   /*****************************************
   *
