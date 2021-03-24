@@ -324,7 +324,7 @@ public class LoyaltyProgramChallengeHistory
     {
       LevelHistory levelHistory = (LevelHistory) value;
       Struct struct = new Struct(schema);
-      struct.put("fromLevel", levelHistory.getToLevel());
+      struct.put("fromLevel", levelHistory.getFromLevel());
       struct.put("toLevel", levelHistory.getToLevel());
       struct.put("occurrenceNumber", levelHistory.getOccurrenceNumber());
       struct.put("transitionDate", levelHistory.getTransitionDate());
