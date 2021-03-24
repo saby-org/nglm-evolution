@@ -386,9 +386,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     scoreValidityJSON.put("roundDown", true);
     scoreJSON.put("validity", JSONUtilities.encodeObject(scoreValidityJSON));
     JSONObject jsonroot = JSONUtilities.encodeObject(scoreJSON);
-    //JSONObject response = processPutScore("0", jsonroot);
-    //return JSONUtilities.decodeString(response, "id", false);
-    return null; //RAJ K
+    JSONObject response = super.guiManagerGeneral.processPutPoint("0", jsonroot);
+    log.info("RAJ K createScoreAndGetID response {}", response);
+    return JSONUtilities.decodeString(response, "id", false);
   }
 
   /*****************************************

@@ -714,7 +714,7 @@ public class GUIManager
   
   private GUIManagerBaseManagement guiManagerBaseManagement;
   private GUIManagerLoyaltyReporting guiManagerLoyaltyReporting;
-  private GUIManagerGeneral guiManagerGeneral;
+  protected GUIManagerGeneral guiManagerGeneral;
   
   //
   //  properties
