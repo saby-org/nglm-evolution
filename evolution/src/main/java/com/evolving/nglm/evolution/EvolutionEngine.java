@@ -3169,6 +3169,8 @@ public class EvolutionEngine
         //
 
         Point point = pointService.getActivePoint(pointFulfillmentRequest.getPointID(), now);
+        if (point == null) point = pointService.getActiveScore(pointFulfillmentRequest.getPointID(), now); // could be a score in future
+        
         if (point == null)
           {
             log.info("pointFulfillmentRequest failed (no such point): {}", pointFulfillmentRequest.getPointID());
@@ -4384,13 +4386,12 @@ public class EvolutionEngine
                           // update Score points
                           //
 
-                          Point point = pointService.getActivePoint(loyaltyProgramChallenge.getScoreID(), now);
-                          if (point != null)
+                          Score score = pointService.getActiveScore(loyaltyProgramChallenge.getScoreID(), now);
+                          if (score != null)
                             {
-
-                              if (log.isDebugEnabled()) log.debug("update loyalty program Score => adding " + ((LoyaltyProgramPointsEvent) evolutionEvent).getUnit() + " x " + subscriberCurrentLevelDefinition.getNumberOfscorePerEvent() + " of point " + point.getPointName());
+                              if (log.isDebugEnabled()) log.debug("update loyalty program Score => adding " + ((LoyaltyProgramPointsEvent) evolutionEvent).getUnit() + " x " + subscriberCurrentLevelDefinition.getNumberOfscorePerEvent() + " of score " + score.getPointName());
                               int amount = ((LoyaltyProgramPointsEvent) evolutionEvent).getUnit() * subscriberCurrentLevelDefinition.getNumberOfscorePerEvent();
-                              updatePointBalance(context, null, scoreEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, oldLevel);
+                              updatePointBalance(context, null, scoreEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, score, CommodityDeliveryOperation.Credit, amount, now, false, oldLevel);
                               triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentLevelDefinition.getWorkflowScore(), loyaltyProgramID, oldLevel);
                               subscriberProfileUpdated = true;
                             } 

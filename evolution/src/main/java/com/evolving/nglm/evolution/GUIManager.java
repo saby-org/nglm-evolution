@@ -19850,7 +19850,7 @@ public class GUIManager
 
                       LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
                       String scorePointID = loyaltyProgramChallenge.getScoreID();
-                      Point scorePoint = pointService.getActivePoint(scorePointID, now);
+                      Point scorePoint = pointService.getActiveScore(scorePointID, now);
                       if (scorePoint != null)
                         {
                           loyaltyProgramPresentation.put("scoreID", scorePoint.getPointID());
