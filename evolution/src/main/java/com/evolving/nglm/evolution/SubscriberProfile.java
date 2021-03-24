@@ -513,9 +513,7 @@ public abstract class SubscriberProfile
                         String scorePointsID = loyaltyProgramChallenge.getScoreID();
                         if(scorePointsID != null)
                           {
-                            loyalty.put("scoreID", scorePointsID);
                             GUIManagedObject scoreObj = pointService.getStoredScore(scorePointsID);
-                            loyalty.put("scoreName", (scoreObj!=null)?(scoreObj.getJSONRepresentation().get("display").toString()):"");
                             int score = 0;
                             if(this.pointBalances.get(scorePointsID) != null){
                               score = this.pointBalances.get(scorePointsID).getBalance(now);

@@ -1809,10 +1809,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
     if (existingPoint != null && existingPoint.getReadOnly())
       {
+        boolean isScoreType = JSONUtilities.decodeBoolean(pointService.generateResponseJSON(existingPoint, true, now), "isScoreType", false);
         response.put("id", existingPoint.getGUIManagedObjectID());
         response.put("accepted", existingPoint.getAccepted());
         response.put("valid", existingPoint.getAccepted());
-        response.put("processing", pointService.isActivePoint(existingPoint, now));
+        response.put("processing", isScoreType ? pointService.isActiveScore(existingPoint, now) : pointService.isActivePoint(existingPoint, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
@@ -1919,7 +1920,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         response.put("id", point.getPointID());
         response.put("accepted", point.getAccepted());
         response.put("valid", point.getAccepted());
-        response.put("processing", pointService.isActivePoint(point, now));
+        response.put("processing", point.isScoreType() ? pointService.isActiveScore(point, now) : pointService.isActivePoint(point, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
