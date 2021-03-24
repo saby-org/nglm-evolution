@@ -83,6 +83,17 @@
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
   "ESRetentionDaysVDR"              : 45,
+  
+  "connectTask": {
+		"default": {
+			"initialWait": 50,
+			"retries": 18
+		},
+		"extendedsubscriberprofile_es_sink_connector": {
+			"initialWait": 100,
+			"retries": 19
+		}
+  },
 
   "hourlyReportCronEntryString"   : "0 * * * *",
   "dailyReportCronEntryString"    : "5 2 * * *",
