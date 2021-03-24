@@ -2967,27 +2967,27 @@ public class GUIManager
                   break;
 
                 case getPointList:
-                  jsonResponse = guiManagerGeneral.processGetPointList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetPointList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getPointSummaryList:
-                  jsonResponse = guiManagerGeneral.processGetPointList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetPointList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPoint:
-                  jsonResponse = guiManagerGeneral.processGetPoint(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetPoint(userID, jsonRoot, includeArchived);
                   break;
 
                 case putPoint:
-                  jsonResponse = guiManagerGeneral.processPutPoint(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processPutPoint(userID, jsonRoot);
                   break;
 
                 case removePoint:
-                  jsonResponse = guiManagerGeneral.processRemovePoint(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processRemovePoint(userID, jsonRoot);
                   break;
                   
                 case setStatusPoint:
-                  jsonResponse = guiManagerGeneral.processSetStatusPoint(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processSetStatusPoint(userID, jsonRoot);
                   break;
 
                 case getComplexObjectTypeList:
