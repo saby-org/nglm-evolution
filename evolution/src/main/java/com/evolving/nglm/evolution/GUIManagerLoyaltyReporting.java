@@ -274,7 +274,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             if (scoreID == null || scoreID.equals("1")) scoreID = createScoreAndGetID(jsonRoot); //RAJ K need to remove score 1
             if (scoreID == null) throw new GUIManagerException("can't create internal score for challenge", "");
             
-            jsonRoot.put(" scoreID", scoreID);
+            jsonRoot.put("scoreID", scoreID);
             loyaltyProgram = new LoyaltyProgramChallenge(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
             break;
 
