@@ -34,11 +34,13 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -268,6 +270,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             break;
             
           case CHALLENGE:
+            String scoreID = JSONUtilities.decodeString(jsonRoot, "scoreID", false);
+            if (scoreID == null || scoreID.equals("1")) scoreID = createScoreAndGetID(jsonRoot); //RAJ K need to remove score 1
+            if (scoreID == null) throw new GUIManagerException("can't create internal score for challenge", "");
+            
+            jsonRoot.put(" scoreID", scoreID);
             loyaltyProgram = new LoyaltyProgramChallenge(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
             break;
 
@@ -358,6 +365,34 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *  processRemoveLoyaltyProgram
   *
   *****************************************/
+  
+  private String createScoreAndGetID(JSONObject challengeJSON)
+  {
+    String name = JSONUtilities.decodeString(challengeJSON, "name", "challenge").concat("-score");
+    String display = JSONUtilities.decodeString(challengeJSON, "display", "challenge").concat("-score");
+    Map<String, Object> scoreJSON = new HashMap<String, Object>();
+    Map<String, Object> scoreValidityJSON = new HashMap<String, Object>();
+    scoreJSON.put("apiVersion", 1);
+    scoreJSON.put("name", name);
+    scoreJSON.put("display", display);
+    scoreJSON.put("active", true);
+    scoreJSON.put("debitable", true);
+    scoreJSON.put("creditable", true);
+    scoreValidityJSON.put("periodType", "year");
+    scoreValidityJSON.put("periodQuantity", 100);
+    scoreValidityJSON.put("validityExtension", true);
+    scoreValidityJSON.put("roundDown", true);
+    scoreJSON.put("validity", JSONUtilities.encodeObject(scoreValidityJSON));
+    JSONObject jsonroot = JSONUtilities.encodeObject(scoreJSON);
+    JSONObject response = processPutScore("0", jsonroot);
+    return JSONUtilities.decodeString(response, "id", false);
+  }
+
+  /*****************************************
+  *
+  *  processRemoveLoyaltyProgram
+  *
+  *****************************************/
 
   JSONObject processRemoveLoyaltyProgram(String userID, JSONObject jsonRoot){
 
@@ -438,6 +473,20 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
 
         GUIManagedObject loyaltyProgram = loyaltyPrograms.get(i);
+        
+        //
+        // remove score if loyalty program challenge
+        //
+        
+        JSONObject loyaltyJson = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, now);
+        String scoreID = JSONUtilities.decodeString(loyaltyJson, "scoreID", false);
+        if (scoreID != null)
+          {
+            Map<String, Object> removeScoreJSON = new HashMap<String, Object>();
+            removeScoreJSON.put("apiVersion", 1);
+            removeScoreJSON.put("id", scoreID);
+            processRemoveScore("0", JSONUtilities.encodeObject(removeScoreJSON));
+          }
 
         //
         // remove loyalty program
@@ -484,6 +533,191 @@ public class GUIManagerLoyaltyReporting extends GUIManager
      *
      *****************************************/
     response.put("removedloyaltyProgramIDS", JSONUtilities.encodeArray(validIDs));
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveScore
+  *
+  *****************************************/
+
+  JSONObject processRemoveScore(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> scores = new ArrayList<GUIManagedObject>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray pointIDs = new JSONArray();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single point
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String pointID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        pointIDs.add(pointID);
+        GUIManagedObject point = pointService.getStoredScore(pointID);
+        if (point != null && (force || !point.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (point != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            singleIDresponseCode = "pointNotFound";
+          }
+
+
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        pointIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }  
+
+    for (int i = 0; i < pointIDs.size(); i++)
+      {
+        String pointID = pointIDs.get(i).toString();
+        GUIManagedObject score = pointService.getStoredScore(pointID);
+
+        if (score != null && (force || !score.getReadOnly()))
+          {
+            scores.add(score);
+            validIDs.add(pointID);
+          }
+      }
+
+    /*****************************************
+     *
+     * remove related deliverable and related paymentMean
+     *
+     *****************************************/
+    for (int i = 0; i < scores.size(); i++)
+      {
+        GUIManagedObject score = scores.get(i);
+        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
+        JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+        String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+        if (providerID != null)
+          {
+            //
+            // deliverable
+            //
+
+            Collection<GUIManagedObject> deliverableObjects = deliverableService.getStoredDeliverables();
+            for (GUIManagedObject deliverableObject : deliverableObjects)
+              {
+                if (deliverableObject instanceof Deliverable)
+                  {
+                    Deliverable deliverable = (Deliverable) deliverableObject;
+                    if (deliverable.getFulfillmentProviderID().equals(providerID)
+                        && deliverable.getExternalAccountID().equals(score.getGUIManagedObjectID()))
+                      {
+                        deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
+                      }
+                  }
+              }
+
+            //
+            // paymentMean
+            //
+
+            Collection<GUIManagedObject> paymentMeanObjects = paymentMeanService.getStoredPaymentMeans();
+            for (GUIManagedObject paymentMeanObject : paymentMeanObjects)
+              {
+                if (paymentMeanObject instanceof PaymentMean)
+                  {
+                    PaymentMean paymentMean = (PaymentMean) paymentMeanObject;
+                    if (paymentMean.getFulfillmentProviderID().equals(providerID)
+                        && paymentMean.getExternalAccountID().equals(score.getGUIManagedObjectID()))
+                      {
+                        paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
+                      }
+                  }
+              }
+          }
+
+        /*****************************************
+         *
+         * remove
+         *
+         *****************************************/
+
+        //
+        // remove point
+        //
+
+        pointService.removePoint(score.getGUIManagedObjectID(), userID);
+
+        //
+        // remove dynamic criterion fields
+        //
+
+        //dynamicCriterionFieldService.removePointCriterionFields(score);
+
+        //
+        // revalidate
+        //
+
+        revalidateSubscriberMessageTemplates(now);
+        revalidateTargets(now);
+        revalidateJourneys(now);
+          
+      }
+        /*****************************************
+         *
+         * responseCode
+         *
+         *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    else
+      {
+        response.put("responseCode", "ok");
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedPointIDs", JSONUtilities.encodeArray(validIDs));
 
     return JSONUtilities.encodeObject(response);
   }
@@ -1588,6 +1822,225 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     return JSONUtilities.encodeObject(response);
  }
+  
+  /*****************************************
+  *
+  *  processPutScore
+  *
+  *****************************************/
+
+  JSONObject processPutScore(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
+    /*****************************************
+    *
+    *  pointID
+    *
+    *****************************************/
+
+    String pointID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (pointID == null)
+      {
+        //little hack here :
+        //   since pointID = deliverableID (if creditable) = paymentMeanID (if debitable), we need to be sure that 
+        //   deliverableID and paymentMeanID are unique, so point IDs start at position 10001
+        //   NOTE : we will be in trouble when we will have more than 10000 deliverables/paymentMeans ...
+        String idString = pointService.generatePointID();
+        try
+          {
+            int id = Integer.parseInt(idString);
+            pointID = String.valueOf(id > 10000 ? id : (10000 + id));
+          } catch (NumberFormatException e)
+          {
+            throw new ServerRuntimeException("ProcessPutPoint : could not generate new ID");
+          }
+        jsonRoot.put("id", pointID);
+      }
+
+    /*****************************************
+    *
+    *  existing point
+    *
+    *****************************************/
+
+    GUIManagedObject existingPoint = pointService.getStoredScore(pointID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingPoint != null && existingPoint.getReadOnly())
+      {
+        response.put("id", existingPoint.getGUIManagedObjectID());
+        response.put("accepted", existingPoint.getAccepted());
+        response.put("valid", existingPoint.getAccepted());
+        response.put("processing", pointService.isActivePoint(existingPoint, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process point
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate Point
+        *
+        ****************************************/
+
+        Point score = new Score(jsonRoot, epoch, existingPoint);
+
+        /*****************************************
+         *
+         * store
+         *
+         *****************************************/
+        if (!dryRun)
+          {
+
+            pointService.putPoint(score, (existingPoint == null), userID);
+
+            /*****************************************
+             *
+             * add dynamic criterion fields)
+             *
+             *****************************************/
+
+            //dynamicCriterionFieldService.addPointCriterionFields(point, (existingPoint == null));
+
+            /*****************************************
+             *
+             * create related deliverable and related paymentMean
+             *
+             *****************************************/
+
+            DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
+            JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+            String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+
+            //
+            // deliverable
+            //
+
+            if (providerID != null && score.getCreditable())
+              {
+                Map<String, Object> deliverableMap = new HashMap<String, Object>();
+                deliverableMap.put("id", CommodityDeliveryManager.POINT_PREFIX + score.getPointID());
+                deliverableMap.put("fulfillmentProviderID", providerID);
+                deliverableMap.put("externalAccountID", score.getPointID());
+                deliverableMap.put("name", score.getPointName());
+                deliverableMap.put("display", score.getDisplay());
+                deliverableMap.put("active", true);
+                deliverableMap.put("unitaryCost", 0);
+                deliverableMap.put("label", "points");
+                Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
+                deliverableService.putDeliverable(deliverable, true, userID);
+              }
+
+            //
+            // paymentMean
+            //
+
+            if (providerID != null && score.getDebitable())
+              {
+                Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
+                paymentMeanMap.put("id", "point-" + score.getPointID());
+                paymentMeanMap.put("fulfillmentProviderID", providerID);
+                paymentMeanMap.put("externalAccountID", score.getPointID());
+                paymentMeanMap.put("name", score.getPointName());
+                paymentMeanMap.put("display", score.getDisplay());
+                paymentMeanMap.put("active", true);
+                paymentMeanMap.put("label", score.getLabel());
+                PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
+                paymentMeanService.putPaymentMean(paymentMean, true, userID);
+              }
+
+            /*****************************************
+             *
+             * revalidate
+             *
+             *****************************************/
+
+            revalidateSubscriberMessageTemplates(now);
+            revalidateTargets(now);
+            revalidateJourneys(now);
+          }
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", score.getPointID());
+        response.put("accepted", score.getAccepted());
+        response.put("valid", score.getAccepted());
+        response.put("processing", pointService.isActiveScore(score, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+        if (!dryRun)
+          {
+            pointService.putIncompletePoint(incompleteObject, (existingPoint == null), userID);
+          }
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("pointID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "pointNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
   
   
 }
