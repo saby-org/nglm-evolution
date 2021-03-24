@@ -10,8 +10,10 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+@GUIDependencyDef(objectType = "score", serviceClass = PointService.class, dependencies = {})
 public class Score extends Point
 {
   
