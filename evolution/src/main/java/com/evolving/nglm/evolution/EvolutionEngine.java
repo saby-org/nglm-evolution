@@ -4386,7 +4386,7 @@ public class EvolutionEngine
                           // update Score points
                           //
 
-                          Score score = pointService.getActiveScore(loyaltyProgramChallenge.getScoreID(), now);
+                          Point score = pointService.getActiveScore(loyaltyProgramChallenge.getScoreID(), now);
                           if (score != null)
                             {
                               if (log.isDebugEnabled()) log.debug("update loyalty program Score => adding " + ((LoyaltyProgramScoreEvent) evolutionEvent).getScoreUnit() + " x " + subscriberCurrentLevelDefinition.getNumberOfscorePerEvent() + " of score " + score.getPointName());

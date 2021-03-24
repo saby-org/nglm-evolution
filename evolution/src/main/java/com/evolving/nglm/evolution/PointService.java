@@ -109,18 +109,34 @@ public class PointService extends GUIService
   public GUIManagedObject getStoredPoint(String pointID) 
   {
     GUIManagedObject result = null;
-    if (!(getStoredGUIManagedObject(pointID) instanceof Score))
+    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(pointID);
+    if (guiManagedObject.getAccepted())
       {
-        result = getStoredGUIManagedObject(pointID); 
+        if (!((Point) guiManagedObject).isScoreType())
+          {
+            result = guiManagedObject;
+          }
+      }
+    else
+      {
+        result = guiManagedObject;
       }
     return result;
   }
   public GUIManagedObject getStoredPoint(String pointID, boolean includeArchived) 
   {
     GUIManagedObject result = null;
-    if (!(getStoredGUIManagedObject(pointID, includeArchived) instanceof Score))
+    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(pointID, includeArchived);
+    if (guiManagedObject.getAccepted())
       {
-        result = getStoredGUIManagedObject(pointID, includeArchived); 
+        if (!((Point) guiManagedObject).isScoreType())
+          {
+            result = guiManagedObject;
+          }
+      }
+    else
+      {
+        result = guiManagedObject;
       }
     return result;
   }
@@ -129,7 +145,14 @@ public class PointService extends GUIService
     List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
     for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects())
       {
-        if (!(guiManagedObject instanceof Score))
+        if (guiManagedObject.getAccepted())
+          {
+            if (!((Point) guiManagedObject).isScoreType())
+              {
+                result.add(guiManagedObject);
+              }
+          }
+        else
           {
             result.add(guiManagedObject);
           }
@@ -141,29 +164,33 @@ public class PointService extends GUIService
     List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
     for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(includeArchived))
       {
-        if (!(guiManagedObject instanceof Score))
+        if (guiManagedObject.getAccepted())
+          {
+            if (!((Point) guiManagedObject).isScoreType())
+              {
+                result.add(guiManagedObject);
+              }
+          }
+        else
           {
             result.add(guiManagedObject);
           }
       }
     return result;
   }
-  public boolean isActivePoint(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date) && !(pointUnchecked instanceof Score); }
+  public boolean isActivePoint(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date) && !((Point) pointUnchecked).isScoreType(); }
   public Point getActivePoint(String pointID, Date date) 
   {
-    Point result = null;
-    if (!(getActiveGUIManagedObject(pointID, date) instanceof Score))
-      {
-        result = (Point) getActiveGUIManagedObject(pointID, date);
-      }
+    Point result = (Point) getActiveGUIManagedObject(pointID, date);
+    if (result.isScoreType()) return null;
     return result;
   }
   public Collection<Point> getActivePoints(Date date) 
   {
     Collection<Point> result = new HashSet<Point>();
-    for (GUIManagedObject guiManagedObject : getActiveGUIManagedObjects(date))
+    for (Point guiManagedObject : (Collection<Point>) getActiveGUIManagedObjects(date))
       {
-        if (!(guiManagedObject instanceof Score)) result.add((Point) guiManagedObject);
+        if (!guiManagedObject.isScoreType()) result.add(guiManagedObject);
       }
 
     return result;
@@ -178,18 +205,21 @@ public class PointService extends GUIService
   public GUIManagedObject getStoredScore(String scoreID) 
   {
     GUIManagedObject result = null;
-    if ((getStoredGUIManagedObject(scoreID) instanceof Score))
+    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(scoreID);
+    if (guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
       {
-        result = getStoredGUIManagedObject(scoreID); 
+        result = guiManagedObject;
       }
     return result;
   }
+  
   public GUIManagedObject getStoredScore(String scoreID, boolean includeArchived) 
   {
     GUIManagedObject result = null;
-    if ((getStoredGUIManagedObject(scoreID, includeArchived) instanceof Score))
+    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(scoreID, includeArchived);
+    if (guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
       {
-        result = getStoredGUIManagedObject(scoreID, includeArchived); 
+        result = guiManagedObject;
       }
     return result;
   }
@@ -198,7 +228,7 @@ public class PointService extends GUIService
     List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
     for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects())
       {
-        if (guiManagedObject instanceof Score)
+        if (guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
           {
             result.add(guiManagedObject);
           }
@@ -211,32 +241,28 @@ public class PointService extends GUIService
     List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
     for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(includeArchived))
       {
-        if ((guiManagedObject instanceof Score))
+        if (guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
           {
             result.add(guiManagedObject);
           }
       }
     return result;
   }
-  public boolean isActiveScore(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date) && (pointUnchecked instanceof Score); }
+  public boolean isActiveScore(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date) && ((Point) pointUnchecked).isScoreType(); }
 
-  public Score getActiveScore(String pointID, Date date)
+  public Point getActiveScore(String pointID, Date date)
   {
-    Score result = null;
-    if (getActiveGUIManagedObject(pointID, date) instanceof Score)
-      {
-        result = (Score) getActiveGUIManagedObject(pointID, date);
-      }
+    Point result = (Point) getActiveGUIManagedObject(pointID, date);
+    if (!result.isScoreType()) return null;
     return result;
   }
   
-  public Collection<Score> getActiveScores(Date date)
+  public Collection<Point> getActiveScores(Date date)
   {
-    Collection<Score> result = new HashSet<Score>();
-    for (GUIManagedObject guiManagedObject : getActiveGUIManagedObjects(date))
+    Collection<Point> result = new HashSet<Point>();
+    for (Point guiManagedObject : (Collection<Point>) getActiveGUIManagedObjects(date))
       {
-        if (guiManagedObject instanceof Score)
-          result.add((Score) guiManagedObject);
+        if (guiManagedObject.isScoreType()) result.add(guiManagedObject);
       }
 
     return result;
@@ -260,26 +286,6 @@ public class PointService extends GUIService
     //
 
     putGUIManagedObject(point, now, newObject, userID);
-  }
-  
-  /*****************************************
-  *
-  *  putScore
-  *
-  *****************************************/
-
-  public void putScore(Score score, boolean newObject, String userID) throws GUIManagerException{
-    //
-    //  now
-    //
-
-    Date now = SystemTime.getCurrentTime();
-
-    //
-    //  put
-    //
-
-    putGUIManagedObject(score, now, newObject, userID);
   }
   
   /*****************************************
