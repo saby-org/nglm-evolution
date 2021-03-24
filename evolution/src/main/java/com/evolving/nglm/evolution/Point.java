@@ -47,7 +47,7 @@ public class Point extends GUIManagedObject
     schemaBuilder.field("setable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("validity", PointValidity.schema());
     schemaBuilder.field("label", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("isScore", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("isScoreType", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -188,7 +188,7 @@ public class Point extends GUIManagedObject
     boolean setable = valueStruct.getBoolean("setable");
     PointValidity validity = PointValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
     String label = (schemaVersion >= 2) ? valueStruct.getString("label") : "";
-    boolean isScoreType = valueStruct.getBoolean("isScoreType");
+    boolean isScoreType = (schemaVersion >= 3) ? valueStruct.getBoolean("isScoreType") : false;
 
     //
     //  return
