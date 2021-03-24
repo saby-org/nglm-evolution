@@ -13,6 +13,8 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.ScheduledJobConfiguration;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings;
 import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
 
 import org.json.simple.JSONArray;
@@ -116,6 +118,8 @@ public class Deployment
   private static int elasticsearchRetentionDaysVDR;
   private static JSONObject licenseManagement;
   
+  private static Map<String, ConnectTaskConfiguration> connectTask = new HashMap<>();
+  private static ConnectTaskConfiguration connectTaskConfigDefault;
 
   //
   //  accessors
@@ -1010,6 +1014,24 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    try
+    {
+      //  connectTask
+      JSONObject connectTaskJSON = JSONUtilities.decodeJSONObject(jsonRoot, "connectTask", true);
+      for (Object key : connectTaskJSON.keySet()) {
+        connectTask.put((String) key, new ConnectTaskConfiguration((JSONObject) connectTaskJSON.get(key)));
+      }
+      connectTaskConfigDefault = connectTask.get("default");
+      if (connectTaskConfigDefault == null) {
+        log.info("connectTask section has no \"default\", using hard-coded values");
+        connectTaskConfigDefault = new ConnectTaskConfiguration(50, 8);
+      }
+    }
+  catch (JSONUtilitiesException e)
+    {
+      throw new ServerRuntimeException("deployment", e);
+    }
+
     
   };
   
@@ -1179,5 +1201,29 @@ public class Deployment
   public static JSONObject getTenantJSONRoot(int tenantID)
   {
     return jsonConfigPerTenant.get(tenantID);
+  }
+
+  public static int getConnectTaskInitialWait(String connectorName)
+  {
+    int res;
+    ConnectTaskConfiguration connectTaskConfig = connectTask.get(connectorName);
+    if (connectTaskConfig != null) {
+      res = connectTaskConfig.getInitialWait();
+    } else {
+      res = connectTaskConfigDefault.getInitialWait();
+    }
+    return res;
+  }
+
+  public static int getConnectTaskRetries(String connectorName)
+  {
+    int res;
+    ConnectTaskConfiguration connectTaskConfig = connectTask.get(connectorName);
+    if (connectTaskConfig != null) {
+      res = connectTaskConfig.getRetries();
+    } else {
+      res = connectTaskConfigDefault.getRetries();
+    }
+    return res;
   }
 }
