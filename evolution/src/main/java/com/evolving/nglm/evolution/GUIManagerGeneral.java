@@ -1176,6 +1176,7 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
 
     GUIManagedObject existingPoint = pointService.getStoredPoint(pointID);
+    if (existingPoint == null) existingPoint = pointService.getStoredScore(pointID); //can be a score
 
     /*****************************************
     *
@@ -1226,7 +1227,7 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            dynamicCriterionFieldService.addPointCriterionFields(point, (existingPoint == null));
+            if (!point.isScoreType()) dynamicCriterionFieldService.addPointCriterionFields(point, (existingPoint == null));
 
             /*****************************************
              *
@@ -1409,7 +1410,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String pointID = pointIDs.get(i).toString();
         GUIManagedObject point = pointService.getStoredPoint(pointID);
-
+        if (point == null) point = pointService.getStoredScore(pointID);
         if (point != null && (force || !point.getReadOnly()))
           {
             points.add(point);
@@ -1483,7 +1484,12 @@ public class GUIManagerGeneral extends GUIManager
         // remove dynamic criterion fields
         //
 
-        dynamicCriterionFieldService.removePointCriterionFields(point);
+        JSONObject pointJsonObject = pointService.generateResponseJSON(point, true, now);
+        if (!JSONUtilities.decodeBoolean(pointJsonObject, "isScoreType", false))
+          {
+            dynamicCriterionFieldService.removePointCriterionFields(point);
+          }
+        
 
         //
         // revalidate
