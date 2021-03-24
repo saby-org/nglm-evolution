@@ -41,6 +41,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
@@ -913,31 +914,35 @@ public abstract class SubscriberProfile
       }
     
   //prepare complexObjectInstances
+    HashMap<String,String> complexObjectTypes=new HashMap<String,String>();
+    Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), getTenantID());
+    for(ComplexObjectType current : types) { 
+    	complexObjectTypes.put(current.getComplexObjectTypeID(), current.getDisplay());
+    	}
+
     ArrayList<JSONObject> complexObjectInstancesjson = new ArrayList<JSONObject>();
 	HashMap<String,HashMap<String,HashMap<String,Object>>> json = new HashMap<String,HashMap<String,HashMap<String,Object>>>();
     if(getComplexObjectInstances()!=null && getComplexObjectInstances().size()>0) {
-    	for (ComplexObjectInstance instance : getComplexObjectInstances())
-    	{ 	System.out.println(1+":"+instance.getComplexObjectTypeID());
-    		if(!json.containsKey(instance.getComplexObjectTypeID())) {
-    		System.out.println(2);
-    		json.put(instance.getComplexObjectTypeID(), new HashMap<String,HashMap<String,Object>>());
+    	for (ComplexObjectInstance instance : getComplexObjectInstances()) {
+    		if(instance.getComplexObjectTypeID()==null || instance.getComplexObjectTypeID().trim().equals(""))
+    			continue;
+    	{ 	String complexObjectDisplay=complexObjectTypes.get(instance.getComplexObjectTypeID());
+    		if(!json.containsKey(complexObjectDisplay)) {
+    		json.put(complexObjectDisplay, new HashMap<String,HashMap<String,Object>>());
     	}
-    	HashMap<String,HashMap<String,Object>>  elements=(HashMap<String,HashMap<String,Object>>) json.get(instance.getComplexObjectTypeID());
+    	HashMap<String,HashMap<String,Object>>  elements=(HashMap<String,HashMap<String,Object>>) json.get(complexObjectDisplay);
     	if(!elements.containsKey(instance.getElementID())) {
-    		System.out.println(3);
     		elements.put(instance.getElementID(), new HashMap<String,Object>());
     	} 
     	HashMap<String,Object> elementVal=elements.get(instance.getElementID());
     	
     	for (Map.Entry<String,DataModelFieldValue> entry : instance.getFieldValues().entrySet()) {
-    		System.out.println(4+" -"+entry.getKey()+":"+entry.getValue().getValue());
     		elementVal.put(entry.getKey(), entry.getValue().getValue());
     	}       
     	}
-    	System.out.println("5:"+json);
+    	    }
     	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
-    }
-    
+    	}
     //prepare Inclusion/Exclusion list
     
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
@@ -1069,7 +1074,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
-    generalDetailsPresentation.put("complexObjectInstances", JSONUtilities.encodeArray(complexObjectInstancesjson));
+    generalDetailsPresentation.put("complexFields", JSONUtilities.encodeArray(complexObjectInstancesjson));
     // prepare basic kpiPresentation (if any)
     //
 
