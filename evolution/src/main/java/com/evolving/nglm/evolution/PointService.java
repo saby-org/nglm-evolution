@@ -264,6 +264,26 @@ public class PointService extends GUIService
   
   /*****************************************
   *
+  *  putScore
+  *
+  *****************************************/
+
+  public void putScore(Score score, boolean newObject, String userID) throws GUIManagerException{
+    //
+    //  now
+    //
+
+    Date now = SystemTime.getCurrentTime();
+
+    //
+    //  put
+    //
+
+    putGUIManagedObject(score, now, newObject, userID);
+  }
+  
+  /*****************************************
+  *
   *  putIncompleteOffer
   *
   *****************************************/

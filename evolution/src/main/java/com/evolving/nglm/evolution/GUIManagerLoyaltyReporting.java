@@ -1915,7 +1915,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         *
         ****************************************/
 
-        Point score = new Score(jsonRoot, epoch, existingPoint);
+        Score score = new Score(jsonRoot, epoch, existingPoint);
 
         /*****************************************
          *
@@ -1925,7 +1925,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         if (!dryRun)
           {
 
-            pointService.putPoint(score, (existingPoint == null), userID);
+            pointService.putScore(score, (existingPoint == null), userID);
 
             /*****************************************
              *
