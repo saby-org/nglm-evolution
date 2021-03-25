@@ -21,6 +21,8 @@ import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
+import com.evolving.nglm.evolution.SupplierService;
+import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
@@ -29,6 +31,7 @@ import com.evolving.nglm.evolution.datacubes.generator.ODRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.ProgramsChangesDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.ProgramsHistoryDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.SubscriberProfileDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.VDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -76,6 +79,8 @@ public class DatacubeManager
   private static OfferObjectiveService offerObjectiveService;
   private static ElasticsearchClientAPI elasticsearchRestClient;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
+  private static VoucherService voucherService;
+  private static SupplierService supplierService;
 
   //
   // Datacube writer
@@ -110,6 +115,10 @@ public class DatacubeManager
   private static MDRDatacubeGenerator hourlyMdrDatacubeDefinitive;
   private static SubscriberProfileDatacubeGenerator subscriberProfileDatacubePreview;
   private static SubscriberProfileDatacubeGenerator subscriberProfileDatacubeDefinitive;
+  private static VDRDatacubeGenerator dailyVdrDatacubePreview;
+  private static VDRDatacubeGenerator dailyVdrDatacubeDefinitive;
+  private static VDRDatacubeGenerator hourlyVdrDatacubePreview;
+  private static VDRDatacubeGenerator hourlyVdrDatacubeDefinitive;
   
   /*****************************************
   *
@@ -153,6 +162,10 @@ public class DatacubeManager
     offerObjectiveService.start();
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "NOT_USED", Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
+    voucherService = new VoucherService(bootstrapServers, "NOT_USED", Deployment.getVoucherTopic());
+    voucherService.start();
+    supplierService = new SupplierService(bootstrapServers, "NOT_USED", Deployment.getSupplierTopic(), false);
+    supplierService.start();
     
     //
     // initialize ES client & GUI client
@@ -199,6 +212,10 @@ public class DatacubeManager
     hourlyMdrDatacubeDefinitive = new MDRDatacubeGenerator("MDR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
     subscriberProfileDatacubePreview = new SubscriberProfileDatacubeGenerator("SubscriberProfile(Preview)", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
     subscriberProfileDatacubeDefinitive = new SubscriberProfileDatacubeGenerator("SubscriberProfile(Definitive)", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
+    dailyVdrDatacubePreview = new VDRDatacubeGenerator("VDR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, voucherService, supplierService);
+    dailyVdrDatacubeDefinitive = new VDRDatacubeGenerator("VDR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, voucherService, supplierService);
+    hourlyVdrDatacubePreview = new VDRDatacubeGenerator("VDR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, voucherService, supplierService);
+    hourlyVdrDatacubeDefinitive = new VDRDatacubeGenerator("VDR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, voucherService, supplierService);
   }
 
   /*****************************************
@@ -696,6 +713,130 @@ public class DatacubeManager
       return nextAvailableID;
     }
   }
+  
+  /*
+   * ODR daily preview
+   *
+   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new ODR can still be added.
+   */
+  private static long scheduleVDRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "VDR-daily-preview";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        dailyVdrDatacubePreview.dailyPreview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * ODR daily definitive
+   *
+   * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleVDRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "VDR-daily-definitive";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        dailyVdrDatacubeDefinitive.dailyDefinitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  
+  /*
+   * ODR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new VDR can still be added.
+   */
+  private static long scheduleVDRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "VDR-hourly-preview";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyVdrDatacubePreview.hourlyPreview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * VDR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_vouchers-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleVDRHourlyDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String jobName = "VDR-hourly-definitive";
+    
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
+        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyVdrDatacubeDefinitive.hourlyDefinitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+
 
   /*
    * Journey datacube
@@ -773,6 +914,8 @@ public class DatacubeManager
     uniqueID = scheduleBDRHourlyPreview(datacubeScheduler, uniqueID);
     uniqueID = scheduleMDRDailyPreview(datacubeScheduler, uniqueID);
     uniqueID = scheduleMDRHourlyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleVDRDailyPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleVDRHourlyPreview(datacubeScheduler, uniqueID);
     
     //
     // Definitives datacubes 
@@ -786,6 +929,9 @@ public class DatacubeManager
     uniqueID = scheduleMDRDailyDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleMDRHourlyDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleJourneyDatacubeDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleVDRDailyDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleVDRHourlyDefinitive(datacubeScheduler, uniqueID);
+    
 
     log.info("Starting scheduler");
     datacubeScheduler.runScheduler();
@@ -838,6 +984,8 @@ public class DatacubeManager
     salesChannelService.stop();
     paymentMeanService.stop();
     offerObjectiveService.stop();
+    voucherService.stop();
+    supplierService.stop();
     
     /*****************************************
     *

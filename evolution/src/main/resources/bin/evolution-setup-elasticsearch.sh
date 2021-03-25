@@ -484,7 +484,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "returnStatus" : { "type" : "keyword" },
       "voucherCode" : { "type" : "keyword" },
       "voucherID" : { "type" : "keyword" },
-      "opertaion" : { "type" : "keyword" },
+      "opertaion" : { "type" : "keyword" },      
+      "returnCode" : { "type" : "keyword" },
       "expiryDate" : { "type" : "keyword" }
     }
   }
@@ -826,6 +827,27 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_m
       "filter.returnCode" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalQty" : { "type" : "integer" }
+    }
+  }
+}'
+echo
+
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_vdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["datacube_vdr"],
+  "mappings" : {
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.voucher" : { "type" : "keyword" },
+      "filter.supplier" : { "type" : "keyword" },
+      "filter.module" : { "type" : "keyword" },
+      "filter.feature" : { "type" : "keyword" },      
+      "filter.action" : { "type" : "keyword" },
+      "filter.origin" : { "type" : "keyword" },
+      "filter.returnCode" : { "type" : "keyword" },
+      "count" : { "type" : "integer" },
+      "metric.totalAmount" : { "type" : "integer" }
     }
   }
 }'
