@@ -4444,7 +4444,14 @@ public class EvolutionEngine
               {
                 if (log.isDebugEnabled()) log.debug("exiting deleted from conf loyalty program " + loyaltyProgramID + " for subscriber " + subscriberProfile.getSubscriberID());
                 loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramID);
-                ((LoyaltyProgramPointsState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService);
+                if (loyaltyProgramState instanceof LoyaltyProgramPointsState)
+                  {
+                    ((LoyaltyProgramPointsState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService);
+                  }
+                else if (loyaltyProgramState instanceof LoyaltyProgramChallengeState)
+                  {
+                    ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService, null);
+                  }
               }
           }
         }

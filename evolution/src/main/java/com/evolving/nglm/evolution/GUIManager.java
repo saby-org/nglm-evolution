@@ -19854,7 +19854,6 @@ public class GUIManager
                       if (scorePoint != null)
                         {
                           loyaltyProgramPresentation.put("scoreID", scorePoint.getPointID());
-                          loyaltyProgramPresentation.put("scoreName", scorePoint.getPointName());
                           loyaltyProgramPresentation.put("scoreDisplay", scorePoint.getDisplay());
                         }
                       PointBalance score = baseSubscriberProfile.getPointBalances().get(scorePointID);
