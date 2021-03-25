@@ -106,7 +106,6 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   public String getDisplay(String id, String fieldName)
   {
     T result = this.guiManagedObjects.get(id);
-    logWarningOnlyOnce("result " + result);
     if(result != null && result.getGUIManagedObjectDisplay() != null)
       {
         return result.getGUIManagedObjectDisplay();

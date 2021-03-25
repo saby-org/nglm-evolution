@@ -46,7 +46,6 @@ public class VouchersMap extends GUIManagedObjectMap<Voucher>
   public String getSupplierID(String id, String fieldName)
   {
     Voucher result = this.guiManagedObjects.get(id);
-    logWarningOnlyOnce("result " + result);
     if(result != null)
       {
         return result.getSupplierID();

@@ -715,10 +715,10 @@ public class DatacubeManager
   }
   
   /*
-   * ODR daily preview
+   * VDR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the current day
-   * Those data are not definitive, the day is not ended yet, new ODR can still be added.
+   * This will generated a datacube preview of the day from the detailedrecords_vouchers-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new VDR can still be added.
    */
   private static long scheduleVDRDailyPreview(JobScheduler scheduler, long nextAvailableID) {
     String jobName = "VDR-daily-preview";
@@ -746,9 +746,9 @@ public class DatacubeManager
   }
   
   /*
-   * ODR daily definitive
+   * VDR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_vouchers-YYYY-MM-dd index of the previous day.
    */
   private static long scheduleVDRDailyDefinitive(JobScheduler scheduler, long nextAvailableID) {
     String jobName = "VDR-daily-definitive";
@@ -777,9 +777,9 @@ public class DatacubeManager
   
   
   /*
-   * ODR hourly preview
+   * VDR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of every hour from the detailedrecords_vouchers-YYYY-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new VDR can still be added.
    */
   private static long scheduleVDRHourlyPreview(JobScheduler scheduler, long nextAvailableID) {
