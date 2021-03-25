@@ -41,7 +41,6 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
-import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
@@ -914,23 +913,15 @@ public abstract class SubscriberProfile
       }
     
   //prepare complexObjectInstances
-    HashMap<String,String> complexObjectTypes=new HashMap<String,String>();
-    Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), getTenantID());
-    for(ComplexObjectType current : types) { 
-    	complexObjectTypes.put(current.getComplexObjectTypeID(), current.getDisplay());
-    	}
-
+    
     ArrayList<JSONObject> complexObjectInstancesjson = new ArrayList<JSONObject>();
 	HashMap<String,HashMap<String,HashMap<String,Object>>> json = new HashMap<String,HashMap<String,HashMap<String,Object>>>();
     if(getComplexObjectInstances()!=null && getComplexObjectInstances().size()>0) {
-    	for (ComplexObjectInstance instance : getComplexObjectInstances()) {
-    		if(instance.getComplexObjectTypeID()==null || instance.getComplexObjectTypeID().trim().equals(""))
-    			continue;
-    	{ 	String complexObjectDisplay=complexObjectTypes.get(instance.getComplexObjectTypeID());
-    		if(!json.containsKey(complexObjectDisplay)) {
-    		json.put(complexObjectDisplay, new HashMap<String,HashMap<String,Object>>());
+    	for (ComplexObjectInstance instance : getComplexObjectInstances())
+    	{ 	if(!json.containsKey(instance.getComplexObjectTypeID())) {
+    		json.put(instance.getComplexObjectTypeID(), new HashMap<String,HashMap<String,Object>>());
     	}
-    	HashMap<String,HashMap<String,Object>>  elements=(HashMap<String,HashMap<String,Object>>) json.get(complexObjectDisplay);
+    	HashMap<String,HashMap<String,Object>>  elements=(HashMap<String,HashMap<String,Object>>) json.get(instance.getComplexObjectTypeID());
     	if(!elements.containsKey(instance.getElementID())) {
     		elements.put(instance.getElementID(), new HashMap<String,Object>());
     	} 
@@ -940,9 +931,9 @@ public abstract class SubscriberProfile
     		elementVal.put(entry.getKey(), entry.getValue().getValue());
     	}       
     	}
-    	    }
     	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
-    	}
+    }
+    
     //prepare Inclusion/Exclusion list
     
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
