@@ -182,7 +182,7 @@ public class PointService extends GUIService
   public Point getActivePoint(String pointID, Date date) 
   {
     Point result = (Point) getActiveGUIManagedObject(pointID, date);
-    if (result.isScoreType()) return null;
+    if (result == null || result.isScoreType()) return null;
     return result;
   }
   public Collection<Point> getActivePoints(Date date) 
@@ -253,7 +253,7 @@ public class PointService extends GUIService
   public Point getActiveScore(String pointID, Date date)
   {
     Point result = (Point) getActiveGUIManagedObject(pointID, date);
-    if (!result.isScoreType()) return null;
+    if (result == null || !result.isScoreType()) return null;
     return result;
   }
   
