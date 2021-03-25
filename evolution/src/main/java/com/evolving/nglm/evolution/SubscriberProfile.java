@@ -629,7 +629,7 @@ public abstract class SubscriberProfile
   
   private boolean isScore(String pointID, PointService pointService)
   {
-    return pointService.getStoredScore(pointID) != null;
+    return pointService.getStoredScore(pointID, true) != null;
   }
   /****************************************
   *
