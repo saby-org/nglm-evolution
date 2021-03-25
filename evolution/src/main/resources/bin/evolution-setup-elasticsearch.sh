@@ -98,7 +98,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
               "loyaltyProgramEnrollmentDate" : { "type" : "date" },
               "loyaltyProgramExitDate"       : { "type" : "date" },
               "tierUpdateDate"               : { "type" : "date" },
-              "loyaltyProgramEpoch"          : { "type" : "long" }
+              "loyaltyProgramEpoch"          : { "type" : "long" },
+              "levelUpdateDate"              : { "type" : "date" },
            }
       },
       "pointBalances"                       : { "type": "nested",
