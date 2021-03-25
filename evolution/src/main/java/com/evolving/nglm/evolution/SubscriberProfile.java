@@ -589,35 +589,48 @@ public abstract class SubscriberProfile
   *
   ****************************************/
   
-  public JSONArray getPointsBalanceJSON()
+  public JSONArray getPointsBalanceJSON(PointService pointService)
   {
     JSONArray array = new JSONArray();
     if(this.pointBalances != null)
       {
         for(Entry<String, PointBalance> point : pointBalances.entrySet())
           {
-            JSONObject obj = new JSONObject();
-            Date earliestExpirationDate = point.getValue().getFirstExpirationDate(SystemTime.getCurrentTime());
-            int earliestExpirationQuantity = point.getValue().getBalance(earliestExpirationDate);
-            JSONArray expirationDates = new JSONArray();
-            for (Date expirationDate : point.getValue().getBalances().keySet())
+            if (!isScore(point.getKey(), pointService))
               {
-                JSONObject pointInfo = new JSONObject();
-                pointInfo.put("date", expirationDate.getTime());
-                pointInfo.put("amount", point.getValue().getBalances().get(expirationDate));
-                expirationDates.add(pointInfo);
+                JSONObject obj = new JSONObject();
+                Date earliestExpirationDate = point.getValue().getFirstExpirationDate(SystemTime.getCurrentTime());
+                int earliestExpirationQuantity = point.getValue().getBalance(earliestExpirationDate);
+                JSONArray expirationDates = new JSONArray();
+                for (Date expirationDate : point.getValue().getBalances().keySet())
+                  {
+                    JSONObject pointInfo = new JSONObject();
+                    pointInfo.put("date", expirationDate.getTime());
+                    pointInfo.put("amount", point.getValue().getBalances().get(expirationDate));
+                    expirationDates.add(pointInfo);
+                  }
+                obj.put("expirationDates", JSONUtilities.encodeArray(expirationDates));
+                obj.put(EARLIEST_EXPIRATION_DATE, earliestExpirationDate != null ? earliestExpirationDate.getTime() : null);
+                obj.put(EARLIEST_EXPIRATION_QUANTITY, earliestExpirationQuantity);
+                obj.put(CURRENT_BALANCE, point.getValue().getBalance(SystemTime.getCurrentTime()));
+                obj.put("pointID", point.getKey());
+                array.add(obj);
               }
-            obj.put("expirationDates", JSONUtilities.encodeArray(expirationDates));
-            obj.put(EARLIEST_EXPIRATION_DATE, earliestExpirationDate != null ? earliestExpirationDate.getTime() : null);
-            obj.put(EARLIEST_EXPIRATION_QUANTITY, earliestExpirationQuantity);
-            obj.put(CURRENT_BALANCE, point.getValue().getBalance(SystemTime.getCurrentTime()));
-            obj.put("pointID", point.getKey());
-            array.add(obj);
           }
       }
     return array;
   }
 
+  /****************************************
+  *
+  *  isScore
+  *
+  ****************************************/
+  
+  private boolean isScore(String pointID, PointService pointService)
+  {
+    return pointService.getStoredScore(pointID) != null;
+  }
   /****************************************
   *
   *  getSubscriberJourneysJSON - SubscriberJourneys

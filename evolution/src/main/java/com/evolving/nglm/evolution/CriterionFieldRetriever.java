@@ -471,6 +471,7 @@ public abstract class CriterionFieldRetriever
             optOutDate = loyaltyProgramChallengeState.getLoyaltyProgramExitDate(); 
           }
       }
+    
     //
     // opted out previously?
     //
