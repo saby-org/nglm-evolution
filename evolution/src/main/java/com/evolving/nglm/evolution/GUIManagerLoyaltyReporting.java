@@ -1074,7 +1074,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions(includeArchived).size());
     response.put("pointCount", pointService.getStoredPoints(includeArchived).size());
     response.put("offerCount", offerService.getStoredOffers(includeArchived).size());
-    response.put("loyaltyProgramCount", loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived).size());
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies(includeArchived).size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies(includeArchived).size());
     response.put("dnboMatrixCount", dnboMatrixService.getStoredDNBOMatrixes(includeArchived).size());
@@ -1100,6 +1099,33 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived).size());
+    
+    //
+    //  LoyaltyProgram
+    //
+    
+    int loyaltyProgramCount = 0;
+    int loyaltyProgramChallengeCount = 0;
+    for (GUIManagedObject guiManagedObject : loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived))
+      {
+        JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(guiManagedObject, true, SystemTime.getCurrentTime());
+        LoyaltyProgramType type = LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType"));
+        if (type == LoyaltyProgramType.POINTS)
+          {
+            loyaltyProgramCount++;
+          }
+        else if (type == LoyaltyProgramType.CHALLENGE)
+          {
+            loyaltyProgramChallengeCount++;
+          }
+      }
+    response.put("loyaltyProgramCount", loyaltyProgramCount);
+    response.put("loyaltyProgramChallengeCount", loyaltyProgramChallengeCount);
+    
+    //
+    //  areaAvailablity
+    //
+    
     if (jsonRoot.containsKey("areaAvailablity"))
       {
         int mailTemplateCount = 0;
