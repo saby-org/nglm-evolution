@@ -438,10 +438,12 @@ public abstract class SubscriberProfile
   
   public JSONArray getLoyaltyProgramsJSON(LoyaltyProgramService loyaltyProgramService, PointService pointService)
   {
+    log.info("RAJ K getLoyaltyProgramsJSON {}", loyaltyPrograms != null);
     Date now = SystemTime.getCurrentTime();
     JSONArray array = new JSONArray();
     if(this.loyaltyPrograms != null)
       {
+        log.info("RAJ K loyaltyPrograms {}", loyaltyPrograms.entrySet());
         for(Entry<String, LoyaltyProgramState> program : loyaltyPrograms.entrySet())
           {
             // Add archives for datacubes & reports on terminated loyalty programs.
@@ -450,6 +452,7 @@ public abstract class SubscriberProfile
             
             if(loyaltyProgram != null)
               {
+                log.info("RAJ K loyaltyProgram {}", loyaltyProgram.getGUIManagedObjectDisplay());
                 loyalty.put("programID", program.getKey());
                 loyalty.put("loyaltyProgramType", program.getValue().getLoyaltyProgramType().getExternalRepresentation());
                 loyalty.put("loyaltyProgramEpoch", program.getValue().getLoyaltyProgramEpoch());

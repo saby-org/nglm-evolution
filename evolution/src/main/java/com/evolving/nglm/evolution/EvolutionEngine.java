@@ -4411,7 +4411,6 @@ public class EvolutionEngine
                           //
 
                           String newLevel = determineLoyaltyProgramChallengeLevel(subscriberProfile, loyaltyProgramChallenge, now);
-                          log.info("RAJ K oldLevel {}, newLevel {} ", oldLevel, newLevel);
                           if (!oldLevel.equals(newLevel))
                             {
                               LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevel, now, evolutionEvent.getClass().getName(), loyaltyProgramService, null);
@@ -4507,16 +4506,13 @@ public class EvolutionEngine
         currentSubsriberScores = subscriberProfile.getPointBalances().get(loyaltyProgramChallenge.getScoreID()).getBalance(now);
       }
     
-    log.info("RAJ K determineLoyaltyProgramChallengeLevel - currentSubsriberScores {}", currentSubsriberScores);
     for (ChallengeLevel level : loyaltyProgramChallenge.getLevels())
       {
-        log.info("RAJ K ChallengeLevel {} - score required {}", level.getLevelName(), level.getScoreLevel());
         if (currentSubsriberScores >= level.getScoreLevel())
           {
             newLevelName = level.getLevelName();
           }
       }
-    log.info("RAJ K newLevelName {} ", newLevelName);
     return newLevelName;
   }
 

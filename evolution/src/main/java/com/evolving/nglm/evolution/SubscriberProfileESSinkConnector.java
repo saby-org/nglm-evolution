@@ -140,6 +140,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       *  documentMap
       *
       ****************************************/
+      log.info("RAJ K getDocumentMap for {}", subscriberProfile.getMSISDN());
 
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", subscriberProfile.getSubscriberID());
