@@ -849,6 +849,7 @@ public class DatacubeManager
     salesChannelService.stop();
     paymentMeanService.stop();
     offerObjectiveService.stop();
+    resellerService.stop();
     
     /*****************************************
     *
