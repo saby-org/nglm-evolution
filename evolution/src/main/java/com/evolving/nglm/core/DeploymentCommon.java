@@ -44,6 +44,7 @@ import com.evolving.nglm.evolution.ExternalAPI;
 import com.evolving.nglm.evolution.ExternalAPITopic;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.GUIManagerExtension;
+import com.evolving.nglm.evolution.JourneyMetricConfiguration;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.NodeType;
 import com.evolving.nglm.evolution.NotificationManager;
@@ -221,10 +222,6 @@ public class DeploymentCommon
   //
   // Elasticsearch
   //
-  private static String elasticsearchHost;
-  private static int elasticsearchPort;
-  private static String elasticsearchUserName;
-  private static String elasticsearchUserPassword;
   private static int elasticsearchScrollSize;
   private static int elasticSearchScrollKeepAlive;
   private static int elasticsearchDefaultShards;
@@ -241,6 +238,9 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysTokens;
   private static int elasticsearchRetentionDaysSnapshots;
   private static int elasticsearchRetentionDaysVDR;
+  private static int elasticsearchRetentionDaysJourneys;
+  private static int elasticsearchRetentionDaysCampaigns;
+  private static int elasticsearchRetentionDaysBulkCampaigns;
   //
   // Kafka
   //
@@ -320,7 +320,6 @@ public class DeploymentCommon
   private static String subscriberHistoryChangeLogTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
-  private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
@@ -407,7 +406,7 @@ public class DeploymentCommon
   private static boolean generateSimpleProfileDimensions;
   private static Map<String,CommunicationChannel> communicationChannels;
   private static Map<String,SupportedDataType> supportedDataTypes;
-  private static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations;
+  private static JourneyMetricConfiguration journeyMetricConfiguration;
   private static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics;
   private static Map<String,CriterionField> profileCriterionFields;
   private static Map<String,CriterionField> baseProfileCriterionFields;
@@ -456,6 +455,8 @@ public class DeploymentCommon
   private static int recurrentCampaignCreationDaysRange;
   private static Map<String,Topic> allTopics;
   private static boolean isPreprocessorNeeded;
+  private static int nodesTransitionsHistorySize;
+  private static String firstDayOfTheWeek;
   
   /*****************************************
   *
@@ -478,10 +479,12 @@ public class DeploymentCommon
   //
   // Elasticsearch
   //
-  public static String getElasticSearchHost() { return elasticsearchHost; }
-  public static int getElasticSearchPort() { return elasticsearchPort; }
-  public static String getElasticSearchUserName() { return  elasticsearchUserName; }
-  public static String getElasticSearchUserPassword() { return  elasticsearchUserPassword; }
+  public static ElasticsearchConnectionSettings getElasticsearchConnectionSettings(String name, boolean forConnect) {
+    if(elasticsearchConnectionSettings.get(name) == null) {
+      return (forConnect) ? elasticsearchConnectionSettings.get("connectDefault") : elasticsearchConnectionSettings.get("default");
+    }
+    return elasticsearchConnectionSettings.get(name);
+  }
   public static int getElasticsearchScrollSize() {return elasticsearchScrollSize; }
   public static int getElasticSearchScrollKeepAlive() {return elasticSearchScrollKeepAlive; }
   public static int getElasticsearchDefaultShards() { return elasticsearchDefaultShards; }
@@ -498,6 +501,9 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysTokens() { return elasticsearchRetentionDaysTokens; }
   public static int getElasticsearchRetentionDaysSnapshots() { return elasticsearchRetentionDaysSnapshots; }
   public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
+  public static int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
+  public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
+  public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
   //
   // Kafka
   //
@@ -577,7 +583,6 @@ public class DeploymentCommon
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
-  public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
@@ -648,7 +653,7 @@ public class DeploymentCommon
   public static JSONArray getInitialComplexObjectJSONArray() { return initialComplexObjectJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
-  public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; } // EVPRO-99 check for tenant and static
+  public static JourneyMetricConfiguration getJourneyMetricConfiguration() { return journeyMetricConfiguration; }
   public static Map<String,SubscriberProfileDatacubeMetric> getSubscriberProfileDatacubeMetrics() { return subscriberProfileDatacubeMetrics; } // EVPRO-99 check for tenant and static 
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; } // EVPRO-99 check for tenant and static
   public static Map<String,CriterionField> getBaseProfileCriterionFields() { return baseProfileCriterionFields; }
@@ -685,9 +690,9 @@ public class DeploymentCommon
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static String getReportManagerTopicsCreationProperties() { return reportManagerTopicsCreationProperties; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
+  @Deprecated // TODO EVPRO-99 TO BE REMOVED
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; } // EVPRO-99 check for tenant and static
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
-  public static Map<String,ElasticsearchConnectionSettings> getElasticsearchConnectionSettings() { return elasticsearchConnectionSettings; }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static Map<String,CommunicationChannel> getCommunicationChannels(){ return communicationChannels; }; // TODO EVPRO-99 how communication channels are handled into multitenancy ??
@@ -713,6 +718,8 @@ public class DeploymentCommon
   public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; } // TODO EVPRO-99 check tenant aspect
   public static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
+  public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
+  public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
   
   /****************************************
   *
@@ -750,19 +757,6 @@ public class DeploymentCommon
     //
     // Elasticsearch
     //
-    // TODO EVPRO-99 getenv
-    elasticsearchHost = System.getenv("ELASTICSEARCH_HOST");
-    elasticsearchPort = -1;
-    try
-      {
-        elasticsearchPort = Integer.parseInt(System.getenv("ELASTICSEARCH_PORT"));
-      }
-    catch (NumberFormatException e)
-      {
-        log.info("deployment : can not get/parse env conf ELASTICSEARCH_PORT");
-      }
-    elasticsearchUserName = System.getenv("ELASTICSEARCH_USERNAME");
-    elasticsearchUserPassword = System.getenv("ELASTICSEARCH_USERPASSWORD");
     
     elasticsearchScrollSize = jsonReader.decodeInteger("elasticsearchScrollSize");
     elasticSearchScrollKeepAlive = jsonReader.decodeInteger("elasticSearchScrollKeepAlive");
@@ -782,8 +776,32 @@ public class DeploymentCommon
     elasticsearchRetentionDaysTokens = jsonReader.decodeInteger("ESRetentionDaysTokens");
     elasticsearchRetentionDaysSnapshots = jsonReader.decodeInteger("ESRetentionDaysSnapshots");
     elasticsearchRetentionDaysVDR = jsonReader.decodeInteger("ESRetentionDaysVDR");
-    
-    journeyMetricDeclarations = jsonReader.decodeMapFromArray(JourneyMetricDeclaration.class, "journeyMetrics");
+    elasticsearchRetentionDaysJourneys = jsonReader.decodeInteger("ESRetentionDaysJourneys");
+    elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
+    elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
+
+    // journeyMetricDeclarations
+    DeploymentJSONReader journeyMetricConfigurationJsonReader = jsonReader.get("journeyMetrics");
+    if( journeyMetricConfigurationJsonReader.keySet().isEmpty() ) {
+      // JourneyMetric are therefore disabled
+      journeyMetricConfiguration = new JourneyMetricConfiguration();
+    } else {
+      int priorPeriodDays = journeyMetricConfigurationJsonReader.decodeInteger("priorPeriodDays");
+      if(priorPeriodDays < 1) {
+        throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'priorPeriodDays' field cannot be negative or zero.");
+      }
+      
+      int postPeriodDays = journeyMetricConfigurationJsonReader.decodeInteger("postPeriodDays");
+      if(postPeriodDays < 1) {
+        throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'postPeriodDays' field cannot be negative or zero.");
+      }
+      Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = journeyMetricConfigurationJsonReader.decodeMapFromArray(JourneyMetricDeclaration.class, "metrics");
+      if(journeyMetricDeclarations.isEmpty()) { // JourneyMetric are therefore disabled
+        journeyMetricConfiguration = new JourneyMetricConfiguration();
+      } else {
+        journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
+      }
+    }
     
     //
     // Kafka
@@ -799,11 +817,9 @@ public class DeploymentCommon
     kafkaRetentionDaysJourneys = jsonReader.decodeInteger("kafkaRetentionDaysJourneys");
     kafkaRetentionDaysCampaigns = jsonReader.decodeInteger("kafkaRetentionDaysCampaigns");
     // adjusting and warning if too low for journey metric feature to work
-    for (JourneyMetricDeclaration journeyMetricDeclaration : getJourneyMetricDeclarations().values()){
-      if(journeyMetricDeclaration.getPostPeriodDays() > kafkaRetentionDaysCampaigns + 2){
-        kafkaRetentionDaysCampaigns = journeyMetricDeclaration.getPostPeriodDays() + 2;
-        log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric "+journeyMetricDeclaration.getID()+" postPeriodDays of "+journeyMetricDeclaration.getPostPeriodDays()+" (need at least 2 days more)");
-      }
+    if(Deployment.getJourneyMetricConfiguration().getPostPeriodDays() > kafkaRetentionDaysCampaigns+2){
+      kafkaRetentionDaysCampaigns = Deployment.getJourneyMetricConfiguration().getPostPeriodDays() + 2;
+      log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric postPeriodDays of "+Deployment.getJourneyMetricConfiguration().getPostPeriodDays()+" (need at least 2 days more)");
     }
     kafkaRetentionDaysBulkCampaigns = jsonReader.decodeInteger("kafkaRetentionDaysBulkCampaigns");
     kafkaRetentionDaysLoyaltyPrograms = jsonReader.decodeInteger("kafkaRetentionDaysLoyaltyPrograms");
@@ -885,7 +901,6 @@ public class DeploymentCommon
     subscriberHistoryChangeLogTopic = jsonReader.decodeString("subscriberHistoryChangeLogTopic");
     journeyStatisticTopic = jsonReader.decodeString("journeyStatisticTopic");
     journeyMetricTopic = jsonReader.decodeString("journeyMetricTopic");
-    deliverableSourceTopic = jsonReader.decodeString("deliverableSourceTopic");
     presentationLogTopic = jsonReader.decodeString("presentationLogTopic");
     acceptanceLogTopic = jsonReader.decodeString("acceptanceLogTopic");
     segmentContactPolicyTopic = jsonReader.decodeString("segmentContactPolicyTopic");
@@ -1397,6 +1412,9 @@ public class DeploymentCommon
 
     enableContactPolicyProcessing = jsonReader.decodeBoolean("enableContactPolicyProcessing");
     recurrentCampaignCreationDaysRange = jsonReader.decodeInteger("recurrentCampaignCreationDaysRange");
+    
+    nodesTransitionsHistorySize = jsonReader.decodeInteger("nodesTransitionsHistorySize");
+    firstDayOfTheWeek = jsonReader.decodeString("firstDayOfTheWeek");
     
     //
     // all dynamic topics

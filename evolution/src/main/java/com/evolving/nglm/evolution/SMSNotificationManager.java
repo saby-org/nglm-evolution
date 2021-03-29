@@ -26,12 +26,14 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 
 public class SMSNotificationManager extends DeliveryManagerForNotifications implements Runnable
@@ -355,8 +357,13 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     public SMSNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
-      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
-      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      try {
+        setCreationDate(RLMDateUtils.parseDateFromREST((String) esFields.get("creationDate")));
+        setDeliveryDate(RLMDateUtils.parseDateFromREST((String) esFields.get("deliveryDate")));
+      }
+      catch(java.text.ParseException e) {
+        throw new ServerRuntimeException(e);
+      }
       
       this.destination = (String) esFields.get("destination");
       this.source = (String) esFields.get("source");

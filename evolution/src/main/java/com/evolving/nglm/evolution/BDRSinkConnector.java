@@ -118,7 +118,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("origin", commodityRequest.getOrigin());
       documentMap.put("returnCode", commodityRequest.getCommodityDeliveryStatus().getReturnCode());
       documentMap.put("returnCodeDetails", commodityRequest.getStatusMessage());
-      documentMap.put("creationDate", commodityRequest.getCreationDate()!=null?dateFormat.format(commodityRequest.getCreationDate()):"");
+      documentMap.put("creationDate", commodityRequest.getCreationDate() != null ? RLMDateUtils.formatDateForElasticsearchDefault(commodityRequest.getCreationDate()) : "");
         
       log.debug("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
       return documentMap;

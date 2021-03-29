@@ -611,7 +611,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
 
   }
   
-
+  @Deprecated // TO BE FACTORIZED
   private static List<String> getEsIndexDates(final Date fromDate, Date toDate)
   {
     Date tempfromDate = fromDate;
@@ -624,17 +624,18 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       }
     return esIndexOdrList;
   }
-  
+  @Deprecated // TO BE FACTORIZED
   public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates, int tenantID)
   {
     if (includeBothDates)
       {
+        String timeZone =  Deployment.getDeployment(tenantID).getTimeZone();
         Date tempfromDate = fromDate;
         List<String> esIndexOdrList = new ArrayList<String>();
         while(tempfromDate.getTime() <= toDate.getTime())
           {
-            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            esIndexOdrList.add(RLMDateUtils.formatDateDay(tempfromDate, timeZone)); // TODO Refactor for week (EVPRO-869)
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, timeZone);
           }
         return esIndexOdrList;
       }

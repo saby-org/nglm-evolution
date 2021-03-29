@@ -68,7 +68,7 @@ public class EvolutionUtilities
   public static Date addTime(Date baseTime, int amount, TimeUnit timeUnit, String timeZone, RoundingSelection roundingSelection)
   {
     Date result = baseTime;
-    String firstDayOfTheweekFromDeployment = com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek();
+    String firstDayOfTheweekFromDeployment = Deployment.getFirstDayOfTheWeek();
     int firstDayOfTheWeek;
     if (firstDayOfTheweekFromDeployment.equalsIgnoreCase("Sunday"))
       {

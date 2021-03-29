@@ -183,8 +183,7 @@ public class RLMDateUtils
     return result;
   }
   
-  // Here we re-use the default SimpleDateFormat for ES. But we could also do something similar to REST 
-  // if a circular dependency appear.
+  // Here we re-use the default SimpleDateFormat for ES. But we could also do something similar to REST if a circular dependency appear.
   public static Date parseDateFromElasticsearch(String stringDate) throws ParseException { return parseDate(stringDate, DatePattern.ELASTICSEARCH_UNIVERSAL_TIMESTAMP, Deployment.getDefault().getTimeZone()); }
 
   /*****************************************

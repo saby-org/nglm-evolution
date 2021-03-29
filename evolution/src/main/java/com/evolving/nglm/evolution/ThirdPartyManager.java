@@ -129,8 +129,6 @@ public class ThirdPartyManager
   private static final String DEFAULT_FEATURE_ID = "<anonymous>";
   private static final String CUSTOMER_ID = "customerID";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
-  private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
-  private static DateFormat esDateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
   /*****************************************
    *
@@ -233,7 +231,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  enum API // package visible
+  public enum API // package visible
   {
     ping(1),
     getCustomer(2),
@@ -1300,8 +1298,8 @@ public class ThirdPartyManager
           // read history
           //
 
-          SearchRequest searchRequest = getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), filters, tenantID);
-          List<SearchHit> hits = getESHits(searchRequest);
+          SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+          List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
           for (SearchHit hit : hits)
             {
               Map<String, Object> esFields = hit.getSourceAsMap();
@@ -1314,61 +1312,12 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     } 
-    catch (SubscriberProfileServiceException | java.text.ParseException e)
+    catch (SubscriberProfileServiceException | java.text.ParseException | GUIManagerException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
     }
     return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getESHits
-  *
-  *****************************************/
-  
-  private List<SearchHit> getESHits(SearchRequest searchRequest) throws ThirdPartyManagerException
-  {
-    List<SearchHit> hits = new ArrayList<SearchHit>();
-    Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
-    searchRequest.scroll(scroll);
-    searchRequest.source().size(1000);
-    try
-      {
-        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
-        String scrollId = searchResponse.getScrollId(); // always null
-        SearchHit[] searchHits = searchResponse.getHits().getHits();
-        while (searchHits != null && searchHits.length > 0)
-          {
-            //
-            //  add
-            //
-            
-            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
-            
-            //
-            //  scroll
-            //
-            
-            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
-            scrollRequest.scroll(scroll);
-            searchResponse = elasticsearch.searchScroll(scrollRequest, RequestOptions.DEFAULT);
-            scrollId = searchResponse.getScrollId();
-            searchHits = searchResponse.getHits().getHits();
-          }
-      } 
-    catch (IOException e)
-      {
-        log.error("IOException in ES qurery {}", e.getMessage());
-        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
-      }
-    
-    //
-    //  return
-    //
-    
-    return hits;
   }
 
   /*****************************************
@@ -1428,8 +1377,8 @@ public class ThirdPartyManager
 
           List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
           List<DeliveryRequest> ODRs = new ArrayList<DeliveryRequest>();
-          SearchRequest searchRequest = getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), filters, tenantID);
-          List<SearchHit> hits = getESHits(searchRequest);
+          SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+          List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
           for (SearchHit hit : hits)
             {
               PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
@@ -1481,7 +1430,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     } 
-    catch (SubscriberProfileServiceException | java.text.ParseException e)
+    catch (SubscriberProfileServiceException | java.text.ParseException | GUIManagerException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1860,8 +1809,8 @@ public class ThirdPartyManager
           //
 
           List<JSONObject> messagesJson = new ArrayList<JSONObject>();
-          SearchRequest searchRequest = getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), filters, tenantID);
-          List<SearchHit> hits = getESHits(searchRequest);
+          SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+          List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
           for (SearchHit hit : hits)
             {
               String channelID = (String) hit.getSourceAsMap().get("channelID");
@@ -1882,7 +1831,7 @@ public class ThirdPartyManager
                       String requestClass = Deployment.getDeliveryManagers().get(deliveryType).getRequestClassName();
                       if (requestClass != null)
                         {
-                          DeliveryRequest notification = getNotificationDeliveryRequest(requestClass, hit);
+                          DeliveryRequest notification = ElasticsearchClientAPI.getNotificationDeliveryRequest(requestClass, hit);
                           if (notification != null)
                             {
                               Map<String, Object> esNotificationMap = notification.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
@@ -1897,7 +1846,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     } 
-    catch (SubscriberProfileServiceException | java.text.ParseException e)
+    catch (SubscriberProfileServiceException | java.text.ParseException | GUIManagerException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1961,8 +1910,8 @@ public class ThirdPartyManager
       else
         {
           List<JSONObject> journeysJsonES = new ArrayList<JSONObject>();
-          SearchRequest searchRequest = getSearchRequest(API.getCustomerJourneys, subscriberID, journeyStartDate, filters, tenantID);
-          List<SearchHit> hits = getESHits(searchRequest);
+          SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerJourneys, subscriberID, journeyStartDate, filters, tenantID);
+          List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
           Map<String, JourneyHistory> journeyHistoryMap = new HashMap<String, JourneyHistory>(hits.size());
           for (SearchHit hit : hits)
             {
@@ -2169,7 +2118,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     } 
-    catch (SubscriberProfileServiceException e)
+    catch (SubscriberProfileServiceException | GUIManagerException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -2242,8 +2191,8 @@ public class ThirdPartyManager
         {
           List<JSONObject> campaignsJsonES = new ArrayList<JSONObject>();
           
-          SearchRequest searchRequest = getSearchRequest(API.getCustomerCampaigns, subscriberID, campaignStartDate, filters, tenantID);
-          List<SearchHit> hits = getESHits(searchRequest);
+          SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerCampaigns, subscriberID, campaignStartDate, filters, tenantID);
+          List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
           Map<String, JourneyHistory> journeyHistoryMap = new HashMap<String, JourneyHistory>(hits.size());
           for (SearchHit hit : hits)
             {
@@ -2455,7 +2404,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     } 
-    catch (SubscriberProfileServiceException e)
+    catch (SubscriberProfileServiceException | GUIManagerException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -6512,7 +6461,7 @@ public class ThirdPartyManager
    *  getDateString
    *
    *****************************************/
-
+  @Deprecated // TODO EVPRO-99 TO BE REMOVED
   public static String getDateString(Date date, int tenantID)
   {
     String result = null;
@@ -6535,7 +6484,7 @@ public class ThirdPartyManager
   *  readString
   *
   *****************************************/
-  
+  @Deprecated
   private static String readString(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ThirdPartyManagerException
   {
     String result = readString(jsonRoot, key);
@@ -6552,7 +6501,7 @@ public class ThirdPartyManager
   *  readString
   *
   *****************************************/
-  
+  @Deprecated
   private static String readString(JSONObject jsonRoot, String key) throws ThirdPartyManagerException
   {
     String result = null;
@@ -6573,7 +6522,7 @@ public class ThirdPartyManager
   *  readInteger
   *
   *****************************************/
-  
+  @Deprecated
   private Integer readInteger(JSONObject jsonRoot, String key, boolean required) throws ThirdPartyManagerException
   {
     try 
@@ -6628,198 +6577,5 @@ public class ThirdPartyManager
     statsDuration.withLabel(StatsBuilders.LABEL.name.name(),apiName)
          .withLabel(StatsBuilders.LABEL.status.name(),status.name())
          .getStats().add(startTime);
-  }
-  
-  /*********************************
-   * 
-   * getSearchRequest
-   * 
-   ********************************/
-  
-  private SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters, int tenantID)
-  {
-    SearchRequest searchRequest = null;
-    String index = null;
-    BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("subscriberID", subscriberId));
-    Date indexFilterDate = RLMDateUtils.addDays(SystemTime.getCurrentTime(), -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    
-    //
-    //  filters
-    //
-    
-    for (QueryBuilder filter : filters)
-      {
-        query = query.filter(filter);
-      }
-    
-    switch (api)
-    {
-      case getCustomerBDRs:
-        if (startDate != null)
-          {
-            if (indexFilterDate.before(startDate))
-              {
-                List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
-                index = getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
-              }
-            else
-              {
-                index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
-              }
-            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(esDateFormat.format(startDate)));
-          }
-        else
-          {
-            index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
-          }
-        break;
-        
-      case getCustomerODRs:
-        if (startDate != null)
-          {
-            if (indexFilterDate.before(startDate))
-              {
-                List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
-                index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
-              }
-            else
-              {
-                index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
-              }
-            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(esDateFormat.format(startDate)));
-          }
-        else
-          {
-            index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
-          }
-        break;
-        
-      case getCustomerMessages:
-        if (startDate != null)
-          {
-            if (indexFilterDate.before(startDate))
-              {
-                List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
-                index = getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
-              }
-            else
-              {
-                index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
-              }
-            query = query.filter(QueryBuilders.rangeQuery("creationDate").gte(esDateFormat.format(startDate)));
-          }
-        else
-          {
-            index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
-          }
-        break;
-        
-      case getCustomerCampaigns:
-      case getCustomerJourneys:
-        index = JourneyCustomerStatisticsReportDriver.JOURNEY_ES_INDEX + "*";
-        break;
-        
-      default:
-        break;
-    }
-    
-    //
-    //  searchRequest
-    //
-    
-    searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
-    
-    //
-    //  return
-    //
-    
-    return searchRequest;
-  }
-  
-  /*****************************************
-  *
-  * getNotificationDeliveryRequest
-  *
-  *****************************************/
-  
-  private DeliveryRequest getNotificationDeliveryRequest(String requestClass, SearchHit hit)
-  {
-    DeliveryRequest deliveryRequest = null;
-    if (requestClass.equals(MailNotificationManagerRequest.class.getName()))
-      {
-        deliveryRequest = new MailNotificationManagerRequest(hit.getSourceAsMap());
-      }
-    else if(requestClass.equals(SMSNotificationManagerRequest.class.getName()))
-      {
-        deliveryRequest = new SMSNotificationManagerRequest(hit.getSourceAsMap());
-      }
-    else if (requestClass.equals(NotificationManagerRequest.class.getName()))
-      {
-        deliveryRequest = new NotificationManagerRequest(hit.getSourceAsMap());
-      }
-    else if (requestClass.equals(PushNotificationManagerRequest.class.getName()))
-      {
-        deliveryRequest = new PushNotificationManagerRequest(hit.getSourceAsMap());
-      }
-    else
-      {
-        if (log.isErrorEnabled()) log.error("invalid requestclass {}", requestClass);
-      }
-    return deliveryRequest;
-  }
-  
-  /*****************************************
-  *
-  * getExistingIndices
-  *
-  *****************************************/
-  
-  private String getExistingIndices(String indexCSV, String defaulteValue)
-  {
-    String result = null;
-    StringBuilder existingIndexes = new StringBuilder();
-    boolean firstEntry = true;
-    
-    if (indexCSV != null)
-      {
-        for (String index : indexCSV.split(","))
-          {
-            if(index.endsWith("*")) 
-              {
-                if (!firstEntry) existingIndexes.append(",");
-                existingIndexes.append(index); 
-                firstEntry = false;
-                continue;
-              }
-            else
-              {
-                GetIndexRequest request = new GetIndexRequest(index);
-                request.local(false); 
-                request.humanReadable(true); 
-                request.includeDefaults(false); 
-                try
-                {
-                  boolean exists = elasticsearch.indices().exists(request, RequestOptions.DEFAULT);
-                  if (exists) 
-                    {
-                      if (!firstEntry) existingIndexes.append(",");
-                      existingIndexes.append(index);
-                      firstEntry = false;
-                    }
-                } 
-              catch (IOException e)
-                {
-                  log.info("Exception " + e.getLocalizedMessage());
-                }
-              }
-          }
-        result = existingIndexes.toString();
-      }
-    result = result == null || result.trim().isEmpty() ? defaulteValue : result;
-    if (log.isDebugEnabled()) log.debug("reading data from index {}", result);
-    return result;
   }
 }

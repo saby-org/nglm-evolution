@@ -68,9 +68,6 @@ public class Deployment extends DeploymentCommon
   //
   // Elasticsearch
   //
-  private int elasticsearchRetentionDaysJourneys;
-  private int elasticsearchRetentionDaysCampaigns;
-  private int elasticsearchRetentionDaysBulkCampaigns;
   private int elasticsearchRetentionDaysExpiredVouchers; 
   private Map<String,ScheduledJobConfiguration> datacubeJobsScheduling;
   private Map<String,ScheduledJobConfiguration> elasticsearchJobsScheduling;
@@ -105,10 +102,7 @@ public class Deployment extends DeploymentCommon
   //
   // Elasticsearch
   //
-  public int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
-  public int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
-  public int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
-  public int getElasticsearchRetentionDaysExpiredVouchers() { return elasticsearchRetentionDaysExpiredVouchers; }  
+  public int getElasticsearchRetentionDaysExpiredVouchers() { return elasticsearchRetentionDaysExpiredVouchers; }
   public Map<String,ScheduledJobConfiguration> getDatacubeJobsScheduling() { return datacubeJobsScheduling; }
   public Map<String,ScheduledJobConfiguration> getElasticsearchJobsScheduling() { return elasticsearchJobsScheduling; }
   
@@ -157,9 +151,6 @@ public class Deployment extends DeploymentCommon
     //
     // Elasticsearch settings
     //
-    elasticsearchRetentionDaysJourneys = jsonReader.decodeInteger("ESRetentionDaysJourneys");
-    elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
-    elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
     elasticsearchRetentionDaysExpiredVouchers = jsonReader.decodeInteger("ESRetentionDaysExpiredVouchers");
     
     // Datacubes jobs
@@ -177,13 +168,28 @@ public class Deployment extends DeploymentCommon
     
     // Elasticsearch jobs
     if(tenantID == 0) {
-      elasticsearchJobsScheduling = null; // because elasticsearch jobs make no sense for "tenant 0".
+      // Only for tenantID == 0
+      // TODO EVPRO-99 for the moment most ES jobs are global (for tenant 0)
+      elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
+      DeploymentJSONReader elasticsearchJobsSchedulingJSON = jsonReader.get("elasticsearchJobsScheduling");
+      for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
+        if(!key.equals("ExpiredVoucherCleanUp")) { // @rl UGLY, to be improved later 
+          String newKey = "T" + tenantID + "_" + ((String) key);
+          elasticsearchJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone));
+        }
+      }
     } else {
       elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
       DeploymentJSONReader elasticsearchJobsSchedulingJSON = jsonReader.get("elasticsearchJobsScheduling");
       for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
-        String newKey = "T" + tenantID + "_" + ((String) key); // TODO EVPRO-99 by tenant ????
-        elasticsearchJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone));
+        if(key.equals("ExpiredVoucherCleanUp")) { // @rl UGLY, to be improved later 
+          String newKey = "T" + tenantID + "_" + ((String) key);
+          elasticsearchJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone));
+        }
+        else {
+          // @rl UGLY, to be improved later 
+          new ScheduledJobConfiguration("X", elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone); // for warnings -- (meaning that overriding it will not raise error... dangerous)
+        }
       }
     }
     

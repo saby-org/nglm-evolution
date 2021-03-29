@@ -619,24 +619,29 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       //
       
       super(esFields);
-      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
-      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
-      
-      //
-      //  this
-      //
-      
-      this.providerID = (String) esFields.get("providerID");
-      this.commodityID = (String) esFields.get("deliverableID");
-      String esOperation = (String) esFields.get("operation");
-      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(esOperation != null ? esOperation.toLowerCase() : esOperation);
-      this.amount = (int) esFields.get("deliverableQty");
-      this.validityPeriodType = TimeUnit.Year;
-      this.validityPeriodQuantity = 1;
-      this.deliverableExpirationDate = getDateFromESString(esDefaultDateFormat, (String) esFields.get("deliverableExpirationDate"));
-      CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
-      this.commodityDeliveryStatus = commodityDeliveryStatus;
-      this.statusMessage = (String) esFields.get("returnCodeDetails");
+      try {
+        setCreationDate(RLMDateUtils.parseDateFromREST((String) esFields.get("creationDate")));
+        setDeliveryDate(RLMDateUtils.parseDateFromREST((String) esFields.get("eventDatetime")));
+        
+        //
+        //  this
+        //
+        
+        this.providerID = (String) esFields.get("providerID");
+        this.commodityID = (String) esFields.get("deliverableID");
+        String esOperation = (String) esFields.get("operation");
+        this.operation = CommodityDeliveryOperation.fromExternalRepresentation(esOperation != null ? esOperation.toLowerCase() : esOperation);
+        this.amount = (int) esFields.get("deliverableQty");
+        this.validityPeriodType = TimeUnit.Year;
+        this.validityPeriodQuantity = 1;
+        this.deliverableExpirationDate = RLMDateUtils.parseDateFromREST((String) esFields.get("deliverableExpirationDate"));
+        CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
+        this.commodityDeliveryStatus = commodityDeliveryStatus;
+        this.statusMessage = (String) esFields.get("returnCodeDetails");
+      }
+      catch(java.text.ParseException e) {
+        throw new ServerRuntimeException(e);
+      }
     }
     /*****************************************
     *

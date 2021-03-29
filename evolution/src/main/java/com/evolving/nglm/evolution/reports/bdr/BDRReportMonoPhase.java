@@ -43,12 +43,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
 {
 
   private static final Logger log = LoggerFactory.getLogger(BDRReportMonoPhase.class);
-  private static final DateFormat DATE_FORMAT;
-  static
-  {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone()));  // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
-  }
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private DeliverableService deliverableService;
@@ -376,30 +370,32 @@ public class BDRReportMonoPhase implements ReportCsvFactory
           }
       }
   }
-  
+  @Deprecated // TO BE FACTORIZED
   private static List<String> getEsIndexDates(final Date fromDate, Date toDate)
   {
+    String timeZone =  Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 refactor with tenant
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
     // to get the reports with yesterday's date only
     while(tempfromDate.getTime() < toDate.getTime())
       {
-        esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+        esIndexOdrList.add(RLMDateUtils.formatDateDay(tempfromDate, timeZone)); // TODO Refactor for week (EVPRO-869)
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, timeZone); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
       }
     return esIndexOdrList;
   }
-  
+  @Deprecated // TO BE FACTORIZED
   public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates, int tenantID)
   {
     if (includeBothDates)
       {
+        String timeZone =  Deployment.getDeployment(tenantID).getTimeZone();
         Date tempfromDate = fromDate;
         List<String> esIndexOdrList = new ArrayList<String>();
         while(tempfromDate.getTime() <= toDate.getTime())
           {
-            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            esIndexOdrList.add(RLMDateUtils.formatDateDay(tempfromDate, timeZone)); // TODO Refactor for week (EVPRO-869)
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, timeZone);
           }
         return esIndexOdrList;
       }

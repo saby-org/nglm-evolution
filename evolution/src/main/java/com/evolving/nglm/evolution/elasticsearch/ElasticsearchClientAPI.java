@@ -1,17 +1,9 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -58,13 +50,32 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
+import com.evolving.nglm.evolution.GUIManager;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
+import com.evolving.nglm.evolution.GUIManager.API;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
+import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
+import com.evolving.nglm.evolution.ThirdPartyManager;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
+import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver;
+import com.evolving.nglm.evolution.reports.notification.NotificationReportDriver;
+import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
+import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
+import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
 {
@@ -898,6 +909,261 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         if (log.isErrorEnabled()) log.error("elastic search getAllIndices error, {}", e.getMessage());
         e.printStackTrace();
       }
+    return result;
+  }
+
+  /*********************************
+   * 
+   * Utils for GUIManager/ThirdPartyManager
+   * 
+   ********************************/
+  //
+  // getSearchRequest
+  //
+  public SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters, int tenantID)
+  {
+    String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+    SearchRequest searchRequest = null;
+    String index = null;
+    BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("subscriberID", subscriberId));
+    Date indexFilterDate = RLMDateUtils.addDays(SystemTime.getCurrentTime(), -7, timeZone);
+    
+    //
+    //  filters
+    //
+    
+    for (QueryBuilder filter : filters)
+      {
+        query = query.filter(filter);
+      }
+    
+    switch (api)
+    {
+      case getCustomerBDRs:
+        if (startDate != null)
+          {
+            if (indexFilterDate.before(startDate))
+              {
+                List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
+                String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
+                index = this.getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
+              }
+            else
+              {
+                index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
+              }
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearch(startDate, timeZone)));
+          }
+        else
+          {
+            index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
+          }
+        break;
+        
+      case getCustomerODRs:
+        if (startDate != null)
+          {
+            if (indexFilterDate.before(startDate))
+              {
+                List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
+                String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
+                index = this.getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
+              }
+            else
+              {
+                index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
+              }
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearch(startDate, timeZone)));
+          }
+        else
+          {
+            index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
+          }
+        break;
+        
+      case getCustomerMessages:
+        if (startDate != null)
+          {
+            if (indexFilterDate.before(startDate))
+              {
+                List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
+                String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
+                index = this.getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
+              }
+            else
+              {
+                index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
+              }
+            query = query.filter(QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.formatDateForElasticsearch(startDate, timeZone)));
+          }
+        else
+          {
+            index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
+          }
+        break;
+        
+      case getCustomerCampaigns:
+      case getCustomerJourneys:
+        index = JourneyCustomerStatisticsReportDriver.JOURNEY_ES_INDEX + "*";
+        break;
+        
+      default:
+        break;
+    }
+    
+    //
+    //  searchRequest
+    //
+    
+    searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
+    
+    //
+    //  return
+    //
+    
+    return searchRequest;
+  }
+  
+  
+  // UGLY - Adapter for ThirdPartyManager 
+  public SearchRequest getSearchRequest(ThirdPartyManager.API api, String subscriberId, Date startDate, List<QueryBuilder> filters, int tenantID) {
+    switch (api)
+    {
+      case getCustomerBDRs:
+        return getSearchRequest(GUIManager.API.getCustomerBDRs, subscriberId, startDate, filters, tenantID);
+      case getCustomerODRs:
+        return getSearchRequest(GUIManager.API.getCustomerODRs, subscriberId, startDate, filters, tenantID);
+      case getCustomerMessages:
+        return getSearchRequest(GUIManager.API.getCustomerMessages, subscriberId, startDate, filters, tenantID);
+      case getCustomerCampaigns:
+      case getCustomerJourneys:
+        return getSearchRequest(GUIManager.API.getCustomerCampaigns, subscriberId, startDate, filters, tenantID);
+      default:
+        return getSearchRequest(GUIManager.API.Unknown, subscriberId, startDate, filters, tenantID);
+    }
+  }
+
+  //
+  // getNotificationDeliveryRequest
+  //
+  public static DeliveryRequest getNotificationDeliveryRequest(String requestClass, SearchHit hit)
+  {
+    DeliveryRequest deliveryRequest = null;
+    if (requestClass.equals(MailNotificationManagerRequest.class.getName()))
+      {
+        deliveryRequest = new MailNotificationManagerRequest(hit.getSourceAsMap());
+      }
+    else if(requestClass.equals(SMSNotificationManagerRequest.class.getName()))
+      {
+        deliveryRequest = new SMSNotificationManagerRequest(hit.getSourceAsMap());
+      }
+    else if (requestClass.equals(NotificationManagerRequest.class.getName()))
+      {
+        deliveryRequest = new NotificationManagerRequest(hit.getSourceAsMap());
+      }
+    else if (requestClass.equals(PushNotificationManagerRequest.class.getName()))
+      {
+        deliveryRequest = new PushNotificationManagerRequest(hit.getSourceAsMap());
+      }
+    else
+      {
+        if (log.isErrorEnabled()) log.error("invalid requestclass {}", requestClass);
+      }
+    return deliveryRequest;
+  }
+
+  //
+  // getESHits
+  //
+  public List<SearchHit> getESHits(SearchRequest searchRequest) throws GUIManagerException
+  {
+    List<SearchHit> hits = new ArrayList<SearchHit>();
+    Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+    searchRequest.scroll(scroll);
+    searchRequest.source().size(1000);
+    try
+      {
+        SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId(); // always null
+        SearchHit[] searchHits = searchResponse.getHits().getHits();
+        while (searchHits != null && searchHits.length > 0)
+          {
+            //
+            //  add
+            //
+            
+            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
+            
+            //
+            //  scroll
+            //
+            
+            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
+            scrollRequest.scroll(scroll);
+            searchResponse = this.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+            scrollId = searchResponse.getScrollId();
+            searchHits = searchResponse.getHits().getHits();
+          }
+      } 
+    catch (IOException e)
+      {
+        log.error("IOException in ES qurery {}", e.getMessage());
+        throw new GUIManagerException(e);
+      }
+    
+    //
+    //  return
+    //
+    
+    return hits;
+  }
+
+  //
+  // getExistingIndices
+  //
+  public String getExistingIndices(String indexCSV, String defaulteValue)
+  {
+    String result = null;
+    StringBuilder existingIndexes = new StringBuilder();
+    boolean firstEntry = true;
+    
+    if (indexCSV != null)
+      {
+        for (String index : indexCSV.split(","))
+          {
+            if(index.endsWith("*")) 
+              {
+                if (!firstEntry) existingIndexes.append(",");
+                existingIndexes.append(index); 
+                firstEntry = false;
+                continue;
+              }
+            else
+              {
+                GetIndexRequest request = new GetIndexRequest(index);
+                request.local(false); 
+                request.humanReadable(true); 
+                request.includeDefaults(false); 
+                try
+                {
+                  boolean exists = this.indices().exists(request, RequestOptions.DEFAULT);
+                  if (exists) 
+                    {
+                      if (!firstEntry) existingIndexes.append(",");
+                      existingIndexes.append(index);
+                      firstEntry = false;
+                    }
+                } 
+              catch (IOException e)
+                {
+                  log.info("Exception " + e.getLocalizedMessage());
+                }
+              }
+          }
+        result = existingIndexes.toString();
+      }
+    result = result == null || result.trim().isEmpty() ? defaulteValue : result;
+    if (log.isDebugEnabled()) log.debug("reading data from index {}", result);
     return result;
   }
 }

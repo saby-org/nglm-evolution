@@ -70,10 +70,10 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
     "properties" : {
       "subscriberID"                        : { "type" : "keyword" },
       "tenantID"                            : { "type" : "integer" },
-      "evaluationDate"                      : { "type" : "date"    },
+      "evaluationDate"                      : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "evolutionSubscriberStatus"           : { "type" : "keyword" },
       "previousEvolutionSubscriberStatus"   : { "type" : "keyword" },
-      "evolutionSubscriberStatusChangeDate" : { "type" : "date"    },
+      "evolutionSubscriberStatusChangeDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "universalControlGroup"               : { "type" : "boolean" },
       "language"                            : { "type" : "keyword" },
       "segments"                            : { "type" : "keyword" },
@@ -91,14 +91,14 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       },
       "vouchers"                            : { "type" : "nested",
         "properties" : {
-          "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date" }, "voucherDeliveryDate" : { "type" : "date" } } }
+          "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }, "voucherDeliveryDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" } } }
         }
       },
       "loyaltyPrograms"                     : { "type" : "nested",
         "properties" : {
-          "loyaltyProgramEnrollmentDate" : { "type" : "date" },
-          "loyaltyProgramExitDate"       : { "type" : "date" },
-          "tierUpdateDate"               : { "type" : "date" },
+          "loyaltyProgramEnrollmentDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+          "loyaltyProgramExitDate"       : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+          "tierUpdateDate"               : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
           "loyaltyProgramEpoch"          : { "type" : "long" },
           "rewardTodayRedeemer"          : { "type" : "boolean" },
           "rewardYesterdayRedeemer"      : { "type" : "boolean" }
@@ -106,8 +106,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       },
       "pointBalances"                       : { "type": "nested",
         "properties" : {
-          "earliestExpirationDate" : { "type" : "date" },
-          "expirationDates"        : { "type": "nested", "properties": { "date" : { "type" : "date" } } }
+          "earliestExpirationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+          "expirationDates"        : { "type": "nested", "properties": { "date" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" } } }
          }
       }
     }
@@ -224,7 +224,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $EL
       "deliveryRequestID" : { "type" : "keyword" },
       "deliverableID" : { "type" : "keyword" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
-      "deliverableExpiration" : { "type" : "date" },
+      "deliverableExpiration" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "creationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "deliverableQty" : { "type" : "integer", "index" : "false" },
       "operation" : { "type" : "keyword" },
@@ -621,7 +621,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeysta
       "journeyID" : { "type" : "keyword" },
       "subscriberID" : { "type" : "keyword" },
       "tenantID" : { "type" : "integer" },
-      "transitionDate" : { "type" : "date" },
+      "transitionDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "nodeID" : { "type" : "keyword" },
       "nodeHistory" : { "type" : "keyword" },
       "statusHistory" : { "type" : "keyword" },
@@ -975,7 +975,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_ba
               "name"  : { "type" : "keyword" }
            }
       },
-      "createdDate"   : { "type" : "date" },
+      "createdDate"   : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
     }
   }

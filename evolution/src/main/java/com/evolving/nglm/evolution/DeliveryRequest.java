@@ -42,11 +42,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryRequest.class);
   
-  protected static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
-  protected static DateFormat esDateFormat = new SimpleDateFormat(elasticSearchDateFormat);
-  protected static final String elasticSearchDefaultDateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-  protected static DateFormat esDefaultDateFormat = new SimpleDateFormat(elasticSearchDefaultDateFormat);
-  
   //
   // this
   //
@@ -1021,7 +1016,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   *  getDateString
   *
   *****************************************/
-  
+  @Deprecated
   public String getDateString(Date date)
 
   {
@@ -1055,23 +1050,4 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     }
     return subscriberFields;
   }
-  
-  public Date getDateFromESString(DateFormat dateFormat, String date)
-  {
-    if (date == null) return null;
-    else
-      {
-        try
-          {
-            return dateFormat.parse(date);
-          } 
-        catch (ParseException e)
-          {
-            if (log.isWarnEnabled()) log.warn("invalid date {} parse error", date);
-            return null;
-          }
-      }
-    
-  }
-
 }

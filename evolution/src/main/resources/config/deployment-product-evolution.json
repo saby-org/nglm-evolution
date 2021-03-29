@@ -113,7 +113,7 @@
     "subscriberprofile"
   ],
   
-  "stockRefreshPeriod" : 30,
+  "stockRefreshPeriod" : 5,
   
   "evolutionVersion"                                     : "${nglm.evolution.version}",
   "customerVersion"                                      : "${project.version}",

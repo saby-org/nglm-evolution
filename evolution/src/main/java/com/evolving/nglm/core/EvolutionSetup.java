@@ -98,7 +98,7 @@ public class EvolutionSetup
       //
       System.out.println("");
       System.out.println("================================================================================");
-      System.out.println("= DEPLOYMENT CHECK                                                             =");
+      System.out.println("= DEPLOYMENT CONFIGURATION CHECK                                               =");
       System.out.println("================================================================================");
       Deployment.initialize();
   

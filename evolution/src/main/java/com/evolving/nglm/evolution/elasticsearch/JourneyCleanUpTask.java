@@ -63,9 +63,9 @@ public class JourneyCleanUpTask
   {
     Date now = SystemTime.getCurrentTime();
     // Here days are converted into hours. Therefore we do not take into account timezone. A retention of 15 days means 360 hours.
-    Date journeyExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getDeployment(this.tenantID).getElasticsearchRetentionDaysJourneys());
-    Date campaignExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getDeployment(this.tenantID).getElasticsearchRetentionDaysCampaigns());
-    Date bulkCampaignExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getDeployment(this.tenantID).getElasticsearchRetentionDaysBulkCampaigns());
+    Date journeyExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getElasticsearchRetentionDaysJourneys()); // TODO EVPRO-99 for the moment, same for every tenant
+    Date campaignExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getElasticsearchRetentionDaysCampaigns()); // TODO EVPRO-99 for the moment, same for every tenant
+    Date bulkCampaignExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getElasticsearchRetentionDaysBulkCampaigns()); // TODO EVPRO-99 for the moment, same for every tenant
     
     // Init list of indices to check 
     Set<String> lowerCaseIDs = getESLowerCaseJourneyIDs();
