@@ -422,7 +422,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       if(deliverableExpirationDate!=null) return deliverableExpirationDate;
       // but if empty we will compute it (so might be not a real one), for all the others cases, based on delivery date
       if(getDeliveryDate()!= null && validityPeriodType!=null && validityPeriodType!=TimeUnit.Unknown && validityPeriodQuantity!=null){
-        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getDeployment(tenantID).getBaseTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
+        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
       }
       // should be null here
       return deliverableExpirationDate;

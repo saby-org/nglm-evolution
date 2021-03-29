@@ -11,6 +11,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentManagedObject;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -49,7 +50,9 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+/* IF COPY/PASTE FROM ANOTHER DeploymentManagedObject OBJECT
+ * DO NOT FORGET TO ADD IT TO THE DeploymentManagedObject FACTORY
+ * SEE DeploymentManagedObject.create */
 public class CriterionField extends DeploymentManagedObject
 {
   /*****************************************

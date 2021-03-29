@@ -11,23 +11,14 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 
 import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONObject;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
 public class AcceptanceLog implements SubscriberStreamEvent
 {

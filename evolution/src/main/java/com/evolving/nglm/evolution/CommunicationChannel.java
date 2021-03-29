@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
@@ -107,7 +108,7 @@ public class CommunicationChannel extends GUIManagedObject
       //  iterate until a valid date is found (give up after 7 days and reschedule even if not legal)
       //
 
-      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getDeployment(tenantID).getTimeZone());
       Date deliveryDate = now;
       while (deliveryDate.before(maximumDeliveryDate))
         {
@@ -247,7 +248,7 @@ public class CommunicationChannel extends GUIManagedObject
     public List<DailyWindow> getTodaysDailyWindows(Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, CommunicationChannelTimeWindow timeWindow, int tenantID)
     {
       List<DailyWindow> result = null;
-      int today = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      int today = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
       if (timeWindow != null)
         {
           switch(today)
@@ -294,15 +295,15 @@ public class CommunicationChannel extends GUIManagedObject
       if (communicationChannel != null && timeWindow != null)
         {
           effectiveDeliveryDate = NGLMRuntime.END_OF_TIME;
-          Date today = RLMDateUtils.truncate(now, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          Date today = RLMDateUtils.truncate(now, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone());
           for (int i=0; i<8; i++)
             {
               //
               //  check the i-th day
               //
 
-              Date windowDay = RLMDateUtils.addDays(today, i, Deployment.getDeployment(tenantID).getBaseTimeZone());
-              Date nextDay = RLMDateUtils.addDays(today, i+1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              Date windowDay = RLMDateUtils.addDays(today, i, Deployment.getDeployment(tenantID).getTimeZone());
+              Date nextDay = RLMDateUtils.addDays(today, i+1, Deployment.getDeployment(tenantID).getTimeZone());
               for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay, communicationChannelTimeWindowService, timeWindow, tenantID))
                 {
                   Date windowStartDate = dailyWindow.getFromDate(windowDay, tenantID);

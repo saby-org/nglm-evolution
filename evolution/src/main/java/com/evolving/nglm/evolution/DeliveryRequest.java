@@ -1029,8 +1029,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     if (null == date) return result;
     try
       {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         result = dateFormat.format(date);
       }
     catch (Exception e)

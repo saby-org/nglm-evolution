@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
@@ -132,7 +133,7 @@ public class StockMonitor implements Runnable
     //
 
     Date now = SystemTime.getCurrentTime();
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         for (GUIService guiService : this.stockItemServices)
           {

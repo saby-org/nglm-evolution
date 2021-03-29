@@ -35,8 +35,7 @@ public class LoyaltyProgramsMap extends GUIManagedObjectMap<LoyaltyProgramPoints
   * GUIManagedObjectMap implementation
   *
   *****************************************/
-  // TODO: for the moment, we also retrieve archived objects
-  protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredLoyaltyPrograms(true, tenantID); } // this method seems useless
+  @Override protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredLoyaltyPrograms(true, tenantID); }
   
   /*****************************************
   *

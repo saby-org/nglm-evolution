@@ -1,7 +1,7 @@
 package com.evolving.nglm.evolution.zookeeper;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.Pair;
-import com.evolving.nglm.evolution.Deployment;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;

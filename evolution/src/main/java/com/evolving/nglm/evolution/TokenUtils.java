@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
@@ -296,7 +297,7 @@ public class TokenUtils
   {
     // check if we can call this PS
     int maximumPresentationsPeriodDays = presentationStrategy.getMaximumPresentationsPeriodDays();
-    Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
     List<Date> presentationDates = token.getPresentationDates();
     List<Date> newPresentationDates = new ArrayList<>();
     for (Date date : presentationDates)
@@ -592,7 +593,7 @@ public class TokenUtils
       Long maximumPresentationsPeriodDaysStr = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
       long maximumPresentationsPeriodDays = maximumPresentationsPeriodDaysStr != null ? maximumPresentationsPeriodDaysStr : 365L;  // default value
       
-      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getDeployment(tenantID).getBaseTimeZone());
+      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getDeployment(tenantID).getTimeZone());
 
       for (String catalogObjectiveID : catalogObjectiveIDs)
       {

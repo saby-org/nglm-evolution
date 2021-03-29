@@ -1,7 +1,7 @@
 package com.evolving.nglm.evolution.extracts;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -33,14 +33,14 @@ public class ExtractLauncher implements Runnable
   {
     try
     {
-      sdf = new SimpleDateFormat(Deployment.getExtractManagerDateFormat());
-      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+      sdf = new SimpleDateFormat(Deployment.getExtractManagerDateFormat());   // TODO EVPRO-99
+      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     }
     catch (IllegalArgumentException e)
     {
       log.error("Config error : date format " + Deployment.getExtractManagerDateFormat() + " is invalid, using default"
           + e.getLocalizedMessage(), e);
-      sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
+      sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...   // TODO EVPRO-99
     }
   }
 

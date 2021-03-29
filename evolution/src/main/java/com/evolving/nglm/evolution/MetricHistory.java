@@ -7,40 +7,26 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SystemTime;
 
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.Pair;
-import org.json.simple.JSONObject;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -131,7 +117,7 @@ public class MetricHistory
   public static Date EPOCH;
   static
   {
-    GregorianCalendar epochCalendar = new GregorianCalendar(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct 
+    GregorianCalendar epochCalendar = new GregorianCalendar(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct 
     epochCalendar.set(2010,0,1);
     epochCalendar.set(Calendar.HOUR_OF_DAY,0);
     epochCalendar.set(Calendar.MINUTE,0);
@@ -246,10 +232,10 @@ public class MetricHistory
     this.monthlyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfMonthlyBuckets, MINIMUM_MONTH_BUCKETS));
     this.allTimeBucket = (metricHistoryMode == MetricHistoryMode.Standard) ? 0L : -1L;
     this.baseDay = EPOCH;
-    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getDeployment(tenantID).getBaseTimeZone());
-    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getDeployment(tenantID).getTimeZone());
+    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getDeployment(tenantID).getTimeZone());
+    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getDeployment(tenantID).getTimeZone());
     this.metricHistoryMode = metricHistoryMode;
     this.tenantID = tenantID;
   }
@@ -293,10 +279,10 @@ public class MetricHistory
     this.monthlyBuckets = monthlyBuckets;
     this.allTimeBucket = allTimeBucket;
     this.baseDay = baseDay;
-    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getDeployment(tenantID).getBaseTimeZone());
-    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getDeployment(tenantID).getTimeZone());
+    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getDeployment(tenantID).getTimeZone());
+    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getDeployment(tenantID).getTimeZone());
     this.metricHistoryMode = metricHistoryMode;
     this.tenantID = tenantID;
   }
@@ -643,7 +629,7 @@ public class MetricHistory
     Integer result = daysSinceEpochIntegers.get(baseDay);
     if (result == null)
       {
-        result = RLMDateUtils.daysBetween(EPOCH, baseDay, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+        result = RLMDateUtils.daysBetween(EPOCH, baseDay, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
         daysSinceEpochIntegers.put(baseDay, result);
       }
     return result;
@@ -658,7 +644,7 @@ public class MetricHistory
     Date result = daysSinceEpochDates.get(daysSinceEpoch);
     if (result == null)
       {
-        result = RLMDateUtils.addDays(EPOCH, daysSinceEpoch, Deployment.getSystemTimeZone());  // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+        result = RLMDateUtils.addDays(EPOCH, daysSinceEpoch, Deployment.getDefault().getTimeZone());  // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
         daysSinceEpochDates.put(daysSinceEpoch, result);
       }
     return result;
@@ -693,8 +679,8 @@ public class MetricHistory
     
     Date now = SystemTime.getCurrentTime();
     Date effectiveDate = date.before(now) ? date : now;
-    Date day = RLMDateUtils.truncate(effectiveDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date beginningOfCurrentMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(effectiveDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone());
+    Date beginningOfCurrentMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
 
     /****************************************
     *
@@ -729,7 +715,7 @@ public class MetricHistory
         //
         
         long[] newDailyBuckets = allocateBuckets(metricHistoryMode, dailyBuckets.length);
-        int dayOffset = RLMDateUtils.daysBetween(baseDay, day, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        int dayOffset = RLMDateUtils.daysBetween(baseDay, day, Deployment.getDeployment(tenantID).getTimeZone());
         for (int i = 0; i < dailyBuckets.length - dayOffset; i++)
           {
             newDailyBuckets[i] = dailyBuckets[i + dayOffset];
@@ -740,7 +726,7 @@ public class MetricHistory
         //
 
         long[] newMonthlyBuckets = allocateBuckets(metricHistoryMode, monthlyBuckets.length);
-        int monthOffset = RLMDateUtils.monthsBetween(beginningOfBaseMonth, beginningOfCurrentMonth, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        int monthOffset = RLMDateUtils.monthsBetween(beginningOfBaseMonth, beginningOfCurrentMonth, Deployment.getDeployment(tenantID).getTimeZone());
         for (int i = 0; i < monthlyBuckets.length - monthOffset; i++)
           {
             newMonthlyBuckets[i] = monthlyBuckets[i + monthOffset];
@@ -762,10 +748,10 @@ public class MetricHistory
         dailyBuckets = newDailyBuckets;
         monthlyBuckets = newMonthlyBuckets;
         baseDay = day;
-        beginningOfBaseMonth = RLMDateUtils.truncate(baseDay, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-        beginningOfDailyValues = RLMDateUtils.addDays(baseDay, -1*(dailyBuckets.length-1), Deployment.getDeployment(tenantID).getBaseTimeZone());
-        beginningOfMonthlyValues = RLMDateUtils.addMonths(beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getDeployment(tenantID).getBaseTimeZone());
-        endOfMonthlyValues = RLMDateUtils.addDays(beginningOfBaseMonth, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        beginningOfBaseMonth = RLMDateUtils.truncate(baseDay, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+        beginningOfDailyValues = RLMDateUtils.addDays(baseDay, -1*(dailyBuckets.length-1), Deployment.getDeployment(tenantID).getTimeZone());
+        beginningOfMonthlyValues = RLMDateUtils.addMonths(beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getDeployment(tenantID).getTimeZone());
+        endOfMonthlyValues = RLMDateUtils.addDays(beginningOfBaseMonth, -1, Deployment.getDeployment(tenantID).getTimeZone());
       }
     
     /****************************************
@@ -780,7 +766,7 @@ public class MetricHistory
 
     if (day.compareTo(beginningOfDailyValues) >= 0)
       {
-        int bucketIndex = dailyBuckets.length - RLMDateUtils.daysBetween(day, baseDay, Deployment.getDeployment(tenantID).getBaseTimeZone()) - 1;
+        int bucketIndex = dailyBuckets.length - RLMDateUtils.daysBetween(day, baseDay, Deployment.getDeployment(tenantID).getTimeZone()) - 1;
         switch (metricHistoryMode)
           {
             case Standard:
@@ -813,7 +799,7 @@ public class MetricHistory
 
     if (beginningOfCurrentMonth.compareTo(beginningOfMonthlyValues) >= 0 && beginningOfCurrentMonth.compareTo(beginningOfBaseMonth) < 0)
       {
-        int bucketIndex = monthlyBuckets.length - RLMDateUtils.monthsBetween(beginningOfCurrentMonth, beginningOfBaseMonth, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        int bucketIndex = monthlyBuckets.length - RLMDateUtils.monthsBetween(beginningOfCurrentMonth, beginningOfBaseMonth, Deployment.getDeployment(tenantID).getTimeZone());
         switch (metricHistoryMode)
           {
             case Standard:
@@ -929,7 +915,7 @@ public class MetricHistory
     //
 
     startDay = Objects.equals(startDay, NGLMRuntime.BEGINNING_OF_TIME) ? null : startDay;
-    if (startDay != null && ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone())))
+    if (startDay != null && ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone())))
       {
         throw new IllegalArgumentException("startDay must be on a day boundary");
       }
@@ -939,7 +925,7 @@ public class MetricHistory
     //
     
     endDay = Objects.equals(endDay, NGLMRuntime.END_OF_TIME) ? null : endDay;
-    if (endDay != null && ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone())))
+    if (endDay != null && ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone())))
       {
         throw new IllegalArgumentException("endDay must be on a day boundary");
       }
@@ -1031,10 +1017,10 @@ public class MetricHistory
                   switch (endDayCase)
                     {
                       case A:
-                        result = allTimeBucket - aggregateMonthlyValues(RLMDateUtils.addDays(endDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone()), endOfMonthlyValues) - aggregateDailyValues(beginningOfBaseMonth,baseDay);
+                        result = allTimeBucket - aggregateMonthlyValues(RLMDateUtils.addDays(endDay, 1, Deployment.getDeployment(tenantID).getTimeZone()), endOfMonthlyValues) - aggregateDailyValues(beginningOfBaseMonth,baseDay);
                         break;
                       case B:
-                        result = allTimeBucket - aggregateDailyValues(RLMDateUtils.addDays(endDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone()), baseDay);
+                        result = allTimeBucket - aggregateDailyValues(RLMDateUtils.addDays(endDay, 1, Deployment.getDeployment(tenantID).getTimeZone()), baseDay);
                         break;
                       case C:
                         result = allTimeBucket;
@@ -1272,7 +1258,7 @@ public class MetricHistory
     if (result == null)
       {
         result = new HashSet<Date>();
-        for (Date month = firstMonth; month.before(baseMonth); month = RLMDateUtils.addMonths(month, 1, Deployment.getSystemTimeZone()))  // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+        for (Date month = firstMonth; month.before(baseMonth); month = RLMDateUtils.addMonths(month, 1, Deployment.getDefault().getTimeZone()))  // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
           {
             result.add(month);
           }
@@ -1295,9 +1281,9 @@ public class MetricHistory
     if (result == null)
       {
         result = new HashSet<Date>();
-        for (Date month = firstMonth; month.before(baseMonth); month = RLMDateUtils.addMonths(month, 1, Deployment.getSystemTimeZone())) // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+        for (Date month = firstMonth; month.before(baseMonth); month = RLMDateUtils.addMonths(month, 1, Deployment.getDefault().getTimeZone())) // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
           {
-            result.add(RLMDateUtils.addDays(RLMDateUtils.addMonths(month, 1, Deployment.getSystemTimeZone()), -1, Deployment.getSystemTimeZone())); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+            result.add(RLMDateUtils.addDays(RLMDateUtils.addMonths(month, 1, Deployment.getDefault().getTimeZone()), -1, Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
           }
         monthlyEndDaysCache.get().put(key,result);
       }
@@ -1339,7 +1325,7 @@ public class MetricHistory
     //  aggregate
     //
         
-    int bucketIndex = dailyBuckets.length - RLMDateUtils.daysBetween(startDay, baseDay, Deployment.getDeployment(tenantID).getBaseTimeZone()) - 1;
+    int bucketIndex = dailyBuckets.length - RLMDateUtils.daysBetween(startDay, baseDay, Deployment.getDeployment(tenantID).getTimeZone()) - 1;
     Date bucketDay = startDay;
     while (bucketDay.compareTo(endDay) <= 0)
       {
@@ -1361,7 +1347,7 @@ public class MetricHistory
               }
           }
         bucketIndex += 1;
-        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getDeployment(tenantID).getTimeZone());
       }
     return result;
   }
@@ -1423,7 +1409,7 @@ public class MetricHistory
               }
           }
         bucketIndex += 1;
-        bucketMonth = RLMDateUtils.addMonths(bucketMonth, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        bucketMonth = RLMDateUtils.addMonths(bucketMonth, 1, Deployment.getDeployment(tenantID).getTimeZone());
       }
     return result;
   }
@@ -1446,7 +1432,7 @@ public class MetricHistory
     //  startDay
     //
 
-    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone())))
+    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone())))
       {
         throw new IllegalArgumentException("startDay must be on a day boundary");
       }
@@ -1455,7 +1441,7 @@ public class MetricHistory
     //  endDay
     //
     
-    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone())))
+    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone())))
       {
         throw new IllegalArgumentException("endDay must be on a day boundary");
       }
@@ -1551,7 +1537,7 @@ public class MetricHistory
                   break;
               }
           }
-        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getDeployment(tenantID).getTimeZone());
       }
     
     /*****************************************
@@ -1581,7 +1567,7 @@ public class MetricHistory
     //  startDay
     //
 
-    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone())))
+    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone())))
       {
         throw new IllegalArgumentException("startDay must be on a day boundary");
       }
@@ -1590,7 +1576,7 @@ public class MetricHistory
     //  endDay
     //
     
-    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone())))
+    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone())))
       {
         throw new IllegalArgumentException("endDay must be on a day boundary");
       }
@@ -1654,7 +1640,7 @@ public class MetricHistory
           {
             result += 1;
           }
-        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getDeployment(tenantID).getTimeZone());
       }
     
     /*****************************************
@@ -1716,9 +1702,9 @@ public class MetricHistory
 
   private Long getPreviousNDays(Date evaluationDate, int numberOfDays)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -numberOfDays, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -numberOfDays, Deployment.getDeployment(tenantID).getTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getTimeZone());
     return this.getValue(startDay, endDay);
   }
 
@@ -1728,7 +1714,7 @@ public class MetricHistory
 
   public Long getToday(Date evaluationDate)
   {
-    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getTimeZone());
     return this.getValue(today, today);
   }
 
@@ -1738,8 +1724,8 @@ public class MetricHistory
 
   public Long getYesterday(Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getTimeZone());
     Date endDay = startDay;
     return this.getValue(startDay, endDay);
   }
@@ -1777,10 +1763,10 @@ public class MetricHistory
 
   public Long getPreviousMonth(Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, 0, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getDeployment(tenantID).getTimeZone());
+    Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getDeployment(tenantID).getTimeZone());
     return this.getValue(startDay, endDay);
   }
 
@@ -1799,9 +1785,9 @@ public class MetricHistory
 
   private Long getCountIfZeroOrNotPrevious90Days(Date evaluationDate, MetricHistory.Criteria zeroOrNot)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getTimeZone());
     return this.countIf(startDay, endDay, zeroOrNot);
   }
 
@@ -1829,9 +1815,9 @@ public class MetricHistory
 
   private Long getAggregateIfZeroOrNotPrevious90Days(MetricHistory criteriaMetricHistory, Date evaluationDate, MetricHistory.Criteria zeroOrNot)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getTimeZone());
     return this.aggregateIf(startDay, endDay, zeroOrNot, criteriaMetricHistory);
   }
 
@@ -1875,13 +1861,13 @@ public class MetricHistory
     //
 
     int numberOfMonths = 3;
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, 0, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, 0, Deployment.getDeployment(tenantID).getTimeZone());
     long[] valuesByMonth = new long[numberOfMonths];
     for (int i=0; i<numberOfMonths; i++)
       {
-        Date startDay = RLMDateUtils.addMonths(startOfMonth, -(i+1), Deployment.getDeployment(tenantID).getBaseTimeZone());
-        Date endDay = RLMDateUtils.addDays(RLMDateUtils.addMonths(startDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone()), -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        Date startDay = RLMDateUtils.addMonths(startOfMonth, -(i+1), Deployment.getDeployment(tenantID).getTimeZone());
+        Date endDay = RLMDateUtils.addDays(RLMDateUtils.addMonths(startDay, 1, Deployment.getDeployment(tenantID).getTimeZone()), -1, Deployment.getDeployment(tenantID).getTimeZone());
         valuesByMonth[i] = this.getValue(startDay, endDay);
       }
 

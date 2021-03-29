@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.core;
 
-import com.evolving.nglm.evolution.DeliveryRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,12 +118,7 @@ public class NGLMRuntime
     //
     // Deployments initialization for all tenants
     //
-    
-    for(Integer tenantID : Deployment.getTenantIDs())
-      {
-        Deployment.getDeployment(tenantID);
-        com.evolving.nglm.evolution.Deployment.getDeployment(tenantID);
-      }
+    // Deployment.initialize(); TODO EVPRO-99 Not needed anymore ?
   }
 
   //

@@ -1,9 +1,9 @@
 package com.evolving.nglm.evolution.propensity;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.PropensityRule;
 import com.evolving.nglm.evolution.SubscriberGroupEpoch;
 import com.evolving.nglm.evolution.SubscriberProfile;

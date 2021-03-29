@@ -22,7 +22,7 @@ public class DynSMTPTimeWindow implements Serializable{
 	public DynSMTPTimeWindow(String timeZone, String dateFormat){
 		this.timeZoneStr = timeZone;
 		this.dateFormatStr = dateFormat;
-		this.f = new SimpleDateFormat(dateFormatStr);
+		this.f = new SimpleDateFormat(dateFormatStr); // WARNING, deprecated usage of SimpleDateFormat - See RLMDateUtils
 	}	
 	
 	public Date getStartTime() {

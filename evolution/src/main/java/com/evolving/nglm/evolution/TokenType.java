@@ -17,6 +17,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -112,7 +113,7 @@ public class TokenType extends GUIManagedObject
         creationDate, 
         this.getValidity().getPeriodQuantity(),
         this.getValidity().getPeriodType(),
-        Deployment.getDeployment(tenantID).getBaseTimeZone(),
+        Deployment.getDeployment(tenantID).getTimeZone(),
         this.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
     return result;
   }

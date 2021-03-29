@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -17,6 +16,9 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.DeploymentManagedObject;
 import com.evolving.nglm.core.JSONUtilities;
 
+/* IF COPY/PASTE FROM ANOTHER DeploymentManagedObject OBJECT
+ * DO NOT FORGET TO ADD IT TO THE DeploymentManagedObject FACTORY
+ * SEE DeploymentManagedObject.create */
 public class OfferOptimizationAlgorithm extends DeploymentManagedObject
 {
   @Override

@@ -1,38 +1,77 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
-import java.util.Date;
+import java.util.Map;
 
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.ScheduledJob;
+import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.VoucherService;
-import com.evolving.nglm.evolution.datacubes.AsyncScheduledJob;
 
 public class ElasticsearchManager
 {
+  /*****************************************
+  *
+  * Properties
+  *
+  *****************************************/
   private JobScheduler elasticsearchJobScheduler;
   private Thread schedulerThread;
-  private SnapshotTask subscriberprofileSnapshotTask;
-  private JourneyCleanUpTask journeyCleanUpTask;
   
+  //
+  // Client & Services
+  //
+  private ElasticsearchClientAPI elasticsearchRestClient;
+  private VoucherService voucherService;
+  private JourneyService journeyService;
+
+  /*****************************************
+  *
+  * Constructor
+  *
+  *****************************************/
   public ElasticsearchManager(ElasticsearchClientAPI elasticsearchClient, VoucherService voucherService, JourneyService journeyService) {
+    this.elasticsearchRestClient = elasticsearchClient;
+    this.voucherService = voucherService;
+    this.journeyService = journeyService;
+    
     this.elasticsearchJobScheduler = new JobScheduler("Elasticsearch jobs");
-    
-    this.subscriberprofileSnapshotTask = new SnapshotTask("Snapshot:subscriberprofile", "subscriberprofile", "subscriberprofile_snapshot", elasticsearchClient);
-    this.journeyCleanUpTask = new JourneyCleanUpTask(journeyService, elasticsearchClient);
-    
+
     //
-    // Schedule all Elasticsearch jobs
+    // Set all jobs from configuration
     //
-    long uniqueID = 0;
-    uniqueID = ElasticsearchManager.scheduleSnapshot(elasticsearchJobScheduler, uniqueID, this.subscriberprofileSnapshotTask);
-    uniqueID = ElasticsearchManager.scheduleJourneystatisticCleanUp(elasticsearchJobScheduler, uniqueID, this.journeyCleanUpTask);
-    uniqueID = ElasticsearchManager.scheduleVoucherCleanUp(elasticsearchJobScheduler, uniqueID, voucherService);
+    for(Integer tenantID: Deployment.getTenantIDs()) {
+      Map<String, ScheduledJobConfiguration> jobConfigs = Deployment.getDeployment(tenantID).getElasticsearchJobsScheduling();
+      if(jobConfigs == null) {
+        continue;
+      }
+      
+      for(String jobID: jobConfigs.keySet()) {
+        ScheduledJobConfiguration config = jobConfigs.get(jobID);
+        
+        if(config.isEnabled()) {
+          ScheduledJob job = ElasticsearchJobs.createElasticsearchJob(config, this);
+          elasticsearchJobScheduler.schedule(job);
+        }
+      }
+    }
   }
+
+  /*****************************************
+  *
+  * Getters
+  *
+  *****************************************/
+  public ElasticsearchClientAPI getElasticsearchClientAPI() { return this.elasticsearchRestClient; }
+  public VoucherService getVoucherService() { return this.voucherService; }
+  public JourneyService getJourneyService() { return this.journeyService; }
   
+  /*****************************************
+  *
+  * Start & Stop scheduler thread
+  *
+  *****************************************/
   public void start() {
     schedulerThread = new Thread(elasticsearchJobScheduler::runScheduler);
     schedulerThread.start();
@@ -40,80 +79,5 @@ public class ElasticsearchManager
   
   public void stop() {
     elasticsearchJobScheduler.stop();
-  }
-  
-  private static long scheduleSnapshot(JobScheduler scheduler, long nextAvailableID, SnapshotTask snapshotTask) {
-    String jobName = "SubscriberProfileSnapshot";
-    ScheduledJob job = new AsyncScheduledJob(nextAvailableID,
-        jobName, 
-        Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
-        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
-    {
-      @Override
-      protected void asyncRun()
-      {
-        Date now = SystemTime.getCurrentTime();
-        // This snapshot is done the day after the "saved" day (after midnight, in the morning usually)
-        Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        snapshotTask.run(yesterday);
-      }
-    };
-    
-    if(Deployment.getElasticsearchJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
-      scheduler.schedule(job);
-      return nextAvailableID + 1;
-    } 
-    else {
-      return nextAvailableID;
-    }
-  }
-
-  private static long scheduleJourneystatisticCleanUp(JobScheduler scheduler, long nextAvailableID, JourneyCleanUpTask journeyCleanUpTask) {
-    String jobName = "JourneystatisticCleanUp";
-    ScheduledJob job = new AsyncScheduledJob(nextAvailableID,
-        jobName, 
-        Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
-        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
-    {
-      @Override
-      protected void asyncRun()
-      {
-        journeyCleanUpTask.start();
-      }
-    };
-    
-    if(Deployment.getElasticsearchJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
-      scheduler.schedule(job);
-      return nextAvailableID + 1;
-    } 
-    else {
-      return nextAvailableID;
-    }
-  }
-
-  private static long scheduleVoucherCleanUp(JobScheduler scheduler, long nextAvailableID, VoucherService voucherService) {
-    String jobName = "ExpiredVoucherCleanUp";
-    ScheduledJob job = new AsyncScheduledJob(nextAvailableID,
-        jobName, 
-        Deployment.getElasticsearchJobsScheduling().get(jobName).getCronEntry(), 
-        Deployment.getSystemTimeZone(), // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-        Deployment.getElasticsearchJobsScheduling().get(jobName).isScheduledAtRestart())
-    {
-      @Override
-      protected void asyncRun()
-      {
-        voucherService.cleanUpVouchersJob(0); // TODO EVPRO-99 check this 0 value maybe need to split per tenant ??
-      }
-    };
-    
-    if(Deployment.getElasticsearchJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
-      scheduler.schedule(job);
-      return nextAvailableID + 1;
-    } 
-    else {
-      return nextAvailableID;
-    }
   }
 }

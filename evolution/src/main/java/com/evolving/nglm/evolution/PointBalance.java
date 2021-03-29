@@ -313,7 +313,7 @@ public class PointBalance
             //  expiration date
             //
 
-            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getDeployment(tenantID).getBaseTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
+            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getDeployment(tenantID).getTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
             if(pointFulfillmentResponse != null){ pointFulfillmentResponse.setDeliverableExpirationDate(expirationDate); }
 
             //

@@ -156,7 +156,6 @@
     <topic.sourceaddress>sourceaddress</topic.sourceaddress>
     <topic.voucherchange.request>voucherchange-request</topic.voucherchange.request>
     <topic.voucherchange.response>voucherchange-response</topic.voucherchange.response>
-    <topic.tenant>tenant</topic.tenant>
 
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>

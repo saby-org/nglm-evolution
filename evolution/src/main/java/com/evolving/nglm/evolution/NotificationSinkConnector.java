@@ -1,8 +1,5 @@
 package com.evolving.nglm.evolution;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +11,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -45,9 +43,6 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
   
   public static class NotificationSinkConnectorTask extends StreamESSinkTask<MessageDelivery>
   {
-    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
-    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
-
     /*****************************************
     *
     *  start
@@ -121,11 +116,12 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap.put("subscriberID", mailNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(mailNotification.getAlternateIDs(), documentMap);
+        documentMap.put("tenantID", mailNotification.getTenantID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", mailNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", mailNotification.getCreationDate()!=null?dateFormat.format(mailNotification.getCreationDate()):"");
-        documentMap.put("deliveryDate", mailNotification.getDeliveryDate()!=null?dateFormat.format(mailNotification.getDeliveryDate()):"");
+        documentMap.put("creationDate", mailNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(mailNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", mailNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(mailNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", mailNotification.getModuleID());
         documentMap.put("featureID", mailNotification.getFeatureID());
         documentMap.put("source", mailNotification.getFromAddress());
@@ -153,11 +149,12 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap.put("subscriberID", smsNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(smsNotification.getAlternateIDs(), documentMap);
+        documentMap.put("tenantID", smsNotification.getTenantID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", smsNotification.getCreationDate()!=null?dateFormat.format(smsNotification.getCreationDate()):"");
-        documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");
+        documentMap.put("creationDate", smsNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(smsNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(smsNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", smsNotification.getModuleID());
         documentMap.put("featureID", smsNotification.getFeatureID());
         documentMap.put("source", smsNotification.getSource());
@@ -184,11 +181,12 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap.put("subscriberID", notifNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(notifNotification.getAlternateIDs(), documentMap);
+        documentMap.put("tenantID", notifNotification.getTenantID());
         documentMap.put("deliveryRequestID", notifNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", notifNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", notifNotification.getCreationDate()!=null?dateFormat.format(notifNotification.getCreationDate()):"");
-        documentMap.put("deliveryDate", notifNotification.getDeliveryDate()!=null?dateFormat.format(notifNotification.getDeliveryDate()):"");
+        documentMap.put("creationDate", notifNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(notifNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", notifNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(notifNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", notifNotification.getModuleID());
         documentMap.put("featureID", notifNotification.getFeatureID());
         documentMap.put("source", notifNotification.getSourceAddressParam());
@@ -211,11 +209,12 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap.put("subscriberID", pushNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(pushNotification.getAlternateIDs(), documentMap);
+        documentMap.put("tenantID", pushNotification.getTenantID());
         documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", pushNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", pushNotification.getCreationDate()!=null?dateFormat.format(pushNotification.getCreationDate()):"");
-        documentMap.put("deliveryDate", pushNotification.getDeliveryDate()!=null?dateFormat.format(pushNotification.getDeliveryDate()):"");
+        documentMap.put("creationDate", pushNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(pushNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", pushNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(pushNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", pushNotification.getModuleID());
         documentMap.put("featureID", pushNotification.getFeatureID());
         documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?

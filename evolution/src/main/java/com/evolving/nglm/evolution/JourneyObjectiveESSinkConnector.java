@@ -1,30 +1,20 @@
 package com.evolving.nglm.evolution;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
-import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
-import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
-import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
 @Deprecated
 public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
@@ -53,9 +43,6 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
   @Deprecated
   public static class JourneyObjectiveESSinkConnectorTask extends ChangeLogESSinkTask<JourneyObjective>
   {
-    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
-    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
-
     /*****************************************
     *
     *  start
@@ -150,7 +137,7 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
           String contactPolicyID = (String) jr.get("contactPolicyID");
           ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
           documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
-          documentMap.put("timestamp",     RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+          documentMap.put("timestamp",     RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
         }
       return documentMap;
     }

@@ -10,6 +10,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.ElasticSearchMapping;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;

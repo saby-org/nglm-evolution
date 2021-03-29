@@ -20,6 +20,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 

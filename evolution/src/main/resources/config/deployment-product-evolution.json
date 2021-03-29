@@ -1,10 +1,9 @@
 
 {
-  "baseTimeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
-  "baseLanguage"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
-  "baseCountry"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
-  "APIresponseDateFormat"                    : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
-  "systemTimeZone"                           : "<_DEPLOYMENT_TIMEZONE_>",
+  "timeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
+  "language"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
+  "country"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
+  "APIresponseDateFormat"                : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
 
   "topicSubscriberPartitions" : "<_SUBSCRIBER_PARTITIONS_>",
   "topicReplication"          : "<_KAFKA_REPLICATION_FACTOR_>",
@@ -26,34 +25,33 @@
   
   "firstDayOfTheWeek"                 : "Monday",
 
-  "CronFormat_comment": "minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
-
+  "datacubeJobsScheduling.comment": "CRON are scheduled in the time-zone of THE TENANT. Two jobs scheduled at midnight for different tenants in different time-zone will therefore not run at the same time. Fields name are JobUniqueID. They can be used to override them in the project deployment.json. You can also add new jobs by using a different JobUniqueID. BEWARE that every job will have an instance for EVERY tenants. CRON Format: minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
   "datacubeJobsScheduling" : {
-    "ODR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "ODR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "ODR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "ODR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "BDR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "BDR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "BDR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "BDR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "MDR-daily-preview"              : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "MDR-daily-definitive"           : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "MDR-hourly-preview"             : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "MDR-hourly-definitive"          : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
-    "LoyaltyPrograms-preview"        : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
-    "SubscriberProfile-preview"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "SubscriberProfile-definitive"   : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
-    "Journeys"                       : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "1 * * * *" }
+    "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "ODR-daily-definitive"           : { "type": "ODR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "ODR-hourly-preview"             : { "type": "ODR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "ODR-hourly-definitive"          : { "type": "ODR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "BDR-daily-preview"              : { "type": "BDR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "BDR-daily-definitive"           : { "type": "BDR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "BDR-hourly-preview"             : { "type": "BDR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "BDR-hourly-definitive"          : { "type": "BDR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "MDR-daily-preview"              : { "type": "MDR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "MDR-daily-definitive"           : { "type": "MDR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "MDR-hourly-preview"             : { "type": "MDR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "MDR-hourly-definitive"          : { "type": "MDR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
+    "LoyaltyPrograms-preview"        : { "type": "LoyaltyPrograms-preview",      "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "LoyaltyPrograms-definitive"     : { "type": "LoyaltyPrograms-definitive",   "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
+    "SubscriberProfile-preview"      : { "type": "SubscriberProfile-preview",    "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "SubscriberProfile-definitive"   : { "type": "SubscriberProfile-definitive", "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
+    "Journeys"                       : { "type": "Journeys",                     "enabled": true,  "scheduledAtRestart": false, "cronEntry": "1 * * * *" }
   },
   "elasticsearchJobsScheduling" : {
-    "SubscriberProfileSnapshot"      : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
-    "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
-    "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
+    "SubscriberProfileSnapshot"      : { "type": "SubscriberProfileSnapshot",    "enabled": true,  "scheduledAtRestart": false, "cronEntry": "5 0 * * *" },
+    "JourneystatisticCleanUp"        : { "type": "JourneystatisticCleanUp",      "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 3 * * *" },
+    "ExpiredVoucherCleanUp"          : { "type": "ExpiredVoucherCleanUp",        "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 3 * * *" }
   },
 
-  "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   "elasticsearchScrollSize" : 1000,
   "elasticsearchConnectionSettings" :
     [
@@ -102,10 +100,10 @@
   "voucherESCacheCleanerFrequencyInSec" : 300,
   "numberConcurrentVoucherAllocationToES" : 10,
 
-  "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
+  "maxPollIntervalMs.comment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 300000,
   
-  "purchaseTimeoutMsComment" : "timeout for completion when calling purchase in sync mode",
+  "purchaseTimeoutMs.comment" : "timeout for completion when calling purchase in sync mode",
   "purchaseTimeoutMs" : 15000,
   
   "nodesTransitionsHistorySize" : 10,
@@ -114,6 +112,9 @@
   [
     "subscriberprofile"
   ],
+  
+  "stockRefreshPeriod" : 30,
+  
   "evolutionVersion"                                     : "${nglm.evolution.version}",
   "customerVersion"                                      : "${project.version}",
   "journeyTopic"                                         : "${topic.journey}",
@@ -142,7 +143,6 @@
   "voucherTopic"                                         : "${topic.voucher}",  
   "guiAuditTopic"                                        : "${topic.guiaudit}",
   "reportTopic"                                          : "${topic.report}",
-  "subscriberUpdateTopic"                                : "subscriberupdate",
   "assignSubscriberIDsTopic"                             : "${topic.assignsubscriberids}",
   "updateExternalSubscriberIDTopic"                      : "${topic.updateexternalsubscriberid}",
   "assignExternalSubscriberIDsTopic"                     : "${topic.assignexternalsubscriberids}",
@@ -194,10 +194,9 @@
   "dynamicCriterionFieldTopic"                           : "${topic.dynamiccriterionfield}",
   "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
   "criterionFieldAvailableValuesTopic"                   : "${topic.criterionfieldavailablevalues}",
-  "sourceAddressTopic"                   				 : "${topic.sourceaddress}",
+  "sourceAddressTopic"                                   : "${topic.sourceaddress}",
   "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
-  "tenantTopic"                                          : "${topic.tenant}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
 
   "supportedDataTypes" :
@@ -409,10 +408,8 @@
           "eventClass" : "com.evolving.nglm.evolution.TimedEvaluation",
           "eventTopic" : null,
           "eventRule" : "standard",
-		  "eventCriterionFields" :
-[
-]
-        },             
+          "eventCriterionFields" : []
+        },
         { 
           "name" : "journeyComplete",
           "eventClass" : null,
@@ -496,7 +493,7 @@
       { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "stringSet",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] }
     ],
 
-  "offerOptimizationAlgorithmsCommon": 
+  "offerOptimizationAlgorithms": 
     [
       {
         "id": "M-Random",
@@ -549,8 +546,6 @@
       }
     ],
 
-  "allThoseFollowingAreComingFromNGLMQA": "this is not yet OK, just a first try",
-
   "propensityRule"                                       :
   {
     "selectedDimensions": [],
@@ -582,15 +577,6 @@
     { "id" : "vc3", "display" : "[ACDEFGHJKMNPQRTWXY34679]{7}" },
     { "id" : "vc4", "display" : "[0123456789abcdef]{5}" },
     { "id" : "vc5", "display" : "[0123456789abcdef]{6}" }
-  ],
-  
-  "universalControlGroupCriteria" :
-  [
-    { "id" : "1", "criterionField" : "subscriber.universalControlGroup", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "true",  "expression" : "true" } }
-  ],
-  "controlGroupCriteria" :
-  [
-    { "id" : "1", "criterionField" : "subscriber.segments", "criterionOperator" : "contains", "argument" : { "valueType" : "simple",  "value" : "controlGroup",  "expression" : "'controlGroup'" } }
   ],
 
   "partnerTypes" : [],
@@ -671,9 +657,15 @@
   "initialSalesChannels" :
   [
     {"id":"-1", "name":"CustomerCare",  "display":"Customer Care","active":true, "readOnly":true, "callingChannelIDs" : [ "-1" ] },
-    {"id":"2",	"name":"journey",	"display":"Journey",	  "active":true, "readOnly":true, "callingChannelIDs":[]}
+    {"id":"2",  "name":"journey",       "display":"Journey",      "active":true, "readOnly":true, "callingChannelIDs":[]}
   ],
-
+  
+  "initialSourceAddresses" : [],
+  "initialPartners" : [],
+  "initialProducts" : [],
+  "initialCatalogCharacteristics" : [],
+  "initialContactPolicies" : [],
+  "initialJourneyTemplates" : [],
   "initialJourneyObjectives" : [],
 
   "initialOfferObjectives" :
@@ -687,6 +679,11 @@
       "catalogCharacteristics" : [ ]
     }
   ],
+  
+  "initialProductTypes" : [],
+  "initialTokenTypes" : [],
+  "initialSegmentationDimensions" : [],
+  "initialComplexObjects" : [],
 
   "initialCallingChannels": [
     {
@@ -750,8 +747,6 @@
     }
   ],
 
-
-
   "offerProperties" :
   [
     { "id": "1", "name": "offerID", "display": "Offer ID" },
@@ -763,7 +758,6 @@
     { "id": "7", "name": "price", "display": "Price" }
   ],
   
-
   "authResponseCacheLifetimeInMinutes" : 60,
   "thirdPartyMethodPermissions" :
   [
@@ -944,7 +938,6 @@
       "permissions"  : ["API-GET-RESELLER-DETAILS"]
     }
     
-
   ],
 
   "uploadedFileSeparator" : ";",
@@ -1152,8 +1145,7 @@
     ]
   },
 
-
-  "subscriberProfileRegistrySubjectComment"              : "todo, remove totally this hack from the conf",
+  "subscriberProfileRegistrySubject.comment"             : "TODO remove totally this hack from the conf",
   "subscriberProfileRegistrySubject"                     : "subscriberprofile",
   
   "scoringEngines" :
@@ -1192,9 +1184,9 @@
       { "id" : "supplier_2", "name" : "EvolutionCampaigns","fulfillmentProviderID" : "provider_Journey","display" : "Evolution Campaigns",       "description" : "Evolution Campaigns Supplier", "active" : true, "readOnly" : true, "email" : "", "phone" : "", "website" : "" }
     ],
     
-   "supportedCurrencies" : [],
+  "supportedCurrencies" : [],
    
-   "supportedRelationships" : [],
+  "supportedRelationships" : [],
 
   "catalogCharacteristicUnits" :
     [
@@ -1206,7 +1198,7 @@
       { "id": "percentage", "display": "%",        "dataTypes": [ "integer", "double" ] }
     ],
     
-    "presentationCriterionFields" :
+  "presentationCriterionFields" :
     [
        { "id" : "offer.rank",              "display" : "Offer Rank",               "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                    "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" },
       { "id" : "offer.score",             "display" : "Offer Score",              "dataType" : "double",  "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                     "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" },
@@ -1220,13 +1212,22 @@
       { "id" : "product.validity",        "display" : "Product Validity(days)",   "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                         "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" }
     ],
     
-    "journeyMetrics" : {},
+  "journeyMetrics" : {},
     
-    "subscriberProfileDatacubeMetrics" : [],
+  "subscriberProfileDatacubeMetrics" : [],
     
-    "enableProfileSegmentChange" : true,
-    "enableEvaluateTargetRandomness" : false,
-    "enableContactPolicyProcessing" : true,
+  "enableProfileSegmentChange" : true,
+  "enableEvaluateTargetRandomness" : false,
+  "enableContactPolicyProcessing" : true,
+  
+  "subscriberGroupLoaderAlternateID" : null,
+  "subscriberGroupLoaderAutoProvision" : false,
+  "subscriberTraceControlAlternateID" : null,
+  "subscriberTraceControlAutoProvision" : false,
+  "autoProvisionEvents" : [],
+  "externalAPITopics" : [],
+  
+  "generateSimpleProfileDimensions" : true,
     
-    "recurrentCampaignCreationDaysRange" : 3
+  "recurrentCampaignCreationDaysRange" : 3
 }

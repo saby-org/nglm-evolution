@@ -8,6 +8,9 @@ package com.evolving.nglm.core;
 
 import org.json.simple.JSONObject;
 
+/* IF COPY/PASTE FROM ANOTHER DeploymentManagedObject OBJECT
+ * DO NOT FORGET TO ADD IT TO THE DeploymentManagedObject FACTORY
+ * SEE DeploymentManagedObject.create */
 public class AutoProvisionEvent extends DeploymentManagedObject
 {
   /*****************************************

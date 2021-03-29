@@ -4,11 +4,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -28,8 +32,13 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.RLMDateUtils.DatePattern;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
+/**
+ * DatacubeGenerator is NOT thread-safe ! - Should only be used in mono-thread.
+ */
 public abstract class DatacubeGenerator
 {
   /*****************************************
@@ -71,19 +80,29 @@ public abstract class DatacubeGenerator
   protected ElasticsearchClientAPI elasticsearch;
   protected String datacubeName;
   protected ByteBuffer tmpBuffer = null;
+  
+  protected int tenantID;
+  protected String timeZone;
+  protected SimpleDateFormat timestampFormat;
+  protected SimpleDateFormat dayFormat;
 
   /*****************************************
   *
   * Constructor
   *
   *****************************************/
-  public DatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter) 
+  public DatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, int tenantID, String timeZone) 
   {
+    this.log = new DatacubeLogger(this);
+    
     this.datacubeName = datacubeName;
     this.elasticsearch = elasticsearch;
     this.datacubeWriter = datacubeWriter;
     
-    this.log = new DatacubeLogger(this);
+    this.tenantID = tenantID;
+    this.timeZone = timeZone;
+    this.timestampFormat = RLMDateUtils.createLocalDateFormat(DatePattern.ELASTICSEARCH_UNIVERSAL_TIMESTAMP, timeZone);
+    this.dayFormat = RLMDateUtils.createLocalDateFormat(DatePattern.LOCAL_DAY, timeZone);
   }
   
   /*****************************************
@@ -124,6 +143,31 @@ public abstract class DatacubeGenerator
   {
     // @param mode can be used to distinguish several type of publishing mode (hourly, daily)
     return this.extractDocumentIDFromFilter(filters, timestamp, "default");
+  }
+
+  /*****************************************
+  *
+  * Tenant & Date Utils
+  *
+  *****************************************/
+  protected int getTenantID() 
+  {
+    return this.tenantID;
+  }
+  
+  protected String getTimeZone() 
+  { 
+    return this.timeZone; 
+  }
+  
+  protected String printTimestamp(Date date) 
+  {
+    return this.timestampFormat.format(date);
+  }
+  
+  protected String printDay(Date date)
+  {
+    return this.dayFormat.format(date);
   }
   
   /*****************************************

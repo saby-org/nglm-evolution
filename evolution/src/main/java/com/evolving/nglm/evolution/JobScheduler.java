@@ -66,7 +66,7 @@ public class JobScheduler
   {
     for (ScheduledJob job : schedule)
       {
-        if (job.getjobID() == jobID)
+        if (job.getSchedulingID() == jobID)
           {
             return job;
           }
@@ -275,7 +275,7 @@ public class JobScheduler
               {
                 if (nextWaitDuration >= 0)
                   {
-                    log.info("Scheduler will now sleep for "+ Math.round(nextWaitDuration/1000.0) +" s" + ((nextPeriodicEvaluation!=null)? " until " + RLMDateUtils.printTimestamp(new Date(nextPeriodicEvaluation.getTime())) : "."));
+                    log.info("Scheduler will now sleep for "+ Math.round(nextWaitDuration/1000.0) +" s" + ((nextPeriodicEvaluation!=null)? " until " + RLMDateUtils.formatDateForElasticsearchDefault(new Date(nextPeriodicEvaluation.getTime())) : "."));
                     this.wait(nextWaitDuration); // wait till the next scheduled job
                   }
                 else 

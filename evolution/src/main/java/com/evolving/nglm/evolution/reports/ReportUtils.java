@@ -55,9 +55,9 @@ import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.EvolutionSetup;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.evolution.Deployment;
 
 import kafka.admin.AdminUtils;
 import kafka.admin.RackAwareMode;

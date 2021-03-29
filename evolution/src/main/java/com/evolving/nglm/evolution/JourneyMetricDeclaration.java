@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentManagedObject;
 
 import com.evolving.nglm.core.JSONUtilities;
@@ -18,6 +19,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+/* IF COPY/PASTE FROM ANOTHER DeploymentManagedObject OBJECT
+ * DO NOT FORGET TO ADD IT TO THE DeploymentManagedObject FACTORY
+ * SEE DeploymentManagedObject.create */
 public class JourneyMetricDeclaration extends DeploymentManagedObject
 {
   /*****************************************

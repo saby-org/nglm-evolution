@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.VoucherDelivery.VoucherStatus;
 import com.evolving.nglm.evolution.retention.Cleanable;

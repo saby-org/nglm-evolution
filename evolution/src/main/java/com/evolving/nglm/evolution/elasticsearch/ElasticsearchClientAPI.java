@@ -57,7 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
@@ -308,13 +308,14 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   }
 
   // @return map<STATUS,count>
-  public Map<String, Long> getJourneyBonusesCount(String journeyDisplay) throws ElasticsearchClientException {
-    return getJourneyGenericDeliveryCount(journeyDisplay, "returnCode", BDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_bdr
+  public Map<String, Long> getJourneyBonusesCount(String journeyDisplay, int tenantID) throws ElasticsearchClientException {
+    return getJourneyGenericDeliveryCount(journeyDisplay, "returnCode", BDRDatacubeGenerator.DATACUBE_ES_INDEX(tenantID));  // tX_datacube_bdr
   }
 
+
   // @return map<STATUS,count>
-  public Map<String, Long> getJourneyMessagesCount(String journeyDisplay) throws ElasticsearchClientException {
-    return getJourneyGenericDeliveryCount(journeyDisplay, "returnCode", MDRDatacubeGenerator.DATACUBE_ES_INDEX);  // datacube_messages
+  public Map<String, Long> getJourneyMessagesCount(String journeyDisplay, int tenantID) throws ElasticsearchClientException {
+    return getJourneyGenericDeliveryCount(journeyDisplay, "returnCode", MDRDatacubeGenerator.DATACUBE_ES_INDEX(tenantID));  // tX_datacube_messages
   }
   
   // @return map<STATUS,count>

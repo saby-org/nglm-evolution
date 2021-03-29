@@ -50,6 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.CronFormat;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
@@ -77,7 +78,7 @@ public class ReportService extends GUIService
   static
   {
     TIMESTAMP_PRINT_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-    TIMESTAMP_PRINT_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    TIMESTAMP_PRINT_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
   }
   
   private Map<Integer, File> reportDirectoryPerTenant = new HashMap<Integer, File>();
@@ -91,7 +92,7 @@ public class ReportService extends GUIService
   public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "ReportService", groupID, reportTopic, masterService, getSuperListener(reportListener), "putReport", "removeReport", notifyOnSignificantChange);
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         File f = validateAndgetReportDirectory(tenantID);
         reportDirectoryPerTenant.put(tenantID, f);
@@ -577,7 +578,7 @@ public class ReportService extends GUIService
   private Set<Date> compareAndGetDates(Report report, Set<Date> generatedDates, int tenantID)
   {
     Set<Date> result = new HashSet<Date>();
-    final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
     for (SchedulingInterval schedulingInterval : report.getEffectiveScheduling())
       {
         if(log.isDebugEnabled()) log.debug("compareAndGetDates schedulingInterval {}", schedulingInterval);
@@ -589,7 +590,7 @@ public class ReportService extends GUIService
         if (schedulingInterval == SchedulingInterval.HOURLY) continue;
         
         Calendar c = SystemTime.getCalendar();
-        c.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        c.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         c.setTime(now);
         Date start = null;
         Date end = null;
@@ -602,8 +603,8 @@ public class ReportService extends GUIService
         switch (schedulingInterval)
         {
           case DAILY:
-            end = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
-            start = RLMDateUtils.addDays(now, -6, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            end = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+            start = RLMDateUtils.addDays(now, -6, Deployment.getDeployment(tenantID).getTimeZone());
             break;
             
           case WEEKLY:
@@ -616,11 +617,11 @@ public class ReportService extends GUIService
             
           case MONTHLY:
             int dayOfMonth = c.get(Calendar.DAY_OF_MONTH);
-            Date previousMonth = RLMDateUtils.addMonths(now, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
-            start = RLMDateUtils.addDays(previousMonth, -dayOfMonth + 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            Date previousMonth = RLMDateUtils.addMonths(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+            start = RLMDateUtils.addDays(previousMonth, -dayOfMonth + 1, Deployment.getDeployment(tenantID).getTimeZone());
             c.setTime(start);
             int endDay = c.getActualMaximum(Calendar.DAY_OF_MONTH);
-            end = RLMDateUtils.addDays(start, endDay -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            end = RLMDateUtils.addDays(start, endDay -1, Deployment.getDeployment(tenantID).getTimeZone());
             break;
 
           default:
@@ -629,7 +630,7 @@ public class ReportService extends GUIService
         while (start.before(end) || start.equals(end))
           {
             datesToCheck.add(start);
-            start = RLMDateUtils.addDays(start, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            start = RLMDateUtils.addDays(start, 1, Deployment.getDeployment(tenantID).getTimeZone());
           }
         
         StringBuilder datesToCheckRAJKString = new StringBuilder();
@@ -667,15 +668,15 @@ public class ReportService extends GUIService
                 Date lastWeekReportDate = getPreviousReportDate(Deployment.getDeployment(tenantID).getWeeklyReportCronEntryString(), now, tenantID);
                 if (lastWeekReportDate != null)
                   {
-                    int thisWK = RLMDateUtils.getField(now, Calendar.WEEK_OF_YEAR, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                    int lastWKReportsWK = RLMDateUtils.getField(lastWeekReportDate, Calendar.WEEK_OF_YEAR, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                    if (thisWK == lastWKReportsWK) lastWeekReportDate = RLMDateUtils.addWeeks(lastWeekReportDate, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                    int thisWK = RLMDateUtils.getField(now, Calendar.WEEK_OF_YEAR, Deployment.getDeployment(tenantID).getTimeZone());
+                    int lastWKReportsWK = RLMDateUtils.getField(lastWeekReportDate, Calendar.WEEK_OF_YEAR, Deployment.getDeployment(tenantID).getTimeZone());
+                    if (thisWK == lastWKReportsWK) lastWeekReportDate = RLMDateUtils.addWeeks(lastWeekReportDate, -1, Deployment.getDeployment(tenantID).getTimeZone());
                   }
                 else
                   {
-                    lastWeekReportDate = RLMDateUtils.addWeeks(now, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                    lastWeekReportDate = RLMDateUtils.addWeeks(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
                   }
-                lastWeekReportDate = RLMDateUtils.truncate(lastWeekReportDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                lastWeekReportDate = RLMDateUtils.truncate(lastWeekReportDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
                 result.add(lastWeekReportDate);
               }
             break;
@@ -695,15 +696,15 @@ public class ReportService extends GUIService
                 Date lastMonthReportDate = getPreviousReportDate(Deployment.getDeployment(tenantID).getMonthlyReportCronEntryString(), now, tenantID);
                 if (lastMonthReportDate != null)
                   {
-                    int thisMonth = RLMDateUtils.getField(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                    int lastMonthReportsMonth = RLMDateUtils.getField(lastMonthReportDate, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                    if (thisMonth == lastMonthReportsMonth) lastMonthReportDate = RLMDateUtils.addMonths(lastMonthReportDate, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                    int thisMonth = RLMDateUtils.getField(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+                    int lastMonthReportsMonth = RLMDateUtils.getField(lastMonthReportDate, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+                    if (thisMonth == lastMonthReportsMonth) lastMonthReportDate = RLMDateUtils.addMonths(lastMonthReportDate, -1, Deployment.getDeployment(tenantID).getTimeZone());
                   }
                 else
                   {
-                    lastMonthReportDate = RLMDateUtils.addMonths(now, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                    lastMonthReportDate = RLMDateUtils.addMonths(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
                   }
-                lastMonthReportDate = RLMDateUtils.truncate(lastMonthReportDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                lastMonthReportDate = RLMDateUtils.truncate(lastMonthReportDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
                 result.add(lastMonthReportDate);
               }
             break;
@@ -731,7 +732,7 @@ public class ReportService extends GUIService
     Date result = null;
     try
       {
-        CronFormat cronFormat = new CronFormat(cron, TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        CronFormat cronFormat = new CronFormat(cron, TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         result = cronFormat.previous(now);
       } 
     catch (UtilitiesException e)
@@ -753,10 +754,10 @@ public class ReportService extends GUIService
     try
       {
         String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getDeployment(tenantID).getReportManagerFileExtension())[0];
-        SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getDeployment(tenantID).getReportManagerDateFormat());
-        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getDeployment(tenantID).getReportManagerDateFormat());   // TODO EVPRO-99
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         result = sdf.parse(reportDateString);
-        result = RLMDateUtils.truncate(result, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        result = RLMDateUtils.truncate(result, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
       } 
     catch (Exception e)
       {

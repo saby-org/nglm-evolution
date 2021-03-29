@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -393,7 +394,7 @@ public class DialogMessage
 
     CriterionField subscriberLanguage = CriterionContext.Profile(subscriberEvaluationRequest.getTenantID()).getCriterionFields(subscriberEvaluationRequest.getTenantID()).get("subscriber.language");
     String languageID = (String) subscriberLanguage.retrieve(subscriberEvaluationRequest);
-    String language = (languageID != null && Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID) != null) ? Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID).getName() : Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseLanguage();
+    String language = (languageID != null && Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID) != null) ? Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID).getName() : Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getLanguage();
 
     //
     //  message text
@@ -407,7 +408,7 @@ public class DialogMessage
 
     if (messageText == null)
       {
-        language = Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseLanguage();
+        language = Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getLanguage();
         messageText = messageTextByLanguage.get(language);
       }
     
@@ -417,7 +418,7 @@ public class DialogMessage
     *
     *****************************************/
 
-    Locale messageLocale = new Locale(language, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseCountry());
+    Locale messageLocale = new Locale(language, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getCountry());
     MessageFormat formatter = null;
     Object[] messageTags = new Object[this.allTags.size()];
     for (int i=0; i<this.allTags.size(); i++)
@@ -447,9 +448,9 @@ public class DialogMessage
         formatter = new MessageFormat("{0" + tag.resolveTagFormat(formatDataType) + "}", messageLocale);
         for (Format format : formatter.getFormats())
           {
-            if (format instanceof SimpleDateFormat)
+            if (format instanceof SimpleDateFormat)   // TODO EVPRO-99
               {
-                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone()));
+                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getTimeZone()));
               }
           }
 
@@ -523,7 +524,7 @@ public class DialogMessage
     *
     *****************************************/
 
-    Locale messageLocale = new Locale(language, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseCountry());
+    Locale messageLocale = new Locale(language, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getCountry());
     MessageFormat formatter = null;
     List<String> messageTags = new ArrayList<String>();
     for (int i=0; i<this.allTags.size(); i++)
@@ -559,9 +560,9 @@ public class DialogMessage
         formatter = new MessageFormat("{0" + tag.resolveTagFormat(formatDataType) + "}", messageLocale);
         for (Format format : formatter.getFormats())
           {
-            if (format instanceof SimpleDateFormat)
+            if (format instanceof SimpleDateFormat)   // TODO EVPRO-99
               {
-                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone()));
+                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getTimeZone()));
               }
           }
 
@@ -685,7 +686,7 @@ public class DialogMessage
     String text = null;
     if (messageTextByLanguage.get(language) != null)
       {
-        Locale messageLocale = new Locale(language, Deployment.getDeployment(tenantID).getBaseCountry());
+        Locale messageLocale = new Locale(language, Deployment.getDeployment(tenantID).getCountry());
         MessageFormat formatter = new MessageFormat(messageTextByLanguage.get(language), messageLocale);
         text = formatter.format(messageTags.toArray());
       }

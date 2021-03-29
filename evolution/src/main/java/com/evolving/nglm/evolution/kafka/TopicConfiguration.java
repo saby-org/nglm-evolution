@@ -1,6 +1,5 @@
 package com.evolving.nglm.evolution.kafka;
 
-import com.evolving.nglm.evolution.Deployment;
 import org.apache.kafka.common.config.TopicConfig;
 
 import java.util.HashMap;

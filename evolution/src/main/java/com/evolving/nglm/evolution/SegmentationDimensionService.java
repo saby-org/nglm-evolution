@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
@@ -95,7 +96,7 @@ public class SegmentationDimensionService extends GUIService
     //  (re-initialize lastGeneratedSegmentID) for all tenant
     //
 
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions(true, tenantID))
           {
@@ -161,7 +162,7 @@ public class SegmentationDimensionService extends GUIService
     //
 
     Date now = SystemTime.getCurrentTime();
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         for (SegmentationDimension segmentationDimension : getActiveSegmentationDimensions(now, tenantID))
           {

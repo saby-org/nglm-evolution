@@ -7,7 +7,9 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
@@ -32,14 +34,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TimeZone;
 
 
 public abstract class GUIManagedObject
@@ -86,36 +86,6 @@ public abstract class GUIManagedObject
   //
 
   protected static final Logger log = LoggerFactory.getLogger(GUIManagedObject.class);
-
-  /*****************************************
-  *
-  *  standard formats
-  *
-  *****************************************/
-
-  private static List<SimpleDateFormat> standardDateFormats;
-  static
-  {
-    //
-    //  standardDateFormats
-    //
-        
-    standardDateFormats = new ArrayList<SimpleDateFormat>();
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));
-
-    //
-    //  setTimeZone
-    //
-
-    for (SimpleDateFormat standardDateFormat : standardDateFormats)
-      {
-        if(Deployment.getSystemTimeZone() != null)
-          {
-            standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // EVPRO-99 use getSystemTimeZone instead of getBaseTimezone, is that ok ? should it be by tenant ?
-          }
-      }
-  }
 
   /*****************************************
   *
@@ -218,7 +188,27 @@ public abstract class GUIManagedObject
   public static Schema commonSchema() { return commonSchema; }
   public static ConnectSerde<GUIManagedObject> commonSerde() { return commonSerde; }
   public static ConnectSerde<GUIManagedObject> incompleteObjectSerde() { return incompleteObjectSerde; }
-
+  
+  /****************************************
+  *
+  *  utils
+  *
+  ****************************************/
+  @Deprecated 
+  // TODO EVPRO-99 Should not be here... - Plus should not be used that much ?
+  // We can directly use RLMDateUtils.parseDateFromREST
+  public static Date parseDateField(String stringDate) throws JSONUtilitiesException
+  {
+    try
+      {
+        return RLMDateUtils.parseDateFromREST(stringDate);
+      } 
+    catch (ParseException e)
+      {
+        throw new JSONUtilitiesException("parseDateField", e);
+      }
+  }
+  
   /****************************************
   *
   *  data
@@ -303,8 +293,8 @@ public abstract class GUIManagedObject
   *****************************************/
 
   protected void setEpoch(long epoch) { this.epoch = epoch; }
-  protected void setCreatedDate(Date createdDate) { this.createdDate = createdDate; jsonRepresentation.put("createdDate", formatDateField(createdDate)); }
-  protected void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; jsonRepresentation.put("updatedDate", formatDateField(updatedDate)); }
+  protected void setCreatedDate(Date createdDate) { this.createdDate = createdDate; jsonRepresentation.put("createdDate", RLMDateUtils.formatDateForREST(createdDate, Deployment.getDeployment(tenantID).getTimeZone())); }
+  protected void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; jsonRepresentation.put("updatedDate", RLMDateUtils.formatDateForREST(updatedDate, Deployment.getDeployment(tenantID).getTimeZone())); }
   protected void markDeleted(boolean deleted) { this.deleted = deleted; jsonRepresentation.put("deleted", deleted); }
   
   /*****************************************
@@ -483,90 +473,6 @@ public abstract class GUIManagedObject
         throw new JSONUtilitiesException("jsonRepresentation", e);
       }
     return result;
-  }
-
-  /*****************************************
-  *
-  *  parseDateField
-  *
-  *****************************************/
-
-  public static Date parseDateField(String stringDate) throws JSONUtilitiesException
-  {
-    //
-    //  parse via standard date formats
-    //
-
-    Date result = null;
-    ParseException parseException = null;
-    if (stringDate != null && stringDate.trim().length() > 0)
-      {
-        for (SimpleDateFormat standardDateFormat : standardDateFormats)
-          {
-            //
-            //  parse
-            //
-
-            synchronized (standardDateFormat)
-              {
-                try
-                  {
-                    result = standardDateFormat.parse(stringDate.trim());
-                    parseException = null;
-                  }
-                catch (ParseException e)
-                  {
-                    result = null;
-                    parseException = e;
-                  }
-              }
-
-            //
-            //  result
-            //
-
-            if (result != null) break;
-          }
-      }
-
-    //
-    //  exception
-    //
-
-    if (parseException != null)
-      {
-        throw new JSONUtilitiesException("parseDateField", parseException);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  formatDateField
-  *
-  *****************************************/
-
-  public static String formatDateField(Date date) throws JSONUtilitiesException
-  {
-    return (date != null) ? standardDateFormats.get(0).format(date) : null;
-  }
-
-  public Date parseWithStandardDateFormat(String str)
-  {
-    try
-      {
-        return standardDateFormats.get(0).parse(str);
-      }
-    catch (ParseException e)
-      {
-        if (log.isDebugEnabled()) log.debug("unable to parse " + str + " as a date with format : " + standardDateFormats.get(0));
-        return null;
-      }
   }
   
   /*****************************************

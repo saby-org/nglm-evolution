@@ -36,7 +36,6 @@ public class SegmentationDimensionsMap extends GUIManagedObjectMap<SegmentationD
   * GUIManagedObjectMap implementation
   *
   *****************************************/
-  // TODO: for the moment, we also retrieve archived objects
   @Override protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredSegmentationDimensions(true, tenantID); }
   
   /*****************************************

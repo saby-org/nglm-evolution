@@ -11,6 +11,7 @@ import java.util.Map;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -26,18 +27,20 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_loyaltyprogramschanges";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_loyaltyprogramschanges";
+  public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX = "subscriberprofile";
 
   /*****************************************
@@ -56,11 +59,20 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService)
+  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService, int tenantID, String timeZone)
   {
-    super(datacubeName, elasticsearch, datacubeWriter);
+    super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
     
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
+  }
+  
+  public ProgramsChangesDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
+    this(datacubeName,
+        datacubeManager.getElasticsearchClientAPI(),
+        datacubeManager.getDatacubeWriter(),
+        datacubeManager.getLoyaltyProgramService(),
+        tenantID,
+        Deployment.getDeployment(tenantID).getTimeZone());
   }
 
   /*****************************************
@@ -69,7 +81,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   *
   *****************************************/
   @Override protected String getDataESIndex() { return DATA_ES_INDEX; }
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
 
   /*****************************************
   *
@@ -99,7 +111,9 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     // Those comes when the SubscriberProfile sink connector push them.
     // For a while, it is possible a document in subscriberprofile index miss many product fields required by datacube generation.
     // Therefore, we filter out those subscribers with missing data by looking for lastUpdateDate
-    QueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    query.filter().add(QueryBuilders.existsQuery("lastUpdateDate"));
+    query.filter().add(QueryBuilders.termQuery("tenantID", this.tenantID)); // filter to keep only tenant related items !
     
     //
     // Aggregations
@@ -186,6 +200,9 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
           filters.replace(key, "None"); // for newTier & previousTier
         }
       }
+      
+      // Special filter: tenantID 
+      filters.put("tenantID", this.tenantID);
 
       //
       // Extract only the change of the day
@@ -249,19 +266,19 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   public void definitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
+    Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone()); 
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());        // 00:00:00.000
+    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                     // 23:59:59.999
     this.targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     this.targetPeriodStartIncluded = beginningOfYesterday.getTime();
 
-    this.targetDay = RLMDateUtils.printDay(yesterday);
+    this.targetDay = this.printDay(yesterday);
 
     //
     // Timestamp & period
     //
-    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+    String timestamp = this.printTimestamp(endOfYesterday);
     
     this.run(timestamp, targetPeriod);
   }
@@ -274,16 +291,16 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   public void preview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone()); 
     this.targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     this.targetPeriodStartIncluded = beginningOfToday.getTime();
 
-    this.targetDay = RLMDateUtils.printDay(now);
+    this.targetDay = this.printDay(now);
 
     //
     // Timestamp & period
     //
-    String timestamp = RLMDateUtils.printTimestamp(now);
+    String timestamp = this.printTimestamp(now);
     
     this.run(timestamp, targetPeriod);
   }

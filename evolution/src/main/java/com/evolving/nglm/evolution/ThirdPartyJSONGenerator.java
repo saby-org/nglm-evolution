@@ -15,6 +15,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -581,8 +582,8 @@ public class ThirdPartyJSONGenerator
    if (date == null) return result;
    try
    {
-     SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-     dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+     SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());  // TODO EVPRO-99
+     dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
      result = dateFormat.format(date);
    }
    catch (Exception e)

@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import org.slf4j.Logger;
@@ -150,17 +151,17 @@ public class ContactPolicyProcessor
             switch (limit.getTimeUnit())
               {
                 case "day":
-                  startDate = RLMDateUtils.addDays(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  startDate = RLMDateUtils.addDays(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getTimeZone());
                   break;
                 case "week":
-                  startDate = RLMDateUtils.addWeeks(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  startDate = RLMDateUtils.addWeeks(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getTimeZone());
                   break;
                 case "month":
-                  startDate = RLMDateUtils.addMonths(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  startDate = RLMDateUtils.addMonths(evaluationDate, -limit.getDuration(), Deployment.getDeployment(tenantID).getTimeZone());
                   break;
               }
             //start date null means that no valid interval defined for processing list. An exception will be thrown that will be handled at upper level
-            if (requestMetricHistory.getValue(RLMDateUtils.truncate(startDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone()), RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone())) >= limit.getMaxMessages())
+            if (requestMetricHistory.getValue(RLMDateUtils.truncate(startDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone()), RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getTimeZone())) >= limit.getMaxMessages())
               {
                 returnValue = true;
                 break;

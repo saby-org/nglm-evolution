@@ -197,8 +197,6 @@ public class ThirdPartyManager
   private static final String GENERIC_RESPONSE_DESCRIPTION = "description";
   private static final String GENERIC_RESPONSE_DETAILS = "responseDetails";
   private String getCustomerAlternateID;
-  public static final String REQUEST_DATE_PATTERN = "\\d{4}-\\d{2}-\\d{2}"; //Represents exact yyyy-MM-dd
-  public static final String REQUEST_DATE_FORMAT= "yyyy-MM-dd";
   // all this conf which should not makes no sense at then end :
   //private static final Class<?> PURCHASE_FULFILLMENT_REQUEST_CLASS = com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest.class;
   public static final String PURCHASE_FULFILLMENT_MANAGER_TYPE = "purchaseFulfillment";
@@ -1316,7 +1314,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     } 
-    catch (SubscriberProfileServiceException e)
+    catch (SubscriberProfileServiceException | java.text.ParseException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1483,7 +1481,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     } 
-    catch (SubscriberProfileServiceException e)
+    catch (SubscriberProfileServiceException | java.text.ParseException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1899,7 +1897,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     } 
-    catch (SubscriberProfileServiceException e)
+    catch (SubscriberProfileServiceException | java.text.ParseException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1932,8 +1930,18 @@ public class ThirdPartyManager
     String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", false);
     String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", false);
 
-    Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
-    Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
+    Date journeyStartDate;
+    Date journeyEndDate;
+    try
+      {
+        String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+        journeyStartDate = GUIManager.prepareStartDate(RLMDateUtils.parseDateFromDay(journeyStartDateStr, timeZone), timeZone);
+        journeyEndDate = GUIManager.prepareEndDate(RLMDateUtils.parseDateFromDay(journeyEndDateStr, timeZone), timeZone);
+      } 
+    catch (java.text.ParseException e1)
+      {
+        throw new ThirdPartyManagerException(e1);
+      }
     
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
 
@@ -2200,9 +2208,20 @@ public class ThirdPartyManager
     String customerStatus = readString(jsonRoot, "customerStatus", false);
     String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", false);
     String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", false);
+    
+    Date campaignStartDate;
+    Date campaignEndDate;
+    try
+      {
+        String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+        campaignStartDate = GUIManager.prepareStartDate(RLMDateUtils.parseDateFromDay(campaignStartDateStr, timeZone), timeZone);
+        campaignEndDate = GUIManager.prepareEndDate(RLMDateUtils.parseDateFromDay(campaignEndDateStr, timeZone), timeZone);
+      } 
+    catch (java.text.ParseException e1)
+      {
+        throw new ThirdPartyManagerException(e1);
+      }
 
-    Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
-    Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
     
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
 
@@ -2816,13 +2835,14 @@ public class ThirdPartyManager
     int user = (authResponse.getUserId());
     String userID = Integer.toString(user);
     
-    Date offerStartDate = prepareStartDate(getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
-    Date offerEndDate = prepareEndDate(getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN, tenantID), tenantID);
-    
     Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID, tenantID);    
 
     try
     {
+      String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+      Date offerStartDate = GUIManager.prepareStartDate(RLMDateUtils.parseDateFromDay(startDateString, timeZone), timeZone);
+      Date offerEndDate = GUIManager.prepareEndDate(RLMDateUtils.parseDateFromDay(endDateString, timeZone), timeZone);
+    
       SubscriberProfile subscriberProfile = null;
       if (subscriberID != null)
         {
@@ -3036,7 +3056,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
     }
-    catch(SubscriberProfileServiceException spe)
+    catch(SubscriberProfileServiceException | java.text.ParseException spe)
     {
       updateResponse(response, RESTAPIGenericReturnCodes.SYSTEM_ERROR);
       log.error("SubscriberProfileServiceException {}", spe);
@@ -5168,8 +5188,8 @@ public class ThirdPartyManager
             if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
               {
                 Date redeemedDateToBeFormatted = profileVoucher.getVoucherRedeemDate();
-                SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-                dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+                SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat()); // TODO EVPRO-99
+                dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
                 String redeemedDate = dateFormat.format(redeemedDateToBeFormatted);
                 String redeemedSubscriberID = subscriberID;
                 JSONObject additionalDetails = new JSONObject();
@@ -5531,78 +5551,6 @@ public class ThirdPartyManager
         response.put(GENERIC_RESPONSE_MSG,         genericCode.getGenericResponseMessage());
         response.put(GENERIC_RESPONSE_DESCRIPTION, genericCode.getGenericDescription() + descriptionSuffix);
       }
-  }
-
-  /*****************************************
-   *
-   *  getDateFromString
-   *
-   *****************************************/
-
-  private Date getDateFromString(String dateString, String dateFormat, String pattern, int tenantID) throws ThirdPartyManagerException
-  {
-    Date result = null;
-    if (dateString != null)
-      {
-        if (pattern != null && !dateString.matches(pattern))
-          {
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"(invalid date/format expected in "+dateFormat+" and found "+dateString+")", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
-          }
-        try 
-          {
-            result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone(), false);
-          }
-        catch(Exception ex)
-          {
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"(invalid date/format expected in "+dateFormat+" and found "+dateString+")", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
-          }
-        
-      }
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  prepareEndDate
-  *
-  *****************************************/
-
-  public static Date prepareEndDate(Date endDate, int tenantID)
-  {
-    Date result = null;
-    if (endDate != null)
-      {
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
-        cal.setTime(endDate);
-        cal.set(Calendar.HOUR_OF_DAY, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        result = cal.getTime();
-      }
-    return result;
-  }
-  
-  /*****************************************
-  *
-  *  prepareStartDate
-  *
-  *****************************************/
-
-  public static Date prepareStartDate(Date startDate, int tenantID)
-  {
-    Date result = null;
-    if (startDate != null)
-      {
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
-        cal.setTime(startDate);
-        cal.set(Calendar.HOUR_OF_DAY, 00);
-        cal.set(Calendar.MINUTE, 00);
-        cal.set(Calendar.SECOND, 00);
-        result = cal.getTime();
-      }
-    return result;
   }
   
   /*****************************************
@@ -6572,7 +6520,7 @@ public class ThirdPartyManager
     try
     {
       SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-      dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+      dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
       result = dateFormat.format(date);
     }
     catch (Exception e)

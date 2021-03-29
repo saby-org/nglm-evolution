@@ -69,6 +69,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
   "mappings" : {
     "properties" : {
       "subscriberID"                        : { "type" : "keyword" },
+      "tenantID"                            : { "type" : "integer" },
       "evaluationDate"                      : { "type" : "date"    },
       "evolutionSubscriberStatus"           : { "type" : "keyword" },
       "previousEvolutionSubscriberStatus"   : { "type" : "keyword" },
@@ -81,34 +82,34 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       "pointFluctuations"                   : { "type" : "object"  },
       "subscriberJourneys"                  : { "type" : "nested"  },
       "tokens"                              : { "type" : "nested",
-      	   "properties" : {
-              "creationDate"       : { "type" : "long" },
-              "expirationDate"     : { "type" : "long" },
-              "redeemedDate"       : { "type" : "long" },
-              "lastAllocationDate" : { "type" : "long" }
-           }
+        "properties" : {
+          "creationDate"       : { "type" : "long" },
+          "expirationDate"     : { "type" : "long" },
+          "redeemedDate"       : { "type" : "long" },
+          "lastAllocationDate" : { "type" : "long" }
+        }
       },
       "vouchers"                            : { "type" : "nested",
-      	   "properties" : {
-              "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date" }, "voucherDeliveryDate" : { "type" : "date" } } }
-           }
+        "properties" : {
+          "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date" }, "voucherDeliveryDate" : { "type" : "date" } } }
+        }
       },
       "loyaltyPrograms"                     : { "type" : "nested",
-      	   "properties" : {
-              "loyaltyProgramEnrollmentDate" : { "type" : "date" },
-              "loyaltyProgramExitDate"       : { "type" : "date" },
-              "tierUpdateDate"               : { "type" : "date" },
-              "loyaltyProgramEpoch"          : { "type" : "long" },
-              "rewardTodayRedeemer"          : { "type" : "boolean" },
-              "rewardYesterdayRedeemer"      : { "type" : "boolean" }
-           }
+        "properties" : {
+          "loyaltyProgramEnrollmentDate" : { "type" : "date" },
+          "loyaltyProgramExitDate"       : { "type" : "date" },
+          "tierUpdateDate"               : { "type" : "date" },
+          "loyaltyProgramEpoch"          : { "type" : "long" },
+          "rewardTodayRedeemer"          : { "type" : "boolean" },
+          "rewardYesterdayRedeemer"      : { "type" : "boolean" }
+        }
       },
       "pointBalances"                       : { "type": "nested",
-           "properties" : {
-              "earliestExpirationDate" : { "type" : "date" },
-              "expirationDates"        : { "type": "nested", "properties": { "date" : { "type" : "date" } } }
-           }
-        }
+        "properties" : {
+          "earliestExpirationDate" : { "type" : "date" },
+          "expirationDates"        : { "type": "nested", "properties": { "date" : { "type" : "date" } } }
+         }
+      }
     }
   }
 }'
@@ -217,6 +218,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $EL
   "mappings" : {
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
+      "tenantID" : { "type" : "integer" },
       "providerID" : { "type" : "keyword" },
       "eventID" : { "type" : "keyword" },
       "deliveryRequestID" : { "type" : "keyword" },
@@ -305,6 +307,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -u $
   "mappings" : {
     "properties" : {
       "subscriberID"  : { "type" : "keyword" },
+      "tenantID"      : { "type" : "integer" },
       "tokenCode"     : { "type" : "keyword" },
       "action"        : { "type" : "keyword" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
@@ -384,6 +387,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -u $EL
   "mappings" : {
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
+      "tenantID" : { "type" : "integer" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "creationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "deliveryRequestID" : { "type" : "keyword" },
@@ -476,6 +480,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
   "mappings" : {
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
+      "tenantID" : { "type" : "integer" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "eventID" : { "type" : "keyword" },     
       "moduleID" : { "type" : "keyword" },
@@ -559,6 +564,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
   "mappings" : {
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
+      "tenantID" : { "type" : "integer" },
       "eventID" : { "type" : "keyword" },
       "deliveryRequestID" : { "type" : "keyword" },
       "creationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
@@ -614,6 +620,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeysta
       "journeyInstanceID" : { "type" : "keyword" },
       "journeyID" : { "type" : "keyword" },
       "subscriberID" : { "type" : "keyword" },
+      "tenantID" : { "type" : "integer" },
       "transitionDate" : { "type" : "date" },
       "nodeID" : { "type" : "keyword" },
       "nodeHistory" : { "type" : "keyword" },
@@ -686,11 +693,12 @@ fi
 # -------------------------------------------------------------------------------
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_subscriberprofile -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_subscriberprofile"],
+  "index_patterns": ["t*_datacube_subscriberprofile"],
   "mappings" : {
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
       "count" : { "type" : "integer" }
     }
   }
@@ -699,11 +707,12 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramshistory -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_loyaltyprogramshistory"],
+  "index_patterns": ["t*_datacube_loyaltyprogramshistory"],
   "mappings" : {
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
       "filter.loyaltyProgram" : { "type" : "keyword" },
       "filter.tier" : { "type" : "keyword" },
       "filter.evolutionSubscriberStatus" : { "type" : "keyword" },
@@ -720,11 +729,12 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramschanges -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_loyaltyprogramschanges"],
+  "index_patterns": ["t*_datacube_loyaltyprogramschanges"],
   "mappings" : {
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
       "filter.loyaltyProgram" : { "type" : "keyword" },
       "filter.newTier" : { "type" : "keyword" },
       "filter.previousTier" : { "type" : "keyword" },
@@ -737,11 +747,12 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_journeytraffic-*"],
+  "index_patterns": ["t*_datacube_journeytraffic-*"],
   "mappings" : {
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
       "filter.journey" : { "type" : "keyword" },
       "filter.node" : { "type" : "keyword" },
       "filter.status" : { "type" : "keyword" },
@@ -755,11 +766,12 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_journeyrewards-*"],
+  "index_patterns": ["t*_datacube_journeyrewards-*"],
   "mappings" : {
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
       "filter.journey" : { "type" : "keyword" },
       "count" : { "type" : "integer" }
     }
@@ -769,11 +781,12 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_odr"],
+  "index_patterns": ["t*_datacube_odr"],
   "mappings" : {
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
       "filter.offer" : { "type" : "keyword" },
       "filter.module" : { "type" : "keyword" },
       "filter.feature" : { "type" : "keyword" },
@@ -790,11 +803,12 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_bdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_bdr"],
+  "index_patterns": ["t*_datacube_bdr"],
   "mappings" : {
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
       "filter.module" : { "type" : "keyword" },
       "filter.feature" : { "type" : "keyword" },
       "filter.provider" : { "type" : "keyword" },
@@ -811,11 +825,12 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_messages -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_messages"],
+  "index_patterns": ["t*_datacube_messages"],
   "mappings" : {
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
       "filter.module" : { "type" : "keyword" },
       "filter.feature" : { "type" : "keyword" },
       "filter.provider" : { "type" : "keyword" },
@@ -901,6 +916,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_jo
   "mappings" : {
     "properties" : {
       "journeyID" : { "type" : "keyword" },
+      "tenantID" : { "type" : "integer" },
       "display" : { "type" : "keyword" },
       "description" : { "type" : "keyword" },
       "type" : { "type" : "keyword" },

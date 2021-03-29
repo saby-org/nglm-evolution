@@ -1,7 +1,6 @@
 package com.evolving.nglm.core;
 
 import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;

@@ -20,14 +20,15 @@ import org.elasticsearch.rest.RestStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 
+// TODO rl-EVPRO-99
 public class JourneyCleanUpTask
 {
   protected static final Logger log = LoggerFactory.getLogger(JourneyCleanUpTask.class);
@@ -39,16 +40,18 @@ public class JourneyCleanUpTask
   *****************************************/
   private JourneyService journeyService;
   private ElasticsearchClientAPI elasticsearchClient;
+  private int tenantID;
   
   /*****************************************
   *
   * Constructor
   *
   *****************************************/
-  public JourneyCleanUpTask(JourneyService journeyService, ElasticsearchClientAPI elasticsearchClient) 
+  public JourneyCleanUpTask(JourneyService journeyService, ElasticsearchClientAPI elasticsearchClient, int tenantID) 
   {
     this.journeyService = journeyService;
     this.elasticsearchClient = elasticsearchClient;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -59,9 +62,10 @@ public class JourneyCleanUpTask
   public void start() 
   {
     Date now = SystemTime.getCurrentTime();
-    Date journeyExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysJourneys(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ??? 
-    Date campaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysCampaigns(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date bulkCampaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysBulkCampaigns(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    // Here days are converted into hours. Therefore we do not take into account timezone. A retention of 15 days means 360 hours.
+    Date journeyExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getDeployment(this.tenantID).getElasticsearchRetentionDaysJourneys());
+    Date campaignExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getDeployment(this.tenantID).getElasticsearchRetentionDaysCampaigns());
+    Date bulkCampaignExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getDeployment(this.tenantID).getElasticsearchRetentionDaysBulkCampaigns());
     
     // Init list of indices to check 
     Set<String> lowerCaseIDs = getESLowerCaseJourneyIDs();
@@ -112,8 +116,8 @@ public class JourneyCleanUpTask
    * in the system. The goal is to be able to retrieve the "real" journeyID 
    * from the lowerCase one extracted from Elasticsearch.
    * 
-   * We do not retrieve archived journeys. Therefore, if a journey has been
-   * deleted, because it will not be in this map, this will automatically call
+   * We do not retrieve archived journeys. If a journey has been deleted, 
+   * it will therefore not be in this map and that will automatically call
    * a clean-up on all related ES indices.
    */
   private Map<String, String> getLowerCaseMatchingIDs()

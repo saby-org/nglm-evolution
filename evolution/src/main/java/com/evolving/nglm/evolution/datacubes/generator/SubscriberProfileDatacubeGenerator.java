@@ -19,10 +19,11 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
@@ -31,7 +32,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_subscriberprofile";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_subscriberprofile";
+  public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String FILTER_STRATUM_PREFIX = "stratum.";
   private static final String METRIC_PREFIX = "metric_";
@@ -55,9 +57,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public SubscriberProfileDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService)
+  public SubscriberProfileDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService, int tenantID, String timeZone)
   {
-    super(datacubeName, elasticsearch, datacubeWriter);
+    super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     
@@ -66,6 +68,15 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     //
     this.filterFields = new ArrayList<String>();
   }
+  
+  public SubscriberProfileDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
+    this(datacubeName,
+        datacubeManager.getElasticsearchClientAPI(),
+        datacubeManager.getDatacubeWriter(),
+        datacubeManager.getSegmentationDimensionService(),
+        tenantID,
+        Deployment.getDeployment(tenantID).getTimeZone());
+  }
 
   /*****************************************
   *
@@ -73,7 +84,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   @Override protected String getDataESIndex() { return DATA_ES_INDEX; }
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
   
   //
   // Subset of subscriberprofile
@@ -84,9 +95,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   // For a while, it is possible a document in subscriberprofile index miss many product fields required by datacube generation.
   // Therefore, we filter out those subscribers with missing data
   @Override
-  protected QueryBuilder getSubsetQuery() 
+  protected List<QueryBuilder> getFilterQueries() 
   {
-    return QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
+    return Collections.singletonList(QueryBuilders.existsQuery("lastUpdateDate"));
   }
   
   
@@ -225,15 +236,15 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   public void definitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone());
+    Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
     
     // Dates: YYYY-MM-dd 00:00:00.000
-    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone()); 
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
 
-    this.metricTargetDay = RLMDateUtils.printDay(yesterday);
+    this.metricTargetDay = this.printDay(yesterday);
     this.metricTargetDayStartTime = beginningOfYesterday.getTime();
     this.metricTargetDayDuration = beginningOfToday.getTime() - beginningOfYesterday.getTime();
     this.metricTargetDayAfterStartTime = beginningOfToday.getTime();
@@ -243,7 +254,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     // Timestamp & period
     //
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
-    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+    String timestamp = this.printTimestamp(endOfYesterday);
     long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     
     this.run(timestamp, targetPeriod);
@@ -257,15 +268,15 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   public void preview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date twodaysafter = RLMDateUtils.addDays(now, 2, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
+    Date twodaysafter = RLMDateUtils.addDays(now, 2, this.getTimeZone());
 
     // Dates: YYYY-MM-dd 00:00:00.000
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfTwodaysafter = RLMDateUtils.truncate(twodaysafter, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
+    Date beginningOfTwodaysafter = RLMDateUtils.truncate(twodaysafter, Calendar.DATE, this.getTimeZone());
 
-    this.metricTargetDay = RLMDateUtils.printDay(now);
+    this.metricTargetDay = this.printDay(now);
     this.metricTargetDayStartTime = beginningOfToday.getTime();
     this.metricTargetDayDuration = beginningOfTomorrow.getTime() - beginningOfToday.getTime();
     this.metricTargetDayAfterStartTime = beginningOfTomorrow.getTime();
@@ -274,7 +285,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // Timestamp & period
     //
-    String timestamp = RLMDateUtils.printTimestamp(now);
+    String timestamp = this.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     
     this.run(timestamp, targetPeriod);
