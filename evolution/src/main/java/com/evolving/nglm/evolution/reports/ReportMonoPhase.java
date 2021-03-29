@@ -20,12 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.http.HttpHost;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.action.search.ClearScrollRequest;
@@ -33,7 +34,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -301,7 +301,7 @@ public class ReportMonoPhase
     log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
     return res;
   }
-  
+
   public final boolean startOneToOne(boolean multipleFile)
   {
     if (!multipleFile)
@@ -453,7 +453,7 @@ public class ReportMonoPhase
                       //
                       //  ZIP
                       //
-
+                      
                       for (String key : records.keySet())
                         {
 
@@ -555,6 +555,224 @@ public class ReportMonoPhase
     return true;
   }
 
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  public final boolean startOneToOneMultiThread()
+  {
+    if (csvfile == null) {
+        log.info("csvfile is null !");
+        return false;
+      }
+    File file = new File(csvfile + ReportUtils.ZIP_EXTENSION);
+    if (file.exists()) {
+        log.info(csvfile + " already exists, do nothing");
+        return false;
+      }
+    if (esIndex.entrySet().size() != 1) {
+      log.error("internal error : esIndex should contain 1 element " + esIndex.entrySet().size());
+      return false;
+    }
+    Entry<String, QueryBuilder> indexEntry = esIndex.entrySet().iterator().next();
+    String indexList = indexEntry.getKey();
+    QueryBuilder query = indexEntry.getValue();
+    int maxParallelThreads = Deployment.getJourneysReportMaxParallelThreads();
+    try {
+      elasticsearchReaderClient = getESAPI(esNode);    // used by getIndices()
+      String[] indicesToRead = getIndices(indexList);
+      if (indicesToRead == null || indicesToRead.length == 0) return true;
+      List<Thread> threads = new ArrayList<>();
+      AtomicInteger activeThreads = new AtomicInteger(0);
+      CountDownLatch latch = new CountDownLatch(indicesToRead.length);
+      List<String> tempFiles = new ArrayList<>();
+      for (String singleIndex : indicesToRead) {
+        String tmpFileName = file + "." + singleIndex + ".tmp";
+        tempFiles.add(tmpFileName);
+        Thread thread = new Thread( () -> { 
+          processSingleJourney(tmpFileName, query, singleIndex, latch, activeThreads);
+        } );
+        threads.add(thread);
+      }
+      for (Thread thread : threads) {
+        log.info("Starting subthread " + thread.getName() + " with latch " + latch.getCount());
+        thread.start();
+        // TODO : change to 100 for prod
+        try { Thread.sleep(10L); } catch (InterruptedException ie) {} // always wait a bit, prevents storm
+        while (activeThreads.get() >= maxParallelThreads) {
+          try { Thread.sleep(1000L); } catch (InterruptedException ie) {} // do not allow more than maxParallelThreads simultaneously
+        }
+      }
+      threads = null; // for GC
+      try { latch.await(); } catch (InterruptedException e) {}
+      log.info("All threads finished");
+
+      FileOutputStream fos = new FileOutputStream(file);
+      ZipOutputStream writer = new ZipOutputStream(fos);
+      for (String tmpFile : tempFiles) {
+        log.debug("Reading from temp file " + tmpFile);
+        FileInputStream fis = new FileInputStream(tmpFile);
+        ZipInputStream reader = new ZipInputStream(fis);
+        writer.putNextEntry(reader.getNextEntry());
+        writer.setLevel(Deflater.BEST_SPEED);
+        // copy to final file
+        int length;
+        byte[] bytes = new byte[5*1024*1024];//5M buffer
+        while ((length=reader.read(bytes))!=-1) {
+          writer.write(bytes,0,length);
+        }
+        reader.closeEntry();
+        reader.close();
+        new File(tmpFile).delete();
+      }
+      writer.flush();
+      writer.closeEntry();
+      writer.close();
+    } catch (IOException e) {
+      log.error("Error while concatenating tmp files", e);
+    } finally {
+      try {
+        if (elasticsearchReaderClient != null) elasticsearchReaderClient.close();
+      }
+      catch (IOException e)
+      {
+        log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
+      }
+    }
+    log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
+    return true;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  private void processSingleJourney(String tmpFileName, QueryBuilder query, String singleIndex, CountDownLatch latch, AtomicInteger activeThreads)
+  {
+    long startThread = System.currentTimeMillis();
+    activeThreads.incrementAndGet();
+    FileOutputStream fos = null;
+    ZipOutputStream writer = null;
+    ElasticsearchClientAPI localESClient = null;
+    try {
+      fos = new FileOutputStream(tmpFileName);
+      writer = new ZipOutputStream(fos);
+      String dataFile[] = csvfile.split("[.]");
+      String dataFileName = dataFile[0] + "_" + singleIndex;
+      String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
+      ZipEntry entry = new ZipEntry(zipEntryName);
+      writer.putNextEntry(entry);
+      writer.setLevel(Deflater.BEST_SPEED);
+
+      localESClient = getESAPI(esNode);
+      int scroolKeepAlive = getScrollKeepAlive();
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(query);
+      SearchRequest searchRequest = new SearchRequest().source(searchSourceBuilder).allowPartialSearchResults(false);
+      Scroll scroll = new Scroll(TimeValue.timeValueSeconds(scroolKeepAlive));
+      
+      searchRequest.indices(singleIndex);
+      searchRequest.source().size(getScrollSize());
+      searchRequest.scroll(scroll);
+      SearchResponse searchResponse;
+      searchResponse = localESClient.search(searchRequest, RequestOptions.DEFAULT);
+      long startBatch = System.currentTimeMillis();
+      int nbMaxTraces = 10; // max number of traces to display at INFO level
+      String scrollId = searchResponse.getScrollId(); // always null
+      SearchHit[] searchHits = searchResponse.getHits().getHits();
+      logSearchResponse(new String[] {singleIndex}, searchResponse, searchHits);
+      while (searchHits != null && searchHits.length > 0) {
+        List<Map<String, Object>> records = new ArrayList<Map<String, Object>>();
+        if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
+        for (SearchHit searchHit : searchHits) {
+          Map<String, Object> miniSourceMap = searchHit.getSourceAsMap();
+          String _id = searchHit.getId();
+          miniSourceMap.put("_id", _id);
+          Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFileMono(miniSourceMap);
+          if (splittedReportElements.keySet().size() != 1) {
+            log.error("Internal error : splittedReportElements should contain 1 mapping " + splittedReportElements.keySet().size());
+          } else {
+            String journeyIDFromMethod = splittedReportElements.keySet().iterator().next();
+            if (!singleIndex.equals("journeystatistic-"+journeyIDFromMethod)) {
+              log.error("Internal error : splittedReportElements returned wrong journeyID : " + journeyIDFromMethod + " " + singleIndex);
+            } else {
+              records.addAll(splittedReportElements.get(journeyIDFromMethod));
+            }
+          }
+        }
+        long elapsedBatch = System.currentTimeMillis() - startBatch;
+        if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L) {
+          log.info("Potential problem : scroll took " + elapsedBatch/1000.0 + " seconds to process, keepAlive of " + scroolKeepAlive + " seconds exceeded");
+          nbMaxTraces--;
+        }
+        SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+        scrollRequest.scroll(scroll);
+        searchResponse = localESClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+        scrollId = searchResponse.getScrollId();
+        searchHits = searchResponse.getHits().getHits();
+        try {
+          boolean addHeader = true;
+          for (Map<String, Object> lineMap : records)
+            {
+              reportFactory.dumpLineToCsv(lineMap, writer, addHeader);
+              addHeader = false;
+            }
+        } catch (Exception e) {
+          log.error("Error writing tmp file " + tmpFileName + " {} ", e);
+        }
+      }
+      if (scrollId != null) {
+          ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+          clearScrollRequest.addScrollId(scrollId);
+          localESClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+        }
+    } catch (IOException e) { e.printStackTrace(); }
+    finally {
+      try {
+        if (localESClient != null) localESClient.close();
+        if (writer != null) {
+          writer.flush();
+          writer.close();
+        }
+      }
+      catch (IOException e) {
+        log.info("Exception while releasing resources " + e.getLocalizedMessage());
+      } finally {
+        long elapsedThread = System.currentTimeMillis() - startThread;
+        log.info("Finished with subthread " + Thread.currentThread().getName() + " took " + elapsedThread + " ms, decreasing latch from " + latch.getCount() + " current active threads : " + activeThreads.decrementAndGet());
+        latch.countDown(); // we're done
+      }
+    }
+  }
+
+  private ElasticsearchClientAPI getESAPI(String nodes)
+  {
+    String node = null;
+    int port = 0;
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
+    String username = null;
+    String password = null;
+    if (nodes.contains(",")) {
+      String[] split = nodes.split(",");
+      if (split[0] != null) {
+        Scanner s = new Scanner(split[0]);
+        s.useDelimiter(":");
+        node = s.next();
+        port = s.nextInt();
+        username = s.next();
+        password = s.next();
+        s.close();
+      }
+    } else {
+      Scanner s = new Scanner(nodes);
+      s.useDelimiter(":");
+      node = s.next();
+      port = s.nextInt();
+      username = s.next();
+      password = s.next();
+      s.close();
+    }
+    return new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
+  }
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  
   private String[] getIndices(String key)
   {
     StringBuilder existingIndexes = new StringBuilder();
