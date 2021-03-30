@@ -6,15 +6,13 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.Duration;
+import java.util.*;
 
+import com.evolving.nglm.core.*;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -28,12 +26,6 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
@@ -46,7 +38,7 @@ import com.evolving.nglm.evolution.statistics.CounterStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
 
-public class PurchaseFulfillmentManager extends DeliveryManager implements Runnable, CommodityDeliveryResponseHandler
+public class PurchaseFulfillmentManager extends DeliveryManager implements Runnable
 {
 
   public static final String PURCHASEFULFILLMENT_DELIVERY_TYPE = "purchaseFulfillment";
@@ -159,6 +151,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private SalesChannelService salesChannelService;
   private StockMonitor stockService;
   private DeliverableService deliverableService;
+  private PaymentMeanService paymentMeanService;
   private ResellerService resellerService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private StatBuilder<CounterStat> statsCounter;
@@ -225,6 +218,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     deliverableService = new DeliverableService(Deployment.getBrokerServers(), "PurchaseMgr-deliverableservice-"+deliveryManagerKey, Deployment.getDeliverableTopic(), false);
     deliverableService.start();
 
+    paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "PurchaseMgr-paymentmeanservice-"+deliveryManagerKey, Deployment.getPaymentMeanTopic(), false);
+    paymentMeanService.start();
+
     resellerService = new ResellerService(Deployment.getBrokerServers(), "PurchaseMgr-resellereservice-"+deliveryManagerKey, Deployment.getResellerTopic(), false);
     resellerService.start();
 
@@ -234,7 +230,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     // define as commodityDelivery response consumer
     //
     
-    CommodityDeliveryManager.addCommodityDeliveryResponseConsumer(application_ID, this);
+    addCommodityDeliveryResponseConsumer();
     
     //
     // statistics
@@ -260,6 +256,101 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     startDelivery();
 
   }
+
+	public void addCommodityDeliveryResponseConsumer(){
+
+		for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values()){
+			CommodityDeliveryManager.CommodityType commodityType = CommodityDeliveryManager.CommodityType.fromExternalRepresentation(deliveryManager.getRequestClassName());
+
+			if(commodityType != null){
+
+				switch (commodityType) {
+					case JOURNEY:
+					case IN:
+					case POINT:
+					case REWARD:
+					case EMPTY:
+
+						log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : get information from deliveryManager "+deliveryManager);
+
+						//
+						// update list of (kafka) response consumers
+						//
+
+						for(String responseTopic:deliveryManager.getResponseTopicsList()){
+
+							String prefix = commodityType.toString()+"_"+deliveryManager.getProviderID()+"_"+responseTopic;
+							Thread consumerThread = new Thread(new Runnable(){
+								private volatile boolean stopping=false;
+								@Override
+								public void run()
+								{
+									Properties consumerProperties = new Properties();
+									consumerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+									consumerProperties.put("group.id", prefix+"_"+"requestReader");
+									consumerProperties.put("auto.offset.reset", "earliest");
+									consumerProperties.put("enable.auto.commit", "false");
+									consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+									consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+									consumerProperties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, Deployment.getMaxPollIntervalMs());
+									KafkaConsumer consumer = new KafkaConsumer<byte[], byte[]>(consumerProperties);
+									consumer.subscribe(Arrays.asList(responseTopic));
+									log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : added kafka consumer for provider "+deliveryManager.getProviderName()+" "+responseTopic);
+
+									NGLMRuntime.addShutdownHook(notUsed->stopping=true);
+									while(!stopping){
+
+										// poll
+
+										long lastPollTime=System.currentTimeMillis();// to log poll processing time if exception happens later
+										ConsumerRecords<byte[], byte[]> fileRecords = consumer.poll(Duration.ofMillis(5000));
+
+										//  process records
+
+										try{
+											for (ConsumerRecord<byte[], byte[]> fileRecord : fileRecords) {
+												//  parse
+												DeliveryRequest response = deliveryManager.getRequestSerde().deserializer().deserialize(responseTopic, fileRecord.value());
+												handleCommodityDeliveryResponse(response);
+											}
+											if(fileRecords.count()>0) consumer.commitSync();
+
+										}catch (CommitFailedException ex){
+											long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
+											log.warn("CommodityDeliveryManager : CommitFailedException catched, last poll was "+lastPoll_ms+"ms ago");
+										}
+
+									}
+
+									// thread leaving the main loop !
+									consumer.close();
+									log.warn("CommodityDeliveryManager : STOPPING reading response from "+commodityType+" "+responseTopic);
+								}
+							}, "consumer_"+prefix);
+							consumerThread.start();
+
+						}
+
+						log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : get information from deliveryManager "+deliveryManager+" DONE");
+
+						break;
+
+					default:
+						log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : skip deliveryManager "+deliveryManager);
+						break;
+				}
+			}
+
+			// -------------------------------
+			// skip all other managers
+			// -------------------------------
+
+			else{
+				log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : skip deliveryManager "+deliveryManager);
+			}
+		}
+
+	}
 
   /*****************************************
   *
@@ -1900,8 +1991,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
       purchaseStatus.incrementNewRequestCounter();
       String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
+		try {
+			CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
+			log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
+		} catch (CommodityDeliveryException e) {
+			log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting paymentmean ("+offerPrice.getPaymentMeanID()+") FAILED => rollback");
+			purchaseStatus.setPaymentDebitFailed(offerPrice);
+			purchaseStatus.setPaymentBeingDebited(null);
+			proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "could not debit paymentmean "+offerPrice.getPaymentMeanID()+" "+e.getError().getGenericResponseMessage());
+		}
     }
     
     //
@@ -1917,8 +2015,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
+			try {
+				CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
+				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
+			} catch (CommodityDeliveryException e) {
+				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
+				purchaseStatus.setProductCreditFailed(offerProduct);
+				purchaseStatus.setProductBeingCredited(null);
+				proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable "+product.getDeliverableID()+" "+e.getError().getGenericResponseMessage());
+			}
         }else{
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
           purchaseStatus.setProductCreditFailed(offerProduct);
@@ -1942,8 +2047,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
       purchaseStatus.incrementNewRequestCounter();
       String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
+		try {
+			CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
+			log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
+		} catch (CommodityDeliveryException e) {
+			log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price FAILED "+e.getError().getGenericResponseMessage());
+			purchaseStatus.addPaymentRollbackFailed(offerPrice);
+			purchaseStatus.setPaymentBeingRollbacked(null);
+			proceedRollback(originatingRequest,purchaseStatus, null, null);
+		}
     }
     
     //
@@ -1959,8 +2071,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-          CommodityDeliveryManager.sendCommodityDeliveryRequest(originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
+			try {
+				CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
+				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
+			} catch (CommodityDeliveryException e) {
+				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
+				purchaseStatus.addProductRollbackFailed(offerProductRollback);
+				purchaseStatus.setProductBeingRollbacked(null);
+				proceedRollback(originatingRequest,purchaseStatus, null, null);
+			}
         }else{
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
           purchaseStatus.addProductRollbackFailed(offerProductRollback);
@@ -1985,16 +2104,21 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  @Override
   public void handleCommodityDeliveryResponse(DeliveryRequest response)
   {
     
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse() called with " + response);
 
+    if(response.getDiplomaticBriefcase() == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_ID)==null || !response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_ID).equals(application_ID)){
+      // not a bonus for purchase
+      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(response) : not message for purchase, ignoring");
+      return;
+    }
+
     // ------------------------------------
     // Getting initial request status
     // ------------------------------------
-    
+
     if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status ");
     if(response.getDiplomaticBriefcase() == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE) == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE).isEmpty()){
       log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(response) : can not get purchase status => ignore this response");
