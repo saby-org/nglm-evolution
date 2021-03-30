@@ -141,7 +141,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(9));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -163,6 +163,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
+    schemaBuilder.field("scores", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("subscriber_profile_scores").schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -244,6 +245,7 @@ public abstract class SubscriberProfile
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
+  private Set<Pair<String, Integer>> scores = new HashSet<Pair<String, Integer>>();
   
  
 
@@ -276,6 +278,20 @@ public abstract class SubscriberProfile
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
   public List<Pair<String, String>> getUnknownRelationships(){ return unknownRelationships ; }
+  public Set<Pair<String, Integer>> getScores(){ return scores ; }
+  public Integer getScore(String challengeID)
+  {
+    Integer result = null;
+    for (Pair<String, Integer> challengeScorePair : scores)
+      {
+        if (challengeID.equals(challengeScorePair.getFirstElement()))
+          {
+            result = challengeScorePair.getSecondElement();
+            break;
+          }
+      }
+    return result;
+  }
 
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -511,19 +527,7 @@ public abstract class SubscriberProfile
                     ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getPreviousLevelName());
                     loyalty.put("levelChangeType", ChallengeLevel.changeFromLevelToLevel(previousLevel, level).getExternalRepresentation());
                     loyalty.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber());
-                    if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
-                      { 
-                        String scorePointsID = loyaltyProgramChallenge.getScoreID();
-                        if(scorePointsID != null)
-                          {
-                            GUIManagedObject scoreObj = pointService.getStoredScore(scorePointsID);
-                            int score = 0;
-                            if(this.pointBalances.get(scorePointsID) != null){
-                              score = this.pointBalances.get(scorePointsID).getBalance(now);
-                            }
-                            loyalty.put("score", score);
-                          } 
-                      }
+                    loyalty.put("score", getScore(loyaltyProgramChallenge.getLoyaltyProgramID()));
                   }
               }
             array.add(JSONUtilities.encodeObject(loyalty));
@@ -589,48 +593,35 @@ public abstract class SubscriberProfile
   *
   ****************************************/
   
-  public JSONArray getPointsBalanceJSON(PointService pointService)
+  public JSONArray getPointsBalanceJSON()
   {
     JSONArray array = new JSONArray();
     if(this.pointBalances != null)
       {
         for(Entry<String, PointBalance> point : pointBalances.entrySet())
           {
-            if (!isScore(point.getKey(), pointService))
+            JSONObject obj = new JSONObject();
+            Date earliestExpirationDate = point.getValue().getFirstExpirationDate(SystemTime.getCurrentTime());
+            int earliestExpirationQuantity = point.getValue().getBalance(earliestExpirationDate);
+            JSONArray expirationDates = new JSONArray();
+            for (Date expirationDate : point.getValue().getBalances().keySet())
               {
-                JSONObject obj = new JSONObject();
-                Date earliestExpirationDate = point.getValue().getFirstExpirationDate(SystemTime.getCurrentTime());
-                int earliestExpirationQuantity = point.getValue().getBalance(earliestExpirationDate);
-                JSONArray expirationDates = new JSONArray();
-                for (Date expirationDate : point.getValue().getBalances().keySet())
-                  {
-                    JSONObject pointInfo = new JSONObject();
-                    pointInfo.put("date", expirationDate.getTime());
-                    pointInfo.put("amount", point.getValue().getBalances().get(expirationDate));
-                    expirationDates.add(pointInfo);
-                  }
-                obj.put("expirationDates", JSONUtilities.encodeArray(expirationDates));
-                obj.put(EARLIEST_EXPIRATION_DATE, earliestExpirationDate != null ? earliestExpirationDate.getTime() : null);
-                obj.put(EARLIEST_EXPIRATION_QUANTITY, earliestExpirationQuantity);
-                obj.put(CURRENT_BALANCE, point.getValue().getBalance(SystemTime.getCurrentTime()));
-                obj.put("pointID", point.getKey());
-                array.add(obj);
+                JSONObject pointInfo = new JSONObject();
+                pointInfo.put("date", expirationDate.getTime());
+                pointInfo.put("amount", point.getValue().getBalances().get(expirationDate));
+                expirationDates.add(pointInfo);
               }
+            obj.put("expirationDates", JSONUtilities.encodeArray(expirationDates));
+            obj.put(EARLIEST_EXPIRATION_DATE, earliestExpirationDate != null ? earliestExpirationDate.getTime() : null);
+            obj.put(EARLIEST_EXPIRATION_QUANTITY, earliestExpirationQuantity);
+            obj.put(CURRENT_BALANCE, point.getValue().getBalance(SystemTime.getCurrentTime()));
+            obj.put("pointID", point.getKey());
+            array.add(obj);
           }
       }
     return array;
   }
 
-  /****************************************
-  *
-  *  isScore
-  *
-  ****************************************/
-  
-  private boolean isScore(String pointID, PointService pointService)
-  {
-    return pointService.getStoredScore(pointID, true) != null;
-  }
   /****************************************
   *
   *  getSubscriberJourneysJSON - SubscriberJourneys
@@ -1480,6 +1471,7 @@ public abstract class SubscriberProfile
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
     this.complexObjectInstances = new ArrayList<>();
     this.offerPurchaseHistory = new HashMap<>();
+    this.scores = new HashSet<Pair<String, Integer>>();
   }
 
   /*****************************************
@@ -1524,6 +1516,7 @@ public abstract class SubscriberProfile
     List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
+    Set<Pair<String, Integer>> scores = (schemaVersion >= 9) ? unpackScores(valueStruct.get("scores")) : new HashSet<Pair<String, Integer>>();;
 
     //
     //  return
@@ -1550,8 +1543,30 @@ public abstract class SubscriberProfile
     this.exclusionInclusionTargets = exclusionInclusionTargets;
     this.complexObjectInstances = complexObjectInstances;
     this.offerPurchaseHistory = offerPurchaseHistory;
+    this.scores = scores;
   }
 
+  /*****************************************
+  *
+  *  unpackSegments
+  *
+  *****************************************/
+  
+  private Set<Pair<String, Integer>> unpackScores(Object value)
+  {
+    Set<Pair<String, Integer>> result = new HashSet<Pair<String, Integer>>();
+    if (value != null)
+      {
+        Map<String, Integer> valueMap = (Map<String, Integer>) value;
+        for (String packedGroupID : valueMap.keySet())
+          {
+            Pair<String, Integer> pair = new Pair<String, Integer>(packedGroupID, valueMap.get(packedGroupID));
+            result.add(pair);
+          }
+      }
+    return result;
+  }
+  
   /*****************************************
   *
   *  unpackSegments
@@ -1868,6 +1883,7 @@ public abstract class SubscriberProfile
     this.complexObjectInstances = subscriberProfile.getComplexObjectInstances();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
+    this.scores = new HashSet<Pair<String,Integer>>(subscriberProfile.getScores());
   }
 
   /*****************************************
@@ -1899,8 +1915,28 @@ public abstract class SubscriberProfile
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
+    struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
+    struct.put("scores", packScores(subscriberProfile.getScores()));
   }
 
+  /****************************************
+  *
+  *  packScores
+  *
+  ****************************************/
+  
+  private static Object packScores(Set<Pair<String, Integer>> subsScores)
+  {
+    Map<Object, Object> result = new HashMap<Object, Object>();
+    for (Pair<String, Integer> score : subsScores)
+      {
+        String challengeID = score.getFirstElement();
+        Integer challengeScore = score.getSecondElement();
+        result.put(challengeID, challengeScore);
+      }
+    return result;
+  }
+  
   /****************************************
   *
   *  packSegments

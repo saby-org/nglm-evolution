@@ -19832,7 +19832,7 @@ public class GUIManager
                       LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
                       
                       //
-                      // current tier
+                      // current level
                       //
 
                       if (loyaltyProgramChallengeState.getLevelName() != null)
@@ -19845,26 +19845,10 @@ public class GUIManager
                         }
                       
                       //
-                      // status point
+                      // score
                       //
 
-                      LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
-                      String scorePointID = loyaltyProgramChallenge.getScoreID();
-                      Point scorePoint = pointService.getActiveScore(scorePointID, now);
-                      if (scorePoint != null)
-                        {
-                          loyaltyProgramPresentation.put("scoreID", scorePoint.getPointID());
-                          loyaltyProgramPresentation.put("scoreDisplay", scorePoint.getDisplay());
-                        }
-                      PointBalance score = baseSubscriberProfile.getPointBalances().get(scorePointID);
-                      if (score != null)
-                        {
-                          loyaltyProgramPresentation.put("score", score.getBalance(now));
-                        } 
-                      else
-                        {
-                          loyaltyProgramPresentation.put("score", 0);
-                        }
+                      loyaltyProgramPresentation.put("score", baseSubscriberProfile.getScore(loyaltyProgramChallengeState.getLoyaltyProgramID()));
                       
                       //
                       // history

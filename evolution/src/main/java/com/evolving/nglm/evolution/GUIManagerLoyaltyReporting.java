@@ -270,11 +270,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             break;
             
           case CHALLENGE:
-            String scoreID = JSONUtilities.decodeString(jsonRoot, "scoreID", false);
-            if (scoreID == null || scoreID.equals("1")) scoreID = createScoreAndGetID(jsonRoot); //RAJ K need to remove score 1
-            if (scoreID == null) throw new GUIManagerException("can't create internal score for challenge", "");
-            
-            jsonRoot.put("scoreID", scoreID);
             loyaltyProgram = new LoyaltyProgramChallenge(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
             break;
 
@@ -360,36 +355,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
   }
 
-  /*****************************************
-  *
-  *  processRemoveLoyaltyProgram
-  *
-  *****************************************/
-  
-  private String createScoreAndGetID(JSONObject challengeJSON)
-  {
-    String name = JSONUtilities.decodeString(challengeJSON, "name", "challenge").concat("-score");
-    String display = JSONUtilities.decodeString(challengeJSON, "display", "challenge").concat("-score");
-    Map<String, Object> scoreJSON = new HashMap<String, Object>();
-    Map<String, Object> scoreValidityJSON = new HashMap<String, Object>();
-    scoreJSON.put("apiVersion", 1);
-    scoreJSON.put("name", name);
-    scoreJSON.put("display", display);
-    scoreJSON.put("active", true);
-    scoreJSON.put("debitable", true);
-    scoreJSON.put("creditable", true);
-    scoreJSON.put("isScoreType", true);
-    
-    scoreValidityJSON.put("periodType", "year");
-    scoreValidityJSON.put("periodQuantity", 100);
-    scoreValidityJSON.put("validityExtension", true);
-    scoreValidityJSON.put("roundDown", true);
-    scoreJSON.put("validity", JSONUtilities.encodeObject(scoreValidityJSON));
-    JSONObject jsonroot = JSONUtilities.encodeObject(scoreJSON);
-    JSONObject response = processPutPoint("0", jsonroot);
-    log.info("RAJ K createScoreAndGetID response {}", response);
-    return JSONUtilities.decodeString(response, "id", false);
-  }
 
   /*****************************************
   *
@@ -1825,7 +1790,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *****************************************/
 
     GUIManagedObject existingPoint = pointService.getStoredPoint(pointID);
-    if (existingPoint == null) existingPoint = pointService.getStoredScore(pointID); //can be a score
 
     /*****************************************
     *
@@ -1835,11 +1799,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
     if (existingPoint != null && existingPoint.getReadOnly())
       {
-        boolean isScoreType = JSONUtilities.decodeBoolean(pointService.generateResponseJSON(existingPoint, true, now), "isScoreType", false);
         response.put("id", existingPoint.getGUIManagedObjectID());
         response.put("accepted", existingPoint.getAccepted());
         response.put("valid", existingPoint.getAccepted());
-        response.put("processing", isScoreType ? pointService.isActiveScore(existingPoint, now) : pointService.isActivePoint(existingPoint, now));
+        response.put("processing", pointService.isActivePoint(existingPoint, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
@@ -1877,7 +1840,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
              *
              *****************************************/
 
-            if (!point.isScoreType()) dynamicCriterionFieldService.addPointCriterionFields(point, (existingPoint == null));
+            dynamicCriterionFieldService.addPointCriterionFields(point, (existingPoint == null));
 
             /*****************************************
              *
@@ -1946,7 +1909,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         response.put("id", point.getPointID());
         response.put("accepted", point.getAccepted());
         response.put("valid", point.getAccepted());
-        response.put("processing", point.isScoreType() ? pointService.isActiveScore(point, now) : pointService.isActivePoint(point, now));
+        response.put("processing", pointService.isActivePoint(point, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -2060,7 +2023,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
         String pointID = pointIDs.get(i).toString();
         GUIManagedObject point = pointService.getStoredPoint(pointID);
-        if (point == null) point = pointService.getStoredScore(pointID);
         if (point != null && (force || !point.getReadOnly()))
           {
             points.add(point);
@@ -2134,11 +2096,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         // remove dynamic criterion fields
         //
 
-        JSONObject pointJsonObject = pointService.generateResponseJSON(point, true, now);
-        if (!JSONUtilities.decodeBoolean(pointJsonObject, "isScoreType", false))
-          {
-            dynamicCriterionFieldService.removePointCriterionFields(point);
-          }
+        dynamicCriterionFieldService.removePointCriterionFields(point);
         
 
         //

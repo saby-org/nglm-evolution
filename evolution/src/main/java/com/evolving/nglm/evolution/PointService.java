@@ -6,11 +6,8 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -106,167 +103,13 @@ public class PointService extends GUIService
   *****************************************/
 
   public String generatePointID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredPoint(String pointID) 
-  {
-    GUIManagedObject result = null;
-    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(pointID);
-    if (guiManagedObject != null && guiManagedObject.getAccepted())
-      {
-        if (!((Point) guiManagedObject).isScoreType())
-          {
-            result = guiManagedObject;
-          }
-      }
-    else
-      {
-        result = guiManagedObject;
-      }
-    return result;
-  }
-  public GUIManagedObject getStoredPoint(String pointID, boolean includeArchived) 
-  {
-    GUIManagedObject result = null;
-    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(pointID, includeArchived);
-    if (guiManagedObject != null && guiManagedObject.getAccepted())
-      {
-        if (!((Point) guiManagedObject).isScoreType())
-          {
-            result = guiManagedObject;
-          }
-      }
-    else
-      {
-        result = guiManagedObject;
-      }
-    return result;
-  }
-  public Collection<GUIManagedObject> getStoredPoints() 
-  {
-    List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
-    for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects())
-      {
-        if (guiManagedObject.getAccepted())
-          {
-            if (!((Point) guiManagedObject).isScoreType())
-              {
-                result.add(guiManagedObject);
-              }
-          }
-        else
-          {
-            result.add(guiManagedObject);
-          }
-      }
-    return result;
-  }
-  public Collection<GUIManagedObject> getStoredPoints(boolean includeArchived) 
-  {
-    List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
-    for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(includeArchived))
-      {
-        if (guiManagedObject.getAccepted())
-          {
-            if (!((Point) guiManagedObject).isScoreType())
-              {
-                result.add(guiManagedObject);
-              }
-          }
-        else
-          {
-            result.add(guiManagedObject);
-          }
-      }
-    return result;
-  }
-  public boolean isActivePoint(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date) && !((Point) pointUnchecked).isScoreType(); }
-  public Point getActivePoint(String pointID, Date date) 
-  {
-    Point result = (Point) getActiveGUIManagedObject(pointID, date);
-    if (result == null || result.isScoreType()) return null;
-    return result;
-  }
-  public Collection<Point> getActivePoints(Date date) 
-  {
-    Collection<Point> result = new HashSet<Point>();
-    for (Point guiManagedObject : (Collection<Point>) getActiveGUIManagedObjects(date))
-      {
-        if (!guiManagedObject.isScoreType()) result.add(guiManagedObject);
-      }
-
-    return result;
-  }
-  
-  /*****************************************
-  *
-  *  getScores
-  *
-  *****************************************/
-
-  public GUIManagedObject getStoredScore(String scoreID) 
-  {
-    GUIManagedObject result = null;
-    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(scoreID);
-    if (guiManagedObject != null && guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
-      {
-        result = guiManagedObject;
-      }
-    return result;
-  }
-  
-  public GUIManagedObject getStoredScore(String scoreID, boolean includeArchived) 
-  {
-    GUIManagedObject result = null;
-    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(scoreID, includeArchived);
-    if (guiManagedObject != null && guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
-      {
-        result = guiManagedObject;
-      }
-    return result;
-  }
-  public Collection<GUIManagedObject> getStoredScores() 
-  {
-    List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
-    for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects())
-      {
-        if (guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
-          {
-            result.add(guiManagedObject);
-          }
-      }
-    return result;
-  }
-  
-  public Collection<GUIManagedObject> getStoredScores(boolean includeArchived) 
-  {
-    List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
-    for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(includeArchived))
-      {
-        if (guiManagedObject.getAccepted() && ((Point) guiManagedObject).isScoreType())
-          {
-            result.add(guiManagedObject);
-          }
-      }
-    return result;
-  }
-  public boolean isActiveScore(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date) && ((Point) pointUnchecked).isScoreType(); }
-
-  public Point getActiveScore(String pointID, Date date)
-  {
-    Point result = (Point) getActiveGUIManagedObject(pointID, date);
-    if (result == null || !result.isScoreType()) return null;
-    return result;
-  }
-  
-  public Collection<Point> getActiveScores(Date date)
-  {
-    Collection<Point> result = new HashSet<Point>();
-    for (Point guiManagedObject : (Collection<Point>) getActiveGUIManagedObjects(date))
-      {
-        if (guiManagedObject.isScoreType()) result.add(guiManagedObject);
-      }
-
-    return result;
-  }
+  public GUIManagedObject getStoredPoint(String pointID) { return getStoredGUIManagedObject(pointID); }
+  public GUIManagedObject getStoredPoint(String pointID, boolean includeArchived) { return getStoredGUIManagedObject(pointID, includeArchived); }
+  public Collection<GUIManagedObject> getStoredPoints() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredPoints(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public boolean isActivePoint(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date); }
+  public Point getActivePoint(String pointID, Date date) { return (Point) getActiveGUIManagedObject(pointID, date); }
+  public Collection<Point> getActivePoints(Date date) { return (Collection<Point>) getActiveGUIManagedObjects(date); }
 
   /*****************************************
   *

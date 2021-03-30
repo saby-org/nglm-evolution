@@ -3169,8 +3169,6 @@ public class EvolutionEngine
         //
 
         Point point = pointService.getActivePoint(pointFulfillmentRequest.getPointID(), now);
-        if (point == null) point = pointService.getActiveScore(pointFulfillmentRequest.getPointID(), now); // could be a score in future
-        
         if (point == null)
           {
             log.info("pointFulfillmentRequest failed (no such point): {}", pointFulfillmentRequest.getPointID());
@@ -3870,6 +3868,77 @@ public class EvolutionEngine
 
   }
   
+  
+  /*****************************************
+  *
+  *  updateScore
+  *
+  *****************************************/
+
+  private static boolean updateScore(SubscriberProfile subscriberProfile, String loyaltyChallengeID, int amount, Date now)
+  {
+    log.info("RAJ K updateScore for subscriberProfile {} and loyaltyChallengeID {} with amount {}", subscriberProfile.getSubscriberID(), loyaltyChallengeID, amount);
+    boolean success = true;
+
+    //
+    //  get (or create) score
+    //
+
+    Integer score = subscriberProfile.getScore(loyaltyChallengeID);
+    if (score == null) score = 0;
+    
+    //
+    //  update
+    //
+    
+    score = score + amount;
+    
+    //
+    //  validate non-negative
+    //
+    
+    success = score >= 0;
+    
+    if (success)
+      {
+        //
+        //  update score
+        //
+
+        subscriberProfile.getScores().add(new Pair<String, Integer>(loyaltyChallengeID, score));
+
+        //
+        //  update loyalty program balances
+        //
+        
+        for (LoyaltyProgramState loyaltyProgramState : subscriberProfile.getLoyaltyPrograms().values())
+          {
+            LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
+            if (loyaltyProgram != null)
+              {
+                if(loyaltyProgram instanceof LoyaltyProgramChallenge)
+                  {
+                    LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+                    LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+                    if (Objects.equals(loyaltyChallengeID, loyaltyProgramChallenge.getScoreID())) loyaltyProgramChallengeState.setScoreLevel(score);
+                  }
+              }
+          }
+      }
+    else
+      {
+        if (log.isErrorEnabled()) log.error("updateScore -> subscriber score cant be negative. current score is {}, update amount is {}", subscriberProfile.getScore(loyaltyChallengeID), amount);
+      }
+    
+    //
+    //  return
+    //
+    
+    log.info("RAJ K updateScore {}", success);
+    return success;
+
+  }
+  
   /*****************************************
   *
   *  updateSubscriberLoyaltyProgram
@@ -4091,15 +4160,14 @@ public class EvolutionEngine
                     LoyaltyProgramState currentLoyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
                     if (currentLoyaltyProgramState == null || !(currentLoyaltyProgramState instanceof LoyaltyProgramChallengeState))
                       {
+                        //
+                        //  LoyaltyProgramChallengeHistory
+                        //
+                        
                         LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = new LoyaltyProgramChallengeHistory(loyaltyProgram.getLoyaltyProgramID());
                         currentLoyaltyProgramState = new LoyaltyProgramChallengeState(LoyaltyProgramType.CHALLENGE, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newLevelName, null, now, loyaltyProgramChallengeHistory);
                         if (log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '" + subscriberProfile.getSubscriberID() + "' : loyaltyProgramState.update(" + loyaltyProgram.getEpoch() + ", " + loyaltyProgramRequest.getOperation() + ", " + loyaltyProgram.getLoyaltyProgramName() + ", " + newLevelName + ", " + now + ", " + loyaltyProgramRequest.getDeliveryRequestID() + ")");
-                        Integer currentScore = null;
-                        if (subscriberProfile.getPointBalances().get(loyaltyProgramChallenge.getScoreID()) != null)
-                          {
-                            currentScore = subscriberProfile.getPointBalances().get(loyaltyProgramChallenge.getScoreID()).getBalance(now);
-                          }
-                        
+                        Integer currentScore = subscriberProfile.getScore(loyaltyProgramChallenge.getLoyaltyProgramID());
                         LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService, currentScore);
 
                         //
@@ -4113,6 +4181,10 @@ public class EvolutionEngine
                         infos.put(LoyaltyProgramChallengeEventInfos.LEVEL_UPDATE_TYPE.getExternalRepresentation(), levelChangeType.getExternalRepresentation());
                         ProfileLoyaltyProgramChangeEvent profileChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), infos);
                         subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileChangeEvent);
+                        
+                        //
+                        //  launchChangeTierWorkflows
+                        //
 
                         launchChangeTierWorkflows(profileChangeEvent, subscriberState, loyaltyProgramChallenge, null, newLevelName, currentLoyaltyProgramState.getLoyaltyProgramID());
                       } 
@@ -4388,23 +4460,11 @@ public class EvolutionEngine
                       if (scoreEventDeclaration != null && scoreEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramPointsEvent && ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() != 0) // RAJ K LoyaltyProgramPointsEvent??
                         {
 
-                          //
-                          // update Score points
-                          //
-
-                          Point score = pointService.getActiveScore(loyaltyProgramChallenge.getScoreID(), now);
-                          if (score != null)
-                            {
-                              if (log.isDebugEnabled()) log.debug("update loyalty program Score => adding " + ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() + " x " + subscriberCurrentLevelDefinition.getNumberOfscorePerEvent() + " of score " + score.getPointName());
-                              int amount = ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() * subscriberCurrentLevelDefinition.getNumberOfscorePerEvent();
-                              updatePointBalance(context, null, scoreEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, score, CommodityDeliveryOperation.Credit, amount, now, false, oldLevel);
-                              triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentLevelDefinition.getWorkflowScore(), loyaltyProgramID, oldLevel);
-                              subscriberProfileUpdated = true;
-                            } 
-                          else
-                            {
-                              log.info("update loyalty program STATUS : Score point with ID '" + loyaltyProgramChallenge.getScoreID() + "' not found");
-                            }
+                          if (log.isDebugEnabled()) log.debug("update loyalty program Score => adding " + ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() + " x " + subscriberCurrentLevelDefinition.getNumberOfscorePerEvent() + " of score " + loyaltyProgram.getGUIManagedObjectDisplay());
+                          int amount = ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() * subscriberCurrentLevelDefinition.getNumberOfscorePerEvent();
+                          updateScore(subscriberProfile, loyaltyProgram.getLoyaltyProgramID(), amount, now);
+                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentLevelDefinition.getWorkflowScore(), loyaltyProgramID, oldLevel);
+                          subscriberProfileUpdated = true;
 
                           //
                           // update tier
@@ -4501,9 +4561,9 @@ public class EvolutionEngine
   {
     String newLevelName = null;
     int currentSubsriberScores = 0;
-    if (subscriberProfile.getPointBalances() != null && subscriberProfile.getPointBalances().get(loyaltyProgramChallenge.getScoreID()) != null)
+    if (subscriberProfile.getScore(loyaltyProgramChallenge.getLoyaltyProgramID()) != null)
       {
-        currentSubsriberScores = subscriberProfile.getPointBalances().get(loyaltyProgramChallenge.getScoreID()).getBalance(now);
+        currentSubsriberScores = subscriberProfile.getScore(loyaltyProgramChallenge.getLoyaltyProgramID());
       }
     
     for (ChallengeLevel level : loyaltyProgramChallenge.getLevels())
