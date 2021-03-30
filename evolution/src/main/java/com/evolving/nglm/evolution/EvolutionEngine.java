@@ -3156,9 +3156,14 @@ public class EvolutionEngine
           {
             String challengeID = (String) subscriberProfileForceUpdate.getParameterMap().get("challengeID");
             Integer score = (Integer) subscriberProfileForceUpdate.getParameterMap().get("score");
+            Integer oldScore = subscriberProfile.getScore(challengeID);
             if (challengeID != null && score != null)
               {
                 subscriberProfileUpdated = updateScore(subscriberProfile, challengeID, score, now);
+                if (subscriberProfileUpdated)
+                  {
+                    checkForLoyaltyProgramStateChanges(context.getSubscriberState(), null, now, oldScore);
+                  }
               }
           }
         
@@ -3197,8 +3202,6 @@ public class EvolutionEngine
         if (point != null)
           {
             
-            int oldBal = subscriberProfile.getPointBalances().get(point.getPointID()).getBalance(now);
-            
             //
             // copy point and update point validity
             //
@@ -3229,7 +3232,7 @@ public class EvolutionEngine
                 //  check loyalty program (may need to change tier if credited/debited point is the one used as status point in the program)
                 //
                 
-                checkForLoyaltyProgramStateChanges(context.getSubscriberState(), pointFulfillmentRequest.getDeliveryRequestID(), now, oldBal);
+                checkForLoyaltyProgramStateChanges(context.getSubscriberState(), pointFulfillmentRequest.getDeliveryRequestID(), now, null);
                 
               }
             else
@@ -3640,7 +3643,7 @@ public class EvolutionEngine
     return false;
   }
 
-  private static void checkForLoyaltyProgramStateChanges(SubscriberState subscriberState, String deliveryRequestID, Date now, int oldBal)
+  private static void checkForLoyaltyProgramStateChanges(SubscriberState subscriberState, String deliveryRequestID, Date now, Integer oldScore)
   {
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     for(Entry<String, LoyaltyProgramState> entry : subscriberProfile.getLoyaltyPrograms().entrySet())
@@ -3737,7 +3740,7 @@ public class EvolutionEngine
                     //  update loyalty program state
                     //
 
-                    LoyaltyProgramLevelChange loyaltyProgramLevelChange = loyaltyProgramChallengeState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, deliveryRequestID, loyaltyProgramService, oldBal);
+                    LoyaltyProgramLevelChange loyaltyProgramLevelChange = loyaltyProgramChallengeState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, deliveryRequestID, loyaltyProgramService, oldScore);
                     
                     //
                     //  generate new event (tier changed)
