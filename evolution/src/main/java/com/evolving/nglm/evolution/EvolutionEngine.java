@@ -4385,7 +4385,7 @@ public class EvolutionEngine
                       //
 
                       EvolutionEngineEventDeclaration scoreEventDeclaration = Deployment.getEvolutionEngineEvents().get(subscriberCurrentLevelDefinition.getScoreEventName());
-                      if (scoreEventDeclaration != null && scoreEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramScoreEvent && ((LoyaltyProgramScoreEvent) evolutionEvent).getScoreUnit() != 0) // RAJ K LoyaltyProgramPointsEvent??
+                      if (scoreEventDeclaration != null && scoreEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramPointsEvent && ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() != 0) // RAJ K LoyaltyProgramPointsEvent??
                         {
 
                           //
@@ -4395,8 +4395,8 @@ public class EvolutionEngine
                           Point score = pointService.getActiveScore(loyaltyProgramChallenge.getScoreID(), now);
                           if (score != null)
                             {
-                              if (log.isDebugEnabled()) log.debug("update loyalty program Score => adding " + ((LoyaltyProgramScoreEvent) evolutionEvent).getScoreUnit() + " x " + subscriberCurrentLevelDefinition.getNumberOfscorePerEvent() + " of score " + score.getPointName());
-                              int amount = ((LoyaltyProgramScoreEvent) evolutionEvent).getScoreUnit() * subscriberCurrentLevelDefinition.getNumberOfscorePerEvent();
+                              if (log.isDebugEnabled()) log.debug("update loyalty program Score => adding " + ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() + " x " + subscriberCurrentLevelDefinition.getNumberOfscorePerEvent() + " of score " + score.getPointName());
+                              int amount = ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() * subscriberCurrentLevelDefinition.getNumberOfscorePerEvent();
                               updatePointBalance(context, null, scoreEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, score, CommodityDeliveryOperation.Credit, amount, now, false, oldLevel);
                               triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentLevelDefinition.getWorkflowScore(), loyaltyProgramID, oldLevel);
                               subscriberProfileUpdated = true;

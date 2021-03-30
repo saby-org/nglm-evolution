@@ -26448,27 +26448,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 {
                 }
             }
-          //break; //RAJ K TO DO
-          
-        case "loyaltyProgramScoreEventNames":
-          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
-            {
-              try
-                {
-                  Class eventClass = Class.forName(evolutionEngineEventDeclaration.getEventClassName());
-                  for(Class currentInterface : eventClass.getInterfaces()){
-                    if(currentInterface.equals(LoyaltyProgramScoreEvent.class)){
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", evolutionEngineEventDeclaration.getName());
-                      availableValue.put("display", evolutionEngineEventDeclaration.getName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                      break;
-                    }
-                  }
-                } catch (Exception e)
-                {
-                }
-            }
           break;
           
         case "moduleIds":
