@@ -107,7 +107,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("lastOccurrenceCreateDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("levels", SchemaBuilder.array(ChallengeLevel.schema()).schema());
-      schemaBuilder.field("scoreID", Schema.STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -153,7 +152,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   private Integer lastCreatedOccurrenceNumber;
   private Date lastOccurrenceCreateDate;
   private List<ChallengeLevel> levels = null;
-  private String scoreID;
 
   /*****************************************
    *
@@ -223,11 +221,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     return result;
   }
   
-  public String getScoreID()
-  {
-    return scoreID;
-  }
-  
   /*****************************************
   *
   * getLevel
@@ -287,7 +280,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     this.lastOccurrenceCreateDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastOccurrenceCreateDate", false));
     this.levels = decodeLoyaltyProgramLevels(JSONUtilities.decodeJSONArray(jsonRoot, "levels", true));
-    this.scoreID = JSONUtilities.decodeString(jsonRoot, "scoreID", true);
 
     /*****************************************
      *
@@ -307,7 +299,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, List<ChallengeLevel> levels, String scoreID)
+  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, List<ChallengeLevel> levels)
   {
     super(schemaAndValue);
     this.createLeaderBoard = createLeaderBoard;
@@ -318,7 +310,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     this.lastCreatedOccurrenceNumber = lastCreatedOccurrenceNumber;
     this.lastOccurrenceCreateDate = lastOccurrenceCreateDate;
     this.levels = levels;
-    this.scoreID = scoreID;
   }
 
   /*****************************************
@@ -340,7 +331,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     struct.put("lastCreatedOccurrenceNumber", loyaltyProgramChallenge.getLastCreatedOccurrenceNumber());
     struct.put("lastOccurrenceCreateDate", loyaltyProgramChallenge.getLastOccurrenceCreateDate());
     struct.put("levels", packLoyaltyProgramLevels(loyaltyProgramChallenge.getLevels()));
-    struct.put("scoreID", loyaltyProgramChallenge.getScoreID());
     return struct;
   }
 
@@ -389,13 +379,12 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     Integer lastCreatedOccurrenceNumber = valueStruct.getInt32("lastCreatedOccurrenceNumber");
     Date lastOccurrenceCreateDate = (Date) valueStruct.get("lastOccurrenceCreateDate");
     List<ChallengeLevel> levels = unpackLoyaltyProgramTiers(schema.field("levels").schema(), valueStruct.get("levels"));
-    String scoreID = valueStruct.getString("scoreID");
 
     //
     // return
     //
 
-    return new LoyaltyProgramChallenge(schemaAndValue, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, levels, scoreID);
+    return new LoyaltyProgramChallenge(schemaAndValue, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, levels);
   }
 
   /*****************************************
@@ -470,7 +459,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
         epochChanged = epochChanged || !Objects.equals(getRecurrenceId(), existingLoyaltyProgramChallenge.getRecurrenceId());
         epochChanged = epochChanged || !Objects.equals(getOccurrenceNumber(), existingLoyaltyProgramChallenge.getOccurrenceNumber());
         epochChanged = epochChanged || !Objects.equals(getJourneyScheduler(), existingLoyaltyProgramChallenge.getJourneyScheduler());
-        epochChanged = epochChanged || !Objects.equals(getScoreID(), existingLoyaltyProgramChallenge.getScoreID());
         return epochChanged;
       } else
       {
@@ -712,7 +700,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> catalogcharacteristicIDs = new ArrayList<String>();
-    List<String> scoreID = new ArrayList<String>();
     
     if (getCharacteristics() != null)
       {
@@ -721,9 +708,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
             catalogcharacteristicIDs.add(catalogCharacteristicInstance.getCatalogCharacteristicID());
           }
       }
-    if (getScoreID() != null) scoreID.add(getScoreID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
     
-    result.put("point", scoreID);
     result.put("catalogcharacteristic", catalogcharacteristicIDs);
     return result;
   }

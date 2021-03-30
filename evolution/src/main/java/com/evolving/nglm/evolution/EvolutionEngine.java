@@ -3147,6 +3147,21 @@ public class EvolutionEngine
                   }
               }
           }
+        
+        //
+        //  score
+        //
+        
+        if (subscriberProfileForceUpdate.getParameterMap().containsKey("score"))
+          {
+            String challengeID = (String) subscriberProfileForceUpdate.getParameterMap().get("challengeID");
+            Integer score = (Integer) subscriberProfileForceUpdate.getParameterMap().get("score");
+            if (challengeID != null && score != null)
+              {
+                subscriberProfileUpdated = updateScore(subscriberProfile, challengeID, score, now);
+              }
+          }
+        
       }
     
     /*****************************************
@@ -3851,12 +3866,6 @@ public class EvolutionEngine
                 if (Objects.equals(point.getPointID(), loyaltyProgramPoints.getStatusPointsID())) loyaltyProgramPointsState.setStatusPoints(pointBalance.getBalance(now));
                 if (Objects.equals(point.getPointID(), loyaltyProgramPoints.getRewardPointsID())) loyaltyProgramPointsState.setRewardPoints(pointBalance.getBalance(now));
               }
-            else if(loyaltyProgram instanceof LoyaltyProgramChallenge)
-              {
-                LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
-                LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
-                if (Objects.equals(point.getPointID(), loyaltyProgramChallenge.getScoreID())) loyaltyProgramChallengeState.setScoreLevel(pointBalance.getBalance(now));
-              }
           }
       }
     
@@ -3920,7 +3929,7 @@ public class EvolutionEngine
                   {
                     LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
                     LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
-                    if (Objects.equals(loyaltyChallengeID, loyaltyProgramChallenge.getScoreID())) loyaltyProgramChallengeState.setScoreLevel(score);
+                    if (Objects.equals(loyaltyChallengeID, loyaltyProgramState.getLoyaltyProgramID())) loyaltyProgramChallengeState.setScoreLevel(score);
                   }
               }
           }

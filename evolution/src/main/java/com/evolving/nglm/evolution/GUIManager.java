@@ -29743,29 +29743,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       long startTimeMili = SystemTime.getCurrentTime().getTime();
       log.info("execute Challenge OccouranceJob for challenge {}, for date(s) {}", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates);
       ChallengeLevel firstLevel = challenge.getFirstLevel();
-      String scoreID = challenge.getScoreID();
       
-      /*****************************************
-      *
-      *  resolve Deliverable
-      *
-      *****************************************/
-
-      Deliverable searchedBonus = null;
-      for (GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables())
-        {
-          if (storedDeliverable instanceof Deliverable && scoreID.equals(((Deliverable) storedDeliverable).getExternalAccountID()))
-            {
-                searchedBonus = (Deliverable) storedDeliverable;
-                break;
-            }
-        }
-      
-      if (searchedBonus == null)
-        {
-          log.error("unable to debit score as searchedBonus is null for scoreID {}", scoreID);
-          return;
-        }
       
       for (Date recDate : tmpOccouranceDates)
         {
@@ -29786,11 +29764,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         {
                           String deliveryRequestID = zuks.getStringKey();
                           int firstLevelScore = firstLevel.getScoreLevel();
-                          int subscriberCurrnetScore = baseSubscriberProfile.getPointBalances().get(scoreID).getBalance(SystemTime.getCurrentTime());
+                          int subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
                           int scoreToDebit = subscriberCurrnetScore - firstLevelScore;
                           scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
-                          CommodityDeliveryManager.sendCommodityDeliveryRequest(baseSubscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Loyalty_Program.getExternalRepresentation(), challenge.getLoyaltyProgramID(), subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, scoreToDebit, null, null, DELIVERY_REQUEST_PRIORITY, "for " + challenge.getLoyaltyProgramDisplay() + " - occurrenceNumber " + lastCreatedOccurrenceNumber + 1);
-                          //  down grade to level 1 : done
+                          
+                          //
+                          // SubscriberProfileForceUpdate
+                          //
+                          
+                          SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap());
+                          subscriberProfileForceUpdate.getParameterMap().put("score", scoreToDebit*-1);
+                          subscriberProfileForceUpdate.getParameterMap().put("challengeID", challenge.getGUIManagedObjectID());
+                          
+                          //
+                          //  send
+                          //
+                          
+                          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
                         }
                     } 
                   catch (SubscriberProfileServiceException e)
