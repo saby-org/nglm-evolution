@@ -29715,7 +29715,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           else if ("day".equalsIgnoreCase(scheduling))
             {
-              Date lastDate = SystemTime.getCurrentTime();
+              Date lastDate = RLMDateUtils.ceiling(now, Calendar.DATE, tz);
               Date tempStartDate = RLMDateUtils.addDays(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               while(lastDate.compareTo(tempStartDate) >= 0)
                 {
