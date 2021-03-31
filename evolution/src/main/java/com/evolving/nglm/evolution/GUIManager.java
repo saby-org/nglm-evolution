@@ -19864,11 +19864,22 @@ public class GUIManager
                               levelHistoryJSON.put("fromLevel", level.getFromLevel());
                               levelHistoryJSON.put("toLevel", level.getToLevel());
                               levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate()));
-                              levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate()));
                               levelHistoryJSON.put("occouranceNumber", level.getOccurrenceNumber());
                               loyaltyProgramChallengeHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
                             }
                         }
+                      
+                      //
+                      //  Recurrence
+                      //
+                      
+                      if (loyaltyProgram instanceof LoyaltyProgramChallenge && ((LoyaltyProgramChallenge) loyaltyProgram).getRecurrence())
+                        {
+                          loyaltyProgramPresentation.put("previousPeriodLevel", loyaltyProgramChallengeState.getPreviousPeriodLevel());
+                          loyaltyProgramPresentation.put("previousPeriodScore", loyaltyProgramChallengeState.getPreviousPeriodScore());
+                          loyaltyProgramPresentation.put("previousPeriodLevel", getDateString(loyaltyProgramChallengeState.getPreviousPeriodStartDate()));
+                        }
+                      
                       loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
                       break;
                       
