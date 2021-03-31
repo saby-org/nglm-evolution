@@ -516,7 +516,7 @@ public class LicenseChecker
     writer.writeBytes(requestBody);
     writer.flush();
     writer.close();
-    log.debug("LicenseRequest: {} ", requestBody);
+    log.trace("LicenseRequest: {} ", requestBody);
 
     //
     //  response
@@ -531,7 +531,7 @@ public class LicenseChecker
     }
     in.close();
     String result = response.toString();
-    log.debug("LicenseResponse: {} ", result);
+    log.trace("LicenseResponse: {} ", result);
 
     //
     //  return
