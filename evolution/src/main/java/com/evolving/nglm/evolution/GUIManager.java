@@ -29765,24 +29765,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         {
                           String deliveryRequestID = zuks.getStringKey();
                           int firstLevelScore = firstLevel.getScoreLevel();
-                          int subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
-                          int scoreToDebit = subscriberCurrnetScore - firstLevelScore;
+                          Integer subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
+                          int scoreToDebit = (subscriberCurrnetScore == null ? new Integer(0) :  subscriberCurrnetScore) - firstLevelScore;
                           scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
-                          
-                          //
-                          // SubscriberProfileForceUpdate
-                          //
-                          
-                          SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap());
-                          subscriberProfileForceUpdate.getParameterMap().put("score", scoreToDebit*-1);
-                          subscriberProfileForceUpdate.getParameterMap().put("challengeID", challenge.getGUIManagedObjectID());
-                          
-                          //
-                          //  send
-                          //
-                          
-                          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
-                        }
+                          if (scoreToDebit > 0)
+                            {
+                              //
+                              // SubscriberProfileForceUpdate
+                              //
+                              
+                              SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap());
+                              subscriberProfileForceUpdate.getParameterMap().put("score", scoreToDebit*-1);
+                              subscriberProfileForceUpdate.getParameterMap().put("challengeID", challenge.getGUIManagedObjectID());
+                              
+                              //
+                              //  send
+                              //
+                              
+                              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+                            }
+                          }
                     } 
                   catch (SubscriberProfileServiceException e)
                     {
