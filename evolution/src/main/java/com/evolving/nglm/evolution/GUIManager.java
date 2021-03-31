@@ -29676,7 +29676,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           if ("week".equalsIgnoreCase(scheduling))
             {
               Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK);
-              Date tempStartDate = challenge.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date tempStartDate = RLMDateUtils.addWeeks(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
               Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
               while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
@@ -29696,7 +29696,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           else if ("month".equalsIgnoreCase(scheduling))
             {
               Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
-              Date tempStartDate = challenge.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date tempStartDate = RLMDateUtils.addMonths(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
               Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
               while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
@@ -29716,7 +29716,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           else if ("day".equalsIgnoreCase(scheduling))
             {
               Date lastDate = SystemTime.getCurrentTime();
-              Date tempStartDate = challenge.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date tempStartDate = RLMDateUtils.addDays(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               while(lastDate.compareTo(tempStartDate) >= 0)
                 {
                   tmpOccouranceDates.add(new Date(tempStartDate.getTime()));
