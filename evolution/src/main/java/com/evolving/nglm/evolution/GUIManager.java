@@ -2278,7 +2278,7 @@ public class GUIManager
     long uniqueID = 0;
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
-    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob(uniqueID++, "Challenges Occurrence", "5,10,15,30,45,59 * * * *", Deployment.getBaseTimeZone(), false); // RAJ K Cron fix
+    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob(uniqueID++, "Challenges Occurrence", "* * * * *", Deployment.getBaseTimeZone(), false); // RAJ K Cron fix "5,10,15,30,45,59 * * * *"
     
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
       {
@@ -29732,7 +29732,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           // filter out if not today - no adv task
           //
           
-          if(log.isDebugEnabled()) log.debug("before filter tmpOccouranceDates {}", tmpOccouranceDates);
+          StringBuilder bldr = new StringBuilder();
+          tmpOccouranceDates.forEach(dt -> bldr.append(ReportService.printDate(dt)).append(" "));
+          if(log.isDebugEnabled()) log.debug("RAJ K before filter tmpOccouranceDates {}", bldr.toString());
           tmpOccouranceDates = tmpOccouranceDates.stream().filter(date -> RLMDateUtils.truncatedCompareTo(date, SystemTime.getCurrentTime(), Calendar.DATE, tz) == 0).collect(Collectors.toList());
           if(log.isDebugEnabled()) log.debug("after filter tmpOccouranceDates {}", tmpOccouranceDates);
           
