@@ -2873,4 +2873,13 @@ public abstract class SubscriberProfile
     Pair<String, Integer> newScorePair = new Pair<String, Integer>(loyaltyChallengeID, newScore);
     scores.add(newScorePair);
   }
+  
+  public void deleteScore(String loyaltyChallengeID)
+  {
+    Pair<String, Integer> existing = getScorePair(loyaltyChallengeID);
+    if (existing != null)
+      {
+        scores.remove(existing);
+      }
+  }
 }
