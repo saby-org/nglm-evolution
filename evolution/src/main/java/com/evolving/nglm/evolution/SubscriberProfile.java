@@ -292,6 +292,20 @@ public abstract class SubscriberProfile
       }
     return result;
   }
+  
+  private Pair<String, Integer> getScorePair(String challengeID)
+  {
+    Pair<String, Integer> result = null;
+    for (Pair<String, Integer> challengeScorePair : scores)
+      {
+        if (challengeID.equals(challengeScorePair.getFirstElement()))
+          {
+            result = challengeScorePair;
+            break;
+          }
+      }
+    return result;
+  }
 
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -2846,4 +2860,17 @@ public abstract class SubscriberProfile
      this.responseCode = -1;
    }
  }
+
+
+  public void updateScore(String loyaltyChallengeID, Integer newScore)
+  {
+    Pair<String, Integer> existing = getScorePair(loyaltyChallengeID);
+    if (existing != null)
+      {
+        scores.remove(existing);
+      }
+    
+    Pair<String, Integer> newScorePair = new Pair<String, Integer>(loyaltyChallengeID, newScore);
+    scores.add(newScorePair);
+  }
 }

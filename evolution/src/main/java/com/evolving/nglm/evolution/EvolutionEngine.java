@@ -3919,7 +3919,7 @@ public class EvolutionEngine
         //  update score
         //
 
-        subscriberProfile.getScores().add(new Pair<String, Integer>(loyaltyChallengeID, score));
+        subscriberProfile.updateScore(loyaltyChallengeID, score);
         log.info("RAJ K subscriberProfile score is {}", subscriberProfile.getScore(loyaltyChallengeID));
 
         //
