@@ -29679,7 +29679,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               Date tempStartDate = RLMDateUtils.addWeeks(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
               Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
-              while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
+              while(RLMDateUtils.truncatedCompareTo(lastDateOfThisWk, lastDateOfStartDateWk, Calendar.DATE, tz) >= 0)
                 {
                   tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
                   tempStartDate = RLMDateUtils.addWeeks(tempStartDate, scheduligInterval, tz);
@@ -29700,7 +29700,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
               Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
               log.info("RAJ K lastDateOfThisMonth {} and firstDateOfStartDateMonth {}", ReportService.printDate(lastDateOfThisMonth), ReportService.printDate(firstDateOfStartDateMonth));
-              while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
+              while(RLMDateUtils.truncatedCompareTo(lastDateOfThisMonth, lastDateOfStartDateMonth, Calendar.DATE, tz) >= 0)
                 {
                   tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
                   tempStartDate = RLMDateUtils.addMonths(tempStartDate, scheduligInterval, tz);
