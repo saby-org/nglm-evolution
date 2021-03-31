@@ -29729,6 +29729,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           
           //
+          // filter out create dates
+          //
+          
+          tmpOccouranceDates = tmpOccouranceDates.stream().filter(date -> RLMDateUtils.truncatedCompareTo(date, challenge.getEffectiveStartDate(), Calendar.DATE, tz) != 0).collect(Collectors.toList());
+          
+          //
           // filter out if not today - no adv task
           //
           
