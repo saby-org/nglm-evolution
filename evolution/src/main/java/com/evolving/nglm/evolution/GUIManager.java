@@ -29724,6 +29724,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           if(log.isDebugEnabled()) log.debug("before filter tmpOccouranceDates {}", tmpOccouranceDates);
           tmpOccouranceDates = tmpOccouranceDates.stream().filter(date -> RLMDateUtils.truncatedCompareTo(date, SystemTime.getCurrentTime(), Calendar.DATE, tz) == 0).collect(Collectors.toList());
           if(log.isDebugEnabled()) log.debug("after filter tmpOccouranceDates {}", tmpOccouranceDates);
+          log.info("RAJ K after filter tmpOccouranceDates {}", tmpOccouranceDates);
           
           //
           // executeOccouranceJob
