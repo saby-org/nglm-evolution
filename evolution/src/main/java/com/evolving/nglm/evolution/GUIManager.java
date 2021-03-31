@@ -5581,6 +5581,41 @@ public class GUIManager
             journeys.add(journeyInfo);
           }
       }
+    
+    if (!fullDetails && objectType == GUIManagedObjectType.Workflow && jsonRoot.containsKey("areaAvailability"))
+      {
+        List<JSONObject> workflowsWithAreaAvailability = new ArrayList<JSONObject>();
+        JSONArray areaAvailability = JSONUtilities.decodeJSONArray(jsonRoot, "areaAvailability", false);
+        for (JSONObject journey : journeys)
+          {
+            JSONArray journeyAreaAvailability = (JSONArray) journey.get("areaAvailability");
+            if (journeyAreaAvailability == null || journeyAreaAvailability.isEmpty())
+              {
+                workflowsWithAreaAvailability.add(journey);
+              }
+            else
+              {
+                for (int i = 0; i < journeyAreaAvailability.size(); i++)
+                  {
+                    if (areaAvailability.contains(journeyAreaAvailability.get(i)))
+                      {
+                        workflowsWithAreaAvailability.add(journey);
+                        break;
+                      }
+                  }
+              }
+          }
+        /*****************************************
+         *
+         * response
+         *
+         *****************************************/
+
+        HashMap<String, Object> response = new HashMap<String, Object>();        
+        response.put("responseCode", "ok");
+        response.put("workflows", JSONUtilities.encodeArray(workflowsWithAreaAvailability));
+        return JSONUtilities.encodeObject(response);
+      }
 
     /*****************************************
      *
@@ -16222,6 +16257,41 @@ public class GUIManager
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
+    if (!fullDetails && jsonRoot.containsKey("areaAvailability"))
+      {
+        List<JSONObject> templatesWithAreaAvailability = new ArrayList<JSONObject>();
+        JSONArray areaAvailability = JSONUtilities.decodeJSONArray(jsonRoot, "areaAvailability", false);
+        for (JSONObject template : templates)
+          {
+            JSONArray mailTemplateAreaAvailability = (JSONArray) template.get("areaAvailability");
+            if (mailTemplateAreaAvailability == null || mailTemplateAreaAvailability.isEmpty())
+              {
+                templatesWithAreaAvailability.add(template);
+              }
+            else
+              {
+                for (int i = 0; i < mailTemplateAreaAvailability.size(); i++)
+                  {
+                    if (areaAvailability.contains(mailTemplateAreaAvailability.get(i)))
+                      {
+                        templatesWithAreaAvailability.add(template);
+                        break;
+                      }
+                  }
+              }
+          }
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        HashMap<String,Object> response = new HashMap<String,Object>();;
+        response.put("responseCode", "ok");
+        response.put("templates", JSONUtilities.encodeArray(templatesWithAreaAvailability));
+        return JSONUtilities.encodeObject(response);
+      }
+
 
     /*****************************************
     *
@@ -16691,6 +16761,41 @@ public class GUIManager
     for (GUIManagedObject template : templateObjects)
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
+      }
+    
+    if (!fullDetails && jsonRoot.containsKey("areaAvailability"))
+      {
+        List<JSONObject> templatesWithAreaAvailability = new ArrayList<JSONObject>();
+        JSONArray areaAvailability = JSONUtilities.decodeJSONArray(jsonRoot, "areaAvailability", false);
+        for (JSONObject template : templates)
+          {
+            JSONArray SMSTemplateAreaAvailability = (JSONArray) template.get("areaAvailability");
+            if (SMSTemplateAreaAvailability == null || SMSTemplateAreaAvailability.isEmpty())
+              {
+                templatesWithAreaAvailability.add(template);
+              }
+            else
+              {
+                for (int i = 0; i < SMSTemplateAreaAvailability.size(); i++)
+                  {
+                    if (areaAvailability.contains(SMSTemplateAreaAvailability.get(i)))
+                      {
+                        templatesWithAreaAvailability.add(template);
+                        break;
+                      }
+                  }
+              }
+          }
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        HashMap<String,Object> response = new HashMap<String,Object>();;
+        response.put("responseCode", "ok");
+        response.put("templates", JSONUtilities.encodeArray(templatesWithAreaAvailability));
+        return JSONUtilities.encodeObject(response);
       }
 
     /*****************************************
@@ -17173,6 +17278,41 @@ public class GUIManager
         if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(templateCommunicationChannelID)){
           templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
         }
+      }
+    
+    if (!fullDetails && jsonRoot.containsKey("areaAvailability"))
+      {
+        List<JSONObject> templatesWithAreaAvailability = new ArrayList<JSONObject>();
+        JSONArray areaAvailability = JSONUtilities.decodeJSONArray(jsonRoot, "areaAvailability", false);
+        for (JSONObject template : templates)
+          {
+            JSONArray pushTemplateAreaAvailability = (JSONArray) template.get("areaAvailability");
+            if (pushTemplateAreaAvailability == null || pushTemplateAreaAvailability.isEmpty())
+              {
+                templatesWithAreaAvailability.add(template);
+              }
+            else
+              {
+                for (int i = 0; i < pushTemplateAreaAvailability.size(); i++)
+                  {
+                    if (areaAvailability.contains(pushTemplateAreaAvailability.get(i)))
+                      {
+                        templatesWithAreaAvailability.add(template);
+                        break;
+                      }
+                  }
+              }
+          }
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        HashMap<String,Object> response = new HashMap<String,Object>();;
+        response.put("responseCode", "ok");
+        response.put("templates", JSONUtilities.encodeArray(templatesWithAreaAvailability));
+        return JSONUtilities.encodeObject(response);
       }
 
     /*****************************************
@@ -17657,6 +17797,41 @@ public class GUIManager
           templateJSON.put("communicationChannelID", templateCommunicationChannelID);
           templates.add(templateJSON);
         }
+      }
+    if (!fullDetails && jsonRoot.containsKey("areaAvailability"))
+      {
+        List<JSONObject> templatesWithAreaAvailability = new ArrayList<JSONObject>();
+        JSONArray areaAvailability = JSONUtilities.decodeJSONArray(jsonRoot, "areaAvailability", false);
+        for (JSONObject template : templates)
+          {
+            JSONArray dialogTemplateAreaAvailability = (JSONArray) template.get("areaAvailability");
+            if (dialogTemplateAreaAvailability == null || dialogTemplateAreaAvailability.isEmpty())
+              {
+                templatesWithAreaAvailability.add(template);
+              }
+            else
+              {
+                for (int i = 0; i < dialogTemplateAreaAvailability.size(); i++)
+                  {
+                    if (areaAvailability.contains(dialogTemplateAreaAvailability.get(i)))
+                      {
+                        templatesWithAreaAvailability.add(template);
+                        break;
+                      }
+                  }
+              }
+          }
+        /*****************************************
+         *
+         * response
+         *
+         *****************************************/
+
+        HashMap<String, Object> response = new HashMap<String, Object>();
+        ;
+        response.put("responseCode", "ok");
+        response.put("templates", JSONUtilities.encodeArray(templatesWithAreaAvailability));
+        return JSONUtilities.encodeObject(response);
       }
 
     /*****************************************

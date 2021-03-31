@@ -3148,6 +3148,43 @@ public class GUIManagerGeneral extends GUIManager
       {
         catalogCharacteristics.add(catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, fullDetails, now));
       }
+    
+    if (!fullDetails && jsonRoot.containsKey("areaAvailability"))
+      {
+        List<JSONObject> catalogCharacteristicWithAreaAvailability = new ArrayList<JSONObject>();
+        JSONArray areaAvailability = JSONUtilities.decodeJSONArray(jsonRoot, "areaAvailability", false);
+        for (JSONObject catalogCharacteristic : catalogCharacteristics)
+          {
+            JSONArray catalogCharacteristicAreaAvailability = (JSONArray) catalogCharacteristic.get("areaAvailability");
+          
+            if (catalogCharacteristicAreaAvailability == null || catalogCharacteristicAreaAvailability.isEmpty())
+              {
+                catalogCharacteristicWithAreaAvailability.add(catalogCharacteristic);
+              }
+            else
+              {
+                for (int i = 0; i < catalogCharacteristicAreaAvailability.size(); i++)
+                  {
+                    if (areaAvailability.contains(catalogCharacteristicAreaAvailability.get(i)))
+                      {
+                        catalogCharacteristicWithAreaAvailability.add(catalogCharacteristic);
+                        break;
+                      }
+                  }
+              }
+          }
+        /*****************************************
+         *
+         * response
+         *
+         *****************************************/
+
+        HashMap<String, Object> response = new HashMap<String, Object>();
+        ;
+        response.put("responseCode", "ok");
+        response.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristicWithAreaAvailability));
+        return JSONUtilities.encodeObject(response);
+      }
 
     /*****************************************
     *

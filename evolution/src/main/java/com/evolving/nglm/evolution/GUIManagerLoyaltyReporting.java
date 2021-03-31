@@ -1057,13 +1057,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived, tenantID).size());
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived, tenantID).size());
-    if (jsonRoot.containsKey("areaAvailablity"))
+    if (jsonRoot.containsKey("areaAvailability"))
       {
         int mailTemplateCount = 0;
         int smsTemplateCount = 0;
         int dialogTemplateCount = 0;
         int pushTemplateCount = 0;
-        String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
+        JSONArray areaAvailability = JSONUtilities.decodeJSONArray(jsonRoot, "areaAvailability", false);
         Collection<GUIManagedObject> mailTemplates = subscriberMessageTemplateService.getStoredMailTemplates(true,
             includeArchived, tenantID);
         if (mailTemplates.size() != 0 && mailTemplates != null)
@@ -1072,11 +1072,26 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 if (template instanceof MailTemplate)
                   {
-                    JSONArray templeteAreaAvailablity = (JSONArray) ((MailTemplate) template).getJSONRepresentation()
+                    JSONArray templeteAreaAvailability = (JSONArray) ((MailTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    if (templeteAreaAvailablity != null && templeteAreaAvailablity.contains(areaAvailablity))
+                    if (templeteAreaAvailability == null || templeteAreaAvailability.isEmpty())
                       {
                         mailTemplateCount += 1;
+                      }
+                    else
+                      {
+                        for (int i = 0; i < areaAvailability.size(); i++)
+                          {
+                            if (templeteAreaAvailability.contains(areaAvailability.get(i)))
+                              {
+                                mailTemplateCount += 1;
+                              }
+                            else
+                              {
+                                continue;
+                              }
+                          }
+
                       }
                   }
               }
@@ -1089,11 +1104,26 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 if (template instanceof SMSTemplate)
                   {
-                    JSONArray templeteAreaAvailablity = (JSONArray) ((SMSTemplate) template).getJSONRepresentation()
+                    JSONArray templeteAreaAvailability = (JSONArray) ((SMSTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    if (templeteAreaAvailablity != null && templeteAreaAvailablity.contains(areaAvailablity))
+                    if (templeteAreaAvailability == null || templeteAreaAvailability.isEmpty())
                       {
                         smsTemplateCount += 1;
+                      }
+                    else
+                      {
+                        for (int i = 0; i < areaAvailability.size(); i++)
+                          {
+                            if (templeteAreaAvailability.contains(areaAvailability.get(i)))
+                              {
+                                smsTemplateCount += 1;
+                              }
+                            else
+                              {
+                                continue;
+                              }
+                          }
+
                       }
                   }
               }
@@ -1106,11 +1136,26 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 if (template instanceof DialogTemplate)
                   {
-                    JSONArray templeteAreaAvailablity = (JSONArray)((DialogTemplate) template).getJSONRepresentation()
+                    JSONArray templeteAreaAvailability = (JSONArray)((DialogTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    if (templeteAreaAvailablity != null && templeteAreaAvailablity.contains(areaAvailablity))
+                    if (templeteAreaAvailability == null || templeteAreaAvailability.isEmpty())
                       {
                         dialogTemplateCount += 1;
+                      }
+                    else
+                      {
+                        for (int i = 0; i < areaAvailability.size(); i++)
+                          {
+                            if (templeteAreaAvailability.contains(areaAvailability.get(i)))
+                              {
+                                dialogTemplateCount += 1;
+                              }
+                            else
+                              {
+                                continue;
+                              }
+                          }
+
                       }
                   }
               }
@@ -1123,11 +1168,26 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 if (template instanceof PushTemplate)
                   {
-                    JSONArray templeteAreaAvailablity = (JSONArray)((PushTemplate) template).getJSONRepresentation()
+                    JSONArray templeteAreaAvailability = (JSONArray)((PushTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    if (templeteAreaAvailablity != null && templeteAreaAvailablity.contains(areaAvailablity))
+                    if (templeteAreaAvailability == null || templeteAreaAvailability.isEmpty())
                       {
                         pushTemplateCount += 1;
+                      }
+                    else
+                      {
+                        for (int i = 0; i < areaAvailability.size(); i++)
+                          {
+                            if (templeteAreaAvailability.contains(areaAvailability.get(i)))
+                              {
+                                pushTemplateCount += 1;
+                              }
+                            else
+                              {
+                                continue;
+                              }
+                          }
+
                       }
                   }
               }

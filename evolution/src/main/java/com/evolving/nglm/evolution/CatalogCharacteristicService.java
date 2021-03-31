@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
@@ -20,18 +21,20 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
-
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -119,6 +122,29 @@ public class CatalogCharacteristicService extends GUIService
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("type", guiManagedObject.getJSONRepresentation().get("type"));
     result.put("unit", guiManagedObject.getJSONRepresentation().get("unit"));
+    result.put("areaAvailability", guiManagedObject.getJSONRepresentation().get("areaAvailability"));    
+    List<JSONObject> translations = new ArrayList<>();
+    //translation should have only the language field
+    if (guiManagedObject.getJSONRepresentation().get("translations") != null)
+      {
+        JSONArray existingTranslation = (JSONArray) guiManagedObject.getJSONRepresentation().get("translations");
+        if (existingTranslation != null && !(existingTranslation.isEmpty()))
+          {
+            for (int i = 0; i < existingTranslation.size(); i++)
+              {
+                JSONObject translationObject = (JSONObject) existingTranslation.get(i);
+                if (translationObject != null && translationObject.get("language") != null)
+                  {
+                    String language = (String) translationObject.get("language");
+                    JSONObject languageToBeUpdate = new JSONObject();
+                    languageToBeUpdate.put("language", language);
+                    translations.add(languageToBeUpdate);
+                  }
+
+              }
+          }
+      }
+    result.put("translations", translations);
     return result;
   }
   
