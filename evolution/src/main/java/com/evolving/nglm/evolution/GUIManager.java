@@ -29699,6 +29699,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               Date tempStartDate = RLMDateUtils.addMonths(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
               Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
+              log.info("RAJ K lastDateOfThisMonth {} and firstDateOfStartDateMonth {}", ReportService.printDate(lastDateOfThisMonth), ReportService.printDate(firstDateOfStartDateMonth));
               while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
                 {
                   tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
