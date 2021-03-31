@@ -29782,7 +29782,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                           String deliveryRequestID = zuks.getStringKey();
                           int firstLevelScore = firstLevel.getScoreLevel();
                           Integer subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
-                          int scoreToDebit = (subscriberCurrnetScore == null ? new Integer(0) :  subscriberCurrnetScore) - firstLevelScore;
+                          int scoreToDebit = (subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
                           scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
                           if (scoreToDebit > 0)
                             {
