@@ -29799,7 +29799,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               jsonRoot.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
               jsonRoot.put("name", challenge.getGUIManagedObjectName() + "_" + lastCreatedOccurrenceNumber);
               jsonRoot.put("display", challenge.getGUIManagedObjectDisplay() + " - " + lastCreatedOccurrenceNumber);
-              jsonRoot.put("lastOccurrenceCreateDate", GUIManagedObject.formatDateField(getNextGenerationDate()));
+              jsonRoot.put("previousPeriodStartDate", GUIManagedObject.formatDateField(challenge.getLastOccurrenceCreateDate()));
+              jsonRoot.put("lastOccurrenceCreateDate", GUIManagedObject.formatDateField(recDate));
               guiManagerLoyaltyReporting.processPutLoyaltyProgram("0", jsonRoot, LoyaltyProgramType.CHALLENGE);
             } 
           catch (ElasticsearchClientException e)

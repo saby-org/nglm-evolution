@@ -262,7 +262,6 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
             //
             
             List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
-            List<LevelHistory> lastPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber-1);
             if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
               {
                 //
@@ -271,19 +270,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
                 
                 this.previousPeriodLevel = fromLevel;
                 this.previousPeriodScore = previousScore;
-                
-                if (lastPeroidLevels != null && !lastPeroidLevels.isEmpty())
-                  {
-                    List<LevelHistory> firstLevels = lastPeroidLevels.stream().filter(level -> level.getFromLevel().equals(loyaltyProgramChallenge.getFirstLevel().getLevelName())).collect(Collectors.toList());
-                    if (firstLevels != null && !firstLevels.isEmpty())
-                      {
-                        this.previousPeriodStartDate = firstLevels.get(0).getTransitionDate();
-                      }
-                  }
-                else
-                  {
-                    this.previousPeriodStartDate = loyaltyProgramChallenge.getEffectiveStartDate();
-                  }
+                this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
               }
           }
         

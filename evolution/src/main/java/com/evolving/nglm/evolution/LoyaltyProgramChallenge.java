@@ -106,6 +106,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
       schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
       schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("lastOccurrenceCreateDate", Timestamp.builder().optional().schema());
+      schemaBuilder.field("previousPeriodStartDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("levels", SchemaBuilder.array(ChallengeLevel.schema()).schema());
       schema = schemaBuilder.build();
     };
@@ -151,6 +152,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   private JourneyScheduler journeyScheduler;
   private Integer lastCreatedOccurrenceNumber;
   private Date lastOccurrenceCreateDate;
+  private Date previousPeriodStartDate;
   private List<ChallengeLevel> levels = null;
 
   /*****************************************
@@ -191,7 +193,12 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   
   public Date getLastOccurrenceCreateDate()
   {
-    return lastOccurrenceCreateDate;
+    return lastOccurrenceCreateDate == null ? getEffectiveStartDate() : lastOccurrenceCreateDate;
+  }
+  
+  public Date getPreviousPeriodStartDate()
+  {
+    return previousPeriodStartDate;
   }
 
   public List<ChallengeLevel> getLevels()
@@ -279,6 +286,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     this.lastOccurrenceCreateDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastOccurrenceCreateDate", false));
+    this.previousPeriodStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "previousPeriodStartDate", false));
     this.levels = decodeLoyaltyProgramLevels(JSONUtilities.decodeJSONArray(jsonRoot, "levels", true));
 
     /*****************************************
@@ -299,7 +307,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, List<ChallengeLevel> levels)
+  public LoyaltyProgramChallenge(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, Date previousPeriodStartDate, List<ChallengeLevel> levels)
   {
     super(schemaAndValue);
     this.createLeaderBoard = createLeaderBoard;
@@ -309,6 +317,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     this.journeyScheduler = scheduler;
     this.lastCreatedOccurrenceNumber = lastCreatedOccurrenceNumber;
     this.lastOccurrenceCreateDate = lastOccurrenceCreateDate;
+    this.previousPeriodStartDate = previousPeriodStartDate;
     this.levels = levels;
   }
 
@@ -330,6 +339,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     struct.put("scheduler", JourneyScheduler.serde().packOptional(loyaltyProgramChallenge.getJourneyScheduler()));
     struct.put("lastCreatedOccurrenceNumber", loyaltyProgramChallenge.getLastCreatedOccurrenceNumber());
     struct.put("lastOccurrenceCreateDate", loyaltyProgramChallenge.getLastOccurrenceCreateDate());
+    struct.put("previousPeriodStartDate", loyaltyProgramChallenge.getPreviousPeriodStartDate());
     struct.put("levels", packLoyaltyProgramLevels(loyaltyProgramChallenge.getLevels()));
     return struct;
   }
@@ -378,13 +388,14 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     JourneyScheduler scheduler = JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("scheduler")));
     Integer lastCreatedOccurrenceNumber = valueStruct.getInt32("lastCreatedOccurrenceNumber");
     Date lastOccurrenceCreateDate = (Date) valueStruct.get("lastOccurrenceCreateDate");
+    Date previousPeriodStartDate = (Date) valueStruct.get("previousPeriodStartDate");
     List<ChallengeLevel> levels = unpackLoyaltyProgramTiers(schema.field("levels").schema(), valueStruct.get("levels"));
 
     //
     // return
     //
 
-    return new LoyaltyProgramChallenge(schemaAndValue, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, levels);
+    return new LoyaltyProgramChallenge(schemaAndValue, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, previousPeriodStartDate, levels);
   }
 
   /*****************************************
