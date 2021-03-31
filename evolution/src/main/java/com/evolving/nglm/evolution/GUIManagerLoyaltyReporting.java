@@ -214,14 +214,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         jsonRoot.put("id", loyaltyProgramID);
       }
     
-    //
-    // recurrence
-    //
-    
-    boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
-    String recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
-    if (recurrence && recurrenceID == null) jsonRoot.put("recurrenceId", loyaltyProgramID);
-
     /*****************************************
     *
     *  existing LoyaltyProgram
@@ -229,6 +221,26 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *****************************************/
 
     GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
+    
+    //
+    //  clear bad values (happened in clone from gui)
+    //
+    
+    if (existingLoyaltyProgram == null) 
+      {
+        jsonRoot.remove("lastCreatedOccurrenceNumber");
+        jsonRoot.remove("lastOccurrenceCreateDate");
+        jsonRoot.remove("previousPeriodStartDate");
+      }
+    
+    //
+    // recurrence
+    //
+    
+    boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
+    String recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
+    if (recurrence && recurrenceID == null) jsonRoot.put("recurrenceId", loyaltyProgramID);
+    if (recurrence && JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false) == null) jsonRoot.put("lastCreatedOccurrenceNumber", 1);
 
     /*****************************************
     *

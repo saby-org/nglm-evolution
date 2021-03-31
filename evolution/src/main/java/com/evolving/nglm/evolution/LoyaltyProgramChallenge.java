@@ -283,22 +283,10 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     this.recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
     this.recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
     this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
-    if (recurrence)
-      {
-        this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
-        if (existingLoyaltyProgramUnchecked == null)
-          {
-            this.lastCreatedOccurrenceNumber = 1;
-            this.lastOccurrenceCreateDate = null;
-            this.previousPeriodStartDate = null;
-          }
-        else
-          {
-            this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", 1);
-            this.lastOccurrenceCreateDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastOccurrenceCreateDate", false));
-            this.previousPeriodStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "previousPeriodStartDate", false));
-          }
-      }
+    if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
+    this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
+    this.lastOccurrenceCreateDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastOccurrenceCreateDate", false));
+    this.previousPeriodStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "previousPeriodStartDate", false));
     this.levels = decodeLoyaltyProgramLevels(JSONUtilities.decodeJSONArray(jsonRoot, "levels", true));
 
     /*****************************************
