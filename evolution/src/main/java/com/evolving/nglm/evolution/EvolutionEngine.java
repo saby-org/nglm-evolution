@@ -3897,6 +3897,7 @@ public class EvolutionEngine
     //
 
     Integer score = subscriberProfile.getScore(loyaltyChallengeID);
+    log.info("RAJ K subscriberProfile current score {}", score);
     if (score == null) score = 0;
     
     //
@@ -3910,6 +3911,7 @@ public class EvolutionEngine
     //
     
     success = score >= 0;
+    log.info("RAJ K subscriberProfile score will be {}", score);
     
     if (success)
       {
@@ -3918,6 +3920,7 @@ public class EvolutionEngine
         //
 
         subscriberProfile.getScores().add(new Pair<String, Integer>(loyaltyChallengeID, score));
+        log.info("RAJ K subscriberProfile score is {}", subscriberProfile.getScore(loyaltyChallengeID));
 
         //
         //  update loyalty program balances

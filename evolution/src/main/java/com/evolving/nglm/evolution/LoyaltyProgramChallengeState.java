@@ -299,7 +299,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        if (occouranceNumber != null && occouranceNumber != 1)
+        if (loyaltyProgramChallenge.getRecurrence() && occouranceNumber != null && occouranceNumber != 1)
           {
             //
             //  first or no occurrences
