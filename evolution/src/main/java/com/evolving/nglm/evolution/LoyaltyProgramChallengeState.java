@@ -8,7 +8,6 @@ package com.evolving.nglm.evolution;
 
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -16,6 +15,8 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -25,7 +26,6 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramLevelChange;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
-
 
 public class LoyaltyProgramChallengeState extends LoyaltyProgramState
 {
@@ -56,6 +56,12 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     schemaBuilder.field("loyaltyProgramChallengeHistory", LoyaltyProgramChallengeHistory.schema());
     schema = schemaBuilder.build();
   };
+  
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(LoyaltyProgramChallengeState.class);
 
   //
   //  serde
@@ -240,7 +246,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
 
         this.loyaltyProgramEpoch = loyaltyProgramEpoch;
         this.loyaltyProgramName = loyaltyProgramName;
-        this.loyaltyProgramEnrollmentDate = enrollmentDate;
+        if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
         if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; }
 
         this.previousLevelName = fromLevel;
@@ -251,6 +257,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
+        log.info("RAJ K occouranceNumber {}", occouranceNumber);
         if (loyaltyProgramChallenge.getRecurrence() && occouranceNumber != null && occouranceNumber != 1)
           {
             //
@@ -259,12 +266,14 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
             
             
             previousPeriodStartDate = loyaltyProgramChallenge.getLastOccurrenceCreateDate();
+            log.info("RAJ K before previousPeriodStartDate {}", previousPeriodStartDate);
             
             //
             //  thisPeroidLevels
             //
             
             List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
+            log.info("RAJ K before thisPeroidLevels {}", thisPeroidLevels);
             if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
               {
                 //
@@ -274,6 +283,8 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
                 this.previousPeriodLevel = fromLevel;
                 this.previousPeriodScore = previousScore;
                 this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
+                
+                log.info("RAJ K before previousPeriodLevel {}", previousPeriodLevel);
               }
           }
         

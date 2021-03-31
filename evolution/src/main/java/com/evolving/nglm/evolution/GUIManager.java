@@ -19877,7 +19877,7 @@ public class GUIManager
                         {
                           loyaltyProgramPresentation.put("previousPeriodLevel", loyaltyProgramChallengeState.getPreviousPeriodLevel());
                           loyaltyProgramPresentation.put("previousPeriodScore", loyaltyProgramChallengeState.getPreviousPeriodScore());
-                          loyaltyProgramPresentation.put("previousPeriodLevel", getDateString(loyaltyProgramChallengeState.getPreviousPeriodStartDate()));
+                          loyaltyProgramPresentation.put("previousPeriodStartDate", getDateString(loyaltyProgramChallengeState.getPreviousPeriodStartDate()));
                         }
                       
                       loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
