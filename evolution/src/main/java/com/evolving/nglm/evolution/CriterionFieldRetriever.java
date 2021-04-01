@@ -612,7 +612,7 @@ public abstract class CriterionFieldRetriever
                   result = loyaltyProgramChallengeState.getLevelName();
                   break;
 
-                case "score.balance":
+                case "score":
                   result = loyaltyProgramChallengeState.getScoreLevel();
                   break;
 

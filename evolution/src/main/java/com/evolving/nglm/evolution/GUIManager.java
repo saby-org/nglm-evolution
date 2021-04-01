@@ -2341,8 +2341,9 @@ public class GUIManager
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     long uniqueID = 0;
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
+    String qaCronEntry = "5,10,15,30,45,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getSystemTimeZone(), false);
-    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob(uniqueID++, "Challenges Occurrence", "* * * * *", Deployment.getSystemTimeZone(), false); // RAJ K Cron fix "5,10,15,30,45,59 * * * *"
+    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob(uniqueID++, "Challenges Occurrence", periodicGenerationCronEntry, Deployment.getSystemTimeZone(), false);
     
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
       {
@@ -19756,7 +19757,7 @@ public class GUIManager
                       // score
                       //
 
-                      loyaltyProgramPresentation.put("score", baseSubscriberProfile.getScore(loyaltyProgramChallengeState.getLoyaltyProgramID()));
+                      loyaltyProgramPresentation.put("score", loyaltyProgramChallengeState.getScoreLevel());
                       
                       //
                       // history
@@ -29364,7 +29365,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               Date tempStartDate = RLMDateUtils.addMonths(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
               Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
-              log.info("RAJ K lastDateOfThisMonth {} and lastDateOfStartDateMonth {}", ReportService.printDate(lastDateOfThisMonth), ReportService.printDate(lastDateOfStartDateMonth));
               while(RLMDateUtils.truncatedCompareTo(lastDateOfThisMonth, lastDateOfStartDateMonth, Calendar.DATE, tz) >= 0)
                 {
                   tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
@@ -29383,7 +29383,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             {
               Date lastDate = RLMDateUtils.ceiling(now, Calendar.DATE, tz);
               Date tempStartDate = RLMDateUtils.addDays(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              log.info("RAJ K lastDate {} and tempStartDate {}", ReportService.printDate(lastDate), ReportService.printDate(tempStartDate));
               while(RLMDateUtils.truncatedCompareTo(lastDate, tempStartDate, Calendar.DATE, tz) >= 0)
                 {
                   tmpOccouranceDates.add(new Date(tempStartDate.getTime()));
@@ -29405,15 +29404,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           // filter out if not today - no adv task
           //
           
-          StringBuilder bldr = new StringBuilder();
-          tmpOccouranceDates.forEach(dt -> bldr.append(ReportService.printDate(dt)).append(" "));
-          if(log.isDebugEnabled()) log.debug("RAJ K before filter tmpOccouranceDates {}", bldr.toString());
           tmpOccouranceDates = tmpOccouranceDates.stream().filter(date -> RLMDateUtils.truncatedCompareTo(date, SystemTime.getCurrentTime(), Calendar.DATE, tz) == 0).collect(Collectors.toList());
-          if(log.isDebugEnabled()) log.debug("after filter tmpOccouranceDates {}", tmpOccouranceDates);
-          
-          StringBuilder builder = new StringBuilder();
-          tmpOccouranceDates.forEach(dt -> builder.append(ReportService.printDate(dt)).append(" "));
-          log.info("RAJ K after filter tmpOccouranceDates {}", builder.toString());
           
           //
           // executeOccouranceJob

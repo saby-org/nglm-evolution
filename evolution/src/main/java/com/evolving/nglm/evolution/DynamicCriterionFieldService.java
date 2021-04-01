@@ -144,7 +144,7 @@ public class DynamicCriterionFieldService extends GUIService
     else if (loyaltyProgram instanceof LoyaltyProgramChallenge)
       {
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "level", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "score.balance", CriterionDataType.IntegerCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "score", CriterionDataType.IntegerCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "levelupdatedate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
@@ -254,7 +254,7 @@ public class DynamicCriterionFieldService extends GUIService
     else if (loyaltyProgram instanceof LoyaltyProgramChallenge)
       {
         removeDynamicCriterionField(prefix + "level", null, loyaltyProgram.getTenantID());
-        removeDynamicCriterionField(prefix + "score.balance", null, loyaltyProgram.getTenantID());
+        removeDynamicCriterionField(prefix + "score", null, loyaltyProgram.getTenantID());
       }
   }
 

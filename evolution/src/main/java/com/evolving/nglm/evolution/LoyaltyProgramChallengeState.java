@@ -266,7 +266,6 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        log.info("RAJ K occouranceNumber {}", occouranceNumber);
         if (loyaltyProgramChallenge.getRecurrence() && occouranceNumber != null && occouranceNumber != 1)
           {
             //
@@ -275,14 +274,12 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
             
             
             previousPeriodStartDate = loyaltyProgramChallenge.getLastOccurrenceCreateDate();
-            log.info("RAJ K before previousPeriodStartDate {}", previousPeriodStartDate);
             
             //
             //  thisPeroidLevels
             //
             
             List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
-            log.info("RAJ K before thisPeroidLevels {}", thisPeroidLevels);
             if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
               {
                 //
@@ -292,8 +289,6 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
                 this.previousPeriodLevel = fromLevel;
                 this.previousPeriodScore = previousScore;
                 this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
-                
-                log.info("RAJ K before previousPeriodLevel {}", previousPeriodLevel);
               }
           }
         

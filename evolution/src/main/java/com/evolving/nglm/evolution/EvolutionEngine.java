@@ -3812,7 +3812,6 @@ public class EvolutionEngine
         break;
         
       case CHALLENGE:
-        log.info("RAJ K executing launchChangeTierWorkflows");
         LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
         
      // Exit tier workflow
@@ -3924,7 +3923,6 @@ public class EvolutionEngine
 
   private static boolean updateScore(SubscriberProfile subscriberProfile, String loyaltyChallengeID, int amount, Date now)
   {
-    log.info("RAJ K updateScore for subscriberProfile {} and loyaltyChallengeID {} with amount {}", subscriberProfile.getSubscriberID(), loyaltyChallengeID, amount);
     boolean success = true;
 
     //
@@ -3932,7 +3930,6 @@ public class EvolutionEngine
     //
 
     Integer score = subscriberProfile.getScore(loyaltyChallengeID);
-    log.info("RAJ K subscriberProfile current score {}", score);
     if (score == null) score = 0;
     
     //
@@ -3946,7 +3943,6 @@ public class EvolutionEngine
     //
     
     success = score >= 0;
-    log.info("RAJ K subscriberProfile score will be {}", score);
     
     if (success)
       {
@@ -3955,7 +3951,6 @@ public class EvolutionEngine
         //
 
         subscriberProfile.updateScore(loyaltyChallengeID, score);
-        log.info("RAJ K subscriberProfile score is {}", subscriberProfile.getScore(loyaltyChallengeID));
 
         //
         //  update loyalty program balances
@@ -3984,7 +3979,6 @@ public class EvolutionEngine
     //  return
     //
     
-    log.info("RAJ K updateScore {}", success);
     return success;
 
   }
@@ -4505,7 +4499,7 @@ public class EvolutionEngine
                       //
 
                       EvolutionEngineEventDeclaration scoreEventDeclaration = Deployment.getEvolutionEngineEvents().get(subscriberCurrentLevelDefinition.getScoreEventName());
-                      if (scoreEventDeclaration != null && scoreEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramPointsEvent && ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() != 0) // RAJ K LoyaltyProgramPointsEvent??
+                      if (scoreEventDeclaration != null && scoreEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramPointsEvent && ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() != 0)
                         {
 
                           if (log.isDebugEnabled()) log.debug("update loyalty program Score => adding " + ((LoyaltyProgramPointsEvent) evolutionEvent).getScoreUnit() + " x " + subscriberCurrentLevelDefinition.getNumberOfscorePerEvent() + " of score " + loyaltyProgram.getGUIManagedObjectDisplay());

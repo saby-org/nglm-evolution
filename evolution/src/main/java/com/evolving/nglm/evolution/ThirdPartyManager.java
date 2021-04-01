@@ -2614,7 +2614,7 @@ public class ThirdPartyManager
                      // score
                      //
 
-                     loyaltyProgramPresentation.put("score", baseSubscriberProfile.getScore(loyaltyProgramChallengeState.getLoyaltyProgramID()));
+                     loyaltyProgramPresentation.put("score", loyaltyProgramChallengeState.getScoreLevel());
                      
                      //
                      // history
