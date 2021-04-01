@@ -29352,12 +29352,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                   lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
                   firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
                 }
-              
-              //
-              // handle the edge (if start day of next wk)
-              //
-              
-              //tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
             }
           else if ("month".equalsIgnoreCase(scheduling))
             {
@@ -29372,12 +29366,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                   firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
                   lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
                 }
-              
-              //
-              // handle the edge (if 1st day of next month)
-              //
-              
-              //tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
             }
           else if ("day".equalsIgnoreCase(scheduling))
             {
@@ -29422,7 +29410,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private void executeChallengeOccouranceJob(LoyaltyProgramChallenge challenge, List<Date> tmpOccouranceDates, Integer lastCreatedOccurrenceNumber)
     {
       long startTimeMili = SystemTime.getCurrentTime().getTime();
-      log.info("execute Challenge OccouranceJob for challenge {}, for date(s) {}", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates);
+      if (log.isInfoEnabled())
+        {
+          StringBuilder dtBuilders = new StringBuilder();
+          tmpOccouranceDates.forEach(dt -> dtBuilders.append(RLMDateUtils.printTimestamp(dt)).append(" "));
+          log.info("execute Challenge OccouranceJob for challenge {}, for date(s) {}", challenge.getLoyaltyProgramDisplay(), dtBuilders.toString());
+        }
+      
       ChallengeLevel firstLevel = challenge.getFirstLevel();
       
       
@@ -29485,7 +29479,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               e.printStackTrace();
             }
         }
-      log.info("executed Challenge OccouranceJob for challenge {}, for date(s) {} time taken {} milisec", challenge.getLoyaltyProgramDisplay(), tmpOccouranceDates, SystemTime.getCurrentTime().getTime() - startTimeMili);
+      log.info("executed Challenge OccouranceJob for challenge {}, time taken {} milisec", challenge.getLoyaltyProgramDisplay(), SystemTime.getCurrentTime().getTime() - startTimeMili);
     }
 
     //
