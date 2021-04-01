@@ -4526,7 +4526,7 @@ public class EvolutionEngine
                   {
                     ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService, null);
                     //
-                    //  delete score from subscriber // RAJ K
+                    //  delete score from subscriber if loyalty got deleted (NOT JUST "suspended") // RAJ K
                     //
                     // subscriberProfile.deleteScore(loyaltyProgramID);
                     // subscriberProfileUpdated = true;
