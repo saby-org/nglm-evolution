@@ -4542,11 +4542,6 @@ public class EvolutionEngine
                 else if (loyaltyProgramState instanceof LoyaltyProgramChallengeState)
                   {
                     ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService, null);
-                    //
-                    //  delete score from subscriber if loyalty got deleted (NOT JUST "suspended") // RAJ K
-                    //
-                    // subscriberProfile.deleteScore(loyaltyProgramID);
-                    // subscriberProfileUpdated = true;
                   }
               }
           }
