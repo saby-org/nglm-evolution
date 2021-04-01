@@ -96,6 +96,7 @@ public class LoyaltyProgramState implements Cleanable
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public Date getLoyaltyProgramEnrollmentDate() { return loyaltyProgramEnrollmentDate; }
   public Date getLoyaltyProgramExitDate() { return loyaltyProgramExitDate; }
+  public void setLoyaltyProgramExitDate(Date date) { this.loyaltyProgramExitDate = date; }
 
   @Override public Date getExpirationDate(RetentionService retentionService) { return getLoyaltyProgramExitDate(); }
   @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
