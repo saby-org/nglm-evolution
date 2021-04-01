@@ -3184,7 +3184,7 @@ public class EvolutionEngine
             String challengeID = (String) subscriberProfileForceUpdate.getParameterMap().get("challengeID");
             Integer score = (Integer) subscriberProfileForceUpdate.getParameterMap().get("score");
             int oldScore = 0;
-            if (subscriberProfile.getLoyaltyPrograms() != null && subscriberProfile.getLoyaltyPrograms().isEmpty() && subscriberProfile.getLoyaltyPrograms().get(challengeID) instanceof LoyaltyProgramChallengeState)
+            if (subscriberProfile.getLoyaltyPrograms() != null && !subscriberProfile.getLoyaltyPrograms().isEmpty() && subscriberProfile.getLoyaltyPrograms().get(challengeID) instanceof LoyaltyProgramChallengeState)
               {
                 oldScore = ((LoyaltyProgramChallengeState) subscriberProfile.getLoyaltyPrograms().get(challengeID)).getScoreLevel();
               }
