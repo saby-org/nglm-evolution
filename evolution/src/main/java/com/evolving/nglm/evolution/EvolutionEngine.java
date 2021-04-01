@@ -3956,22 +3956,13 @@ public class EvolutionEngine
         //  update loyalty program score and lastScoreChangeDate
         //
         
-        for (LoyaltyProgramState loyaltyProgramState : subscriberProfile.getLoyaltyPrograms().values())
+        LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyChallengeID);
+        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
+        if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramChallenge && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
           {
-            LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
-            if (loyaltyProgram != null)
-              {
-                if(loyaltyProgram instanceof LoyaltyProgramChallenge)
-                  {
-                    LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
-                    LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
-                    if (Objects.equals(loyaltyChallengeID, loyaltyProgramState.getLoyaltyProgramID()))
-                      {
-                        loyaltyProgramChallengeState.setScoreLevel(score);
-                        loyaltyProgramChallengeState.setLastScoreChangeDate(now);
-                      }
-                  }
-              }
+            LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+            loyaltyProgramChallengeState.setScoreLevel(score);
+            loyaltyProgramChallengeState.setLastScoreChangeDate(now);
           }
       }
     else
