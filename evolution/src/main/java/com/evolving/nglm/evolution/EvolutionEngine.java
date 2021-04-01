@@ -4050,7 +4050,7 @@ public class EvolutionEngine
                     //
 
                     LoyaltyProgramState currentLoyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
-                    if (currentLoyaltyProgramState == null || !(currentLoyaltyProgramState instanceof LoyaltyProgramPointsState))
+                    if (currentLoyaltyProgramState == null)
                       {
                         LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
                         currentLoyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newTierName, null, now, loyaltyProgramHistory);
@@ -4077,7 +4077,7 @@ public class EvolutionEngine
 
                         launchChangeTierWorkflows(profileChangeEvent, subscriberState, loyaltyProgramPoints, null, newTierName, currentLoyaltyProgramState.getLoyaltyProgramID());
                       } 
-                    else
+                    else if (currentLoyaltyProgramState instanceof LoyaltyProgramPointsState)
                       {
                         //
                         // get current tier
@@ -4192,7 +4192,7 @@ public class EvolutionEngine
                   case Optin:
                     LoyaltyProgramState currentLoyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
                     String newLevelName = determineLoyaltyProgramChallengeLevel(currentLoyaltyProgramState, loyaltyProgramChallenge, now);
-                    if (currentLoyaltyProgramState == null || !(currentLoyaltyProgramState instanceof LoyaltyProgramChallengeState))
+                    if (currentLoyaltyProgramState == null)
                       {
                         //
                         //  LoyaltyProgramChallengeHistory
@@ -4222,7 +4222,7 @@ public class EvolutionEngine
 
                         launchChangeTierWorkflows(profileChangeEvent, subscriberState, loyaltyProgramChallenge, null, newLevelName, currentLoyaltyProgramState.getLoyaltyProgramID());
                       } 
-                    else
+                    else if (currentLoyaltyProgramState instanceof LoyaltyProgramChallengeState)
                       {
                         //
                         // get current tier
