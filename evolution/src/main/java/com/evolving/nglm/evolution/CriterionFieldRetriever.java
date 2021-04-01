@@ -615,6 +615,10 @@ public abstract class CriterionFieldRetriever
                 case "score":
                   result = loyaltyProgramChallengeState.getScoreLevel();
                   break;
+                  
+                case "lastScoreChangeDate":
+                  result = loyaltyProgramChallengeState.getLastScoreChangeDate();
+                  break;
 
                 case "levelupdatedate":
                   result = loyaltyProgramChallengeState.getLevelEnrollmentDate();

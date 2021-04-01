@@ -53,6 +53,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     schemaBuilder.field("previousPeriodScore", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("previousPeriodLevel", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("previousPeriodStartDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("lastScoreChangeDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("loyaltyProgramChallengeHistory", LoyaltyProgramChallengeHistory.schema());
     schema = schemaBuilder.build();
   };
@@ -89,6 +90,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   private Integer previousPeriodScore;
   private String previousPeriodLevel;
   private Date previousPeriodStartDate;
+  private Date lastScoreChangeDate;
   private LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory;
   
   /*****************************************
@@ -105,12 +107,14 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   public Integer getPreviousPeriodScore() { return previousPeriodScore; }
   public String getPreviousPeriodLevel() { return previousPeriodLevel; }
   public Date getPreviousPeriodStartDate() { return previousPeriodStartDate; }
+  public Date getLastScoreChangeDate() { return lastScoreChangeDate; }
 
   //
   //  setters
   //
 
   public void setScoreLevel(int scoreLevel) { this.scoreLevel = scoreLevel; }
+  public void setLastScoreChangeDate(Date lastScoreChangeDate) { this.lastScoreChangeDate = lastScoreChangeDate; }
 
   /*****************************************
   *
@@ -134,7 +138,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramChallengeState(SchemaAndValue schemaAndValue, String levelName, String previousLevelName, Date levelEnrollmentDate, int scoreLevel, Integer previousPeriodScore, String previousPeriodLevel, Date previousPeriodStartDate, LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory)
+  public LoyaltyProgramChallengeState(SchemaAndValue schemaAndValue, String levelName, String previousLevelName, Date levelEnrollmentDate, int scoreLevel, Integer previousPeriodScore, String previousPeriodLevel, Date previousPeriodStartDate, Date lastScoreChangeDate, LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory)
   {
     super(schemaAndValue);
     this.levelName = levelName;
@@ -144,6 +148,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     this.previousPeriodScore = previousPeriodScore;
     this.previousPeriodLevel = previousPeriodLevel;
     this.previousPeriodStartDate = previousPeriodStartDate;
+    this.lastScoreChangeDate = lastScoreChangeDate;
     this.loyaltyProgramChallengeHistory = loyaltyProgramChallengeHistory;
   }
 
@@ -165,6 +170,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     struct.put("previousPeriodScore", loyaltyProgramPointsState.getPreviousPeriodScore());
     struct.put("previousPeriodLevel", loyaltyProgramPointsState.getPreviousPeriodLevel());
     struct.put("previousPeriodStartDate", loyaltyProgramPointsState.getPreviousPeriodStartDate());
+    struct.put("lastScoreChangeDate", loyaltyProgramPointsState.getLastScoreChangeDate());
     struct.put("loyaltyProgramChallengeHistory", LoyaltyProgramChallengeHistory.serde().pack(loyaltyProgramPointsState.getLoyaltyProgramChallengeHistory()));
     return struct;
   }
@@ -197,13 +203,14 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     Integer previousPeriodScore = valueStruct.getInt32("previousPeriodScore");
     String previousPeriodLevel = valueStruct.getString("previousPeriodLevel");
     Date previousPeriodStartDate = (Date) valueStruct.get("previousPeriodStartDate");
+    Date lastScoreChangeDate = (Date) valueStruct.get("lastScoreChangeDate");
     LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = LoyaltyProgramChallengeHistory.serde().unpack(new SchemaAndValue(schema.field("loyaltyProgramChallengeHistory").schema(), valueStruct.get("loyaltyProgramChallengeHistory")));
     
     //  
     //  return
     //
 
-    return new LoyaltyProgramChallengeState(schemaAndValue, levelName, previousLevelName, levelEnrollmentDate, scoreLevel, previousPeriodScore, previousPeriodLevel, previousPeriodStartDate, loyaltyProgramChallengeHistory);
+    return new LoyaltyProgramChallengeState(schemaAndValue, levelName, previousLevelName, levelEnrollmentDate, scoreLevel, previousPeriodScore, previousPeriodLevel, previousPeriodStartDate, lastScoreChangeDate, loyaltyProgramChallengeHistory);
   }
   
   /*****************************************

@@ -3953,7 +3953,7 @@ public class EvolutionEngine
         subscriberProfile.updateScore(loyaltyChallengeID, score);
 
         //
-        //  update loyalty program balances
+        //  update loyalty program score and lastScoreChangeDate
         //
         
         for (LoyaltyProgramState loyaltyProgramState : subscriberProfile.getLoyaltyPrograms().values())
@@ -3965,7 +3965,11 @@ public class EvolutionEngine
                   {
                     LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
                     LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
-                    if (Objects.equals(loyaltyChallengeID, loyaltyProgramState.getLoyaltyProgramID())) loyaltyProgramChallengeState.setScoreLevel(score);
+                    if (Objects.equals(loyaltyChallengeID, loyaltyProgramState.getLoyaltyProgramID()))
+                      {
+                        loyaltyProgramChallengeState.setScoreLevel(score);
+                        loyaltyProgramChallengeState.setLastScoreChangeDate(now);
+                      }
                   }
               }
           }
@@ -4462,7 +4466,7 @@ public class EvolutionEngine
                             {
                               if (log.isDebugEnabled()) log.debug("update loyalty program REWARD => adding " + ((LoyaltyProgramPointsEvent) evolutionEvent).getUnit() + " x " + subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit() + " of point with ID " + loyaltyProgramPoints.getRewardPointsID());
                               int amount = ((LoyaltyProgramPointsEvent) evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit();
-                          updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, oldTier, tenantID);
+                              updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true, oldTier, tenantID);
 
                               // TODO Previous call might have changed tier -> do we need to generate tier
                               // changed event + trigger workflow for tier change ?
