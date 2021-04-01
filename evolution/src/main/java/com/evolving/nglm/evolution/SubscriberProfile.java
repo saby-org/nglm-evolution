@@ -141,7 +141,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(9));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -246,6 +246,8 @@ public abstract class SubscriberProfile
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
+  
+ 
 
   /****************************************
   *
@@ -1520,7 +1522,6 @@ public abstract class SubscriberProfile
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
-
     //
     //  return
     //
@@ -1898,7 +1899,6 @@ public abstract class SubscriberProfile
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
-    struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
   }
 
   /****************************************
