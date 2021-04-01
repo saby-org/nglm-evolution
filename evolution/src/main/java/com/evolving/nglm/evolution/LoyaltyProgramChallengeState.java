@@ -49,7 +49,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     schemaBuilder.field("levelName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("previousLevelName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("levelEnrollmentDate", Timestamp.builder().optional().schema());
-    schemaBuilder.field("scoreLevel", SchemaBuilder.int32().defaultValue(0).schema());
+    schemaBuilder.field("currentScore", SchemaBuilder.int32().defaultValue(0).schema());
     schemaBuilder.field("previousPeriodScore", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("previousPeriodLevel", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("previousPeriodStartDate", Timestamp.builder().optional().schema());
@@ -86,7 +86,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   private String levelName;
   private String previousLevelName;
   private Date levelEnrollmentDate;
-  private int scoreLevel;
+  private int currentScore;
   private Integer previousPeriodScore;
   private String previousPeriodLevel;
   private Date previousPeriodStartDate;
@@ -102,7 +102,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   public String getLevelName() { return levelName; }
   public String getPreviousLevelName() { return previousLevelName; }
   public Date getLevelEnrollmentDate() { return levelEnrollmentDate; }
-  public int getScoreLevel() { return scoreLevel; }
+  public int getCurrentScore() { return currentScore; }
   public LoyaltyProgramChallengeHistory getLoyaltyProgramChallengeHistory() { return loyaltyProgramChallengeHistory; }
   public Integer getPreviousPeriodScore() { return previousPeriodScore; }
   public String getPreviousPeriodLevel() { return previousPeriodLevel; }
@@ -113,7 +113,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   //  setters
   //
 
-  public void setScoreLevel(int scoreLevel) { this.scoreLevel = scoreLevel; }
+  public void setCurrentScore(int currentScore) { this.currentScore = currentScore; }
   public void setLastScoreChangeDate(Date lastScoreChangeDate) { this.lastScoreChangeDate = lastScoreChangeDate; }
 
   /*****************************************
@@ -128,7 +128,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     this.levelName = levelName;
     this.previousLevelName = previousLevelName;
     this.levelEnrollmentDate = levelEnrollmentDate;
-    this.scoreLevel = 0;
+    this.currentScore = 0;
     this.loyaltyProgramChallengeHistory = loyaltyProgramChallengeHistory;
   }
 
@@ -138,13 +138,13 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramChallengeState(SchemaAndValue schemaAndValue, String levelName, String previousLevelName, Date levelEnrollmentDate, int scoreLevel, Integer previousPeriodScore, String previousPeriodLevel, Date previousPeriodStartDate, Date lastScoreChangeDate, LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory)
+  public LoyaltyProgramChallengeState(SchemaAndValue schemaAndValue, String levelName, String previousLevelName, Date levelEnrollmentDate, int currentScore, Integer previousPeriodScore, String previousPeriodLevel, Date previousPeriodStartDate, Date lastScoreChangeDate, LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory)
   {
     super(schemaAndValue);
     this.levelName = levelName;
     this.previousLevelName = previousLevelName;
     this.levelEnrollmentDate = levelEnrollmentDate;
-    this.scoreLevel = scoreLevel;
+    this.currentScore = currentScore;
     this.previousPeriodScore = previousPeriodScore;
     this.previousPeriodLevel = previousPeriodLevel;
     this.previousPeriodStartDate = previousPeriodStartDate;
@@ -160,18 +160,18 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
 
   public static Object pack(Object value)
   {
-    LoyaltyProgramChallengeState loyaltyProgramPointsState = (LoyaltyProgramChallengeState) value;
+    LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, loyaltyProgramPointsState);
-    struct.put("levelName", loyaltyProgramPointsState.getLevelName());
-    struct.put("previousLevelName", loyaltyProgramPointsState.getPreviousLevelName());
-    struct.put("levelEnrollmentDate", loyaltyProgramPointsState.getLevelEnrollmentDate());
-    struct.put("scoreLevel", loyaltyProgramPointsState.getScoreLevel());
-    struct.put("previousPeriodScore", loyaltyProgramPointsState.getPreviousPeriodScore());
-    struct.put("previousPeriodLevel", loyaltyProgramPointsState.getPreviousPeriodLevel());
-    struct.put("previousPeriodStartDate", loyaltyProgramPointsState.getPreviousPeriodStartDate());
-    struct.put("lastScoreChangeDate", loyaltyProgramPointsState.getLastScoreChangeDate());
-    struct.put("loyaltyProgramChallengeHistory", LoyaltyProgramChallengeHistory.serde().pack(loyaltyProgramPointsState.getLoyaltyProgramChallengeHistory()));
+    packCommon(struct, loyaltyProgramChallengeState);
+    struct.put("levelName", loyaltyProgramChallengeState.getLevelName());
+    struct.put("previousLevelName", loyaltyProgramChallengeState.getPreviousLevelName());
+    struct.put("levelEnrollmentDate", loyaltyProgramChallengeState.getLevelEnrollmentDate());
+    struct.put("currentScore", loyaltyProgramChallengeState.getCurrentScore());
+    struct.put("previousPeriodScore", loyaltyProgramChallengeState.getPreviousPeriodScore());
+    struct.put("previousPeriodLevel", loyaltyProgramChallengeState.getPreviousPeriodLevel());
+    struct.put("previousPeriodStartDate", loyaltyProgramChallengeState.getPreviousPeriodStartDate());
+    struct.put("lastScoreChangeDate", loyaltyProgramChallengeState.getLastScoreChangeDate());
+    struct.put("loyaltyProgramChallengeHistory", LoyaltyProgramChallengeHistory.serde().pack(loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory()));
     return struct;
   }
 
@@ -199,7 +199,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     String levelName = valueStruct.getString("levelName");
     String previousLevelName = valueStruct.getString("previousLevelName");
     Date levelEnrollmentDate = (Date) valueStruct.get("levelEnrollmentDate");
-    int scoreLevel = valueStruct.getInt32("scoreLevel");
+    int currentScore = valueStruct.getInt32("currentScore");
     Integer previousPeriodScore = valueStruct.getInt32("previousPeriodScore");
     String previousPeriodLevel = valueStruct.getString("previousPeriodLevel");
     Date previousPeriodStartDate = (Date) valueStruct.get("previousPeriodStartDate");
@@ -210,7 +210,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     //  return
     //
 
-    return new LoyaltyProgramChallengeState(schemaAndValue, levelName, previousLevelName, levelEnrollmentDate, scoreLevel, previousPeriodScore, previousPeriodLevel, previousPeriodStartDate, lastScoreChangeDate, loyaltyProgramChallengeHistory);
+    return new LoyaltyProgramChallengeState(schemaAndValue, levelName, previousLevelName, levelEnrollmentDate, currentScore, previousPeriodScore, previousPeriodLevel, previousPeriodStartDate, lastScoreChangeDate, loyaltyProgramChallengeHistory);
   }
   
   /*****************************************

@@ -287,7 +287,7 @@ public abstract class SubscriberProfile
         LoyaltyProgramState challengeStUnchecked = getLoyaltyPrograms().get(challengeID);
         if (challengeStUnchecked instanceof LoyaltyProgramChallengeState)
           {
-            result = ((LoyaltyProgramChallengeState) challengeStUnchecked).getScoreLevel();
+            result = ((LoyaltyProgramChallengeState) challengeStUnchecked).getCurrentScore();
           }
       }
     return result;
@@ -532,7 +532,7 @@ public abstract class SubscriberProfile
                     ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getPreviousLevelName());
                     loyalty.put("levelChangeType", ChallengeLevel.changeFromLevelToLevel(previousLevel, level).getExternalRepresentation());
                     loyalty.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber());
-                    loyalty.put("score", loyaltyProgramChallengeState.getScoreLevel());
+                    loyalty.put("score", loyaltyProgramChallengeState.getCurrentScore());
                   }
               }
             array.add(JSONUtilities.encodeObject(loyalty));

@@ -3186,7 +3186,7 @@ public class EvolutionEngine
             int oldScore = 0;
             if (subscriberProfile.getLoyaltyPrograms() != null && !subscriberProfile.getLoyaltyPrograms().isEmpty() && subscriberProfile.getLoyaltyPrograms().get(challengeID) instanceof LoyaltyProgramChallengeState)
               {
-                oldScore = ((LoyaltyProgramChallengeState) subscriberProfile.getLoyaltyPrograms().get(challengeID)).getScoreLevel();
+                oldScore = ((LoyaltyProgramChallengeState) subscriberProfile.getLoyaltyPrograms().get(challengeID)).getCurrentScore();
               }
             
             if (challengeID != null && score != null)
@@ -3940,7 +3940,7 @@ public class EvolutionEngine
         // get current score
         //
         
-        int score = loyaltyProgramChallengeState.getScoreLevel();
+        int score = loyaltyProgramChallengeState.getCurrentScore();
         
         //
         //  update
@@ -3956,7 +3956,7 @@ public class EvolutionEngine
             //  update score
             //
             
-            loyaltyProgramChallengeState.setScoreLevel(score);
+            loyaltyProgramChallengeState.setCurrentScore(score);
             loyaltyProgramChallengeState.setLastScoreChangeDate(now);
           }
       }
@@ -4600,7 +4600,7 @@ public class EvolutionEngine
     int currentSubsriberScores = 0;
     if (loyaltyProgramState != null && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
       {
-        currentSubsriberScores = ((LoyaltyProgramChallengeState) loyaltyProgramState).getScoreLevel();
+        currentSubsriberScores = ((LoyaltyProgramChallengeState) loyaltyProgramState).getCurrentScore();
       }
     
     for (ChallengeLevel level : loyaltyProgramChallenge.getLevels())

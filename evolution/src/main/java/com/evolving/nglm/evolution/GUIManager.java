@@ -19757,7 +19757,7 @@ public class GUIManager
                       // score
                       //
 
-                      loyaltyProgramPresentation.put("score", loyaltyProgramChallengeState.getScoreLevel());
+                      loyaltyProgramPresentation.put("score", loyaltyProgramChallengeState.getCurrentScore());
                       
                       //
                       // history
