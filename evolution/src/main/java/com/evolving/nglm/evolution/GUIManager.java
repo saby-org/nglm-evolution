@@ -29308,7 +29308,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       if (log.isDebugEnabled()) log.debug("ChallengesOccurrenceJob executing");
       String tz = Deployment.getSystemTimeZone();
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-      Collection<LoyaltyProgramChallenge> recurrentLoyaltyProgramChallenges = loyaltyProgramService.getActiveRecurrentChallenges(SystemTime.getCurrentTime(), 0); // tenant ID hard coded 0 ?? // RAJ K
+      Collection<LoyaltyProgramChallenge> recurrentLoyaltyProgramChallenges = loyaltyProgramService.getActiveRecurrentChallenges(SystemTime.getCurrentTime(), 1); // tenant ID hard coded 1 ?? // EVPRO-99 to check??
       if(log.isDebugEnabled()) log.debug("Challenges with Occurrence {}", recurrentLoyaltyProgramChallenges);
       for (LoyaltyProgramChallenge challenge : recurrentLoyaltyProgramChallenges)
         {
