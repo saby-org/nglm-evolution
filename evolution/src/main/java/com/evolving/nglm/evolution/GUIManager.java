@@ -29308,7 +29308,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       if (log.isDebugEnabled()) log.debug("ChallengesOccurrenceJob executing");
       String tz = Deployment.getSystemTimeZone();
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-      Collection<LoyaltyProgramChallenge> recurrentLoyaltyProgramChallenges = loyaltyProgramService.getActiveRecurrentChallenges(SystemTime.getCurrentTime(), 1); // tenant ID hard coded 1 ?? // EVPRO-99 to check??
+      Collection<LoyaltyProgramChallenge> recurrentLoyaltyProgramChallenges = loyaltyProgramService.getActiveRecurrentChallenges(SystemTime.getCurrentTime(), 0); // tenant ID 0 means from all tenants
       if(log.isDebugEnabled()) log.debug("Challenges with Occurrence {}", recurrentLoyaltyProgramChallenges);
       for (LoyaltyProgramChallenge challenge : recurrentLoyaltyProgramChallenges)
         {
@@ -29383,7 +29383,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             {
               Date lastDate = RLMDateUtils.ceiling(now, Calendar.DATE, tz);
               Date tempStartDate = RLMDateUtils.addDays(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              while(lastDate.compareTo(tempStartDate) >= 0)
+              log.info("RAJ K lastDate {} and tempStartDate {}", ReportService.printDate(lastDate), ReportService.printDate(tempStartDate));
+              while(RLMDateUtils.truncatedCompareTo(lastDate, tempStartDate, Calendar.DATE, tz) >= 0)
                 {
                   tmpOccouranceDates.add(new Date(tempStartDate.getTime()));
                   tempStartDate = RLMDateUtils.addDays(tempStartDate, scheduligInterval, tz);
