@@ -519,7 +519,7 @@ public class GUIManager
     launchExtract("launchExtract"),
     downloadExtractFile("downloadExtractFile"),
     launchAndDownloadExtract("launchAndDownloadExtract"),
-    
+
     getComplexObjectTypeList("getComplexObjectTypeList"),
     getComplexObjectTypeSummaryList("getComplexObjectTypeSummaryList"),
     getComplexObjectType("getComplexObjectType"),
@@ -896,10 +896,10 @@ public class GUIManager
       @Override public void journeyActivated(Journey journey) {
           log.debug("journeyActivated: " + journey.getJourneyID()+" "+journey.getJourneyName());
 
-          // 
+          //
           // send the evaluate target order to evolution engine
           //
-          
+
           if (journey.getTargetID() != null)
           {
             EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(journey.getJourneyID()), journey.getTargetID());
@@ -910,7 +910,7 @@ public class GUIManager
           //
           //  externalAPIMethodJourneyActivated
           //
-          
+
           if (externalAPIMethodJourneyActivated != null)
             {
               try
@@ -940,11 +940,11 @@ public class GUIManager
                 throw new RuntimeException(e);
               }
             }
-          
+
           //
           //  FileVariables
           //
-          
+
           if (TargetingType.FileVariables == journey.getTargetingType() && journey.getTargetingFileVariableID() != null)
             {
               Date now = SystemTime.getCurrentTime();
@@ -954,7 +954,7 @@ public class GUIManager
               if (targetingFile != null) uploadedFileService.createFileWithVariableEvents(targetingFile, subscriberIDService, kafkaProducer);
             }
         }
-      
+
       @Override public void journeyDeactivated(String guiManagedObjectID)
       {
         log.debug("journeyDeactivated: " + guiManagedObjectID);
@@ -1590,7 +1590,7 @@ public class GUIManager
             throw new ServerRuntimeException("deployment", e);
           }
       }
-    
+
     //
     //  complexObject
     //
@@ -1770,7 +1770,7 @@ public class GUIManager
     journeyObjectiveService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     targetService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     contactPolicyService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
-    journeyService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);    
+    journeyService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     dynamicCriterionFieldService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);    
     segmentationDimensionService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     pointService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
@@ -2721,7 +2721,7 @@ public class GUIManager
                 case updateJourney:
                   jsonResponse = processUpdateJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
                   break;
-                  
+
                 case setStatusJourney:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
                   break;
@@ -2762,7 +2762,7 @@ public class GUIManager
                   jsonResponse = processUpdateJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
                   break;
 
-                  
+
                 case setStatusCampaign:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
                   break;
@@ -2806,7 +2806,7 @@ public class GUIManager
                 case updateWorkflow:
                   jsonResponse = processUpdateJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
                   break;
-                  
+
                 case setStatusWorkflow:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
                   break;
@@ -2862,7 +2862,7 @@ public class GUIManager
                 case updateBulkCampaign:
                   jsonResponse = processUpdateBulkCampaign(userID, jsonRoot);
                   break;
-                  
+
                 case setStatusBulkCampaign:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
                   break;
@@ -3014,7 +3014,7 @@ public class GUIManager
                 case updateOffer:
                   jsonResponse = processUpdateOffer(userID, jsonRoot);
                   break;
-                  
+
                 case setStatusOffer:
                   jsonResponse = processSetStatusOffer(userID, jsonRoot);
                   break;
@@ -3206,7 +3206,7 @@ public class GUIManager
                 case putProduct:
                   jsonResponse = processPutProduct(userID, jsonRoot);
                   break;
-                  
+
                 case updateProduct:
                   jsonResponse = processUpdateProduct(userID, jsonRoot);
                   break;
@@ -4330,7 +4330,7 @@ public class GUIManager
                 case putUploadedFile:
                   guiManagerGeneral.processPutFile(jsonResponse, exchange);
                   break;
-                  
+
                 case putUploadedFileWithVariables:
                   guiManagerGeneral.processPutUploadedFileWithVariables(jsonResponse, exchange);
                   break;
@@ -4848,7 +4848,7 @@ public class GUIManager
     boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
     String nodeTypeParameterID = JSONUtilities.decodeString(jsonRoot, "nodeTypeParameterID", false);
     JSONArray targetFileVariables = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
-    
+
     /*****************************************
     *
     *  retrieve journey criterion fields
@@ -5762,7 +5762,7 @@ public class GUIManager
         //
         // Update targetCount
         //
-        
+
         journey.setTargetCount(elasticsearch, uploadedFileService);
         
         /*****************************************
@@ -6076,8 +6076,8 @@ public class GUIManager
     
   }
   
-  
-  
+
+
   /*****************************************
   *
   *  processUpdateJourney
@@ -6093,13 +6093,13 @@ public class GUIManager
     ****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();    
+    HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
     JSONArray journeyIDs = new JSONArray();
     List<GUIManagedObject> existingJourneys = new ArrayList();
-    List<String> updatedIDs = new ArrayList();    
+    List<String> updatedIDs = new ArrayList();
     List<Object> exceptionList= new ArrayList();
-    
+
 
     /*****************************************
     *
@@ -6116,7 +6116,7 @@ public class GUIManager
     * update product
     *
     *****************************************/
-   
+
   if (jsonRoot.containsKey("ids"))
      {
        journeyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple product
@@ -6127,7 +6127,7 @@ public class GUIManager
        response.put("responseMessage", "Journey ID is empty");
        return JSONUtilities.encodeObject(response);
      }
-      
+
    /*****************************************
    *
    * existing journeys
@@ -6149,15 +6149,15 @@ public class GUIManager
       response.put("responseMessage", "journeys does not exist");
       return JSONUtilities.encodeObject(response);
     }
-  
+
   for (GUIManagedObject existingJourneyToBeUpdated : existingJourneys)
-    {    
+    {
     //
     // recurrence
     //
     boolean recurrence = false;
     String recurrenceID = null;
-    JSONObject JSONToBeUpdated = new JSONObject();        
+    JSONObject JSONToBeUpdated = new JSONObject();
     Set<String> JsonRootkeySets = jsonRoot.keySet();
     JSONObject existingJourneyObject = existingJourneyToBeUpdated.getJSONRepresentation();
         if (jsonRoot.containsKey("recurrence"))
@@ -6181,7 +6181,7 @@ public class GUIManager
           jsonRoot.put("recurrenceId", existingJourneyToBeUpdated.getGUIManagedObjectID());
         if (recurrence && JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false) == null)
           jsonRoot.put("lastCreatedOccurrenceNumber", 1);
-        
+
         for (String JsonRootkey : JsonRootkeySets)
           {
             JSONToBeUpdated.put(JsonRootkey, jsonRoot.get(JsonRootkey));  // get the part of GUI object which need to be updated from jsonRoot
@@ -6193,7 +6193,7 @@ public class GUIManager
             if (key != null && (!(JsonRootkeySets.contains(key))))
               {
                 JSONToBeUpdated.put(key, existingJourneyObject.get(key)); //get the other parts of the GUI objects from the existing journey JSON
-              
+
               }
           }
 
@@ -6201,7 +6201,7 @@ public class GUIManager
     //
     // initial approval
     //
-    
+
     JourneyStatus approval = JourneyStatus.Pending;
 
     /*****************************************
@@ -6234,7 +6234,7 @@ public class GUIManager
             Journey journey = new Journey(JSONToBeUpdated, objectType, epoch, existingJourneyToBeUpdated,
                 journeyService, catalogCharacteristicService, subscriberMessageTemplateService,
                 dynamicEventDeclarationsService, journeyTemplateService, approval);
-            
+
             if (GUIManagedObjectType.Workflow.equals(objectType)
                 || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType))
               {
@@ -6328,7 +6328,7 @@ public class GUIManager
              * response
              *
              *****************************************/
-            
+
             if (jsonRoot.containsKey("ids"))
               {
                 updatedIDs.add(journey.getJourneyID());
@@ -6361,7 +6361,7 @@ public class GUIManager
             //
             // response
             //
-            
+
             if (jsonRoot.containsKey("ids"))
               {
                 HashMap<String, String> invalidProductsExceptions = new HashMap<String, String>();
@@ -6398,10 +6398,10 @@ public class GUIManager
         response.put("exceptionIds", exceptionList);
         response.put("responseCode", "ok");
       }
-      
+
   return JSONUtilities.encodeObject(response);
   }
-  
+
   /*****************************************
    *
    * processSetStatusJourney
@@ -6993,7 +6993,7 @@ public class GUIManager
     JSONArray bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", true);
     int priority = JSONUtilities.decodeInteger(jsonRoot, "priority", Integer.MAX_VALUE); // for legacy campaigns, very low priority
 
-    
+
     //
     //  recurrent
     //
@@ -7008,7 +7008,7 @@ public class GUIManager
     boolean recurrenceActive = JSONUtilities.decodeBoolean(jsonRoot, "recurrenceActive", Boolean.FALSE);
     String targetingFileVariableID = JSONUtilities.decodeString(jsonRoot, "targetingFileVariableID", false);
     JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", false);
-    
+
     /*****************************************
     *
     *  existing journey
@@ -7126,7 +7126,7 @@ public class GUIManager
         //
         // Update targetCount
         //
-        
+
         bulkCampaign.setTargetCount(elasticsearch, uploadedFileService);
         
         /*****************************************
@@ -7186,13 +7186,13 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
   }
-  
-  
+
+
   /*****************************************
   *
   *  processUpdateBulkCampaign
   *
-  *****************************************/  
+  *****************************************/
 
   private JSONObject processUpdateBulkCampaign(String userID, JSONObject jsonRoot)
   {
@@ -7207,7 +7207,7 @@ public class GUIManager
     Boolean dryRun = false;
     JSONArray BulkCampaignIDs = new JSONArray();
     List<GUIManagedObject> existingbulkCampaigns = new ArrayList();
-    List<String> updatedIDs = new ArrayList();    
+    List<String> updatedIDs = new ArrayList();
     List<Object> exceptionList= new ArrayList();
 
     /*****************************************
@@ -7219,13 +7219,13 @@ public class GUIManager
       {
         dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
       }
-    
+
     /*****************************************
     *
     * update product
     *
     *****************************************/
-   
+
    if (jsonRoot.containsKey("ids"))
      {
        BulkCampaignIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple product
@@ -7527,7 +7527,7 @@ public class GUIManager
           {
             occurrenceNumber = JSONUtilities.decodeInteger(existingBulkCampaignObject, "occurrenceNumber", recurrence);
           }
-        
+
         JSONObject journeyScheduler = new JSONObject();
         if (jsonRoot.containsKey("scheduler"))
           {
@@ -7568,7 +7568,7 @@ public class GUIManager
             targetFileVariablesJSON = JSONUtilities.decodeJSONArray(existingBulkCampaignObject,
                 "targetFileVariables", false);
           }
-        
+
         if (recurrence && lastCreatedOccurrenceNumber == null)
           lastCreatedOccurrenceNumber = 1;
 
@@ -7641,7 +7641,7 @@ public class GUIManager
             campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives);
             campaignJSONRepresentation.put("story", bulkCampaignStory);
             campaignJSONRepresentation.put("priority", bulkCampaignPriority);
-            
+
             if (bulkCampaignInfo != null)
               {
                 campaignJSONRepresentation.put("info", bulkCampaignInfo);
@@ -7657,8 +7657,8 @@ public class GUIManager
             campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
 
             campaignJSONRepresentation.put("targetingFileVariableID", targetingFileVariableID);
-            campaignJSONRepresentation.put("targetFileVariables", targetFileVariablesJSON);            
-            
+            campaignJSONRepresentation.put("targetFileVariables", targetFileVariablesJSON);
+
 
             //
             // campaignJSON
@@ -7697,7 +7697,7 @@ public class GUIManager
              * response
              *
              *****************************************/
-          
+
             if (jsonRoot.containsKey("ids"))
               {
                 updatedIDs.add(bulkCampaign.getJourneyID());
@@ -7731,7 +7731,7 @@ public class GUIManager
             //
             // response
             //
-         
+
             if (jsonRoot.containsKey("ids"))
               {
                 HashMap<String, String> invalidProductsExceptions = new HashMap<String, String>();
@@ -8781,7 +8781,7 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
-  
+
   /*****************************************
   *
   *  processUpdateOffer
@@ -8801,7 +8801,7 @@ public class GUIManager
     Boolean dryRun = false;
     JSONArray offerIDs = new JSONArray();
     List<GUIManagedObject> existingOffers = new ArrayList();
-    List<String> updatedIDs = new ArrayList();    
+    List<String> updatedIDs = new ArrayList();
     List<Object> exceptionList= new ArrayList();
 
     /*****************************************
@@ -8819,7 +8819,7 @@ public class GUIManager
      * update product
      *
      *****************************************/
-    
+
     if (jsonRoot.containsKey("ids"))
       {
         offerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple offer
@@ -8855,7 +8855,7 @@ public class GUIManager
 
     for (GUIManagedObject existingOfferToBeUpdated : existingOffers)
       {
-        JSONObject JSONToBeUpdated = new JSONObject();        
+        JSONObject JSONToBeUpdated = new JSONObject();
         Set<String> JsonRootkeySets = jsonRoot.keySet();
         if (existingOfferToBeUpdated instanceof Offer)
           {
@@ -8870,7 +8870,7 @@ public class GUIManager
                         "The display cannot be changed for the existing simple offer");
                     exceptionList.add(errorResponseDisplay);
                     continue;
-                                        
+
                   }
                 if (jsonRoot.containsKey("simpleOffer"))
                   {
@@ -8905,13 +8905,13 @@ public class GUIManager
                         "The vouchers cannot be changed for the existing simple offer");
                     exceptionList.add(errorResponseVoucher);
                     continue;
-                    
+
                   }
               }
           }
         JSONObject existingOfferObject = existingOfferToBeUpdated.getJSONRepresentation();
         for (String JsonRootkey : JsonRootkeySets)
-          {            
+          {
             JSONToBeUpdated.put(JsonRootkey, jsonRoot.get(JsonRootkey));  // get the part of GUI object which need to be updated from jsonRoot
           }
         JSONToBeUpdated.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
@@ -8924,7 +8924,7 @@ public class GUIManager
               }
 
           }
-        
+
         /*****************************************
          *
          * process offer
@@ -8962,7 +8962,7 @@ public class GUIManager
              * response
              *
              *****************************************/
-           
+
             if (jsonRoot.containsKey("ids")) {
               updatedIDs.add(offer.getOfferID());
             }
@@ -8998,19 +8998,19 @@ public class GUIManager
 
             // response
             //
-          
+
             if (jsonRoot.containsKey("ids"))
               {
                 updatedIDs.add(incompleteObject.getGUIManagedObjectID());
-                HashMap<String, String> invalidOfferExceptions = new HashMap<String, String>();                
+                HashMap<String, String> invalidOfferExceptions = new HashMap<String, String>();
                 invalidOfferExceptions.put("id", incompleteObject.getGUIManagedObjectID());
                 invalidOfferExceptions.put("responseCode", "OfferNotValid");
                 invalidOfferExceptions.put("responseMessage", e.getMessage());
                 invalidOfferExceptions.put("responseParameter",
-                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null); 
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
 
                 exceptionList.add(invalidOfferExceptions); //get the exceptions for multiple offers
-                
+
               }
 
           }
@@ -9019,12 +9019,12 @@ public class GUIManager
       response.put("updatedIds", updatedIDs);
       response.put("exceptionIds", exceptionList);
       response.put("responseCode", "ok");
-      
+
     }
 
     return JSONUtilities.encodeObject(response);
   }
-  
+
   /*****************************************
    *
    * processSetStatusOffer
@@ -12792,7 +12792,7 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
-  
+
   /*****************************************
   *
   *  processUpdateProduct
@@ -12812,7 +12812,7 @@ public class GUIManager
     Boolean dryRun = false;
     JSONArray productIDs = new JSONArray();
     List<GUIManagedObject> existingProducts = new ArrayList();
-    List<String> updatedIDs = new ArrayList();    
+    List<String> updatedIDs = new ArrayList();
     List<Object> exceptionList= new ArrayList();
 
     /*****************************************
@@ -12830,7 +12830,7 @@ public class GUIManager
      * update product
      *
      *****************************************/
-    
+
    if (jsonRoot.containsKey("ids"))
       {
         productIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple product
@@ -12866,7 +12866,7 @@ public class GUIManager
 
     for (GUIManagedObject existingProductToBeUpdated : existingProducts)
       {
-        JSONObject JSONToBeUpdated = new JSONObject();        
+        JSONObject JSONToBeUpdated = new JSONObject();
         Set<String> JsonRootkeySets = jsonRoot.keySet();
         JSONObject existingProductObject = existingProductToBeUpdated.getJSONRepresentation();
         if (existingProductToBeUpdated instanceof Product)
@@ -12910,7 +12910,7 @@ public class GUIManager
            if (key != null && (!(JsonRootkeySets.contains(key))))
               {
                 JSONToBeUpdated.put(key, existingProductObject.get(key)); //get the other parts of the GUI objects from the existing product JSON
-              
+
               }
           }
         /*****************************************
@@ -13006,11 +13006,11 @@ public class GUIManager
                 invalidProductsExceptions.put("responseCode", "productNotValid");
                 invalidProductsExceptions.put("responseMessage", e.getMessage());
                 invalidProductsExceptions.put("responseParameter",
-                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null); 
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
 
                 exceptionList.add(invalidProductsExceptions); //get the exceptions for multiple products
                 updatedIDs.add(incompleteObject.getGUIManagedObjectID());
-                
+
               }
 
           }
@@ -13019,12 +13019,12 @@ public class GUIManager
       response.put("updatedIds", updatedIDs);
       response.put("exceptionIds", exceptionList);
       response.put("responseCode", "ok");
-      
+
     }
 
     return JSONUtilities.encodeObject(response);
   }
-  
+
   /*****************************************
    *
    * processSetStatusProduct
@@ -19117,7 +19117,7 @@ public class GUIManager
                         if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
                           customerStatusInJourney = profilejourneyStatus;
                         }
-                        
+
                         if (customerStatus != null)
                           {
                             SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
@@ -19415,8 +19415,10 @@ public class GUIManager
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
                         SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                         SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID()+"");
+                        if(profilejourneyStatus == null)
+                          continue;
                         if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
-                          customerStatusInJourney = profilejourneyStatus;	
+                          customerStatusInJourney = profilejourneyStatus;
                         }
                         
                         if (customerStatus != null)
@@ -21979,7 +21981,7 @@ public class GUIManager
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
     String featureID = (userID != null) ? userID : "1";
-    
+
     /*****************************************
     *
     *  resolve subscriberID
@@ -22077,7 +22079,7 @@ public class GUIManager
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
     String featureID = (userID != null) ? userID : "1";
-    
+
     /*****************************************
     *
     *  resolve subscriberID
@@ -25655,7 +25657,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         JSONObject j = new JSONObject();
                         j.put("id", comparableField.getID());
                         j.put("display", comparableField.getDisplay());
-                        singleton.add(j);                        
+                        singleton.add(j);
                       }
                   }
                 criterionFieldJSON.put("singletonComparableFieldsGroup", ""+resolvedFieldType.getAssociatedGroupID());
@@ -27977,7 +27979,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       }
     return result;
   }
-  
+
   /****************************************
   *
   *  resolveSubscriberID
@@ -28292,7 +28294,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     private CriterionDataType dataType;
     private Set<JSONObject> availableValues;
-    private List<JSONObject> associatedGroup; 
+    private List<JSONObject> associatedGroup;
     private int associatedGroupID;
 
     //
@@ -28303,7 +28305,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     Set<JSONObject> getAvailableValues() { return availableValues; }
     List<JSONObject> getAssociatedGroup() { return associatedGroup; }
     int getAssociatedGroupID() { return associatedGroupID; }
-    
+
     void setAssociatedGroup(List<JSONObject> associatedGroup) { this.associatedGroup = associatedGroup; }
     void setAssociatedGroupID(int associatedGroupID) { this.associatedGroupID = associatedGroupID; }
 
@@ -28904,7 +28906,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String topic = Deployment.getTokenChangeTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "CC", Module.Customer_Care, userID); 
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "CC", Module.Customer_Care, userID);
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),
@@ -29412,19 +29414,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               //
               //  lastCreatedOccurrenceNumber
               //
-              
+
               JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
               recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
               processPutJourney("0", recJourneyJSON, recurrentJourney.getGUIManagedObjectType());
             }
-          
+
         }
     }
-    
+
     //
     //  getExpectedCreationDates
     //
-    
+
     private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay)
     {
       List<Date> result = new ArrayList<Date>();
@@ -29436,7 +29438,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               case "week":
                 day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
                 break;
-                
+
               case "month":
                 day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
                 break;
@@ -29448,11 +29450,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
           firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getBaseTimeZone());
         }
-      
+
       //
       //  handle last date of month
       //
-      
+
       if ("month".equalsIgnoreCase(scheduling))
         {
           int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
@@ -29467,7 +29469,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     //
     //  getFirstDate
     //
-    
+
     private Date getFirstDate(Date now, int dayOf)
     {
       if (Calendar.DAY_OF_WEEK == dayOf)
@@ -29484,11 +29486,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           return firstDate;
         }
     }
-    
+
     //
     //  getLastDate
     //
-    
+
     private Date getLastDate(Date now, int dayOf)
     {
       Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
@@ -29509,14 +29511,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         }
     }
   }
-  
+
   /*****************************************
   *
   *  TargetValidityCheckJob
   *
   *****************************************/
-  
-  
+
+
   public class TargetValidityCheckJob extends ScheduledJob
   {
     /***********************************
@@ -29583,13 +29585,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
                   firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
                 }
-              
+
               //
               // handle the edge (if start day of next wk)
               //
-              
+
               tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
-            } 
+            }
           else if ("month".equalsIgnoreCase(scheduling))
             {
               Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
@@ -29603,11 +29605,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
                   lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
                 }
-              
+
               //
               // handle the edge (if 1st day of next month)
               //
-              
+
               tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
             }
           else if ("day".equalsIgnoreCase(scheduling))
@@ -29624,7 +29626,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             {
               if (log.isErrorEnabled()) log.error("invalid scheduling {}", scheduling);
             }
-          
+
           //
           // filter out if before start date and recurrentCampaignCreationDaysRange (before / after)
           //
@@ -29632,11 +29634,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 		  if(log.isDebugEnabled()) log.debug("before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
           tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(recurrentJourney.getEffectiveStartDate())  && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
 		  if(log.isDebugEnabled()) log.debug("after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
-          
+
           //
           //  exists
           //
-          
+
           Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID(), true);
           for (Date expectedDate : tmpJourneyCreationDates)
             {
@@ -29652,7 +29654,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   limitCount--;
                 }
             }
-          
+
 
           //
           // createJourneys
@@ -29662,11 +29664,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         }
       if (log.isInfoEnabled())log.info("created recurrent campaigns");
     }
-    
+
     //
     //  createJourneys
     //
-    
+
     private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer lastCreatedOccurrenceNumber)
     {
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
@@ -29678,35 +29680,35 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //
           //  prepare start and end date
           //
-          
+
           Date endDate = RLMDateUtils.addDays(startDate, daysBetween, timeZone);
           endDate = RLMDateUtils.setField(endDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.HOUR_OF_DAY, timeZone), timeZone);
           endDate = RLMDateUtils.setField(endDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.MINUTE, timeZone), timeZone);
           endDate = RLMDateUtils.setField(endDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.SECOND, timeZone), timeZone);
-          
+
           startDate = RLMDateUtils.setField(startDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.HOUR_OF_DAY, timeZone), timeZone);
           startDate = RLMDateUtils.setField(startDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.MINUTE, timeZone), timeZone);
           startDate = RLMDateUtils.setField(startDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.SECOND, timeZone), timeZone);
-          
+
           //
           //  journeyJSON
           //
-          
+
           JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
           journeyJSON.put("apiVersion", 1);
-          
+
           //
           //  remove
           //
-          
+
           journeyJSON.remove("recurrence");
           journeyJSON.remove("scheduler");
           journeyJSON.remove("status");
-          
+
           //
           //  add
           //
-          
+
           String journeyID = journeyService.generateJourneyID();
           journeyJSON.put("id", journeyID);
           journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
@@ -29714,20 +29716,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
           journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
           journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(endDate));
-          
+
           //
           //  create and activate
           //
-          
+
           if (GUIManagedObjectType.BulkCampaign == recurrentJourney.getGUIManagedObjectType())
             {
               processPutBulkCampaign("0", journeyJSON);
               processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
-              
+
               //
               //  lastCreatedOccurrenceNumber
               //
-              
+
               JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
               recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
               processPutBulkCampaign("0", recJourneyJSON);
@@ -29736,11 +29738,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             {
               processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
               processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
-              
+
               //
               //  lastCreatedOccurrenceNumber
               //
-              
+
               JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
               recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
               processPutJourney("0", recJourneyJSON, recurrentJourney.getGUIManagedObjectType());
@@ -29838,8 +29840,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     }
   }
   
-  
-  
+
+
   /*****************************************
   *
   *  processPutSimpleOffer

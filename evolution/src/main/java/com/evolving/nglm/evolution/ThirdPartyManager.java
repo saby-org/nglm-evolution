@@ -1698,8 +1698,8 @@ public class ThirdPartyManager
   /*****************************************
   *
   *  processCreditBonus
-   * @throws ParseException 
-   * @throws IOException 
+   * @throws ParseException
+   * @throws IOException
   *
   *****************************************/
   
@@ -1730,11 +1730,11 @@ public class ThirdPartyManager
     else
       {
         authResponse = authenticate(thirdPartyCredential);
-      } 
+      }
     int user = (authResponse.getUserId());
     String userID = Integer.toString(user);
     String featureID = userID;
-    
+
     /*****************************************
     *
     *  resolve subscriberID
@@ -1839,11 +1839,11 @@ public class ThirdPartyManager
     else
       {
         authResponse = authenticate(thirdPartyCredential);
-      } 
+      }
     int user = (authResponse.getUserId());
     String userID = Integer.toString(user);
     String featureID = userID;
-    
+
     /*****************************************
     *
     *  resolve subscriberID
@@ -2197,9 +2197,9 @@ public class ThirdPartyManager
                   SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                   SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID()+"");
                   if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
-                    customerStatusInJourney = profilejourneyStatus;	
+                    customerStatusInJourney = profilejourneyStatus;
                   }
-              
+
                   if (customerStatus != null)
                     {
                       SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
@@ -2488,10 +2488,12 @@ public class ThirdPartyManager
                   boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
                   SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                   SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID()+"");
+                  if(profilejourneyStatus == null)
+                    continue;
                   if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
-                    customerStatusInJourney=profilejourneyStatus;	
+                    customerStatusInJourney=profilejourneyStatus;
                   }
-                  
+
                   if (customerStatus != null)
                     {
                       SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
@@ -3917,7 +3919,7 @@ public class ThirdPartyManager
              valueSerializer.serialize(topic, presentationLog)
              ));
          keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-         
+
          // Update token locally, so that it is correctly displayed in the response
          // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
 
@@ -4159,7 +4161,7 @@ public class ThirdPartyManager
                  valueSerializer.serialize(topic, presentationLog)
                  ));
              keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-             
+
              // Update token locally, so that it is correctly displayed in the response
              // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
 
@@ -4395,7 +4397,7 @@ public class ThirdPartyManager
             valueSerializer.serialize(topic, tokenRedeemed)
             ));
         keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-      }      
+      }
     }
     catch (SubscriberProfileServiceException e) 
     {
@@ -4743,7 +4745,7 @@ public class ThirdPartyManager
           valueSerializer.serialize(topic, loyaltyProgramRequest)
           ));
       keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-      
+
       //
       // TODO how do we deal with the offline errors ? 
       //
@@ -4896,7 +4898,7 @@ public class ThirdPartyManager
         updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS, "-{eventName is missing}");
         return JSONUtilities.encodeObject(response);
       }
-    
+
     EvolutionEngineEventDeclaration eventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
     AutoProvisionEvent autoProvisionEvent = com.evolving.nglm.core.Deployment.getAutoProvisionEvents().get(eventName);
 
@@ -4905,11 +4907,11 @@ public class ThirdPartyManager
     //
 
     Pair<String, String> subscriberParameter = resolveSubscriberAlternateID(jsonRoot);
-    
+
     //
     //  eventBody
     //
-    
+
     JSONObject eventBody = JSONUtilities.decodeJSONObject(jsonRoot, "eventBody");
     if (eventBody == null)
       {
@@ -4922,7 +4924,7 @@ public class ThirdPartyManager
     //  subscriberID
     //
     String subscriberID = null;
-    try 
+    try
     {
       subscriberID = resolveSubscriberID(jsonRoot);
     }
@@ -4936,7 +4938,7 @@ public class ThirdPartyManager
         subscriberID = null;
       }
     }
-    
+
     if (eventDeclaration == null || eventDeclaration.getEventRule() == EvolutionEngineEventDeclaration.EventRule.Internal)
       {
         updateResponse(response, RESTAPIGenericReturnCodes.EVENT_NAME_UNKNOWN, "-{" + eventName + "}");
@@ -4975,7 +4977,7 @@ public class ThirdPartyManager
               {
                 // means this is an autoprovision event, case 2...
                 eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody });
-                eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);              
+                eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
               }
           }
         catch (Exception e)
@@ -5330,7 +5332,7 @@ public class ThirdPartyManager
                 additionalDetails.put("RedeemedDate", redeemedDate);
                 additionalDetails.put("customerID", redeemedSubscriberID);
                 additionalDetails.put("AlternateIDs", alternateIDs);
-                
+
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage(),
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode(), additionalDetails);
@@ -6029,7 +6031,7 @@ public class ThirdPartyManager
     // Returns a value, or an exception
     return subscriberID;
   }
-  
+
   /*****************************************
   *
   *  resolveSubscriberAlternateID
@@ -6038,10 +6040,10 @@ public class ThirdPartyManager
 
   private Pair<String, String> resolveSubscriberAlternateID(JSONObject jsonRoot) throws ThirdPartyManagerException
   {
-    // "customerID" parameter is mapped internally to subscriberID 
+    // "customerID" parameter is mapped internally to subscriberID
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
     String alternateSubscriberID = null;
-    
+
     // finds the first parameter in the input request that corresponds to an entry in alternateID[]
     String subscriberkey = null;
     String subscriberValue = null;
@@ -6060,7 +6062,7 @@ public class ThirdPartyManager
 
           }
       }
-    
+
     if (subscriberID == null)
       {
         if (alternateSubscriberID == null)
@@ -6462,7 +6464,7 @@ public class ThirdPartyManager
       super(responseMessage);
       this.responseCode = responseCode;
     }
-    
+
     public ThirdPartyManagerException(String responseMessage, int responseCode, JSONObject responseDetails)
     {
       super(responseMessage);
@@ -6473,8 +6475,8 @@ public class ThirdPartyManager
     public ThirdPartyManagerException(RESTAPIGenericReturnCodes genericReturnCode)
     {
       this(genericReturnCode.getGenericResponseMessage(),genericReturnCode.getGenericResponseCode());
-    }   
-  
+    }
+
     /*****************************************
      *
      *  constructor - exception
