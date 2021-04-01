@@ -3183,7 +3183,12 @@ public class EvolutionEngine
           {
             String challengeID = (String) subscriberProfileForceUpdate.getParameterMap().get("challengeID");
             Integer score = (Integer) subscriberProfileForceUpdate.getParameterMap().get("score");
-            Integer oldScore = subscriberProfile.getScore(challengeID);
+            int oldScore = 0;
+            if (subscriberProfile.getLoyaltyPrograms() != null && subscriberProfile.getLoyaltyPrograms().isEmpty() && subscriberProfile.getLoyaltyPrograms().get(challengeID) instanceof LoyaltyProgramChallengeState)
+              {
+                oldScore = ((LoyaltyProgramChallengeState) subscriberProfile.getLoyaltyPrograms().get(challengeID)).getScoreLevel();
+              }
+            
             if (challengeID != null && score != null)
               {
                 subscriberProfileUpdated = updateScore(subscriberProfile, challengeID, score, now);
@@ -3762,7 +3767,7 @@ public class EvolutionEngine
                 //
 
                 LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
-                String newLevelName = determineLoyaltyProgramChallengeLevel(subscriberProfile, loyaltyProgramChallenge, now);
+                String newLevelName = determineLoyaltyProgramChallengeLevel(loyaltyProgramState, loyaltyProgramChallenge, now);
                 
                 //
                 //  compare to current tier
@@ -3924,50 +3929,40 @@ public class EvolutionEngine
   private static boolean updateScore(SubscriberProfile subscriberProfile, String loyaltyChallengeID, int amount, Date now)
   {
     boolean success = true;
-
-    //
-    //  get (or create) score
-    //
-
-    Integer score = subscriberProfile.getScore(loyaltyChallengeID);
-    if (score == null) score = 0;
     
-    //
-    //  update
-    //
-    
-    score = score + amount;
-    
-    //
-    //  validate non-negative
-    //
-    
-    success = score >= 0;
-    
-    if (success)
+    LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyChallengeID);
+    LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
+    if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramChallenge && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
       {
+        LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+        
         //
-        //  update score
-        //
-
-        subscriberProfile.updateScore(loyaltyChallengeID, score);
-
-        //
-        //  update loyalty program score and lastScoreChangeDate
+        // get current score
         //
         
-        LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyChallengeID);
-        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
-        if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramChallenge && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
+        int score = loyaltyProgramChallengeState.getScoreLevel();
+        
+        //
+        //  update
+        //
+        
+        score = score + amount;
+        
+        success = score >= 0;
+        
+        if (success)
           {
-            LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+            //
+            //  update score
+            //
+            
             loyaltyProgramChallengeState.setScoreLevel(score);
             loyaltyProgramChallengeState.setLastScoreChangeDate(now);
           }
       }
     else
       {
-        if (log.isErrorEnabled()) log.error("updateScore -> subscriber score cant be negative. current score is {}, update amount is {}", subscriberProfile.getScore(loyaltyChallengeID), amount);
+        if (log.isErrorEnabled()) log.error("updateScore failed -> invalid loyaltyProgram {}", loyaltyProgram.getGUIManagedObjectDisplay());
       }
     
     //
@@ -4195,8 +4190,8 @@ public class EvolutionEngine
                 switch (loyaltyProgramRequest.getOperation())
                 {
                   case Optin:
-                    String newLevelName = determineLoyaltyProgramChallengeLevel(subscriberProfile, loyaltyProgramChallenge, now);
                     LoyaltyProgramState currentLoyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
+                    String newLevelName = determineLoyaltyProgramChallengeLevel(currentLoyaltyProgramState, loyaltyProgramChallenge, now);
                     if (currentLoyaltyProgramState == null || !(currentLoyaltyProgramState instanceof LoyaltyProgramChallengeState))
                       {
                         //
@@ -4206,7 +4201,7 @@ public class EvolutionEngine
                         LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = new LoyaltyProgramChallengeHistory(loyaltyProgram.getLoyaltyProgramID());
                         currentLoyaltyProgramState = new LoyaltyProgramChallengeState(LoyaltyProgramType.CHALLENGE, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newLevelName, null, now, loyaltyProgramChallengeHistory);
                         if (log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '" + subscriberProfile.getSubscriberID() + "' : loyaltyProgramState.update(" + loyaltyProgram.getEpoch() + ", " + loyaltyProgramRequest.getOperation() + ", " + loyaltyProgram.getLoyaltyProgramName() + ", " + newLevelName + ", " + now + ", " + loyaltyProgramRequest.getDeliveryRequestID() + ")");
-                        Integer currentScore = subscriberProfile.getScore(loyaltyProgramChallenge.getLoyaltyProgramID());
+                        Integer currentScore = null;
                         LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService, currentScore);
 
                         //
@@ -4507,7 +4502,7 @@ public class EvolutionEngine
                           // update tier
                           //
 
-                          String newLevel = determineLoyaltyProgramChallengeLevel(subscriberProfile, loyaltyProgramChallenge, now);
+                          String newLevel = determineLoyaltyProgramChallengeLevel(loyaltyProgramState, loyaltyProgramChallenge, now);
                           if (!oldLevel.equals(newLevel))
                             {
                               LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevel, now, evolutionEvent.getClass().getName(), loyaltyProgramService, null);
@@ -4599,13 +4594,13 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static String determineLoyaltyProgramChallengeLevel(SubscriberProfile subscriberProfile, LoyaltyProgramChallenge loyaltyProgramChallenge, Date now)
+  private static String determineLoyaltyProgramChallengeLevel(LoyaltyProgramState loyaltyProgramState, LoyaltyProgramChallenge loyaltyProgramChallenge, Date now)
   {
     String newLevelName = null;
     int currentSubsriberScores = 0;
-    if (subscriberProfile.getScore(loyaltyProgramChallenge.getLoyaltyProgramID()) != null)
+    if (loyaltyProgramState != null && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
       {
-        currentSubsriberScores = subscriberProfile.getScore(loyaltyProgramChallenge.getLoyaltyProgramID());
+        currentSubsriberScores = ((LoyaltyProgramChallengeState) loyaltyProgramState).getScoreLevel();
       }
     
     for (ChallengeLevel level : loyaltyProgramChallenge.getLevels())
