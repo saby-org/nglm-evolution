@@ -3770,10 +3770,19 @@ public class EvolutionEngine
                 String newLevelName = determineLoyaltyProgramChallengeLevel(loyaltyProgramState, loyaltyProgramChallenge, now);
                 
                 //
+                //  periodChange
+                //
+                
+                boolean isPeriodChange = true;
+                Integer currentOccurrenceNumber = loyaltyProgramChallenge.getLastCreatedOccurrenceNumber();
+                isPeriodChange = isPeriodChange && loyaltyProgramChallenge.getRecurrence() && 1 != currentOccurrenceNumber;
+                isPeriodChange = isPeriodChange && loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory() != null && (loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory().getAllLevelHistoryForThisPeriod(currentOccurrenceNumber) == null || loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory().getAllLevelHistoryForThisPeriod(currentOccurrenceNumber).isEmpty());
+                
+                //
                 //  compare to current tier
                 //
                 
-                if ((currentLevel != null && !currentLevel.equals(newLevelName)) || (currentLevel == null && newLevelName != null))
+                if ((currentLevel != null && !currentLevel.equals(newLevelName)) || (currentLevel == null && newLevelName != null) || isPeriodChange)
                   {
                     //
                     //  update loyalty program state
