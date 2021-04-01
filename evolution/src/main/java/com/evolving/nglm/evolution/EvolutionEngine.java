@@ -4368,7 +4368,7 @@ public class EvolutionEngine
           //  check that the subscriber is still in the program (no LoyaltyProgramExitDate)
           //
           
-          if(loyaltyProgram != null && loyaltyProgram.getLoyaltyProgramType().equals(loyaltyProgramState.getLoyaltyProgramType()) && subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramID).getLoyaltyProgramExitDate() == null){
+          if(loyaltyProgram != null && loyaltyProgram.getLoyaltyProgramType().equals(loyaltyProgramState.getLoyaltyProgramType()) && loyaltyProgramState.getLoyaltyProgramExitDate() == null){
               
               switch (loyaltyProgram.getLoyaltyProgramType()) 
               {
