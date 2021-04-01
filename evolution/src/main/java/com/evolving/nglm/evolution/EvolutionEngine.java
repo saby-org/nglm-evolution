@@ -3812,6 +3812,7 @@ public class EvolutionEngine
         break;
         
       case CHALLENGE:
+        log.info("RAJ K executing launchChangeTierWorkflows");
         LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
         
      // Exit tier workflow
