@@ -45,6 +45,7 @@ import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 
 public abstract class SubscriberProfile
 {
@@ -163,6 +164,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
+    schemaBuilder.field("scores", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("subscriber_profile_scores").schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -245,6 +247,7 @@ public abstract class SubscriberProfile
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
+  private Set<Pair<String, Integer>> scores = new HashSet<Pair<String, Integer>>();
   
  
 
@@ -278,6 +281,34 @@ public abstract class SubscriberProfile
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
   public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
   public int getTenantID() { return tenantID; }
+  public Set<Pair<String, Integer>> getScores(){ return scores ; }
+  public Integer getScore(String challengeID)
+  {
+    Integer result = null;
+    for (Pair<String, Integer> challengeScorePair : scores)
+      {
+        if (challengeID.equals(challengeScorePair.getFirstElement()))
+          {
+            result = challengeScorePair.getSecondElement();
+            break;
+          }
+      }
+    return result;
+  }
+  
+  private Pair<String, Integer> getScorePair(String challengeID)
+  {
+    Pair<String, Integer> result = null;
+    for (Pair<String, Integer> challengeScorePair : scores)
+      {
+        if (challengeID.equals(challengeScorePair.getFirstElement()))
+          {
+            result = challengeScorePair;
+            break;
+          }
+      }
+    return result;
+  }
 
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -440,10 +471,12 @@ public abstract class SubscriberProfile
   
   public JSONArray getLoyaltyProgramsJSON(LoyaltyProgramService loyaltyProgramService, PointService pointService)
   {
+    log.info("RAJ K getLoyaltyProgramsJSON {}", loyaltyPrograms != null);
     Date now = SystemTime.getCurrentTime();
     JSONArray array = new JSONArray();
     if(this.loyaltyPrograms != null)
       {
+        log.info("RAJ K loyaltyPrograms {}", loyaltyPrograms.entrySet());
         for(Entry<String, LoyaltyProgramState> program : loyaltyPrograms.entrySet())
           {
             // Add archives for datacubes & reports on terminated loyalty programs.
@@ -452,6 +485,7 @@ public abstract class SubscriberProfile
             
             if(loyaltyProgram != null)
               {
+                log.info("RAJ K loyaltyProgram {}", loyaltyProgram.getGUIManagedObjectDisplay());
                 loyalty.put("programID", program.getKey());
                 loyalty.put("loyaltyProgramType", program.getValue().getLoyaltyProgramType().getExternalRepresentation());
                 loyalty.put("loyaltyProgramEpoch", program.getValue().getLoyaltyProgramEpoch());
@@ -506,8 +540,21 @@ public abstract class SubscriberProfile
                     loyalty.put("rewardTodayRedeemer", todayRedeemer);
                     loyalty.put("rewardYesterdayRedeemer", yesterdayRedeemer);
                   }
+                else if(loyaltyProgram instanceof LoyaltyProgramChallenge) 
+                  {
+                    LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+                    LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) program.getValue();
+                    
+                    if(loyaltyProgramChallengeState.getLevelName() != null){ loyalty.put("levelName", loyaltyProgramChallengeState.getLevelName()); }
+                    if(loyaltyProgramChallengeState.getLevelEnrollmentDate() != null){ loyalty.put("levelUpdateDate", loyaltyProgramChallengeState.getLevelEnrollmentDate()); }
+                    if(loyaltyProgramChallengeState.getPreviousLevelName() != null){ loyalty.put("previousLevelName", loyaltyProgramChallengeState.getPreviousLevelName()); }
+                    ChallengeLevel level = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getLevelName());
+                    ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getPreviousLevelName());
+                    loyalty.put("levelChangeType", ChallengeLevel.changeFromLevelToLevel(previousLevel, level).getExternalRepresentation());
+                    loyalty.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber());
+                    loyalty.put("score", getScore(loyaltyProgramChallenge.getLoyaltyProgramID()));
+                  }
               }
-            
             array.add(JSONUtilities.encodeObject(loyalty));
           }
       }
@@ -1450,6 +1497,7 @@ public abstract class SubscriberProfile
     this.complexObjectInstances = new ArrayList<>();
     this.offerPurchaseHistory = new HashMap<>();
     this.tenantID = tenantID;
+    this.scores = new HashSet<Pair<String, Integer>>();
   }
 
   /*****************************************
@@ -1495,6 +1543,8 @@ public abstract class SubscriberProfile
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
+    Set<Pair<String, Integer>> scores = (schemaVersion >= 9) ? unpackScores(valueStruct.get("scores")) : new HashSet<Pair<String, Integer>>();;
+
     //
     //  return
     //
@@ -1521,8 +1571,30 @@ public abstract class SubscriberProfile
     this.complexObjectInstances = complexObjectInstances;
     this.offerPurchaseHistory = offerPurchaseHistory;
     this.tenantID = tenantID;
+    this.scores = scores;
   }
 
+  /*****************************************
+  *
+  *  unpackSegments
+  *
+  *****************************************/
+  
+  private Set<Pair<String, Integer>> unpackScores(Object value)
+  {
+    Set<Pair<String, Integer>> result = new HashSet<Pair<String, Integer>>();
+    if (value != null)
+      {
+        Map<String, Integer> valueMap = (Map<String, Integer>) value;
+        for (String packedGroupID : valueMap.keySet())
+          {
+            Pair<String, Integer> pair = new Pair<String, Integer>(packedGroupID, valueMap.get(packedGroupID));
+            result.add(pair);
+          }
+      }
+    return result;
+  }
+  
   /*****************************************
   *
   *  unpackSegments
@@ -1840,6 +1912,7 @@ public abstract class SubscriberProfile
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
     this.tenantID = subscriberProfile.getTenantID();
+    this.scores = new HashSet<Pair<String,Integer>>(subscriberProfile.getScores());
   }
 
   /*****************************************
@@ -1872,8 +1945,28 @@ public abstract class SubscriberProfile
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
+    struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
+    struct.put("scores", packScores(subscriberProfile.getScores()));
   }
 
+  /****************************************
+  *
+  *  packScores
+  *
+  ****************************************/
+  
+  private static Object packScores(Set<Pair<String, Integer>> subsScores)
+  {
+    Map<Object, Object> result = new HashMap<Object, Object>();
+    for (Pair<String, Integer> score : subsScores)
+      {
+        String challengeID = score.getFirstElement();
+        Integer challengeScore = score.getSecondElement();
+        result.put(challengeID, challengeScore);
+      }
+    return result;
+  }
+  
   /****************************************
   *
   *  packSegments
@@ -2784,4 +2877,26 @@ public abstract class SubscriberProfile
      this.responseCode = -1;
    }
  }
+
+
+  public void updateScore(String loyaltyChallengeID, Integer newScore)
+  {
+    Pair<String, Integer> existing = getScorePair(loyaltyChallengeID);
+    if (existing != null)
+      {
+        scores.remove(existing);
+      }
+    
+    Pair<String, Integer> newScorePair = new Pair<String, Integer>(loyaltyChallengeID, newScore);
+    scores.add(newScorePair);
+  }
+  
+  public void deleteScore(String loyaltyChallengeID)
+  {
+    Pair<String, Integer> existing = getScorePair(loyaltyChallengeID);
+    if (existing != null)
+      {
+        scores.remove(existing);
+      }
+  }
 }
