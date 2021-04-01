@@ -29442,7 +29442,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                           Integer subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
                           int scoreToDebit = (subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
                           scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
-                          if (scoreToDebit > 0)
+                          if (scoreToDebit >= 0)
                             {
                               //
                               // SubscriberProfileForceUpdate
