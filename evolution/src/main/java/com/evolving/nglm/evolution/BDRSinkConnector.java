@@ -7,13 +7,13 @@ import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 
 
 public class BDRSinkConnector extends SimpleESSinkConnector
@@ -36,7 +36,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class BDRSinkConnectorTask extends StreamESSinkTask<CommodityDeliveryRequest>
+  public static class BDRSinkConnectorTask extends StreamESSinkTask<BonusDelivery>
   {
     private static final Logger log = LoggerFactory.getLogger(BDRSinkConnector.class);
 
@@ -79,13 +79,23 @@ public class BDRSinkConnector extends SimpleESSinkConnector
     *  unpackRecord
     *
     *****************************************/
-    
-    @Override public CommodityDeliveryRequest unpackRecord(SinkRecord sinkRecord) 
+
+    // closely duplicated in com.evolving.nglm.evolution.NotificationSinkConnector.NotificationSinkConnectorTask.unpackRecord()
+    @Override public BonusDelivery unpackRecord(SinkRecord sinkRecord)
     {
-      log.debug("BDRSinkConnector.unpackRecord: extract CommodityDeliveryRequest");
-      Object commodityRequestValue = sinkRecord.value();
-      Schema commodityRequestValueSchema = sinkRecord.valueSchema();
-      return CommodityDeliveryRequest.unpack(new SchemaAndValue(commodityRequestValueSchema, commodityRequestValue));
+      Object commodityValue = sinkRecord.value();
+      Schema commodityValueSchema = sinkRecord.valueSchema();
+
+      Struct valueStruct = (Struct) commodityValue;
+      String type = valueStruct.getString("deliveryType");
+
+      //  safety guard - return null
+      if(type == null || type.equals("") || Deployment.getDeliveryManagers().get(type)==null ) {
+        return null;
+      }
+
+      return (BonusDelivery) Deployment.getDeliveryManagers().get(type).getRequestSerde().unpack(new SchemaAndValue(commodityValueSchema, commodityValue));
+
     }
     
     /*****************************************
@@ -95,7 +105,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
     *****************************************/
     
     @Override
-    public Map<String, Object> getDocumentMap(CommodityDeliveryRequest commodityRequest)
+    public Map<String, Object> getDocumentMap(BonusDelivery commodityRequest)
     {
 
       if(commodityRequest.getOriginatingSubscriberID() != null && commodityRequest.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
@@ -107,23 +117,23 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", commodityRequest.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(commodityRequest.getAlternateIDs(), documentMap);
-      documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null?dateFormat.format(commodityRequest.getEventDate()):"");
+      documentMap.put("eventDatetime", commodityRequest.getDeliveryDate()!=null?dateFormat.format(commodityRequest.getDeliveryDate()):"");
       documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
       documentMap.put("eventID", commodityRequest.getEventID());
-      documentMap.put("deliverableExpirationDate", commodityRequest.getDeliverableExpirationDate(commodityRequest.getTenantID()));
-      documentMap.put("providerID", commodityRequest.getProviderID());
-      documentMap.put("deliverableID", commodityRequest.getCommodityID());
-      documentMap.put("deliverableQty", commodityRequest.getAmount());
-      documentMap.put("operation", commodityRequest.getOperation().toString().toUpperCase());
+      documentMap.put("deliverableExpirationDate", commodityRequest.getBonusDeliveryDeliverableExpirationDate()!=null?dateFormat.format(commodityRequest.getBonusDeliveryDeliverableExpirationDate()):"");
+      documentMap.put("providerID", commodityRequest.getBonusDeliveryProviderId());
+      documentMap.put("deliverableID", commodityRequest.getBonusDeliveryDeliverableId());
+      documentMap.put("deliverableQty", commodityRequest.getBonusDeliveryDeliverableQty());
+      documentMap.put("operation", commodityRequest.getBonusDeliveryOperation().toUpperCase());
       documentMap.put("moduleID", commodityRequest.getModuleID());
       documentMap.put("featureID", commodityRequest.getFeatureID());
-      documentMap.put("origin", commodityRequest.getOrigin());
-      documentMap.put("returnCode", commodityRequest.getCommodityDeliveryStatus().getReturnCode());
-      documentMap.put("returnCodeDetails", commodityRequest.getStatusMessage());
+      documentMap.put("origin", commodityRequest.getBonusDeliveryOrigin());
+      documentMap.put("returnCode", commodityRequest.getBonusDeliveryReturnCode());
+      documentMap.put("returnCodeDetails", commodityRequest.getBonusDeliveryReturnCodeDetails());
       documentMap.put("creationDate", commodityRequest.getCreationDate()!=null?dateFormat.format(commodityRequest.getCreationDate()):"");
         
-      log.debug("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
+      if(log.isDebugEnabled()) log.debug("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
       return documentMap;
     }
   }

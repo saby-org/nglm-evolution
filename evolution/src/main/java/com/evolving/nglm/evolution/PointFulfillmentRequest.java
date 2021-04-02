@@ -24,7 +24,7 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOpe
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 
-public class PointFulfillmentRequest extends DeliveryRequest implements BonusDelivery
+public class PointFulfillmentRequest extends BonusDelivery
 {
   
   /*****************************************
@@ -108,19 +108,6 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
 
   @Override public ActivityType getActivityType() { return ActivityType.BDR; }
 
-  //
-  //  bonus delivery accessors
-  //
-
-  public int getBonusDeliveryReturnCode() { return 0; }
-  public String getBonusDeliveryReturnCodeDetails() { return ""; }
-  public String getBonusDeliveryOrigin() { return ""; }
-  public String getBonusDeliveryProviderId() { return ""; }
-  public String getBonusDeliveryDeliverableId() { return getPointID(); }
-  public String getBonusDeliveryDeliverableName() { return getPointName(); }
-  public int getBonusDeliveryDeliverableQty() { return getAmount(); }
-  public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
-  
   /*****************************************
   *
   *  constructor

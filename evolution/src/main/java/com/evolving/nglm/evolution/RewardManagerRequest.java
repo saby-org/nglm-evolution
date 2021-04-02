@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-public class RewardManagerRequest extends DeliveryRequest implements BonusDelivery
+public class RewardManagerRequest extends BonusDelivery
 {
   /*****************************************
   *

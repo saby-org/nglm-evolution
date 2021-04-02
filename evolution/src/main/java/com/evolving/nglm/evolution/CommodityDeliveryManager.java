@@ -143,7 +143,7 @@ public class CommodityDeliveryManager
   *
   *****************************************/
 
-  public static class CommodityDeliveryRequest extends DeliveryRequest implements BonusDelivery
+  public static class CommodityDeliveryRequest extends DeliveryRequest
   {
     /*****************************************
     *
@@ -179,7 +179,7 @@ public class CommodityDeliveryManager
     //
     //  serde
     //
-        
+
     private static ConnectSerde<CommodityDeliveryRequest> serde = new ConnectSerde<CommodityDeliveryRequest>(schema, false, CommodityDeliveryRequest.class, CommodityDeliveryRequest::pack, CommodityDeliveryRequest::unpack);
 
     //
@@ -189,7 +189,7 @@ public class CommodityDeliveryManager
     public static Schema schema() { return schema; }
     public static ConnectSerde<CommodityDeliveryRequest> serde() { return serde; }
     public Schema subscriberStreamEventSchema() { return schema(); }
-        
+
     /*****************************************
     *
     *  data
@@ -218,17 +218,17 @@ public class CommodityDeliveryManager
     public CommodityDeliveryOperation getOperation() { return operation; }
     public int getAmount() { return amount; }
     public TimeUnit getValidityPeriodType() { return validityPeriodType; }
-    public Integer getValidityPeriodQuantity() { return validityPeriodQuantity; }    
-    public Date getDeliverableExpirationDate(int tenantID) {
+    public Integer getValidityPeriodQuantity() { return validityPeriodQuantity; }
+    public Date getDeliverableExpirationDate() {
       // so far only internal point returns this
       if(deliverableExpirationDate!=null) return deliverableExpirationDate;
       // but if empty we will compute it (so might be not a real one), for all the others cases, based on delivery date
       if(getDeliveryDate()!= null && validityPeriodType!=null && validityPeriodType!=TimeUnit.Unknown && validityPeriodQuantity!=null){
-        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getDeployment(tenantID).getBaseTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
+        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getDeployment(this.getTenantID()).getBaseTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
       }
       // should be null here
       return deliverableExpirationDate;
-    }    
+    }
     public CommodityDeliveryStatus getCommodityDeliveryStatus() { return commodityDeliveryStatus; }
     public String getStatusMessage() { return statusMessage; }
     public String getOrigin() { return origin; }
@@ -239,20 +239,6 @@ public class CommodityDeliveryManager
 
     public void setCommodityDeliveryStatus(CommodityDeliveryStatus status) { this.commodityDeliveryStatus = status; }
     public void setStatusMessage(String statusMessage) { this.statusMessage = statusMessage; }
-    public void setDeliverableExpirationDate(Date deliverableExpirationDate) { this.deliverableExpirationDate = deliverableExpirationDate; }
-
-    //
-    //  bonus delivery accessors
-    //
-
-    public int getBonusDeliveryReturnCode() { return getCommodityDeliveryStatus().getReturnCode(); }
-    public String getBonusDeliveryReturnCodeDetails() { return getStatusMessage(); }
-    public String getBonusDeliveryOrigin() { return ""; }
-    public String getBonusDeliveryProviderId() { return getProviderID(); }
-    public String getBonusDeliveryDeliverableId() { return getCommodityID(); }
-    public String getBonusDeliveryDeliverableName() { return getCommodityName(); }
-    public int getBonusDeliveryDeliverableQty() { return getAmount(); }
-    public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
 
     /*****************************************
     *
@@ -262,7 +248,7 @@ public class CommodityDeliveryManager
 
     public CommodityDeliveryRequest(EvolutionEventContext context, String deliveryRequestSource, Map<String, String> diplomaticBriefcase, String providerID, String commodityID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date deliverableExpirationDate, String origin, int tenantID)
     {
-      super(context, "commodityDelivery", deliveryRequestSource, tenantID);
+      super(context, COMMODITY_DELIVERY_TYPE, deliveryRequestSource, tenantID);
       setDiplomaticBriefcase(diplomaticBriefcase);
       this.providerID = providerID;
       this.commodityID = commodityID;
@@ -356,7 +342,7 @@ public class CommodityDeliveryManager
       data.put("validityPeriodType", (this.getValidityPeriodType() != null ? this.getValidityPeriodType().getExternalRepresentation() : null));
       data.put("validityPeriodQuantity", this.getValidityPeriodQuantity());
       
-      data.put("deliverableExpirationDate", this.getDeliverableExpirationDate(tenantID));
+      data.put("deliverableExpirationDate", this.getDeliverableExpirationDate());
       
       data.put("commodityDeliveryStatusCode", this.getCommodityDeliveryStatus().getReturnCode());
       data.put("statusMessage", this.getStatusMessage());
@@ -402,7 +388,7 @@ public class CommodityDeliveryManager
       this.amount = commodityDeliveryRequest.getAmount();
       this.validityPeriodType = commodityDeliveryRequest.getValidityPeriodType();
       this.validityPeriodQuantity = commodityDeliveryRequest.getValidityPeriodQuantity();
-      this.deliverableExpirationDate = commodityDeliveryRequest.getDeliverableExpirationDate(commodityDeliveryRequest.getTenantID());
+      this.deliverableExpirationDate = commodityDeliveryRequest.getDeliverableExpirationDate();
       this.commodityDeliveryStatus = commodityDeliveryRequest.getCommodityDeliveryStatus();
       this.statusMessage = commodityDeliveryRequest.getStatusMessage();
       this.origin = commodityDeliveryRequest.getOrigin();
@@ -469,7 +455,7 @@ public class CommodityDeliveryManager
       struct.put("amount", commodityDeliveryRequest.getAmount());
       struct.put("validityPeriodType", (commodityDeliveryRequest.getValidityPeriodType() != null ? commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation() : null));
       struct.put("validityPeriodQuantity", commodityDeliveryRequest.getValidityPeriodQuantity());
-      struct.put("deliverableExpirationDate", commodityDeliveryRequest.getDeliverableExpirationDate(commodityDeliveryRequest.getTenantID()));
+      struct.put("deliverableExpirationDate", commodityDeliveryRequest.getDeliverableExpirationDate());
       struct.put("commodityDeliveryStatusCode", commodityDeliveryRequest.getCommodityDeliveryStatus().getReturnCode());
       struct.put("statusMessage", commodityDeliveryRequest.getStatusMessage());
       struct.put("origin", commodityDeliveryRequest.getOrigin());
@@ -571,7 +557,7 @@ public class CommodityDeliveryManager
       guiPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
       guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
       guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
-      guiPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate(tenantID)));
+      guiPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
@@ -592,7 +578,7 @@ public class CommodityDeliveryManager
       thirdPartyPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getGUIManagedObjectDisplay() : getCommodityID()));
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
-      thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate(tenantID)));
+      thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());

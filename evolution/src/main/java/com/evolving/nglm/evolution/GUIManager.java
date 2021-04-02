@@ -868,7 +868,7 @@ public class GUIManager
     // ZookeeperUniqueKeyServer
     //
  
-    zuks = new ZookeeperUniqueKeyServer("commoditydelivery");
+    zuks = new ZookeeperUniqueKeyServer(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
     zuksVoucherChange = new ZookeeperUniqueKeyServer("voucherchange");
 
     //

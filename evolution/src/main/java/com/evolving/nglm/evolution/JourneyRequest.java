@@ -25,7 +25,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
-public class JourneyRequest extends DeliveryRequest implements SubscriberStreamEvent, Action, BonusDelivery
+public class JourneyRequest extends BonusDelivery implements SubscriberStreamEvent, Action
 {
   /*****************************************
   *
@@ -137,7 +137,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   public String getBonusDeliveryDeliverableName() { return null; }
   public int getBonusDeliveryDeliverableQty() { return 0; }
   public String getBonusDeliveryOperation() { return null; }
-  
+
   /*****************************************
   *
   *  constructor -- journey

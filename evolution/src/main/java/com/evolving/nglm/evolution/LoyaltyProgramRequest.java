@@ -25,7 +25,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 
-public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDelivery
+public class LoyaltyProgramRequest extends BonusDelivery
 {
   /*****************************************
   *

@@ -32,9 +32,8 @@ public class CommodityDeliveryManagerRemovalUtils {
 		deliveryRequestProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
 	}
 
-	public static DeliveryRequest createDeliveryRequest(/*String applicationID, */CommodityDeliveryManager.CommodityDeliveryRequest deliveryRequest, PaymentMeanService paymentMeanService, DeliverableService deliverableService) throws CommodityDeliveryException {
+	public static DeliveryRequest createDeliveryRequest(/*String applicationID, */CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest, PaymentMeanService paymentMeanService, DeliverableService deliverableService) throws CommodityDeliveryException {
 
-		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = ((CommodityDeliveryManager.CommodityDeliveryRequest)deliveryRequest);
 		if(log.isDebugEnabled()) log.debug("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest : processing "+commodityDeliveryRequest);
 
 		String subscriberID = commodityDeliveryRequest.getSubscriberID();
@@ -95,14 +94,12 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 		if(log.isDebugEnabled()) log.debug("CommodityDeliveryManagerRemovalUtils.constructSubDeliveryRequest("+commodityType+", "+deliveryType+") : method called ...");
 
-		/*
 		Map<String, String> diplomaticBriefcase = commodityDeliveryRequest.getDiplomaticBriefcase();
 		if(diplomaticBriefcase == null){
 			diplomaticBriefcase = new HashMap<String, String>();
 		}
-		diplomaticBriefcase.put(CommodityDeliveryManager.APPLICATION_ID, applicationID== null ? CommodityDeliveryManager.COMMODITY_DELIVERY_ID : applicationID);
+		//diplomaticBriefcase.put(CommodityDeliveryManager.APPLICATION_ID, applicationID == null ? CommodityDeliveryManager.COMMODITY_DELIVERY_ID : applicationID);
 		diplomaticBriefcase.put(CommodityDeliveryManager.APPLICATION_BRIEFCASE, commodityDeliveryRequest.getJSONRepresentation(commodityDeliveryRequest.getTenantID()).toJSONString());
-		*/
 
 		//
 		// execute commodity request
@@ -111,7 +108,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 		String validityPeriodType = commodityDeliveryRequest.getValidityPeriodType() != null ? commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation() : null;
 		Integer validityPeriodQuantity = commodityDeliveryRequest.getValidityPeriodQuantity();
 		//String newDeliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-		String newDeliveryRequestID = commodityDeliveryRequest.getDeliveryRequestID();//not you, really needed now ?
+		String newDeliveryRequestID = commodityDeliveryRequest.getDeliveryRequestID();//not new, really needed now ?
 		switch (commodityType) {
 
 			case IN:
@@ -119,7 +116,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 				HashMap<String,Object> inRequestData = new HashMap<String,Object>();
 
 				inRequestData.put("deliveryRequestID", newDeliveryRequestID);
-				inRequestData.put("originatingRequest", false);
+				inRequestData.put("originatingRequest", commodityDeliveryRequest.getOriginatingRequest());
 				inRequestData.put("deliveryType", deliveryType);
 
 				inRequestData.put("eventID", commodityDeliveryRequest.getEventID());
@@ -146,7 +143,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 				HashMap<String,Object> pointRequestData = new HashMap<String,Object>();
 
 				pointRequestData.put("deliveryRequestID", newDeliveryRequestID);
-				pointRequestData.put("originatingRequest", false);
+				pointRequestData.put("originatingRequest", commodityDeliveryRequest.getOriginatingRequest());
 				pointRequestData.put("deliveryType", deliveryType);
 
 				pointRequestData.put("eventID", commodityDeliveryRequest.getEventID());
@@ -173,7 +170,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 				HashMap<String,Object> rewardRequestData = new HashMap<String,Object>();
 				rewardRequestData.put("deliveryRequestID", newDeliveryRequestID);
-				rewardRequestData.put("originatingRequest", false);
+				rewardRequestData.put("originatingRequest", commodityDeliveryRequest.getOriginatingRequest());
 				rewardRequestData.put("subscriberID", commodityDeliveryRequest.getSubscriberID());
 				rewardRequestData.put("eventID", commodityDeliveryRequest.getEventID());
 				rewardRequestData.put("moduleID", commodityDeliveryRequest.getModuleID());
@@ -203,7 +200,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 				HashMap<String,Object> journeyRequestData = new HashMap<String,Object>();
 
 				journeyRequestData.put("deliveryRequestID", newDeliveryRequestID);
-				journeyRequestData.put("originatingRequest", false);
+				journeyRequestData.put("originatingRequest", commodityDeliveryRequest.getOriginatingRequest());
 				journeyRequestData.put("deliveryType", deliveryType);
 
 				journeyRequestData.put("eventID", commodityDeliveryRequest.getEventID());
@@ -230,16 +227,17 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 	}
 
+	// this one is used by PurchaseFulfillmentManager
 	public static void sendCommodityDeliveryRequest(PaymentMeanService paymentMeanService, DeliverableService deliverableService, DeliveryRequest originatingDeliveryRequest, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, String origin) throws CommodityDeliveryException {
 		HashMap<String,Object> requestData = createCommodityDeliveryRequest(briefcase,applicationID,deliveryRequestID,originatingDeliveryRequestID,originatingRequest,eventID,moduleID,featureID,subscriberID,providerID,commodityID,operation,amount,validityPeriodType,validityPeriodQuantity,origin);
-		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(originatingDeliveryRequest,JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"), originatingDeliveryRequest.getTenantID());
+		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(originatingDeliveryRequest,JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), originatingDeliveryRequest.getTenantID());
 		DeliveryRequest deliveryRequest = createDeliveryRequest(/*applicationID, */commodityDeliveryRequest,paymentMeanService,deliverableService);
 		send(deliveryRequest);
 	}
 
 	public static void sendCommodityDeliveryRequest(PaymentMeanService paymentMeanService, DeliverableService deliverableService, SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin, int tenantID) throws CommodityDeliveryException {
 		HashMap<String,Object> requestData = createCommodityDeliveryRequest(briefcase,applicationID,deliveryRequestID,originatingDeliveryRequestID,originatingRequest,eventID,moduleID,featureID,subscriberID,providerID,commodityID,operation,amount,validityPeriodType,validityPeriodQuantity,origin);
-		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"), tenantID);
+		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), tenantID);
 		commodityDeliveryRequest.forceDeliveryPriority(priority);
 		DeliveryRequest deliveryRequest = createDeliveryRequest(/*applicationID, */commodityDeliveryRequest,paymentMeanService,deliverableService);
 		send(deliveryRequest);
@@ -250,7 +248,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 		requestData.put("deliveryRequestID", deliveryRequestID);
 		requestData.put("originatingRequest", originatingRequest);
 		requestData.put("originatingDeliveryRequestID", originatingDeliveryRequestID);
-		requestData.put("deliveryType", "commodityDelivery");
+		requestData.put("deliveryType", CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
 		requestData.put("eventID", eventID);
 		requestData.put("moduleID", moduleID);
 		requestData.put("featureID", featureID);
@@ -279,6 +277,5 @@ public class CommodityDeliveryManagerRemovalUtils {
 		String key = deliveryManagerDeclaration.isProcessedByEvolutionEngine() ? deliveryRequest.getSubscriberID() : deliveryRequest.getDeliveryRequestID();
 		deliveryRequestProducer.send(new ProducerRecord<>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(key)), ((ConnectSerde<DeliveryRequest>)deliveryManagerDeclaration.getRequestSerde()).serializer().serialize(topic, deliveryRequest)));
 	}
-
 
 }

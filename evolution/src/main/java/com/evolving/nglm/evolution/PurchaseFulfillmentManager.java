@@ -182,7 +182,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //  unique key server
     //
     
-    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer("commoditydelivery");
+    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
     
     //
     //  plugin instanciation

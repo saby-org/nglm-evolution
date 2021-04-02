@@ -205,7 +205,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public static class INFulfillmentRequest extends DeliveryRequest implements BonusDelivery
+  public static class INFulfillmentRequest extends BonusDelivery
   {
     /*****************************************
     *

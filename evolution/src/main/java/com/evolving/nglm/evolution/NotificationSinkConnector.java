@@ -83,7 +83,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
     *  unpackRecord
     *
     *****************************************/
-    
+
+    // closely duplicated in com.evolving.nglm.evolution.BDRSinkConnector.BDRSinkConnectorTask#unpackRecord
     @Override public MessageDelivery unpackRecord(SinkRecord sinkRecord) 
     {
       Object notificationValue = sinkRecord.value();

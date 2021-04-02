@@ -169,7 +169,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public static class EmptyFulfillmentRequest extends DeliveryRequest implements BonusDelivery
+  public static class EmptyFulfillmentRequest extends BonusDelivery
   {
     /*****************************************
     *
