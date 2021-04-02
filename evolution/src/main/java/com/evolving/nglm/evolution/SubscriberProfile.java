@@ -1150,7 +1150,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getToday(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     return metricHistory.getValue(today, today);
   }
 
@@ -1160,7 +1160,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getYesterday(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     Date endDay = startDay;
     return metricHistory.getValue(startDay, endDay);
@@ -1172,7 +1172,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getPrevious7Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -7, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
@@ -1184,7 +1184,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getPrevious14Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -14, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
@@ -1196,8 +1196,8 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getPreviousMonth(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
-    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
@@ -1209,7 +1209,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
@@ -1221,7 +1221,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getCountIfZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.countIf(startDay, endDay, MetricHistory.Criteria.IsZero);
@@ -1233,7 +1233,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getCountIfNonZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.countIf(startDay, endDay, MetricHistory.Criteria.IsNonZero);
@@ -1245,7 +1245,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getAggregateIfZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.aggregateIf(startDay, endDay, MetricHistory.Criteria.IsZero, criteriaMetricHistory);
@@ -1257,7 +1257,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getAggregateIfNonZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.aggregateIf(startDay, endDay, MetricHistory.Criteria.IsNonZero, criteriaMetricHistory);
@@ -1285,8 +1285,8 @@ public abstract class SubscriberProfile
     //
 
     int numberOfMonths = 3;
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
-    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getBaseTimeZone());
     long[] valuesByMonth = new long[numberOfMonths];
     for (int i=0; i<numberOfMonths; i++)
       {

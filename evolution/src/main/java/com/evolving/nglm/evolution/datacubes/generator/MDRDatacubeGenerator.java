@@ -207,8 +207,8 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
     
     //
@@ -236,8 +236,8 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
     Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
     
     //
@@ -266,7 +266,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
     
     //
@@ -295,7 +295,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
     Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
     
     //

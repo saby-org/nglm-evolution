@@ -389,7 +389,7 @@ public class JourneyState implements Cleanable
       //
       //  prior
       //
-      Date journeyEntryDay = RLMDateUtils.truncate(this.getJourneyEntryDate(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+      Date journeyEntryDay = RLMDateUtils.truncate(this.getJourneyEntryDate(), Calendar.DATE, Deployment.getBaseTimeZone());
       Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * journeyMetricDeclaration.getPriorPeriodDays(), Deployment.getBaseTimeZone());
       Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getBaseTimeZone());
       long priorMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
@@ -443,7 +443,7 @@ public class JourneyState implements Cleanable
     //
     for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
       if (! this.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID())) {
-        Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+        Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Deployment.getBaseTimeZone());
         Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getBaseTimeZone());
         Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, journeyMetricDeclaration.getPostPeriodDays(), Deployment.getBaseTimeZone());
         if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getBaseTimeZone()))) {

@@ -541,7 +541,7 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
     private long expirationDate(int ttlOnDelete)
     {
       Date now = SystemTime.getCurrentTime();
-      Date day = RLMDateUtils.truncate(now, Calendar.DATE, com.evolving.nglm.evolution.Deployment.getFirstDayOfTheWeek(), Deployment.getBaseTimeZone());
+      Date day = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
       Date expiration = RLMDateUtils.addDays(day, ttlOnDelete + 1, Deployment.getBaseTimeZone());
       return expiration.getTime() / 1000L;
     }

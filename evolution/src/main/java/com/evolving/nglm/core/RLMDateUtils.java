@@ -393,20 +393,12 @@ public class RLMDateUtils
   //  ceiling
   //
 
-  public static Date ceiling(Date date, int field, String firstDayOfWeek, String timeZone)
+  public static Date ceiling(Date date, int field, String timeZone)
   {
+    int firstDayOfTheWeekInt = Deployment.getFirstDayOfTheWeek();
     Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     Calendar result;
-    int firstDayOfTheWeekInt;
-    if (firstDayOfWeek.equalsIgnoreCase("Sunday"))
-      {
-        firstDayOfTheWeekInt = Calendar.SUNDAY;
-      }
-    else 
-      {
-        firstDayOfTheWeekInt = Calendar.MONDAY;
-      }
     switch (field)
       {
         case Calendar.DAY_OF_WEEK:
@@ -415,7 +407,7 @@ public class RLMDateUtils
           result = day;
           break;
         default:
-          result = truncate(date, field, firstDayOfWeek, timeZone).equals(date) ? calendar : DateUtils.ceiling(calendar, field);
+          result = truncate(date, field, timeZone).equals(date) ? calendar : DateUtils.ceiling(calendar, field);
           break;
       }
     return result.getTime();
@@ -426,20 +418,12 @@ public class RLMDateUtils
   //  truncate
   //
 
-  public static Date truncate(Date date, int field, String firstDayOfWeek, String timeZone)
+  public static Date truncate(Date date, int field, String timeZone)
   {
+    int firstDayOfTheWeekInt = Deployment.getFirstDayOfTheWeek();
     Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     Calendar result;
-    int firstDayOfTheWeekInt;
-    if (firstDayOfWeek.equalsIgnoreCase("Sunday"))
-      {
-        firstDayOfTheWeekInt = Calendar.SUNDAY;
-      }
-    else 
-      {
-        firstDayOfTheWeekInt = Calendar.MONDAY;
-      }
     switch (field)
       {
         case Calendar.DAY_OF_WEEK:
@@ -458,18 +442,18 @@ public class RLMDateUtils
   //  truncatedCompareTo
   //
 
-  public static int truncatedCompareTo(Date date1, Date date2, int field, String timeZone, String firstDayOfTheWeek)
+  public static int truncatedCompareTo(Date date1, Date date2, int field, String timeZone)
   {
-    return truncate(date1,field,firstDayOfTheWeek,timeZone).compareTo(truncate(date2,field,firstDayOfTheWeek,timeZone));
+    return truncate(date1,field,timeZone).compareTo(truncate(date2,field,timeZone));
   }
   
   //
   //  truncatedEquals
   //
 
-  public static boolean truncatedEquals(Date date1, Date date2, int field, String timeZone, String firstDayOfTheWeek)
+  public static boolean truncatedEquals(Date date1, Date date2, int field, String timeZone)
   {
-    return (truncatedCompareTo(date1, date2, field, timeZone, firstDayOfTheWeek) == 0);
+    return (truncatedCompareTo(date1, date2, field, timeZone) == 0);
   }
 
   //

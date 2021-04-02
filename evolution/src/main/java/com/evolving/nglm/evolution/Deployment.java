@@ -251,7 +251,7 @@ public class Deployment
   private static boolean enableContactPolicyProcessing;
   
   //EVPRO-865  
-  private static String firstDayOfTheWeek;
+  private static int firstDayOfTheWeek;
 
   //extracts configuration
   private static String extractManagerZookeeperDir;
@@ -301,7 +301,7 @@ public class Deployment
   public static String getSubscriberTraceTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceTopic(); }
   public static Map<String, AlternateID> getAlternateIDs() { return com.evolving.nglm.core.Deployment.getAlternateIDs(); }
 //EVPRO-865
-  public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
+  public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
 
   //
   //  evolution accessors
@@ -2031,7 +2031,31 @@ public class Deployment
 
       try
         {
-          firstDayOfTheWeek = JSONUtilities.decodeString(jsonRoot, "firstDayOfTheWeek", false);
+          String day = JSONUtilities.decodeString(jsonRoot, "firstDayOfTheWeek", "SUNDAY");
+          switch (day.trim().toUpperCase())
+            {
+            case "SUNDAY":
+              firstDayOfTheWeek = Calendar.SUNDAY;
+              break;
+            case "MONDAY":
+              firstDayOfTheWeek = Calendar.MONDAY;
+              break;
+            case "TUESDAY":
+              firstDayOfTheWeek = Calendar.TUESDAY;
+              break;
+            case "WEDNESDAY":
+              firstDayOfTheWeek = Calendar.WEDNESDAY;
+              break;
+            case "THURSDAY":
+              firstDayOfTheWeek = Calendar.THURSDAY;
+              break;
+            case "FRIDAY":
+              firstDayOfTheWeek = Calendar.FRIDAY;
+              break;
+            case "SATURDAY":
+              firstDayOfTheWeek = Calendar.SATURDAY;
+              break;
+            }
         }
       catch (JSONUtilitiesException e)
         {
