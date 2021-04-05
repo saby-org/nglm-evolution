@@ -3940,7 +3940,7 @@ public class EvolutionEngine
     boolean success = false;
     
     LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyChallengeID);
-    LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
+    LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyChallengeID, now);
     
     if (loyaltyProgramState != null)
       {
