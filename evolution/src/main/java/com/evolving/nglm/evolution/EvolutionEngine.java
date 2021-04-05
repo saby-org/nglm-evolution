@@ -3942,7 +3942,7 @@ public class EvolutionEngine
     LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyChallengeID);
     LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyChallengeID, now);
     
-    if (loyaltyProgramState != null)
+    if (loyaltyProgramState != null && loyaltyProgramState.getLoyaltyProgramExitDate() == null)
       {
         if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramChallenge && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
           {
@@ -3976,6 +3976,10 @@ public class EvolutionEngine
           {
             if (log.isErrorEnabled()) log.error("updateScore failed -> invalid loyaltyProgram {}", loyaltyProgram.getGUIManagedObjectDisplay());
           }
+      }
+    else
+      {
+        if (log.isErrorEnabled()) log.error("updateScore failed -> customer is not in loyaltyProgram {}", loyaltyProgram.getGUIManagedObjectDisplay());
       }
     
     //
