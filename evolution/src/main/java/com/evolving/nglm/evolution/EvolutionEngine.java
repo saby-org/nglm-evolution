@@ -3184,7 +3184,7 @@ public class EvolutionEngine
             String challengeID = (String) subscriberProfileForceUpdate.getParameterMap().get("challengeID");
             Integer score = (Integer) subscriberProfileForceUpdate.getParameterMap().get("score");
             int oldScore = 0;
-            if (subscriberProfile.getLoyaltyPrograms() != null && !subscriberProfile.getLoyaltyPrograms().isEmpty() && subscriberProfile.getLoyaltyPrograms().get(challengeID) instanceof LoyaltyProgramChallengeState)
+            if (subscriberProfile.getLoyaltyPrograms() != null && !subscriberProfile.getLoyaltyPrograms().isEmpty() && subscriberProfile.getLoyaltyPrograms().get(challengeID) != null && subscriberProfile.getLoyaltyPrograms().get(challengeID) instanceof LoyaltyProgramChallengeState)
               {
                 oldScore = ((LoyaltyProgramChallengeState) subscriberProfile.getLoyaltyPrograms().get(challengeID)).getCurrentScore();
               }
@@ -3941,37 +3941,41 @@ public class EvolutionEngine
     
     LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyChallengeID);
     LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
-    if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramChallenge && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
+    
+    if (loyaltyProgramState != null)
       {
-        LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
-        
-        //
-        // get current score
-        //
-        
-        int score = loyaltyProgramChallengeState.getCurrentScore();
-        
-        //
-        //  update
-        //
-        
-        score = score + amount;
-        
-        success = score >= 0;
-        
-        if (success)
+        if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramChallenge && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
           {
+            LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+            
             //
-            //  update score
+            // get current score
             //
             
-            loyaltyProgramChallengeState.setCurrentScore(score);
-            loyaltyProgramChallengeState.setLastScoreChangeDate(now);
+            int score = loyaltyProgramChallengeState.getCurrentScore();
+            
+            //
+            //  update
+            //
+            
+            score = score + amount;
+            
+            success = score >= 0;
+            
+            if (success)
+              {
+                //
+                //  update score
+                //
+                
+                loyaltyProgramChallengeState.setCurrentScore(score);
+                loyaltyProgramChallengeState.setLastScoreChangeDate(now);
+              }
           }
-      }
-    else
-      {
-        if (log.isErrorEnabled()) log.error("updateScore failed -> invalid loyaltyProgram {}", loyaltyProgram.getGUIManagedObjectDisplay());
+        else
+          {
+            if (log.isErrorEnabled()) log.error("updateScore failed -> invalid loyaltyProgram {}", loyaltyProgram.getGUIManagedObjectDisplay());
+          }
       }
     
     //
