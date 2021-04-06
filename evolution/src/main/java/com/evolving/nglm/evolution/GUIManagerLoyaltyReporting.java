@@ -47,6 +47,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -168,6 +169,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramChallengeNotFound");
         if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
         break;
+        
+      case MISSION:
+        response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramMissionNotFound");
+        if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
+        break;
 
       default:
         break;
@@ -286,6 +292,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           case CHALLENGE:
             loyaltyProgram = new LoyaltyProgramChallenge(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService, tenantID);
             break;
+            
+          case MISSION:
+            loyaltyProgram = new LoyaltyProgramMission(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService, tenantID);
+            break;
 
           case Unknown:
             throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", false));
@@ -307,8 +317,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
              *
              *****************************************/
 
-            dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram,
-                (existingLoyaltyProgram == null));
+            dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram, (existingLoyaltyProgram == null));
 
             /*****************************************
              *
@@ -681,6 +690,19 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   {
                     ChallengeLevel lastLevel = ((LoyaltyProgramChallenge) loyaltyProgram).getLastLevel();
                     loyaltyPro.put("topScore", lastLevel == null ? Integer.valueOf(0) : lastLevel.getScoreLevel());
+                  }
+              }
+            else if (loyaltyProgramType == LoyaltyProgramType.MISSION)
+              {
+                loyaltyPro.put("recurrence", recurrence);
+                if (loyaltyProgram instanceof LoyaltyProgramMission)
+                  {
+                    MissionStep lastStep = ((LoyaltyProgramMission) loyaltyProgram).getLastStep();
+                    loyaltyPro.put("lastStep", lastStep == null ? null : lastStep.getStepName());
+                    //
+                    //  RAJ K
+                    //
+                    
                   }
               }
             

@@ -494,15 +494,19 @@ public class GUIManager
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
     getLoyaltyProgramChallengeList("getLoyaltyProgramChallengeList"),
+    getLoyaltyProgramMissionList("getLoyaltyProgramMissionList"),
     
     getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
     getLoyaltyProgramChallengeSummaryList("getLoyaltyProgramChallengeSummaryList"),
+    getLoyaltyProgramMissionSummaryList("getLoyaltyProgramMissionSummaryList"),
     
     getLoyaltyProgram("getLoyaltyProgram"),
     getLoyaltyProgramChallenge("getLoyaltyProgramChallenge"),
+    getLoyaltyProgramMission("getLoyaltyProgramMission"),
     
     putLoyaltyProgram("putLoyaltyProgram"),
     putLoyaltyProgramChallenge("putLoyaltyProgramChallenge"),
+    putLoyaltyProgramMission("putLoyaltyProgramMission"),
     
     removeLoyaltyProgram("removeLoyaltyProgram"),
     setStatusLoyaltyProgram("setStatusLoyaltyProgram"),
@@ -2213,12 +2217,16 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeList", new APISimpleHandler(API.getLoyaltyProgramChallengeList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramMissionList", new APISimpleHandler(API.getLoyaltyProgramMissionList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramSummaryList", new APISimpleHandler(API.getLoyaltyProgramSummaryList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeSummaryList", new APISimpleHandler(API.getLoyaltyProgramChallengeSummaryList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramMissionSummaryList", new APISimpleHandler(API.getLoyaltyProgramMissionSummaryList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgram", new APISimpleHandler(API.getLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallenge", new APISimpleHandler(API.getLoyaltyProgramChallenge));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramMission", new APISimpleHandler(API.getLoyaltyProgramMission));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgramChallenge", new APISimpleHandler(API.putLoyaltyProgramChallenge));
+        restServer.createContext("/nglm-guimanager/putLoyaltyProgramMission", new APISimpleHandler(API.putLoyaltyProgramMission));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/setStatusLoyaltyProgram", new APISimpleHandler(API.setStatusLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
@@ -3871,6 +3879,10 @@ public class GUIManager
                 case getLoyaltyProgramChallengeList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, true, includeArchived, tenantID);
                   break;
+                  
+                case getLoyaltyProgramMissionList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.MISSION, true, includeArchived, tenantID);
+                  break;
 
                 case getLoyaltyProgramSummaryList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.POINTS, false, includeArchived, tenantID);
@@ -3878,6 +3890,10 @@ public class GUIManager
                   
                 case getLoyaltyProgramChallengeSummaryList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, false, includeArchived, tenantID);
+                  break;
+                  
+                case getLoyaltyProgramMissionSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.MISSION, false, includeArchived, tenantID);
                   break;
 
                 case getLoyaltyProgram:
@@ -3887,6 +3903,10 @@ public class GUIManager
                 case getLoyaltyProgramChallenge:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, includeArchived, tenantID);
                   break;
+                  
+                case getLoyaltyProgramMission:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.MISSION, includeArchived, tenantID);
+                  break;
 
                 case putLoyaltyProgram:
                   jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.POINTS, tenantID);
@@ -3894,6 +3914,10 @@ public class GUIManager
                   
                 case putLoyaltyProgramChallenge:
                   jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, tenantID);
+                  break;
+                  
+                case putLoyaltyProgramMission:
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.MISSION, tenantID);
                   break;
 
                 case removeLoyaltyProgram:

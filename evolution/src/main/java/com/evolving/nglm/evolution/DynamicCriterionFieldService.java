@@ -150,6 +150,13 @@ public class DynamicCriterionFieldService extends GUIService
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
       }
+    else if (loyaltyProgram instanceof LoyaltyProgramMission)
+      {
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "step", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "stepupdatedate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
+      }
   }
   /*****************************************
   *
@@ -257,6 +264,10 @@ public class DynamicCriterionFieldService extends GUIService
         removeDynamicCriterionField(prefix + "level", null, loyaltyProgram.getTenantID());
         removeDynamicCriterionField(prefix + "score", null, loyaltyProgram.getTenantID());
         removeDynamicCriterionField(prefix + "lastScoreChangeDate", null, loyaltyProgram.getTenantID());
+      }
+    else if (loyaltyProgram instanceof LoyaltyProgramMission)
+      {
+        removeDynamicCriterionField(prefix + "step", null, loyaltyProgram.getTenantID());
       }
   }
 
