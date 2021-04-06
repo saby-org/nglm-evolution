@@ -201,6 +201,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CommunicationChannelTimeWindow.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramPoints.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramChallenge.serde());
+    guiManagedObjectSerdes.add(LoyaltyProgramMission.serde());
     guiManagedObjectSerdes.add(ExclusionInclusionTarget.serde());
     guiManagedObjectSerdes.add(DNBOMatrix.serde());
     guiManagedObjectSerdes.add(SegmentContactPolicy.serde());
