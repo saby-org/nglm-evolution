@@ -532,6 +532,8 @@ public abstract class SubscriberProfile
                     ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getPreviousLevelName());
                     loyalty.put("levelChangeType", ChallengeLevel.changeFromLevelToLevel(previousLevel, level).getExternalRepresentation());
                     loyalty.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber());
+                    loyalty.put("previousPeriodScore", loyaltyProgramChallengeState.getPreviousPeriodScore());
+                    loyalty.put("previousPeriodLevel", loyaltyProgramChallengeState.getPreviousPeriodLevel());
                     loyalty.put("score", loyaltyProgramChallengeState.getCurrentScore());
                   }
               }
