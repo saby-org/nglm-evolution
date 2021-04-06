@@ -514,8 +514,8 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       schemaBuilder.field("stepID", Schema.INT32_SCHEMA);
       schemaBuilder.field("stepName", Schema.STRING_SCHEMA);
       schemaBuilder.field("completionEventName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("proportionalProgression", Schema.BOOLEAN_SCHEMA);
-      schemaBuilder.field("progression", Schema.FLOAT64_SCHEMA);
+      schemaBuilder.field("proportionalProgression", SchemaBuilder.bool().defaultValue(true).schema());
+      schemaBuilder.field("progression", Schema.OPTIONAL_FLOAT64_SCHEMA);
       schemaBuilder.field("workflowStepUP", Schema.OPTIONAL_STRING_SCHEMA); //workflowStepUP
       schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("workflowCompletion", Schema.OPTIONAL_STRING_SCHEMA);

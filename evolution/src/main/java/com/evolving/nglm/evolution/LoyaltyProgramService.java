@@ -10,6 +10,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
@@ -169,28 +170,25 @@ public class LoyaltyProgramService extends GUIService
   public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
     JSONObject responseJSON = super.generateResponseJSON(guiManagedObject, fullDetails, date);
-    int tierCount = 0;
     int levelCount = 0;
     if (guiManagedObject instanceof LoyaltyProgramPoints)
       {
         LoyaltyProgramPoints lp = (LoyaltyProgramPoints) guiManagedObject;
         List<Tier> tiers = lp.getTiers();
-        if (tiers != null)
-          {
-            tierCount = tiers.size();
-          }
+        responseJSON.put("tierCount", tiers == null ? Integer.valueOf(0) : tiers.size());
       }
     else if (guiManagedObject instanceof LoyaltyProgramChallenge)
       {
         LoyaltyProgramChallenge lc = (LoyaltyProgramChallenge) guiManagedObject;
         List<ChallengeLevel> challengeLevels = lc.getLevels();
-        if (challengeLevels != null)
-          {
-            levelCount = challengeLevels.size();
-          }
+        responseJSON.put("levelCount", challengeLevels == null ? Integer.valueOf(0) : challengeLevels.size());
       }
-    responseJSON.put("tierCount", tierCount);
-    responseJSON.put("levelCount", levelCount);
+    else if (guiManagedObject instanceof LoyaltyProgramMission)
+      {
+        LoyaltyProgramMission mission = (LoyaltyProgramMission) guiManagedObject;
+        List<MissionStep> steps = mission.getSteps();
+        responseJSON.put("stepCount", steps == null ? Integer.valueOf(0) : steps.size());
+      }
     return responseJSON;
   }
 
