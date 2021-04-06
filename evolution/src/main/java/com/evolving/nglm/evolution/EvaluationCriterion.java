@@ -9,8 +9,7 @@ package com.evolving.nglm.evolution;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.lang.reflect.Type;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -44,7 +43,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
@@ -240,7 +238,7 @@ public class EvaluationCriterion
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("criterionContext", CriterionContext.schema());
     schemaBuilder.field("criterionField", Schema.STRING_SCHEMA);
     schemaBuilder.field("criterionOperator", Schema.STRING_SCHEMA);
@@ -248,6 +246,7 @@ public class EvaluationCriterion
     schemaBuilder.field("argumentBaseTimeUnit", Schema.STRING_SCHEMA);
     schemaBuilder.field("storyReference", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("criterionDefault", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("useESQueryNoPainless",Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -282,13 +281,15 @@ public class EvaluationCriterion
   private Expression argument;
   private boolean referencesEvaluationDate;
 
+  private Boolean useESQueryNoPainless;
+
   /*****************************************
   *
   *  constructor -- simple
   *
   *****************************************/
 
-  private EvaluationCriterion(CriterionContext criterionContext, CriterionField criterionField, CriterionOperator criterionOperator, String argumentExpression, TimeUnit argumentBaseTimeUnit, String storyReference, boolean criterionDefault)
+  private EvaluationCriterion(CriterionContext criterionContext, CriterionField criterionField, CriterionOperator criterionOperator, String argumentExpression, TimeUnit argumentBaseTimeUnit, String storyReference, boolean criterionDefault,Boolean useESQueryNoPainless)
   {
     this.criterionContext = criterionContext;
     this.criterionField = criterionField;
@@ -299,6 +300,7 @@ public class EvaluationCriterion
     this.criterionDefault = criterionDefault;
     this.argument = null;
     this.referencesEvaluationDate = criterionField.getID().equals(CriterionField.EvaluationDateField);
+    this.useESQueryNoPainless = useESQueryNoPainless;
   }
 
   /*****************************************
@@ -342,6 +344,8 @@ public class EvaluationCriterion
       {
         throw new GUIManagerException(e);
       }
+
+    this.useESQueryNoPainless = JSONUtilities.decodeBoolean(jsonRoot, "useESQueryNoPainless");
 
     //
     //  validate
@@ -648,6 +652,18 @@ public class EvaluationCriterion
   public Expression getArgument() { return argument; }
   public String getStoryReference() { return storyReference; }
   public boolean getCriterionDefault() { return criterionDefault; }
+  public Boolean getUseESQueryNoPainless(){return  useESQueryNoPainless;}
+
+  /*****************************************
+   *
+   *  setters
+   *
+   *****************************************/
+  //this method was defined especially for extracts to be sure that extracts
+  public void setUseESQueryNoPainless(Boolean useESQueryNoPainless)
+  {
+    this.useESQueryNoPainless = useESQueryNoPainless;
+  }
 
   /*****************************************
   *
@@ -677,6 +693,7 @@ public class EvaluationCriterion
     struct.put("argumentBaseTimeUnit", criterion.getArgumentBaseTimeUnit().getExternalRepresentation());
     struct.put("storyReference", criterion.getStoryReference());
     struct.put("criterionDefault", criterion.getCriterionDefault());
+    struct.put("useESQueryNoPainless",criterion.getUseESQueryNoPainless());
     return struct;
   }
 
@@ -708,6 +725,7 @@ public class EvaluationCriterion
     TimeUnit argumentBaseTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("argumentBaseTimeUnit"));
     String storyReference = valueStruct.getString("storyReference");
     boolean criterionDefault = valueStruct.getBoolean("criterionDefault");
+    Boolean useESQueryNoPainless = schemaVersion >=2 ? valueStruct.getBoolean("useESQueryNoPainless"):null;
 
     //
     //  validate
@@ -719,7 +737,7 @@ public class EvaluationCriterion
     //  construct
     //
 
-    EvaluationCriterion result = new EvaluationCriterion(criterionContext, criterionField, criterionOperator, argumentExpression, argumentBaseTimeUnit, storyReference, criterionDefault);
+    EvaluationCriterion result = new EvaluationCriterion(criterionContext, criterionField, criterionOperator, argumentExpression, argumentBaseTimeUnit, storyReference, criterionDefault,useESQueryNoPainless);
 
     //
     //  parse argument
@@ -1412,84 +1430,117 @@ public class EvaluationCriterion
 
   QueryBuilder esQuery() throws CriterionException
   {
+
     /*****************************************
-    *
-    *  esField
-    *
-    *****************************************/
+     *
+     *  esField
+     *
+     *****************************************/
 
     String esField = criterionField.getESField();
-    
+
     if (esField == null)
-      {
-        throw new CriterionException("invalid criterionField " + criterionField);
-      }
+    {
+      throw new CriterionException("invalid criterionField " + criterionField);
+    }
 
     //
     // Handle criterion "loyaltyprogram.name"
     //
-    
+
     if ("loyaltyprogram.name".equals(esField))
+    {
+      QueryBuilder query = null;
+      // ES special case for isNull : (must_not -> exists) does not work when inside a nested query : must_not must be on the toplevel query !
+      switch (criterionOperator)
       {
-        QueryBuilder query = null;
-        // ES special case for isNull : (must_not -> exists) does not work when inside a nested query : must_not must be on the toplevel query !
-        switch (criterionOperator)
-        {
-          case IsNullOperator:
-            query = QueryBuilders.boolQuery().mustNot(
-                QueryBuilders.nestedQuery("loyaltyPrograms",
-                    QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramName") , ScoreMode.Total));
-            break;
-            
-          case IsNotNullOperator:
-          default:
-            query = QueryBuilders.boolQuery().filter(
-                QueryBuilders.nestedQuery("loyaltyPrograms",
-                    buildCompareQuery("loyaltyPrograms.loyaltyProgramName", ExpressionDataType.StringExpression) , ScoreMode.Total));
-            break;
-        }
-        return query;
+      case IsNullOperator:
+        query = QueryBuilders.boolQuery().mustNot(
+            QueryBuilders.nestedQuery("loyaltyPrograms",
+                QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramName") , ScoreMode.Total));
+        break;
+
+      case IsNotNullOperator:
+      default:
+        query = QueryBuilders.boolQuery().filter(
+            QueryBuilders.nestedQuery("loyaltyPrograms",
+                buildCompareQuery("loyaltyPrograms.loyaltyProgramName", ExpressionDataType.StringExpression) , ScoreMode.Total));
+        break;
       }
+      return query;
+    }
 
     //
     // Handle dynamic criterion "loyaltyprogram.LP1.xxxxx"
     //
-    
+
     if (esField.startsWith("loyaltyprogram."))
-      {
-        QueryBuilder query = handleLoyaltyProgramDynamicCriterion(esField);
-        return query;
-      }
+    {
+      QueryBuilder query = handleLoyaltyProgramDynamicCriterion(esField);
+      return query;
+    }
 
     //
     // Handle dynamic criterion "point.POINT001.balance"
     //
-    
+
     if (esField.startsWith("point."))
-      {
-        QueryBuilder query = handlePointDynamicCriterion(esField);
-        return query;
-      }
+    {
+      QueryBuilder query = handlePointDynamicCriterion(esField);
+      return query;
+    }
 
     //
     // Handle dynamic criterion "campaign.name, journey.customer.name..."
     //
-    
+
     if (esField.startsWith("specialCriterion"))
-      {
-        QueryBuilder query = handleSpecialCriterion(esField);
-        return query;
-      }
+    {
+      QueryBuilder query = handleSpecialCriterion(esField);
+      return query;
+    }
 
     //
     // Handle targets
     //
-    
+
     if ("internal.targets".equals(esField))
-      {
-        QueryBuilder query = handleTargetsCriterion(esField);
-        return query;
-      }
+    {
+      QueryBuilder query = handleTargetsCriterion(esField);
+      return query;
+    }
+
+    //base on criterion settings decide which es query will be used (with painless or not)
+    //the way how criterion will be evaluated can come from json request or can be defined into CriterionField
+    //if defined in request CriterionField value will be ignored
+    boolean evaluateNoQuery;
+    //if criterion is not comming from request it will be completed with valued defined in CriterionField (CriterionField follows the usual pattern false if not defined)
+    if(useESQueryNoPainless == null)
+    {
+      evaluateNoQuery = criterionField.getUseESQueryNoPainless();
+    }
+    else
+    {
+      evaluateNoQuery = useESQueryNoPainless.booleanValue();
+    }
+    if(evaluateNoQuery)
+    {
+      return noPainlessEsQuery(esField);
+    }
+    else
+    {
+      return painlessEsQuery(esField);
+    }
+  }
+
+  /*****************************************
+   *
+   *  painlessEsQuery
+   *
+   *****************************************/
+
+  private QueryBuilder painlessEsQuery(String esField) throws CriterionException
+  {
 
     /*****************************************
     *
@@ -1855,98 +1906,18 @@ public class EvaluationCriterion
 
   /*****************************************
    *
-   *  esQuery
+   *  noPainlessEsQuery
    *
    *****************************************/
 
-  QueryBuilder esQueryWithoutPainless() throws CriterionException
+  private QueryBuilder noPainlessEsQuery(String esField) throws CriterionException
   {
-    /*****************************************
-     *
-     *  esField
-     *
-     *****************************************/
-
-    String esField = criterionField.getESField();
-
-    if (esField == null)
-    {
-      throw new CriterionException("invalid criterionField " + criterionField);
-    }
-
-    //
-    // Handle criterion "loyaltyprogram.name"
-    //
-
-    if ("loyaltyprogram.name".equals(esField))
-    {
-      QueryBuilder query = null;
-      // ES special case for isNull : (must_not -> exists) does not work when inside a nested query : must_not must be on the toplevel query !
-      switch (criterionOperator)
-      {
-      case IsNullOperator:
-        query = QueryBuilders.boolQuery().mustNot(
-            QueryBuilders.nestedQuery("loyaltyPrograms",
-                QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramName") , ScoreMode.Total));
-        break;
-
-      case IsNotNullOperator:
-      default:
-        query = QueryBuilders.boolQuery().filter(
-            QueryBuilders.nestedQuery("loyaltyPrograms",
-                buildCompareQuery("loyaltyPrograms.loyaltyProgramName", ExpressionDataType.StringExpression) , ScoreMode.Total));
-        break;
-      }
-      return query;
-    }
-
-    //
-    // Handle dynamic criterion "loyaltyprogram.LP1.xxxxx"
-    //
-
-    if (esField.startsWith("loyaltyprogram."))
-    {
-      QueryBuilder query = handleLoyaltyProgramDynamicCriterion(esField);
-      return query;
-    }
-
-    //
-    // Handle dynamic criterion "point.POINT001.balance"
-    //
-
-    if (esField.startsWith("point."))
-    {
-      QueryBuilder query = handlePointDynamicCriterion(esField);
-      return query;
-    }
-
-    //
-    // Handle dynamic criterion "campaign.name, journey.customer.name..."
-    //
-
-    if (esField.startsWith("specialCriterion"))
-    {
-      QueryBuilder query = handleSpecialCriterion(esField);
-      return query;
-    }
-
-    //
-    // Handle targets
-    //
-
-    if ("internal.targets".equals(esField))
-    {
-      QueryBuilder query = handleTargetsCriterion(esField);
-      return query;
-    }
 
     /*****************************************
      *
-     *  script
+     *  query
      *
      ****************************************/
-
-    StringBuilder script = new StringBuilder();
     QueryBuilder queryBuilder = null;
 
     /*****************************************
@@ -1955,58 +1926,243 @@ public class EvaluationCriterion
      *
      *****************************************/
 
+    //verify is null or not
+    switch (criterionOperator)
+    {
+    case IsNullOperator:
+      return QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(esField));
+    case IsNotNullOperator:
+      return QueryBuilders.existsQuery(esField);
+    }
+
     CriterionDataType evaluationDataType = criterionField.getFieldDataType();
     switch (evaluationDataType)
     {
+    case BooleanCriterion:
+    {
+      switch (criterionOperator)
+      {
+      case EqualOperator:
+        queryBuilder = QueryBuilders.termQuery(esField,argument.esQueryNoPainless());
+        break;
+      case NotEqualOperator:
+        TermQueryBuilder termQuery = QueryBuilders.termQuery(esField,argument.esQueryNoPainless());
+        queryBuilder = QueryBuilders.boolQuery().mustNot(termQuery);
+        break;
+      default:
+        throw new UnsupportedOperationException("Operation "+criterionOperator.getExternalRepresentation()+" not supported for "+evaluationDataType.getExternalRepresentation());
+      }
+    }
+    break;
+
     case StringCriterion:
     {
       switch (criterionOperator)
       {
       case EqualOperator:
-        queryBuilder = QueryBuilders.termQuery(esField,argument.evaluateConstant());
+        queryBuilder = QueryBuilders.termQuery(esField,argument.esQueryNoPainless());
         break;
       case NotEqualOperator:
-        TermQueryBuilder termQuery = QueryBuilders.termQuery(esField,argument.evaluateConstant());
+        TermQueryBuilder termQuery = QueryBuilders.termQuery(esField,argument.esQueryNoPainless());
         queryBuilder = QueryBuilders.boolQuery().mustNot(termQuery);
         break;
+      case ContainsKeywordOperator:
+      case DoesNotContainsKeywordOperator:
+        if (! argument.isConstant())
+        {
+          throw new CriterionException("containsKeyword invalid (non-constant) argument");
+        }
+        if(argumentExpression.isEmpty())
+        {
+          throw new CriterionException("Operation "+criterionOperator.getExternalRepresentation()+" not allowed for empty argument");
+        }
+        queryBuilder = QueryBuilders.regexpQuery(esField,"@"+argument.evaluateExpression(null,null)+"@");
+        if(criterionOperator == CriterionOperator.DoesNotContainsKeywordOperator)
+        {
+          queryBuilder =  QueryBuilders.boolQuery().mustNot(queryBuilder);
+        }
+        break;
+      case IsInSetOperator:
+      {
+        Object argumentObject = argument.esQueryNoPainless();
+        queryBuilder = new TermsQueryBuilder(esField, (Set<String>) argumentObject);
+        break;
+      }
+      case NotInSetOperator:
+      {
+        Object argumentObject = argument.esQueryNoPainless();
+        queryBuilder = QueryBuilders.boolQuery().mustNot(new TermsQueryBuilder(esField, (Set<String>) argumentObject));
+        break;
+      }
       default:
         throw new UnsupportedOperationException("Operation "+criterionOperator.getExternalRepresentation()+" not supported for "+evaluationDataType.getExternalRepresentation());
       }
       break;
     }
 
+    case IntegerCriterion:
+    case DoubleCriterion:
+    {
+      //operations can be performed in ES only by using painless script for the moment
+      if(argument instanceof Expression.OperatorExpression || argument instanceof Expression.UnaryExpression || argument instanceof Expression.ReferenceExpression)
+      {
+        return painlessEsQuery(esField);
+      }
+      else
+      {
+        RangeQueryBuilder rangeQueryBuilder = new RangeQueryBuilder(esField);
+        switch (criterionOperator)
+        {
+        case EqualOperator:
+          queryBuilder = QueryBuilders.termQuery(esField, argument.esQueryNoPainless());
+          break;
+        case NotEqualOperator:
+          TermQueryBuilder termQuery = QueryBuilders.termQuery(esField, argument.esQueryNoPainless());
+          queryBuilder = QueryBuilders.boolQuery().mustNot(termQuery);
+          break;
+        case GreaterThanOrEqualOperator:
+          rangeQueryBuilder.gte(argument.esQueryNoPainless());
+          queryBuilder = rangeQueryBuilder;
+          break;
+        case GreaterThanOperator:
+          rangeQueryBuilder.gt(argument.esQueryNoPainless());
+          queryBuilder = rangeQueryBuilder;
+          break;
+        case LessThanOperator:
+          rangeQueryBuilder.lt(argument.esQueryNoPainless());
+          queryBuilder = rangeQueryBuilder;
+          break;
+        case LessThanOrEqualOperator:
+          rangeQueryBuilder.lte(argument.esQueryNoPainless());
+          queryBuilder = rangeQueryBuilder;
+          break;
+        case IsInSetOperator:
+        {
+          //double will not get here because is rejected by validate
+          Object argumentObject = argument.esQueryNoPainless();
+          queryBuilder = new TermsQueryBuilder(esField, (Set<Integer>) argumentObject);
+          break;
+        }
+        case NotInSetOperator:
+        {
+          //double will not get here because is rejected by validate
+          Object argumentObject = argument.esQueryNoPainless();
+          queryBuilder = QueryBuilders.boolQuery().mustNot(new TermsQueryBuilder(esField, (Set<Integer>) argumentObject));
+          break;
+        }
+        default:
+          throw new UnsupportedOperationException(
+              "Operation " + criterionOperator.getExternalRepresentation() + " not supported for " + evaluationDataType.getExternalRepresentation());
+        }
+      }
+      break;
+    }
+
 
     case DateCriterion:
+    {
+      RangeQueryBuilder rangeQueryBuilder = new RangeQueryBuilder(esField);
+      rangeQueryBuilder.timeZone(Deployment.getBaseTimeZone());
+      if(argument instanceof Expression.OperatorExpression || argument instanceof Expression.UnaryExpression || argument instanceof Expression.ReferenceExpression)
+      {
+        return painlessEsQuery(esField);
+      }
+      else
+      {
+        switch (criterionOperator)
+        {
+        case EqualOperator:
+          rangeQueryBuilder.from(argument.esQueryNoPainless());
+          rangeQueryBuilder.to(argument.esQueryNoPainless());
+          queryBuilder = rangeQueryBuilder;
+          break;
+        case NotEqualOperator:
+          rangeQueryBuilder.from(argument.esQueryNoPainless());
+          rangeQueryBuilder.to(argument.esQueryNoPainless());
+          queryBuilder = QueryBuilders.boolQuery().mustNot(rangeQueryBuilder);
+          break;
+        case GreaterThanOrEqualOperator:
+          rangeQueryBuilder.from(argument.esQueryNoPainless(), true);
+          queryBuilder = rangeQueryBuilder;
+          break;
+        case GreaterThanOperator:
+          rangeQueryBuilder.from(argument.esQueryNoPainless(), false);
+          queryBuilder = rangeQueryBuilder;
+          break;
+        case LessThanOperator:
+          rangeQueryBuilder.to(argument.esQueryNoPainless(), false);
+          queryBuilder = rangeQueryBuilder;
+          break;
+        case LessThanOrEqualOperator:
+          rangeQueryBuilder.to(argument.esQueryNoPainless(), true);
+          queryBuilder = rangeQueryBuilder;
+          break;
+        }
+      }
+    }
+    break;
+
+    case StringSetCriterion:
+    {
+      Object argumentObject = argument.esQueryNoPainless();
+      QueryBuilder stringSetQueryBuilder;
+      if (argumentObject instanceof String)
+      {
+        stringSetQueryBuilder = new TermQueryBuilder(esField, (String) argumentObject);
+      }
+      else if (argumentObject instanceof Set)
+      {
+        stringSetQueryBuilder = new TermsQueryBuilder(esField, (Set<String>) argumentObject);
+      }
+      else
+      {
+        throw new UnsupportedOperationException(
+            "Argument type" + argumentObject.getClass().toString() + " not supported for " + evaluationDataType.getExternalRepresentation());
+      }
       switch (criterionOperator)
       {
-      case EqualOperator:
-        queryBuilder = QueryBuilders.termQuery(esField,argumentBaseTimeUnit);
+      case NonEmptyIntersectionOperator:
+      case ContainsOperator:
+        queryBuilder = stringSetQueryBuilder;
         break;
-      case NotEqualOperator:
-        TermQueryBuilder termQuery = QueryBuilders.termQuery(esField,argumentBaseTimeUnit);
-        queryBuilder = QueryBuilders.boolQuery().mustNot(termQuery);
-        break;
-      case GreaterThanOrEqualOperator:
-        RangeQueryBuilder rangeQueryBuilder = new RangeQueryBuilder(esField);
-        rangeQueryBuilder.gte(argumentBaseTimeUnit);
-        queryBuilder = rangeQueryBuilder;
-        break;
-      case GreaterThanOperator:
-        break;
-      case LessThanOperator:
-        break;
-      case LessThanOrEqualOperator:
+      case EmptyIntersectionOperator:
+      case DoesNotContainOperator:
+        queryBuilder = QueryBuilders.boolQuery().mustNot(stringSetQueryBuilder);
         break;
       }
       break;
-
-    case StringSetCriterion:
-      script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i)?.toLowerCase()); ");
-      break;
+    }
 
     case IntegerSetCriterion:
-      script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
+    {
+      Object argumentObject = argument.esQueryNoPainless();
+      QueryBuilder stringSetQueryBuilder;
+      if (argumentObject instanceof String)
+      {
+        stringSetQueryBuilder = new TermQueryBuilder(esField, (Integer) argumentObject);
+      }
+      else if (argumentObject instanceof Set)
+      {
+        stringSetQueryBuilder = new TermsQueryBuilder(esField, (Set<Integer>) argumentObject);
+      }
+      else
+      {
+        throw new UnsupportedOperationException(
+            "Argument type" + argumentObject.getClass().toString() + " not supported for " + evaluationDataType.getExternalRepresentation());
+      }
+      switch (criterionOperator)
+      {
+      case NonEmptyIntersectionOperator:
+      case ContainsOperator:
+        queryBuilder = stringSetQueryBuilder;
+        break;
+      case EmptyIntersectionOperator:
+      case DoesNotContainOperator:
+        queryBuilder = QueryBuilders.boolQuery().mustNot(stringSetQueryBuilder);
+        break;
+      }
       break;
+    }
 
     case AniversaryCriterion:
       throw new UnsupportedOperationException("AniversaryCriterion is not supported");
@@ -2015,309 +2171,9 @@ public class EvaluationCriterion
       throw new UnsupportedOperationException("timeCriterion is not supported");
 
     default:
-      script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
+      //script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
       break;
     }
-
-    /*****************************************
-     *
-     *  right -- generate code to evaluate right
-     *
-     *****************************************/
-
-    //if (argument != null)
-    //{
-    //  argument.esQuery(script, argumentBaseTimeUnit);
-    //  switch (argument.getType())
-    //  {
-    //  case StringExpression:
-    //    script.append("def right = right_0?.toLowerCase(); ");
-    //    break;
-    //
-    //  case StringSetExpression:
-    //    script.append("def right = new ArrayList(); for (int i=0;i<right_0.size();i++) right.add(right_0.get(i)?.toLowerCase()); ");
-    //    break;
-    //
-    //  default:
-    //    script.append("def right = right_0; ");
-    //    break;
-    //  }
-    //}
-
-    /*****************************************
-     *
-     *  operator -- generate code to evaluate the operator (using left and right)
-     *
-     *****************************************/
-
-    //switch (criterionOperator)
-    //{
-    ///*****************************************
-    // *
-    // *  equality operators
-    // *
-    // *****************************************/
-    //
-    //case EqualOperator:
-    //  script.append("return (left != null) ? left == right : false; ");
-    //  break;
-    //
-    //case NotEqualOperator:
-    //  script.append("return (left != null) ? left != right : false; ");
-    //  break;
-    //
-    ///*****************************************
-    // *
-    // *  relational operators
-    // *
-    // *****************************************/
-    //
-    //case GreaterThanOperator:
-    //  switch (evaluationDataType)
-    //  {
-    //  case DateCriterion:
-    //    script.append("return (left != null) ? left.isAfter(right) : false; ");
-    //    break;
-    //  case AniversaryCriterion:
-    //    throw new UnsupportedOperationException("AniversaryCriterion is not supported");
-    //  case TimeCriterion:
-    //    throw new UnsupportedOperationException("timeCriterion is not supported");
-    //
-    //  default:
-    //    script.append("return (left != null) ? left > right : false; ");
-    //    break;
-    //  }
-    //  break;
-    //
-    //case GreaterThanOrEqualOperator:
-    //  switch (evaluationDataType)
-    //  {
-    //  case DateCriterion:
-    //    script.append("return (left != null) ? !left.isBefore(right) : true; ");
-    //    break;
-    //
-    //  case AniversaryCriterion:
-    //    throw new UnsupportedOperationException("AniversaryCriterion is not supported");
-    //
-    //  case TimeCriterion:
-    //    throw new UnsupportedOperationException("timeCriterion is not supported");
-    //
-    //  default:
-    //    script.append("return (left != null) ? left >= right : false; ");
-    //    break;
-    //  }
-    //  break;
-    //
-    //case LessThanOperator:
-    //  switch (evaluationDataType)
-    //  {
-    //  case DateCriterion:
-    //    script.append("return (left != null) ? left.isBefore(right) : false; ");
-    //    break;
-    //
-    //  case AniversaryCriterion:
-    //    throw new UnsupportedOperationException("AniversaryCriterion is not supported");
-    //
-    //  case TimeCriterion:
-    //    throw new UnsupportedOperationException("timeCriterion is not supported");
-    //
-    //  default:
-    //    script.append("return (left != null) ? left < right : false; ");
-    //    break;
-    //  }
-    //  break;
-    //
-    //case LessThanOrEqualOperator:
-    //  switch (evaluationDataType)
-    //  {
-    //  case DateCriterion:
-    //    script.append("return (left != null) ? !left.isAfter(right) : true; ");
-    //    break;
-    //
-    //  case AniversaryCriterion:
-    //    throw new UnsupportedOperationException("AniversaryCriterion is not supported");
-    //
-    //  case TimeCriterion:
-    //    throw new UnsupportedOperationException("timeCriterion is not supported");
-    //
-    //  default:
-    //    script.append("return (left != null) ? left <= right : false; ");
-    //    break;
-    //  }
-    //  break;
-    //
-    ///*****************************************
-    // *
-    // *  isNull operators
-    // *
-    // *****************************************/
-    //
-    //case IsNullOperator:
-    //  script.append("return left == null; ");
-    //  break;
-    //
-    //case IsNotNullOperator:
-    //  script.append("return left != null; ");
-    //  break;
-    //
-    ///*****************************************
-    // *
-    // *  containsKeyword operator
-    // *
-    // *****************************************/
-    //
-    //case ContainsKeywordOperator:
-    //case DoesNotContainsKeywordOperator:
-    //
-    //  //
-    //  //  argument must be constant to evaluate esQuery
-    //  //
-    //
-    //  if (! argument.isConstant())
-    //  {
-    //    throw new CriterionException("containsKeyword invalid (non-constant) argument");
-    //  }
-    //
-    //  //
-    //  //  evaluate constant right hand-side
-    //  //
-    //
-    //  String argumentValue = (String) argument.evaluateExpression(null, TimeUnit.Unknown);
-    //
-    //  //
-    //  //  script
-    //  //
-    //
-    //  script.append("return left =~ /" + generateContainsKeywordRegex(argumentValue) + "/; ");
-    //
-    //  //
-    //  //  break
-    //  //
-    //
-    //  break;
-    //
-    ///*****************************************
-    // *
-    // *  set operators
-    // *
-    // *****************************************/
-    //
-    //case IsInSetOperator:
-    //  switch (argument.getType())
-    //  {
-    //  case StringSetExpression:
-    //  case EmptySetExpression:
-    //    script.append("return right.contains(left); ");
-    //    break;
-    //
-    //  case IntegerSetExpression:
-    //    script.append("def found = false; for (int i=0;i<right.size();i++) found = (found || right.get(i) == left); return found; ");
-    //    break;
-    //  }
-    //  break;
-    //
-    //case NotInSetOperator:
-    //  switch (argument.getType())
-    //  {
-    //  case StringSetExpression:
-    //  case EmptySetExpression:
-    //    script.append("return !right.contains(left); ");
-    //    break;
-    //
-    //  case IntegerSetExpression:
-    //    script.append("def found = false; for (int i=0;i<right.size();i++) found = (found || right.get(i) == left); return !found; ");
-    //    break;
-    //  }
-    //  break;
-    //
-    //case ContainsOperator:
-    //  switch (evaluationDataType)
-    //  {
-    //  case StringSetCriterion:
-    //    script.append("return left.contains(right); ");
-    //    break;
-    //
-    //  case IntegerSetCriterion:
-    //    script.append("def found = false; for (int i=0;i<left.size();i++) found = (found || left.get(i) == right); return found; ");
-    //    break;
-    //  }
-    //  break;
-    //
-    //case DoesNotContainOperator:
-    //  switch (evaluationDataType)
-    //  {
-    //  case StringSetCriterion:
-    //    script.append("return !left.contains(right); ");
-    //    break;
-    //
-    //  case IntegerSetCriterion:
-    //    script.append("def found = false; for (int i=0;i<left.size();i++) found = (found || left.get(i) == right); return !found; ");
-    //    break;
-    //  }
-    //  break;
-    //
-    //case NonEmptyIntersectionOperator:
-    //  script.append("left.retainAll(right); return !left.isEmpty(); ");
-    //  break;
-    //
-    //case EmptyIntersectionOperator:
-    //  script.append("left.retainAll(right); return left.isEmpty(); ");
-    //  break;
-    //
-    ///*****************************************
-    // *
-    // *  default
-    // *
-    // *****************************************/
-    //
-    //default:
-    //  throw new UnsupportedOperationException(criterionOperator.getExternalRepresentation());
-    //}
-
-    /*****************************************
-     *
-     *  log painless script
-     *
-     *****************************************/
-
-    if (log.isDebugEnabled()) log.debug("painless script: {}", script.toString());
-
-    /*****************************************
-     *
-     *  script query
-     *
-     *****************************************/
-
-    //Map<String, Object> parameters = Collections.<String, Object>emptyMap();
-    //QueryBuilder baseQuery = QueryBuilders.scriptQuery(new Script(ScriptType.INLINE, "painless", script.toString(), parameters));
-    //QueryBuilders.
-
-    ///*****************************************
-    // *
-    // *  criterionDefault
-    // *
-    // *****************************************/
-    //
-    //QueryBuilder query;
-    //switch (criterionOperator)
-    //{
-    //case IsNullOperator:
-    //case IsNotNullOperator:
-    //  query = queryBuilder;
-    //  break;
-    //
-    //case DoesNotContainsKeywordOperator:
-    //  query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(queryBuilder);
-    //  break;
-    //
-    //
-    //default:
-    //  if (criterionDefault)
-    //    query = QueryBuilders.boolQuery().should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(esField))).should(queryBuilder);
-    //  else
-    //    query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(queryBuilder);
-    //  break;
-    //}
 
     /*****************************************
      *
