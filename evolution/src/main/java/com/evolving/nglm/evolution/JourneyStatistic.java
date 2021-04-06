@@ -244,9 +244,30 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     	// take in account the fact that a workflow changed the following values for the calling campaign
         this.statusNotified = this.statusNotified || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
         this.statusConverted = this.statusConverted || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-        this.statusTargetGroup = this.statusTargetGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
-        this.statusControlGroup = this.statusControlGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
-        this.statusUniversalControlGroup = this.statusUniversalControlGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+        if(this.statusTargetGroup == null) 
+          {  
+            this.statusTargetGroup = workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+          }
+        else
+          {
+        	this.statusTargetGroup = this.statusTargetGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+          }
+        if(this.statusControlGroup == null)
+          {
+        	this.statusControlGroup = workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+          }
+        else 
+          {
+        	this.statusControlGroup = this.statusControlGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+          }
+        if(this.statusUniversalControlGroup == null)
+          {
+            this.statusUniversalControlGroup = workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+          }
+        else
+          {
+            this.statusUniversalControlGroup = this.statusUniversalControlGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+          }
       }
     
     //
