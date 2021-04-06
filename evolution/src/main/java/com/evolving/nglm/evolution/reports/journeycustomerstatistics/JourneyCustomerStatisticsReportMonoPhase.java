@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
@@ -59,11 +60,11 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> journeyStats = map;
     Map<String, Object> journeyMetric = map;
-        if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
+        if (journeyStats != null && !journeyStats.isEmpty())
           {
-            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
-            if (journey != null)
-              {
+            GUIManagedObject gmo = journeyService.getStoredJourney("" + journeyStats.get("journeyID")); // this does cast to String without NPE
+            if (gmo != null && gmo instanceof Journey) {
+              Journey journey = (Journey) gmo;
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
                 if (journeyStats.get(subscriberID) != null)
                   {
@@ -178,7 +179,15 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     journeyService.start();
 
     try {
-      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
+      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys();
+      List<Journey> activeJourneys = new ArrayList<>();
+      Date yesterdayAtZeroHour = ReportUtils.yesterdayAtZeroHour(reportGenerationDate);
+      Date yesterdayAtMidnight = ReportUtils.yesterdayAtMidnight(reportGenerationDate);
+      for (GUIManagedObject gmo : allJourneys) {
+        if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(yesterdayAtZeroHour)) {
+          activeJourneys.add((Journey) gmo);
+        }
+      }
       StringBuilder activeJourneyEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Journey journey : activeJourneys)
