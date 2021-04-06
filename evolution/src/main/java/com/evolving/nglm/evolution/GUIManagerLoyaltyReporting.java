@@ -1147,6 +1147,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     
     int loyaltyProgramCount = 0;
     int loyaltyProgramChallengeCount = 0;
+    int loyaltyProgramMissionCount = 0;
     for (GUIManagedObject guiManagedObject : loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived, tenantID))
       {
         JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(guiManagedObject, true, SystemTime.getCurrentTime());
@@ -1159,9 +1160,14 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           {
             loyaltyProgramChallengeCount++;
           }
+        else if (type == LoyaltyProgramType.MISSION)
+          {
+            loyaltyProgramMissionCount++;
+          }
       }
     response.put("loyaltyProgramCount", loyaltyProgramCount);
     response.put("loyaltyProgramChallengeCount", loyaltyProgramChallengeCount);
+    response.put("loyaltyProgramMissionCount", loyaltyProgramMissionCount);
     
     //
     //  areaAvailablity

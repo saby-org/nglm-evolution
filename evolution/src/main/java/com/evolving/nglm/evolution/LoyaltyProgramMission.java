@@ -514,8 +514,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       schemaBuilder.field("stepID", Schema.INT32_SCHEMA);
       schemaBuilder.field("stepName", Schema.STRING_SCHEMA);
       schemaBuilder.field("completionEventName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("progression", Schema.FLOAT32_SCHEMA);
+      schemaBuilder.field("progression", Schema.FLOAT64_SCHEMA);
       schemaBuilder.field("workflowStepUP", Schema.OPTIONAL_STRING_SCHEMA); //workflowStepUP
+      schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("workflowCompletion", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -543,6 +545,8 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     private String completionEventName = null;
     private Double progression;
     private String workflowStepUP = null;
+    private String workflowDaily = null;
+    private String workflowCompletion = null;
 
 
     /*****************************************
@@ -571,6 +575,15 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     {
       return workflowStepUP;
     }
+    public String getWorkflowDaily()
+    {
+      return workflowDaily;
+    }
+    public String getWorkflowCompletion()
+    {
+      return workflowCompletion;
+    }
+    
 
 
     /*****************************************
@@ -579,13 +592,15 @@ public class LoyaltyProgramMission extends LoyaltyProgram
      *
      *****************************************/
 
-    public MissionStep(int stepID, String stepName, String completionEventName, Double progression, String workflowStepUP)
+    public MissionStep(int stepID, String stepName, String completionEventName, Double progression, String workflowStepUP, String workflowDaily, String workflowCompletion)
     {
       this.stepID = stepID;
       this.stepName = stepName;
       this.completionEventName = completionEventName;
       this.progression = progression;
       this.workflowStepUP = workflowStepUP;
+      this.workflowDaily = workflowDaily;
+      this.workflowCompletion = workflowCompletion;
     }
 
     /*****************************************
@@ -603,6 +618,8 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       struct.put("completionEventName", steps.getCompletionEventName());
       struct.put("progression", steps.getProgression());
       struct.put("workflowStepUP", steps.getWorkflowStepUP());
+      struct.put("workflowDaily", steps.getWorkflowDaily());
+      struct.put("workflowCompletion", steps.getWorkflowCompletion());
       return struct;
     }
 
@@ -632,12 +649,14 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       String completionEventName = valueStruct.getString("completionEventName");
       Double progression = valueStruct.getFloat64("progression");
       String workflowStepUP = valueStruct.getString("workflowStepUP");
+      String workflowDaily = valueStruct.getString("workflowDaily");
+      String workflowCompletion = valueStruct.getString("workflowCompletion");
 
       //
       //  return
       //
 
-      return new MissionStep(stepID, stepName, completionEventName, progression, workflowStepUP);
+      return new MissionStep(stepID, stepName, completionEventName, progression, workflowStepUP, workflowDaily, workflowCompletion);
     }
 
     /*****************************************
@@ -659,6 +678,8 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       this.completionEventName = JSONUtilities.decodeString(jsonRoot, "completionEventName", true);
       this.progression = JSONUtilities.decodeDouble(jsonRoot, "progression", false);
       this.workflowStepUP = JSONUtilities.decodeString(jsonRoot, "workflowStepUP", false);
+      this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
+      this.workflowCompletion = JSONUtilities.decodeString(jsonRoot, "workflowCompletion", false);
     }
     
     /*****************************************
