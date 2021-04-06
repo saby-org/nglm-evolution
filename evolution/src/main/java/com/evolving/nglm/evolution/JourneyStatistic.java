@@ -173,10 +173,11 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.fromNodeID = null;
     this.toNodeID = journeyState.getJourneyNodeID();
     if(journeyState.isSpecialExit())
-    {	this.specialExitStatus=journeyState.getSpecialExitReason().getExternalRepresentation();
-    thisJourneyComplete=true;
-    this.exitDate=journeyState.getJourneyExitDate();
-    }
+      {	
+    	this.specialExitStatus=journeyState.getSpecialExitReason().getExternalRepresentation();
+    	thisJourneyComplete=true;
+    	this.exitDate=journeyState.getJourneyExitDate();
+      }
     this.deliveryRequestID = null;
     this.sample = null;
     this.markNotified = false;
@@ -190,8 +191,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.statusUniversalControlGroup = null;
     this.journeyComplete = thisJourneyComplete;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
-    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
-    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory, null);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory, null);
     this.subscriberStratum = subscriberStratum;
     
   }
@@ -202,27 +203,51 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted, String sample, Map<String, String> subscriberStratum, SubscriberProfile subscriberProfile)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyHistory workflowHistory, JourneyState journeyState, JourneyState workflowJourneyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted, String sample, Map<String, String> subscriberStratum, SubscriberProfile subscriberProfile)
   {
+    // if this constructor is called by a workflow, i.e. workflowJouneyState != null, then the JouneyLink must be set to null as it does not reflect something from the main campaign
+    if(workflowJourneyState != null)
+      {
+    	journeyLink = null;
+      }
+        
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
     this.journeyID = journeyState.getJourneyID();
     this.subscriberID = subscriberID;
     this.transitionDate = journeyState.getJourneyNodeEntryDate();
-    this.linkID = journeyLink.getLinkID();
-    this.fromNodeID = journeyLink.getSourceReference();
-    this.toNodeID = journeyLink.getDestinationReference();
+    this.linkID = journeyLink != null ? journeyLink.getLinkID() : null;
+    this.fromNodeID = journeyLink != null ? journeyLink.getSourceReference() : null;
+    this.toNodeID = journeyLink != null ? journeyLink.getDestinationReference() : journeyState.getJourneyNodeID();
     this.deliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
     this.sample = sample;
     this.markNotified = markNotified;
     this.markConverted = markConverted;
     this.lastConversionDate = journeyHistory.getLastConversionDate();
     this.conversionCount = journeyHistory.getConversionCount();
+    if(workflowHistory != null)
+      {
+        if(workflowHistory.getLastConversionDate() != null && (this.lastConversionDate == null || workflowHistory.getLastConversionDate().getTime() > this.lastConversionDate.getTime()))
+          {
+        	this.lastConversionDate = workflowHistory.getLastConversionDate();
+          }
+        this.conversionCount = this.conversionCount + workflowHistory.getConversionCount();
+      }
     this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     this.statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
     this.statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
     this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
     this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+
+    if(workflowJourneyState != null)
+      {
+    	// take in account the fact that a workflow changed the following values for the calling campaign
+        this.statusNotified = this.statusNotified || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+        this.statusConverted = this.statusConverted || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+        this.statusTargetGroup = this.statusTargetGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+        this.statusControlGroup = this.statusControlGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+        this.statusUniversalControlGroup = this.statusUniversalControlGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+      }
     
     //
     // re-check
@@ -232,10 +257,10 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     if (this.statusControlGroup == Boolean.TRUE) this.statusTargetGroup = this.statusUniversalControlGroup = !this.statusControlGroup;
     if (this.statusUniversalControlGroup == Boolean.TRUE) this.statusTargetGroup = this.statusControlGroup = !this.statusUniversalControlGroup;
     
-    this.journeyComplete = journeyLink.getDestination().getExitNode();
+    this.journeyComplete = journeyLink != null ? journeyLink.getDestination().getExitNode() : false;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
-    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
-    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory, workflowHistory);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory, workflowHistory);
     this.subscriberStratum = subscriberStratum;
     this.exitDate=journeyState.getJourneyExitDate()==null?null:journeyState.getJourneyExitDate();
   }
@@ -277,8 +302,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     
     this.journeyComplete = true;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
-    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
-    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory, null);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory, null);
     this.subscriberStratum = subscriberStratum;
     this.exitDate=journeyState.getJourneyExitDate();
   }
@@ -711,7 +736,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
   
-  private List<StatusHistory> prepareJourneyStatusSummary(JourneyHistory journeyHistory)
+  private List<StatusHistory> prepareJourneyStatusSummary(JourneyHistory journeyHistory, JourneyHistory workflowHistory)
   {
     List<StatusHistory> result = new ArrayList<StatusHistory>();
     if(journeyHistory != null) 
@@ -724,6 +749,13 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
               }
           }
       }
+    if(workflowHistory != null) 
+    {
+      for(StatusHistory status : workflowHistory.getStatusHistory()) 
+        {
+          result.add(status);
+        }
+    }
     return result;
   }
   
@@ -733,7 +765,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
   
-  private List<RewardHistory> prepareJourneyRewardsSummary(JourneyHistory journeyHistory)
+  private List<RewardHistory> prepareJourneyRewardsSummary(JourneyHistory journeyHistory, JourneyHistory workflowHistory)
   {
     List<RewardHistory> result = new ArrayList<RewardHistory>();
     if(journeyHistory != null) 
@@ -746,6 +778,13 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
               }
           }        
       }
+    if(workflowHistory != null) 
+    {
+      for(RewardHistory rewardHistory : workflowHistory.getRewardHistory()) 
+        {
+          result.add(rewardHistory);
+        }
+    }
     return result;
   }
   

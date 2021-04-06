@@ -61,7 +61,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
         if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
           {
             Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
-            if (journey != null)
+            if (journey != null && !journey.isWorkflow())
               {
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
                 if (journeyStats.get(subscriberID) != null)
