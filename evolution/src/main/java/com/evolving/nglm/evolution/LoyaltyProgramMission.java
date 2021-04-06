@@ -514,6 +514,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       schemaBuilder.field("stepID", Schema.INT32_SCHEMA);
       schemaBuilder.field("stepName", Schema.STRING_SCHEMA);
       schemaBuilder.field("completionEventName", Schema.STRING_SCHEMA);
+      schemaBuilder.field("proportionalProgression", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("progression", Schema.FLOAT64_SCHEMA);
       schemaBuilder.field("workflowStepUP", Schema.OPTIONAL_STRING_SCHEMA); //workflowStepUP
       schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA);
@@ -543,6 +544,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     private int stepID;
     private String stepName;
     private String completionEventName = null;
+    private boolean proportionalProgression;
     private Double progression;
     private String workflowStepUP = null;
     private String workflowDaily = null;
@@ -567,6 +569,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     {
       return completionEventName;
     }
+    public boolean getProportionalProgression()
+    {
+      return proportionalProgression;
+    }
     public Double getProgression()
     {
       return progression;
@@ -583,8 +589,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     {
       return workflowCompletion;
     }
-    
-
 
     /*****************************************
      *
@@ -592,11 +596,12 @@ public class LoyaltyProgramMission extends LoyaltyProgram
      *
      *****************************************/
 
-    public MissionStep(int stepID, String stepName, String completionEventName, Double progression, String workflowStepUP, String workflowDaily, String workflowCompletion)
+    public MissionStep(int stepID, String stepName, String completionEventName, boolean proportionalProgression, Double progression, String workflowStepUP, String workflowDaily, String workflowCompletion)
     {
       this.stepID = stepID;
       this.stepName = stepName;
       this.completionEventName = completionEventName;
+      this.proportionalProgression = proportionalProgression;
       this.progression = progression;
       this.workflowStepUP = workflowStepUP;
       this.workflowDaily = workflowDaily;
@@ -616,6 +621,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       struct.put("stepID", steps.getStepID());
       struct.put("stepName", steps.getStepName());
       struct.put("completionEventName", steps.getCompletionEventName());
+      struct.put("proportionalProgression", steps.getProportionalProgression());
       struct.put("progression", steps.getProgression());
       struct.put("workflowStepUP", steps.getWorkflowStepUP());
       struct.put("workflowDaily", steps.getWorkflowDaily());
@@ -647,6 +653,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       int stepID = valueStruct.getInt32("stepID");
       String stepName = valueStruct.getString("stepName");
       String completionEventName = valueStruct.getString("completionEventName");
+      boolean proportionalProgression = valueStruct.getBoolean("proportionalProgression");
       Double progression = valueStruct.getFloat64("progression");
       String workflowStepUP = valueStruct.getString("workflowStepUP");
       String workflowDaily = valueStruct.getString("workflowDaily");
@@ -656,7 +663,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       //  return
       //
 
-      return new MissionStep(stepID, stepName, completionEventName, progression, workflowStepUP, workflowDaily, workflowCompletion);
+      return new MissionStep(stepID, stepName, completionEventName, proportionalProgression, progression, workflowStepUP, workflowDaily, workflowCompletion);
     }
 
     /*****************************************
@@ -676,7 +683,9 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       this.stepID = JSONUtilities.decodeInteger(jsonRoot, "stepID", true);
       this.stepName = JSONUtilities.decodeString(jsonRoot, "stepName", true);
       this.completionEventName = JSONUtilities.decodeString(jsonRoot, "completionEventName", true);
-      this.progression = JSONUtilities.decodeDouble(jsonRoot, "progression", false);
+      this.proportionalProgression = JSONUtilities.decodeBoolean(jsonRoot, "proportionalProgression", Boolean.TRUE);
+      if (!proportionalProgression) throw new GUIManagerException("currently only proportionalProgression is supported", "proportionalProgression");
+      this.progression = JSONUtilities.decodeDouble(jsonRoot, "progression", !proportionalProgression);
       this.workflowStepUP = JSONUtilities.decodeString(jsonRoot, "workflowStepUP", false);
       this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
       this.workflowCompletion = JSONUtilities.decodeString(jsonRoot, "workflowCompletion", false);
