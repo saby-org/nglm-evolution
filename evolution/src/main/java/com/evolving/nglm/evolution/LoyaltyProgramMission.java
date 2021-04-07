@@ -98,7 +98,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(LoyaltyProgram.commonSchema().version(), 1));
       for (Field field : LoyaltyProgram.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("proportionalProgression", Schema.BOOLEAN_SCHEMA);
-      schemaBuilder.field("createLeaderBoard", Schema.BOOLEAN_SCHEMA);
+      schemaBuilder.field("createContest", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("recurrence", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("recurrenceId", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
@@ -145,7 +145,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *****************************************/
 
   private boolean proportionalProgression;
-  private boolean createLeaderBoard;
+  private boolean createContest;
   private boolean recurrence;
   private String recurrenceId;
   private Integer occurrenceNumber;
@@ -165,9 +165,9 @@ public class LoyaltyProgramMission extends LoyaltyProgram
   {
     return proportionalProgression;
   }
-  public boolean getCreateLeaderBoard()
+  public boolean getCreateContest()
   {
-    return createLeaderBoard;
+    return createContest;
   }
   
   public boolean getRecurrence()
@@ -285,7 +285,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
 
     this.proportionalProgression = JSONUtilities.decodeBoolean(jsonRoot, "proportionalProgression", Boolean.TRUE);
     if (!proportionalProgression) throw new GUIManagerException("currently only proportionalProgression is supported", "proportionalProgression");
-    this.createLeaderBoard = JSONUtilities.decodeBoolean(jsonRoot, "createLeaderBoard", Boolean.FALSE);
+    this.createContest = JSONUtilities.decodeBoolean(jsonRoot, "createContest", Boolean.FALSE);
     this.recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
     this.recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
     this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
@@ -313,11 +313,11 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramMission(SchemaAndValue schemaAndValue, boolean proportionalProgression, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, Date previousPeriodStartDate, List<MissionStep> steps)
+  public LoyaltyProgramMission(SchemaAndValue schemaAndValue, boolean proportionalProgression, boolean createContest, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, Date previousPeriodStartDate, List<MissionStep> steps)
   {
     super(schemaAndValue);
     this.proportionalProgression = proportionalProgression;
-    this.createLeaderBoard = createLeaderBoard;
+    this.createContest = createContest;
     this.recurrence = recurrence;
     this.recurrenceId = recurrenceId;
     this.occurrenceNumber = occurrenceNumber;
@@ -340,7 +340,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     Struct struct = new Struct(schema);
     LoyaltyProgram.packCommon(struct, loyaltyProgramMission);
     struct.put("proportionalProgression", loyaltyProgramMission.getProportionalProgression());
-    struct.put("createLeaderBoard", loyaltyProgramMission.getCreateLeaderBoard());
+    struct.put("createContest", loyaltyProgramMission.getCreateContest());
     struct.put("recurrence", loyaltyProgramMission.getRecurrence());
     struct.put("recurrenceId", loyaltyProgramMission.getRecurrenceId());
     struct.put("occurrenceNumber", loyaltyProgramMission.getOccurrenceNumber());
@@ -390,7 +390,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
 
     Struct valueStruct = (Struct) value;
     boolean proportionalProgression = valueStruct.getBoolean("proportionalProgression");
-    boolean createLeaderBoard = valueStruct.getBoolean("createLeaderBoard");
+    boolean createContest = valueStruct.getBoolean("createContest");
     boolean recurrence = valueStruct.getBoolean("recurrence");
     String recurrenceId = valueStruct.getString("recurrenceId");
     Integer occurrenceNumber = valueStruct.getInt32("occurrenceNumber");
@@ -404,7 +404,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     // return
     //
 
-    return new LoyaltyProgramMission(schemaAndValue, proportionalProgression, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, previousPeriodStartDate, steps);
+    return new LoyaltyProgramMission(schemaAndValue, proportionalProgression, createContest, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, previousPeriodStartDate, steps);
   }
 
   /*****************************************
@@ -474,7 +474,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
         epochChanged = epochChanged || !Objects.equals(getLoyaltyProgramType(), existingLoyaltyProgramMission.getLoyaltyProgramType());
         epochChanged = epochChanged || !Objects.equals(getSteps(), existingLoyaltyProgramMission.getSteps());
         epochChanged = epochChanged || !Objects.equals(getCharacteristics(), existingLoyaltyProgramMission.getCharacteristics());
-        epochChanged = epochChanged || !Objects.equals(getCreateLeaderBoard(), existingLoyaltyProgramMission.getCreateLeaderBoard());
+        epochChanged = epochChanged || !Objects.equals(getCreateContest(), existingLoyaltyProgramMission.getCreateContest());
         epochChanged = epochChanged || !Objects.equals(getProportionalProgression(), existingLoyaltyProgramMission.getProportionalProgression());
         epochChanged = epochChanged || !Objects.equals(getRecurrence(), existingLoyaltyProgramMission.getRecurrence());
         epochChanged = epochChanged || !Objects.equals(getRecurrenceId(), existingLoyaltyProgramMission.getRecurrenceId());
@@ -685,7 +685,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
        *****************************************/
       this.stepID = JSONUtilities.decodeInteger(jsonRoot, "stepID", true);
       this.stepName = JSONUtilities.decodeString(jsonRoot, "stepName", true);
-      this.completionEventName = JSONUtilities.decodeString(jsonRoot, "completionEventName", true);
+      this.completionEventName = JSONUtilities.decodeString(jsonRoot, "completionEventName", stepID != 0);
       this.progression = JSONUtilities.decodeDouble(jsonRoot, "progression", !proportionalProgression);
       this.workflowStepUP = JSONUtilities.decodeString(jsonRoot, "workflowStepUP", false);
       this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
