@@ -134,6 +134,7 @@ public class CommodityDeliveryManager
   private static final Logger log = LoggerFactory.getLogger(CommodityDeliveryManager.class);
 
   public static final String COMMODITY_DELIVERY_TYPE = "commodityDelivery";
+  public static final String COMMODITY_DELIVERY_BRIEFCASE = "commodity_delivery_briefcase";
   public static final String APPLICATION_ID = "application_id";
   public static final String APPLICATION_BRIEFCASE = "application_briefcase";
 

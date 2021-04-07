@@ -46,9 +46,9 @@ public abstract class BonusDelivery extends DeliveryRequest
   private void init(){
     // extract the embedded CommodityDeliveryRequest if there is
     if(this.getDiplomaticBriefcase()==null) return;
-    if(this.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE)==null) return;
+    if(this.getDiplomaticBriefcase().get(CommodityDeliveryManager.COMMODITY_DELIVERY_BRIEFCASE)==null) return;
     try {
-      JSONObject jsonCommodityDeliveryRequest = (JSONObject)(new JSONParser()).parse(this.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE));
+      JSONObject jsonCommodityDeliveryRequest = (JSONObject)(new JSONParser()).parse(this.getDiplomaticBriefcase().get(CommodityDeliveryManager.COMMODITY_DELIVERY_BRIEFCASE));
       this.commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(this,jsonCommodityDeliveryRequest,Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE),this.getTenantID());
     } catch (ParseException e) {
       throw new RuntimeException(e);
@@ -101,7 +101,7 @@ public abstract class BonusDelivery extends DeliveryRequest
     }
 
     // update the embedded CommodityDeliveryRequest
-    this.getDiplomaticBriefcase().put(CommodityDeliveryManager.APPLICATION_BRIEFCASE, this.commodityDeliveryRequest.getJSONRepresentation(getTenantID()).toJSONString());
+    this.getDiplomaticBriefcase().put(CommodityDeliveryManager.COMMODITY_DELIVERY_BRIEFCASE, this.commodityDeliveryRequest.getJSONRepresentation(getTenantID()).toJSONString());
   }
 
   //

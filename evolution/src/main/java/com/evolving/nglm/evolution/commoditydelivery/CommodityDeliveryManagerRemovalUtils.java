@@ -99,7 +99,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 			diplomaticBriefcase = new HashMap<String, String>();
 		}
 		//diplomaticBriefcase.put(CommodityDeliveryManager.APPLICATION_ID, applicationID == null ? CommodityDeliveryManager.COMMODITY_DELIVERY_ID : applicationID);
-		diplomaticBriefcase.put(CommodityDeliveryManager.APPLICATION_BRIEFCASE, commodityDeliveryRequest.getJSONRepresentation(commodityDeliveryRequest.getTenantID()).toJSONString());
+		diplomaticBriefcase.put(CommodityDeliveryManager.COMMODITY_DELIVERY_BRIEFCASE, commodityDeliveryRequest.getJSONRepresentation(commodityDeliveryRequest.getTenantID()).toJSONString());
 
 		//
 		// execute commodity request
