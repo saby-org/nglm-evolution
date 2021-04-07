@@ -11,15 +11,7 @@ import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,8 +22,6 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
-import com.evolving.nglm.evolution.Expression.ExpressionFunction;
 
 /*****************************************
 *
@@ -204,6 +194,7 @@ public abstract class Expression
   protected abstract Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit);
   public Object evaluateConstant() { throw new ServerRuntimeException("constant expression"); }
   public abstract void esQuery(StringBuilder script, TimeUnit baseTimeUnit, int tenantID) throws CriterionException;
+  public abstract Object esQueryNoPainless() throws CriterionException;
 
   /*****************************************
   *
@@ -393,6 +384,47 @@ public abstract class Expression
           default:
             throw new CriterionException("invalid criterionField datatype for esQuery");
         }
+    }
+
+    /*****************************************
+     *
+     *  esQueryNoPainless
+     *
+     *****************************************/
+
+    @Override public Object esQueryNoPainless() throws CriterionException
+    {
+      switch (getType())
+      {
+      case IntegerExpression:
+      case DoubleExpression:
+      case StringExpression:
+        return constant;
+
+      case BooleanExpression:
+        return ((Boolean) constant).toString();
+
+      case DateExpression:
+        DateFormat scriptDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        return scriptDateFormat.format((Date) constant);
+        //break;
+
+      case StringSetExpression: case IntegerSetExpression:
+        //use set to avoid duplicates in the list
+        Set<String> returnItems = new HashSet<>();
+        for (Object item : (Set<Object>) constant)
+        {
+          returnItems.add(item.toString());
+        }
+        return returnItems;
+
+      case EmptySetExpression:
+        return new HashSet<>();
+
+      case TimeExpression:
+      default:
+        throw new CriterionException("invalid criterionField datatype for esQuery");
+      }
     }
 
     /*****************************************
@@ -649,6 +681,17 @@ public abstract class Expression
           default:
             throw new CriterionException("invalid criterionField datatype for esQuery");
         }
+    }
+
+    /*****************************************
+     *
+     *  esQueryNoPainless
+     *
+     *****************************************/
+
+    @Override public Object esQueryNoPainless() throws CriterionException
+    {
+      throw new CriterionException(this.getClass().getSimpleName()+"cannot be processed into an no painless query");
     }
 
     /*****************************************
@@ -962,7 +1005,18 @@ public abstract class Expression
             break;
         }
     }
-    
+
+    /*****************************************
+     *
+     *  esQueryNoPainless
+     *
+     *****************************************/
+
+    @Override public Object esQueryNoPainless() throws CriterionException
+    {
+      throw new CriterionException(this.getClass().getSimpleName()+"cannot be processed into an no painless query");
+    }
+
     /*****************************************
     *
     *  constructor
@@ -1172,7 +1226,18 @@ public abstract class Expression
             break;
         }
     }
-    
+
+    /*****************************************
+     *
+     *  esQueryNoPainless
+     *
+     *****************************************/
+
+    @Override public Object esQueryNoPainless() throws CriterionException
+    {
+      throw new CriterionException(this.getClass().getSimpleName()+"cannot be processed into an no painless query");
+    }
+
     /*****************************************
     *
     *  constructor
@@ -3025,6 +3090,29 @@ public abstract class Expression
           default:
             throw new ExpressionEvaluationException();
         }
+    }
+
+    /*****************************************
+     *
+     *  esQueryNoPainless
+     *
+     *****************************************/
+
+    @Override public Object esQueryNoPainless() throws CriterionException
+    {
+      switch (function)
+      {
+      case DateConstantFunction:
+        return arguments.get(0).evaluateConstant().toString();
+
+      case DateAddFunction:
+        throw new CriterionException(this.getClass().getSimpleName()+" "+function.getFunctionName()+"cannot be processed into an no painless query");
+
+      case TimeConstantFunction:
+      case TimeAddFunction:
+      default:
+        throw new ExpressionEvaluationException();
+      }
     }
 
     /*****************************************

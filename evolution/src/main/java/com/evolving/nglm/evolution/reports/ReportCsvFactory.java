@@ -42,4 +42,5 @@ public interface ReportCsvFactory
   default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)  {}
   default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement, int tenantID) {return null;}
   default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map) {return null;}
+  default void setReportCsvFactoryListener(ReportCsvFactoryListener listener){};
 }
