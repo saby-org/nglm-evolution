@@ -49,7 +49,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     schemaBuilder.field("stepName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("previousStepName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("stepEnrollmentDate", Timestamp.builder().optional().schema());
-    schemaBuilder.field("currentScore", SchemaBuilder.int32().defaultValue(0).schema());
     schemaBuilder.field("previousPeriodStep", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("previousPeriodStartDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("loyaltyProgramMissionHistory", LoyaltyProgramMissionHistory.schema());
@@ -84,7 +83,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   private String stepName;
   private String previousStepName;
   private Date stepEnrollmentDate;
-  private int currentScore;
   private String previousPeriodStep;
   private Date previousPeriodStartDate;
   private LoyaltyProgramMissionHistory loyaltyProgramMissionHistory;
@@ -98,7 +96,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   public String getStepName() { return stepName; }
   public String getPreviousStepName() { return previousStepName; }
   public Date getStepEnrollmentDate() { return stepEnrollmentDate; }
-  public int getCurrentScore() { return currentScore; }
   public LoyaltyProgramMissionHistory getLoyaltyProgramMissionHistory() { return loyaltyProgramMissionHistory; }
   public String getPreviousPeriodStep() { return previousPeriodStep; }
   public Date getPreviousPeriodStartDate() { return previousPeriodStartDate; }
@@ -106,8 +103,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   //
   //  setters
   //
-
-  public void setCurrentScore(int currentScore) { this.currentScore = currentScore; }
 
   /*****************************************
   *
@@ -121,7 +116,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     this.stepName = stepName;
     this.previousStepName = previousStepName;
     this.stepEnrollmentDate = stepEnrollmentDate;
-    this.currentScore = 0;
     this.loyaltyProgramMissionHistory = loyaltyProgramMissionHistory;
   }
 
@@ -131,13 +125,12 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramMissionState(SchemaAndValue schemaAndValue, String stepName, String previousStepName, Date stepEnrollmentDate, int currentScore, String previousPeriodStep, Date previousPeriodStartDate, LoyaltyProgramMissionHistory loyaltyProgramMissionHistory)
+  public LoyaltyProgramMissionState(SchemaAndValue schemaAndValue, String stepName, String previousStepName, Date stepEnrollmentDate, String previousPeriodStep, Date previousPeriodStartDate, LoyaltyProgramMissionHistory loyaltyProgramMissionHistory)
   {
     super(schemaAndValue);
     this.stepName = stepName;
     this.previousStepName = previousStepName;
     this.stepEnrollmentDate = stepEnrollmentDate;
-    this.currentScore = currentScore;
     this.previousPeriodStep = previousPeriodStep;
     this.previousPeriodStartDate = previousPeriodStartDate;
     this.loyaltyProgramMissionHistory = loyaltyProgramMissionHistory;
@@ -157,7 +150,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     struct.put("stepName", loyaltyProgramMissionState.getStepName());
     struct.put("previousStepName", loyaltyProgramMissionState.getPreviousStepName());
     struct.put("stepEnrollmentDate", loyaltyProgramMissionState.getStepEnrollmentDate());
-    struct.put("currentScore", loyaltyProgramMissionState.getCurrentScore());
     struct.put("previousPeriodStep", loyaltyProgramMissionState.getPreviousPeriodStep());
     struct.put("previousPeriodStartDate", loyaltyProgramMissionState.getPreviousPeriodStartDate());
     struct.put("loyaltyProgramMissionHistory", LoyaltyProgramMissionHistory.serde().pack(loyaltyProgramMissionState.getLoyaltyProgramMissionHistory()));
@@ -188,7 +180,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     String stepName = valueStruct.getString("stepName");
     String previousStepName = valueStruct.getString("previousStepName");
     Date stepEnrollmentDate = (Date) valueStruct.get("stepEnrollmentDate");
-    int currentScore = valueStruct.getInt32("currentScore");
     String previousPeriodStep = valueStruct.getString("previousPeriodStep");
     Date previousPeriodStartDate = (Date) valueStruct.get("previousPeriodStartDate");
     LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = LoyaltyProgramMissionHistory.serde().unpack(new SchemaAndValue(schema.field("loyaltyProgramMissionHistory").schema(), valueStruct.get("loyaltyProgramMissionHistory")));
@@ -197,7 +188,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     //  return
     //
 
-    return new LoyaltyProgramMissionState(schemaAndValue, stepName, previousStepName, stepEnrollmentDate, currentScore, previousPeriodStep, previousPeriodStartDate, loyaltyProgramMissionHistory);
+    return new LoyaltyProgramMissionState(schemaAndValue, stepName, previousStepName, stepEnrollmentDate, previousPeriodStep, previousPeriodStartDate, loyaltyProgramMissionHistory);
   }
   
   /*****************************************

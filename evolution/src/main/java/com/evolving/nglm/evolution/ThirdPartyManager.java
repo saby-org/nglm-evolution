@@ -101,6 +101,7 @@ import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -2635,6 +2636,50 @@ public class ThirdPartyManager
                            }
                        }
                      loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
+                     break;
+                     
+                   case MISSION:
+                     LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+                     
+                     //
+                     // current step
+                     //
+
+                     loyaltyProgramPresentation.put("stepName", loyaltyProgramMissionState.getStepName());
+                     loyaltyProgramPresentation.put("stepEnrollmentDate", getDateString(loyaltyProgramMissionState.getStepEnrollmentDate(), tenantID));
+                     
+                     //
+                     // history
+                     //
+                     
+                     ArrayList<JSONObject> loyaltyProgramMissionHistoryJSON = new ArrayList<JSONObject>();
+                     LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory();
+                     if (loyaltyProgramMissionHistory != null && loyaltyProgramMissionHistory.getStepHistory() != null && !loyaltyProgramMissionHistory.getStepHistory().isEmpty())
+                       {
+                         for (StepHistory step : loyaltyProgramMissionHistory.getStepHistory())
+                           {
+                             HashMap<String, Object> levelHistoryJSON = new HashMap<String, Object>();
+                             levelHistoryJSON.put("fromStep", step.getFromStep());
+                             levelHistoryJSON.put("toStep", step.getToStep());
+                             levelHistoryJSON.put("transitionDate", getDateString(step.getTransitionDate(), tenantID));
+                             levelHistoryJSON.put("occouranceNumber", step.getOccurrenceNumber());// RAJ K
+                             loyaltyProgramMissionHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
+                           }
+                       }
+                     
+                     /*//
+                     //  Recurrence
+                     //
+                     //  RAJ K
+                      
+                     if (loyaltyProgram instanceof LoyaltyProgramChallenge && ((LoyaltyProgramChallenge) loyaltyProgram).getRecurrence())
+                       {
+                         loyaltyProgramPresentation.put("previousPeriodLevel", loyaltyProgramMissionState.getPreviousPeriodLevel());
+                         loyaltyProgramPresentation.put("previousPeriodScore", loyaltyProgramMissionState.getPreviousPeriodScore());
+                         loyaltyProgramPresentation.put("previousPeriodStartDate", getDateString(loyaltyProgramMissionState.getPreviousPeriodStartDate(), tenantID));
+                       }*/
+                     
+                     loyaltyProgramPresentation.put("loyaltyProgramMissionHistory", loyaltyProgramMissionHistoryJSON);
                      break;
                      
                    default:
