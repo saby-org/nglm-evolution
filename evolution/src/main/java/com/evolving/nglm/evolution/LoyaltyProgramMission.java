@@ -97,6 +97,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       schemaBuilder.name("loyalty_program_mission");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(LoyaltyProgram.commonSchema().version(), 1));
       for (Field field : LoyaltyProgram.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+      schemaBuilder.field("proportionalProgression", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("createLeaderBoard", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("recurrence", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("recurrenceId", Schema.OPTIONAL_STRING_SCHEMA);
@@ -143,6 +144,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *
    *****************************************/
 
+  private boolean proportionalProgression;
   private boolean createLeaderBoard;
   private boolean recurrence;
   private String recurrenceId;
@@ -159,6 +161,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *
    *****************************************/
 
+  public boolean getProportionalProgression()
+  {
+    return proportionalProgression;
+  }
   public boolean getCreateLeaderBoard()
   {
     return createLeaderBoard;
@@ -277,6 +283,8 @@ public class LoyaltyProgramMission extends LoyaltyProgram
      *
      *****************************************/
 
+    this.proportionalProgression = JSONUtilities.decodeBoolean(jsonRoot, "proportionalProgression", Boolean.TRUE);
+    if (!proportionalProgression) throw new GUIManagerException("currently only proportionalProgression is supported", "proportionalProgression");
     this.createLeaderBoard = JSONUtilities.decodeBoolean(jsonRoot, "createLeaderBoard", Boolean.FALSE);
     this.recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
     this.recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
@@ -285,7 +293,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     this.lastOccurrenceCreateDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastOccurrenceCreateDate", false));
     this.previousPeriodStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "previousPeriodStartDate", false));
-    this.steps = decodeLoyaltyProgramSteps(JSONUtilities.decodeJSONArray(jsonRoot, "steps", true));
+    this.steps = decodeLoyaltyProgramSteps(JSONUtilities.decodeJSONArray(jsonRoot, "steps", true), proportionalProgression);
 
     /*****************************************
      *
@@ -305,9 +313,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramMission(SchemaAndValue schemaAndValue, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, Date previousPeriodStartDate, List<MissionStep> steps)
+  public LoyaltyProgramMission(SchemaAndValue schemaAndValue, boolean proportionalProgression, boolean createLeaderBoard, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, Date previousPeriodStartDate, List<MissionStep> steps)
   {
     super(schemaAndValue);
+    this.proportionalProgression = proportionalProgression;
     this.createLeaderBoard = createLeaderBoard;
     this.recurrence = recurrence;
     this.recurrenceId = recurrenceId;
@@ -330,6 +339,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     LoyaltyProgramMission loyaltyProgramMission = (LoyaltyProgramMission) value;
     Struct struct = new Struct(schema);
     LoyaltyProgram.packCommon(struct, loyaltyProgramMission);
+    struct.put("proportionalProgression", loyaltyProgramMission.getProportionalProgression());
     struct.put("createLeaderBoard", loyaltyProgramMission.getCreateLeaderBoard());
     struct.put("recurrence", loyaltyProgramMission.getRecurrence());
     struct.put("recurrenceId", loyaltyProgramMission.getRecurrenceId());
@@ -379,6 +389,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     //
 
     Struct valueStruct = (Struct) value;
+    boolean proportionalProgression = valueStruct.getBoolean("proportionalProgression");
     boolean createLeaderBoard = valueStruct.getBoolean("createLeaderBoard");
     boolean recurrence = valueStruct.getBoolean("recurrence");
     String recurrenceId = valueStruct.getString("recurrenceId");
@@ -393,7 +404,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     // return
     //
 
-    return new LoyaltyProgramMission(schemaAndValue, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, previousPeriodStartDate, steps);
+    return new LoyaltyProgramMission(schemaAndValue, proportionalProgression, createLeaderBoard, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, previousPeriodStartDate, steps);
   }
 
   /*****************************************
@@ -434,14 +445,14 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *
    *****************************************/
 
-  private List<MissionStep> decodeLoyaltyProgramSteps(JSONArray jsonArray) throws GUIManagerException
+  private List<MissionStep> decodeLoyaltyProgramSteps(JSONArray jsonArray, boolean proportionalProgression) throws GUIManagerException
   {
     List<MissionStep> result = new ArrayList<MissionStep>();
     if (jsonArray != null)
       {
         for (int i = 0; i < jsonArray.size(); i++)
           {
-            result.add(new MissionStep((JSONObject) jsonArray.get(i)));
+            result.add(new MissionStep((JSONObject) jsonArray.get(i), proportionalProgression));
           }
       }
     return result;
@@ -464,6 +475,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
         epochChanged = epochChanged || !Objects.equals(getSteps(), existingLoyaltyProgramMission.getSteps());
         epochChanged = epochChanged || !Objects.equals(getCharacteristics(), existingLoyaltyProgramMission.getCharacteristics());
         epochChanged = epochChanged || !Objects.equals(getCreateLeaderBoard(), existingLoyaltyProgramMission.getCreateLeaderBoard());
+        epochChanged = epochChanged || !Objects.equals(getProportionalProgression(), existingLoyaltyProgramMission.getProportionalProgression());
         epochChanged = epochChanged || !Objects.equals(getRecurrence(), existingLoyaltyProgramMission.getRecurrence());
         epochChanged = epochChanged || !Objects.equals(getRecurrenceId(), existingLoyaltyProgramMission.getRecurrenceId());
         epochChanged = epochChanged || !Objects.equals(getOccurrenceNumber(), existingLoyaltyProgramMission.getOccurrenceNumber());
@@ -514,7 +526,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       schemaBuilder.field("stepID", Schema.INT32_SCHEMA);
       schemaBuilder.field("stepName", Schema.STRING_SCHEMA);
       schemaBuilder.field("completionEventName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("proportionalProgression", SchemaBuilder.bool().defaultValue(true).schema());
       schemaBuilder.field("progression", Schema.OPTIONAL_FLOAT64_SCHEMA);
       schemaBuilder.field("workflowStepUP", Schema.OPTIONAL_STRING_SCHEMA); //workflowStepUP
       schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA);
@@ -544,7 +555,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     private int stepID;
     private String stepName;
     private String completionEventName = null;
-    private boolean proportionalProgression;
     private Double progression;
     private String workflowStepUP = null;
     private String workflowDaily = null;
@@ -569,10 +579,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     {
       return completionEventName;
     }
-    public boolean getProportionalProgression()
-    {
-      return proportionalProgression;
-    }
     public Double getProgression()
     {
       return progression;
@@ -596,12 +602,11 @@ public class LoyaltyProgramMission extends LoyaltyProgram
      *
      *****************************************/
 
-    public MissionStep(int stepID, String stepName, String completionEventName, boolean proportionalProgression, Double progression, String workflowStepUP, String workflowDaily, String workflowCompletion)
+    public MissionStep(int stepID, String stepName, String completionEventName, Double progression, String workflowStepUP, String workflowDaily, String workflowCompletion)
     {
       this.stepID = stepID;
       this.stepName = stepName;
       this.completionEventName = completionEventName;
-      this.proportionalProgression = proportionalProgression;
       this.progression = progression;
       this.workflowStepUP = workflowStepUP;
       this.workflowDaily = workflowDaily;
@@ -621,7 +626,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       struct.put("stepID", steps.getStepID());
       struct.put("stepName", steps.getStepName());
       struct.put("completionEventName", steps.getCompletionEventName());
-      struct.put("proportionalProgression", steps.getProportionalProgression());
       struct.put("progression", steps.getProgression());
       struct.put("workflowStepUP", steps.getWorkflowStepUP());
       struct.put("workflowDaily", steps.getWorkflowDaily());
@@ -653,7 +657,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       int stepID = valueStruct.getInt32("stepID");
       String stepName = valueStruct.getString("stepName");
       String completionEventName = valueStruct.getString("completionEventName");
-      boolean proportionalProgression = valueStruct.getBoolean("proportionalProgression");
       Double progression = valueStruct.getFloat64("progression");
       String workflowStepUP = valueStruct.getString("workflowStepUP");
       String workflowDaily = valueStruct.getString("workflowDaily");
@@ -663,7 +666,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       //  return
       //
 
-      return new MissionStep(stepID, stepName, completionEventName, proportionalProgression, progression, workflowStepUP, workflowDaily, workflowCompletion);
+      return new MissionStep(stepID, stepName, completionEventName, progression, workflowStepUP, workflowDaily, workflowCompletion);
     }
 
     /*****************************************
@@ -672,7 +675,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
      *
      *****************************************/
 
-    public MissionStep(JSONObject jsonRoot) throws GUIManagerException
+    public MissionStep(JSONObject jsonRoot, boolean proportionalProgression) throws GUIManagerException
     {
 
       /*****************************************
@@ -683,8 +686,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       this.stepID = JSONUtilities.decodeInteger(jsonRoot, "stepID", true);
       this.stepName = JSONUtilities.decodeString(jsonRoot, "stepName", true);
       this.completionEventName = JSONUtilities.decodeString(jsonRoot, "completionEventName", true);
-      this.proportionalProgression = JSONUtilities.decodeBoolean(jsonRoot, "proportionalProgression", Boolean.TRUE);
-      if (!proportionalProgression) throw new GUIManagerException("currently only proportionalProgression is supported", "proportionalProgression");
       this.progression = JSONUtilities.decodeDouble(jsonRoot, "progression", !proportionalProgression);
       this.workflowStepUP = JSONUtilities.decodeString(jsonRoot, "workflowStepUP", false);
       this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
