@@ -574,8 +574,8 @@ public class EvolutionSetup
                       }
                   }
                 }else if(connectorName.equals("bdr_es_sink_connector")){
-                  DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
-                  if(deliveryManagerDeclaration!=null){
+                  for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
+                    if(!deliveryManagerDeclaration.logBDR()) continue;//not to log BDR
                     for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
                       toAdd.add(topic.getName());
                     }

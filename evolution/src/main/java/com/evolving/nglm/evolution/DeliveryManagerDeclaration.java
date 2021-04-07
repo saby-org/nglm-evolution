@@ -92,6 +92,13 @@ public class DeliveryManagerDeclaration
   public boolean isProcessedByEvolutionEngine(){
     return deliveryType.equals("pointFulfillment") || deliveryType.equals("journeyFulfillment") || deliveryType.equals("loyaltyProgramFulfillment");
   }
+  public boolean logBDR(){
+    if(getProviderType()==null) return false;//not a "commodity type" at all
+    if(getProviderType()==CommodityType.IN) return true;// the external IN request type
+    if(getProviderType()==CommodityType.POINT) return true;// the internal point request type
+    if(getProviderType()==CommodityType.REWARD) return true;// the hacky REWARD embedded in product, it is technically a IN one
+    return false;
+  }
 
   //
   //  getRequestSerde
