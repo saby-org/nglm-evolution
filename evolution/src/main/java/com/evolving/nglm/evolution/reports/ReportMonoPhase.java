@@ -676,6 +676,7 @@ public class ReportMonoPhase
       String scrollId = searchResponse.getScrollId(); // always null
       SearchHit[] searchHits = searchResponse.getHits().getHits();
       logSearchResponse(new String[] {singleIndex}, searchResponse, searchHits);
+      boolean addHeader = true;
       while (searchHits != null && searchHits.length > 0) {
         List<Map<String, Object>> records = new ArrayList<Map<String, Object>>();
         if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
@@ -706,7 +707,6 @@ public class ReportMonoPhase
         scrollId = searchResponse.getScrollId();
         searchHits = searchResponse.getHits().getHits();
         try {
-          boolean addHeader = true;
           for (Map<String, Object> lineMap : records)
             {
               reportFactory.dumpLineToCsv(lineMap, writer, addHeader);
