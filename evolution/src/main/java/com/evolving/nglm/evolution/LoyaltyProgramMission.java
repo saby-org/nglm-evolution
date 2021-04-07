@@ -722,13 +722,51 @@ public class LoyaltyProgramMission extends LoyaltyProgram
           return LoyaltyProgramStepChange.NoChange;
         }
    }
-    
     @Override
     public int compareTo(MissionStep missionStep)
     {
       return this.stepID - missionStep.getStepID();
     }
-   
+  }
+  
+  /*******************************
+   * 
+   * getNextStep
+   * 
+   *******************************/
+
+  public MissionStep getNextStep(int stepID)
+  {
+    MissionStep result = null;
+    for (MissionStep step : getSteps())
+      {
+        if (step.getStepID() == (stepID + 1))
+          {
+            result = step;
+            break;
+          }
+      }
+    return result;
+  }
+  
+  /*******************************
+   * 
+   * getNextPreviousStep
+   * 
+   *******************************/
+
+  public MissionStep getNextPreviousStep(int stepID)
+  {
+    MissionStep result = null;
+    for (MissionStep step : getSteps())
+      {
+        if (step.getStepID() == (stepID - 1))
+          {
+            result = step;
+            break;
+          }
+      }
+    return result;
   }
   
   /*******************************
