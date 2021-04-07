@@ -123,19 +123,6 @@ public class RewardManagerRequest extends BonusDelivery
 
   @Override public ActivityType getActivityType() { return ActivityType.BDR; }
 
-  //
-  //  bonus delivery accessors
-  //
-
-  public int getBonusDeliveryReturnCode() { return getReturnCode() != null? getReturnCode() : 0; }
-  public String getBonusDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
-  public String getBonusDeliveryOrigin() { return null; }
-  public String getBonusDeliveryProviderId() { return getProviderID(); }
-  public String getBonusDeliveryDeliverableId() { return getDeliverableID(); }
-  public String getBonusDeliveryDeliverableName() { return getDeliverableName(); }
-  public int getBonusDeliveryDeliverableQty() { return (int) getAmount(); }
-  public String getBonusDeliveryOperation() { return null; }
-
   /*****************************************
   *
   *  constructor

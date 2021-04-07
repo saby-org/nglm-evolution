@@ -107,6 +107,7 @@ public class PointFulfillmentRequest extends BonusDelivery
   //
 
   @Override public ActivityType getActivityType() { return ActivityType.BDR; }
+  @Override public Date getBonusDeliveryDeliverableExpirationDate() { return this.deliverableExpirationDate; }
 
   /*****************************************
   *

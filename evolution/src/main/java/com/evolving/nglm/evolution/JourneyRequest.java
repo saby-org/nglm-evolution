@@ -125,19 +125,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   @Override public ActivityType getActivityType() { return ActivityType.Journey; }
   @Override public String getEventName() { return isPending() ? "journeyRequest" : "journeyComplete"; }
 
-  //
-  //  bonus delivery accessors
-  //
-
-  public int getBonusDeliveryReturnCode() { return 0; }
-  public String getBonusDeliveryReturnCodeDetails() { return null; }
-  public String getBonusDeliveryOrigin() { return null; }
-  public String getBonusDeliveryProviderId() { return null; }
-  public String getBonusDeliveryDeliverableId() { return null; }
-  public String getBonusDeliveryDeliverableName() { return null; }
-  public int getBonusDeliveryDeliverableQty() { return 0; }
-  public String getBonusDeliveryOperation() { return null; }
-
   /*****************************************
   *
   *  constructor -- journey

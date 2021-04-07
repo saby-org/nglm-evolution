@@ -44,6 +44,7 @@ public abstract class BonusDelivery extends DeliveryRequest
   }
 
   private void init(){
+    // extract the embedded CommodityDeliveryRequest if there is
     if(this.getDiplomaticBriefcase()==null) return;
     if(this.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE)==null) return;
     try {
@@ -52,6 +53,55 @@ public abstract class BonusDelivery extends DeliveryRequest
     } catch (ParseException e) {
       throw new RuntimeException(e);
     }
+    // then update the CommodityDeliveryRequest from sub request if needed (response update)
+    if(this.getDeliveryStatus()==DeliveryManager.DeliveryStatus.Pending) return;
+    updateResponse();
+  }
+
+  private void updateResponse(){
+    this.commodityDeliveryRequest.setDeliveryDate(this.getDeliveryDate());
+    switch(this.getDeliveryStatus()){
+      case Delivered:
+        this.commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryManager.CommodityDeliveryStatus.SUCCESS);
+        this.commodityDeliveryRequest.setStatusMessage("Success");
+        break;
+      case CheckBalanceLowerThan:
+        this.commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryManager.CommodityDeliveryStatus.CHECK_BALANCE_LT);
+        this.commodityDeliveryRequest.setStatusMessage("Success");
+        break;
+      case CheckBalanceEqualsTo:
+        this.commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryManager.CommodityDeliveryStatus.CHECK_BALANCE_ET);
+        this.commodityDeliveryRequest.setStatusMessage("Success");
+        break;
+      case CheckBalanceGreaterThan:
+        this.commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryManager.CommodityDeliveryStatus.CHECK_BALANCE_GT);
+        this.commodityDeliveryRequest.setStatusMessage("Success");
+        break;
+      case BonusNotFound:
+        this.commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryManager.CommodityDeliveryStatus.BONUS_NOT_FOUND);
+        this.commodityDeliveryRequest.setStatusMessage("Commodity delivery request failed");
+        break;
+      case InsufficientBalance:
+        this.commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryManager.CommodityDeliveryStatus.INSUFFICIENT_BALANCE);
+        this.commodityDeliveryRequest.setStatusMessage("Commodity delivery request failed");
+        break;
+      case FailedRetry:
+      case Indeterminate:
+      case Failed:
+      case FailedTimeout:
+        this.commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryManager.CommodityDeliveryStatus.THIRD_PARTY_ERROR);
+        this.commodityDeliveryRequest.setStatusMessage("Commodity delivery request failed");
+        break;
+      case Pending:
+      case Unknown:
+      default:
+        this.commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryManager.CommodityDeliveryStatus.THIRD_PARTY_ERROR);
+        this.commodityDeliveryRequest.setStatusMessage("Commodity delivery request failure");
+        break;
+    }
+
+    // update the embedded CommodityDeliveryRequest
+    this.getDiplomaticBriefcase().put(CommodityDeliveryManager.APPLICATION_BRIEFCASE, this.commodityDeliveryRequest.getJSONRepresentation(getTenantID()).toJSONString());
   }
 
   //
