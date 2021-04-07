@@ -525,7 +525,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
       schemaBuilder.field("stepID", Schema.INT32_SCHEMA);
       schemaBuilder.field("stepName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("completionEventName", Schema.STRING_SCHEMA);
+      schemaBuilder.field("completionEventName", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("progression", Schema.OPTIONAL_FLOAT64_SCHEMA);
       schemaBuilder.field("workflowStepUP", Schema.OPTIONAL_STRING_SCHEMA); //workflowStepUP
       schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA);
@@ -685,7 +685,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
        *****************************************/
       this.stepID = JSONUtilities.decodeInteger(jsonRoot, "stepID", true);
       this.stepName = JSONUtilities.decodeString(jsonRoot, "stepName", true);
-      this.completionEventName = JSONUtilities.decodeString(jsonRoot, "completionEventName", stepID != 0);
+      this.completionEventName = stepID != 0 ? JSONUtilities.decodeString(jsonRoot, "completionEventName", stepID != 0) : null;
       this.progression = JSONUtilities.decodeDouble(jsonRoot, "progression", !proportionalProgression);
       this.workflowStepUP = JSONUtilities.decodeString(jsonRoot, "workflowStepUP", false);
       this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
