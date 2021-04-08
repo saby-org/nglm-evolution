@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -294,6 +295,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             break;
             
           case MISSION:
+            String effectiveEndDateStr = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false);
+            Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", false);
+            if (durationInDays != null)
+              {
+                Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(effectiveEndDateStr), durationInDays, Deployment.getSystemTimeZone());
+                jsonRoot.put("effectiveEndDate", GUIManagedObject.formatDateField(effectiveEndDate));
+              }
             loyaltyProgram = new LoyaltyProgramMission(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService, tenantID);
             break;
 
@@ -694,6 +702,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }
             else if (loyaltyProgramType == LoyaltyProgramType.MISSION)
               {
+                Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", false);
+                if (durationInDays != null) jsonRoot.remove("effectiveEndDate");
                 loyaltyPro.put("recurrence", recurrence);
                 if (loyaltyProgram instanceof LoyaltyProgramMission)
                   {
