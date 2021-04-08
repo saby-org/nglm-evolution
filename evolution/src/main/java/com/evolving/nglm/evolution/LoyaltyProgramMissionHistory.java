@@ -75,10 +75,6 @@ public class LoyaltyProgramMissionHistory
   
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public List<StepHistory> getStepHistory() { return stepHistory; }
-  public List<StepHistory> getAllStepHistoryForThisPeriod(Integer occurrenceNumber) 
-  { 
-    return stepHistory.stream().filter(step -> step.getOccurrenceNumber() == occurrenceNumber).collect(Collectors.toList()); 
-  }
   
   /*****************************************
   *
@@ -220,9 +216,9 @@ public class LoyaltyProgramMissionHistory
   *
   *****************************************/
   
-  public void addStepHistory(String fromStep, String toStep, Integer occurrenceNumber, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramStepChange stepUpdateType) 
+  public void addStepHistory(String fromStep, String toStep, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramStepChange stepUpdateType) 
   {
-    StepHistory stepHistory = new StepHistory(fromStep, toStep, occurrenceNumber, enrollmentDate, deliveryRequestID, stepUpdateType);
+    StepHistory stepHistory = new StepHistory(fromStep, toStep, enrollmentDate, deliveryRequestID, stepUpdateType);
     this.stepHistory.add(stepHistory);
 
   }
@@ -268,7 +264,6 @@ public class LoyaltyProgramMissionHistory
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
       schemaBuilder.field("fromStep", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("toStep", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("transitionDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("stepUpdateType", Schema.OPTIONAL_STRING_SCHEMA);
@@ -299,7 +294,6 @@ public class LoyaltyProgramMissionHistory
     private Date transitionDate;
     private String deliveryRequestID;
     private LoyaltyProgramStepChange stepUpdateType;
-    private Integer occurrenceNumber;
     
     /*****************************************
     *
@@ -312,7 +306,6 @@ public class LoyaltyProgramMissionHistory
     public Date getTransitionDate() { return transitionDate; }
     public String getDeliveryRequestID() { return deliveryRequestID; }
     public LoyaltyProgramStepChange getStepUpdateType() { return stepUpdateType; }
-    public Integer getOccurrenceNumber() { return occurrenceNumber; }
     
     /*****************************************
     *
@@ -326,7 +319,6 @@ public class LoyaltyProgramMissionHistory
       Struct struct = new Struct(schema);
       struct.put("fromStep", stepHistory.getFromStep());
       struct.put("toStep", stepHistory.getToStep());
-      struct.put("occurrenceNumber", stepHistory.getOccurrenceNumber());
       struct.put("transitionDate", stepHistory.getTransitionDate());
       struct.put("deliveryRequestID", stepHistory.getDeliveryRequestID());
       struct.put("stepUpdateType", stepHistory.getStepUpdateType().getExternalRepresentation());
@@ -339,11 +331,10 @@ public class LoyaltyProgramMissionHistory
     *
     *****************************************/
 
-    public StepHistory(String fromStep, String toStep, Integer occurrenceNumber, Date transitionDate, String deliveryRequestID, LoyaltyProgramStepChange stepUpdateType)
+    public StepHistory(String fromStep, String toStep, Date transitionDate, String deliveryRequestID, LoyaltyProgramStepChange stepUpdateType)
     {
       this.fromStep = fromStep;
       this.toStep = toStep;
-      this.occurrenceNumber = occurrenceNumber;
       this.transitionDate = transitionDate;
       this.deliveryRequestID = deliveryRequestID;
       this.stepUpdateType = stepUpdateType;
@@ -372,7 +363,6 @@ public class LoyaltyProgramMissionHistory
       Struct valueStruct = (Struct) value;
       String fromStep = valueStruct.getString("fromStep");
       String toStep = valueStruct.getString("toStep");
-      Integer occurrenceNumber = valueStruct.getInt32("occurrenceNumber");
       Date transitionDate = (Date) valueStruct.get("transitionDate");
       String deliveryRequestID = valueStruct.getString("deliveryRequestID");
       LoyaltyProgramStepChange loyaltyProgramStepChange = LoyaltyProgramStepChange.fromExternalRepresentation(valueStruct.getString("stepUpdateType"));
@@ -381,7 +371,7 @@ public class LoyaltyProgramMissionHistory
       //  return
       //
 
-      return new StepHistory(fromStep, toStep, occurrenceNumber, transitionDate, deliveryRequestID, loyaltyProgramStepChange);
+      return new StepHistory(fromStep, toStep, transitionDate, deliveryRequestID, loyaltyProgramStepChange);
     }
     
     /*****************************************

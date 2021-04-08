@@ -99,13 +99,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       for (Field field : LoyaltyProgram.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("proportionalProgression", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("createContest", Schema.BOOLEAN_SCHEMA);
-      schemaBuilder.field("recurrence", Schema.BOOLEAN_SCHEMA);
-      schemaBuilder.field("recurrenceId", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
-      schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
-      schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
-      schemaBuilder.field("lastOccurrenceCreateDate", Timestamp.builder().optional().schema());
-      schemaBuilder.field("previousPeriodStartDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("steps", SchemaBuilder.array(MissionStep.schema()).schema());
       schema = schemaBuilder.build();
     };
@@ -146,13 +139,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
 
   private boolean proportionalProgression;
   private boolean createContest;
-  private boolean recurrence;
-  private String recurrenceId;
-  private Integer occurrenceNumber;
-  private JourneyScheduler journeyScheduler;
-  private Integer lastCreatedOccurrenceNumber;
-  private Date lastOccurrenceCreateDate;
-  private Date previousPeriodStartDate;
   private List<MissionStep> steps = null;
 
   /*****************************************
@@ -170,41 +156,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     return createContest;
   }
   
-  public boolean getRecurrence()
-  {
-    return recurrence;
-  }
-
-  public String getRecurrenceId()
-  {
-    return recurrenceId;
-  }
-
-  public Integer getOccurrenceNumber()
-  {
-    return occurrenceNumber;
-  }
-
-  public JourneyScheduler getJourneyScheduler()
-  {
-    return journeyScheduler;
-  }
-
-  public Integer getLastCreatedOccurrenceNumber()
-  {
-    return lastCreatedOccurrenceNumber;
-  }
-  
-  public Date getLastOccurrenceCreateDate()
-  {
-    return lastOccurrenceCreateDate == null ? getEffectiveStartDate() : lastOccurrenceCreateDate;
-  }
-  
-  public Date getPreviousPeriodStartDate()
-  {
-    return previousPeriodStartDate;
-  }
-
   public List<MissionStep> getSteps()
   {
     return steps;
@@ -286,13 +237,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     this.proportionalProgression = JSONUtilities.decodeBoolean(jsonRoot, "proportionalProgression", Boolean.TRUE);
     if (!proportionalProgression) throw new GUIManagerException("currently only proportionalProgression is supported", "proportionalProgression");
     this.createContest = JSONUtilities.decodeBoolean(jsonRoot, "createContest", Boolean.FALSE);
-    this.recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
-    this.recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
-    this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
-    if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
-    this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
-    this.lastOccurrenceCreateDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastOccurrenceCreateDate", false));
-    this.previousPeriodStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "previousPeriodStartDate", false));
     this.steps = decodeLoyaltyProgramSteps(JSONUtilities.decodeJSONArray(jsonRoot, "steps", true), proportionalProgression);
 
     /*****************************************
@@ -313,18 +257,11 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramMission(SchemaAndValue schemaAndValue, boolean proportionalProgression, boolean createContest, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, Date lastOccurrenceCreateDate, Date previousPeriodStartDate, List<MissionStep> steps)
+  public LoyaltyProgramMission(SchemaAndValue schemaAndValue, boolean proportionalProgression, boolean createContest, List<MissionStep> steps)
   {
     super(schemaAndValue);
     this.proportionalProgression = proportionalProgression;
     this.createContest = createContest;
-    this.recurrence = recurrence;
-    this.recurrenceId = recurrenceId;
-    this.occurrenceNumber = occurrenceNumber;
-    this.journeyScheduler = scheduler;
-    this.lastCreatedOccurrenceNumber = lastCreatedOccurrenceNumber;
-    this.lastOccurrenceCreateDate = lastOccurrenceCreateDate;
-    this.previousPeriodStartDate = previousPeriodStartDate;
     this.steps = steps;
   }
 
@@ -341,13 +278,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     LoyaltyProgram.packCommon(struct, loyaltyProgramMission);
     struct.put("proportionalProgression", loyaltyProgramMission.getProportionalProgression());
     struct.put("createContest", loyaltyProgramMission.getCreateContest());
-    struct.put("recurrence", loyaltyProgramMission.getRecurrence());
-    struct.put("recurrenceId", loyaltyProgramMission.getRecurrenceId());
-    struct.put("occurrenceNumber", loyaltyProgramMission.getOccurrenceNumber());
-    struct.put("scheduler", JourneyScheduler.serde().packOptional(loyaltyProgramMission.getJourneyScheduler()));
-    struct.put("lastCreatedOccurrenceNumber", loyaltyProgramMission.getLastCreatedOccurrenceNumber());
-    struct.put("lastOccurrenceCreateDate", loyaltyProgramMission.getLastOccurrenceCreateDate());
-    struct.put("previousPeriodStartDate", loyaltyProgramMission.getPreviousPeriodStartDate());
     struct.put("steps", packLoyaltyProgramSteps(loyaltyProgramMission.getSteps()));
     return struct;
   }
@@ -391,20 +321,13 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     Struct valueStruct = (Struct) value;
     boolean proportionalProgression = valueStruct.getBoolean("proportionalProgression");
     boolean createContest = valueStruct.getBoolean("createContest");
-    boolean recurrence = valueStruct.getBoolean("recurrence");
-    String recurrenceId = valueStruct.getString("recurrenceId");
-    Integer occurrenceNumber = valueStruct.getInt32("occurrenceNumber");
-    JourneyScheduler scheduler = JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("scheduler")));
-    Integer lastCreatedOccurrenceNumber = valueStruct.getInt32("lastCreatedOccurrenceNumber");
-    Date lastOccurrenceCreateDate = (Date) valueStruct.get("lastOccurrenceCreateDate");
-    Date previousPeriodStartDate = (Date) valueStruct.get("previousPeriodStartDate");
     List<MissionStep> steps = unpackLoyaltyProgramTiers(schema.field("steps").schema(), valueStruct.get("steps"));
 
     //
     // return
     //
 
-    return new LoyaltyProgramMission(schemaAndValue, proportionalProgression, createContest, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber, lastOccurrenceCreateDate, previousPeriodStartDate, steps);
+    return new LoyaltyProgramMission(schemaAndValue, proportionalProgression, createContest, steps);
   }
 
   /*****************************************
@@ -476,10 +399,6 @@ public class LoyaltyProgramMission extends LoyaltyProgram
         epochChanged = epochChanged || !Objects.equals(getCharacteristics(), existingLoyaltyProgramMission.getCharacteristics());
         epochChanged = epochChanged || !Objects.equals(getCreateContest(), existingLoyaltyProgramMission.getCreateContest());
         epochChanged = epochChanged || !Objects.equals(getProportionalProgression(), existingLoyaltyProgramMission.getProportionalProgression());
-        epochChanged = epochChanged || !Objects.equals(getRecurrence(), existingLoyaltyProgramMission.getRecurrence());
-        epochChanged = epochChanged || !Objects.equals(getRecurrenceId(), existingLoyaltyProgramMission.getRecurrenceId());
-        epochChanged = epochChanged || !Objects.equals(getOccurrenceNumber(), existingLoyaltyProgramMission.getOccurrenceNumber());
-        epochChanged = epochChanged || !Objects.equals(getJourneyScheduler(), existingLoyaltyProgramMission.getJourneyScheduler());
         return epochChanged;
       } else
       {

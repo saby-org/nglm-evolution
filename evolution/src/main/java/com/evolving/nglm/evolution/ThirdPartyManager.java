@@ -2662,7 +2662,6 @@ public class ThirdPartyManager
                              levelHistoryJSON.put("fromStep", step.getFromStep());
                              levelHistoryJSON.put("toStep", step.getToStep());
                              levelHistoryJSON.put("transitionDate", getDateString(step.getTransitionDate(), tenantID));
-                             levelHistoryJSON.put("occouranceNumber", step.getOccurrenceNumber());// RAJ K
                              loyaltyProgramMissionHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
                            }
                        }
