@@ -1,6 +1,7 @@
 package com.evolving.nglm.evolution.reports.journeycustomerstates;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -174,7 +175,8 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
             journeyInfo.put("customerStatuses", statuses);
             journeyInfo.put("dateTime",         ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
             journeyInfo.put("startDate",        ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-            journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+            journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));  
+                    
 
             List<String> rewardHistory = (List<String>) journeyStats.get("rewardHistory");
             List<Map<String, Object>> outputJSON = new ArrayList<>();
@@ -201,6 +203,26 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
                   }
               }
             journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
+            
+            if (journeyStats.containsKey("journeyExitDate") && journeyStats.get("journeyExitDate") != null)
+              {
+
+                Object journeyExitDateObj = journeyStats.get("journeyExitDate");
+                if (journeyExitDateObj instanceof String)
+                  {
+                    journeyInfo.put("journeyExitDate", ReportsCommonCode.parseDate((String) journeyExitDateObj));
+
+                  }
+                else
+                  {
+                    log.info(journeyExitDateObj + " is of wrong type : "+journeyExitDateObj.getClass().getName());
+                  }
+              
+              }
+            else
+              {
+                journeyInfo.put("journeyExitDate", null);
+              }
 
             //
             // result
