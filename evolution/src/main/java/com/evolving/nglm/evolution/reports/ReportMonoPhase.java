@@ -742,33 +742,7 @@ public class ReportMonoPhase
 
   private ElasticsearchClientAPI getESAPI(String nodes)
   {
-    String node = null;
-    int port = 0;
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
-    String username = null;
-    String password = null;
-    if (nodes.contains(",")) {
-      String[] split = nodes.split(",");
-      if (split[0] != null) {
-        Scanner s = new Scanner(split[0]);
-        s.useDelimiter(":");
-        node = s.next();
-        port = s.nextInt();
-        username = s.next();
-        password = s.next();
-        s.close();
-      }
-    } else {
-      Scanner s = new Scanner(nodes);
-      s.useDelimiter(":");
-      node = s.next();
-      port = s.nextInt();
-      username = s.next();
-      password = s.next();
-      s.close();
-    }
-    return new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
+    return new ElasticsearchClientAPI("ReportManager");
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////

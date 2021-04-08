@@ -113,7 +113,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
                 journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
                 journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
                   {
                     journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
                     journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
@@ -177,7 +177,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     journeyService.start();
 
     try {
-      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
+      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate, 0);
       StringBuilder activeJourneyEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Journey journey : activeJourneys)

@@ -304,7 +304,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
     journeyService.start();
     
     try {
-      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
+      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate, 0);
       StringBuilder activeJourneyEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Journey journey : activeJourneys)
