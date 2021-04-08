@@ -239,34 +239,59 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
     this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
 
-    if(workflowJourneyState != null)
+    if(workflowJourneyState != null && workflowJourneyState.getJourneyParameters() != null)
       {
-    	// take in account the fact that a workflow changed the following values for the calling campaign
-        this.statusNotified = this.statusNotified || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
-        this.statusConverted = this.statusConverted || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-        if(this.statusTargetGroup == null) 
-          {  
-            this.statusTargetGroup = workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
-          }
-        else
+    	  // take in account the fact that a workflow changed the following values for the calling campaign
+        Boolean workflowStatusNotified = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName());
+        if(workflowStatusNotified != null)
           {
-        	this.statusTargetGroup = this.statusTargetGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+            this.statusNotified = this.statusNotified || workflowStatusNotified.booleanValue();
           }
-        if(this.statusControlGroup == null)
+        
+        Boolean workflowStatusConverted = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName());
+        if(workflowStatusConverted != null)
           {
-        	this.statusControlGroup = workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+            this.statusConverted = this.statusConverted ||  workflowStatusConverted;
           }
-        else 
+        
+        
+        Boolean workflowStatusTargetGroup = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName());
+        if(workflowStatusTargetGroup != null)
           {
-        	this.statusControlGroup = this.statusControlGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+            if(this.statusTargetGroup == null) 
+              {  
+                this.statusTargetGroup = workflowStatusTargetGroup;
+              }
+            else
+              {
+                this.statusTargetGroup = this.statusTargetGroup || workflowStatusTargetGroup.booleanValue();
+              }
           }
-        if(this.statusUniversalControlGroup == null)
+
+        Boolean workflowStatusControlGroup = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName());
+        if(workflowStatusControlGroup != null)
           {
-            this.statusUniversalControlGroup = workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
-          }
-        else
+            if(this.statusControlGroup == null)
+              {
+                this.statusControlGroup = workflowStatusControlGroup;
+              }
+            else 
+              {
+                this.statusControlGroup = this.statusControlGroup || workflowStatusControlGroup.booleanValue();
+              }
+          }       
+        
+        Boolean workflowStatusUniversalControlGroup = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName());
+        if(workflowStatusUniversalControlGroup != null)
           {
-            this.statusUniversalControlGroup = this.statusUniversalControlGroup || workflowJourneyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+            if(this.statusUniversalControlGroup == null)
+              {
+                this.statusUniversalControlGroup = workflowStatusUniversalControlGroup;
+              }
+            else 
+              {
+                this.statusUniversalControlGroup = this.statusUniversalControlGroup || workflowStatusUniversalControlGroup.booleanValue(); 
+              }
           }
       }
     
