@@ -874,7 +874,7 @@ public class ThirdPartyManager
               jsonResponse = processGetTokensCodesList(jsonRoot);
               break;
             case acceptOffer:
-              jsonResponse = processAcceptOffer(jsonRoot);
+              jsonResponse = processAcceptOffer(jsonRoot, sync);
               break;
             case purchaseOffer:
               jsonResponse = processPurchaseOffer(jsonRoot,sync);
@@ -4204,7 +4204,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processAcceptOffer(JSONObject jsonRoot) throws ThirdPartyManagerException
+  private JSONObject processAcceptOffer(JSONObject jsonRoot, boolean sync) throws ThirdPartyManagerException
   {
     /****************************************
      *
@@ -4234,6 +4234,7 @@ public class ThirdPartyManager
      *
      *****************************************/
     String deliveryRequestID = "";
+    PurchaseFulfillmentRequest purchaseResponse=null;
     try
     {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
@@ -4339,8 +4340,23 @@ public class ThirdPartyManager
         } 
       
        
+      deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
+      
+       
       deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
 
+        if (!sync)
+          {
+            deliveryRequestID = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, 1,
+                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
+          }
+        else
+          {
+            purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, 1,
+                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID);
+
+            deliveryRequestID = purchaseResponse.getDeliveryRequestID();
+          }
       
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -4411,7 +4427,12 @@ public class ThirdPartyManager
      *
      *****************************************/
     response.put("deliveryRequestID", deliveryRequestID);
-    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+    if(sync){
+      response.put(GENERIC_RESPONSE_CODE, purchaseResponse.getStatus().getReturnCode());
+      response.put(GENERIC_RESPONSE_MSG, purchaseResponse.getStatus().name());
+    }else{
+      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+    }
     return JSONUtilities.encodeObject(response);
   }
 
