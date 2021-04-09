@@ -17,6 +17,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferObjectiveService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
+import com.evolving.nglm.evolution.ResellerService;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
@@ -76,6 +77,7 @@ public class DatacubeManager
   private static OfferObjectiveService offerObjectiveService;
   private static ElasticsearchClientAPI elasticsearchRestClient;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
+  private static ResellerService resellerService;
 
   //
   // Datacube writer
@@ -160,6 +162,8 @@ public class DatacubeManager
     offerObjectiveService.start();
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, applicationID + "-subscribermessagetemplateservice-" + instanceID, Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
+    resellerService = new ResellerService(bootstrapServers, "NOT_USED", Deployment.getResellerTopic(), false);
+    resellerService.start();
     
     //
     // initialize ES client & GUI client
@@ -192,10 +196,10 @@ public class DatacubeManager
     loyaltyHistoryDatacubeDefinitive = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History(Definitive)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
     tierChangesDatacubePreview = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes(Preview)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
     tierChangesDatacubeDefinitive = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes(Definitive)", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
-    dailyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    dailyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    hourlyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    hourlyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    dailyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService, resellerService);
+    dailyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService, resellerService);
+    hourlyOdrDatacubePreview = new ODRDatacubeGenerator("ODR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService, resellerService);
+    hourlyOdrDatacubeDefinitive = new ODRDatacubeGenerator("ODR:Hourly(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService, resellerService);
     dailyBdrDatacubePreview = new BDRDatacubeGenerator("BDR:Daily(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
     dailyBdrDatacubeDefinitive = new BDRDatacubeGenerator("BDR:Daily(Definitive)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
     hourlyBdrDatacubePreview = new BDRDatacubeGenerator("BDR:Hourly(Preview)", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);

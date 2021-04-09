@@ -29,6 +29,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferObjectiveService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
+import com.evolving.nglm.evolution.ResellerService;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
@@ -40,6 +41,7 @@ import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OfferObjectivesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
+import com.evolving.nglm.evolution.datacubes.mapping.ResellerMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -64,6 +66,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
+  private ResellerMap resellerMap;
 
   private boolean hourlyMode;
   private String targetDay;
@@ -74,7 +77,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ODRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
+  public ODRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, ResellerService resellerService)  
   {
     super(datacubeName, elasticsearch, datacubeWriter);
 
@@ -86,6 +89,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
+    this.resellerMap = new ResellerMap(resellerService);
     
     //
     // Filter fields
@@ -98,6 +102,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("meanOfPayment");
     this.filterFields.add("returnCode");
     this.filterFields.add("origin");
+    this.filterFields.add("resellerID");
     
     //
     // Data Aggregations
@@ -150,6 +155,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
+    resellerMap.update();
     
     return true;
   }
@@ -175,6 +181,9 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     // Offer objectives are directly put as a Set<String> (because there is a 1-1 linked with the offer)
     Set<String> offerObjectivesID = offersMap.getOfferObjectivesID(offerID, "offer");
     filters.put("offerObjectives", offerObjectivesMap.getOfferObjectiveDisplaySet(offerObjectivesID, "offerObjective") );
+    
+    String resellerID = (String) filters.remove("resellerID");
+    filters.put("reseller", resellerMap.getDisplay(resellerID, "reseller"));
     
     DatacubeUtils.embelishReturnCode(filters);
     

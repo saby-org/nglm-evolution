@@ -43,8 +43,18 @@ public class PaymentMeansMap extends GUIManagedObjectMap<PaymentMean>
   * Getters
   *
   *****************************************/
-  public String getProviderID(String id, String fieldName)
+  public String getProviderID(String display, String fieldName)
   {
+    Collection<GUIManagedObject> paymentMeans = getCollection(0);
+    String id = null;
+    for (GUIManagedObject paymentMean : paymentMeans)
+      {
+        if (paymentMean.getGUIManagedObjectDisplay().equals(display))
+          {
+            id = paymentMean.getGUIManagedObjectID();
+            break;
+          }
+      }
     PaymentMean result = this.guiManagedObjects.get(id);
     if(result != null)
       {
