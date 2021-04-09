@@ -4340,7 +4340,7 @@ public class ThirdPartyManager
         } 
       
        
-      deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
+      deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
       
        
       deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
@@ -4348,12 +4348,12 @@ public class ThirdPartyManager
         if (!sync)
           {
             deliveryRequestID = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
+                moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
           }
         else
           {
             purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID);
+                moduleID, featureID, origin, resellerID, kafkaProducer);
 
             deliveryRequestID = purchaseResponse.getDeliveryRequestID();
           }
