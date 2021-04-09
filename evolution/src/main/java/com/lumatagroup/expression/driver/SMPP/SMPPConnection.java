@@ -539,13 +539,15 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 			logger.info("SMPPConnection.restart Try to restart " + name);
 		}
 		boolean restart = false;
-		List<SubmitSMCorrectionDeliveryRequest> toResends = new ArrayList<>();
+		Map<String,INotificationRequest> toResends = new HashMap<>();
 		synchronized(this) {
 			if (!being_restarted) { // are we already restarting ?
 				being_restarted = true;
 				restart = true;
-				toResends.addAll(messageId2NotifBean.values());
-				logger.info("SMPPConnection.restart ["+this.name+"] called, "+toResends.size()+" un-acknowledged submit_sm in previous connection");
+				for(SubmitSMCorrectionDeliveryRequest inFlightSubmitSM:messageId2NotifBean.values()) {
+				  toResends.put(inFlightSubmitSM.getDeliveryRequest().getDeliveryRequestID(),inFlightSubmitSM.getDeliveryRequest());
+				}
+				logger.info("SMPPConnection.restart ["+this.name+"] called, "+toResends.size()+" un-acknowledged SMS ("+messageId2NotifBean.size()+" submit_sm) in previous connection");
 				messageId2NotifBean.clear();
 			}
 		}
@@ -567,9 +569,11 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 							if(SMPPConnection.this.retrySender==null){
 								logger.warn("SMPPConnection.restart ["+SMPPConnection.this.name+"] no retry sender, this can lead to blocking situation");
 							}else{
-								for(SubmitSMCorrectionDeliveryRequest toResend:toResends){
-									logger.info("SMPPConnection.restart ["+SMPPConnection.this.name+"] resending delivery request "+toResend.getDeliveryRequest().getDeliveryRequestID());
-									retrySender.send(toResend.getDeliveryRequest());
+								for(INotificationRequest toResend:toResends.values()){
+									logger.info("SMPPConnection.restart ["+SMPPConnection.this.name+"] resending delivery request "+toResend.getDeliveryRequestID());
+									retrySender.send(toResend);
+									// completely arbitrary throttling, so very low on purpose
+									try { Thread.sleep(1000L); } catch (InterruptedException e) {}
 								}
 							}
 						}
