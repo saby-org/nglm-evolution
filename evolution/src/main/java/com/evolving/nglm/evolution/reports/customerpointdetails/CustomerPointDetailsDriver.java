@@ -1,18 +1,13 @@
 package com.evolving.nglm.evolution.reports.customerpointdetails;
 
-import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.FilterObject;
-import com.evolving.nglm.evolution.reports.ReportDriver;
-import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportMonoPhase;
+import java.util.Date;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
 public class CustomerPointDetailsDriver extends ReportDriver

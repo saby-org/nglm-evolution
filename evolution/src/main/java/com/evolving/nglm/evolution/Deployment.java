@@ -245,7 +245,6 @@ public class Deployment
   private static int kafkaRetentionDaysODR;
   private static int kafkaRetentionDaysBDR;
   private static int kafkaRetentionDaysMDR;
-  //EVPRO-574
   private static int kafkaRetentionDaysTargets;
   private static int journeysReportMaxParallelThreads;
 
