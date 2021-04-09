@@ -1,11 +1,13 @@
 package com.evolving.nglm.evolution.reports.journeycustomerstates;
 
 import java.util.Date;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
 public class JourneyCustomerStatesReportDriverMultithread extends ReportDriver
@@ -25,4 +27,16 @@ public class JourneyCustomerStatesReportDriverMultithread extends ReportDriver
     log.debug("Finished with Journey Customer States Report Multithread");
 
   }
+
+@Override
+public List<FilterObject> reportFilters() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public List<String> reportHeader() {
+	// TODO Auto-generated method stub
+	return null;
+}
 }
