@@ -4,9 +4,49 @@ echo "This script will allow you to change the log configuration of a running co
 echo "*********************************************************************************"
 echo
 
+: ${SWARM_HOSTS:?"SWARM_HOSTS undefined"}
+
+declare -a hosts
+for host in $SWARM_HOSTS
+do
+  hosts+=($host)
+done
+
+
+for ID in "${!hosts[@]}"
+do
+  if [ $ID -lt 10 ]
+  then
+    echo "   $ID ... ${hosts[$ID]}"
+  else
+    echo "  $ID ... ${hosts[$ID]}"
+  fi
+done
+
+rep=""
+while [ "$rep" == "" ]
+do
+  echo -n "--> Select host to change logging : "
+  read rep
+done
+
+if [ $rep -lt 0 -o $rep -ge ${#hosts[@]} ]
+then
+  echo "Unknown index"
+  exit 1
+fi
+
+HOSTNAME=${hosts[$rep]}
+if [ "$HOSTNAME" == "" ]
+then
+  echo "Unknown index"
+  exit 1
+fi
+
+
 export DOCKER_STACK=${DOCKER_STACK:-ev}
 declare -a containers
-for name in `docker ps --format '{{.Names}}' | grep -v ${DOCKER_STACK}-gui_ | sort`
+for name in `ssh $HOSTNAME docker ps --format '{{.Names}}' | grep -v ${DOCKER_STACK}-gui_ | sort`
 do
   containers+=($name)
 done
@@ -41,7 +81,7 @@ then
   exit 1
 fi
 
-CONTAINERID=`docker ps --format '{{.ID}}' -f "Name=$CONTAINERNAME"`
+CONTAINERID=`ssh $HOSTNAME docker ps --format '{{.ID}}' -f "Name=$CONTAINERNAME"`
 
 if [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-guimanager_guimanager ]]; then
   FILE=guimanager
@@ -87,7 +127,7 @@ fi
 
 TEMPFILE=/tmp/logfile.$$.xml
 
-docker exec -i $CONTAINERID cat $LOGFILE > ${TEMPFILE}
+ssh $HOSTNAME "docker exec -i $CONTAINERID cat $LOGFILE" > ${TEMPFILE}
 if [ $? -ne 0 ]
 then
   echo "--> unexpected error : exiting"
@@ -101,21 +141,22 @@ then
   echo "--> identical files : exiting"
   exit 1
 fi
+scp $TEMPFILE $HOSTNAME:$TEMPFILE
+
 echo "--> changing log config file in container..."
 echo "docker exec -i $CONTAINERID ls -la $LOGFILE"
-docker exec -i $CONTAINERID ls -la $LOGFILE
-docker cp $TEMPFILE $CONTAINERID:${LOGFILE}.tmp
+ssh $HOSTNAME "docker exec -i $CONTAINERID ls -la $LOGFILE"
+ssh $HOSTNAME "docker cp $TEMPFILE $CONTAINERID:${LOGFILE}.tmp"
 if [ $? -ne 0 ]
 then
   echo "--> unexpected error : exiting"
   exit 1
 fi
-docker exec -i $CONTAINERID cp ${LOGFILE}.tmp ${LOGFILE}
+ssh $HOSTNAME "docker exec -i $CONTAINERID cp ${LOGFILE}.tmp ${LOGFILE}"
 if [ $? -ne 0 ]
 then
   echo "--> unexpected error : exiting"
   exit 1
 fi
 echo "--> Log config file replaced in container $CONTAINERNAME"
-
 
