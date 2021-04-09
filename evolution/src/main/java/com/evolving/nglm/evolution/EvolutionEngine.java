@@ -4368,7 +4368,7 @@ public class EvolutionEngine
                         //
                         
                         LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = new LoyaltyProgramMissionHistory(loyaltyProgram.getLoyaltyProgramID());
-                        currentLoyaltyProgramState = new LoyaltyProgramMissionState(LoyaltyProgramType.MISSION, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newStepName, null, now, loyaltyProgramMissionHistory);
+                        currentLoyaltyProgramState = new LoyaltyProgramMissionState(LoyaltyProgramType.MISSION, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newStepName, null, now, Double.valueOf(0.0), loyaltyProgramMissionHistory);
                         if (log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '" + subscriberProfile.getSubscriberID() + "' : loyaltyProgramState.update(" + loyaltyProgram.getEpoch() + ", " + loyaltyProgramRequest.getOperation() + ", " + loyaltyProgram.getLoyaltyProgramName() + ", " + newStepName + ", " + now + ", " + loyaltyProgramRequest.getDeliveryRequestID() + ")");
                         LoyaltyProgramStepChange stepChangeType = ((LoyaltyProgramMissionState) currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newStepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
 
@@ -4451,7 +4451,7 @@ public class EvolutionEngine
                     if (loyaltyProgramState == null)
                       {
                         LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = new LoyaltyProgramMissionHistory(loyaltyProgram.getLoyaltyProgramID());
-                        loyaltyProgramState = new LoyaltyProgramMissionState(LoyaltyProgramType.MISSION, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, stepName, null, now, loyaltyProgramMissionHistory);
+                        loyaltyProgramState = new LoyaltyProgramMissionState(LoyaltyProgramType.MISSION, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, stepName, null, now, Double.valueOf(0.0), loyaltyProgramMissionHistory);
                       }
 
                     LoyaltyProgramStepChange loyaltyProgramStepChange = LoyaltyProgramStepChange.NoChange;

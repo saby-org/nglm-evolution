@@ -19827,6 +19827,7 @@ public class GUIManager
 
                       loyaltyProgramPresentation.put("stepName", loyaltyProgramMissionState.getStepName());
                       loyaltyProgramPresentation.put("stepEnrollmentDate", getDateString(loyaltyProgramMissionState.getStepEnrollmentDate(), tenantID));
+                      loyaltyProgramPresentation.put("currentProgression", loyaltyProgramMissionState.getCurrentProgression());
                       
                       //
                       // history

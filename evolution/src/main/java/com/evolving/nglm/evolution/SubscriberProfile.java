@@ -544,13 +544,11 @@ public abstract class SubscriberProfile
                     
                     if(loyaltyProgramMissionState.getStepName() != null){ loyalty.put("stepName", loyaltyProgramMissionState.getStepName()); }
                     if(loyaltyProgramMissionState.getStepEnrollmentDate() != null){ loyalty.put("stepUpdateDate", loyaltyProgramMissionState.getStepEnrollmentDate()); }
+                    loyalty.put("currentProgression", loyaltyProgramMissionState.getCurrentProgression());
                     if(loyaltyProgramMissionState.getPreviousStepName() != null){ loyalty.put("previousStepName", loyaltyProgramMissionState.getPreviousStepName()); }
                     MissionStep step = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getStepName());
                     MissionStep previousStep = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getPreviousStepName());
                     loyalty.put("stepChangeType", MissionStep.changeFromStepToStep(previousStep, step).getExternalRepresentation());
-                    //loyalty.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber()); //RAJ K
-                    //loyalty.put("previousPeriodScore", loyaltyProgramChallengeState.getPreviousPeriodScore());
-                    //loyalty.put("previousPeriodStep", loyaltyProgramMissionState.getPreviousPeriodStep());
                   }
               }
             array.add(JSONUtilities.encodeObject(loyalty));
