@@ -29673,7 +29673,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     {
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       String timeZone = Deployment.getBaseTimeZone();
-      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
+      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE,timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       for (Date startDate : journeyCreationDates)
         {

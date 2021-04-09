@@ -940,22 +940,22 @@ public class EvaluationCriterion
                     case Instant:
                       break;
                     case Minute:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MINUTE, Deployment.getBaseTimeZone());
                       break;
                     case Hour:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.HOUR, Deployment.getBaseTimeZone());
                       break;
                     case Day:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getBaseTimeZone());
                       break;
                     case Week:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
                       break;
                     case Month:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MONTH, Deployment.getBaseTimeZone());
                       break;
                     case Year:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Deployment.getBaseTimeZone());
                       break;
                   }
               }

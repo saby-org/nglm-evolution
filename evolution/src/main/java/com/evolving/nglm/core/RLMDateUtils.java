@@ -388,21 +388,14 @@ public class RLMDateUtils
     return result;
   }
 
+  
   //
   //  ceiling
   //
 
   public static Date ceiling(Date date, int field, String timeZone)
   {
-    return ceiling(date, field, Calendar.SUNDAY, timeZone);
-  }
-  
-  //
-  //  ceiling
-  //
-
-  public static Date ceiling(Date date, int field, int firstDayOfWeek, String timeZone)
-  {
+    int firstDayOfTheWeekInt = Deployment.getFirstDayOfTheWeek();
     Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     Calendar result;
@@ -410,7 +403,7 @@ public class RLMDateUtils
       {
         case Calendar.DAY_OF_WEEK:
           Calendar day = DateUtils.ceiling(calendar,Calendar.DATE);
-          while (day.get(Calendar.DAY_OF_WEEK) != firstDayOfWeek) day.add(Calendar.DATE,1);
+          while (day.get(Calendar.DAY_OF_WEEK) != firstDayOfTheWeekInt) day.add(Calendar.DATE,1);
           result = day;
           break;
         default:
@@ -420,21 +413,14 @@ public class RLMDateUtils
     return result.getTime();
   }
 
+
   //
   //  truncate
   //
 
   public static Date truncate(Date date, int field, String timeZone)
   {
-    return truncate(date, field, Calendar.SUNDAY, timeZone);
-  }
-
-  //
-  //  truncate
-  //
-
-  public static Date truncate(Date date, int field, int firstDayOfWeek, String timeZone)
-  {
+    int firstDayOfTheWeekInt = Deployment.getFirstDayOfTheWeek();
     Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     Calendar result;
@@ -442,7 +428,7 @@ public class RLMDateUtils
       {
         case Calendar.DAY_OF_WEEK:
           Calendar day = DateUtils.truncate(calendar,Calendar.DATE);
-          while (day.get(Calendar.DAY_OF_WEEK) != firstDayOfWeek) day.add(Calendar.DATE,-1);
+          while (day.get(Calendar.DAY_OF_WEEK) != firstDayOfTheWeekInt) day.add(Calendar.DATE,-1);
           result = day;
           break;
         default:

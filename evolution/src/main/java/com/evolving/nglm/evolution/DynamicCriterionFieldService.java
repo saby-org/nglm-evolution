@@ -259,6 +259,9 @@ public class DynamicCriterionFieldService extends GUIService
     addPointCriterionField(point, newPoint, nature+".yesterday", CriterionDataType.IntegerCriterion, null);
     addPointCriterionField(point, newPoint, nature+".last7days", CriterionDataType.IntegerCriterion, null);
     addPointCriterionField(point, newPoint, nature+".last30days", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionField(point, newPoint, nature+".today", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionField(point, newPoint, nature+".thisWeek", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionField(point, newPoint, nature+".thisMonth", CriterionDataType.IntegerCriterion, null);
   }
 
   /*****************************************
@@ -314,14 +317,23 @@ public class DynamicCriterionFieldService extends GUIService
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.yesterday", null);
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.last7days", null);
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.last30days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.today", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.thisWeek", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.thisMonth", null);
 
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.yesterday", null);
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.last7days", null);
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.last30days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.today", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.thisWeek", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.thisMonth", null);
 
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.yesterday", null);
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last7days", null);
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last30days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.today", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.thisWeek", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.thisMonth", null);
   }
   
   /*****************************************

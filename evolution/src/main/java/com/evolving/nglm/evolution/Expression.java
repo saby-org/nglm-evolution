@@ -554,22 +554,22 @@ public abstract class Expression
                 case Instant:
                   break;
                 case Minute:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MINUTE, Deployment.getBaseTimeZone());
                   break;
                 case Hour:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.HOUR, Deployment.getBaseTimeZone());
                   break;
                 case Day:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DATE, Deployment.getBaseTimeZone());
                   break;
                 case Week:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
                   break;
                 case Month:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MONTH, Deployment.getBaseTimeZone());
                   break;
                 case Year:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.YEAR, Deployment.getBaseTimeZone());
                   break;
               }
             break;
@@ -2474,22 +2474,22 @@ public abstract class Expression
           case Instant:
             break;
           case Minute:
-            date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getBaseTimeZone());
             break;
           case Hour:
-            date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getBaseTimeZone());
             break;
           case Day:
-            date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getBaseTimeZone());
             break;
           case Week:
-            date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
             break;
           case Month:
-            date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getBaseTimeZone());
             break;
           case Year:
-            date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getBaseTimeZone());
             break;
         }
       
@@ -2551,22 +2551,22 @@ public abstract class Expression
             case Instant:
               break;
             case Minute:
-              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getBaseTimeZone());
               break;
             case Hour:
-              date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getBaseTimeZone());
               break;
             case Day:
-              date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getBaseTimeZone());
               break;
             case Week:
-              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
               break;
             case Month:
-              date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getBaseTimeZone());
               break;
             case Year:
-              date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getBaseTimeZone());
               break;
           }
         }
@@ -2607,22 +2607,22 @@ public abstract class Expression
             case Instant:
               break;
             case Minute:
-              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getBaseTimeZone());
               break;
             case Hour:
-              date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getBaseTimeZone());
               break;
             case Day:
-              date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getBaseTimeZone());
               break;
             case Week:
-              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
               break;
             case Month:
-              date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getBaseTimeZone());
               break;
             case Year:
-              date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getBaseTimeZone());
               break;
           }
         }
@@ -2743,6 +2743,7 @@ public abstract class Expression
               int hh = Integer.parseInt(args[0]);
               int mm = Integer.parseInt(args[1]);
               int ss = Integer.parseInt(args[2]);
+             
               if (RLMDateUtils.truncatedEquals(nextDayDate, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
                 {
                   //
@@ -2784,6 +2785,7 @@ public abstract class Expression
           int mm = Integer.parseInt(args[1]);
           int ss = Integer.parseInt(args[2]);
           Date now = SystemTime.getCurrentTime();
+          
           if (RLMDateUtils.truncatedEquals(now, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
             {
               //
