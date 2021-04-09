@@ -116,8 +116,13 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   }
 
   protected DeliveryManagerForNotifications(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration, int workerThreadNumber)
+  {
+    this(applicationID, applicationID, deliveryManagerKey, bootstrapServers, requestSerde, deliveryManagerDeclaration, workerThreadNumber);
+  }
+
+  protected DeliveryManagerForNotifications(String applicationID, String groupIdForRouting, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration, int workerThreadNumber)
     {
-      super(applicationID, deliveryManagerKey, bootstrapServers, requestSerde, deliveryManagerDeclaration, workerThreadNumber);
+      super(applicationID, groupIdForRouting, deliveryManagerKey, bootstrapServers, requestSerde, deliveryManagerDeclaration, workerThreadNumber);
     }
   
   /*****************************************

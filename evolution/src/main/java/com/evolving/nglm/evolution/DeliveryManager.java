@@ -272,13 +272,18 @@ public abstract class DeliveryManager
 
   protected void shutdown() { }
 
+  protected DeliveryManager(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration, int workerThreadNumber)
+  {
+    this(applicationID, applicationID, deliveryManagerKey, bootstrapServers, requestSerde, deliveryManagerDeclaration, workerThreadNumber);
+  }
+  
   /*****************************************
   *
   *  constructor
   *
   *****************************************/
 
-  protected DeliveryManager(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration, int workerThreadNumber)
+  protected DeliveryManager(String applicationID, String groupIdForRouting, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration, int workerThreadNumber)
   {
     /*****************************************
     *
@@ -350,7 +355,8 @@ public abstract class DeliveryManager
 
     Properties routingConsumerProperties = new Properties();
     routingConsumerProperties.put("bootstrap.servers", bootstrapServers);
-    routingConsumerProperties.put("group.id", applicationID + "-routing");
+    routingConsumerProperties.put("group.id", groupIdForRouting + "-routing");
+    log.info("MK creating routing consumer with group = " + groupIdForRouting + "-routing");
     routingConsumerProperties.put("auto.offset.reset", "earliest");
     routingConsumerProperties.put("enable.auto.commit", "false");
     routingConsumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
