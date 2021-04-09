@@ -951,7 +951,8 @@
     "reportManagerFieldSurrounder": "'",
     "reportManagerMaxMessageLength": 200,
     "reportManagerStreamsTempDir" : "/tmp",
-    "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000"
+    "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000",
+    "journeysReportMaxParallelThreads" : 10
   },
   
   "initialReports" :
@@ -960,7 +961,7 @@
       "name"                : "journeyCustomerStatesReport",
       "display"             : "Journey Customer States Report",
       "description"         : "Description of the Journey Customer States Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriverMultithread",
       "availableScheduling" : [ "none", "daily", "weekly", "monthly" ]
     },
     {
@@ -1027,7 +1028,7 @@
       "name"                : "journeyCustomerStatisticsReport",
       "display"             : "Journey Customer Statistics Report",
       "description"         : "Description of the Journey Customer Statistics Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriverMultithread",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
 
     },

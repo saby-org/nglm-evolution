@@ -3697,7 +3697,7 @@ public class EvolutionEngine
     
     if(loyaltyWorflowID == null) { return false; }
     
-    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID + ":" + featureID + ":" + origin;
+    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Program.getExternalRepresentation() + ":" + origin ;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
       {
@@ -4680,6 +4680,7 @@ public class EvolutionEngine
         //
         String sourceFeatureIDFromWorkflowTriggering = null;
         String origin = null;
+        String sourceModuleIDFromWorkflowTriggering = null;
         List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
         List<String> toBeRemoved = new ArrayList<>();
         if(journey.isWorkflow())
@@ -4702,10 +4703,8 @@ public class EvolutionEngine
 				                    calledJourney = true;
 				                    toBeRemoved.add(currentWFToTrigger);
 				                    sourceFeatureIDFromWorkflowTriggering=elements[3];
-                            if (elements.length >= 5)
-                              {
-                                origin = elements[4];
-                              }
+                                                    if (elements.length > 4) { sourceModuleIDFromWorkflowTriggering=elements[4]; }
+                                                    if (elements.length > 5) { origin = elements[5]; }
 				                  }
 				              }
 				            else 
@@ -4989,8 +4988,9 @@ public class EvolutionEngine
                 *****************************************/
 
                 JourneyRequest journeyRequest;
-                String sourceFeatureID;
                 String sourceOrigin = "";
+                String sourceFeatureID;
+                String sourceModuleID;
                 ParameterMap boundParameters;
                 if (calledJourney && evolutionEvent instanceof JourneyRequest)
                   {
@@ -4999,6 +4999,7 @@ public class EvolutionEngine
                     boundParameters.putAll(journeyRequest.getBoundParameters());
                     // get featureID from the source
                     sourceFeatureID = journeyRequest.getDeliveryRequestSource();
+                    sourceModuleID = DeliveryRequest.Module.Journey_Manager.getExternalRepresentation();
                   }
                 else
                   {
@@ -5007,6 +5008,7 @@ public class EvolutionEngine
                     // get the featureID from the CalledJourney computation
                     sourceFeatureID = sourceFeatureIDFromWorkflowTriggering;
                     sourceOrigin = origin;
+                    sourceModuleID = sourceModuleIDFromWorkflowTriggering;
                   }
 
                 //
@@ -5043,7 +5045,7 @@ public class EvolutionEngine
                 }
 
                 JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
-                JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory, sourceOrigin);
+                JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceModuleID, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory, sourceOrigin);
 
                 if (currentStatus != null) // EVPRO-530
                 {
@@ -5781,8 +5783,36 @@ public class EvolutionEngine
                 //
                 
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, journeyNode.getExitNode());
-                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
-
+                if(journey.isWorkflow())
+                  {  
+                    // retrieve the journey state of the calling campaign
+                	JourneyState sourceJourneyState = null;
+                    if(subscriberState.getJourneyStates() != null)
+                      {
+                        for(JourneyState state : subscriberState.getJourneyStates())
+                          {
+                            if(state.getJourneyID().equals(journeyState.getsourceFeatureID()) && DeliveryRequest.Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()))
+                              {
+                                sourceJourneyState = state;
+                              }
+                          }
+                      }
+                    if(sourceJourneyState != null)
+                      {
+                        subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), sourceJourneyState.getJourneyHistory(), journeyState.getJourneyHistory(), sourceJourneyState, journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
+                      }
+                    else
+                      {
+                        // error...generate a jounrey statistic for the workflow as it it was a normal journey for debug help
+                        log.warn("Can't retrieve source journey state for workflow " + journeyState.getJourneyID() + " and subscriber " + subscriberState.getSubscriberID());
+                        subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
+                      }
+                  }
+                else
+                  {
+                	// normal case
+                	subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
+                  }
                 /*****************************************
                 *
                 *  update subscriberJourneys in profile

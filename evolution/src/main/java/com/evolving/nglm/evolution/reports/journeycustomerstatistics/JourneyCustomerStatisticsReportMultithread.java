@@ -25,11 +25,10 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
-public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactory
+public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFactory
 {
-  private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportMonoPhase.class);
+  private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportMultithread.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private JourneyService journeyService;
   List<String> headerFieldsOrder = new ArrayList<String>();
@@ -153,7 +152,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
 
   public static void main(String[] args, Date reportGenerationDate)
   {
-    JourneyCustomerStatisticsReportMonoPhase journeyCustomerStatisticsReportMonoPhase = new JourneyCustomerStatisticsReportMonoPhase();
+    JourneyCustomerStatisticsReportMultithread journeyCustomerStatisticsReportMonoPhase = new JourneyCustomerStatisticsReportMultithread();
     journeyCustomerStatisticsReportMonoPhase.start(args, reportGenerationDate);
   }
   
@@ -162,19 +161,19 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
-        log.info("JourneyCustomerStatisticsReportMonoPhase: arg " + arg);
+        log.info("JourneyCustomerStatisticsReportMultithread: arg " + arg);
       }
 
     if (args.length < 3)
       {
-        log.warn("Usage : JourneyCustomerStatisticsReportMonoPhase <ESNode> <ES journey index> <csvfile>");
+        log.warn("Usage : JourneyCustomerStatisticsReportMultithread <ESNode> <ES journey index> <csvfile>");
         return;
       }
     String esNode = args[0];
     String esIndexJourney = args[1];
     String csvfile = args[2];
     
-    journeyService = new JourneyService(Deployment.getBrokerServers(), "JourneyCustomerStatisticsReport-journeyservice-JourneyCustomerStatisticsReportMonoDriver", Deployment.getJourneyTopic(), false);
+    journeyService = new JourneyService(Deployment.getBrokerServers(), "JourneyCustomerStatisticsReportMultithread-journeyservice-JourneyCustomerStatisticsReportMultithread", Deployment.getJourneyTopic(), false);
     journeyService.start();
 
     try {
@@ -201,14 +200,14 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
           csvfile
           );
 
-      if (!reportMonoPhase.startOneToOne(true))
+      if (!reportMonoPhase.startOneToOneMultiThread())
         {
           log.warn("An error occured, the report might be corrupted");
         }
     } finally {
 
       journeyService.stop();
-      log.info("Finished JourneyCustomerStatisticsReport");
+      log.info("Finished JourneyCustomerStatisticsReport Multithread");
     }
   }
 

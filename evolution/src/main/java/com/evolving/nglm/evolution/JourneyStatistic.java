@@ -17,6 +17,8 @@ import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import org.apache.kafka.connect.data.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +30,13 @@ import java.util.Map;
 
 public class JourneyStatistic extends SubscriberStreamOutput implements SubscriberStreamEvent, Comparable
 {
+  
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(JourneyStatistic.class);
+  
   /*****************************************
   *
   *  schema
@@ -174,10 +183,11 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.linkID = null;
     this.fromNodeID = null;
     this.toNodeID = journeyState.getJourneyNodeID();
-    if(journeyState.isSpecialExit()) {
-      this.specialExitStatus = journeyState.getSpecialExitReason().getExternalRepresentation();
-      thisJourneyComplete = true;
-    }
+    if(journeyState.isSpecialExit())
+      {	
+    	this.specialExitStatus=journeyState.getSpecialExitReason().getExternalRepresentation();
+    	thisJourneyComplete=true;    	
+      }
     this.journeyExitDate = journeyState.getJourneyExitDate();
     this.deliveryRequestID = null;
     this.sample = null;
@@ -192,8 +202,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.statusUniversalControlGroup = null;
     this.journeyComplete = thisJourneyComplete;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
-    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
-    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory, null);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory, null);
     this.subscriberStratum = subscriberStratum;
     
   }
@@ -204,27 +214,129 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted, String sample, Map<String, String> subscriberStratum, SubscriberProfile subscriberProfile)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyHistory workflowHistory, JourneyState journeyState, JourneyState workflowJourneyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted, String sample, Map<String, String> subscriberStratum, SubscriberProfile subscriberProfile)
   {
+    // if this constructor is called by a workflow, i.e. workflowJouneyState != null, then the JouneyLink must be set to null as it does not reflect something from the main campaign
+    if(workflowJourneyState != null)
+      {
+    	journeyLink = null;
+      }
+        
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
     this.journeyID = journeyState.getJourneyID();
     this.subscriberID = subscriberID;
     this.transitionDate = journeyState.getJourneyNodeEntryDate();
-    this.linkID = journeyLink.getLinkID();
-    this.fromNodeID = journeyLink.getSourceReference();
-    this.toNodeID = journeyLink.getDestinationReference();
+    this.linkID = journeyLink != null ? journeyLink.getLinkID() : null;
+    this.fromNodeID = journeyLink != null ? journeyLink.getSourceReference() : null;
+    this.toNodeID = journeyLink != null ? journeyLink.getDestinationReference() : journeyState.getJourneyNodeID();
     this.deliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
     this.sample = sample;
     this.markNotified = markNotified;
     this.markConverted = markConverted;
     this.lastConversionDate = journeyHistory.getLastConversionDate();
     this.conversionCount = journeyHistory.getConversionCount();
+    if(workflowHistory != null)
+      {
+        if(workflowHistory.getLastConversionDate() != null && (this.lastConversionDate == null || workflowHistory.getLastConversionDate().getTime() > this.lastConversionDate.getTime()))
+          {
+            this.lastConversionDate = workflowHistory.getLastConversionDate();
+          }
+        this.conversionCount = this.conversionCount + workflowHistory.getConversionCount();
+      }
     this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     this.statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
     this.statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
     this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
     this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+
+    if(workflowJourneyState != null && workflowJourneyState.getJourneyParameters() != null)
+      {
+    	  // take in account the fact that a workflow changed the following values for the calling campaign
+        try 
+        {
+          Boolean workflowStatusNotified = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName());
+          if(workflowStatusNotified != null)
+            {
+              this.statusNotified = this.statusNotified || workflowStatusNotified.booleanValue();
+            }
+        }
+        catch(NullPointerException e)
+        {
+          log.warn("JourneyStatistic.JourneyStatistic NPE workflow " + workflowJourneyState.getJourneyID() + " while handling statusNotified " + workflowJourneyState, e); 
+        }
+        
+        try {
+          Boolean workflowStatusConverted = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName());
+          if(workflowStatusConverted != null)
+            {
+              this.statusConverted = this.statusConverted ||  workflowStatusConverted;
+            }
+        }
+        catch(NullPointerException e)
+        {
+          log.warn("JourneyStatistic.JourneyStatistic NPE workflow " + workflowJourneyState.getJourneyID() + " while handling statusConverted " + workflowJourneyState, e); 
+        }   
+        
+        try
+        {
+          Boolean workflowStatusTargetGroup = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName());
+          if(workflowStatusTargetGroup != null)
+            {
+              if(this.statusTargetGroup == null) 
+                {  
+                  this.statusTargetGroup = workflowStatusTargetGroup;
+                }
+              else
+                {
+                  this.statusTargetGroup = this.statusTargetGroup || workflowStatusTargetGroup.booleanValue();
+                }
+            }
+        }
+        catch(NullPointerException e)
+        {
+          log.warn("JourneyStatistic.JourneyStatistic NPE workflow " + workflowJourneyState.getJourneyID() + " while handling statusTargetGroup " + workflowJourneyState, e);
+        }
+
+        try
+        {
+          Boolean workflowStatusControlGroup = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName());
+          if(workflowStatusControlGroup != null)
+            {
+              if(this.statusControlGroup == null)
+                {
+                  this.statusControlGroup = workflowStatusControlGroup;
+                }
+              else 
+                {
+                  this.statusControlGroup = this.statusControlGroup || workflowStatusControlGroup.booleanValue();
+                }
+            }
+        }
+        catch(NullPointerException e)
+        {
+          log.warn("JourneyStatistic.JourneyStatistic NPE workflow " + workflowJourneyState.getJourneyID() + " while handling statusControlGroup " + workflowJourneyState, e);
+        }
+        
+        try {
+          Boolean workflowStatusUniversalControlGroup = (Boolean) workflowJourneyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName());
+          if(workflowStatusUniversalControlGroup != null)
+            {
+              if(this.statusUniversalControlGroup == null)
+                {
+                  this.statusUniversalControlGroup = workflowStatusUniversalControlGroup;
+                }
+              else 
+                {
+                  this.statusUniversalControlGroup = this.statusUniversalControlGroup || workflowStatusUniversalControlGroup.booleanValue(); 
+                }
+            }
+        }
+        catch(NullPointerException e)
+        {
+          log.warn("JourneyStatistic.JourneyStatistic NPE workflow " + workflowJourneyState.getJourneyID() + " while handling statusUniversalControlGroup " + workflowJourneyState, e);
+        }        
+      }
     
     //
     // re-check
@@ -234,10 +346,10 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     if (this.statusControlGroup == Boolean.TRUE) this.statusTargetGroup = this.statusUniversalControlGroup = !this.statusControlGroup;
     if (this.statusUniversalControlGroup == Boolean.TRUE) this.statusTargetGroup = this.statusControlGroup = !this.statusUniversalControlGroup;
     
-    this.journeyComplete = journeyLink.getDestination().getExitNode();
+    this.journeyComplete = journeyLink != null ? journeyLink.getDestination().getExitNode() : false;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
-    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
-    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory, workflowHistory);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory, workflowHistory);
     this.subscriberStratum = subscriberStratum;
     this.journeyExitDate = journeyState.getJourneyExitDate();
   }
@@ -279,8 +391,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     
     this.journeyComplete = true;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
-    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
-    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory, null);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory, null);
     this.subscriberStratum = subscriberStratum;
     this.journeyExitDate = journeyState.getJourneyExitDate();
   }
@@ -713,7 +825,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
   
-  private List<StatusHistory> prepareJourneyStatusSummary(JourneyHistory journeyHistory)
+  private List<StatusHistory> prepareJourneyStatusSummary(JourneyHistory journeyHistory, JourneyHistory workflowHistory)
   {
     List<StatusHistory> result = new ArrayList<StatusHistory>();
     if(journeyHistory != null) 
@@ -726,6 +838,13 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
               }
           }
       }
+    if(workflowHistory != null && workflowHistory.getStatusHistory() != null) 
+    {
+      for(StatusHistory status : workflowHistory.getStatusHistory()) 
+        {
+          result.add(status);
+        }
+    }
     return result;
   }
   
@@ -735,7 +854,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
   
-  private List<RewardHistory> prepareJourneyRewardsSummary(JourneyHistory journeyHistory)
+  private List<RewardHistory> prepareJourneyRewardsSummary(JourneyHistory journeyHistory, JourneyHistory workflowHistory)
   {
     List<RewardHistory> result = new ArrayList<RewardHistory>();
     if(journeyHistory != null) 
@@ -748,6 +867,13 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
               }
           }        
       }
+    if(workflowHistory != null && workflowHistory.getStatusHistory() != null) 
+    {
+      for(RewardHistory rewardHistory : workflowHistory.getRewardHistory()) 
+        {
+          result.add(rewardHistory);
+        }
+    }
     return result;
   }
   

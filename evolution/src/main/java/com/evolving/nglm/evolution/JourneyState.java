@@ -50,7 +50,7 @@ public class JourneyState implements Cleanable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(9));
     schemaBuilder.field("callingJourneyRequest", JourneyRequest.serde().optionalSchema());
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
@@ -71,6 +71,7 @@ public class JourneyState implements Cleanable
     schemaBuilder.field("specialExitReason", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("priority", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("sourceOrigin", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("sourceModuleID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -110,6 +111,7 @@ public class JourneyState implements Cleanable
   private Date journeyNodeEntryDate;
   private String journeyOutstandingDeliveryRequestID;
   private String sourceFeatureID; // can be null, present by example for workflows that must not define there own ModuleID / FeatureID <ModuleID:FeatureID>
+  private String sourceModuleID; // can be null
   private JourneyHistory journeyHistory;
   private Date journeyEndDate;
   private List<VoucherChange> voucherChanges;
@@ -146,10 +148,10 @@ public class JourneyState implements Cleanable
   public Date getJourneyEndDate() { return journeyEndDate; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
   public Boolean isSpecialExit() { return specialExitReason != null; }
-  public SubscriberJourneyStatus getSpecialExitReason() { return specialExitReason; }
   public int getPriority() { return priority; }
-  public String getsourceOrigin() { return sourceOrigin; }
-  
+  public String getsourceOrigin() { return sourceOrigin; }  
+  public SubscriberJourneyStatus getSpecialExitReason() {return specialExitReason;}
+  public String getSourceModuleID() {return sourceModuleID;}
   /*****************************************
   *
   *  setters
@@ -181,7 +183,7 @@ public class JourneyState implements Cleanable
   *
   *****************************************/
 
-  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, String sourceFeatureID, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory, String sourceOrigin)
+  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, String sourceModuleID, String sourceFeatureID, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory, String sourceOrigin)
   {
     this.callingJourneyRequest = callingJourneyRequest;
     this.sourceFeatureID = sourceFeatureID;
@@ -204,6 +206,7 @@ public class JourneyState implements Cleanable
     this.priority = journey.getPriority();
     this.sourceOrigin = sourceOrigin;
     this.specialExitReason = null;
+    this.sourceModuleID = sourceModuleID;
   }
   
  
@@ -214,7 +217,7 @@ public class JourneyState implements Cleanable
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges, SubscriberJourneyStatus specialExitReason, int priority, String sourceOrigin)
+  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceModuleID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges, SubscriberJourneyStatus specialExitReason, int priority, String sourceOrigin)
   {
     this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = journeyInstanceID;
@@ -237,6 +240,7 @@ public class JourneyState implements Cleanable
     this.specialExitReason = specialExitReason;
     this.priority = priority;
     this.sourceOrigin = sourceOrigin;
+    this.sourceModuleID = sourceModuleID;
   }
 
   /*****************************************
@@ -268,6 +272,7 @@ public class JourneyState implements Cleanable
     this.specialExitReason = journeyState.getSpecialExitReason();
     this.priority = journeyState.getPriority();
     this.sourceOrigin = journeyState.getsourceOrigin();
+    this.sourceModuleID = journeyState.getSourceModuleID();
   }
 
   /*****************************************
@@ -300,6 +305,7 @@ public class JourneyState implements Cleanable
     struct.put("specialExitReason", journeyState.getSpecialExitReason() != null ? journeyState.getSpecialExitReason().getExternalRepresentation() : null);
     struct.put("priority", journeyState.getPriority());
     struct.put("sourceOrigin", journeyState.getsourceOrigin());
+    struct.put("sourceModuleID",  journeyState.getSourceModuleID());
     return struct;
   }
   
@@ -345,12 +351,13 @@ public class JourneyState implements Cleanable
     SubscriberJourneyStatus specialExitReason = schema.field("specialExitReason") != null ? unpackSpecialExitReason(valueStruct) : null;
     int priority = schema.field("priority") != null ? valueStruct.getInt32("priority") : Integer.MAX_VALUE; // for legacy campaigns, very low priority
     String sourceOrigin= schema.field("sourceOrigin") != null ? valueStruct.getString("sourceOrigin") : null;
-    
+    String sourceModuleID = schema.field("sourceModuleID") != null ? valueStruct.getString("sourceModuleID") : null;
+  
     //
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges, specialExitReason, priority, sourceOrigin);
+    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceModuleID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges, specialExitReason, priority, sourceOrigin);
   }
   
   private static SubscriberJourneyStatus unpackSpecialExitReason(Struct valueStruct)

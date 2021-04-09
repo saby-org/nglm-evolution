@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.ReportDriver;
 
 public class CustomerPointDetailsDriver extends ReportDriver
 {

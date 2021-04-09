@@ -19,26 +19,23 @@ import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyNode;
 import com.evolving.nglm.evolution.JourneyService;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
-import com.evolving.nglm.evolution.reports.customerpointdetails.CustomerPointDetailsMonoPhase;
-import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
 
 
-public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
+public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
 {
 
   //
   // logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportMonoPhase.class);
+  private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportMultithread.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
   private JourneyService journeyService;
   List<String> headerFieldsOrder = new ArrayList<String>();
@@ -282,7 +279,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
   
   public static void main(String[] args, final Date reportGenerationDate)
   {
-    JourneyCustomerStatesReportMonoPhase journeyCustomerStatesReportMonoPhase = new JourneyCustomerStatesReportMonoPhase();
+    JourneyCustomerStatesReportMultithread journeyCustomerStatesReportMonoPhase = new JourneyCustomerStatesReportMultithread();
     journeyCustomerStatesReportMonoPhase.start(args, reportGenerationDate);
   }
   
@@ -291,19 +288,19 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
-        log.info("JourneyCustomerStatesReportMonoPhase: arg " + arg);
+        log.info("JourneyCustomerStatesReportMultithread: arg " + arg);
       }
 
     if (args.length < 4)
       {
-        log.warn("Usage : JourneyCustomerStatesReportMonoPhase <ESNode> <ES customer index> <csvfile> <defaultReportPeriodQuantity> <defaultReportPeriodUnit>");
+        log.warn("Usage : JourneyCustomerStatesReportMultithread <ESNode> <ES customer index> <csvfile> <defaultReportPeriodQuantity> <defaultReportPeriodUnit>");
         return;
       }
     String esNode          = args[0];
     String esIndexJourney  = args[1];
     String csvfile         = args[2];
 
-    journeyService = new JourneyService(Deployment.getBrokerServers(), "journeycustomerstatesreport-journeyservice-JourneyCustomerStatesReportMonoPhase", Deployment.getJourneyTopic(), false);
+    journeyService = new JourneyService(Deployment.getBrokerServers(), "journeycustomerstatesreportMultithread-journeyservice-JourneyCustomerStatesReportMultithread", Deployment.getJourneyTopic(), false);
     journeyService.start();
     
     try {
@@ -329,14 +326,14 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
           csvfile
           );
 
-      if (!reportMonoPhase.startOneToOne(true))
+      if (!reportMonoPhase.startOneToOneMultiThread())
         {
           log.warn("An error occured, the report might be corrupted");
         }
     } finally {
 
       journeyService.stop();
-      log.info("Finished JourneyCustomerStatesReportESReader monothread");
+      log.info("Finished JourneyCustomerStatesReport Multithread");
     }  
   }
 
