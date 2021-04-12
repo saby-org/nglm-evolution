@@ -21,6 +21,7 @@ import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
@@ -737,8 +738,17 @@ public class DatacubeManager
         datacubeWriter.pause();
         
         for(String journeyID : journeysMap.keySet()) {
-          trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
-          rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+          if(journeysMap.get(journeyID) == null) {
+            continue;
+          }
+          
+          // Discard WORKFLOW, TEMPLATES, OTHERS...
+          if(journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.Journey
+              || journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.Campaign 
+              || journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.BulkCampaign) {
+            trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+            rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+          }
         }
         
         // Restart writing if allowed. Flush all data generated
