@@ -47,6 +47,9 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ReportMonoPhase
@@ -626,7 +629,7 @@ public class ReportMonoPhase
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  public final boolean startOneToOneMultiThread()
+  public final boolean startOneToOneMultiThread(JourneyService journeyService, List<Journey> activeJourneys )
   {
     if (csvfile == null) {
         log.info("csvfile is null !");
@@ -642,30 +645,57 @@ public class ReportMonoPhase
       return false;
     }
     Entry<String, QueryBuilder> indexEntry = esIndex.entrySet().iterator().next();
-    String indexList = indexEntry.getKey();
+    String indexList = indexEntry.getKey(); // this is in lowercase...
     QueryBuilder query = indexEntry.getValue();
     int maxParallelThreads = Deployment.getJourneysReportMaxParallelThreads();
     try {
       elasticsearchReaderClient = getESAPI(esNode);    // used by getIndices()
       String[] indicesToRead = getIndices(indexList);
       if (indicesToRead == null || indicesToRead.length == 0) return true;
+      List<String> indicesNotWokflows = new ArrayList<>();
+      for (String singleIndex : indicesToRead) { // list is in lowercase, need to find back real journeyIDs
+        String exactJourneyID = null;
+        String journeyIDLowerCase = singleIndex.replace("journeystatistic-", "");
+        for (Journey journey : activeJourneys) { // find correct journeyID
+          if (journey.getJourneyID().equalsIgnoreCase(journeyIDLowerCase)) {
+            exactJourneyID = journey.getJourneyID();
+            break;
+          }
+        }
+        if (exactJourneyID != null) {
+          GUIManagedObject gmo = journeyService.getStoredJourney(exactJourneyID);
+          if (gmo != null && gmo instanceof Journey && !((Journey) gmo).isWorkflow()) { // ignore workflows
+            indicesNotWokflows.add(singleIndex);
+          }
+        }
+      }
       List<Thread> threads = new ArrayList<>();
       AtomicInteger activeThreads = new AtomicInteger(0);
-      CountDownLatch latch = new CountDownLatch(indicesToRead.length);
+      CountDownLatch latch = new CountDownLatch(indicesNotWokflows.size());
       List<String> tempFiles = new ArrayList<>();
-      for (String singleIndex : indicesToRead) {
+      
+      for (String singleIndex : indicesNotWokflows) {
+        String exactJourneyID = null;
+        String journeyIDLowerCase = singleIndex.replace("journeystatistic-", "");
+        for (Journey journey : activeJourneys) { // find correct journeyID
+          if (journey.getJourneyID().equalsIgnoreCase(journeyIDLowerCase)) {
+            exactJourneyID = journey.getJourneyID();
+            break;
+          }
+        }
+        GUIManagedObject gmo = journeyService.getStoredJourney(exactJourneyID);
+        Journey journey = (Journey) gmo; // cast without checking, better to crash than to wait endlessly in latch.await() later
         String tmpFileName = file + "." + singleIndex + ".tmp";
         tempFiles.add(tmpFileName);
         Thread thread = new Thread( () -> { 
-          processSingleJourney(tmpFileName, query, singleIndex, latch, activeThreads);
+          processSingleJourney(journey, tmpFileName, query, singleIndex, latch, activeThreads);
         } );
         threads.add(thread);
       }
       for (Thread thread : threads) {
         log.info("Starting subthread " + thread.getName() + " with latch " + latch.getCount());
         thread.start();
-        // TODO : change to 100 for prod
-        try { Thread.sleep(10L); } catch (InterruptedException ie) {} // always wait a bit, prevents storm
+        try { Thread.sleep(100L); } catch (InterruptedException ie) {} // always wait a bit, prevents storm
         while (activeThreads.get() >= maxParallelThreads) {
           try { Thread.sleep(1000L); } catch (InterruptedException ie) {} // do not allow more than maxParallelThreads simultaneously
         }
@@ -714,7 +744,7 @@ public class ReportMonoPhase
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
-  private void processSingleJourney(String tmpFileName, QueryBuilder query, String singleIndex, CountDownLatch latch, AtomicInteger activeThreads)
+  private void processSingleJourney(Journey journey, String tmpFileName, QueryBuilder query, String singleIndex, CountDownLatch latch, AtomicInteger activeThreads)
   {
     long startThread = System.currentTimeMillis();
     activeThreads.incrementAndGet();
@@ -746,7 +776,7 @@ public class ReportMonoPhase
           Map<String, Object> miniSourceMap = searchHit.getSourceAsMap();
           String _id = searchHit.getId();
           miniSourceMap.put("_id", _id);
-          Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFileMono(miniSourceMap);
+          Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getDataMultithread(journey, miniSourceMap);
           if (splittedReportElements.keySet().size() != 0) { // will be 0 for workflows
             if (splittedReportElements.keySet().size() == 1) {
               String journeyIDFromMethod = splittedReportElements.keySet().iterator().next();

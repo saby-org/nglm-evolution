@@ -61,161 +61,157 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
       }
   }
 
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
+  public Map<String, List<Map<String, Object>>> getDataMultithread(Journey journey, Map<String, Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> journeyStats = map;
     if (journeyStats != null && !journeyStats.isEmpty())
       {
-        GUIManagedObject gmo = journeyService.getStoredJourney("" + journeyStats.get("journeyID")); // this does cast to String without NPE
-        if (gmo != null && gmo instanceof Journey && !((Journey)gmo).isWorkflow()) {
-          Journey journey = (Journey) gmo;
-          Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
-          if (journeyStats.get(subscriberID) != null)
-            {
-              Object subscriberIDField = journeyStats.get(subscriberID);
-              journeyInfo.put(customerID, subscriberIDField);
-            }
-          for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-            {
-              if (journeyStats.get(alternateID.getID()) != null)
-                {
-                  Object alternateId = journeyStats.get(alternateID.getID());
-                  journeyInfo.put(alternateID.getName(), alternateId);
-                }
-              else
-                {
-                  journeyInfo.put(alternateID.getName(), "");
-                }
-            }
-          journeyInfo.put("journeyID", journey.getJourneyID());
-          journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-          journeyInfo.put("journeyType", journey.getTargetingType());
+        Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
+        if (journeyStats.get(subscriberID) != null)
+          {
+            Object subscriberIDField = journeyStats.get(subscriberID);
+            journeyInfo.put(customerID, subscriberIDField);
+          }
+        for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+          {
+            if (journeyStats.get(alternateID.getID()) != null)
+              {
+                Object alternateId = journeyStats.get(alternateID.getID());
+                journeyInfo.put(alternateID.getName(), alternateId);
+              }
+            else
+              {
+                journeyInfo.put(alternateID.getName(), "");
+              }
+          }
+        journeyInfo.put("journeyID", journey.getJourneyID());
+        journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
+        journeyInfo.put("journeyType", journey.getTargetingType());
 
-          if (journeyStats.get("sample") != null)
-            {
-              journeyInfo.put("sample", journeyStats.get("sample"));
-            }
-          boolean statusNotified = false;
-          boolean journeyComplete =false;
-          boolean statusConverted = false;
-          if (journeyStats.get("statusNotified") != null)
-            {
-              statusNotified = (boolean) journeyStats.get("statusNotified");
-            }
-          if (journeyStats.get("journeyComplete") != null)
-            {
-              journeyComplete = (boolean) journeyStats.get("journeyComplete");
-            }
-          if (journeyStats.get("statusConverted") != null)
-            {
-              statusConverted = (boolean) journeyStats.get("statusConverted");
-            }
-          Boolean statusTargetGroup  = journeyStats.get("statusTargetGroup")  == null ? null : (boolean) journeyStats.get("statusTargetGroup");
-          Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
-          Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
-          //          String specialExit=journeyStats.get("specialExitStatus") == null ? null : (String) journeyStats.get("specialExitStatus");
-          // Required Changes in accordance to EVPRO-530
-          //            if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty())
-          //            journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
-          //            else   
-          journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
+        if (journeyStats.get("sample") != null)
+          {
+            journeyInfo.put("sample", journeyStats.get("sample"));
+          }
+        boolean statusNotified = false;
+        boolean journeyComplete =false;
+        boolean statusConverted = false;
+        if (journeyStats.get("statusNotified") != null)
+          {
+            statusNotified = (boolean) journeyStats.get("statusNotified");
+          }
+        if (journeyStats.get("journeyComplete") != null)
+          {
+            journeyComplete = (boolean) journeyStats.get("journeyComplete");
+          }
+        if (journeyStats.get("statusConverted") != null)
+          {
+            statusConverted = (boolean) journeyStats.get("statusConverted");
+          }
+        Boolean statusTargetGroup  = journeyStats.get("statusTargetGroup")  == null ? null : (boolean) journeyStats.get("statusTargetGroup");
+        Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
+        Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
+        //          String specialExit=journeyStats.get("specialExitStatus") == null ? null : (String) journeyStats.get("specialExitStatus");
+        // Required Changes in accordance to EVPRO-530
+        //            if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty())
+        //            journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
+        //            else   
+        journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
 
-          List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");
-          StringBuilder sbStatus = new StringBuilder();
-          if (nodeHistory != null && !nodeHistory.isEmpty())
-            {
-              for (String status : nodeHistory)
-                {
-                  if (status != null)
-                    {
-                      String[] split = status.split(";");
-                      String fromNodeName = decodeNodeName(journey, split, 0);
-                      String toNodeName   = decodeNodeName(journey, split, 1);
-                      Date   date         = decodeDate(split, 2);
-                      sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
-                    }
-                }
-            }
+        List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");
+        StringBuilder sbStatus = new StringBuilder();
+        if (nodeHistory != null && !nodeHistory.isEmpty())
+          {
+            for (String status : nodeHistory)
+              {
+                if (status != null)
+                  {
+                    String[] split = status.split(";");
+                    String fromNodeName = decodeNodeName(journey, split, 0);
+                    String toNodeName   = decodeNodeName(journey, split, 1);
+                    Date   date         = decodeDate(split, 2);
+                    sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
+                  }
+              }
+          }
 
-          String states = null;
-          if (sbStatus.length() > 0)
-            {
-              states = sbStatus.toString().substring(0, sbStatus.toString().length() - 1);
-            }
+        String states = null;
+        if (sbStatus.length() > 0)
+          {
+            states = sbStatus.toString().substring(0, sbStatus.toString().length() - 1);
+          }
 
-          StringBuilder sbStatuses = new StringBuilder();
-          List<String> statusHistory = (List<String>) journeyStats.get("statusHistory");
-          if (statusHistory != null && !statusHistory.isEmpty())
-            {
-              for (String status : statusHistory)
-                {
-                  String statusNameToBeDisplayed = "";
-                  String[] split = status.split(";");
-                  String statusName = null;
-                  if (split[0] != null && !split[0].equals("null"))
-                    {
-                      statusName = split[0];
-                    }
-                  Date date = decodeDate(split, 1);
-                  sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName).getDisplay()).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
-                }
-            }
+        StringBuilder sbStatuses = new StringBuilder();
+        List<String> statusHistory = (List<String>) journeyStats.get("statusHistory");
+        if (statusHistory != null && !statusHistory.isEmpty())
+          {
+            for (String status : statusHistory)
+              {
+                String statusNameToBeDisplayed = "";
+                String[] split = status.split(";");
+                String statusName = null;
+                if (split[0] != null && !split[0].equals("null"))
+                  {
+                    statusName = split[0];
+                  }
+                Date date = decodeDate(split, 1);
+                sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName).getDisplay()).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
+              }
+          }
 
-          String statuses = null;
-          if (sbStatuses.length() > 0)
-            {
-              statuses = sbStatuses.toString().substring(0, sbStatuses.toString().length() - 1);
-            }
+        String statuses = null;
+        if (sbStatuses.length() > 0)
+          {
+            statuses = sbStatuses.toString().substring(0, sbStatuses.toString().length() - 1);
+          }
 
-          journeyInfo.put("customerStates",   states);
-          journeyInfo.put("customerStatuses", statuses);
-          journeyInfo.put("dateTime",         ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
-          journeyInfo.put("startDate",        ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-          journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+        journeyInfo.put("customerStates",   states);
+        journeyInfo.put("customerStatuses", statuses);
+        journeyInfo.put("dateTime",         ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+        journeyInfo.put("startDate",        ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+        journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
-          List<String> rewardHistory = (List<String>) journeyStats.get("rewardHistory");
-          List<Map<String, Object>> outputJSON = new ArrayList<>();
+        List<String> rewardHistory = (List<String>) journeyStats.get("rewardHistory");
+        List<Map<String, Object>> outputJSON = new ArrayList<>();
 
-          if (rewardHistory != null && !rewardHistory.isEmpty())
-            {
-              for (String status : rewardHistory)
-                {
-                  Map<String, Object> historyJSON = new LinkedHashMap<>(); // to preserve order when displaying
-                  String[] split = status.split(";");
-                  String rewardID = null;
-                  String amount   = null;
-                  Date   date     = null;
-                  if (split != null && split.length >= 3)
-                    {
-                      rewardID = split[0];
-                      amount   = split[1];
-                      date     = decodeDate(split, 2);
-                    }
-                  historyJSON.put("reward", rewardID);
-                  historyJSON.put("quantity", amount);
-                  historyJSON.put("date", ReportsCommonCode.getDateString(date));
-                  outputJSON.add(historyJSON);
-                }
-            }
-          journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
+        if (rewardHistory != null && !rewardHistory.isEmpty())
+          {
+            for (String status : rewardHistory)
+              {
+                Map<String, Object> historyJSON = new LinkedHashMap<>(); // to preserve order when displaying
+                String[] split = status.split(";");
+                String rewardID = null;
+                String amount   = null;
+                Date   date     = null;
+                if (split != null && split.length >= 3)
+                  {
+                    rewardID = split[0];
+                    amount   = split[1];
+                    date     = decodeDate(split, 2);
+                  }
+                historyJSON.put("reward", rewardID);
+                historyJSON.put("quantity", amount);
+                historyJSON.put("date", ReportsCommonCode.getDateString(date));
+                outputJSON.add(historyJSON);
+              }
+          }
+        journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
 
-          //
-          // result
-          //
+        //
+        // result
+        //
 
-          String journeyID = journeyInfo.get("journeyID").toString();
-          if (result.containsKey(journeyID))
-            {
-              result.get(journeyID).add(journeyInfo);
-            } 
-          else
-            {
-              List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-              elements.add(journeyInfo);
-              result.put(journeyID, elements);
-            }
-        }
+        String journeyID = journeyInfo.get("journeyID").toString();
+        if (result.containsKey(journeyID))
+          {
+            result.get(journeyID).add(journeyInfo);
+          } 
+        else
+          {
+            List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+            elements.add(journeyInfo);
+            result.put(journeyID, elements);
+          }
       }
     return result;
   }
@@ -335,7 +331,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
           csvfile
           );
 
-      if (!reportMonoPhase.startOneToOneMultiThread())
+      if (!reportMonoPhase.startOneToOneMultiThread(journeyService, activeJourneys))
         {
           log.warn("An error occured, the report might be corrupted");
         }
