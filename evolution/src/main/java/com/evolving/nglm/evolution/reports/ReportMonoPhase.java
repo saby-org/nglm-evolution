@@ -12,6 +12,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -675,20 +677,22 @@ public class ReportMonoPhase
       FileOutputStream fos = new FileOutputStream(file);
       ZipOutputStream writer = new ZipOutputStream(fos);
       for (String tmpFile : tempFiles) {
-        log.debug("Reading from temp file " + tmpFile);
-        FileInputStream fis = new FileInputStream(tmpFile);
-        ZipInputStream reader = new ZipInputStream(fis);
-        writer.putNextEntry(reader.getNextEntry());
-        writer.setLevel(Deflater.BEST_SPEED);
-        // copy to final file
-        int length;
-        byte[] bytes = new byte[5*1024*1024];//5M buffer
-        while ((length=reader.read(bytes))!=-1) {
-          writer.write(bytes,0,length);
+        if (Files.exists(FileSystems.getDefault().getPath(tmpFile))) {
+          log.debug("Reading from temp file " + tmpFile);
+          FileInputStream fis = new FileInputStream(tmpFile);
+          ZipInputStream reader = new ZipInputStream(fis);
+          writer.putNextEntry(reader.getNextEntry());
+          writer.setLevel(Deflater.BEST_SPEED);
+          // copy to final file
+          int length;
+          byte[] bytes = new byte[5*1024*1024];//5M buffer
+          while ((length=reader.read(bytes))!=-1) {
+            writer.write(bytes,0,length);
+          }
+          reader.closeEntry();
+          reader.close();
+          new File(tmpFile).delete();
         }
-        reader.closeEntry();
-        reader.close();
-        new File(tmpFile).delete();
       }
       writer.flush();
       writer.closeEntry();
@@ -714,19 +718,10 @@ public class ReportMonoPhase
   {
     long startThread = System.currentTimeMillis();
     activeThreads.incrementAndGet();
-    FileOutputStream fos = null;
     ZipOutputStream writer = null;
     ElasticsearchClientAPI localESClient = null;
     try {
-      fos = new FileOutputStream(tmpFileName);
-      writer = new ZipOutputStream(fos);
-      String dataFile[] = csvfile.split("[.]");
-      String dataFileName = dataFile[0] + "_" + singleIndex;
-      String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
-      ZipEntry entry = new ZipEntry(zipEntryName);
-      writer.putNextEntry(entry);
-      writer.setLevel(Deflater.BEST_SPEED);
-
+      FileOutputStream fos = null;
       localESClient = getESAPI(esNode);
       int scroolKeepAlive = getScrollKeepAlive();
       SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(query);
@@ -756,7 +751,7 @@ public class ReportMonoPhase
             log.error("Internal error : splittedReportElements should contain 1 mapping " + splittedReportElements.keySet().size());
           } else {
             String journeyIDFromMethod = splittedReportElements.keySet().iterator().next();
-            if (!singleIndex.equals("journeystatistic-"+journeyIDFromMethod)) {
+            if (!singleIndex.equalsIgnoreCase("journeystatistic-"+journeyIDFromMethod)) {
               log.error("Internal error : splittedReportElements returned wrong journeyID : " + journeyIDFromMethod + " " + singleIndex);
             } else {
               records.addAll(splittedReportElements.get(journeyIDFromMethod));
@@ -776,6 +771,16 @@ public class ReportMonoPhase
         try {
           for (Map<String, Object> lineMap : records)
             {
+              if (addHeader) { // only create zip entry if there is actual data to write (exclude workflows for example)
+                fos = new FileOutputStream(tmpFileName);
+                writer = new ZipOutputStream(fos);
+                String dataFile[] = csvfile.split("[.]");
+                String dataFileName = dataFile[0] + "_" + singleIndex;
+                String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
+                ZipEntry entry = new ZipEntry(zipEntryName);
+                writer.putNextEntry(entry);
+                writer.setLevel(Deflater.BEST_SPEED);
+              }
               reportFactory.dumpLineToCsv(lineMap, writer, addHeader);
               addHeader = false;
             }
@@ -791,11 +796,11 @@ public class ReportMonoPhase
     } catch (IOException e) { e.printStackTrace(); }
     finally {
       try {
-        if (localESClient != null) localESClient.close();
         if (writer != null) {
           writer.flush();
           writer.close();
         }
+        if (localESClient != null) localESClient.close();
       }
       catch (IOException e) {
         log.info("Exception while releasing resources " + e.getLocalizedMessage());
