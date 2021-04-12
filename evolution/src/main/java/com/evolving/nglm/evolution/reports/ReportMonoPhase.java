@@ -747,14 +747,16 @@ public class ReportMonoPhase
           String _id = searchHit.getId();
           miniSourceMap.put("_id", _id);
           Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFileMono(miniSourceMap);
-          if (splittedReportElements.keySet().size() != 1) {
-            log.error("Internal error : splittedReportElements should contain 1 mapping " + splittedReportElements.keySet().size());
-          } else {
-            String journeyIDFromMethod = splittedReportElements.keySet().iterator().next();
-            if (!singleIndex.equalsIgnoreCase("journeystatistic-"+journeyIDFromMethod)) {
-              log.error("Internal error : splittedReportElements returned wrong journeyID : " + journeyIDFromMethod + " " + singleIndex);
+          if (splittedReportElements.keySet().size() != 0) { // will be 0 for workflows
+            if (splittedReportElements.keySet().size() == 1) {
+              String journeyIDFromMethod = splittedReportElements.keySet().iterator().next();
+              if (singleIndex.equalsIgnoreCase("journeystatistic-"+journeyIDFromMethod)) {
+                records.addAll(splittedReportElements.get(journeyIDFromMethod));
+              } else {
+                log.error("Internal error : splittedReportElements returned wrong journeyID : " + journeyIDFromMethod + " " + singleIndex);
+              }
             } else {
-              records.addAll(splittedReportElements.get(journeyIDFromMethod));
+              log.error("Internal error : splittedReportElements should contain 1 mapping, not " + splittedReportElements.keySet().size());
             }
           }
         }
