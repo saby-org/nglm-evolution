@@ -15,7 +15,7 @@ public class JourneyCustomerStatesReportDriverMultithread extends ReportDriver
 
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportDriverMultithread.class);
 
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
 
     log.debug("Processing Journey Customer States Report Multithread with " + report + " and " + params);
@@ -23,7 +23,7 @@ public class JourneyCustomerStatesReportDriverMultithread extends ReportDriver
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     String JOURNEY_ES_INDEX = "journeystatistic-";
     log.debug("PHASE 1 : read ElasticSearch");
-    JourneyCustomerStatesReportMultithread.main(new String[] { elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    JourneyCustomerStatesReportMultithread.main(new String[] { elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate, tenantID);
     log.debug("Finished with Journey Customer States Report Multithread");
 
   }

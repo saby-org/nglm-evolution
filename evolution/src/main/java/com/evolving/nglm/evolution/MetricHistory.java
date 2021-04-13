@@ -1750,9 +1750,9 @@ public class MetricHistory
 
   public Long getThisWeek(Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
     Date startDay = day;
-    Date endDay = RLMDateUtils.addDays(day, 7, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, 7, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return this.getValue(startDay, endDay);
   }
   
@@ -1762,10 +1762,10 @@ public class MetricHistory
 
   public Long getThisMonth(Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.MONTH, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
     Date startDay = day;
     int totalDays = Calendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH);
-    Date endDay = RLMDateUtils.addDays(day, totalDays, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, totalDays, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return this.getValue(startDay, endDay);
   }
 

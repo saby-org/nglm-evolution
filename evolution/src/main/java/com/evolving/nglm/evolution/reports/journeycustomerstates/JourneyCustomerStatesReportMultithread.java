@@ -274,13 +274,13 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
     return Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
   }
   
-  public static void main(String[] args, final Date reportGenerationDate)
+  public static void main(String[] args, final Date reportGenerationDate, int tenantID)
   {
     JourneyCustomerStatesReportMultithread journeyCustomerStatesReportMonoPhase = new JourneyCustomerStatesReportMultithread();
-    journeyCustomerStatesReportMonoPhase.start(args, reportGenerationDate);
+    journeyCustomerStatesReportMonoPhase.start(args, reportGenerationDate, tenantID);
   }
   
-  private void start(String[] args, final Date reportGenerationDate)
+  private void start(String[] args, final Date reportGenerationDate, int tenantID)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -301,7 +301,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
     journeyService.start();
     
     try {
-      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys();
+      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(tenantID);
       List<Journey> activeJourneys = new ArrayList<>();
       Date yesterdayAtZeroHour = ReportUtils.yesterdayAtZeroHour(reportGenerationDate);
       Date yesterdayAtMidnight = ReportUtils.yesterdayAtMidnight(reportGenerationDate);

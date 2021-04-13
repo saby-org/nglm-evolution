@@ -180,8 +180,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
 
     try {
 
-sdfsf // TODO EVPRO-99 is all tenant (0) ok here ?
-      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys();
+      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(0); // TODO EVPRO-99 check this....  
       List<Journey> activeJourneys = new ArrayList<>();
       Date yesterdayAtZeroHour = ReportUtils.yesterdayAtZeroHour(reportGenerationDate);
       Date yesterdayAtMidnight = ReportUtils.yesterdayAtMidnight(reportGenerationDate);

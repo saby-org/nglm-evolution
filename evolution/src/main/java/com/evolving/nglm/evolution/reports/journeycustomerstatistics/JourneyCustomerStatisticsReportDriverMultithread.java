@@ -24,7 +24,8 @@ public class JourneyCustomerStatisticsReportDriverMultithread extends ReportDriv
         String kafka,
         String elasticSearch,
         String csvFilename,
-        String[] params) {
+        String[] params,
+        int tenantID) {
       
       log.debug("Processing Journey Customer Statistics Report Multithread with "+report+" and "+params);
       
@@ -36,7 +37,7 @@ public class JourneyCustomerStatisticsReportDriverMultithread extends ReportDriv
 
       JourneyCustomerStatisticsReportMultithread.main(new String[]{
           elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
-      }, reportGenerationDate);         
+      }, reportGenerationDate, tenantID);         
       try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
       
       log.debug("Finished with Journey Customer Statistics Report Multithread");

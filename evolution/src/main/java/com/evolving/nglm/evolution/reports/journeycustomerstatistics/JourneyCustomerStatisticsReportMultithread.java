@@ -111,7 +111,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
         journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
         journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
-        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
           {
             journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
             journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
@@ -147,13 +147,13 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     return result;
   }
 
-  public static void main(String[] args, Date reportGenerationDate)
+  public static void main(String[] args, Date reportGenerationDate, int tenantID)
   {
     JourneyCustomerStatisticsReportMultithread journeyCustomerStatisticsReportMonoPhase = new JourneyCustomerStatisticsReportMultithread();
-    journeyCustomerStatisticsReportMonoPhase.start(args, reportGenerationDate);
+    journeyCustomerStatisticsReportMonoPhase.start(args, reportGenerationDate, tenantID);
   }
   
-  private void start(String[] args, final Date reportGenerationDate)
+  private void start(String[] args, final Date reportGenerationDate, int tenantID)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -174,7 +174,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     journeyService.start();
 
     try {
-      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys();
+      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(tenantID);
       List<Journey> activeJourneys = new ArrayList<>();
       Date yesterdayAtZeroHour = ReportUtils.yesterdayAtZeroHour(reportGenerationDate);
       Date yesterdayAtMidnight = ReportUtils.yesterdayAtMidnight(reportGenerationDate);

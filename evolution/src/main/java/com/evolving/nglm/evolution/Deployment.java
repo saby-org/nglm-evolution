@@ -508,9 +508,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   //EVPRO-574
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
-  
-  //EVPRO-865
-  public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
+
   // EVPRO-886
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
 
@@ -3373,19 +3371,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
           throw new ServerRuntimeException("deployment", e);
         }
       
-      //
-      //  firstDayOfTheWeek EVPRO-865
-      //
-
-      try
-        {
-          firstDayOfTheWeek = JSONUtilities.decodeString(jsonRoot, "firstDayOfTheWeek", false);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
       //
       // all dynamic topics
       //

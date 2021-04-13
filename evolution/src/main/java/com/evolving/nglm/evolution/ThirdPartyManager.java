@@ -4199,12 +4199,12 @@ public class ThirdPartyManager
         if (!sync)
           {
             deliveryRequestID = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
+                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
           }
         else
           {
             purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer);
+                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID);
 
             deliveryRequestID = purchaseResponse.getDeliveryRequestID();
           }

@@ -37,5 +37,5 @@ public class ResellerMap extends GUIManagedObjectMap<Reseller>
   *
   *****************************************/
   // TODO: for the moment, we also retrieve archived objects
-  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredResellers(true); }
+  protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredResellers(true, tenantID); }
 }

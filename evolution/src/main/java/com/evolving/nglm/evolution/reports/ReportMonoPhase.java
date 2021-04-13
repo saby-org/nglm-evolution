@@ -781,8 +781,8 @@ public class ReportMonoPhase
   {
     String node = null;
     int port = 0;
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings("ReportManager").get("ReportManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings("ReportManager").get("ReportManager").getQueryTimeout();
     String username = null;
     String password = null;
     if (nodes.contains(",")) {
@@ -805,7 +805,7 @@ public class ReportMonoPhase
       password = s.next();
       s.close();
     }
-    return new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
+    return new ElasticsearchClientAPI("ReportManager");
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////

@@ -308,8 +308,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     journeyService.start();
     
     try {
-A faire à la main  // TODO EVPRO-99 check this....      
-Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys();
+	  Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(0); // TODO EVPRO-99 check this....  
       List<Journey> activeJourneys = new ArrayList<>();
       Date yesterdayAtZeroHour = ReportUtils.yesterdayAtZeroHour(reportGenerationDate);
       Date yesterdayAtMidnight = ReportUtils.yesterdayAtMidnight(reportGenerationDate);
