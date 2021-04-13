@@ -164,7 +164,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       }
   }
 
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     LinkedHashMap<String, Object> bdrRecs = new LinkedHashMap<>();

@@ -116,7 +116,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       }
   }
 
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> VDRFields = map;
