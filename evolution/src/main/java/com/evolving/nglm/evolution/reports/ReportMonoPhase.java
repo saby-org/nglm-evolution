@@ -12,6 +12,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,6 +47,9 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ReportMonoPhase
@@ -271,7 +276,7 @@ public class ReportMonoPhase
               long elapsedBatch = System.currentTimeMillis() - startBatch;
               if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L)
                 {
-                  log.info("problem : took " + elapsedBatch + " to process scroll, keepAlive of " + scroolKeepAlive + " exceeded");
+                  log.info("Potential problem : scroll took " + elapsedBatch/1000.0 + " seconds to process, keepAlive of " + scroolKeepAlive + " seconds exceeded");
                   nbMaxTraces--;
                 }
               SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
@@ -504,7 +509,7 @@ public class ReportMonoPhase
                     long elapsedBatch = System.currentTimeMillis() - startBatch;
                     if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L)
                       {
-                        log.info("problem : took " + elapsedBatch + " to process scroll, keepAlive of " + scroolKeepAlive + " exceeded");
+                        log.info("Potential problem : scroll took " + elapsedBatch/1000.0 + " seconds to process, keepAlive of " + scroolKeepAlive + " seconds exceeded");
                         nbMaxTraces--;
                       }
 
@@ -624,7 +629,7 @@ public class ReportMonoPhase
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  public final boolean startOneToOneMultiThread()
+  public final boolean startOneToOneMultiThread(JourneyService journeyService, List<Journey> activeJourneys )
   {
     if (csvfile == null) {
         log.info("csvfile is null !");
@@ -640,30 +645,57 @@ public class ReportMonoPhase
       return false;
     }
     Entry<String, QueryBuilder> indexEntry = esIndex.entrySet().iterator().next();
-    String indexList = indexEntry.getKey();
+    String indexList = indexEntry.getKey(); // this is in lowercase...
     QueryBuilder query = indexEntry.getValue();
     int maxParallelThreads = Deployment.getJourneysReportMaxParallelThreads();
     try {
       elasticsearchReaderClient = getESAPI(esNode);    // used by getIndices()
       String[] indicesToRead = getIndices(indexList);
       if (indicesToRead == null || indicesToRead.length == 0) return true;
+      List<String> indicesNotWokflows = new ArrayList<>();
+      for (String singleIndex : indicesToRead) { // list is in lowercase, need to find back real journeyIDs
+        String exactJourneyID = null;
+        String journeyIDLowerCase = singleIndex.replace("journeystatistic-", "");
+        for (Journey journey : activeJourneys) { // find correct journeyID
+          if (journey.getJourneyID().equalsIgnoreCase(journeyIDLowerCase)) {
+            exactJourneyID = journey.getJourneyID();
+            break;
+          }
+        }
+        if (exactJourneyID != null) {
+          GUIManagedObject gmo = journeyService.getStoredJourney(exactJourneyID);
+          if (gmo != null && gmo instanceof Journey && !((Journey) gmo).isWorkflow()) { // ignore workflows
+            indicesNotWokflows.add(singleIndex);
+          }
+        }
+      }
       List<Thread> threads = new ArrayList<>();
       AtomicInteger activeThreads = new AtomicInteger(0);
-      CountDownLatch latch = new CountDownLatch(indicesToRead.length);
+      CountDownLatch latch = new CountDownLatch(indicesNotWokflows.size());
       List<String> tempFiles = new ArrayList<>();
-      for (String singleIndex : indicesToRead) {
+      
+      for (String singleIndex : indicesNotWokflows) {
+        String exactJourneyID = null;
+        String journeyIDLowerCase = singleIndex.replace("journeystatistic-", "");
+        for (Journey journey : activeJourneys) { // find correct journeyID
+          if (journey.getJourneyID().equalsIgnoreCase(journeyIDLowerCase)) {
+            exactJourneyID = journey.getJourneyID();
+            break;
+          }
+        }
+        GUIManagedObject gmo = journeyService.getStoredJourney(exactJourneyID);
+        Journey journey = (Journey) gmo; // cast without checking, better to crash than to wait endlessly in latch.await() later
         String tmpFileName = file + "." + singleIndex + ".tmp";
         tempFiles.add(tmpFileName);
         Thread thread = new Thread( () -> { 
-          processSingleJourney(tmpFileName, query, singleIndex, latch, activeThreads);
+          processSingleJourney(journey, tmpFileName, query, singleIndex, latch, activeThreads);
         } );
         threads.add(thread);
       }
       for (Thread thread : threads) {
         log.info("Starting subthread " + thread.getName() + " with latch " + latch.getCount());
         thread.start();
-        // TODO : change to 100 for prod
-        try { Thread.sleep(10L); } catch (InterruptedException ie) {} // always wait a bit, prevents storm
+        try { Thread.sleep(100L); } catch (InterruptedException ie) {} // always wait a bit, prevents storm
         while (activeThreads.get() >= maxParallelThreads) {
           try { Thread.sleep(1000L); } catch (InterruptedException ie) {} // do not allow more than maxParallelThreads simultaneously
         }
@@ -675,20 +707,22 @@ public class ReportMonoPhase
       FileOutputStream fos = new FileOutputStream(file);
       ZipOutputStream writer = new ZipOutputStream(fos);
       for (String tmpFile : tempFiles) {
-        log.debug("Reading from temp file " + tmpFile);
-        FileInputStream fis = new FileInputStream(tmpFile);
-        ZipInputStream reader = new ZipInputStream(fis);
-        writer.putNextEntry(reader.getNextEntry());
-        writer.setLevel(Deflater.BEST_SPEED);
-        // copy to final file
-        int length;
-        byte[] bytes = new byte[5*1024*1024];//5M buffer
-        while ((length=reader.read(bytes))!=-1) {
-          writer.write(bytes,0,length);
+        if (Files.exists(FileSystems.getDefault().getPath(tmpFile))) {
+          log.debug("Reading from temp file " + tmpFile);
+          FileInputStream fis = new FileInputStream(tmpFile);
+          ZipInputStream reader = new ZipInputStream(fis);
+          writer.putNextEntry(reader.getNextEntry());
+          writer.setLevel(Deflater.BEST_SPEED);
+          // copy to final file
+          int length;
+          byte[] bytes = new byte[5*1024*1024];//5M buffer
+          while ((length=reader.read(bytes))!=-1) {
+            writer.write(bytes,0,length);
+          }
+          reader.closeEntry();
+          reader.close();
+          new File(tmpFile).delete();
         }
-        reader.closeEntry();
-        reader.close();
-        new File(tmpFile).delete();
       }
       writer.flush();
       writer.closeEntry();
@@ -710,23 +744,14 @@ public class ReportMonoPhase
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
-  private void processSingleJourney(String tmpFileName, QueryBuilder query, String singleIndex, CountDownLatch latch, AtomicInteger activeThreads)
+  private void processSingleJourney(Journey journey, String tmpFileName, QueryBuilder query, String singleIndex, CountDownLatch latch, AtomicInteger activeThreads)
   {
     long startThread = System.currentTimeMillis();
     activeThreads.incrementAndGet();
-    FileOutputStream fos = null;
     ZipOutputStream writer = null;
     ElasticsearchClientAPI localESClient = null;
     try {
-      fos = new FileOutputStream(tmpFileName);
-      writer = new ZipOutputStream(fos);
-      String dataFile[] = csvfile.split("[.]");
-      String dataFileName = dataFile[0] + "_" + singleIndex;
-      String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
-      ZipEntry entry = new ZipEntry(zipEntryName);
-      writer.putNextEntry(entry);
-      writer.setLevel(Deflater.BEST_SPEED);
-
+      FileOutputStream fos = null;
       localESClient = getESAPI(esNode);
       int scroolKeepAlive = getScrollKeepAlive();
       SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(query);
@@ -751,15 +776,17 @@ public class ReportMonoPhase
           Map<String, Object> miniSourceMap = searchHit.getSourceAsMap();
           String _id = searchHit.getId();
           miniSourceMap.put("_id", _id);
-          Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFileMono(miniSourceMap);
-          if (splittedReportElements.keySet().size() != 1) {
-            log.error("Internal error : splittedReportElements should contain 1 mapping " + splittedReportElements.keySet().size());
-          } else {
-            String journeyIDFromMethod = splittedReportElements.keySet().iterator().next();
-            if (!singleIndex.equals("journeystatistic-"+journeyIDFromMethod)) {
-              log.error("Internal error : splittedReportElements returned wrong journeyID : " + journeyIDFromMethod + " " + singleIndex);
+          Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getDataMultithread(journey, miniSourceMap);
+          if (splittedReportElements.keySet().size() != 0) { // will be 0 for workflows
+            if (splittedReportElements.keySet().size() == 1) {
+              String journeyIDFromMethod = splittedReportElements.keySet().iterator().next();
+              if (singleIndex.equalsIgnoreCase("journeystatistic-"+journeyIDFromMethod)) {
+                records.addAll(splittedReportElements.get(journeyIDFromMethod));
+              } else {
+                log.error("Internal error : splittedReportElements returned wrong journeyID : " + journeyIDFromMethod + " " + singleIndex);
+              }
             } else {
-              records.addAll(splittedReportElements.get(journeyIDFromMethod));
+              log.error("Internal error : splittedReportElements should contain 1 mapping, not " + splittedReportElements.keySet().size());
             }
           }
         }
@@ -776,6 +803,16 @@ public class ReportMonoPhase
         try {
           for (Map<String, Object> lineMap : records)
             {
+              if (addHeader) { // only create zip entry if there is actual data to write (exclude workflows for example)
+                fos = new FileOutputStream(tmpFileName);
+                writer = new ZipOutputStream(fos);
+                String dataFile[] = csvfile.split("[.]");
+                String dataFileName = dataFile[0] + "_" + singleIndex;
+                String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
+                ZipEntry entry = new ZipEntry(zipEntryName);
+                writer.putNextEntry(entry);
+                writer.setLevel(Deflater.BEST_SPEED);
+              }
               reportFactory.dumpLineToCsv(lineMap, writer, addHeader);
               addHeader = false;
             }
@@ -791,11 +828,11 @@ public class ReportMonoPhase
     } catch (IOException e) { e.printStackTrace(); }
     finally {
       try {
-        if (localESClient != null) localESClient.close();
         if (writer != null) {
           writer.flush();
           writer.close();
         }
+        if (localESClient != null) localESClient.close();
       }
       catch (IOException e) {
         log.info("Exception while releasing resources " + e.getLocalizedMessage());

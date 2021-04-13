@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
@@ -53,37 +54,34 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
       }
   }
   
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map)
+  public Map<String, List<Map<String, Object>>> getDataMultithread(Journey journey, Map<String,Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> journeyStats = map;
     Map<String, Object> journeyMetric = map;
-        if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
+    if (journeyStats != null && !journeyStats.isEmpty())
+      {
+        Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
+        if (journeyStats.get(subscriberID) != null)
           {
-            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
-            if (journey != null && !journey.isWorkflow())
+            Object subscriberIDField = journeyStats.get(subscriberID);
+            journeyInfo.put(customerID, subscriberIDField);
+          }
+        for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+          {
+            if (journeyStats.get(alternateID.getID()) != null)
               {
-                Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
-                if (journeyStats.get(subscriberID) != null)
-                  {
-                    Object subscriberIDField = journeyStats.get(subscriberID);
-                    journeyInfo.put(customerID, subscriberIDField);
-                  }
-                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-                  {
-                    if (journeyStats.get(alternateID.getID()) != null)
-                      {
-                        Object alternateId = journeyStats.get(alternateID.getID());
-                        journeyInfo.put(alternateID.getID(), alternateId);
-                      }
-                  }
-                journeyInfo.put("journeyID", journey.getJourneyID());
-                journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-                journeyInfo.put("journeyType", journey.getTargetingType());
-                journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("nodeID")).getNodeName());
-                
-                // No need to do all that anymore, "status" is already correct in ES
-                /*
+                Object alternateId = journeyStats.get(alternateID.getID());
+                journeyInfo.put(alternateID.getID(), alternateId);
+              }
+          }
+        journeyInfo.put("journeyID", journey.getJourneyID());
+        journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
+        journeyInfo.put("journeyType", journey.getTargetingType());
+        journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("nodeID")).getNodeName());
+
+        // No need to do all that anymore, "status" is already correct in ES
+        /*
                 boolean statusNotified = (boolean) journeyStats.get("statusNotified");
                 boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
                 boolean statusConverted = (boolean) journeyStats.get("statusConverted");
@@ -91,62 +89,61 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
                 Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
                 Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
                 journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
-                 */
-                journeyInfo.put("customerStatus", journeyStats.get("status"));
-                
-                if (journeyStats.get("sample") != null)
-                  {
-                    journeyInfo.put("sample", journeyStats.get("sample"));
-                  }
-                else
-                  {
-                    journeyInfo.put("sample", "");
-                  }
- //Required Changes in accordance to EVPRO-530          
-//                String specialExit=journeyStats.get("status") == null ? null : (String) journeyStats.get("status");
-//                if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty() &&  (SubscriberJourneyStatus.fromExternalRepresentation(specialExit).in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
-//                     )
-//                journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
-//                else 
-                Date currentDate = SystemTime.getCurrentTime();
-                journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
-                journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-                journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+         */
+        journeyInfo.put("customerStatus", journeyStats.get("status"));
 
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
-                  {
-                    journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
-                    journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
-                    journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
-                  }
-                
-
-                /*
-                 * if (addHeaders) { headerFieldsOrder.clear(); addHeaders(writer,
-                 * subscriberFields, 0); addHeaders(writer, journeyInfo, 1); } String line =
-                 * ReportUtils.formatResult(headerFieldsOrder, journeyInfo, subscriberFields);
-                 * log.trace("Writing to csv file : " + line); writer.write(line.getBytes());
-                 * writer.write("\n".getBytes());
-                 */
-                
-                //
-                // result
-                //
-
-                String journeyID = journeyInfo.get("journeyID").toString();
-                if (result.containsKey(journeyID))
-                  {
-                    result.get(journeyID).add(journeyInfo);
-                  } 
-                else
-                  {
-                    List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-                    elements.add(journeyInfo);
-                    result.put(journeyID, elements);
-                  }
-                
-              }
+        if (journeyStats.get("sample") != null)
+          {
+            journeyInfo.put("sample", journeyStats.get("sample"));
           }
+        else
+          {
+            journeyInfo.put("sample", "");
+          }
+        //Required Changes in accordance to EVPRO-530          
+        //                String specialExit=journeyStats.get("status") == null ? null : (String) journeyStats.get("status");
+        //                if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty() &&  (SubscriberJourneyStatus.fromExternalRepresentation(specialExit).in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
+        //                     )
+        //                journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
+        //                else 
+        Date currentDate = SystemTime.getCurrentTime();
+        journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
+        journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+        journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+
+        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+          {
+            journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
+            journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
+            journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
+          }
+
+
+        /*
+         * if (addHeaders) { headerFieldsOrder.clear(); addHeaders(writer,
+         * subscriberFields, 0); addHeaders(writer, journeyInfo, 1); } String line =
+         * ReportUtils.formatResult(headerFieldsOrder, journeyInfo, subscriberFields);
+         * log.trace("Writing to csv file : " + line); writer.write(line.getBytes());
+         * writer.write("\n".getBytes());
+         */
+
+        //
+        // result
+        //
+
+        String journeyID = journeyInfo.get("journeyID").toString();
+        if (result.containsKey(journeyID))
+          {
+            result.get(journeyID).add(journeyInfo);
+          } 
+        else
+          {
+            List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+            elements.add(journeyInfo);
+            result.put(journeyID, elements);
+          }
+
+      }
     return result;
   }
 
@@ -177,7 +174,15 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     journeyService.start();
 
     try {
-      Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
+      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys();
+      List<Journey> activeJourneys = new ArrayList<>();
+      Date yesterdayAtZeroHour = ReportUtils.yesterdayAtZeroHour(reportGenerationDate);
+      Date yesterdayAtMidnight = ReportUtils.yesterdayAtMidnight(reportGenerationDate);
+      for (GUIManagedObject gmo : allJourneys) {
+        if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(yesterdayAtZeroHour)) {
+          activeJourneys.add((Journey) gmo);
+        }
+      }
       StringBuilder activeJourneyEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Journey journey : activeJourneys)
@@ -200,7 +205,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
           csvfile
           );
 
-      if (!reportMonoPhase.startOneToOneMultiThread())
+      if (!reportMonoPhase.startOneToOneMultiThread(journeyService, activeJourneys))
         {
           log.warn("An error occured, the report might be corrupted");
         }

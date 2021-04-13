@@ -7,7 +7,9 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.text.NumberFormat;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -512,4 +514,27 @@ public class ReportUtils {
   }
 
   
+  public static Date yesterdayAtMidnight(Date currentDate)
+  {
+    Calendar c = Calendar.getInstance();
+    c.setTime(currentDate);
+    c.add(Calendar.HOUR_OF_DAY, -24); // go back 24 hours
+    c.set(Calendar.HOUR_OF_DAY, 23); // now set to one second before midnight
+    c.set(Calendar.MINUTE, 59);
+    c.set(Calendar.SECOND, 59);
+    Date yesterdayAtMidnight = c.getTime();
+    return yesterdayAtMidnight;
+  }
+
+  public static Date yesterdayAtZeroHour(Date currentDate)
+  {
+    Calendar c = Calendar.getInstance();
+    c.setTime(currentDate);
+    c.add(Calendar.HOUR_OF_DAY, -24); // go back 24 hours
+    c.set(Calendar.HOUR_OF_DAY, 0); // now set to one second after 0h
+    c.set(Calendar.MINUTE, 0);
+    c.set(Calendar.SECOND, 1);
+    Date yesterdayAtZeroHour = c.getTime();
+    return yesterdayAtZeroHour;
+  }
 }

@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.zip.ZipOutputStream;
 
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 
 /**
@@ -42,4 +43,5 @@ public interface ReportCsvFactory
   default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)  {}
   default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement) {return null;}
   default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map) {return null;}
+  default Map<String, List<Map<String, Object>>> getDataMultithread(Journey journey, Map<String,Object> map) {return null;}
 }
