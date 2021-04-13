@@ -540,7 +540,7 @@ public class SubscriberState implements StateStore
     Date ucgRefreshDay = (Date) valueStruct.get("ucgRefreshDay");
     Date lastEvaluationDate = (Date) valueStruct.get("lastEvaluationDate");
     List<UUID> trackingIDs = schemaVersion >= 4 ? EvolutionUtilities.getUUIDsFromBytes(valueStruct.getBytes("trackingID")) : null;
-    Map<String,MetricHistory> notificationHistory = schemaVersion >= 6 ? unpackNotificationHistory(valueStruct.get("notificationHistory")) : new HashMap<>();
+    Map<String,MetricHistory> notificationHistory = schemaVersion >= 6 ? unpackNotificationHistory(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : new HashMap<>();
 
     //
     //  return
@@ -656,17 +656,17 @@ public class SubscriberState implements StateStore
    *  unpackNotificationHistory
    *
    *****************************************/
-
-  private static Map<String,MetricHistory> unpackNotificationHistory(Object value)
+  private static Map<String,MetricHistory> unpackNotificationHistory(SchemaAndValue schemaAndValue)
   {
-    if (value == null) return null;
+
+    List<Struct> schemasAndValues = (List<Struct>) schemaAndValue.value();
+
     Map<String,MetricHistory> result = new HashMap<>();
-    List<Object> valueMap = (List<Object>) value;
-    for (Object notificationHistoryObject : valueMap)
+    for (Struct value : schemasAndValues)
       {
-        Struct notificationHistoryStruct = (Struct)notificationHistoryObject;
-        String channelID = notificationHistoryStruct.getString("channelID");
-        MetricHistory metricHistory = MetricHistory.unpack(new SchemaAndValue(MetricHistory.schema(),notificationHistoryStruct.get("metricHistory")));
+        Schema schema = value.schema();
+        String channelID = value.getString("channelID");
+        MetricHistory metricHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("metricHistory").schema(),value.get("metricHistory")));
         result.put(channelID,metricHistory);
       }
     return result;

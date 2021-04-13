@@ -476,7 +476,7 @@ public class StockMonitor implements Runnable
     //  zookeeper
     //
 
-    try { zookeeper.close(); } catch (InterruptedException e) { }
+    try { if(zookeeper!=null )zookeeper.close(); } catch (InterruptedException e) { }
   }
 
   /*****************************************
