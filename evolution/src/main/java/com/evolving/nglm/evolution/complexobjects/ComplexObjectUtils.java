@@ -25,7 +25,7 @@ public class ComplexObjectUtils
   
   public static void setComplexObjectValue(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName, Object value) throws ComplexObjectException
   {
-    Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime());
+    Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), profile.getTenantID());
     ComplexObjectType type = null;
     for(ComplexObjectType current : types) { if(current.getComplexObjectTypeName().equals(complexTypeName)) { type = current; break; } }
     if(type == null) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE, "Unknown " + complexTypeName); }
@@ -146,7 +146,7 @@ public class ComplexObjectUtils
   
   private static Object getComplexObjectValue(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
   {
-    Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime());
+    Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), profile.getTenantID());
     ComplexObjectType type = null;
     for(ComplexObjectType current : types) { if(current.getComplexObjectTypeName().equals(complexTypeName)) { type = current; break; } }
     if(type == null) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE, "Unknown " + complexTypeName); }

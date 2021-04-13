@@ -137,7 +137,7 @@ public class SubscriberIDService
   *
   ****************************************/
   
-  public Map<String,String> getSubscriberIDs(String alternateIDName, List<String> alternateIDs) throws SubscriberIDServiceException
+  private Map<String,String> getSubscriberIDs(String alternateIDName, List<String> alternateIDs) throws SubscriberIDServiceException
   {
     /****************************************
     *
@@ -215,17 +215,30 @@ public class SubscriberIDService
     ****************************************/
 
     Map<String,String> result = new HashMap<String,String>();
+    Integer tenantID = null;
     for (int i = 0; i < binaryAlternateIDs.size(); i++)
       {
         String alternateID = new String(binaryAlternateIDs.get(i), StandardCharsets.UTF_8);
-        String subscriberID = null;
+        String subscriberID = null;        
         if (binarySubscriberIDs.get(i) != null)
           {
-            short numberOfSubscriberIDs = Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2));
+            int sizeModulo = binarySubscriberIDs.get(i).length % 8;
+            // after multitenancy, the length is 4 + 8* n before it was 2 + 8 * n
+            int tmpTenantID = sizeModulo == 4 ? /*after mutlitenancy*/ Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2)) : 1;
+            short numberOfSubscriberIDs = sizeModulo == 4 ? /* after multitenancy */ Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 4)) : Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2));
             if (numberOfSubscriberIDs > 1) throw new SubscriberIDServiceException("invariant violated - multiple subscriberIDs");
-            subscriberID = (numberOfSubscriberIDs == 1) ? Long.toString(Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 10))) : null;
+            subscriberID = (numberOfSubscriberIDs == 1) ? (sizeModulo == 4 ? Long.toString(Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 4, 12))) : Long.toString(Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 10))) ) : null;
+            if(tenantID == null)
+              {
+                tenantID = tmpTenantID;
+              }
+            else if(tenantID.intValue() != tmpTenantID)
+              {
+                log.warn("Dfferent tenantID for " + subscriberID);
+              }            
           }
         result.put(alternateID, subscriberID);
+        result.put("tenantID", ""+tenantID);
       }
 
     //
@@ -246,6 +259,34 @@ public class SubscriberIDService
     Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
     return subscriberIDs.get(alternateID);
   }
+    
+  /**
+   * return null if either subscriber ID or tenantID is null...
+   * @param alternateIDName
+   * @param alternateID
+   * @return
+   * @throws SubscriberIDServiceException
+   */
+  public Pair<String, Integer> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException {
+    Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
+    String tenantIDString = subscriberIDs.get("tenantID");
+    Integer tenantID = null;
+    if(tenantIDString != null) 
+      { 
+        tenantID = Integer.parseInt(tenantIDString);
+      }
+    String subscriberID = subscriberIDs.get(alternateID);
+    if(subscriberID != null && tenantID != null) 
+      {
+        return new Pair<String, Integer>(subscriberIDs.get(alternateID), tenantID);
+      }
+    else 
+      {
+        return null;
+      }
+  }
+  
+
   // same but blocking call if redis issue
   public String getSubscriberIDBlocking(String alternateIDName, String alternateID) throws SubscriberIDServiceException
   {

@@ -65,14 +65,14 @@ public class VoucherFile {
     this.expiryDate = expiryDate;
   }
 
-  public VoucherFile(JSONObject jsonRoot, List<VoucherFile> allPreviousVoucherFiles,VoucherPersonal voucher, VoucherType voucherType){
+  public VoucherFile(JSONObject jsonRoot, List<VoucherFile> allPreviousVoucherFiles,VoucherPersonal voucher, VoucherType voucherType, int tenantID){
     this.fileId = JSONUtilities.decodeString(jsonRoot,"fileId",true);
     this.codeFormatId = JSONUtilities.decodeString(jsonRoot,"codeFormatId",true);
     this.expiryDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot,"expiryDate",false));
     // if no expiryDate coming from GUI with file, we have a relative expiryDate from voucherType expiryPeriod
     // this is just an attempt to give smallest expiry period before biggest (we order ES request by date)
     // but note, we wont keep that behavior consistent if VoucherType expiry period is modified, this is too much complexity to track this change
-    this.relativeLatestExpiryDate = EvolutionUtilities.addTime(voucher.getEffectiveEndDate(),voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown:EvolutionUtilities.RoundingSelection.NoRound);
+    this.relativeLatestExpiryDate = EvolutionUtilities.addTime(voucher.getEffectiveEndDate(),voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getDeployment(tenantID).getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown:EvolutionUtilities.RoundingSelection.NoRound);
   }
 
   @Override

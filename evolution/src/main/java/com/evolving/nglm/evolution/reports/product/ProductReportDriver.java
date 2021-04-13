@@ -38,7 +38,7 @@ public class ProductReportDriver extends ReportDriver
    * 
    ****************************************/
   
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.info("Entered in to the Product produceReport");
 
@@ -62,8 +62,8 @@ public class ProductReportDriver extends ReportDriver
     ZipOutputStream writer = null;
     try
       {
-        log.info("productService.getStoredProducts().size(): " + productService.getStoredProducts().size());
-        if (productService.getStoredProducts().size() == 0)
+        log.info("productService.getStoredProducts().size(): " + productService.getStoredProducts(tenantID).size());
+        if (productService.getStoredProducts(tenantID).size() == 0)
           {
             log.info("No products ");
           } else
@@ -77,7 +77,7 @@ public class ProductReportDriver extends ReportDriver
 
             List<JSONObject> productJsonList = new ArrayList<JSONObject>();
 
-            for (GUIManagedObject guiManagedObject : productService.getStoredProducts())
+            for (GUIManagedObject guiManagedObject : productService.getStoredProducts(tenantID))
               {
                 productJsonList.add(productService.generateResponseJSON(guiManagedObject, true, reportGenerationDate));
               }

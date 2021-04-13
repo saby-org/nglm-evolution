@@ -81,7 +81,7 @@ public class CriterionFieldAvailableValuesService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { criterionFieldAvailableValuesListener.criterionFieldAvailableValuesActivated((CriterionFieldAvailableValues) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { criterionFieldAvailableValuesListener.criterionFieldAvailableValuesDeactivated(guiManagedObjectID);}
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { criterionFieldAvailableValuesListener.criterionFieldAvailableValuesDeactivated(guiManagedObjectID);}
         };
       }
     return superListener;
@@ -96,11 +96,11 @@ public class CriterionFieldAvailableValuesService extends GUIService
   public String generateCriterionFieldAvailableValuesID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredCriterionFieldAvailableValues(String criterionFieldAvailableValuesID) { return getStoredGUIManagedObject(criterionFieldAvailableValuesID); }
   public GUIManagedObject getStoredCriterionFieldAvailableValues(String criterionFieldAvailableValuesID, boolean includeArchived) { return getStoredGUIManagedObject(criterionFieldAvailableValuesID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredCriterionFieldAvailableValuesList() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredCriterionFieldAvailableValuesList(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredCriterionFieldAvailableValuesList(int tenantId) { return getStoredGUIManagedObjects(tenantId); }
+  public Collection<GUIManagedObject> getStoredCriterionFieldAvailableValuesList(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveCriterionFieldAvailableValues(GUIManagedObject criterionFieldAvailableValuesUnchecked, Date date) { return isActiveGUIManagedObject(criterionFieldAvailableValuesUnchecked, date); }
   public Journey getActiveCriterionFieldAvailableValues(String journeyID, Date date) { return (Journey) getActiveGUIManagedObject(journeyID, date); }
-  public Collection<CriterionFieldAvailableValues> getActiveCriterionFieldAvailableValues(Date date) { return (Collection<CriterionFieldAvailableValues>) getActiveGUIManagedObjects(date); }
+  public Collection<CriterionFieldAvailableValues> getActiveCriterionFieldAvailableValues(Date date, int tenantID) { return (Collection<CriterionFieldAvailableValues>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -147,7 +147,7 @@ public class CriterionFieldAvailableValuesService extends GUIService
   *
   *****************************************/
 
-  public void removeCriterionFieldAvailableValues(String criterionFieldAvailableValuesID, String userID) { removeGUIManagedObject(criterionFieldAvailableValuesID, SystemTime.getCurrentTime(), userID); }
+  public void removeCriterionFieldAvailableValues(String criterionFieldAvailableValuesID, String userID, int tenantID) { removeGUIManagedObject(criterionFieldAvailableValuesID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

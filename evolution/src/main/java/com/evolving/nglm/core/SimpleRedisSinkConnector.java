@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigDef;
@@ -469,17 +470,33 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
                     {
                       pipeline.select(cacheEntry.getDBIndex());
                       if (pipelined && cacheEntry.getValue() != null)
-                        pipeline.set(cacheEntry.getKey(), cacheEntry.getValue());
+                        {
+                          byte[] value = cacheEntry.getValue();
+                          log.info("1 Cache Entry Value " + Hex.encodeHexString(value));
+                          pipeline.set(cacheEntry.getKey(), value);
+                        }
                       else if (pipelined && cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() != null)
-                        pipeline.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete()));
+                        {
+                          pipeline.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), cacheEntry.getTenantID()));
+                        }
                       else if (pipelined && cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() == null)
-                        pipeline.del(cacheEntry.getKey());
+                        {
+                          pipeline.del(cacheEntry.getKey());
+                        }
                       else if (cacheEntry.getValue() != null)
-                        jedis.set(cacheEntry.getKey(), cacheEntry.getValue());
+                        {
+                          byte[] value = cacheEntry.getValue();
+                          log.info("2 Cache Entry Value " + Hex.encodeHexString(value));
+                          jedis.set(cacheEntry.getKey(), value);
+                        }
                       else if (cacheEntry.getValue() == null && cacheEntry.getTTLOnDelete() != null)
-                        jedis.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete()));
+                        {
+                          jedis.expireAt(cacheEntry.getKey(), expirationDate(cacheEntry.getTTLOnDelete(), cacheEntry.getTenantID()));
+                        }
                       else
-                        jedis.del(cacheEntry.getKey());
+                        {
+                          jedis.del(cacheEntry.getKey());
+                        }
                     }
                 }
             }
@@ -538,11 +555,11 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
     *
     *****************************************/
 
-    private long expirationDate(int ttlOnDelete)
+    private long expirationDate(int ttlOnDelete, int tenantID)
     {
       Date now = SystemTime.getCurrentTime();
-      Date day = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
-      Date expiration = RLMDateUtils.addDays(day, ttlOnDelete + 1, Deployment.getBaseTimeZone());
+      Date day = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      Date expiration = RLMDateUtils.addDays(day, ttlOnDelete + 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
       return expiration.getTime() / 1000L;
     }
 
@@ -695,6 +712,7 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
       private byte[] value;
       private int dbIndex;
       private Integer ttlOnDelete;
+      private int tenantID;
 
       //
       //  accessors
@@ -704,27 +722,35 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
       public byte[] getValue() { return value; }
       public int getDBIndex() { return dbIndex; }
       public Integer getTTLOnDelete() { return ttlOnDelete; }
+      public int getTenantID() { return tenantID; }
 
       //
       //  constructor
       //
 
-      public CacheEntry(byte[] key, byte[] value, Integer dbIndex, Integer ttlOnDelete)
+      public CacheEntry(byte[] key, byte[] value, Integer dbIndex, Integer ttlOnDelete, int tenantID)
       {
         this.key = key;
         this.value = value;
         this.dbIndex = (dbIndex != null) ? dbIndex : SimpleRedisSinkTask.this.defaultDBIndex;
         this.ttlOnDelete = ttlOnDelete;
+        this.tenantID = tenantID;
       }
 
       //
       //  constructor (default dbIndex)
       //
 
-      public CacheEntry(byte[] key, byte[] value)
+      public CacheEntry(byte[] key, byte[] value, int tenantID)
       {
-        this(key, value, null, null);
+        this(key, value, null, null, tenantID);
       }
+      
+      @Override
+      public String toString()
+      {
+        return "CacheEntry [key=" + Arrays.toString(key) + ", value=" + Arrays.toString(value) + ", dbIndex=" + dbIndex + ", ttlOnDelete=" + ttlOnDelete + ", tenantID=" + tenantID + "]";
+      }      
     }
   }
   
@@ -756,5 +782,4 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
   {
     return Objects.equals(attribute, "true");
   }
-
 }

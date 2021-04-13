@@ -417,12 +417,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     public int getAmount() { return amount; }
     public TimeUnit getValidityPeriodType() { return validityPeriodType; }
     public Integer getValidityPeriodQuantity() { return validityPeriodQuantity; }    
-    public Date getDeliverableExpirationDate() {
+    public Date getDeliverableExpirationDate(int tenantID) {
       // so far only internal point returns this
       if(deliverableExpirationDate!=null) return deliverableExpirationDate;
       // but if empty we will compute it (so might be not a real one), for all the others cases, based on delivery date
       if(getDeliveryDate()!= null && validityPeriodType!=null && validityPeriodType!=TimeUnit.Unknown && validityPeriodQuantity!=null){
-        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getBaseTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
+        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getDeployment(tenantID).getBaseTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
       }
       // should be null here
       return deliverableExpirationDate;
@@ -458,9 +458,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     *****************************************/
 
-    public CommodityDeliveryRequest(EvolutionEventContext context, String deliveryRequestSource, Map<String, String> diplomaticBriefcase, String providerID, String commodityID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date deliverableExpirationDate, String origin)
+    public CommodityDeliveryRequest(EvolutionEventContext context, String deliveryRequestSource, Map<String, String> diplomaticBriefcase, String providerID, String commodityID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date deliverableExpirationDate, String origin, int tenantID)
     {
-      super(context, "commodityDelivery", deliveryRequestSource);
+      super(context, "commodityDelivery", deliveryRequestSource, tenantID);
       setDiplomaticBriefcase(diplomaticBriefcase);
       this.providerID = providerID;
       this.commodityID = commodityID;
@@ -480,9 +480,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     *****************************************/
 
-    public CommodityDeliveryRequest(DeliveryRequest originatingRequet,JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    public CommodityDeliveryRequest(DeliveryRequest originatingRequet,JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
     {
-      super(originatingRequet,jsonRoot);
+      super(originatingRequet,jsonRoot, tenantID);
       this.setCorrelator(JSONUtilities.decodeString(jsonRoot, "correlator", false));
       this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
       this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
@@ -503,9 +503,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
      *
      *****************************************/
 
-    public CommodityDeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader,JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    public CommodityDeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader,JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
     {
-      super(subscriberProfile,subscriberGroupEpochReader,jsonRoot);
+      super(subscriberProfile,subscriberGroupEpochReader,jsonRoot, tenantID);
       this.setCorrelator(JSONUtilities.decodeString(jsonRoot, "correlator", false));
       this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
       this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
@@ -526,7 +526,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     *****************************************/
 
-    public JSONObject getJSONRepresentation(){
+    public JSONObject getJSONRepresentation(int tenantID){
       Map<String, Object> data = new HashMap<String, Object>();
       
       data.put("deliveryRequestID", this.getDeliveryRequestID());
@@ -554,7 +554,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       data.put("validityPeriodType", (this.getValidityPeriodType() != null ? this.getValidityPeriodType().getExternalRepresentation() : null));
       data.put("validityPeriodQuantity", this.getValidityPeriodQuantity());
       
-      data.put("deliverableExpirationDate", this.getDeliverableExpirationDate());
+      data.put("deliverableExpirationDate", this.getDeliverableExpirationDate(tenantID));
       
       data.put("commodityDeliveryStatusCode", this.getCommodityDeliveryStatus().getReturnCode());
       data.put("statusMessage", this.getStatusMessage());
@@ -600,12 +600,44 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       this.amount = commodityDeliveryRequest.getAmount();
       this.validityPeriodType = commodityDeliveryRequest.getValidityPeriodType();
       this.validityPeriodQuantity = commodityDeliveryRequest.getValidityPeriodQuantity();
-      this.deliverableExpirationDate = commodityDeliveryRequest.getDeliverableExpirationDate();
+      this.deliverableExpirationDate = commodityDeliveryRequest.getDeliverableExpirationDate(commodityDeliveryRequest.getTenantID());
       this.commodityDeliveryStatus = commodityDeliveryRequest.getCommodityDeliveryStatus();
       this.statusMessage = commodityDeliveryRequest.getStatusMessage();
       this.origin = commodityDeliveryRequest.getOrigin();
     }
 
+    /*****************************************
+    *
+    *  constructor -- esFields
+    *
+    *****************************************/
+    
+    public CommodityDeliveryRequest(Map<String, Object> esFields)
+    {
+      //
+      //  super
+      //
+      
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
+      
+      //
+      //  this
+      //
+      
+      this.providerID = (String) esFields.get("providerID");
+      this.commodityID = (String) esFields.get("deliverableID");
+      String esOperation = (String) esFields.get("operation");
+      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(esOperation != null ? esOperation.toLowerCase() : esOperation);
+      this.amount = (int) esFields.get("deliverableQty");
+      this.validityPeriodType = TimeUnit.Year;
+      this.validityPeriodQuantity = 1;
+      this.deliverableExpirationDate = getDateFromESString(esDefaultDateFormat, (String) esFields.get("deliverableExpirationDate"));
+      CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
+      this.commodityDeliveryStatus = commodityDeliveryStatus;
+      this.statusMessage = (String) esFields.get("returnCodeDetails");
+    }
     /*****************************************
     *
     *  copy
@@ -635,7 +667,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       struct.put("amount", commodityDeliveryRequest.getAmount());
       struct.put("validityPeriodType", (commodityDeliveryRequest.getValidityPeriodType() != null ? commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation() : null));
       struct.put("validityPeriodQuantity", commodityDeliveryRequest.getValidityPeriodQuantity());
-      struct.put("deliverableExpirationDate", commodityDeliveryRequest.getDeliverableExpirationDate());
+      struct.put("deliverableExpirationDate", commodityDeliveryRequest.getDeliverableExpirationDate(commodityDeliveryRequest.getTenantID()));
       struct.put("commodityDeliveryStatusCode", commodityDeliveryRequest.getCommodityDeliveryStatus().getReturnCode());
       struct.put("statusMessage", commodityDeliveryRequest.getStatusMessage());
       struct.put("origin", commodityDeliveryRequest.getOrigin());
@@ -724,7 +756,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       Date now = SystemTime.getCurrentTime();
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
@@ -737,7 +769,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       guiPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
       guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
       guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
-      guiPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
+      guiPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate(tenantID)));
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
@@ -748,7 +780,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       guiPresentationMap.put(RETURNCODEDETAILS, getCommodityDeliveryStatus().toString());
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       Date now = SystemTime.getCurrentTime();
       thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
@@ -758,9 +790,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getGUIManagedObjectDisplay() : getCommodityID()));
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
-      thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
-      thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
-      thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
+      thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate(tenantID)));
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
@@ -826,7 +856,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     if(briefcase != null){diplomaticBriefcase.put(APPLICATION_BRIEFCASE, briefcase.toJSONString());}
     requestData.put("diplomaticBriefcase", diplomaticBriefcase);
     
-    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(originatingDeliveryRequest,JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"));
+    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(originatingDeliveryRequest,JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"), originatingDeliveryRequest.getTenantID());
     
     // ---------------------------------
     //
@@ -846,7 +876,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     log.info("CommodityDeliveryManager.sendCommodityDeliveryRequest(..., "+subscriberID+", "+providerID+", "+commodityID+", "+operation+", "+amount+", "+validityPeriodType+", "+validityPeriodQuantity+", ...) : DONE");
   }
 
-  public static void sendCommodityDeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryOperation operation, long amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin){
+  public static void sendCommodityDeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryOperation operation, long amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin, int tenantID){
 
     log.info("CommodityDeliveryManager.sendCommodityDeliveryRequest(..., "+subscriberID+", "+providerID+", "+commodityID+", "+operation+", "+amount+", "+validityPeriodType+", "+validityPeriodQuantity+", ...) : method called ...");
 
@@ -885,7 +915,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     if(briefcase != null){diplomaticBriefcase.put(APPLICATION_BRIEFCASE, briefcase.toJSONString());}
     requestData.put("diplomaticBriefcase", diplomaticBriefcase);
 
-    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"));
+    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"), tenantID);
     commodityDeliveryRequest.forceDeliveryPriority(priority);
 
     // ---------------------------------
@@ -993,7 +1023,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     try
       {
         JSONObject requestStatusJSON = (JSONObject) parser.parse(response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_BRIEFCASE));
-        commodityDeliveryRequest = new CommodityDeliveryRequest(response, requestStatusJSON, Deployment.getDeliveryManagers().get("commodityDelivery"));
+        commodityDeliveryRequest = new CommodityDeliveryRequest(response, requestStatusJSON, Deployment.getDeliveryManagers().get("commodityDelivery"), response.getTenantID());
       } catch (ParseException e)
       {
         log.error("CommodityDeliveryManager.handleThirdPartirResponse(...) : ERROR while getting request status from '"+response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_BRIEFCASE)+"' => IGNORED");
@@ -1016,39 +1046,39 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     DeliveryStatus responseDeliveryStatus = response.getDeliveryStatus();
     switch (responseDeliveryStatus) {
     case Delivered:
-      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SUCCESS, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SUCCESS, "Success", commodityDeliveryRequest.getDeliverableExpirationDate(response.getTenantID()));
       break;
 
     case CheckBalanceLowerThan:
-      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_LT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_LT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate(response.getTenantID()));
       break;
 
     case CheckBalanceEqualsTo:
-      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_ET, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_ET, "Success", commodityDeliveryRequest.getDeliverableExpirationDate(response.getTenantID()));
       break;
 
     case CheckBalanceGreaterThan:
-      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_GT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate());
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.CHECK_BALANCE_GT, "Success", commodityDeliveryRequest.getDeliverableExpirationDate(response.getTenantID()));
       break;
 
     case BonusNotFound:
-      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate());
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate(response.getTenantID()));
       break;
 
     case InsufficientBalance:
-      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.INSUFFICIENT_BALANCE, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate());
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.INSUFFICIENT_BALANCE, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate(response.getTenantID()));
       break;
 
     case FailedRetry:
     case Indeterminate:
     case Failed:
     case FailedTimeout:
-      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.THIRD_PARTY_ERROR, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate());
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.THIRD_PARTY_ERROR, "Commodity delivery request failed", commodityDeliveryRequest.getDeliverableExpirationDate(response.getTenantID()));
       break;
     case Pending:
     case Unknown:
     default:
-      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.THIRD_PARTY_ERROR, "Commodity delivery request failure", commodityDeliveryRequest.getDeliverableExpirationDate());
+      submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.THIRD_PARTY_ERROR, "Commodity delivery request failure", commodityDeliveryRequest.getDeliverableExpirationDate(response.getTenantID()));
       break;
     }
   }
@@ -1462,7 +1492,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       diplomaticBriefcase = new HashMap<String, String>();
     }
     diplomaticBriefcase.put(COMMODITY_DELIVERY_ID, COMMODITY_DELIVERY_ID_VALUE);
-    diplomaticBriefcase.put(COMMODITY_DELIVERY_BRIEFCASE, commodityDeliveryRequest.getJSONRepresentation().toJSONString());
+    diplomaticBriefcase.put(COMMODITY_DELIVERY_BRIEFCASE, commodityDeliveryRequest.getJSONRepresentation(commodityDeliveryRequest.getTenantID()).toJSONString());
 
     //
     // execute commodity request
@@ -1503,7 +1533,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request DONE");
       
-      INFulfillmentRequest inRequest = new INFulfillmentRequest(commodityDeliveryRequest,JSONUtilities.encodeObject(inRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      INFulfillmentRequest inRequest = new INFulfillmentRequest(commodityDeliveryRequest,JSONUtilities.encodeObject(inRequestData), Deployment.getDeliveryManagers().get(deliveryType), commodityDeliveryRequest.getTenantID());
       commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(inRequestTopic, StringKey.serde().serializer().serialize(inRequestTopic, new StringKey(inRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)inManagerDeclaration.getRequestSerde()).serializer().serialize(inRequestTopic, inRequest)));
       
       if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.IN+" request DONE");
@@ -1536,7 +1566,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.POINT+" request DONE");
 
-      PointFulfillmentRequest pointRequest = new PointFulfillmentRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(pointRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      PointFulfillmentRequest pointRequest = new PointFulfillmentRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(pointRequestData), Deployment.getDeliveryManagers().get(deliveryType), commodityDeliveryRequest.getTenantID());
       commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(pointRequestTopic, StringKey.serde().serializer().serialize(pointRequestTopic, new StringKey(pointRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)pointManagerDeclaration.getRequestSerde()).serializer().serialize(pointRequestTopic, pointRequest)));
       
       if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.POINT+" request DONE");
@@ -1576,7 +1606,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
 
-      RewardManagerRequest rewardRequest = new RewardManagerRequest(commodityDeliveryRequest,JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      RewardManagerRequest rewardRequest = new RewardManagerRequest(commodityDeliveryRequest,JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType), commodityDeliveryRequest.getTenantID());
       commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(rewardRequestTopic, StringKey.serde().serializer().serialize(rewardRequestTopic, new StringKey(rewardRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)rewardManagerDeclaration.getRequestSerde()).serializer().serialize(rewardRequestTopic, rewardRequest)));
       
       if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.REWARD+" request DONE");
@@ -1607,7 +1637,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.JOURNEY+" request DONE");
 
-      JourneyRequest journeyRequest = new JourneyRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(journeyRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      JourneyRequest journeyRequest = new JourneyRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(journeyRequestData), Deployment.getDeliveryManagers().get(deliveryType), commodityDeliveryRequest.getTenantID());
       commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
 
       if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.JOURNEY+" request DONE");
@@ -1706,7 +1736,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       // retrieve the featureID that is the origin of this delivery request:
       // - If the Journey related to JourneyState is not a Workflow, then featureID = JourneyState.getID
-      // - if the Journey related to JourneyState is a Workflown then we must extract the original featureID from the origial delivery Request that created the workflow instance
+      // - if the Journey related to JourneyState is a Workflown then we must extract the original featureID from the original delivery Request that created the workflow instance
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
 
       /*****************************************
@@ -1715,7 +1745,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *
       *****************************************/
 
-      CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, deliveryRequestSource, null, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, null, origin);
+      CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, deliveryRequestSource, null, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, null, origin, subscriberEvaluationRequest.getTenantID());
       request.setModuleID(newModuleID);
       request.setFeatureID(deliveryRequestSource);
 
@@ -1727,7 +1757,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       return Collections.<Action>singletonList(request);
     }
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String pointID = (String) journeyNode.getNodeParameters().get("node.parameter.commodityid");

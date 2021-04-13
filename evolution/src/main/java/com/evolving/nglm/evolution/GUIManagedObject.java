@@ -110,7 +110,10 @@ public abstract class GUIManagedObject
 
     for (SimpleDateFormat standardDateFormat : standardDateFormats)
       {
-        standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        if(Deployment.getSystemTimeZone() != null)
+          {
+            standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // EVPRO-99 use getSystemTimeZone instead of getBaseTimezone, is that ok ? should it be by tenant ?
+          }
       }
   }
 
@@ -129,7 +132,7 @@ public abstract class GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("guimanager_managed_object");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectID", Schema.STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectName", Schema.OPTIONAL_STRING_SCHEMA);
@@ -147,6 +150,7 @@ public abstract class GUIManagedObject
     schemaBuilder.field("groupID", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("createdDate", Timestamp.builder().optional().defaultValue(null).schema());
     schemaBuilder.field("updatedDate", Timestamp.builder().optional().defaultValue(null).schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
 
@@ -238,6 +242,7 @@ public abstract class GUIManagedObject
   private String groupID;
   private Date createdDate;
   private Date updatedDate;
+  private int tenantID;
 
   /****************************************
   *
@@ -261,6 +266,7 @@ public abstract class GUIManagedObject
   public String getUserName() { return userName; }
   public Date getCreatedDate() { return createdDate; }
   public Date getUpdatedDate() { return updatedDate; }
+  public int getTenantID() { return tenantID; }
 
   //
   //  package protected
@@ -326,6 +332,7 @@ public abstract class GUIManagedObject
     struct.put("groupID", guiManagedObject.getGroupID());
     struct.put("createdDate", guiManagedObject.getCreatedDate());
     struct.put("updatedDate", guiManagedObject.getUpdatedDate());
+    struct.put("tenantID", (short)guiManagedObject.getTenantID());
   }
 
   /*****************************************
@@ -334,7 +341,7 @@ public abstract class GUIManagedObject
   *
   *****************************************/
 
-  protected GUIManagedObject(String guiManagedObjectID)
+  protected GUIManagedObject(String guiManagedObjectID, int tenantID)
   {
     this.jsonRepresentation = new JSONObject();
     this.guiManagedObjectID = guiManagedObjectID;
@@ -353,6 +360,7 @@ public abstract class GUIManagedObject
     this.groupID = null;
     this.createdDate = null;
     this.updatedDate = null;
+    this.tenantID = tenantID;
   }
                              
   /*****************************************
@@ -393,6 +401,8 @@ public abstract class GUIManagedObject
     String groupID = (schemaVersion >= 3) ? valueStruct.getString("groupID") : null;
     Date createdDate = (schemaVersion >= 3) ? (Date) valueStruct.get("createdDate") : null;
     Date updatedDate = (schemaVersion >= 3) ? (Date) valueStruct.get("updatedDate") : null;
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
+   
 
     //
     //  return
@@ -415,6 +425,7 @@ public abstract class GUIManagedObject
     this.groupID = groupID;
     this.createdDate = createdDate;
     this.updatedDate = updatedDate;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -423,7 +434,7 @@ public abstract class GUIManagedObject
   *
   *****************************************/
 
-  public GUIManagedObject(JSONObject jsonRoot, GUIManagedObjectType guiManagedObjectType, long epoch)
+  public GUIManagedObject(JSONObject jsonRoot, GUIManagedObjectType guiManagedObjectType, long epoch, int tenantID)
   {
     this.jsonRepresentation = jsonRoot;
     this.guiManagedObjectID = JSONUtilities.decodeString(jsonRoot, "id", true);
@@ -442,15 +453,16 @@ public abstract class GUIManagedObject
     this.groupID = JSONUtilities.decodeString(jsonRoot, "groupID", false);
     this.createdDate = null;
     this.updatedDate = null;
+    this.tenantID = tenantID;
   }
 
   //
   //  constructor
   //
 
-  public GUIManagedObject(JSONObject jsonRoot, long epoch)
+  public GUIManagedObject(JSONObject jsonRoot, long epoch, int tenantID)
   {
-    this(jsonRoot, GUIManagedObjectType.Other, epoch);
+    this(jsonRoot, GUIManagedObjectType.Other, epoch, tenantID);
   }
 
   /*****************************************
@@ -633,9 +645,9 @@ public abstract class GUIManagedObject
     *
     *****************************************/
 
-    public IncompleteObject(String guiManagedObjectID)
+    public IncompleteObject(String guiManagedObjectID, int tenantID)
     {
-      super(guiManagedObjectID);
+      super(guiManagedObjectID, tenantID);
     }
     
     /*****************************************
@@ -707,9 +719,9 @@ public abstract class GUIManagedObject
     *
     *****************************************/
 
-    public IncompleteObject(JSONObject jsonRoot, GUIManagedObjectType guiManagedObjectType, long epoch)
+    public IncompleteObject(JSONObject jsonRoot, GUIManagedObjectType guiManagedObjectType, long epoch, int tenantID)
     {
-      super(jsonRoot, guiManagedObjectType, epoch);
+      super(jsonRoot, guiManagedObjectType, epoch, tenantID);
     }
 
     /*****************************************
@@ -718,15 +730,15 @@ public abstract class GUIManagedObject
     *
     *****************************************/
 
-    public IncompleteObject(JSONObject jsonRoot, long epoch)
+    public IncompleteObject(JSONObject jsonRoot, long epoch, int tenantID)
     {
-      super(jsonRoot, epoch);
+      super(jsonRoot, epoch, tenantID);
     }
-    @Override public Map<String, List<String>>  getGUIDependencies() { return new HashMap<String, List<String>>(); }
+    @Override public Map<String, List<String>>  getGUIDependencies(int tenantID) { return new HashMap<String, List<String>>(); }
   }
   
   //public abstract Map<String, List<String>>  getGUIDependencies();
-  public Map<String, List<String>> getGUIDependencies()
+  public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     return new HashMap<String, List<String>>();
   }

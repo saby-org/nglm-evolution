@@ -35,7 +35,7 @@ public class GUIManagerBaseManagement extends GUIManager
 
   private static final Logger log = LoggerFactory.getLogger(GUIManagerBaseManagement.class);
   
-  public GUIManagerBaseManagement(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerBaseManagement(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -43,7 +43,6 @@ public class GUIManagerBaseManagement extends GUIManager
     super.contactPolicyService = contactPolicyService;
     super.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
     super.deliverableService = deliverableService;
-    super.deliverableSourceService = deliverableSourceService;
     super.exclusionInclusionTargetService = exclusionInclusionTargetService;
     super.journeyObjectiveService = journeyObjectiveService;
     super.journeyService = journeyService;
@@ -98,7 +97,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processConfigAdaptorSegmentationDimension(JSONObject jsonRoot)
+  JSONObject processConfigAdaptorSegmentationDimension(JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -152,7 +151,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetExclusionInclusionTarget(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetExclusionInclusionTarget(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -196,7 +195,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutExclusionInclusionTarget(String userID, JSONObject jsonRoot)
+  JSONObject processPutExclusionInclusionTarget(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -270,7 +269,7 @@ public class GUIManagerBaseManagement extends GUIManager
         *
         ****************************************/
 
-        ExclusionInclusionTarget exclusionInclusionTarget = new ExclusionInclusionTarget(jsonRoot, epoch, existingExclusionInclusionTarget);
+        ExclusionInclusionTarget exclusionInclusionTarget = new ExclusionInclusionTarget(jsonRoot, epoch, existingExclusionInclusionTarget, tenantID);
 
         /*****************************************
         *
@@ -301,7 +300,7 @@ public class GUIManagerBaseManagement extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -332,7 +331,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetExclusionInclusionTargetList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetExclusionInclusionTargetList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -359,7 +358,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-        exclusionInclusionTargetObjects = exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived);
+        exclusionInclusionTargetObjects = exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived, tenantID);
       }
     for (GUIManagedObject exclusionInclusionTarget : exclusionInclusionTargetObjects)
       {
@@ -384,7 +383,7 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusExclusionInclusionTarget(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusExclusionInclusionTarget(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -419,7 +418,7 @@ public class GUIManagerBaseManagement extends GUIManager
                  ****************************************/
 
                 ExclusionInclusionTarget exclusionInclusionTarget = new ExclusionInclusionTarget(elementRoot, epoch,
-                    existingElement);
+                    existingElement, tenantID);
 
                 /*****************************************
                  *
@@ -436,7 +435,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -469,7 +468,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetSegmentationDimension(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetSegmentationDimension(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -513,7 +512,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutSegmentationDimension(String userID, JSONObject jsonRoot)
+  JSONObject processPutSegmentationDimension(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -593,15 +592,15 @@ public class GUIManagerBaseManagement extends GUIManager
         switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
           {
             case ELIGIBILITY:
-              segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
+              segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs, tenantID);
               break;
 
             case RANGES:
-              segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
+              segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs, tenantID);
               break;
 
             case FILE:
-              segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
+              segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs, tenantID);
               break;
 
             case Unknown:
@@ -660,7 +659,7 @@ public class GUIManagerBaseManagement extends GUIManager
              *
              *****************************************/
 
-            revalidateUCGRules(now);
+            revalidateUCGRules(now, tenantID);
           }
 
         /*****************************************
@@ -682,7 +681,7 @@ public class GUIManagerBaseManagement extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -696,7 +695,7 @@ public class GUIManagerBaseManagement extends GUIManager
             // revalidate
             //
 
-            revalidateUCGRules(now);
+            revalidateUCGRules(now, tenantID);
           }
 
         //
@@ -725,7 +724,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveSegmentationDimension(String userID, JSONObject jsonRoot)
+  JSONObject processRemoveSegmentationDimension(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -859,7 +858,7 @@ public class GUIManagerBaseManagement extends GUIManager
          *****************************************/
 
         segmentationDimensionService.removeSegmentationDimension(segmentationDimensionUnchecked.getGUIManagedObjectID(),
-            userID);
+            userID, tenantID);
 
         /*****************************************
          *
@@ -867,7 +866,7 @@ public class GUIManagerBaseManagement extends GUIManager
          *
          *****************************************/
 
-        revalidateUCGRules(now);
+        revalidateUCGRules(now, tenantID);
 
       }
     /*****************************************
@@ -901,7 +900,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processSetStatusSegmentationDimension(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusSegmentationDimension(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -941,17 +940,17 @@ public class GUIManagerBaseManagement extends GUIManager
                   {
                     case ELIGIBILITY:
                       segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService,
-                          elementRoot, epoch, existingElement, resetSegmentIDs);
+                          elementRoot, epoch, existingElement, resetSegmentIDs, tenantID);
                       break;
 
                     case RANGES:
                       segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, elementRoot,
-                          epoch, existingElement, resetSegmentIDs);
+                          epoch, existingElement, resetSegmentIDs, tenantID);
                       break;
 
                     case FILE:
                       segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService,
-                          elementRoot, epoch, existingElement, resetSegmentIDs);
+                          elementRoot, epoch, existingElement, resetSegmentIDs, tenantID);
                       break;
 
                     case Unknown:
@@ -1015,7 +1014,7 @@ public class GUIManagerBaseManagement extends GUIManager
                  *
                  *****************************************/
 
-                revalidateUCGRules(now);
+                revalidateUCGRules(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -1024,7 +1023,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -1037,7 +1036,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 // revalidate
                 //
 
-                revalidateUCGRules(now);
+                revalidateUCGRules(now, tenantID);
 
                 //
                 // log
@@ -1066,7 +1065,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  private void revalidateUCGRules(Date date)
+  private void revalidateUCGRules(Date date, int tenantID)
   {
     /****************************************
     *
@@ -1075,7 +1074,7 @@ public class GUIManagerBaseManagement extends GUIManager
     ****************************************/
 
     Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
+    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules(tenantID))
       {
         //
         //  modifiedUCGRule
@@ -1085,13 +1084,13 @@ public class GUIManagerBaseManagement extends GUIManager
         GUIManagedObject modifiedUCGRule;
         try
           {
-            UCGRule ucgRule = new UCGRule(existingUCGRule.getJSONRepresentation(), epoch, existingUCGRule);
+            UCGRule ucgRule = new UCGRule(existingUCGRule.getJSONRepresentation(), epoch, existingUCGRule, tenantID);
             ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
             modifiedUCGRule = ucgRule;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
           {
-            modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch);
+            modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch, tenantID);
           }
 
         //
@@ -1123,7 +1122,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetTarget(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetTarget(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -1167,7 +1166,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutTarget(String userID, JSONObject jsonRoot)
+  JSONObject processPutTarget(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -1240,7 +1239,7 @@ public class GUIManagerBaseManagement extends GUIManager
         *
         ****************************************/
 
-        Target target = new Target(jsonRoot, epoch, existingTarget);
+        Target target = new Target(jsonRoot, epoch, existingTarget, tenantID);
 
         /*****************************************
         *
@@ -1258,7 +1257,7 @@ public class GUIManagerBaseManagement extends GUIManager
              *
              *****************************************/
 
-            revalidateJourneys(now);
+            revalidateJourneys(now, tenantID);
           }
 
         /*****************************************
@@ -1280,7 +1279,7 @@ public class GUIManagerBaseManagement extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -1294,7 +1293,7 @@ public class GUIManagerBaseManagement extends GUIManager
             // revalidate dependent objects
             //
 
-            revalidateJourneys(now);
+            revalidateJourneys(now, tenantID);
           }
 
         //
@@ -1322,7 +1321,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveTarget(String userID, JSONObject jsonRoot){
+  JSONObject processRemoveTarget(String userID, JSONObject jsonRoot, int tenantID){
 
     /****************************************
     *
@@ -1390,7 +1389,7 @@ public class GUIManagerBaseManagement extends GUIManager
       {
 
         GUIManagedObject existingTarget = targets.get(0);
-        targetService.removeTarget(existingTarget.getGUIManagedObjectID(), userID);
+        targetService.removeTarget(existingTarget.getGUIManagedObjectID(), userID, tenantID);
       }
 
     /*****************************************
@@ -1426,7 +1425,7 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusTarget(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusTarget(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -1459,7 +1458,7 @@ public class GUIManagerBaseManagement extends GUIManager
                  *
                  ****************************************/
 
-                Target target = new Target(elementRoot, epoch, existingElement);
+                Target target = new Target(elementRoot, epoch, existingElement, tenantID);
 
                 /*****************************************
                  *
@@ -1475,7 +1474,7 @@ public class GUIManagerBaseManagement extends GUIManager
                  *
                  *****************************************/
 
-                revalidateJourneys(now);
+                revalidateJourneys(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -1484,7 +1483,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -1497,7 +1496,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 // revalidate dependent objects
                 //
 
-                revalidateJourneys(now);
+                revalidateJourneys(now, tenantID);
 
                 //
                 // log
@@ -1524,7 +1523,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetUCGDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetUCGDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -1552,7 +1551,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-  segmentationDimensionObjects = segmentationDimensionService.getStoredSegmentationDimensions(includeArchived);
+  segmentationDimensionObjects = segmentationDimensionService.getStoredSegmentationDimensions(includeArchived, tenantID);
       }
     for (GUIManagedObject segmentationDimension : segmentationDimensionObjects)
       {
@@ -1581,7 +1580,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetUCGRule(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetUCGRule(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -1625,7 +1624,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutUCGRule(String userID, JSONObject jsonRoot)
+  JSONObject processPutUCGRule(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -1699,7 +1698,7 @@ public class GUIManagerBaseManagement extends GUIManager
         *
         ****************************************/
 
-        UCGRule ucgRule = new UCGRule(jsonRoot, epoch, existingUCGRule);
+        UCGRule ucgRule = new UCGRule(jsonRoot, epoch, existingUCGRule, tenantID);
 
         /*****************************************
          *
@@ -1719,7 +1718,7 @@ public class GUIManagerBaseManagement extends GUIManager
 
             if (ucgRule.getActive())
               {
-                deactivateOtherUCGRules(ucgRule, now);
+                deactivateOtherUCGRules(ucgRule, now, tenantID);
               }
           }
 
@@ -1742,7 +1741,7 @@ public class GUIManagerBaseManagement extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -1778,7 +1777,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveUCGRule(String userID, JSONObject jsonRoot)
+  JSONObject processRemoveUCGRule(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -1856,7 +1855,7 @@ public class GUIManagerBaseManagement extends GUIManager
 
         GUIManagedObject ucgRule = UCGRules.get(i);
 
-        ucgRuleService.removeUCGRule(ucgRule.getGUIManagedObjectID(), userID);
+        ucgRuleService.removeUCGRule(ucgRule.getGUIManagedObjectID(), userID, tenantID);
       }
 
     /*****************************************
@@ -1891,7 +1890,7 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusUCGRule(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusUCGRule(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -1924,7 +1923,7 @@ public class GUIManagerBaseManagement extends GUIManager
                  *
                  ****************************************/
 
-                UCGRule ucgRule = new UCGRule(elementRoot, epoch, existingElement);
+                UCGRule ucgRule = new UCGRule(elementRoot, epoch, existingElement, tenantID);
 
                 /*****************************************
                  *
@@ -1940,7 +1939,7 @@ public class GUIManagerBaseManagement extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -1974,7 +1973,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRefreshUCG(String userID, JSONObject jsonRoot) throws GUIManagerException
+  JSONObject processRefreshUCG(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
   {
     /****************************************
     *
@@ -1992,7 +1991,7 @@ public class GUIManagerBaseManagement extends GUIManager
     *****************************************/
 
     UCGRule activeUCGRule = null;
-    for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now))
+    for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now, tenantID))
       {
         activeUCGRule = ucgRule;
       }
@@ -2025,7 +2024,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  private void deactivateOtherUCGRules(UCGRule currentUCGRule,Date date)
+  private void deactivateOtherUCGRules(UCGRule currentUCGRule, Date date, int tenantID)
   {
     /****************************************
     *
@@ -2034,7 +2033,7 @@ public class GUIManagerBaseManagement extends GUIManager
     ****************************************/
 
     Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
+    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules(tenantID))
       {
         //
         //  modifiedUCGRule
@@ -2047,13 +2046,13 @@ public class GUIManagerBaseManagement extends GUIManager
               {
                 JSONObject existingRuleJSON = existingUCGRule.getJSONRepresentation();
                 existingRuleJSON.replace("active", Boolean.FALSE);
-                UCGRule ucgRule = new UCGRule(existingRuleJSON, epoch, existingUCGRule);
+                UCGRule ucgRule = new UCGRule(existingRuleJSON, epoch, existingUCGRule, tenantID);
                 //ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
                 modifiedUCGRule = ucgRule;
               }
             catch (JSONUtilitiesException | GUIManagerException e)
               {
-                modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch);
+                modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch, tenantID);
               }
 
             //
@@ -2085,7 +2084,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetUCGRuleList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetUCGRuleList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -2117,7 +2116,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-        ucgRuleObjects = ucgRuleService.getStoredUCGRules(includeArchived);
+        ucgRuleObjects = ucgRuleService.getStoredUCGRules(includeArchived, tenantID);
       }
     for (GUIManagedObject ucgRule : ucgRuleObjects)
       {
@@ -2142,7 +2141,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetSegmentationDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetSegmentationDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -2170,7 +2169,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-        segmentationDimensionObjects = segmentationDimensionService.getStoredSegmentationDimensions(includeArchived);
+        segmentationDimensionObjects = segmentationDimensionService.getStoredSegmentationDimensions(includeArchived, tenantID);
       }
     for (GUIManagedObject segmentationDimension : segmentationDimensionObjects)
       {
@@ -2213,7 +2212,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetTargetList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetTargetList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
 
     /*****************************************
@@ -2241,7 +2240,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-        targetObjects = targetService.getStoredTargets(includeArchived);
+        targetObjects = targetService.getStoredTargets(includeArchived, tenantID);
       }
     for (GUIManagedObject targetList : targetObjects)
       {
@@ -2268,7 +2267,7 @@ public class GUIManagerBaseManagement extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveExclusionInclusionTarget(String userID, JSONObject jsonRoot)
+  JSONObject processRemoveExclusionInclusionTarget(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -2348,7 +2347,7 @@ public class GUIManagerBaseManagement extends GUIManager
 
         GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargets.get(i);
         exclusionInclusionTargetService.removeExclusionInclusionTarget(exclusionInclusionTarget.getGUIManagedObjectID(),
-            userID);
+            userID, tenantID);
 
       }
     /*****************************************
@@ -2383,7 +2382,7 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  void processDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  void processDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID)
   {
     ExtractDownloader extractDownloader = new ExtractDownloader(jsonRoot,jsonResponse,exchange);
     extractDownloader.start();
@@ -2395,14 +2394,14 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  JSONObject processLaunchExtract(JSONObject jsonRoot)
+  JSONObject processLaunchExtract(JSONObject jsonRoot, int tenantID)
   {
     log.trace("In processLaunchTargetExtract : " + jsonRoot);
     HashMap<String, Object> response = new HashMap<String, Object>();
     String responseCode = "";
     try
     {
-      ExtractItem extractItem = new ExtractItem(jsonRoot);
+      ExtractItem extractItem = new ExtractItem(jsonRoot, tenantID);
       if (ExtractService.isExtractRunning(extractItem.getExtractName() + "-" + extractItem.getUserId()))
       {
         responseCode = "targetIsAlreadyRunning";
@@ -2428,9 +2427,9 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  void processLaunchAndDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  void processLaunchAndDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID)
   {
-    JSONObject launchResponse = this.processLaunchExtract(jsonRoot);
+    JSONObject launchResponse = this.processLaunchExtract(jsonRoot, tenantID);
     String responseCode = JSONUtilities.decodeString(launchResponse, "responseCode", true);
     if (responseCode != "ok")
     {
@@ -2453,7 +2452,7 @@ public class GUIManagerBaseManagement extends GUIManager
     }
     else
     {
-      processDownloadExtract(jsonRoot, jsonResponse, exchange);
+      processDownloadExtract(jsonRoot, jsonResponse, exchange, tenantID);
     }
   }
 

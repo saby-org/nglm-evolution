@@ -68,7 +68,7 @@ public class GUIManagedObjectDependencyHelper
             for (GUIManagedObject guiManagedObject : storedObjectList)
               {
             	if(guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Other || guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Unknown || guiManagedObject.getGUIManagedObjectType().name().toLowerCase().equals(dependency.toLowerCase())){
-                Map<String, List<String>> guiDependencies = guiManagedObject.getGUIDependencies();
+                Map<String, List<String>> guiDependencies = guiManagedObject.getGUIDependencies(guiManagedObject.getTenantID());
                 
                  if (guiDependencies != null && !guiDependencies.isEmpty())
                   {

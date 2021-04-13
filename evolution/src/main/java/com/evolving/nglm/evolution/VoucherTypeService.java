@@ -76,7 +76,7 @@ public class VoucherTypeService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { voucherTypeListener.voucherTypeActivated((VoucherType) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { voucherTypeListener.voucherTypeDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { voucherTypeListener.voucherTypeDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -91,11 +91,11 @@ public class VoucherTypeService extends GUIService
   public String generateVoucherTypeID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredVoucherType(String voucherTypeID) { return getStoredGUIManagedObject(voucherTypeID); }
   public GUIManagedObject getStoredVoucherType(String voucherTypeID, boolean includeArchived) { return getStoredGUIManagedObject(voucherTypeID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredVoucherTypes() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredVoucherTypes(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredVoucherTypes(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredVoucherTypes(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveVoucherType(GUIManagedObject voucherTypeUnchecked, Date date) { return isActiveGUIManagedObject(voucherTypeUnchecked, date); }
   public VoucherType getActiveVoucherType(String voucherTypeID, Date date) { return (VoucherType) getActiveGUIManagedObject(voucherTypeID, date); }
-  public Collection<VoucherType> getActiveVoucherTypes(Date date) { return (Collection<VoucherType>) getActiveGUIManagedObjects(date); }
+  public Collection<VoucherType> getActiveVoucherTypes(Date date, int tenantID) { return (Collection<VoucherType>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -111,7 +111,7 @@ public class VoucherTypeService extends GUIService
   *
   *****************************************/
 
-  public void removeVoucherType(String voucherTypeID, String userID) { removeGUIManagedObject(voucherTypeID, SystemTime.getCurrentTime(), userID); }
+  public void removeVoucherType(String voucherTypeID, String userID, int tenantID) { removeGUIManagedObject(voucherTypeID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

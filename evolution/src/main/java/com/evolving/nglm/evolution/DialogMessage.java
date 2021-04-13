@@ -111,7 +111,7 @@ public class DialogMessage
   *
   *****************************************/
 
-  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext, boolean inlineTemplate) throws GUIManagerException
+  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext, boolean inlineTemplate, int tenantID) throws GUIManagerException
   {
     Map<CriterionField,String> tagReplacements = new HashMap<CriterionField,String>();
     for (int i=0; i<messagesJSON.size(); i++)
@@ -130,7 +130,7 @@ public class DialogMessage
         *
         *****************************************/
 
-        SupportedLanguage supportedLanguage = Deployment.getSupportedLanguages().get(JSONUtilities.decodeString(messageJSON, "languageID", true));
+        SupportedLanguage supportedLanguage = Deployment.getDeployment(tenantID).getSupportedLanguages().get(JSONUtilities.decodeString(messageJSON, "languageID", true));
         String language = (supportedLanguage != null) ? supportedLanguage.getName() : null;
         if (language == null) throw new GUIManagerException("unsupported language", JSONUtilities.decodeString(messageJSON, "languageID", true));
 
@@ -167,7 +167,7 @@ public class DialogMessage
 
               String rawTag = m.group();
               String criterionFieldName = m.group(1).trim();
-              CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
+              CriterionField criterionField = criterionContext.getCriterionFields(tenantID).get(criterionFieldName);
               boolean parameterTag = false;
               if (criterionField == null)
                 {
@@ -391,9 +391,9 @@ public class DialogMessage
     //  subscriber language
     //
 
-    CriterionField subscriberLanguage = CriterionContext.Profile.getCriterionFields().get("subscriber.language");
+    CriterionField subscriberLanguage = CriterionContext.Profile(subscriberEvaluationRequest.getTenantID()).getCriterionFields(subscriberEvaluationRequest.getTenantID()).get("subscriber.language");
     String languageID = (String) subscriberLanguage.retrieve(subscriberEvaluationRequest);
-    String language = (languageID != null && Deployment.getSupportedLanguages().get(languageID) != null) ? Deployment.getSupportedLanguages().get(languageID).getName() : Deployment.getBaseLanguage();
+    String language = (languageID != null && Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID) != null) ? Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getSupportedLanguages().get(languageID).getName() : Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseLanguage();
 
     //
     //  message text
@@ -407,7 +407,7 @@ public class DialogMessage
 
     if (messageText == null)
       {
-        language = Deployment.getBaseLanguage();
+        language = Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseLanguage();
         messageText = messageTextByLanguage.get(language);
       }
     
@@ -417,7 +417,7 @@ public class DialogMessage
     *
     *****************************************/
 
-    Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+    Locale messageLocale = new Locale(language, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseCountry());
     MessageFormat formatter = null;
     Object[] messageTags = new Object[this.allTags.size()];
     for (int i=0; i<this.allTags.size(); i++)
@@ -449,7 +449,7 @@ public class DialogMessage
           {
             if (format instanceof SimpleDateFormat)
               {
-                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone()));
               }
           }
 
@@ -523,7 +523,7 @@ public class DialogMessage
     *
     *****************************************/
 
-    Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+    Locale messageLocale = new Locale(language, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseCountry());
     MessageFormat formatter = null;
     List<String> messageTags = new ArrayList<String>();
     for (int i=0; i<this.allTags.size(); i++)
@@ -561,7 +561,7 @@ public class DialogMessage
           {
             if (format instanceof SimpleDateFormat)
               {
-                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone()));
               }
           }
 
@@ -645,7 +645,7 @@ public class DialogMessage
       {
         ParameterExpression parameterExpression = (ParameterExpression) parameterValue;
         String resolvedCriterionID = parameterExpression.getExpressionString();
-        CriterionField criterionField = CriterionContext.FullProfile.getCriterionFields().get(resolvedCriterionID);
+        CriterionField criterionField = CriterionContext.FullProfile(evaluationRequest.getTenantID()).getCriterionFields(evaluationRequest.getTenantID()).get(resolvedCriterionID);
         if (criterionField != null)
           {
             result = criterionField.getTagMaxLength();
@@ -680,12 +680,12 @@ public class DialogMessage
   *
   *****************************************/
 
-  public String resolve(String language, List<String> messageTags)
+  public String resolve(String language, List<String> messageTags, int tenantID)
   {
     String text = null;
     if (messageTextByLanguage.get(language) != null)
       {
-        Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+        Locale messageLocale = new Locale(language, Deployment.getDeployment(tenantID).getBaseCountry());
         MessageFormat formatter = new MessageFormat(messageTextByLanguage.get(language), messageLocale);
         text = formatter.format(messageTags.toArray());
       }

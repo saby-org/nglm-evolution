@@ -244,6 +244,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       ParameterMap parameterMap = getNotificationParameters();
       if(parameterMap==null) parameterMap=new ParameterMap();
       parameterMap.put("node.parameter.sourceaddress",sourceAddress);
+      this.notificationParameters = parameterMap;
     }
 
     /*****************************************
@@ -262,7 +263,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
             {
               DialogMessage dialogMessage = dialogMessageEntry.getValue();
               String parameterName = dialogMessageEntry.getKey();
-              String resolved = dialogMessage.resolve(language, tags.get(parameterName));
+              String resolved = dialogMessage.resolve(language, tags.get(parameterName), template.getTenantID());
               result.put(parameterName, resolved);
             }
         }
@@ -353,9 +354,9 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
      *
      *****************************************/
 
-    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID, ParameterMap notificationParameters, String contactType)
+    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID, ParameterMap notificationParameters, String contactType, int tenantID)
       {
-        super(context, deliveryType, deliveryRequestSource);
+        super(context, deliveryType, deliveryRequestSource, tenantID);
         this.destination = destination;
         this.language = language;
         this.templateID = templateID;
@@ -466,6 +467,34 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         this.notificationParameters = notificationManagerRequest.getNotificationParameters();
         this.contactType = notificationManagerRequest.getContactType();
       }
+
+    /*****************************************
+    *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public NotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      
+      this.destination = (String) esFields.get("destination");
+      setSourceAddressParam((String) esFields.get("source"));
+      setSubscriberID((String) esFields.get("subscriberID"));
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.tags = tags;
+        }
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+      this.channelID = (String) esFields.get("channelID");
+    //NOT in ES this.notificationParameters = esFields.get("");
+    }
 
     /*****************************************
      *
@@ -604,7 +633,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     //
 
     @Override
-    public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(EVENTID, null);
@@ -629,7 +658,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     //
 
     @Override
-    public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(EVENTID, null);
@@ -844,7 +873,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
          NotificationManagerRequest request = null;
          if (destAddress != null)
            {
-             request = new NotificationManagerRequest(evolutionEventContext, communicationChannel.getDeliveryType(), deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters, contactType.getExternalRepresentation());
+             request = new NotificationManagerRequest(evolutionEventContext, communicationChannel.getDeliveryType(), deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
              request.setModuleID(newModuleID);
              request.setFeatureID(deliveryRequestSource);
              request.forceDeliveryPriority(contactType.getDeliveryPriority());
@@ -873,10 +902,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         }
       }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      NotificationTemplateParameters templateParameters = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(new SubscriberEvaluationRequest(null, null, null, null, journeyNode, null, null, SystemTime.getCurrentTime())
+      NotificationTemplateParameters templateParameters = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(new SubscriberEvaluationRequest(null, null, null, null, journeyNode, null, null, SystemTime.getCurrentTime(), tenantID)
       , "node.parameter.dialog_template");
       String dialogueTemplateID = (String) templateParameters.getSubscriberMessageTemplateID();
       if (dialogueTemplateID != null) {
@@ -921,7 +950,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                 CommunicationChannel channel = Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
                 if(channel != null) 
                   {
-                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now, dialogRequest.getTenantID());
                   }
 
                 if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
@@ -951,7 +980,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
               if(log.isDebugEnabled())
                 {
                   log.debug("subscriberMessageTemplateService contains :");
-                  for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now))
+                  for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now, deliveryRequest.getTenantID()))
                     {
                       log.debug("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
                     }

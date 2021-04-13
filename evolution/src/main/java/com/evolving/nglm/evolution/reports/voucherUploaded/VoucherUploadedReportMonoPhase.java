@@ -129,7 +129,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
               {
                 Object expiryDateObj = voucherPersonal.get("expiryDate");
                 SimpleDateFormat df = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-                df.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+                df.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(voucher.getTenantID()).getBaseTimeZone()));
                 try
                   {
                     expiryDate = df.parse(ReportsCommonCode.parseDate((String) expiryDateObj));
@@ -256,7 +256,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
     voucherService.start();
 
     try {
-      Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(reportGenerationDate);
+      Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(reportGenerationDate, 0); // TODO EVPRO-99 is it the good tenant value
       StringBuilder activeVoucherEsIndex = new StringBuilder();
       boolean firstEntry = true;
       for (Voucher voucher : activeVouchers)

@@ -88,7 +88,7 @@ public class JourneyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { journeyListener.journeyActivated((Journey) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { journeyListener.journeyDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { journeyListener.journeyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -107,7 +107,7 @@ public class JourneyService extends GUIService
     Integer lastCompletedOccurrenceNumber =  null;
     if (recurrence)
       {
-        Collection<Journey> allRecs = getAllRecurrentJourneysByID(guiManagedObject.getGUIManagedObjectID(), true);
+        Collection<Journey> allRecs = getAllRecurrentJourneysByID(guiManagedObject.getGUIManagedObjectID(), true, guiManagedObject.getTenantID());
         
         //
         //  filter completed
@@ -174,8 +174,8 @@ public class JourneyService extends GUIService
   public String generateJourneyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredJourney(String journeyID) { return getStoredGUIManagedObject(journeyID); }
   public GUIManagedObject getStoredJourney(String journeyID, boolean includeArchived) { return getStoredGUIManagedObject(journeyID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredJourneys() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredJourneys(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredJourneys(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredJourneys(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveJourney(GUIManagedObject journeyUnchecked, Date date) { return isActiveGUIManagedObject(journeyUnchecked, date); }
   public Journey getActiveJourney(String journeyID, Date date) 
   { 
@@ -189,17 +189,17 @@ public class JourneyService extends GUIService
         return activeJourney; 
       }
   }
-  public Collection<Journey> getActiveJourneys(Date date) 
+  public Collection<Journey> getActiveJourneys(Date date, int tenantID) 
   { 
-    Collection<Journey> activeJourney = (Collection<Journey>) getActiveGUIManagedObjects(date);
+    Collection<Journey> activeJourney = (Collection<Journey>) getActiveGUIManagedObjects(date, tenantID);
     activeJourney = activeJourney.stream().filter(journey -> JourneyStatus.StartedApproved == journey.getApproval()).collect(Collectors.toList());
     return activeJourney;
   }
-  public Collection<Journey> getActiveRecurrentJourneys(Date date) { return getActiveJourneys(date).stream().filter( journey -> journey.getRecurrence()).collect(Collectors.toList()); }
-  public Collection<Journey> getAllRecurrentJourneysByID(String parentJourneyID, boolean includeArchived) 
+  public Collection<Journey> getActiveRecurrentJourneys(Date date, int tenantID) { return getActiveJourneys(date, tenantID).stream().filter( journey -> journey.getRecurrence()).collect(Collectors.toList()); }
+  public Collection<Journey> getAllRecurrentJourneysByID(String parentJourneyID, boolean includeArchived, int tenantID) 
   { 
     Collection<Journey> subJourneys = new ArrayList<Journey>();
-    for (GUIManagedObject uncheckedJourney : getStoredJourneys(includeArchived))
+    for (GUIManagedObject uncheckedJourney : getStoredJourneys(includeArchived, tenantID))
       {
         if (uncheckedJourney.getAccepted())
           {
@@ -210,10 +210,10 @@ public class JourneyService extends GUIService
       }
     return subJourneys;
   }
-  public Collection<Journey> getAcceptedAndCompletedRecurrentJourneys(Date now)
+  public Collection<Journey> getAcceptedAndCompletedRecurrentJourneys(Date now, int tenantID)
   {
     Collection<Journey> result = new ArrayList<Journey>();
-    for (GUIManagedObject uncheckedJourney : getStoredJourneys())
+    for (GUIManagedObject uncheckedJourney : getStoredJourneys(tenantID))
       {
         if (uncheckedJourney.getAccepted())
           {
@@ -314,7 +314,7 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  public void removeJourney(String journeyID, String userID) { removeGUIManagedObject(journeyID, SystemTime.getCurrentTime(), userID); }
+  public void removeJourney(String journeyID, String userID, int tenantID) { removeGUIManagedObject(journeyID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

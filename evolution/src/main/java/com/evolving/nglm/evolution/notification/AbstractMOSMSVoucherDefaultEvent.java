@@ -174,7 +174,7 @@ public abstract class AbstractMOSMSVoucherDefaultEvent implements EvolutionEngin
 
     // need supplier ID from display
     String supplierID=null;
-    for(Supplier supplier:context.getSupplierService().getActiveSuppliers(SystemTime.getCurrentTime())){
+    for(Supplier supplier:context.getSupplierService().getActiveSuppliers(SystemTime.getCurrentTime(), 0)){ // TODO EVPRO-99 put 0 for tenant to loop over all Suppliers, is it correct ?
       if(this.supplierDisplay.equals(supplier.getGUIManagedObjectDisplay())){
         supplierID=supplier.getSupplierID();
         break;
@@ -186,7 +186,7 @@ public abstract class AbstractMOSMSVoucherDefaultEvent implements EvolutionEngin
       return;
     }
 
-    VoucherPersonalES esVoucher = VoucherPersonalESService.getESVoucherFromVoucherCode(supplierID,this.getVoucherCodeFromNotification(),context.getElasticsearchClientAPI());
+    VoucherPersonalES esVoucher = VoucherPersonalESService.getESVoucherFromVoucherCode(supplierID,this.getVoucherCodeFromNotification(),context.getElasticsearchClientAPI(), 0); // TODO EVPRO-99 put 0 for tenant to loop over all Suppliers, is it correct ?
     if(esVoucher==null){
       log.info("AbstractMOSMSVoucherDefaultEvent.preprocessEvent : no voucher "+this.subscriberID+" - "+this.getVoucherCodeFromNotification()+" stored in ES");
       this.noResult=true;

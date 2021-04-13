@@ -12,6 +12,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
 
 import org.json.simple.JSONArray;
@@ -27,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,19 +41,36 @@ import java.util.regex.Pattern;
 
 public class Deployment
 {
+  
+  /*****************************************
+  *
+  *  deploymentsPerTenant
+  *
+  *****************************************/
+  private static Map<Integer, JSONObject> jsonConfigPerTenant = new HashMap<>();
+  private static Map<Integer, Deployment> deploymentsPerTenant = new HashMap<>();
+  private static Object lock = new Object();
+  
+  //
+  //  data
+  //
+  
+  
   /*****************************************
   *
   *  data
   *
   *****************************************/
 
-  private static JSONObject jsonRoot;
-  private static String baseTimeZone;
-  private static ZoneId baseZoneId;
-  private static String baseLanguage;
-  private static String baseCountry;
+  private JSONObject tenantSpecificJsonRoot;
+  private String baseTimeZone;
+  private static String systemTimeZone;
+  private ZoneId baseZoneId;
+  private ZoneId systemZoneId;
+  private String baseLanguage;
+  private String baseCountry;
   private static String evolutionVersion;
-  private static String customerVersion;
+  private String customerVersion;
   private static Map<String,AlternateID> alternateIDs = new LinkedHashMap<String,AlternateID>();
   private static String assignSubscriberIDsTopic;
   private static String assignExternalSubscriberIDsTopic;
@@ -94,6 +114,8 @@ public class Deployment
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionDaysExpiredVouchers; 
   private static int elasticsearchRetentionDaysVDR;
+  private static JSONObject licenseManagement;
+  
 
   //
   //  accessors
@@ -102,13 +124,15 @@ public class Deployment
   public static String getZookeeperRoot() { return System.getProperty("nglm.zookeeper.root"); }
   public static String getZookeeperConnect() { return System.getProperty("zookeeper.connect"); }
   public static String getBrokerServers() { return System.getProperty("broker.servers",""); }
-  public static JSONObject getJSONRoot() { return jsonRoot; }
-  public static String getBaseTimeZone() { return baseTimeZone; }
-  public static ZoneId getBaseZoneId() { return baseZoneId; }
-  public static String getBaseLanguage() { return baseLanguage; }
-  public static String getBaseCountry() { return baseCountry; }
+  public JSONObject getTenantSpecificJSONRoot() { return tenantSpecificJsonRoot; }
+  public String getBaseTimeZone() { return baseTimeZone; }
+  public static String getSystemTimeZone() { return systemTimeZone; }
+  public ZoneId getBaseZoneId() { return baseZoneId; }
+  public ZoneId getSystemZoneId() { return systemZoneId; }
+  public String getBaseLanguage() { return baseLanguage; }
+  public String getBaseCountry() { return baseCountry; }
   public static String getEvolutionVersion() { return evolutionVersion!=null?evolutionVersion:"unknown"; }
-  public static String getCustomerVersion() { return customerVersion!=null?customerVersion:"unknown"; }
+  public String getCustomerVersion() { return customerVersion!=null?customerVersion:"unknown"; }
   public static String getRedisSentinels() { return System.getProperty("redis.sentinels",""); }
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getAssignSubscriberIDsTopic() { return assignSubscriberIDsTopic; }
@@ -153,6 +177,8 @@ public class Deployment
   public static Set<String> getCleanupSubscriberElasticsearchIndexes() { return cleanupSubscriberElasticsearchIndexes; }
   public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
   
+  public static JSONObject getLicenseManagement() { return licenseManagement; }
+  
   /*****************************************
   *
   *  static intialization
@@ -163,6 +189,81 @@ public class Deployment
   
   static
   {
+    
+    //
+    // Now check if there are some first level configuration whith name starting with "tenantConfiguration"
+    //
+    JSONObject original = getBrutJsonRoot();
+    
+    ArrayList<JSONObject> tenantSpecificConfigurations = new ArrayList<>();
+    for(Object key : original.keySet())
+      {
+        if(key instanceof String && ((String)key).startsWith("tenantConfiguration"))
+          {
+            JSONObject tenantConfiguration = (JSONObject) original.get(key);
+            tenantSpecificConfigurations.add(tenantConfiguration);            
+          }
+      }
+    
+    // also add fake tenant 0 (for static configurations of Deployment)
+    JSONObject tenant0Configuration = new JSONObject();
+    tenant0Configuration.put("tenantID", 0);
+    tenantSpecificConfigurations.add(tenant0Configuration);
+    
+    //
+    // now analyse the configurations of tenants
+    //
+    for(JSONObject tenantSpecificConfiguration : tenantSpecificConfigurations)
+      {
+        //
+        // first get global jsonRoot that contains also the tenant specific configuration
+        //
+        
+        JSONObject brutJSONObject = getBrutJsonRoot();
+        
+        //
+        // remove tenantSpecific configurations
+        //
+        
+        ArrayList<String> keysToRemove = new ArrayList<>();
+        for(Object key : brutJSONObject.keySet())
+          {
+            if(key instanceof String && ((String)key).startsWith("tenantConfiguration"))
+              {
+                keysToRemove.add((String)key);
+              }
+          }
+        for(String keyToRemove : keysToRemove)
+          {
+            brutJSONObject.remove(keyToRemove);        
+          }
+        
+        //
+        // now merge the tenant specific configuration with the brut configuration, so that we have the effective JSONRoot configuration for the current tenant
+        //
+        
+        JSONObject tenantJSON = JSONUtilities.jsonMergerOverrideOrAdd(brutJSONObject,tenantSpecificConfiguration,(brut,tenant) -> brut.get("id")!=null && tenant.get("id")!=null && brut.get("id").equals(tenant.get("id")));//json object in array match thanks to "id" field only
+        
+        //
+        // get the tenantID
+        //
+        
+        int tenantID = JSONUtilities.decodeInteger(tenantJSON, "tenantID", true);
+        
+        //
+        // let reference the tenantJSONObject configuration available for all subclasses of Deployment
+        //
+        
+        jsonConfigPerTenant.put(tenantID, tenantJSON);
+      }
+    
+    // just init the tenant0 for static configuration
+    new Deployment(0);
+  }
+  
+  private static JSONObject getBrutJsonRoot()
+  {
+  
     /*****************************************
     *
     *  zookeeper -- retrieve configuration
@@ -452,16 +553,30 @@ public class Deployment
         //
         // merge both
         //
-        jsonRoot = JSONUtilities.jsonMergerOverrideOrAdd(productJson,custoJson,(product,custo) -> product.get("id")!=null && custo.get("id")!=null && product.get("id").equals(custo.get("id")));//json object in array match thanks to "id" field only
-		// the final running conf could be so hard to understand from all deployment files, we have to provide it to support team, hence the info log, even if big :
-		log.info("LOADED CONF : "+jsonRoot.toJSONString());
+        JSONObject brutJSONRoot = JSONUtilities.jsonMergerOverrideOrAdd(productJson,custoJson,(product,custo) -> product.get("id")!=null && custo.get("id")!=null && product.get("id").equals(custo.get("id")));//json object in array match thanks to "id" field only
+    		// the final running conf could be so hard to understand from all deployment files, we have to provide it to support team, hence the info log, even if big :
+    		log.info("LOADED BRUT CONF : "+brutJSONRoot.toJSONString());
+    		return brutJSONRoot;
 
       }
     catch (org.json.simple.parser.ParseException e)
       {
         throw new RuntimeException("deployment", e);
       }
+  }
+  
+  public static Set<Integer> getTenantIDs()
+  {
+    return jsonConfigPerTenant.keySet();
+  }
 
+  public Deployment(int tenantID)
+  {
+   
+    deploymentsPerTenant.put(tenantID, this);
+    
+    JSONObject jsonRoot = jsonConfigPerTenant.get(tenantID);
+    
     /*****************************************
     *
     *  baseTimeZone
@@ -470,6 +585,7 @@ public class Deployment
 
     try
       {
+        System.out.println(jsonRoot.toJSONString());
         baseTimeZone = JSONUtilities.decodeString(jsonRoot, "baseTimeZone", true);
         baseZoneId = ZoneId.of(baseTimeZone);
       }
@@ -478,6 +594,22 @@ public class Deployment
         throw new RuntimeException("deployment", e);
       }
 
+    /*****************************************
+    *
+    *  systemTimeZone
+    *
+    *****************************************/
+
+    try
+      {
+        systemTimeZone = JSONUtilities.decodeString(jsonRoot, "systemTimeZone", true);
+        systemZoneId = ZoneId.of(systemTimeZone);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new RuntimeException("deployment", e);
+      }
+    
     /*****************************************
     *
     *  baseLanguage
@@ -791,7 +923,7 @@ public class Deployment
               }
           }
       }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException | ClassNotFoundException e)
       {
         throw new ServerRuntimeException("deployment : autoProvisionEvents", e);
       }
@@ -864,7 +996,24 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    
+    //
+    //  licenseManagement
+    //
+
+    try
+      {
+        licenseManagement = JSONUtilities.decodeJSONObject(jsonRoot, "licenseManagement", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    
   };
+  
+  
 
   /****************************************
   *
@@ -1002,5 +1151,33 @@ public class Deployment
       String contents = new String(bytes, StandardCharsets.UTF_8);
       return new DeploymentConfigurationPart(baseName, partNumber, contents);
     }
+  }
+  
+  public static Deployment getDeployment(int tenantID)
+  {
+    Deployment result = deploymentsPerTenant.get(tenantID);
+    if(result == null)
+      {
+        synchronized(lock)
+          {
+            result = deploymentsPerTenant.get(tenantID);
+            if(result == null)
+              {
+                result = new Deployment(tenantID);
+                deploymentsPerTenant.put(tenantID, result);
+              }
+          }
+      }
+    return deploymentsPerTenant.get(tenantID);
+  }
+  
+  public static Map<Integer, Deployment> getCoreDeployments()
+  {
+    return deploymentsPerTenant;
+  }
+  
+  public static JSONObject getTenantJSONRoot(int tenantID)
+  {
+    return jsonConfigPerTenant.get(tenantID);
   }
 }

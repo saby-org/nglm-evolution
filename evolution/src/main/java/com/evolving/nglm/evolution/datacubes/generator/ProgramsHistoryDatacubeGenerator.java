@@ -429,13 +429,13 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   public void definitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
+    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     
     // Dates: YYYY-MM-dd 00:00:00.000
-    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());// TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
 
     this.metricTargetDay = RLMDateUtils.printDay(yesterday);
     this.metricTargetDayStart = beginningOfYesterday;
@@ -460,13 +460,13 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   public void preview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
-    Date afterTomorrow = RLMDateUtils.addDays(now, 2, Deployment.getBaseTimeZone());
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date afterTomorrow = RLMDateUtils.addDays(now, 2, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     
     // Dates: YYYY-MM-dd 00:00:00.000
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date beginningDayAfterTomorrow = RLMDateUtils.truncate(afterTomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+    Date beginningDayAfterTomorrow = RLMDateUtils.truncate(afterTomorrow, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     
     this.metricTargetDay = RLMDateUtils.printDay(now);
     this.metricTargetDayStart = beginningOfToday;

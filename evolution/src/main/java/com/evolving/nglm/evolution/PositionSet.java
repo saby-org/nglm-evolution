@@ -239,9 +239,9 @@ public class PositionSet
   *
   *****************************************/
 
-  public PositionSet(JSONObject jsonRoot) throws GUIManagerException
+  public PositionSet(JSONObject jsonRoot, int tenantID) throws GUIManagerException
   {
-    this.positions = decodePositions(JSONUtilities.decodeJSONArray(jsonRoot, "positions", true));
+    this.positions = decodePositions(JSONUtilities.decodeJSONArray(jsonRoot, "positions", true), tenantID);
     // This object has an extra level that is not necessary.
     // We wanted to keep the same structure to emphasis that the Eligibility Rules are actually Criteria, but placed in a different area.
     JSONObject intermediate = JSONUtilities.decodeJSONObject(jsonRoot, "eligibility", false); // optional for "setB"
@@ -251,7 +251,7 @@ public class PositionSet
       }
     else
       {
-        this.eligibility = decodeEligibility(JSONUtilities.decodeJSONArray(intermediate, "additionalCriteria", true));
+        this.eligibility = decodeEligibility(JSONUtilities.decodeJSONArray(intermediate, "additionalCriteria", true), tenantID);
       }
   }
 
@@ -261,12 +261,12 @@ public class PositionSet
   *
   *****************************************/
 
-  private List<PositionElement> decodePositions(JSONArray jsonArray) throws GUIManagerException
+  private List<PositionElement> decodePositions(JSONArray jsonArray, int tenantID) throws GUIManagerException
   {
     List<PositionElement> result = new ArrayList<PositionElement>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new PositionElement((JSONObject) jsonArray.get(i)));
+        result.add(new PositionElement((JSONObject) jsonArray.get(i), tenantID));
       }
     return result;
   }
@@ -277,12 +277,12 @@ public class PositionSet
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeEligibility(JSONArray jsonArray) throws GUIManagerException
+  private List<EvaluationCriterion> decodeEligibility(JSONArray jsonArray, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Presentation));
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Presentation(tenantID), tenantID));
       }
     return result;
   }

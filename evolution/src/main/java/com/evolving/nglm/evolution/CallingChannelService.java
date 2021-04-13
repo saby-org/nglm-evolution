@@ -101,7 +101,7 @@ public class CallingChannelService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { callingChannelListener.callingChannelActivated((CallingChannel) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { callingChannelListener.callingChannelDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { callingChannelListener.callingChannelDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -116,12 +116,12 @@ public class CallingChannelService extends GUIService
   public String generateCallingChannelID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredCallingChannel(String callingChannelID) { return getStoredGUIManagedObject(callingChannelID); }
   public GUIManagedObject getStoredCallingChannel(String callingChannelID, boolean includeArchived) { return getStoredGUIManagedObject(callingChannelID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredCallingChannels() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredCallingChannels(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredCallingChannels(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredCallingChannels(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveCallingChannelThroughInterval(GUIManagedObject deliverableUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(deliverableUnchecked, startDate, endDate); }
   public boolean isActiveCallingChannel(GUIManagedObject callingChannelUnchecked, Date date) { return isActiveGUIManagedObject(callingChannelUnchecked, date); }
   public CallingChannel getActiveCallingChannel(String callingChannelID, Date date) { return (CallingChannel) getActiveGUIManagedObject(callingChannelID, date); }
-  public Collection<CallingChannel> getActiveCallingChannels(Date date) { return (Collection<CallingChannel>) getActiveGUIManagedObjects(date); }
+  public Collection<CallingChannel> getActiveCallingChannels(Date date, int tenantID) { return (Collection<CallingChannel>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -137,7 +137,7 @@ public class CallingChannelService extends GUIService
   *
   *****************************************/
 
-  public void removeCallingChannel(String callingChannelID, String userID) { removeGUIManagedObject(callingChannelID, SystemTime.getCurrentTime(), userID); }
+  public void removeCallingChannel(String callingChannelID, String userID, int tenantID) { removeGUIManagedObject(callingChannelID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

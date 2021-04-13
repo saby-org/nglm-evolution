@@ -79,7 +79,7 @@ public class UCGRuleService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { ucgRuleListener.ucgRuleActivated((UCGRule) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { ucgRuleListener.ucgRuleDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { ucgRuleListener.ucgRuleDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -108,11 +108,11 @@ public class UCGRuleService extends GUIService
   public String generateUCGRuleID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredUCGRule(String ucgRuleId) { return getStoredGUIManagedObject(ucgRuleId); }
   public GUIManagedObject getStoredUCGRule(String ucgRuleId, boolean includeArchived) { return getStoredGUIManagedObject(ucgRuleId, includeArchived); }
-  public Collection<GUIManagedObject> getStoredUCGRules() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredUCGRules(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredUCGRules(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredUCGRules(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveUCGRule(GUIManagedObject ucgRuleUnchecked, Date date) { return isActiveGUIManagedObject(ucgRuleUnchecked, date); }
   public UCGRule getActiveUCGRule(String ucgRuleID, Date date) { return (UCGRule) getActiveGUIManagedObject(ucgRuleID, date); }
-  public Collection<UCGRule> getActiveUCGRules(Date date) { return (Collection<UCGRule>) getActiveGUIManagedObjects(date); }
+  public Collection<UCGRule> getActiveUCGRules(Date date, int tenantID) { return (Collection<UCGRule>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -168,7 +168,7 @@ public class UCGRuleService extends GUIService
   *
   *****************************************/
 
-  public void removeUCGRule(String ucgRule, String userID) { removeGUIManagedObject(ucgRule, SystemTime.getCurrentTime(), userID); }
+  public void removeUCGRule(String ucgRule, String userID, int tenantID) { removeGUIManagedObject(ucgRule, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

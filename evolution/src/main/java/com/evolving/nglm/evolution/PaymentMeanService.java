@@ -73,7 +73,7 @@ public class PaymentMeanService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { paymentMeanListener.paymentMeanActivated((PaymentMean) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { paymentMeanListener.paymentMeanDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { paymentMeanListener.paymentMeanDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -101,20 +101,20 @@ public class PaymentMeanService extends GUIService
   public String generatePaymentMeanID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredPaymentMean(String paymentMeanID) { return getStoredGUIManagedObject(paymentMeanID); }
   public GUIManagedObject getStoredPaymentMean(String paymentMeanID, boolean includeArchived) { return getStoredGUIManagedObject(paymentMeanID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredPaymentMeans() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredPaymentMeans(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredPaymentMeans(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredPaymentMeans(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActivePaymentMean(GUIManagedObject paymentMeanUnchecked, Date date) { return isActiveGUIManagedObject(paymentMeanUnchecked, date); }
   public PaymentMean getActivePaymentMean(String paymentMeanID, Date date) { return (PaymentMean) getActiveGUIManagedObject(paymentMeanID, date); }
-  public Collection<PaymentMean> getActivePaymentMeans(Date date) { return (Collection<PaymentMean>) getActiveGUIManagedObjects(date); }
+  public Collection<PaymentMean> getActivePaymentMeans(Date date, int tenantID) { return (Collection<PaymentMean>) getActiveGUIManagedObjects(date, tenantID); }
   
   //
   //  getStoredPaymentMeanByName
   //
   
-  public GUIManagedObject getStoredPaymentMeanByName(String paymentMeanName, boolean includeArchived)
+  public GUIManagedObject getStoredPaymentMeanByName(String paymentMeanName, boolean includeArchived, int tenantID)
   {
     GUIManagedObject result = null;
-    for (GUIManagedObject guiManagedObject : getStoredPaymentMeans(includeArchived))
+    for (GUIManagedObject guiManagedObject : getStoredPaymentMeans(includeArchived, tenantID))
       {
         if (Objects.equals(paymentMeanName, guiManagedObject.getGUIManagedObjectName()))
           {
@@ -129,7 +129,7 @@ public class PaymentMeanService extends GUIService
   //  getStoredPaymentMeanByName
   //
 
-  public GUIManagedObject getStoredPaymentMeanByName(String paymentMeanName) { return getStoredPaymentMeanByName(paymentMeanName, false); }
+  public GUIManagedObject getStoredPaymentMeanByName(String paymentMeanName, int tenantID) { return getStoredPaymentMeanByName(paymentMeanName, false, tenantID); }
 
   /*****************************************
   *
@@ -157,7 +157,7 @@ public class PaymentMeanService extends GUIService
   *
   *****************************************/
 
-  public void removePaymentMean(String paymentMeanID, String userID) { removeGUIManagedObject(paymentMeanID, SystemTime.getCurrentTime(), userID); }
+  public void removePaymentMean(String paymentMeanID, String userID, int tenantID) { removeGUIManagedObject(paymentMeanID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

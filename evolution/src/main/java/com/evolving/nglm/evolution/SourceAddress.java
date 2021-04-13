@@ -139,7 +139,7 @@ public class SourceAddress extends GUIManagedObject
   *
   *****************************************/
 
-  public SourceAddress(JSONObject jsonRoot, long epoch, GUIManagedObject existingSourceAddressUnchecked) throws GUIManagerException
+  public SourceAddress(JSONObject jsonRoot, long epoch, GUIManagedObject existingSourceAddressUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -147,7 +147,7 @@ public class SourceAddress extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSourceAddressUnchecked != null) ? existingSourceAddressUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingSourceAddressUnchecked != null) ? existingSourceAddressUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

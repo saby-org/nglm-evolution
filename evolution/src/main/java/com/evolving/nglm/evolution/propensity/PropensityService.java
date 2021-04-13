@@ -144,7 +144,7 @@ public class PropensityService {
 		// Segments will be arranged in the same order than the one specified in Propensity Rule
 
 		List<String> toRet = new LinkedList<>();
-		PropensityRule propensityRule = Deployment.getPropensityRule();
+		PropensityRule propensityRule = Deployment.getDeployment(subscriberProfile.getTenantID()).getPropensityRule();
 		List<String> dimensions = propensityRule.getSelectedDimensions();
 		Map<String, String> subscriberGroups = subscriberProfile.getSegmentsMap(subscriberGroupEpochReader);
 

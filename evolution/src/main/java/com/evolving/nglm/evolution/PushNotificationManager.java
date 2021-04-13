@@ -217,7 +217,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
@@ -227,7 +227,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
             {
               DialogMessage dialogMessage = dialogMessageEntry.getValue();
               String parameterName = dialogMessageEntry.getKey();
-              String resolved = dialogMessage.resolve(language, tags.get(parameterName));
+              String resolved = dialogMessage.resolve(language, tags.get(parameterName), tenantID);
               result.put(parameterName, resolved);
             }
         }
@@ -266,9 +266,9 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public PushNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String contactType)
+    public PushNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String contactType, int tenantID)
     {
-      super(context, deliveryType, deliveryRequestSource);
+      super(context, deliveryType, deliveryRequestSource, tenantID);
       this.destination = destination;
       this.language = language;
       this.templateID = templateID;
@@ -345,6 +345,30 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       this.contactType = pushNotificationManagerRequest.getContactType();
     }
 
+    /*****************************************
+    *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public PushNotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      
+      this.destination = (String) esFields.get("destination");
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.tags = tags;
+        }
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+    }
+    
     /*****************************************
     *
     *  copy
@@ -467,7 +491,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     //  addFieldsForGUIPresentation
     //
 
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(EVENTID, null);
@@ -483,7 +507,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       guiPresentationMap.put("contactType", getContactType());
-      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService, tenantID);
       guiPresentationMap.putAll(resolvedParameters);
     }
     
@@ -491,7 +515,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     //  addFieldsForThirdPartyPresentation
     //
 
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       thirdPartyPresentationMap.put(DELIVERYSTATUS, getMessageStatus().toString()); // replace value set by the superclass 
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
@@ -509,7 +533,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       thirdPartyPresentationMap.put("contactType", getContactType());
-      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService, tenantID);
       thirdPartyPresentationMap.putAll(resolvedParameters);
     }
     
@@ -660,7 +684,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       PushNotificationManagerRequest request = null;
       if (destAddress != null)
         {
-          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags, contactType.getExternalRepresentation());
+          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
         }
@@ -678,7 +702,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       return Collections.<Action>singletonList(request);
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String pushTemplateID = (String) journeyNode.getNodeParameters().get("node.parameter.message");
@@ -723,7 +747,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
                 CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get("push");
                 if(channel != null) 
                   {
-                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now, pushRequest.getTenantID());
                   }
 
                 if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
@@ -750,7 +774,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
           {
             log.info("PushNotificationManagerRequest run deliveryRequest : ERROR : template with id '"+pushRequest.getTemplateID()+"' not found");
             log.info("subscriberMessageTemplateService contains :");
-            for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now)){
+            for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now, pushRequest.getTenantID())){
               log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
             }
             pushRequest.setDeliveryStatus(DeliveryStatus.Failed);

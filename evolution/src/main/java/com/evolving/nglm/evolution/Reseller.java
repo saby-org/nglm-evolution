@@ -221,7 +221,7 @@ public class Reseller extends GUIManagedObject
   *
   *****************************************/
 
-  public Reseller(JSONObject jsonRoot, long epoch, GUIManagedObject existingResellerUnchecked) throws GUIManagerException
+  public Reseller(JSONObject jsonRoot, long epoch, GUIManagedObject existingResellerUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -229,7 +229,7 @@ public class Reseller extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingResellerUnchecked != null) ? existingResellerUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingResellerUnchecked != null) ? existingResellerUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -331,7 +331,7 @@ public class Reseller extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(ResellerService resellerService, Date date) throws GUIManagerException
+  public void validate(ResellerService resellerService, Date date, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -346,7 +346,7 @@ public class Reseller extends GUIManagedObject
     
     if (billingModeID != null)
       {
-        BillingMode billingMode = Deployment.getBillingModes().get(billingModeID);
+        BillingMode billingMode = Deployment.getDeployment(tenantID).getBillingModes().get(billingModeID);
         if (billingMode == null) throw new GUIManagerException("unknown billingModeID ", billingModeID);
       } 
     
@@ -396,7 +396,7 @@ public class Reseller extends GUIManagedObject
    * 
    *******************************/
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> resellerIDs = new ArrayList<>();

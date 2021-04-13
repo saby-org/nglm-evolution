@@ -34,11 +34,12 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("assignsubscriberids");
-    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
     schemaBuilder.field("alternateIDs", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("assignsubscriberids_alternateids").schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -66,6 +67,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
   private Date eventDate;
   private SubscriberAction subscriberAction;
   private Map<String,String> alternateIDs;
+  private int tenantID;
 
   /****************************************
   *
@@ -77,6 +79,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
   public Date getEventDate() { return eventDate; }
   public SubscriberAction getSubscriberAction() { return subscriberAction; }
   public Map<String,String> getAlternateIDs() { return alternateIDs; }
+  public int getTenantID() { return tenantID; }
 
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
 
@@ -94,7 +97,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
   *
   *****************************************/
 
-  public AssignSubscriberIDs(String subscriberID, Date eventDate, SubscriberAction subscriberAction, Map<String,String> alternateIDs)
+  public AssignSubscriberIDs(String subscriberID, Date eventDate, SubscriberAction subscriberAction, Map<String,String> alternateIDs, int tenantID)
   {
     /*****************************************
     *
@@ -104,6 +107,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
 
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
+    this.tenantID = tenantID;
 
     /*****************************************
     *
@@ -133,9 +137,9 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
   //  default constructor (assign)
   //
 
-  public AssignSubscriberIDs(String subscriberID, Date eventDate, Map<String,String> alternateIDs)
+  public AssignSubscriberIDs(String subscriberID, Date eventDate, Map<String,String> alternateIDs, int tenantID)
   {
-    this(subscriberID, eventDate, SubscriberAction.Standard, alternateIDs);
+    this(subscriberID, eventDate, SubscriberAction.Standard, alternateIDs, tenantID);
   }
 
   /*****************************************
@@ -150,6 +154,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
     this.eventDate = assignSubscriberIDs.getEventDate();
     this.subscriberAction = assignSubscriberIDs.getSubscriberAction();
     this.alternateIDs = new HashMap<String,String>(assignSubscriberIDs.getAlternateIDs());
+    this.tenantID = assignSubscriberIDs.getTenantID();
   }
 
   /*****************************************
@@ -166,6 +171,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
     struct.put("eventDate", assignSubscriberIDs.getEventDate());
     struct.put("subscriberAction", assignSubscriberIDs.getSubscriberAction().getExternalRepresentation());
     struct.put("alternateIDs", assignSubscriberIDs.getAlternateIDs());
+    struct.put("tenantID", (short)assignSubscriberIDs.getTenantID());
     return struct;
   }
 
@@ -200,11 +206,12 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
     Date eventDate = (Date) valueStruct.get("eventDate");
     SubscriberAction subscriberAction = (schemaVersion >= 2) ? SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : SubscriberAction.Standard;
     Map<String,String> alternateIDs = (Map<String,String>) valueStruct.get("alternateIDs");
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
     
     //
     //  return
     //
 
-    return new AssignSubscriberIDs(subscriberID, eventDate, subscriberAction, alternateIDs);
+    return new AssignSubscriberIDs(subscriberID, eventDate, subscriberAction, alternateIDs, tenantID);
   }
 }

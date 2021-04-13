@@ -34,10 +34,11 @@ public class SubscriberHistory implements StateStore
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_history");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyHistory", SchemaBuilder.array(JourneyHistory.schema()).schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("lastCleaningDate", Timestamp.builder().optional().schema());
     schema = schemaBuilder.build();
   };
@@ -64,6 +65,7 @@ public class SubscriberHistory implements StateStore
   *****************************************/
 
   private String subscriberID;
+  private int tenantID;
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyHistory> journeyHistory;
   private Date lastCleaningDate;
@@ -81,6 +83,7 @@ public class SubscriberHistory implements StateStore
   *****************************************/
 
   public String getSubscriberID() { return subscriberID; }
+  public int getTenantID() { return tenantID; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyHistory> getJourneyHistory() { return journeyHistory; }
   public Date getLastCleaningDate() { return lastCleaningDate; }
@@ -100,9 +103,10 @@ public class SubscriberHistory implements StateStore
   *
   *****************************************/
 
-  public SubscriberHistory(String subscriberID)
+  public SubscriberHistory(String subscriberID, int tenantID)
   {
     this.subscriberID = subscriberID;
+    this.tenantID = tenantID;
     this.deliveryRequests = new ArrayList<DeliveryRequest>();
     this.journeyHistory = new ArrayList<JourneyHistory>();
     this.lastCleaningDate = SystemTime.getCurrentTime();
@@ -115,9 +119,10 @@ public class SubscriberHistory implements StateStore
   *
   *****************************************/
 
-  private SubscriberHistory(String subscriberID, List<DeliveryRequest> deliveryRequests, List<JourneyHistory> journeyHistory, Date lastCleaningDate)
+  private SubscriberHistory(String subscriberID, int tenantID, List<DeliveryRequest> deliveryRequests, List<JourneyHistory> journeyHistory, Date lastCleaningDate)
   {
     this.subscriberID = subscriberID;
+    this.tenantID = tenantID;
     this.deliveryRequests = deliveryRequests;
     this.journeyHistory = journeyHistory;
     this.lastCleaningDate = lastCleaningDate;
@@ -133,6 +138,7 @@ public class SubscriberHistory implements StateStore
   public SubscriberHistory(SubscriberHistory subscriberHistory)
   {
     this.subscriberID = subscriberHistory.getSubscriberID();
+    this.tenantID = subscriberHistory.getTenantID();
     this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberHistory.getDeliveryRequests());
     this.lastCleaningDate = subscriberHistory.getLastCleaningDate();
     this.kafkaRepresentation = null;
@@ -159,6 +165,7 @@ public class SubscriberHistory implements StateStore
     SubscriberHistory subscriberHistory = (SubscriberHistory) value;
     Struct struct = new Struct(schema);
     struct.put("subscriberID", subscriberHistory.getSubscriberID());
+    struct.put("tenantID", (short)subscriberHistory.getTenantID());
     struct.put("deliveryRequests", packDeliveryRequests(subscriberHistory.getDeliveryRequests()));
     struct.put("journeyHistory", packJourneyHistory(subscriberHistory.getJourneyHistory()));
     struct.put("lastCleaningDate", subscriberHistory.getLastCleaningDate());
@@ -219,6 +226,7 @@ public class SubscriberHistory implements StateStore
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
+    int tenantID = (schema.field("tenantID") != null) ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyHistory> journeyHistory = unpackJourneyHistory(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory"));
     Date lastCleaningDate = (schemaVersion >= 2 && schema.field("lastCleaningDate")!=null) ? (Date) valueStruct.get("lastCleaningDate") : SystemTime.getCurrentTime();
@@ -227,7 +235,7 @@ public class SubscriberHistory implements StateStore
     //  return
     //
 
-    return new SubscriberHistory(subscriberID, deliveryRequests, journeyHistory, lastCleaningDate);
+    return new SubscriberHistory(subscriberID, tenantID, deliveryRequests, journeyHistory, lastCleaningDate);
   }
     
   /*****************************************
@@ -299,7 +307,6 @@ public class SubscriberHistory implements StateStore
   @Override
   public String toString()
   {
-    return "SubscriberHistory [" + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyHistory != null ? "journeyHistory=" + journeyHistory + ", " : "") + "]";
+    return "SubscriberHistory [" + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") + "tenantID=" + tenantID + ", " + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyHistory != null ? "journeyHistory=" + journeyHistory + ", " : "") + "]";
   }
-
 }

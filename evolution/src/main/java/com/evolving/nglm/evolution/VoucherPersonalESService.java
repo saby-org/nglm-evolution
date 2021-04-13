@@ -88,7 +88,7 @@ public class VoucherPersonalESService{
   }
 
   // bulk delete all expired vouchers
-  public boolean deleteExpiredVoucher(Date expiryDate){
+  public boolean deleteExpiredVoucher(Date expiryDate, int tenantID){
     if(elasticsearch==null) log.error("VoucherPersonalESService.deleteExpiredVoucher : called with no elasticsearch client init");
     try{
       for(int i=0;i<maxTries;i++){
@@ -127,7 +127,7 @@ public class VoucherPersonalESService{
   }
 
   // bulk delete expired vouchers not allocated
-  public int deleteAvailableExpiredVoucher(String supplierId, String voucherId, String fileId,Date expiryDate){
+  public int deleteAvailableExpiredVoucher(String supplierId, String voucherId, String fileId,Date expiryDate, int tenantID){
     if(elasticsearch==null) log.error("VoucherPersonalESService.deleteAvailableExpiredVoucher : called with no elasticsearch client init");
     try{
       for(int i=0;i<maxTries;i++){
@@ -279,19 +279,19 @@ public class VoucherPersonalESService{
   }
 
   // to get the associate subscriberId to a voucher
-  public VoucherPersonalES getESVoucherFromVoucherCode(String supplierId, String voucherCode){
+  public VoucherPersonalES getESVoucherFromVoucherCode(String supplierId, String voucherCode, int tenantID){
     if(this.elasticsearch==null) log.error("VoucherPersonalESService.getESVoucherFromVoucherCode : called with no elasticsearch client init");
-    return VoucherPersonalESService.getESVoucherFromVoucherCode(supplierId,voucherCode,this.elasticsearch);
+    return VoucherPersonalESService.getESVoucherFromVoucherCode(supplierId,voucherCode,this.elasticsearch, tenantID);
   }
 
   // static call providing the elasticsearch client
-  public static VoucherPersonalES getESVoucherFromVoucherCode(String supplierId, String voucherCode, ElasticsearchClientAPI elasticsearchClient){
+  public static VoucherPersonalES getESVoucherFromVoucherCode(String supplierId, String voucherCode, ElasticsearchClientAPI elasticsearchClient, int tenantID){
     try{
       for(int i=0;i<maxTries;i++){
         try{
           GetResponse response = elasticsearchClient.get(new GetRequest().index(getLiveIndexName(supplierId)).id(voucherCode),RequestOptions.DEFAULT);
           if(response.isExists()){
-            VoucherPersonalES toRet = new VoucherPersonalES(response);
+            VoucherPersonalES toRet = new VoucherPersonalES(response, tenantID);
             if(log.isDebugEnabled()) log.debug("VoucherPersonalESService.getESVoucherFromVoucherCode : found "+toRet);
             return toRet;
           }else{
@@ -362,7 +362,7 @@ public class VoucherPersonalESService{
 
   // allocate in ES and return a voucher to a subscriber
   // concurrency control idea : https://www.elastic.co/guide/en/elasticsearch/reference/current/optimistic-concurrency-control.html
-  public VoucherPersonalES allocatePendingVoucher(String supplierId,String voucherId, String subscriberId){
+  public VoucherPersonalES allocatePendingVoucher(String supplierId,String voucherId, String subscriberId, int tenantID){
     if(elasticsearch==null) log.error("VoucherPersonalESService.allocatePendingVoucher : called with no elasticsearch client init");
 
     if(zeroStockVoucherIdCached.contains(voucherId)){
@@ -384,7 +384,7 @@ public class VoucherPersonalESService{
         // search for some available vouchers
 
         SearchResponse response = null;
-        Date minExpiryDate=EvolutionUtilities.addTime(SystemTime.getCurrentTime(),Deployment.getMinExpiryDelayForVoucherDeliveryInHours(), EvolutionUtilities.TimeUnit.Hour,Deployment.getBaseTimeZone());
+        Date minExpiryDate=EvolutionUtilities.addTime(SystemTime.getCurrentTime(),Deployment.getMinExpiryDelayForVoucherDeliveryInHours(), EvolutionUtilities.TimeUnit.Hour,Deployment.getDeployment(tenantID).getBaseTimeZone());
         try{
           response=elasticsearch.search(VoucherPersonalES.getSearchAvailableVouchersRequest(myMaxPosition+1,index, voucherId, minExpiryDate),RequestOptions.DEFAULT);
         }catch (ElasticsearchStatusException e){
@@ -436,7 +436,7 @@ public class VoucherPersonalESService{
           long primaryTerm = resp.getPrimaryTerm();//concurrency update control
           long seqNo = resp.getSeqNo();//concurrency update control
 
-          VoucherPersonalES candidateToRet = new VoucherPersonalES(resp);
+          VoucherPersonalES candidateToRet = new VoucherPersonalES(resp, tenantID);
           if(candidateToRet==null){
             log.warn("VoucherPersonalESService.allocatePendingVoucher : bug while searching available voucher, null");
             continue;
@@ -619,7 +619,7 @@ public class VoucherPersonalESService{
   }
 
   // put the current stats for voucher from ES
-  public void populateVoucherFileWithStockInformation(VoucherPersonal voucher){
+  public void populateVoucherFileWithStockInformation(VoucherPersonal voucher, int tenantID){
     if(elasticsearch==null) log.error("VoucherPersonalESService.populateVoucherFileWithStockInformation : called with no elasticsearch client init");
     if(!this.isMaster){
       log.error("VoucherPersonalESService.populateVoucherFileWithStockInformation : is has not been meant to be executed in an non master service");
@@ -628,7 +628,7 @@ public class VoucherPersonalESService{
     try{
       for(int i=0;i<maxTries;i++){
         try{
-          SearchResponse response = elasticsearch.search(VoucherPersonalES.getSearchRequestGettingVoucherStocksInfo(getLiveIndexName(voucher.getSupplierID()),voucher.getVoucherID()),RequestOptions.DEFAULT);
+          SearchResponse response = elasticsearch.search(VoucherPersonalES.getSearchRequestGettingVoucherStocksInfo(getLiveIndexName(voucher.getSupplierID()),voucher.getVoucherID(), tenantID),RequestOptions.DEFAULT);
           log.info("VoucherPersonalESService.populateVoucherFileWithStockInformation : "+response.getSuccessfulShards()+" shards respond over "+response.getTotalShards()+" in "+response.getTook().millis()+ "ms");
           if(log.isDebugEnabled()) log.debug("VoucherPersonalESService.populateVoucherFileWithStockInformation : "+response.toString());
           if(response.getSuccessfulShards()!=response.getTotalShards()) log.warn("VoucherPersonalESService.populateVoucherFileWithStockInformation : incomplete shards response "+response.getSuccessfulShards()+" vs "+response.getTotalShards());

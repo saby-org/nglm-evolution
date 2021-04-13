@@ -213,7 +213,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
   *
   *****************************************/
 
-  public ExclusionInclusionTarget(JSONObject jsonRoot, long epoch, GUIManagedObject existingExclusionInclusionTargetUnchecked) throws GUIManagerException
+  public ExclusionInclusionTarget(JSONObject jsonRoot, long epoch, GUIManagedObject existingExclusionInclusionTargetUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -221,7 +221,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingExclusionInclusionTargetUnchecked != null) ? existingExclusionInclusionTargetUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingExclusionInclusionTargetUnchecked != null) ? existingExclusionInclusionTargetUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -241,7 +241,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
     this.fileID = JSONUtilities.decodeString(jsonRoot, "targetFileID", false);
     JSONArray segments = JSONUtilities.decodeJSONArray(jsonRoot, "segments", new JSONArray());
     JSONObject segment0 = (segments.size() > 0) ? (JSONObject) segments.get(0) : null;
-    this.criteriaList = (segment0 != null) ? decodeCriteriaList(JSONUtilities.decodeJSONArray(segment0, "profileCriteria", false), new ArrayList<EvaluationCriterion>()) : new ArrayList<EvaluationCriterion>();
+    this.criteriaList = (segment0 != null) ? decodeCriteriaList(JSONUtilities.decodeJSONArray(segment0, "profileCriteria", false), new ArrayList<EvaluationCriterion>(), tenantID) : new ArrayList<EvaluationCriterion>();
 
     /*****************************************
     *
@@ -261,7 +261,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeCriteriaList(JSONArray jsonArray, List<EvaluationCriterion> universalCriteria) throws GUIManagerException
+  private List<EvaluationCriterion> decodeCriteriaList(JSONArray jsonArray, List<EvaluationCriterion> universalCriteria, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
 
@@ -279,7 +279,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
+            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile(tenantID), tenantID));
           }
       }
 

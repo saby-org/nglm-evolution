@@ -143,7 +143,7 @@ public class DialogTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public DialogTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public DialogTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -151,7 +151,7 @@ public class DialogTemplate extends SubscriberMessageTemplate
     *
     *****************************************/
 
-    super(jsonRoot, GUIManagedObjectType.DialogTemplate, epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.DialogTemplate, epoch, existingTemplateUnchecked, tenantID);
     
     /*****************************************
     *

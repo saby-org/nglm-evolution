@@ -84,7 +84,7 @@ public class RetentionService {
 	}
 
 	// the kafka subscriberHistory clean up
-	public boolean cleanSubscriberHistory(SubscriberHistory subscriberHistory){
+	public boolean cleanSubscriberHistory(SubscriberHistory subscriberHistory, int tenantID){
 
 		if(log.isTraceEnabled()) log.trace("cleanSubscriberHistory called for "+subscriberHistory.getSubscriberID());
 

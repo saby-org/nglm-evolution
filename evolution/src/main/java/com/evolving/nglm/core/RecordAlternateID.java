@@ -35,12 +35,13 @@ public class RecordAlternateID
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("record_alternateid");
-    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("idField", Schema.STRING_SCHEMA);
     schemaBuilder.field("alternateID", Schema.STRING_SCHEMA);
     schemaBuilder.field("allSubscriberIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -69,6 +70,7 @@ public class RecordAlternateID
   private Set<String> allSubscriberIDs;
   private Date eventDate;
   private com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction subscriberAction;
+  private int tenantID;
 
   /****************************************
   *
@@ -81,6 +83,7 @@ public class RecordAlternateID
   public Set<String> getAllSubscriberIDs() { return allSubscriberIDs; }
   public Date getEventDate() { return eventDate; }
   public com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction getSubscriberAction() { return subscriberAction; }
+  public int getTenantID() { return tenantID; }
   
   /*****************************************
   *
@@ -88,13 +91,14 @@ public class RecordAlternateID
   *
   *****************************************/
 
-  public RecordAlternateID(String idField, String alternateID, Set<String> allSubscriberIDs, Date eventDate, com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction subscriberAction)
+  public RecordAlternateID(String idField, String alternateID, Set<String> allSubscriberIDs, Date eventDate, com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction subscriberAction, int tenantID)
   {
     this.idField = idField;
     this.alternateID = alternateID;
     this.allSubscriberIDs = allSubscriberIDs;
     this.eventDate = eventDate;
     this.subscriberAction = subscriberAction;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -110,6 +114,7 @@ public class RecordAlternateID
     this.allSubscriberIDs = new HashSet<String>(recordAlternateID.getAllSubscriberIDs());
     this.eventDate = recordAlternateID.getEventDate();
     this.subscriberAction = recordAlternateID.getSubscriberAction();
+    this.tenantID = recordAlternateID.getTenantID();
   }
 
   /*****************************************
@@ -127,6 +132,7 @@ public class RecordAlternateID
     struct.put("allSubscriberIDs", packAllSubscriberIDs(recordAlternateID.getAllSubscriberIDs()));
     struct.put("eventDate", recordAlternateID.getEventDate());
     struct.put("subscriberAction", recordAlternateID.getSubscriberAction().getExternalRepresentation());
+    struct.put("tenantID", (short)recordAlternateID.getTenantID());
     return struct;
   }
 
@@ -178,12 +184,12 @@ public class RecordAlternateID
     Set<String> allSubscriberIDs = unpackAllSubscriberIDs((List<String>) valueStruct.get("allSubscriberIDs"));
     Date eventDate = (Date) valueStruct.get("eventDate");
     com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction subscriberAction = (schemaVersion >= 2) ? com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard;
-
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
     //
     //  return
     //
 
-    return new RecordAlternateID(idField, alternateID, allSubscriberIDs, eventDate, subscriberAction);
+    return new RecordAlternateID(idField, alternateID, allSubscriberIDs, eventDate, subscriberAction, tenantID);
   }
 
   /*****************************************
@@ -201,4 +207,21 @@ public class RecordAlternateID
       }
     return result;
   }
+  @Override
+  public String toString()
+  {
+    String result =  "RecordAlternateID [idField=" + idField + ", alternateID=" + alternateID + ", allSubscriberIDs= [";
+    if(allSubscriberIDs != null)
+      {
+        for(String s : allSubscriberIDs)
+          {
+            result = result + s + " ";
+          }
+      }
+    
+    result = result + "], eventDate=" + eventDate + ", subscriberAction=" + subscriberAction + ", tenantID=" + tenantID + "]";
+    return result;
+  }
+  
+  
 }

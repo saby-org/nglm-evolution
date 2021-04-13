@@ -178,7 +178,7 @@ public class Supplier extends GUIManagedObject
   *
   *****************************************/
 
-  public Supplier(JSONObject jsonRoot, long epoch, GUIManagedObject existingSupplierUnchecked) throws GUIManagerException
+  public Supplier(JSONObject jsonRoot, long epoch, GUIManagedObject existingSupplierUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -186,7 +186,7 @@ public class Supplier extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSupplierUnchecked != null) ? existingSupplierUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingSupplierUnchecked != null) ? existingSupplierUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -323,7 +323,7 @@ public class Supplier extends GUIManagedObject
         walk = parent;
       }
   }
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> supplierIDs = new ArrayList<>();

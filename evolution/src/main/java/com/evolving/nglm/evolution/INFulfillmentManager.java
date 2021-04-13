@@ -311,9 +311,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String commodityName, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
+    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String commodityName, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, int tenantID)
     {
-      super(context, deliveryType, deliveryRequestSource);
+      super(context, deliveryType, deliveryRequestSource, tenantID);
       this.providerID = providerID;
       this.commodityID = commodityID;
       this.commodityName = commodityName;
@@ -333,9 +333,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(DeliveryRequest initialDeliveryRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    public INFulfillmentRequest(DeliveryRequest initialDeliveryRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
     {
-      super(initialDeliveryRequest,jsonRoot);
+      super(initialDeliveryRequest,jsonRoot, tenantID);
       this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
       this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
       this.commodityName = JSONUtilities.decodeString(jsonRoot, "commodityName", false);
@@ -504,7 +504,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(PROVIDERID, getProviderID());
@@ -525,7 +525,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
       thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());

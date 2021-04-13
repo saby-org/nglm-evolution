@@ -195,7 +195,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionEligibility(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs) throws GUIManagerException
+  public SegmentationDimensionEligibility(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -203,7 +203,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     *
     *****************************************/
 
-    super(jsonRoot, epoch, existingSegmentationDimensionUnchecked);
+    super(jsonRoot, epoch, existingSegmentationDimensionUnchecked, tenantID);
 
     /*****************************************
     *
@@ -219,7 +219,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     *
     *****************************************/
 
-    this.segments = decodeSegments(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", true), resetSegmentIDs);
+    this.segments = decodeSegments(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", true), resetSegmentIDs, tenantID);
     
     /*****************************************
     *
@@ -239,7 +239,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   *****************************************/
 
-  private List<SegmentEligibility> decodeSegments(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean resetSegmentIDs) throws GUIManagerException
+  private List<SegmentEligibility> decodeSegments(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean resetSegmentIDs, int tenantID) throws GUIManagerException
    {
     List<SegmentEligibility> result = new ArrayList<SegmentEligibility>();
     for (int i=0; i<jsonArray.size(); i++)
@@ -251,7 +251,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
             segmentID = segmentationDimensionService.generateSegmentID();
             segment.put("id", segmentID);
           }
-        result.add(new SegmentEligibility(segment));
+        result.add(new SegmentEligibility(segment, tenantID));
       }
     return result;
   }

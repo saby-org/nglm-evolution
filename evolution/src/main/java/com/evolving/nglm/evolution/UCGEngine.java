@@ -197,17 +197,11 @@ public class UCGEngine
     *
     *  initialize elastic search rest client 
     *****************************************/
-    String elasticsearchServerHost = args[2];
-    Integer elasticsearchServerPort = Integer.parseInt(args[3]);
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("UCGEngine").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("UCGEngine").getQueryTimeout();
-    String userName = args[4];
-    String userPassword = args[5];
     
     try
       {
-        elasticsearchRestClient = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
-        subscriberGroupField = CriterionContext.Profile.getCriterionFields().get("subscriber.segments").getESField();
+        elasticsearchRestClient = new ElasticsearchClientAPI("UCGEngine");
+        subscriberGroupField = CriterionContext.Profile(0).getCriterionFields(0).get("subscriber.segments").getESField(); // EVPRO-99 groupe field subscriber.segment is the same for all tenant, no need to make a special case for each tenant
       }
     catch (ElasticsearchException e)
       {
@@ -258,7 +252,7 @@ public class UCGEngine
     CronFormat ucgEvaluation = null;
     try
       {
-        ucgEvaluation = new CronFormat(Deployment.getUCGEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        ucgEvaluation = new CronFormat(Deployment.getUCGEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       }
     catch (UtilitiesException e)
       {
@@ -329,7 +323,7 @@ public class UCGEngine
         //
 
         UCGRule activeUCGRule = null;
-        for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now))
+        for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now, 0)) // for all tenant // TODO EVPRO-99 seems only one rule is expected by tenant, here only one tenant...
           {
             activeUCGRule = ucgRule;
           }
@@ -428,7 +422,7 @@ public class UCGEngine
         for (String dimensionID : ucgRule.getSelectedDimensions())
           {
             Set<String> segmentIDs = new HashSet<String>();
-            SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now);
+            SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now); 
             if (dimension != null)
               {
                 for (Segment segment : dimension.getSegments())

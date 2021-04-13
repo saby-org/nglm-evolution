@@ -95,7 +95,7 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
-    public Date getEffectiveDeliveryTime(CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, Date now)
+    public Date getEffectiveDeliveryTime(CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, Date now, int tenantID)
     {
       //
       //  retrieve delivery time configuration
@@ -107,11 +107,11 @@ public class CommunicationChannel extends GUIManagedObject
       //  iterate until a valid date is found (give up after 7 days and reschedule even if not legal)
       //
 
-      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getBaseTimeZone());
+      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getDeployment(tenantID).getBaseTimeZone());
       Date deliveryDate = now;
       while (deliveryDate.before(maximumDeliveryDate))
         {
-          Date nextDailyWindowDeliveryDate = this.getEffectiveDeliveryTime(this, deliveryDate, communicationChannelTimeWindowService);
+          Date nextDailyWindowDeliveryDate = this.getEffectiveDeliveryTime(this, deliveryDate, communicationChannelTimeWindowService, tenantID);
           Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? communicationChannelBlackoutServiceBlackout.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
           Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
           if (nextDeliveryDate.after(deliveryDate))
@@ -134,7 +134,7 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
-    public CommunicationChannel(JSONObject jsonRoot) throws GUIManagerException
+    public CommunicationChannel(JSONObject jsonRoot, int tenantID) throws GUIManagerException
     {
       /*****************************************
       *
@@ -142,7 +142,7 @@ public class CommunicationChannel extends GUIManagedObject
       *
       *****************************************/
 
-      super(jsonRoot, 0);
+      super(jsonRoot, 0, tenantID);
 
       /*****************************************
       *
@@ -202,14 +202,15 @@ public class CommunicationChannel extends GUIManagedObject
       // deliveryManagerDeclaration derived
       if(isGeneric())
         {
+          String deliveryType = "notification_"+getName();
+          
           //TODO remove later, forcing conf cleaning
-          if(getDeliveryType()!=null)
+          if(getDeliveryType()!=null && !getDeliveryType().equals(deliveryType)) // EVPRO-99 compare to deliveryType because of multiple time this is initialized
             {
               log.error("deliveryType configuration for generic channel ("+getName()+") is not possible anymore");
               throw new ServerRuntimeException("old conf for generic channel");
             }
           // delivery type should be derived
-          String deliveryType = "notification_"+getName();
           this.deliveryType = deliveryType;
           jsonRoot.put("deliveryType",deliveryType);
           jsonRoot.put("requestClass", NotificationManager.NotificationManagerRequest.class.getName());
@@ -243,10 +244,10 @@ public class CommunicationChannel extends GUIManagedObject
     }
 
    
-    public List<DailyWindow> getTodaysDailyWindows(Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, CommunicationChannelTimeWindow timeWindow)
+    public List<DailyWindow> getTodaysDailyWindows(Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, CommunicationChannelTimeWindow timeWindow, int tenantID)
     {
       List<DailyWindow> result = null;
-      int today = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+      int today = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
       if (timeWindow != null)
         {
           switch(today)
@@ -284,28 +285,28 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
     
-    private Date getEffectiveDeliveryTime(CommunicationChannel communicationChannel, Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService)
+    private Date getEffectiveDeliveryTime(CommunicationChannel communicationChannel, Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, int tenantID)
     {
       Date effectiveDeliveryDate = now;
       CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), now);
-      if(timeWindow == null) { timeWindow = Deployment.getDefaultNotificationDailyWindows(); }
+      if(timeWindow == null) { timeWindow = Deployment.getDeployment(tenantID).getDefaultNotificationDailyWindows(); }
         
       if (communicationChannel != null && timeWindow != null)
         {
           effectiveDeliveryDate = NGLMRuntime.END_OF_TIME;
-          Date today = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
+          Date today = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
           for (int i=0; i<8; i++)
             {
               //
               //  check the i-th day
               //
 
-              Date windowDay = RLMDateUtils.addDays(today, i, Deployment.getBaseTimeZone());
-              Date nextDay = RLMDateUtils.addDays(today, i+1, Deployment.getBaseTimeZone());
-              for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay, communicationChannelTimeWindowService, timeWindow))
+              Date windowDay = RLMDateUtils.addDays(today, i, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              Date nextDay = RLMDateUtils.addDays(today, i+1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay, communicationChannelTimeWindowService, timeWindow, tenantID))
                 {
-                  Date windowStartDate = dailyWindow.getFromDate(windowDay);
-                  Date windowEndDate = dailyWindow.getUntilDate(windowDay);
+                  Date windowStartDate = dailyWindow.getFromDate(windowDay, tenantID);
+                  Date windowEndDate = dailyWindow.getUntilDate(windowDay, tenantID);
                   if (EvolutionUtilities.isDateBetween(now, windowStartDate, windowEndDate))
                     {
                       effectiveDeliveryDate = now;

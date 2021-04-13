@@ -80,7 +80,7 @@ public class ComplexObjectTypeService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { complexObjectTypeListener.complexObjectTypeActivated((ComplexObjectType) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { complexObjectTypeListener.complexObjectTypeDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { complexObjectTypeListener.complexObjectTypeDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -107,11 +107,11 @@ public class ComplexObjectTypeService extends GUIService
   public String generateComplexObjectTypeID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredComplexObjectType(String complexObjectTypeID) { return getStoredGUIManagedObject(complexObjectTypeID); }
   public GUIManagedObject getStoredComplexObjectType(String complexObjectTypeID, boolean includeArchived) { return getStoredGUIManagedObject(complexObjectTypeID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredComplexObjectTypes() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredComplexObjectTypes(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredComplexObjectTypes(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredComplexObjectTypes(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveComplexObjectType(GUIManagedObject complexObjectTypeUnchecked, Date date) { return isActiveGUIManagedObject(complexObjectTypeUnchecked, date); }
   public ComplexObjectType getActiveComplexObjectType(String complexObjectTypeID, Date date) { return (ComplexObjectType) getActiveGUIManagedObject(complexObjectTypeID, date); }
-  public Collection<ComplexObjectType> getActiveComplexObjectTypes(Date date) { return (Collection<ComplexObjectType>) getActiveGUIManagedObjects(date); }
+  public Collection<ComplexObjectType> getActiveComplexObjectTypes(Date date, int tenantID) { return (Collection<ComplexObjectType>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -119,7 +119,7 @@ public class ComplexObjectTypeService extends GUIService
   *
   *****************************************/
 
-  public void putComplexObjectType(ComplexObjectType complexObjectType, boolean newObject, String userID) throws GUIManagerException{
+  public void putComplexObjectType(ComplexObjectType complexObjectType, boolean newObject, String userID, int tenantID) throws GUIManagerException{
     //
     //  now
     //
@@ -130,7 +130,7 @@ public class ComplexObjectTypeService extends GUIService
     // Make checks: not more than 5 complex fields in total and not more than 100 availableNames 
     //
     
-    Collection<ComplexObjectType> complexObjectTypes = getActiveComplexObjectTypes(now);
+    Collection<ComplexObjectType> complexObjectTypes = getActiveComplexObjectTypes(now, tenantID);
     
     
     boolean alreadyContainsThis = false;
@@ -176,8 +176,8 @@ public class ComplexObjectTypeService extends GUIService
   *
   *****************************************/
 
-  public void removeComplexObjectType(String complexObjectTypeID, String userID) { 
-    removeGUIManagedObject(complexObjectTypeID, SystemTime.getCurrentTime(), userID);
+  public void removeComplexObjectType(String complexObjectTypeID, String userID, int tenantID) { 
+    removeGUIManagedObject(complexObjectTypeID, SystemTime.getCurrentTime(), userID, tenantID);
   }
 
   /*****************************************

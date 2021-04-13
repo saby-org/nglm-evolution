@@ -91,7 +91,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   static
   {
     DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
 
     headerFieldsOrder.add(moduleId);
     headerFieldsOrder.add(featureId);
@@ -622,9 +622,28 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     while(tempfromDate.getTime() < toDate.getTime())	
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
       }
     return esIndexOdrList;
+  }
+  
+  public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates, int tenantID)
+  {
+    if (includeBothDates)
+      {
+        Date tempfromDate = fromDate;
+        List<String> esIndexOdrList = new ArrayList<String>();
+        while(tempfromDate.getTime() <= toDate.getTime())
+          {
+            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          }
+        return esIndexOdrList;
+      }
+    else
+      {
+        return getEsIndexDates(fromDate, toDate);
+      }
   }
   
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
@@ -641,20 +660,45 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     switch (reportPeriodUnit.toUpperCase())
     {
       case "DAYS":
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         break;
 
       case "WEEKS":
-        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         break;
 
       case "MONTHS":
-        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         break;
 
       default:
         break;
     }
     return fromDate;
+  }
+  
+  public static String getESAllIndices(String esIndexInitial)
+  {
+    return esIndexInitial + "*";
+  }
+  
+  /*********************
+   * 
+   * getESIndices
+   *
+   ********************/
+  
+  public static String getESIndices(String esIndex, List<String> esIndexDates)
+  {
+    StringBuilder esIndexList = new StringBuilder();
+    boolean firstEntry = true;
+    for (String esIndexDate : esIndexDates)
+      {
+        if (!firstEntry) esIndexList.append(",");
+        String indexName = esIndex + esIndexDate;
+        esIndexList.append(indexName);
+        firstEntry = false;
+      }
+    return esIndexList.toString();
   }
 }

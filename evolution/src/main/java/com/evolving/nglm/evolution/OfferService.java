@@ -81,7 +81,7 @@ public class OfferService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { offerListener.offerActivated((Offer) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { offerListener.offerDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { offerListener.offerDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -100,6 +100,7 @@ public class OfferService extends GUIService
     result.put("serviceTypeID", guiManagedObject.getJSONRepresentation().get("serviceTypeID"));
     result.put("imageURL", guiManagedObject.getJSONRepresentation().get("imageURL"));
     result.put("offerObjectives", guiManagedObject.getJSONRepresentation().get("offerObjectives"));
+    result.put("remainingStock", guiManagedObject.getJSONRepresentation().get("remainingStock"));
     return result;
   }
   
@@ -112,11 +113,26 @@ public class OfferService extends GUIService
   public String generateOfferID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredOffer(String offerID) { return getStoredGUIManagedObject(offerID); }
   public GUIManagedObject getStoredOffer(String offerID, boolean includeArchived) { return getStoredGUIManagedObject(offerID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredOffers() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredOffers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredOffers(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredOffers(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveOffer(GUIManagedObject offerUnchecked, Date date) { return isActiveGUIManagedObject(offerUnchecked, date); }
   public Offer getActiveOffer(String offerID, Date date) { return (Offer) getActiveGUIManagedObject(offerID, date); }
-  public Collection<Offer> getActiveOffers(Date date) { return (Collection<Offer>) getActiveGUIManagedObjects(date); }
+  public Collection<Offer> getActiveOffers(Date date, int tenantID) { return (Collection<Offer>) getActiveGUIManagedObjects(date, tenantID); }
+
+  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  public GUIManagedObject getStoredOfferWithCurrentStocks(String offerID, boolean includeArchived){
+    GUIManagedObject uncheckedOffer = getStoredOffer(offerID,includeArchived);
+    if(!(uncheckedOffer instanceof Offer)) return uncheckedOffer;//cant do more than normal one
+    uncheckedOffer.getJSONRepresentation().put("remainingStock",StockMonitor.getRemainingStock((Offer)uncheckedOffer));
+    return uncheckedOffer;
+  }
+  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  public Collection<GUIManagedObject> getStoredOffersWithCurrentStocks(boolean includeArchived, int tenantID) {
+    Collection<GUIManagedObject> toRet = getStoredGUIManagedObjects(includeArchived, tenantID);
+    // populate all with stocks info
+    toRet.forEach(offer->getStoredOfferWithCurrentStocks(offer.getGUIManagedObjectID(),true));
+    return toRet;
+  }
 
   /*****************************************
   *
@@ -172,7 +188,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void removeOffer(String offerID, String userID) { removeGUIManagedObject(offerID, SystemTime.getCurrentTime(), userID); }
+  public void removeOffer(String offerID, String userID, int tenantID) { removeGUIManagedObject(offerID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

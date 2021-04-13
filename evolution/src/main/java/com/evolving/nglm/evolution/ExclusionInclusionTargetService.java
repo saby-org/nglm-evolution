@@ -129,7 +129,7 @@ public class ExclusionInclusionTargetService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { exclusionInclusionTargetListener.exclusionInclusionTargetActivated((ExclusionInclusionTarget) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { exclusionInclusionTargetListener.exclusionInclusionTargetDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { exclusionInclusionTargetListener.exclusionInclusionTargetDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -144,20 +144,20 @@ public class ExclusionInclusionTargetService extends GUIService
   public String generateExclusionInclusionTargetID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredExclusionInclusionTarget(String exclusionInclusionTargetID) { return getStoredGUIManagedObject(exclusionInclusionTargetID); }
   public GUIManagedObject getStoredExclusionInclusionTarget(String exclusionInclusionTargetID, boolean includeArchived) { return getStoredGUIManagedObject(exclusionInclusionTargetID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredExclusionInclusionTargets() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredExclusionInclusionTargets(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredExclusionInclusionTargets(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredExclusionInclusionTargets(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveExclusionInclusionTarget(GUIManagedObject exclusionInclusionTargetUnchecked, Date date) { return isActiveGUIManagedObject(exclusionInclusionTargetUnchecked, date); }
   public ExclusionInclusionTarget getActiveExclusionInclusionTarget(String exclusionInclusionTargetID, Date date) { return (ExclusionInclusionTarget) getActiveGUIManagedObject(exclusionInclusionTargetID, date); }
-  public Collection<ExclusionInclusionTarget> getActiveExclusionInclusionTargets(Date date) { return (Collection<ExclusionInclusionTarget>) getActiveGUIManagedObjects(date); }
+  public Collection<ExclusionInclusionTarget> getActiveExclusionInclusionTargets(Date date, int tenantID) { return (Collection<ExclusionInclusionTarget>) getActiveGUIManagedObjects(date, tenantID); }
 
   //
   //  getActiveInclusionTargets
   //
 
-  public Collection<ExclusionInclusionTarget> getActiveInclusionTargets(Date date)
+  public Collection<ExclusionInclusionTarget> getActiveInclusionTargets(Date date, int tenantID)
   {
     Set<ExclusionInclusionTarget> result = new HashSet<ExclusionInclusionTarget>();
-    for (ExclusionInclusionTarget exclusionInclusionTarget : getActiveExclusionInclusionTargets(date))
+    for (ExclusionInclusionTarget exclusionInclusionTarget : getActiveExclusionInclusionTargets(date, tenantID))
       {
         switch (exclusionInclusionTarget.getTargetType())
           {
@@ -173,10 +173,10 @@ public class ExclusionInclusionTargetService extends GUIService
   //  getActiveExclusionTargets
   //
 
-  public Collection<ExclusionInclusionTarget> getActiveExclusionTargets(Date date)
+  public Collection<ExclusionInclusionTarget> getActiveExclusionTargets(Date date, int tenantID)
   {
     Set<ExclusionInclusionTarget> result = new HashSet<ExclusionInclusionTarget>();
-    for (ExclusionInclusionTarget exclusionInclusionTarget : getActiveExclusionInclusionTargets(date))
+    for (ExclusionInclusionTarget exclusionInclusionTarget : getActiveExclusionInclusionTargets(date, tenantID))
       {
         switch (exclusionInclusionTarget.getTargetType())
           {
@@ -254,7 +254,7 @@ public class ExclusionInclusionTargetService extends GUIService
   *
   *****************************************/
 
-  public void removeExclusionInclusionTarget(String exclusionInclusionTargetID, String userID) { removeGUIManagedObject(exclusionInclusionTargetID, SystemTime.getCurrentTime(), userID); }
+  public void removeExclusionInclusionTarget(String exclusionInclusionTargetID, String userID, int tenantID) { removeGUIManagedObject(exclusionInclusionTargetID, SystemTime.getCurrentTime(), userID, tenantID); }
   
   /*****************************************
   *
@@ -370,7 +370,7 @@ public class ExclusionInclusionTargetService extends GUIService
                             String subscriberID = (alternateID != null) ? subscriberIDService.getSubscriberID(alternateID.getID(), line) : line;
                             if(subscriberID != null)
                               {
-                                SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.ExclusionInclusionTarget, Arrays.asList(exclusionInclusionTarget.getExclusionInclusionTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord());
+                                SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.ExclusionInclusionTarget, Arrays.asList(exclusionInclusionTarget.getExclusionInclusionTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord(), exclusionInclusionTarget.getTenantID());
                                 kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupTopic, stringKeySerde.serializer().serialize(subscriberGroupTopic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(subscriberGroupTopic, subscriberGroup)));
                               }
                             else

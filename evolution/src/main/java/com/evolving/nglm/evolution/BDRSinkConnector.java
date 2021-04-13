@@ -111,7 +111,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
       documentMap.put("eventID", commodityRequest.getEventID());
-      documentMap.put("deliverableExpirationDate", commodityRequest.getDeliverableExpirationDate());
+      documentMap.put("deliverableExpirationDate", commodityRequest.getDeliverableExpirationDate(commodityRequest.getTenantID()));
       documentMap.put("providerID", commodityRequest.getProviderID());
       documentMap.put("deliverableID", commodityRequest.getCommodityID());
       documentMap.put("deliverableQty", commodityRequest.getAmount());
@@ -121,6 +121,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("origin", commodityRequest.getOrigin());
       documentMap.put("returnCode", commodityRequest.getCommodityDeliveryStatus().getReturnCode());
       documentMap.put("returnCodeDetails", commodityRequest.getStatusMessage());
+      documentMap.put("creationDate", commodityRequest.getCreationDate()!=null?dateFormat.format(commodityRequest.getCreationDate()):"");
         
       log.debug("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
       return documentMap;

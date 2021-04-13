@@ -21,6 +21,8 @@ public class SubscriberStateOutputWrapper implements SubscriberStreamEvent {
 	public String getSubscriberID() {
 		return event.getSubscriberID();
 	}
+	
+	
 
 	@Override
 	public Date getEventDate() {

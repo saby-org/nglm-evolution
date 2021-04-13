@@ -33,14 +33,22 @@ public class AutoProvisionEvent extends DeploymentManagedObject
   /*****************************************
   *
   *  constructor
+   * @throws ClassNotFoundException 
   *
   *****************************************/
 
-  public AutoProvisionEvent(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
+  public AutoProvisionEvent(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException, ClassNotFoundException
   {
     super(jsonRoot);
     this.eventClass = JSONUtilities.decodeString(jsonRoot, "eventClass", true);
     this.eventTopic = JSONUtilities.decodeString(jsonRoot, "eventTopic", true);
     this.autoProvisionTopic = JSONUtilities.decodeString(jsonRoot, "autoProvisionTopic", true);
+    
+    // ensure the eventClass implements the AutoProvisionSubscriberStreamEvent
+    Class<? extends AutoProvisionSubscriberStreamEvent> eventClass = (Class<? extends AutoProvisionSubscriberStreamEvent>) Class.forName(getEventClass());
+    if(!AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventClass))
+      {
+        throw new RuntimeException("Class " + getEventClass() + " does not implement interface " + AutoProvisionSubscriberStreamEvent.class.getName());
+      }
   }
 }

@@ -27,6 +27,7 @@ import com.evolving.nglm.evolution.ScheduledJob;
 *****************************************/
 
 public class ReportScheduler {
+  
   private static final Logger log = LoggerFactory.getLogger(ReportScheduler.class);
   private ReportService reportService;
   private JobScheduler reportScheduler;
@@ -59,7 +60,7 @@ public class ReportScheduler {
     reportScheduler = new JobScheduler("report");
     
     // EVPRO-266 process all existing reports
-    for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime()))
+    for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime(), 0)) // 0 will return for all tenants
       {
         scheduleReport(report);
       }

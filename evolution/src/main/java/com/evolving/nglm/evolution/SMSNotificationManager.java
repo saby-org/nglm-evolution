@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -245,7 +246,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     {
       SMSTemplate smsTemplate = (SMSTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       DialogMessage dialogMessage = (smsTemplate != null) ? smsTemplate.getMessageText() : null;
-      String text = (dialogMessage != null) ? dialogMessage.resolve(language, messageTags) : null;
+      String text = (dialogMessage != null) ? dialogMessage.resolve(language, messageTags, getTenantID()) : null;
       return text;
     }
 
@@ -255,9 +256,9 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     *
     *****************************************/
 
-    public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags, String contactType)
+    public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags, String contactType, int tenantID)
     {
-      super(context, deliveryType, deliveryRequestSource);
+      super(context, deliveryType, deliveryRequestSource, tenantID);
       this.destination = destination;
       this.source = source;
       this.language = language;
@@ -344,6 +345,31 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       this.contactType = smsNotificationManagerRequest.getContactType();
     }
 
+    /*****************************************
+    *
+    *  constructor : es - minimum
+    *
+    *****************************************/
+    
+    public SMSNotificationManagerRequest(Map<String, Object> esFields)
+    {
+      super(esFields);
+      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
+      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      
+      this.destination = (String) esFields.get("destination");
+      this.source = (String) esFields.get("source");
+      this.language = (String) esFields.get("language");
+      this.templateID = (String) esFields.get("templateID");
+      if (esFields.get("tags") != null)
+        {
+          Map<String,List<String>> tags = (Map<String, List<String>>) esFields.get("tags");
+          this.messageTags = tags.get("tags");
+        }
+      this.returnCode = (Integer) esFields.get("returnCode");
+      this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+    }
+    
     /*****************************************
     *
     *  copy
@@ -437,7 +463,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     //  addFieldsForGUIPresentation
     //
 
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(EVENTID, null);
@@ -459,7 +485,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     //  addFieldsForThirdPartyPresentation
     //
 
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       thirdPartyPresentationMap.put(DELIVERYSTATUS, getMessageStatus().toString()); // replace value set by the superclass 
       thirdPartyPresentationMap.put(EVENTID, null);
@@ -582,7 +608,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       SMSNotificationManagerRequest request = null;
       if (template != null && msisdn != null)
         {
-          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags, contactType.getExternalRepresentation());
+          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
           
           request.setModuleID(newModuleID);
           request.setFeatureID(deliveryRequestSource);
@@ -635,11 +661,11 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
         if(smsRequest.getRestricted()) 
           {
             Date effectiveDeliveryTime = now;
-            String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(smsRequest.getDeliveryType());
-            CommunicationChannel channel = Deployment.getCommunicationChannels().get(channelID);
+            String channelID = Deployment.getDeployment(deliveryRequest.getTenantID()).getDeliveryTypeCommunicationChannelIDMap().get(smsRequest.getDeliveryType());
+            CommunicationChannel channel = Deployment.getDeployment(deliveryRequest.getTenantID()).getCommunicationChannels().get(channelID);
             if(channel != null) 
               {
-                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now, smsRequest.getTenantID());
               }
             
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

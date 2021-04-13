@@ -103,7 +103,7 @@ public class VoucherService extends GUIService {
     if (voucherListener != null) {
       superListener = new GUIManagedObjectListener() {
         @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { voucherListener.voucherActivated((Voucher) guiManagedObject); }
-        @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { voucherListener.voucherDeactivated(guiManagedObjectID); }
+        @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { voucherListener.voucherDeactivated(guiManagedObjectID); }
       };
     }
     return superListener;
@@ -113,13 +113,13 @@ public class VoucherService extends GUIService {
   public String generateVoucherID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredVoucher(String voucherID) { return getStoredGUIManagedObject(voucherID); }
   public GUIManagedObject getStoredVoucher(String voucherID, boolean includeArchived) { return getStoredGUIManagedObject(voucherID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredVouchers() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredVouchers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredVouchers(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredVouchers(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveVoucher(GUIManagedObject voucherUnchecked, Date date) { return isActiveGUIManagedObject(voucherUnchecked, date); }
   public Voucher getActiveVoucher(String voucherID, Date date) { return (Voucher) getActiveGUIManagedObject(voucherID, date); }
-  public Collection<Voucher> getActiveVouchers(Date date) { return (Collection<Voucher>) getActiveGUIManagedObjects(date); }
+  public Collection<Voucher> getActiveVouchers(Date date, int tenantID) { return (Collection<Voucher>) getActiveGUIManagedObjects(date, tenantID); }
 
-  //this call might trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls, hopefuly ES will manage to keep that call quick
+  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
   public GUIManagedObject getStoredVoucherWithCurrentStocks(String voucherID, boolean includeArchived){
 
     GUIManagedObject uncheckedVoucher = getStoredVoucher(voucherID,includeArchived);
@@ -133,11 +133,29 @@ public class VoucherService extends GUIService {
         voucherFile.setVoucherFileStats(getVoucherFileStatsFromZookeeper(voucherID,voucherFile.getFileId()));
       }
       // add the current live status from ES
-      voucherPersonalESService.populateVoucherFileWithStockInformation(voucher);
+      voucherPersonalESService.populateVoucherFileWithStockInformation(voucher, voucher.getTenantID());
+      // sum up
+      int totalStock=0;
+      int totalRemaining=0;
+      for(VoucherFile voucherFile:voucher.getVoucherFiles()){
+        totalStock+=voucherFile.getVoucherFileStats().getStockImported();
+        totalRemaining+=voucherFile.getVoucherFileStats().getStockAvailable();
+      }
+      uncheckedVoucher.getJSONRepresentation().put("stock",totalStock);
+      uncheckedVoucher.getJSONRepresentation().put("remainingStock",totalRemaining);
       return voucher;
+    }else if(uncheckedVoucher instanceof VoucherShared){
+      uncheckedVoucher.getJSONRepresentation().put("remainingStock",StockMonitor.getRemainingStock((VoucherShared)uncheckedVoucher));
     }
 
     return uncheckedVoucher;
+  }
+  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  public Collection<GUIManagedObject> getStoredVouchersWithCurrentStocks(boolean includeArchived, int tenantID) {
+    Collection<GUIManagedObject> toRet = getStoredGUIManagedObjects(includeArchived, tenantID);
+    // populate all with stocks info
+    toRet.forEach(voucher->getStoredVoucherWithCurrentStocks(voucher.getGUIManagedObjectID(),true));
+    return toRet;
   }
 
   public VoucherPersonalESService getVoucherPersonalESService() {return voucherPersonalESService;}
@@ -160,39 +178,39 @@ public class VoucherService extends GUIService {
     }
   }
 
-  public void removeVoucher(String voucherID, String userID, UploadedFileService uploadedFileService) {
+  public void removeVoucher(String voucherID, String userID, UploadedFileService uploadedFileService, int tenantID) {
     GUIManagedObject storedVoucher = getStoredVoucher(voucherID);
     if(storedVoucher instanceof VoucherPersonal){
       VoucherPersonal voucher = (VoucherPersonal) storedVoucher;
       addVoucherJob(new VoucherJob(voucher.getSupplierID(),voucher.getVoucherID(),null,null,VoucherJobAction.DELETE_VOUCHER));
     }
-    removeGUIManagedObject(voucherID, SystemTime.getCurrentTime(), userID);
+    removeGUIManagedObject(voucherID, SystemTime.getCurrentTime(), userID, tenantID);
   }
   
-  public void cleanUpVouchersJob() {
+  public void cleanUpVouchersJob(int tenantID) {
     log.info("VoucherPersonalESService-cleanUpExpiredVouchers : start execution");
     Date now = SystemTime.getCurrentTime();
 
     // we delete the not allocated expired vouchers as soon as expired, per voucherId, fileId, to stored this stats
     // we delete as well change one, this is one is for now just for stats
-    for(Voucher untypedVoucher : getActiveVouchers(SystemTime.getCurrentTime())){
+    for(Voucher untypedVoucher : getActiveVouchers(SystemTime.getCurrentTime(), tenantID)){
       if(!(untypedVoucher instanceof VoucherPersonal)) continue;
       VoucherPersonal voucher = (VoucherPersonal) untypedVoucher;
       for(VoucherFile file:voucher.getVoucherFiles()){
-        int nbExpired=voucherPersonalESService.deleteAvailableExpiredVoucher(voucher.getSupplierID(),voucher.getVoucherID(),file.getFileId(),now);
+        int nbExpired=voucherPersonalESService.deleteAvailableExpiredVoucher(voucher.getSupplierID(),voucher.getVoucherID(),file.getFileId(),now, tenantID);
         log.info("VoucherPersonalESService-cleanUpExpiredVouchers : "+nbExpired+" unallocated expired vouchers deleted for voucher "+voucher.getVoucherID()+" and file "+file.getFileId());
         updateVoucherFileStatsInZookeeper(voucher.getVoucherID(),file.getFileId(),0,0,0,nbExpired);
       }
     }
 
     // this is a bulk delete of all vouchers a while after expiryDate is past, clean up of ES
-    Date expiryDate=EvolutionUtilities.addTime(now,-1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getBaseTimeZone());
+    Date expiryDate=EvolutionUtilities.addTime(now,-1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getDeployment(tenantID).getBaseTimeZone());
     // safety
     if(now.before(expiryDate)){
       log.error("VoucherPersonalESService-cleanUpExpiredVouchers : bug, expiryDate for cleanup is after now !! "+now+" vs "+expiryDate);
       return;
     }
-    voucherPersonalESService.deleteExpiredVoucher(expiryDate);
+    voucherPersonalESService.deleteExpiredVoucher(expiryDate, tenantID);
 
     log.info("VoucherPersonalESService-cleanUpExpiredVouchers : stop execution");
   }
@@ -203,6 +221,7 @@ public class VoucherService extends GUIService {
    result.put("voucherTypeId", guiManagedObject.getJSONRepresentation().get("voucherTypeId"));
    result.put("supplierID", guiManagedObject.getJSONRepresentation().get("supplierID"));
    result.put("imageURL", guiManagedObject.getJSONRepresentation().get("imageURL"));
+   result.put("remainingStock", guiManagedObject.getJSONRepresentation().get("remainingStock"));
    return result;
  }
 
@@ -413,7 +432,7 @@ public class VoucherService extends GUIService {
           int totalNbVouchersAdded=0;
           int nbOfLines=0;
           BufferedReader reader;
-          Date expiryDate = VoucherPersonalES.getDateFromESDateFormated(VoucherPersonalES.ES_FIELDS.expiryDate,job.getExpiryDate());
+          Date expiryDate = VoucherPersonalES.getDateFromESDateFormated(VoucherPersonalES.ES_FIELDS.expiryDate,job.getExpiryDate(), uploadedFile.getTenantID());
           boolean alreadyExpired=expiryDate.before(SystemTime.getCurrentTime());
           try{
             List<VoucherPersonalES> vouchersToAdd = new ArrayList<VoucherPersonalES>();

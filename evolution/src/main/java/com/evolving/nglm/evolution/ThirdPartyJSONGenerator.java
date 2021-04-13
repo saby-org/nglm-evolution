@@ -113,8 +113,8 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerDisplay", offer.getDisplay());
     offerMap.put("offerName", offer.getGUIManagedObjectName());
     offerMap.put("offerState", offerService.isActiveOffer(offer, SystemTime.getCurrentTime()) ? "active" : "stored");
-    offerMap.put("offerStartDate", getDateString(offer.getEffectiveStartDate()));
-    offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate()));
+    offerMap.put("offerStartDate", getDateString(offer.getEffectiveStartDate(), offer.getTenantID()));
+    offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate(), offer.getTenantID()));
     offerMap.put("offerDescription", offer.getDescription());
     offerMap.put("offerExternalID", offer.getJSONRepresentation().get("externalID")!=null?offer.getJSONRepresentation().get("externalID"):"");
     offerMap.put("offerAvailableStock", offer.getJSONRepresentation().get("presentationStock")!=null?offer.getJSONRepresentation().get("presentationStock"):"");
@@ -245,7 +245,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateResellerJSONForThirdParty(Reseller reseller, ResellerService resellerService)
+  protected static JSONObject generateResellerJSONForThirdParty(Reseller reseller, ResellerService resellerService, int tenantID)
   {
     HashMap<String, Object> resellerDetailsMap = new HashMap<String, Object>();
     if (null == reseller)
@@ -256,8 +256,8 @@ public class ThirdPartyJSONGenerator
     resellerDetailsMap.put("resellerWebsite", reseller.getWebsite());
     resellerDetailsMap.put("resellerActive",
         resellerService.isActiveReseller(reseller, SystemTime.getCurrentTime()) ? "active" : "inactive");
-    resellerDetailsMap.put("resellerCreatedDate", getDateString(reseller.getCreatedDate()));
-    resellerDetailsMap.put("resellerUpdatedDate", getDateString(reseller.getUpdatedDate()));
+    resellerDetailsMap.put("resellerCreatedDate", getDateString(reseller.getCreatedDate(), tenantID));
+    resellerDetailsMap.put("resellerUpdatedDate", getDateString(reseller.getUpdatedDate(), tenantID));
     resellerDetailsMap.put("resellerUserIDs", reseller.getUserIDs());
     resellerDetailsMap.put("resellerEmail", reseller.getEmail());
     resellerDetailsMap.put("resellerPhone", reseller.getPhone());
@@ -287,25 +287,25 @@ public class ThirdPartyJSONGenerator
    * @param offerObjectiveService 
   *
   *****************************************/
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService)
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, int tenantID)
   {
-    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null, null, null, null);
+    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null, null, null, null, tenantID);
   }
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService)
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, int tenantID)
   {
-    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, null, null, null);
+    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, null, null, null, tenantID);
   }
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, PaymentMeanService paymentMeanService) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, PaymentMeanService paymentMeanService, int tenantID) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
     if ( null == token ) return JSONUtilities.encodeObject(tokenMap);
     tokenMap.put("tokenStatus", token.getTokenStatus().getExternalRepresentation());
-    tokenMap.put("creationDate", getDateString(token.getCreationDate()));
-    tokenMap.put("boundDate", getDateString(token.getBoundDate()));
-    tokenMap.put("redeemedDate", getDateString(token.getRedeemedDate()));
-    tokenMap.put("tokenExpirationDate", getDateString(token.getTokenExpirationDate()));
+    tokenMap.put("creationDate", getDateString(token.getCreationDate(), tenantID));
+    tokenMap.put("boundDate", getDateString(token.getBoundDate(), tenantID));
+    tokenMap.put("redeemedDate", getDateString(token.getRedeemedDate(), tenantID));
+    tokenMap.put("tokenExpirationDate", getDateString(token.getTokenExpirationDate(), tenantID));
     tokenMap.put("boundCount", token.getBoundCount());
     //tokenMap.put("eventID", token.getEventID());
     //tokenMap.put("subscriberID", token.getSubscriberID());
@@ -328,7 +328,7 @@ public class ThirdPartyJSONGenerator
         ArrayList<Object> scoringStrategiesList = new ArrayList<>();
         for (String scoringStrategyID : dnboToken.getScoringStrategyIDs())
           {
-            scoringStrategiesList.add(JSONUtilities.encodeObject(buildScoringStrategyElement(scoringStrategyID, scoringStrategyService, now)));
+            scoringStrategiesList.add(JSONUtilities.encodeObject(buildScoringStrategyElement(scoringStrategyID, scoringStrategyService, now, tenantID)));
           }
         tokenMap.put("scoringStrategies", JSONUtilities.encodeArray(scoringStrategiesList));        
         
@@ -338,7 +338,7 @@ public class ThirdPartyJSONGenerator
         ArrayList<Object> presentedOffersList = new ArrayList<>();
         for (String offerID : dnboToken.getPresentedOfferIDs())
           {
-            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService)));
+            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService, tenantID)));
           }
         tokenMap.put("presentedOffers", JSONUtilities.encodeArray(presentedOffersList));
         tokenMap.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
@@ -350,7 +350,7 @@ public class ThirdPartyJSONGenerator
           }
         else
           {
-            tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService)));
+            tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService, tenantID)));
           }
       }
     return JSONUtilities.encodeObject(tokenMap);
@@ -371,7 +371,7 @@ public class ThirdPartyJSONGenerator
     return presentationStrategyMap;
   }
   
-  private static HashMap<String, Object> buildScoringStrategyElement(String scoringStrategyID, ScoringStrategyService scoringStrategyService, Date now) {
+  private static HashMap<String, Object> buildScoringStrategyElement(String scoringStrategyID, ScoringStrategyService scoringStrategyService, Date now, int tenantID) {
     HashMap<String, Object> scoringStrategyMap = new HashMap<String, Object>();
     scoringStrategyMap.put("id", scoringStrategyID);
     if (scoringStrategyID == null)
@@ -386,7 +386,7 @@ public class ThirdPartyJSONGenerator
     return scoringStrategyMap;
   }
   
-  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, DNBOToken dnboToken, PaymentMeanService paymentMeanService) {
+  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, DNBOToken dnboToken, PaymentMeanService paymentMeanService, int tenantID) {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     offerMap.put("id", offerID);
     if (offerID == null)
@@ -472,7 +472,7 @@ public class ThirdPartyJSONGenerator
                                                           }
                                                         if (currencyID != null)
                                                           {
-                                                            for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
+                                                            for (SupportedCurrency supportedCurrency : Deployment.getDeployment(tenantID).getSupportedCurrencies().values())
                                                               {
                                                                 JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
                                                                 if (supportedCurrencyJSON != null && currencyID.equals(supportedCurrencyJSON.get("id")))
@@ -575,14 +575,14 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
 
- public static String getDateString(Date date)
+ public static String getDateString(Date date, int tenantID)
  {
    String result = null;
    if (date == null) return result;
    try
    {
      SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-     dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+     dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
      result = dateFormat.format(date);
    }
    catch (Exception e)

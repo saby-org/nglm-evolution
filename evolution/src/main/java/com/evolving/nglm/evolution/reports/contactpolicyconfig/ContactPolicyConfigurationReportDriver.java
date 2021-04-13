@@ -45,7 +45,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
    * 
    ****************************************/
   
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.info("Entered in to the contact policy produceReport");
 
@@ -75,7 +75,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     ZipOutputStream writer = null;
     try
     {
-      if(contactPolicyService.getStoredContactPolicies().size()==0)
+      if(contactPolicyService.getStoredContactPolicies(tenantID).size()==0)
         {
           log.info("No Contact Policies ");
         }
@@ -85,19 +85,19 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
           writer = new ZipOutputStream(fos);
           ZipEntry entry = new ZipEntry(new File(csvFilename).getName()); // do not include tree structure in zipentry, just csv filename
           writer.putNextEntry(entry);
-          for (GUIManagedObject guiManagedObject : contactPolicyService.getStoredContactPolicies())
+          for (GUIManagedObject guiManagedObject : contactPolicyService.getStoredContactPolicies(tenantID))
             {
               if(guiManagedObject instanceof ContactPolicy)
                 {
                   ContactPolicy contactPolicy = (ContactPolicy) guiManagedObject;
                   JSONObject contactPolicyJSON = contactPolicyService.generateResponseJSON(guiManagedObject, true, SystemTime.getCurrentTime());
-                  List<String> segmentIDs = contactPolicyService.getAllSegmentIDsUsingContactPolicy(contactPolicy.getContactPolicyID(), segmentContactPolicyService);
+                  List<String> segmentIDs = contactPolicyService.getAllSegmentIDsUsingContactPolicy(contactPolicy.getContactPolicyID(), segmentContactPolicyService, tenantID);
                   List<String> segmentNames = new ArrayList<>();
                   for(String segmentID :segmentIDs) {
-                    Segment segment = segmentationDimensionService.getSegment(segmentID);
+                    Segment segment = segmentationDimensionService.getSegment(segmentID, tenantID);
                     segmentNames.add(segment.getName());
                   }
-                  List<String> journeyObjectives = contactPolicyService.getAllJourneyObjectiveNamesUsingContactPolicy(contactPolicy.getContactPolicyID(), journeyObjectiveService);
+                  List<String> journeyObjectives = contactPolicyService.getAllJourneyObjectiveNamesUsingContactPolicy(contactPolicy.getContactPolicyID(), journeyObjectiveService, tenantID);
                   contactPolicyJSON.put("segmentNames", JSONUtilities.encodeArray(segmentNames));
                   contactPolicyJSON.put("journeyObjectiveNames", JSONUtilities.encodeArray(journeyObjectives));
                   Map<String, Object> formattedFields = formatSimpleFields(contactPolicyJSON);

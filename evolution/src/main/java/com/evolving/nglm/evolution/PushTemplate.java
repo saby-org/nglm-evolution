@@ -143,7 +143,7 @@ public class PushTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public PushTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public PushTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -151,7 +151,7 @@ public class PushTemplate extends SubscriberMessageTemplate
     *
     *****************************************/
 
-    super(jsonRoot, GUIManagedObjectType.PushMessageTemplate, epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.PushMessageTemplate, epoch, existingTemplateUnchecked, tenantID);
     
     /*****************************************
     *

@@ -22,6 +22,8 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+
+// TODO EVPRO-99 split per tenant ?
 public class SegmentContactPolicy extends GUIManagedObject
 {
   /*****************************************
@@ -151,7 +153,7 @@ public class SegmentContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public SegmentContactPolicy(JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentContactPolicyUnchecked) throws GUIManagerException
+  public SegmentContactPolicy(JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentContactPolicyUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -159,7 +161,7 @@ public class SegmentContactPolicy extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSegmentContactPolicyUnchecked != null) ? existingSegmentContactPolicyUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingSegmentContactPolicyUnchecked != null) ? existingSegmentContactPolicyUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

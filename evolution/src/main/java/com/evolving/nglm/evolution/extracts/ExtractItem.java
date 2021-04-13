@@ -32,7 +32,7 @@ public class ExtractItem
    *
    ****************************************/
 
-  public ExtractItem(JSONObject jsonRoot) throws GUIManager.GUIManagerException
+  public ExtractItem(JSONObject jsonRoot, int tenantID) throws GUIManager.GUIManagerException
   {
     this.extractName = JSONUtilities.decodeString(jsonRoot, "extractName", true);
     this.returnFields = JSONUtilities.decodeJSONArray(jsonRoot, "returnFields", false);
@@ -47,7 +47,7 @@ public class ExtractItem
     {
       for (int i = 0; i < evaluationCritetionListJSON.size(); i++)
       {
-        evaluationCriterionList.add(new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile));
+        evaluationCriterionList.add(new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile(tenantID), tenantID));
       }
     }
   }

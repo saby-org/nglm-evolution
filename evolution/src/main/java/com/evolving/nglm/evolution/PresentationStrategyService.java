@@ -104,7 +104,7 @@ public class PresentationStrategyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { presentationStrategyListener.presentationStrategyActivated((PresentationStrategy) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { presentationStrategyListener.presentationStrategyDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { presentationStrategyListener.presentationStrategyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -132,11 +132,11 @@ public class PresentationStrategyService extends GUIService
   public String generatePresentationStrategyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredPresentationStrategy(String presentationStrategyID) { return getStoredGUIManagedObject(presentationStrategyID); }
   public GUIManagedObject getStoredPresentationStrategy(String presentationStrategyID, boolean includeArchived) { return getStoredGUIManagedObject(presentationStrategyID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredPresentationStrategies() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredPresentationStrategies(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredPresentationStrategies(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredPresentationStrategies(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActivePresentationStrategy(GUIManagedObject presentationStrategyUnchecked, Date date) { return isActiveGUIManagedObject(presentationStrategyUnchecked, date); }
   public PresentationStrategy getActivePresentationStrategy(String presentationStrategyID, Date date) { return (PresentationStrategy) getActiveGUIManagedObject(presentationStrategyID, date); }
-  public Collection<PresentationStrategy> getActivePresentationStrategies(Date date) { return (Collection<PresentationStrategy>) getActiveGUIManagedObjects(date); }
+  public Collection<PresentationStrategy> getActivePresentationStrategies(Date date, int tenantID) { return (Collection<PresentationStrategy>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -192,7 +192,7 @@ public class PresentationStrategyService extends GUIService
   *
   *****************************************/
 
-  public void removePresentationStrategy(String presentationStrategyID, String userID) { removeGUIManagedObject(presentationStrategyID, SystemTime.getCurrentTime(), userID); }
+  public void removePresentationStrategy(String presentationStrategyID, String userID, int tenantID) { removeGUIManagedObject(presentationStrategyID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

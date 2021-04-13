@@ -396,7 +396,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   //  getAllCriteria
   //
 
-  public List<List<EvaluationCriterion>> getAllTargetsCriteria(TargetService targetService, Date now)
+  public List<List<EvaluationCriterion>> getAllTargetsCriteria(TargetService targetService, Date now, int tenantID)
   {
     try
       {
@@ -434,7 +434,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     falseCriterionJSON.put("criterionOperator", "<>");
                     falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
                     List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile));
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile(tenantID), tenantID));
                     result.add(toAdd);
                   }
 
@@ -447,7 +447,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     targetCriterionJSON.put("criterionOperator", "contains");
                     targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
                     List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile));
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile(tenantID), tenantID));
                     result.add(toAdd);
                   }
               }
@@ -622,8 +622,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *  targetCount
   *
   *****************************************/
-  
-  private long evaluateTargetCount(ElasticsearchClientAPI elasticsearch) 
+  private long evaluateTargetCount(ElasticsearchClientAPI elasticsearch, int tenantID) 
   {
     try
       {
@@ -646,11 +645,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   // Like description, it is not used inside the system, only put at creation and pushed in Elasticsearch
   // mapping_journeys index in order to be visible for the GUI (Grafana).
   //
-  public void setTargetCount(ElasticsearchClientAPI elasticsearch, UploadedFileService uploadedFileService)
+  public void setTargetCount(ElasticsearchClientAPI elasticsearch, UploadedFileService uploadedFileService, int tenantID)
   {
     if (this.getTargetingType() == TargetingType.Target)
       {
-        this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)));
+        this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch, tenantID)));
       } 
     else if (TargetingType.FileVariables == getTargetingType())
       {
@@ -1132,9 +1131,9 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *
   *****************************************/
   
-  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, int tenantID) throws GUIManagerException
   {
-	  this(jsonRoot, journeyType, epoch, existingJourneyUnchecked, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, JourneyStatus.Pending);
+	  this(jsonRoot, journeyType, epoch, existingJourneyUnchecked, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, JourneyStatus.Pending, tenantID);
   }
   
   /*****************************************
@@ -1143,7 +1142,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *
   *****************************************/
   
-  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, JourneyStatus approval) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, JourneyStatus approval, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -1151,7 +1150,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    super(jsonRoot, journeyType, (existingJourneyUnchecked != null) ? existingJourneyUnchecked.getEpoch() : epoch);
+    super(jsonRoot, journeyType, (existingJourneyUnchecked != null) ? existingJourneyUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -1170,8 +1169,8 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
     this.templateParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "templateParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
-    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile);
-    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile);
+    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile(tenantID), tenantID);
+    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>(), CriterionContext.DynamicProfile(tenantID), tenantID);
     
     //
     // Targeting Event Criterion mgt
@@ -1188,9 +1187,9 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         eventNameCriterionJson.put("argument", argumentJson);
         arrayEventNameCriterion.add(eventNameCriterionJson);
         EvolutionEngineEventDeclaration event = dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(targetingEvent);
-        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null);
-        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext);        
-        this.targetingEventCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingEventCriteria", false), eventNameCriteria, criterionContext);
+        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null, tenantID);
+        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext, tenantID);        
+        this.targetingEventCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingEventCriteria", false), eventNameCriteria, criterionContext, tenantID);
       }
     else 
       {
@@ -1202,7 +1201,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     this.appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", Boolean.FALSE);
     this.appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", Boolean.FALSE);
     this.appendUCG = JSONUtilities.decodeBoolean(jsonRoot, "appendUCG", Boolean.FALSE);
-    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.templateParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.templateParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
     this.approval = approval;
     // by now GUI send String, to ask change to be cleaner
@@ -1262,8 +1261,8 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         //  criterionContext
         //
         
-        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null);
-        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext);        
+        CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, event, null, null, tenantID);
+        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>(), criterionContext, tenantID);        
         
         //
         //  fileID - argument
@@ -1286,7 +1285,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         //  targetingEventCriteria
         //
         
-        this.targetingEventCriteria = decodeCriteria(arrayTargetingEventCriteria, eventNameCriteria, criterionContext);
+        this.targetingEventCriteria = decodeCriteria(arrayTargetingEventCriteria, eventNameCriteria, criterionContext, tenantID);
       }
 
 
@@ -1295,9 +1294,8 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *  contextVariables
     *
     *****************************************/
-    
     JSONArray targetFileVariablesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "targetFileVariables", new JSONArray());
-    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters, targetFileVariablesJSON);
+    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters, targetFileVariablesJSON, tenantID);
     this.contextVariables = new HashMap<String,CriterionField>();
     this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
     for (CriterionField contextVariable : contextVariablesAndParameters.values())
@@ -1320,7 +1318,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), JSONUtilities.decodeString(jsonRoot,  "journeyTemplateID"), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService, journeyTemplateService);
+    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), JSONUtilities.decodeString(jsonRoot,  "journeyTemplateID"), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService, journeyTemplateService, tenantID);
 
     /*****************************************
     *
@@ -1328,7 +1326,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
     
     /*****************************************
     *
@@ -1952,7 +1950,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeCriteria(JSONArray jsonArray, List<EvaluationCriterion> additionalCriteria, CriterionContext context) throws GUIManagerException
+  private List<EvaluationCriterion> decodeCriteria(JSONArray jsonArray, List<EvaluationCriterion> additionalCriteria, CriterionContext context, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
 
@@ -1970,7 +1968,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context));
+            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context, tenantID));
           }
       }
 
@@ -2006,7 +2004,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *
   *****************************************/
 
-  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
+  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, int tenantID) throws GUIManagerException
   {
     Map<String,GUINode> nodes = new LinkedHashMap<String,GUINode>();
     if (jsonArray != null)
@@ -2018,7 +2016,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             //
 
             JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
-            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
 
             //
             //  validate (if required)
@@ -2028,7 +2026,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
               {
                 for (ContextVariable contextVariable : node.getContextVariables())
                   {
-                    contextVariable.validate(node.getNodeOnlyCriterionContext(), node.getNodeWithJourneyResultCriterionContext());
+                    contextVariable.validate(node.getNodeOnlyCriterionContext(), node.getNodeWithJourneyResultCriterionContext(), tenantID);
                   }
               }
 
@@ -2066,9 +2064,9 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *
   *****************************************/
 
-  private ParameterMap decodeBoundParameters(JSONArray jsonArray, String journeyTemplateID, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, JourneyTemplateService journeyTemplateService) throws GUIManagerException
+  private ParameterMap decodeBoundParameters(JSONArray jsonArray, String journeyTemplateID, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, JourneyTemplateService journeyTemplateService, int tenantID) throws GUIManagerException
   {
-    CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables);
+    CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, this.getTenantID());
     ParameterMap boundParameters = new ParameterMap();
     for (int i = 0; i < jsonArray.size(); i++)
       {
@@ -2120,23 +2118,23 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                 for (int j = 0; j < evaluationCriteriaArray.size(); j++)
                   {
-                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext, tenantID));
                   }
                 boundParameters.put(parameterName, evaluationCriteriaValue);
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 boundParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 boundParameters.put(parameterName, emailMessageValue);
                 break;
 
               case PushMessageParameter:
-                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 boundParameters.put(parameterName, pushMessageValue);
                 break;
               
@@ -2201,12 +2199,12 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
                     if(message != null) {                
                       // case InLine Template
-                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, communcationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, communcationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, tenantID);
                       boundParameters.put(parameterName, templateParameters);
                     }
                     else {
                       // case referenced Template
-                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, communcationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, communcationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, tenantID);
                       boundParameters.put(parameterName, templateParameters);
                     }
                   }
@@ -2217,7 +2215,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 break;
                 
               case WorkflowParameter:
-                WorkflowParameter workflowParameterValue = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                WorkflowParameter workflowParameterValue = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext, tenantID);
                 boundParameters.put(parameterName, workflowParameterValue);
                 break;
               }
@@ -2234,7 +2232,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             // parse
             //
 
-            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
             boundParameters.put(parameterName, parameterExpressionValue);
 
             //
@@ -2536,17 +2534,17 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *
   *****************************************/
 
-  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters) throws GUIManagerException
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, int tenantID) throws GUIManagerException
   {
-    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, new JSONArray());
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, new JSONArray(), tenantID);
   }
 
-  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, JSONArray targetFileVariables) throws GUIManagerException
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, JSONArray targetFileVariables, int tenantID) throws GUIManagerException
   {
-    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, targetFileVariables);
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null, targetFileVariables, tenantID);
   }
 
-  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType, JSONArray targetFileVariables) throws GUIManagerException
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType, JSONArray targetFileVariables, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -2594,9 +2592,9 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         switch (contextVariable.getVariableType())
           {
             case Parameter:
-              CriterionContext nodeOnlyWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getFirstElement(), contextVariableFields);
-              CriterionContext nodeWithJourneyResultWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getSecondElement(), contextVariableFields);
-              contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext);
+              CriterionContext nodeOnlyWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getFirstElement(), contextVariableFields, tenantID);
+              CriterionContext nodeWithJourneyResultWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getSecondElement(), contextVariableFields, tenantID);
+              contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext, tenantID);
               CriterionField criterionField = new CriterionField(contextVariable);
               contextVariableFields.put(criterionField.getID(), criterionField);
               break;
@@ -2640,14 +2638,14 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 //  workingCriterionContext
                 //
 
-                CriterionContext nodeOnlyWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getFirstElement(), contextVariableFields);
-                CriterionContext nodeWithJourneyResultWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getSecondElement(), contextVariableFields);
+                CriterionContext nodeOnlyWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getFirstElement(), contextVariableFields, tenantID);
+                CriterionContext nodeWithJourneyResultWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getSecondElement(), contextVariableFields, tenantID);
 
                 //
                 //  validate
                 //
 
-                contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext);
+                contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext, tenantID);
 
                 //
                 //  mark as validated
@@ -2856,7 +2854,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
+    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, int tenantID) throws GUIManagerException
     {
       /*****************************************
       *
@@ -2896,27 +2894,27 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
       //  selectedjourney
       //
 
-      Journey workflow = decodeDependentWorkflow(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, journeyService);
+      Journey workflow = decodeDependentWorkflow(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, journeyService, tenantID);
 
       //
       //  criterionContext
       //
 
-      this.nodeOnlyCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, (Journey) null);
-      this.nodeWithJourneyResultCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, workflow);
+      this.nodeOnlyCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, (Journey) null, tenantID);
+      this.nodeWithJourneyResultCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, workflow, tenantID);
 
       //
       //  contextVariables
       //
 
-      this.contextVariables = nodeType.getAllowContextVariables() ? decodeContextVariables(JSONUtilities.decodeJSONArray(jsonRoot, "contextVariables", false)) : Collections.<ContextVariable>emptyList();
+      this.contextVariables = nodeType.getAllowContextVariables() ? decodeContextVariables(JSONUtilities.decodeJSONArray(jsonRoot, "contextVariables", false), tenantID) : Collections.<ContextVariable>emptyList();
 
       // add a special internal variables to hold partner
       
       if ("121".equals(nodeType.getID()) && "offerDelivery".equals(eventName)) // event.selection nodetype (defined in src/main/resources/config/deployment-product-toolbox.json)
         {
-          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER, "event.supplierName")));
-          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_RESELLER, "event.resellerName")));
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER, "event.supplierName"), tenantID));
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_RESELLER, "event.resellerName"), tenantID));
         }
       
       /*****************************************
@@ -2931,14 +2929,14 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
           //
 
-          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService));
-          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext));
+          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, tenantID));
+          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, tenantID));
 
           //
           //  outputConnectors
           //
 
-          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
         }
     }
     
@@ -3021,7 +3019,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    private Journey decodeDependentWorkflow(JSONArray jsonArray, NodeType nodeType, JourneyService journeyService) throws GUIManagerException
+    private Journey decodeDependentWorkflow(JSONArray jsonArray, NodeType nodeType, JourneyService journeyService, int tenantID) throws GUIManagerException
     {
       Journey workflow = null;
       for (int i=0; i<jsonArray.size(); i++)
@@ -3067,7 +3065,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID) throws GUIManagerException
     {
       ParameterMap nodeParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -3097,23 +3095,23 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                 for (int j=0; j<evaluationCriteriaArray.size(); j++)
                   {
-                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext, tenantID));
                   }
                 nodeParameters.put(parameterName, evaluationCriteriaValue);
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 nodeParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 nodeParameters.put(parameterName, emailMessageValue);
                 break;
 
               case PushMessageParameter:
-                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 nodeParameters.put(parameterName, pushMessageValue);
                 break;
                 
@@ -3163,19 +3161,19 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     // }
                     if(message != null) {                
                       // case InLine Template
-                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, tenantID);
                       nodeParameters.put(parameterName, templateParameters);
                     }
                     else {
                       // case referenced Template
-                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, communicationChannelID, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext, tenantID);
                       nodeParameters.put(parameterName, templateParameters);
                     }
                   }
                 break;
 
               case WorkflowParameter:
-                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext, tenantID);
                 nodeParameters.put(parameterName, workflowParameter);
                 break;
             }
@@ -3189,7 +3187,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    private ParameterMap decodeExpressionValuedParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    private ParameterMap decodeExpressionValuedParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, int tenantID) throws GUIManagerException
     {
       ParameterMap nodeParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -3216,7 +3214,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           //  parse
           //
 
-          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
           nodeParameters.put(parameterName, parameterExpressionValue);
 
           //
@@ -3329,13 +3327,13 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
+    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, int tenantID) throws GUIManagerException
     {
       List<OutgoingConnectionPoint> outgoingConnectionPoints = new ArrayList<OutgoingConnectionPoint>();
       for (int i=0; i<jsonArray.size(); i++)
         {
           JSONObject connectionPointJSON = (JSONObject) jsonArray.get(i);
-          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, tenantID);
           outgoingConnectionPoints.add(outgoingConnectionPoint);
         }
       return outgoingConnectionPoints;
@@ -3347,7 +3345,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    private static List<ContextVariable> decodeContextVariables(JSONArray jsonArray) throws GUIManagerException
+    private static List<ContextVariable> decodeContextVariables(JSONArray jsonArray, int tenantID) throws GUIManagerException
     {
       List<ContextVariable> contextVariables = new ArrayList<ContextVariable>();
       if (jsonArray != null)
@@ -3355,7 +3353,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           for (int i=0; i<jsonArray.size(); i++)
             {
               JSONObject contextVariableJSON = (JSONObject) jsonArray.get(i);
-              contextVariables.add(new ContextVariable(contextVariableJSON));
+              contextVariables.add(new ContextVariable(contextVariableJSON, tenantID));
             }
         }
       return contextVariables;
@@ -3406,7 +3404,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext nodeCriterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
+    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext nodeCriterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, int tenantID) throws GUIManagerException
     {
       //
       //  data
@@ -3436,20 +3434,20 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
       //  criterionContext
       //
 
-      this.linkCriterionContext = new CriterionContext(nodeCriterionContext, nodeType, linkEvent);
+      this.linkCriterionContext = new CriterionContext(nodeCriterionContext, nodeType, linkEvent, tenantID);
 
       //
       //  additional parameters
       //
 
-      this.outputConnectorParameters.putAll(decodeDependentOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext, journeyService, subscriberMessageTemplateService));
-      this.outputConnectorParameters.putAll(decodeExpressionValuedOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext));
+      this.outputConnectorParameters.putAll(decodeDependentOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext, journeyService, subscriberMessageTemplateService, tenantID));
+      this.outputConnectorParameters.putAll(decodeExpressionValuedOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext, tenantID));
 
       //
       //  transition criteria
       //
 
-      this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), linkCriterionContext);
+      this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), linkCriterionContext, tenantID);
     }
 
     /*****************************************
@@ -3515,7 +3513,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    private ParameterMap decodeDependentOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private ParameterMap decodeDependentOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID) throws GUIManagerException
     {
       ParameterMap outputConnectorParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -3545,23 +3543,23 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                 for (int j=0; j<evaluationCriteriaArray.size(); j++)
                   {
-                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext, tenantID));
                   }
                 outputConnectorParameters.put(parameterName, evaluationCriteriaValue);
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 outputConnectorParameters.put(parameterName, smsMessageValue);
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 outputConnectorParameters.put(parameterName, emailMessageValue);
                 break;
 
               case PushMessageParameter:
-                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext);
+                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), null, subscriberMessageTemplateService, criterionContext, tenantID);
                 outputConnectorParameters.put(parameterName, pushMessageValue);
                 break;
 
@@ -3581,7 +3579,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 //                break;
 
               case WorkflowParameter:
-                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext, tenantID);
                 outputConnectorParameters.put(parameterName, workflowParameter);
                 break;
             }
@@ -3595,7 +3593,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    private ParameterMap decodeExpressionValuedOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    private ParameterMap decodeExpressionValuedOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, int tenantID) throws GUIManagerException
     {
       ParameterMap outputConnectorParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -3622,7 +3620,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           //  parse
           //
 
-          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
           outputConnectorParameters.put(parameterName, parameterExpressionValue);
 
           //
@@ -3735,14 +3733,14 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     *****************************************/
 
-    private List<EvaluationCriterion> decodeTransitionCriteria(JSONArray jsonArray, CriterionContext criterionContext) throws GUIManagerException
+    private List<EvaluationCriterion> decodeTransitionCriteria(JSONArray jsonArray, CriterionContext criterionContext, int tenantID) throws GUIManagerException
     {
       List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
       if (jsonArray != null)
         {
           for (int i=0; i<jsonArray.size(); i++)
             {
-              result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), criterionContext));
+              result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), criterionContext, tenantID));
             }
         }
       return result;
@@ -4006,7 +4004,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
    * 
    *******************************/
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> targetIDs = new ArrayList<String>();
@@ -4031,16 +4029,16 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             {
               if (journeyNode.getNodeType().getActionManager() != null)
                 {
-                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("journey");
+                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("journey");
                   if (campaignID != null)campaignIDs.add(campaignID);
-                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("workflow");
+                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("workflow");
                   if (workflowID != null) wrkflowIDs.add(workflowID);
                  
-                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("pushtemplate");
+                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("pushtemplate");
                   if (pushId != null) pushTemplateIDs.add(pushId);
-                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("mailtemplate");
+                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("mailtemplate");
                   if (mailId != null) mailtemplateIDs.add(mailId);
-                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("dialogtemplate");
+                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
                 }
 				if (journeyNode.getNodeName().equals("Profile Selection")
@@ -4102,22 +4100,22 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             {
               if (offerNode.getNodeType().getActionManager() != null)
                 {
-                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("offer");
+                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("offer");
                   if (offerID != null) 
                 	  offerIDs.add(offerID);
                   
                   
-                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("point");
+                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("point");
                   if (pointID != null) pointIDs.add(pointID);
                   
-                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("workflow");
+                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("workflow");
                   if (workflowID != null) workflowIDs.add(workflowID);
                   
-                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
+                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("pushtemplate");
                   if (pushId != null) pushTemplateIDs.add(pushId);
-                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
+                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate");
                   if (mailId != null) mailtemplateIDs.add(mailId);
-                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
+                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
                 }
               
@@ -4210,11 +4208,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 if (offerNode.getNodeType().getActionManager() != null)
                   {
                            
-                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("pushtemplate");
+                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("pushtemplate");
                     if (pushId != null) pushTemplateIDs.add(pushId);
-                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("mailtemplate");
+                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate");
                     if (mailId != null) mailtemplateIDs.add(mailId);
-                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("dialogtemplate");
+                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate");
                     if (dialogID != null) dialogIDs.add(dialogID);
                   }
                

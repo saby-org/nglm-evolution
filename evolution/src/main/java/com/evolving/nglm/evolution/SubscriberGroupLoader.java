@@ -122,6 +122,7 @@ public class SubscriberGroupLoader
     String loadTypeArgument = args[2];
     SubscriberGroupType subscriberGroupType = SubscriberGroupType.fromExternalRepresentation(args[3]);
     String groupName = args[4];
+    int tenantID = Integer.parseInt(args[5]);
     LoadType loadType = LoadType.fromExternalRepresentation(loadTypeArgument);
 
     //
@@ -251,7 +252,7 @@ public class SubscriberGroupLoader
       {
         case SegmentationDimension:
           SegmentationDimensionService segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "subscribergrouploader-segmentationdimension-" + Long.toString(uniqueKeyServer.getKey()), Deployment.getSegmentationDimensionTopic(), false);
-          for (SegmentationDimension candidateDimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
+          for (SegmentationDimension candidateDimension : segmentationDimensionService.getActiveSegmentationDimensions(now, 0))
             {
               if (Objects.equals(candidateDimension.getSegmentationDimensionName(), groupName))
                 {
@@ -269,7 +270,7 @@ public class SubscriberGroupLoader
 
         case Target:
           TargetService targetService = new TargetService(bootstrapServers, "subscribergrouploader-target-" + Long.toString(uniqueKeyServer.getKey()), Deployment.getTargetTopic(), false);
-          for (Target candidateTarget : targetService.getActiveTargets(now))
+          for (Target candidateTarget : targetService.getActiveTargets(now, 0))
             {
               if (Objects.equals(candidateTarget.getTargetName(), groupName))
                 {
@@ -356,8 +357,8 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    boolean useAlternateID = Deployment.getSubscriberGroupLoaderAlternateID() != null;
-    boolean useAutoProvision = useAlternateID && Objects.equals(Deployment.getSubscriberGroupLoaderAlternateID(), Deployment.getExternalSubscriberID());
+    boolean useAlternateID = Deployment.getDeployment(tenantID).getSubscriberGroupLoaderAlternateID() != null;
+    boolean useAutoProvision = useAlternateID && Objects.equals(Deployment.getDeployment(tenantID).getSubscriberGroupLoaderAlternateID(), Deployment.getDeployment(tenantID).getExternalSubscriberID());
     if (inputFile != null)
       {
         /*****************************************
@@ -368,7 +369,7 @@ public class SubscriberGroupLoader
 
         log.info("updating subscribers in group {}", groupName);
         if (useAlternateID)
-          log.info("using alternate id {} {}", Deployment.getSubscriberGroupLoaderAlternateID(), (String) (subscriberGroupAssignSubscriberIDTopic != null ? "with autoprovision" : ""));
+          log.info("using alternate id {} {}", Deployment.getDeployment(tenantID).getSubscriberGroupLoaderAlternateID(), (String) (subscriberGroupAssignSubscriberIDTopic != null ? "with autoprovision" : ""));
         else
           log.info("using internal subscriber ids");
 
@@ -449,7 +450,7 @@ public class SubscriberGroupLoader
                   {
                     try
                       {
-                        resolvedSubscriberID = subscriberIDService.getSubscriberID(Deployment.getSubscriberGroupLoaderAlternateID(), subscriberID);
+                        resolvedSubscriberID = subscriberIDService.getSubscriberID(Deployment.getDeployment(tenantID).getSubscriberGroupLoaderAlternateID(), subscriberID);
                       }
                     catch (SubscriberIDService.SubscriberIDServiceException e)
                       {
@@ -498,10 +499,10 @@ public class SubscriberGroupLoader
                     switch (subscriberGroupType)
                       {
                         case SegmentationDimension:
-                          subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, SubscriberGroupType.SegmentationDimension, Arrays.asList(primaryID, segmentID), subscriberGroupEpoch.getEpoch(), loadType.getAddRecord());
+                          subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, SubscriberGroupType.SegmentationDimension, Arrays.asList(primaryID, segmentID), subscriberGroupEpoch.getEpoch(), loadType.getAddRecord(), tenantID);
                           break;
                         case Target:
-                          subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, SubscriberGroupType.Target, Arrays.asList(primaryID), subscriberGroupEpoch.getEpoch(), loadType.getAddRecord());
+                          subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, SubscriberGroupType.Target, Arrays.asList(primaryID), subscriberGroupEpoch.getEpoch(), loadType.getAddRecord(), tenantID);
                           break;
                       }
                     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, stringKeySerde.serializer().serialize(topic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(topic, subscriberGroup)));

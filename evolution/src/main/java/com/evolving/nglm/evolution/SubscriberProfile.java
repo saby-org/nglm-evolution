@@ -140,7 +140,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(9));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -162,6 +162,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
 
     commonSchema = schemaBuilder.build();
   };
@@ -190,7 +191,7 @@ public abstract class SubscriberProfile
     try
       {
         Class<SubscriberProfile> subscriberProfileClass = Deployment.getSubscriberProfileClass();
-        subscriberProfileConstructor = subscriberProfileClass.getDeclaredConstructor(String.class);
+        subscriberProfileConstructor = subscriberProfileClass.getDeclaredConstructor(String.class, Integer.TYPE);
         subscriberProfileCopyConstructor = subscriberProfileClass.getDeclaredConstructor(subscriberProfileClass);
         Method serdeMethod = subscriberProfileClass.getMethod("serde");
         subscriberProfileSerde = (ConnectSerde<SubscriberProfile>) serdeMethod.invoke(null);
@@ -240,6 +241,7 @@ public abstract class SubscriberProfile
   private Map<String,Integer> exclusionInclusionTargets; 
   private List<ComplexObjectInstance> complexObjectInstances; 
   private Map<String, List<Date>> offerPurchaseHistory;
+  private int tenantID;
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
@@ -274,7 +276,8 @@ public abstract class SubscriberProfile
   public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
-  public List<Pair<String, String>> getUnknownRelationships(){ return unknownRelationships ; }
+  public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
+  public int getTenantID() { return tenantID; }
 
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -290,7 +293,7 @@ public abstract class SubscriberProfile
 
   public String getLanguage()
   {
-    return (languageID != null && Deployment.getSupportedLanguages().get(getLanguageID()) != null) ? Deployment.getSupportedLanguages().get(getLanguageID()).getName() : Deployment.getBaseLanguage();
+    return (languageID != null && Deployment.getDeployment(this.getTenantID()).getSupportedLanguages().get(getLanguageID()) != null) ? Deployment.getDeployment(tenantID).getSupportedLanguages().get(getLanguageID()).getName() : Deployment.getDeployment(tenantID).getBaseLanguage();
   }
 
 
@@ -373,7 +376,7 @@ public abstract class SubscriberProfile
                 int epoch = segments.get(groupID);
                 if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
                   {
-                    Segment segment = segmentationDimensionService.getSegment(segmentID);
+                    Segment segment = segmentationDimensionService.getSegment(segmentID, tenantID);
                     segmentMap.put("Segment" , segment.getName());
                     segmentMap.put("Dimension" , segmentationDimension.getSegmentationDimensionDisplay());                                                          
                     result.add(segmentMap);
@@ -384,7 +387,7 @@ public abstract class SubscriberProfile
               {
                 Map<String, String> segmentMap = new LinkedHashMap<String, String>();
                 // If not file targeting, let try to retrieve the good segment...
-                Segment segment = segmentationDimensionService.getSegment(segmentID);
+                Segment segment = segmentationDimensionService.getSegment(segmentID, tenantID);
                 if(segment != null) {
                   segmentMap.put("Segment" , segment.getName());
                   segmentMap.put("Dimension" , segmentationDimension.getSegmentationDimensionDisplay());                  
@@ -664,7 +667,7 @@ public abstract class SubscriberProfile
             JSONObject obj = new JSONObject();          
             String relationShipID = relationship.getKey();
             String relationshipName = null;
-            for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+            for (SupportedRelationship supportedRelationship : Deployment.getDeployment(getTenantID()).getSupportedRelationships().values())
               {
                if (supportedRelationship.getID().equals(relationShipID)) {
                  relationshipName = supportedRelationship.getName();
@@ -913,7 +916,7 @@ public abstract class SubscriberProfile
     
     //prepare Inclusion/Exclusion list
     
-    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now);
+    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
     
     //
     //  prepare loyalty programs
@@ -1085,7 +1088,7 @@ public abstract class SubscriberProfile
     HashMap<String, Object> kpiPresentation = new HashMap<String,Object>();
      //prepare Inclusion/Exclusion list
     Date now = SystemTime.getCurrentTime();
-    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now);
+    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
     
 
     //
@@ -1150,7 +1153,7 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getToday(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.getValue(today, today);
   }
 
@@ -1160,8 +1163,8 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getYesterday(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     Date endDay = startDay;
     return metricHistory.getValue(startDay, endDay);
   }
@@ -1172,9 +1175,9 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getPrevious7Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -7, Deployment.getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
   }
 
@@ -1184,9 +1187,9 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getPrevious14Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -14, Deployment.getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -14, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
   }
 
@@ -1196,10 +1199,10 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getPreviousMonth(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
   }
 
@@ -1209,9 +1212,9 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
   }
 
@@ -1221,9 +1224,9 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getCountIfZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.countIf(startDay, endDay, MetricHistory.Criteria.IsZero);
   }
 
@@ -1233,9 +1236,9 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getCountIfNonZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.countIf(startDay, endDay, MetricHistory.Criteria.IsNonZero);
   }
 
@@ -1245,9 +1248,9 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getAggregateIfZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.aggregateIf(startDay, endDay, MetricHistory.Criteria.IsZero, criteriaMetricHistory);
   }
 
@@ -1257,9 +1260,9 @@ public abstract class SubscriberProfile
 
   @Deprecated protected Long getAggregateIfNonZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
   {
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
-    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
     return metricHistory.aggregateIf(startDay, endDay, MetricHistory.Criteria.IsNonZero, criteriaMetricHistory);
   }
 
@@ -1285,13 +1288,13 @@ public abstract class SubscriberProfile
     //
 
     int numberOfMonths = 3;
-    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getBaseTimeZone());
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
     long[] valuesByMonth = new long[numberOfMonths];
     for (int i=0; i<numberOfMonths; i++)
       {
-        Date startDay = RLMDateUtils.addMonths(startOfMonth, -(i+1), Deployment.getBaseTimeZone());
-        Date endDay = RLMDateUtils.addDays(RLMDateUtils.addMonths(startDay, 1, Deployment.getBaseTimeZone()), -1, Deployment.getBaseTimeZone());
+        Date startDay = RLMDateUtils.addMonths(startOfMonth, -(i+1), Deployment.getDeployment(tenantID).getBaseTimeZone());
+        Date endDay = RLMDateUtils.addDays(RLMDateUtils.addMonths(startDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone()), -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
         valuesByMonth[i] = metricHistory.getValue(startDay, endDay);
       }
 
@@ -1423,7 +1426,7 @@ public abstract class SubscriberProfile
   *
   *****************************************/
 
-  protected SubscriberProfile(String subscriberID)
+  protected SubscriberProfile(String subscriberID, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.subscriberTraceEnabled = false;
@@ -1446,6 +1449,7 @@ public abstract class SubscriberProfile
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
     this.complexObjectInstances = new ArrayList<>();
     this.offerPurchaseHistory = new HashMap<>();
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -1490,7 +1494,7 @@ public abstract class SubscriberProfile
     List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
-
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     //
     //  return
     //
@@ -1516,6 +1520,7 @@ public abstract class SubscriberProfile
     this.exclusionInclusionTargets = exclusionInclusionTargets;
     this.complexObjectInstances = complexObjectInstances;
     this.offerPurchaseHistory = offerPurchaseHistory;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -1834,6 +1839,7 @@ public abstract class SubscriberProfile
     this.complexObjectInstances = subscriberProfile.getComplexObjectInstances();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
+    this.tenantID = subscriberProfile.getTenantID();
   }
 
   /*****************************************
@@ -1865,6 +1871,7 @@ public abstract class SubscriberProfile
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
+    struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
   }
 
   /****************************************
@@ -2045,7 +2052,7 @@ public abstract class SubscriberProfile
   public boolean getInInclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     boolean result = false;
-    for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now))
+    for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now, tenantID))
       {
         if (inclusionTarget.getFileID() != null)
           {
@@ -2089,7 +2096,7 @@ public abstract class SubscriberProfile
   public Set<String> getExclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     Set<String> result = new HashSet<String>();
-    for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now))
+    for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now, tenantID))
       {
         if (exclusionTarget.getFileID() != null)
           {
@@ -2131,7 +2138,7 @@ public abstract class SubscriberProfile
   public Set<String> getInclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     Set<String> result = new HashSet<String>();
-    for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now))
+    for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now, tenantID))
       {
         if (inclusionTarget.getFileID() != null)
           {
@@ -2173,7 +2180,7 @@ public abstract class SubscriberProfile
   public boolean getInExclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     boolean result = false;
-    for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now))
+    for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now, tenantID))
       {
         if (exclusionTarget.getFileID() != null)
           {
@@ -2266,6 +2273,7 @@ public abstract class SubscriberProfile
     b.append("," + languageID);
     b.append("," + extendedSubscriberProfile);
     b.append("," + (subscriberHistory != null ? subscriberHistory.getDeliveryRequests().size() : null));
+    b.append("," + tenantID);
     return b.toString();
   }
 
@@ -2523,7 +2531,7 @@ public abstract class SubscriberProfile
     try
       {
         SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         result = dateFormat.format(date);
       }
     catch (Exception e)
@@ -2546,7 +2554,7 @@ public abstract class SubscriberProfile
     //  validate
     //
     
-    if(language != null && (Deployment.getSupportedLanguages().get(language) == null)) throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (language) ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+    if(language != null && (Deployment.getDeployment(getTenantID()).getSupportedLanguages().get(language) == null)) throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (language) ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
     if(evolutionSubscriberStatus != null && (EvolutionSubscriberStatus.fromExternalRepresentation(evolutionSubscriberStatus) == EvolutionSubscriberStatus.Unknown)) throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (evolutionSubscriberStatus) ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
 
     //

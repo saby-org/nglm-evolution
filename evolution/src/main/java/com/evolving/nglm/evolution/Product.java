@@ -230,7 +230,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductUnchecked, DeliverableService deliverableService, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  public Product(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductUnchecked, DeliverableService deliverableService, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -238,7 +238,7 @@ public class Product extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    super(jsonRoot, (existingProductUnchecked != null) ? existingProductUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingProductUnchecked != null) ? existingProductUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -268,7 +268,7 @@ public class Product extends GUIManagedObject implements StockableItem
     if (deliverableID == null)
       {
         String deliverableName = JSONUtilities.decodeString(jsonRoot, "deliverableName", true);
-        GUIManagedObject deliverableUnchecked = deliverableService.getStoredDeliverableByName(deliverableName);
+        GUIManagedObject deliverableUnchecked = deliverableService.getStoredDeliverableByName(deliverableName, tenantID);
         Deliverable deliverable = (deliverableUnchecked != null && deliverableUnchecked.getAccepted()) ? (Deliverable) deliverableUnchecked : null;
         if (deliverable == null) JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
         this.deliverableID = deliverable.getDeliverableID();
@@ -382,7 +382,7 @@ public class Product extends GUIManagedObject implements StockableItem
     if (! deliverableService.isActiveDeliverableThroughInterval(deliverable, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid deliverable (start/end dates)", deliverableID);
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> supplierIDs = new ArrayList<String>();

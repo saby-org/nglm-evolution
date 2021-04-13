@@ -24,7 +24,7 @@ public class ReportsCommonCode
   public static final ThreadLocal<SimpleDateFormat> deploymentDateFormat = ThreadLocal.withInitial(
       () -> {
         SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
         return sdf;
       });
 
@@ -48,7 +48,7 @@ public class ReportsCommonCode
           standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX"));
           for (SimpleDateFormat standardDateFormat : standardDateFormats)
             {
-              standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+              standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
             }
         }
     }

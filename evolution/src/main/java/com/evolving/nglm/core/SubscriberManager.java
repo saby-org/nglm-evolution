@@ -59,12 +59,6 @@ public class SubscriberManager
 
   private static final Logger log = LoggerFactory.getLogger(SubscriberManager.class);
 
-  //
-  //  hardwired arguments
-  //
-
-  public static String baseTimeZone = Deployment.getBaseTimeZone();
-
   /*****************************************
   *
   *  data
@@ -631,6 +625,34 @@ public class SubscriberManager
       {
         return null;
       }
+    
+    /*****************************************
+    *
+    *  extract tenantID : Here comes the following events: AssignSubscriberID or UpdateAlternateID or any of event declared as AutoProvisionSubscriberStreamEvent
+    *
+    *****************************************/
+    
+    Integer tenantID = null;
+    if(currentAutoProvisionedSubscriber != null) 
+      {
+        tenantID = currentAutoProvisionedSubscriber.getTenantID();
+      }
+    else if(autoProvisionEvent instanceof AssignSubscriberIDs)
+      {
+        tenantID = ((AssignSubscriberIDs)autoProvisionEvent).getTenantID();   
+      }
+    else if(autoProvisionEvent instanceof UpdateAlternateID)
+      {
+        tenantID = ((UpdateAlternateID)autoProvisionEvent).getTenantID();   
+      }
+    else if(autoProvisionEvent instanceof AutoProvisionSubscriberStreamEvent)
+      {
+        tenantID = ((AutoProvisionSubscriberStreamEvent)autoProvisionEvent).getTenantID();
+      }
+    else 
+      {
+        log.warn("Can't retrieve tenantID: autoProvisionEvent " + autoProvisionEvent  + " currentAutoProvisionedSubscriber " + currentAutoProvisionedSubscriber);
+      }    
 
     /****************************************
     *
@@ -685,16 +707,17 @@ public class SubscriberManager
     if (autoProvisionEvent instanceof UpdateAlternateID)
       {
         UpdateAlternateID updateAlternateID = (UpdateAlternateID) autoProvisionEvent;
+        tenantID = updateAlternateID.getTenantID();
         switch (updateAlternateID.getAssignmentType())
           {
             case AssignSubscriberID:
-              autoProvisionedSubscriber = new AutoProvisionedSubscriber(updateAlternateID.getSubscriberID(), externalSubscriberID);
+              autoProvisionedSubscriber = new AutoProvisionedSubscriber(updateAlternateID.getSubscriberID(), externalSubscriberID, tenantID);
               autoProvisionedSubscriberUpdated = true;
               break;
               
             case ReassignSubscriberID:
             case UnassignSubscriberID:
-              autoProvisionedSubscriber = new AutoProvisionedSubscriber(null, externalSubscriberID);
+              autoProvisionedSubscriber = new AutoProvisionedSubscriber(null, externalSubscriberID, tenantID);
               autoProvisionedSubscriberUpdated = true;
               break;
           }
@@ -709,7 +732,7 @@ public class SubscriberManager
     boolean autoProvisioned = false;
     if (autoProvisionedSubscriber == null)
       {
-        autoProvisionedSubscriber = new AutoProvisionedSubscriber(generateSubscriberID(), externalSubscriberID);
+        autoProvisionedSubscriber = new AutoProvisionedSubscriber(generateSubscriberID(), externalSubscriberID, tenantID);
         autoProvisionedSubscriberUpdated = true;
         autoProvisioned = true;
       }
@@ -745,7 +768,7 @@ public class SubscriberManager
           {
             Map<String,String> alternateIDs = new HashMap<String,String>();
             alternateIDs.put(Deployment.getExternalSubscriberID(), externalSubscriberID);
-            assignSubscriberIDs = new AssignSubscriberIDs(autoProvisionedSubscriber.getSubscriberID(), autoProvisionEvent.getEventDate(), alternateIDs);
+            assignSubscriberIDs = new AssignSubscriberIDs(autoProvisionedSubscriber.getSubscriberID(), autoProvisionEvent.getEventDate(), alternateIDs, tenantID);
           }
       }
 
@@ -850,7 +873,7 @@ public class SubscriberManager
     List<UpdateSubscriberID> result = new ArrayList<UpdateSubscriberID>();
     for (String idField : assignSubscriberIDs.getAlternateIDs().keySet())
       {
-        result.add(new UpdateSubscriberID(assignSubscriberIDs.getSubscriberID(), idField, assignSubscriberIDs.getAlternateIDs().get(idField), assignSubscriberIDs.getEventDate(), assignSubscriberIDs.getSubscriberAction(), false, false));
+        result.add(new UpdateSubscriberID(assignSubscriberIDs.getSubscriberID(), idField, assignSubscriberIDs.getAlternateIDs().get(idField), assignSubscriberIDs.getEventDate(), assignSubscriberIDs.getSubscriberAction(), false, false, assignSubscriberIDs.getTenantID()));
       }
     return result;
   }    
@@ -881,6 +904,14 @@ public class SubscriberManager
       {
         return null;
       }
+    
+    /****************************************
+    *
+    *  retrieve the tenantID 
+    *
+    ****************************************/
+    
+    int tenantID = updateSubscriberID.getTenantID();
 
     /****************************************
     *
@@ -952,7 +983,7 @@ public class SubscriberManager
       {
         if (! newlyProvisioned && ! Objects.equals(provisionedSubscriberID.getAlternateID(), updateSubscriberID.getAlternateID()))
           {
-            provisionedSubscriberID.setBackChannel(new UpdateAlternateID(updateSubscriberID.getIDField(), provisionedSubscriberID.getAlternateID(), provisionedSubscriberID.getSubscriberID(), (updateSubscriberID.getAlternateID() != null) ? AssignmentType.ReassignSubscriberID : AssignmentType.UnassignSubscriberID, updateSubscriberID.getEventDate(), updateSubscriberID.getSubscriberAction(), true, false));
+            provisionedSubscriberID.setBackChannel(new UpdateAlternateID(updateSubscriberID.getIDField(), provisionedSubscriberID.getAlternateID(), provisionedSubscriberID.getSubscriberID(), (updateSubscriberID.getAlternateID() != null) ? AssignmentType.ReassignSubscriberID : AssignmentType.UnassignSubscriberID, updateSubscriberID.getEventDate(), updateSubscriberID.getSubscriberAction(), true, false, tenantID));
             provisionedSubscriberIDUpdated = true;
           }
       }
@@ -974,7 +1005,7 @@ public class SubscriberManager
 
     if (provisionedSubscriberID.getAlternateID() == null)
       {
-        provisionedSubscriberID.setCleanupTable(new UpdateSubscriberID(updateSubscriberID.getSubscriberID(), updateSubscriberID.getIDField(), null, updateSubscriberID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard, true, true));
+        provisionedSubscriberID.setCleanupTable(new UpdateSubscriberID(updateSubscriberID.getSubscriberID(), updateSubscriberID.getIDField(), null, updateSubscriberID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard, true, true, tenantID));
         provisionedSubscriberIDUpdated = true;
       }
     
@@ -1053,7 +1084,7 @@ public class SubscriberManager
 
   private static Iterable<KeyValue<StringKey, UpdateAlternateID>> getUpdateAlternateIDStream(StringKey key, UpdateSubscriberID updateSubscriberID)
   {
-    UpdateAlternateID updateAlternateID = (updateSubscriberID.getAlternateID() != null) ? new UpdateAlternateID(updateSubscriberID.getIDField(), updateSubscriberID.getAlternateID(), updateSubscriberID.getSubscriberID(), AssignmentType.AssignSubscriberID, updateSubscriberID.getEventDate(), updateSubscriberID.getSubscriberAction(), false, false) : null;
+    UpdateAlternateID updateAlternateID = (updateSubscriberID.getAlternateID() != null) ? new UpdateAlternateID(updateSubscriberID.getIDField(), updateSubscriberID.getAlternateID(), updateSubscriberID.getSubscriberID(), AssignmentType.AssignSubscriberID, updateSubscriberID.getEventDate(), updateSubscriberID.getSubscriberAction(), false, false, updateSubscriberID.getTenantID()) : null;
     KeyValue<StringKey,UpdateAlternateID> result = (updateAlternateID != null) ?  new KeyValue<StringKey,UpdateAlternateID>(new StringKey(updateAlternateID.getAlternateID()), updateAlternateID) : null;
     List<KeyValue<StringKey,UpdateAlternateID>> iterableResult = (result != null) ? Collections.<KeyValue<StringKey,UpdateAlternateID>>singletonList(result) : Collections.<KeyValue<StringKey,UpdateAlternateID>>emptyList();
     return iterableResult;
@@ -1094,6 +1125,16 @@ public class SubscriberManager
 
     ProvisionedAlternateID provisionedAlternateID = (currentProvisionedAlternateID != null) ? new ProvisionedAlternateID(currentProvisionedAlternateID) : null;
     boolean provisionedAlternateIDUpdated = (currentProvisionedAlternateID != null) ? false : true;
+    
+    
+    /****************************************
+    *
+    *  retrieve the tenantID 
+    *
+    ****************************************/
+    
+    int tenantID = updateAlternateID.getTenantID();
+    
 
     /*****************************************
     *
@@ -1171,7 +1212,7 @@ public class SubscriberManager
     boolean newlyProvisioned = false;
     if (provisionedAlternateID == null)
       {
-        provisionedAlternateID = new ProvisionedAlternateID(updateAlternateID.getAlternateID(), Collections.<String>singleton(updateAlternateID.getSubscriberID()));
+        provisionedAlternateID = new ProvisionedAlternateID(updateAlternateID.getAlternateID(), Collections.<String>singleton(updateAlternateID.getSubscriberID()), tenantID);
         provisionedAlternateIDUpdated = true;
         newlyProvisioned = true;
       }
@@ -1188,7 +1229,7 @@ public class SubscriberManager
           {
             if (! newlyProvisioned && provisionedAlternateID.getAllSubscriberIDs().size() == 1 && ! provisionedAlternateID.getAllSubscriberIDs().contains(updateAlternateID.getSubscriberID()))
               {
-                provisionedAlternateID.setBackChannel(new UpdateSubscriberID(provisionedAlternateID.getAllSubscriberIDs().iterator().next(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard, true, false));
+                provisionedAlternateID.setBackChannel(new UpdateSubscriberID(provisionedAlternateID.getAllSubscriberIDs().iterator().next(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard, true, false, tenantID));
                 provisionedAlternateIDUpdated = true;
               }
           }
@@ -1246,10 +1287,10 @@ public class SubscriberManager
     switch (updateAlternateID.getAssignmentType())
       {
         case AssignSubscriberID:
-            provisionedAlternateID.setProvisionedSubscriberID(new RecordSubscriberID(updateAlternateID.getSubscriberID(), updateAlternateID.getIDField(), updateAlternateID.getAlternateID(), updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard));
+            provisionedAlternateID.setProvisionedSubscriberID(new RecordSubscriberID(updateAlternateID.getSubscriberID(), updateAlternateID.getIDField(), updateAlternateID.getAlternateID(), updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard, tenantID));
             if (! newlyProvisioned && ! Deployment.getAlternateIDs().get(updateAlternateID.getIDField()).getSharedID() && !currentProvisionedAlternateID.getAlternateID().equals(updateAlternateID.getAlternateID()))
               {
-                provisionedAlternateID.setDeprovisionedSubscriberID(new RecordSubscriberID(currentProvisionedAlternateID.getAllSubscriberIDs().iterator().next(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard));
+                provisionedAlternateID.setDeprovisionedSubscriberID(new RecordSubscriberID(currentProvisionedAlternateID.getAllSubscriberIDs().iterator().next(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard, tenantID));
               }
             provisionedAlternateIDUpdated = true;
           break;
@@ -1257,7 +1298,7 @@ public class SubscriberManager
         case UnassignSubscriberID:
           if (newlyProvisioned || ! Objects.equals(currentProvisionedAlternateID.getAllSubscriberIDs(), provisionedAlternateID.getAllSubscriberIDs()) || updateAlternateID.getSubscriberAction() == com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Delete)
             {
-              provisionedAlternateID.setDeprovisionedSubscriberID(new RecordSubscriberID(updateAlternateID.getSubscriberID(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), updateAlternateID.getSubscriberAction()));
+              provisionedAlternateID.setDeprovisionedSubscriberID(new RecordSubscriberID(updateAlternateID.getSubscriberID(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), updateAlternateID.getSubscriberAction(), tenantID));
               provisionedAlternateIDUpdated = true;
             }
           break;
@@ -1270,7 +1311,7 @@ public class SubscriberManager
     *****************************************/
 
     // always produce recordalternateid in case redis data was not OK
-    provisionedAlternateID.setProvisionedAlternateID(new RecordAlternateID(updateAlternateID.getIDField(), updateAlternateID.getAlternateID(), provisionedAlternateID.getAllSubscriberIDs(), updateAlternateID.getEventDate(), updateAlternateID.getSubscriberAction()));
+    provisionedAlternateID.setProvisionedAlternateID(new RecordAlternateID(updateAlternateID.getIDField(), updateAlternateID.getAlternateID(), provisionedAlternateID.getAllSubscriberIDs(), updateAlternateID.getEventDate(), updateAlternateID.getSubscriberAction(), tenantID));
     provisionedAlternateIDUpdated = true;
 
     
@@ -1282,7 +1323,7 @@ public class SubscriberManager
 
     if (provisionedAlternateID.getAllSubscriberIDs().size() == 0)
       {
-        provisionedAlternateID.setCleanupTable(new UpdateAlternateID(updateAlternateID.getIDField(), provisionedAlternateID.getAlternateID(), updateAlternateID.getSubscriberID(), AssignmentType.UnassignSubscriberID, updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard, true, true));
+        provisionedAlternateID.setCleanupTable(new UpdateAlternateID(updateAlternateID.getIDField(), provisionedAlternateID.getAlternateID(), updateAlternateID.getSubscriberID(), AssignmentType.UnassignSubscriberID, updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard, true, true, tenantID));
         provisionedAlternateIDUpdated = true;
       }
     
@@ -1454,10 +1495,11 @@ public class SubscriberManager
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("autoprovisioned_subscriber");
-      schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(2));
       schemaBuilder.field("subscriberID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("externalSubscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("assignSubscriberIDs", assignSubscriberIDsSerde.optionalSchema());
+      schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -1483,6 +1525,8 @@ public class SubscriberManager
     private String subscriberID;
     private String externalSubscriberID;
     private AssignSubscriberIDs assignSubscriberIDs = null;
+    private int tenantID;
+
 
     /****************************************
     *
@@ -1493,7 +1537,8 @@ public class SubscriberManager
     public String getSubscriberID() { return subscriberID; }
     public String getExternalSubscriberID() { return externalSubscriberID; }
     public AssignSubscriberIDs getAssignSubscriberIDs() { return assignSubscriberIDs; }
-
+    public int getTenantID() { return tenantID; }
+    
     //
     //  setter
     //
@@ -1509,11 +1554,12 @@ public class SubscriberManager
     *
     *****************************************/
 
-    public AutoProvisionedSubscriber(String subscriberID, String externalSubscriberID)
+    public AutoProvisionedSubscriber(String subscriberID, String externalSubscriberID, int tenantID)
     {
       this.subscriberID = subscriberID;
       this.externalSubscriberID = externalSubscriberID;
       this.assignSubscriberIDs = null;
+      this.tenantID = tenantID;
     }
 
     /*****************************************
@@ -1522,11 +1568,12 @@ public class SubscriberManager
     *
     *****************************************/
 
-    private AutoProvisionedSubscriber(String subscriberID, String externalSubscriberID, AssignSubscriberIDs assignSubscriberIDs)
+    private AutoProvisionedSubscriber(String subscriberID, String externalSubscriberID, AssignSubscriberIDs assignSubscriberIDs, int tenantID)
     {
       this.subscriberID = subscriberID;
       this.externalSubscriberID = externalSubscriberID;
       this.assignSubscriberIDs = assignSubscriberIDs;
+      this.tenantID = tenantID;
     }
 
     /*****************************************
@@ -1540,6 +1587,7 @@ public class SubscriberManager
       this.subscriberID = autoProvisionedSubscriber.getSubscriberID();
       this.externalSubscriberID = autoProvisionedSubscriber.getExternalSubscriberID();
       this.assignSubscriberIDs = autoProvisionedSubscriber.getAssignSubscriberIDs();
+      this.tenantID = autoProvisionedSubscriber.getTenantID();
     }
 
     /*****************************************
@@ -1555,6 +1603,7 @@ public class SubscriberManager
       struct.put("subscriberID", autoProvisionedSubscriber.getSubscriberID());
       struct.put("externalSubscriberID", autoProvisionedSubscriber.getExternalSubscriberID());
       struct.put("assignSubscriberIDs", assignSubscriberIDsSerde.packOptional(autoProvisionedSubscriber.getAssignSubscriberIDs()));
+      struct.put("tenantID", (short)autoProvisionedSubscriber.getTenantID());
       return struct;
     }
 
@@ -1582,12 +1631,13 @@ public class SubscriberManager
       String subscriberID = valueStruct.getString("subscriberID");
       String externalSubscriberID = valueStruct.getString("externalSubscriberID");
       AssignSubscriberIDs assignSubscriberIDs = assignSubscriberIDsSerde.unpackOptional(new SchemaAndValue(schema.field("assignSubscriberIDs").schema(), valueStruct.get("assignSubscriberIDs")));
+      int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
 
       //
       //  return
       //
 
-      return new AutoProvisionedSubscriber(subscriberID, externalSubscriberID, assignSubscriberIDs);
+      return new AutoProvisionedSubscriber(subscriberID, externalSubscriberID, assignSubscriberIDs, tenantID);
     }
   }
 
@@ -1802,7 +1852,7 @@ public class SubscriberManager
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("provisioned_alternateid");
-      schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(2));
+      schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(3));
       schemaBuilder.field("alternateID", Schema.STRING_SCHEMA);
       schemaBuilder.field("allSubscriberIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
       schemaBuilder.field("backChannel", updateSubscriberIDSerde.optionalSchema());
@@ -1810,6 +1860,7 @@ public class SubscriberManager
       schemaBuilder.field("provisionedSubscriberID", recordSubscriberIDSerde.optionalSchema());
       schemaBuilder.field("deprovisionedSubscriberID", recordSubscriberIDSerde.optionalSchema());
       schemaBuilder.field("provisionedAlternateID", recordAlternateIDSerde.optionalSchema());
+      schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -1839,6 +1890,7 @@ public class SubscriberManager
     private RecordSubscriberID provisionedSubscriberID;
     private RecordSubscriberID deprovisionedSubscriberID;
     private RecordAlternateID provisionedAlternateID;
+    private int tenantID;
 
     /****************************************
     *
@@ -1853,6 +1905,7 @@ public class SubscriberManager
     public RecordSubscriberID getProvisionedSubscriberID() { return provisionedSubscriberID; }
     public RecordSubscriberID getDeprovisionedSubscriberID() { return deprovisionedSubscriberID; }
     public RecordAlternateID getProvisionedAlternateID() { return provisionedAlternateID; }
+    public int getTenantID() { return tenantID; }
 
     //
     //  setters
@@ -1872,7 +1925,7 @@ public class SubscriberManager
     *
     *****************************************/
 
-    public ProvisionedAlternateID(String alternateID, Set<String> allSubscriberIDs)
+    public ProvisionedAlternateID(String alternateID, Set<String> allSubscriberIDs, int tenantID)
     {
       this.alternateID = alternateID;
       this.allSubscriberIDs = allSubscriberIDs;
@@ -1881,6 +1934,7 @@ public class SubscriberManager
       this.provisionedSubscriberID = null;
       this.deprovisionedSubscriberID = null;
       this.provisionedAlternateID = null;
+      this.tenantID = tenantID;
     }
 
     /*****************************************
@@ -1889,7 +1943,7 @@ public class SubscriberManager
     *
     *****************************************/
 
-    private ProvisionedAlternateID(String alternateID, Set<String> allSubscriberIDs, UpdateSubscriberID backChannel, UpdateAlternateID cleanupTable, RecordSubscriberID provisionedSubscriberID, RecordSubscriberID deprovisionedSubscriberID, RecordAlternateID provisionedAlternateID)
+    private ProvisionedAlternateID(String alternateID, Set<String> allSubscriberIDs, UpdateSubscriberID backChannel, UpdateAlternateID cleanupTable, RecordSubscriberID provisionedSubscriberID, RecordSubscriberID deprovisionedSubscriberID, RecordAlternateID provisionedAlternateID, int tenantID)
     {
       this.alternateID = alternateID;
       this.allSubscriberIDs = allSubscriberIDs;
@@ -1898,6 +1952,7 @@ public class SubscriberManager
       this.provisionedSubscriberID = provisionedSubscriberID;
       this.deprovisionedSubscriberID = deprovisionedSubscriberID;
       this.provisionedAlternateID = provisionedAlternateID;
+      this.tenantID = tenantID;
     }
 
     /*****************************************
@@ -1915,6 +1970,7 @@ public class SubscriberManager
       this.provisionedSubscriberID = provisionedAlternateID.getProvisionedSubscriberID();
       this.deprovisionedSubscriberID = provisionedAlternateID.getDeprovisionedSubscriberID();
       this.provisionedAlternateID = provisionedAlternateID.getProvisionedAlternateID();
+      this.tenantID = provisionedAlternateID.getTenantID();
     }
 
     /*****************************************
@@ -1934,6 +1990,7 @@ public class SubscriberManager
       struct.put("provisionedSubscriberID", recordSubscriberIDSerde.packOptional(provisionedAlternateID.getProvisionedSubscriberID()));
       struct.put("deprovisionedSubscriberID", recordSubscriberIDSerde.packOptional(provisionedAlternateID.getDeprovisionedSubscriberID()));
       struct.put("provisionedAlternateID", recordAlternateIDSerde.packOptional(provisionedAlternateID.getProvisionedAlternateID()));
+      struct.put("tenantID", (short)provisionedAlternateID.getTenantID());
       return struct;
     }
 
@@ -1981,12 +2038,13 @@ public class SubscriberManager
       RecordSubscriberID provisionedSubscriberID = recordSubscriberIDSerde.unpackOptional(new SchemaAndValue(schema.field("provisionedSubscriberID").schema(), valueStruct.get("provisionedSubscriberID")));
       RecordSubscriberID deprovisionedSubscriberID = recordSubscriberIDSerde.unpackOptional(new SchemaAndValue(schema.field("deprovisionedSubscriberID").schema(), valueStruct.get("deprovisionedSubscriberID")));
       RecordAlternateID provisionedAlternateID = recordAlternateIDSerde.unpackOptional(new SchemaAndValue(schema.field("provisionedAlternateID").schema(), valueStruct.get("provisionedAlternateID")));
-
+      int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
+      
       //
       //  return
       //
 
-      return new ProvisionedAlternateID(alternateID, allSubscriberIDs, backChannel, cleanupTable, provisionedSubscriberID, deprovisionedSubscriberID, provisionedAlternateID);
+      return new ProvisionedAlternateID(alternateID, allSubscriberIDs, backChannel, cleanupTable, provisionedSubscriberID, deprovisionedSubscriberID, provisionedAlternateID, tenantID);
     }
 
     /*****************************************

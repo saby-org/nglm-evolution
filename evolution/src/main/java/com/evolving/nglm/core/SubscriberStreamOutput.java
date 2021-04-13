@@ -72,20 +72,20 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 		this.deliveryPriority = subscriberStreamOutput.getDeliveryPriority();
 	}
 	// with subscriberprofile context constructor
-	public SubscriberStreamOutput(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliveryPriority deliveryPriority){
-		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader);
+	public SubscriberStreamOutput(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliveryPriority deliveryPriority, int tenantID){
+		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader, tenantID);
 		this.deliveryPriority = deliveryPriority;
 	}
 	// enrich directly
-	public void enrichSubscriberStreamOutput(SubscriberStreamEvent originatingEvent, SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader){
-		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader);
+	public void enrichSubscriberStreamOutput(SubscriberStreamEvent originatingEvent, SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID){
+		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader, tenantID);
 		this.deliveryPriority = originatingEvent.getDeliveryPriority();
 	}
 
 	// build alternateIDs populated
-	private Map<String,String> buildAlternateIDs(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) {
+	private Map<String,String> buildAlternateIDs(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID) {
 		Map<String,String> alternateIDs = new LinkedHashMap<>();
-		SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+		SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
 
 		for (Map.Entry<String,AlternateID> entry:Deployment.getAlternateIDs().entrySet()) {
 			AlternateID alternateID = entry.getValue();

@@ -47,7 +47,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   static
   {
     DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));  // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
   }
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
@@ -164,7 +164,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       }
   }
 
-  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map, int tenantID)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     LinkedHashMap<String, Object> bdrRecs = new LinkedHashMap<>();
@@ -385,9 +385,28 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     while(tempfromDate.getTime() < toDate.getTime())
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
       }
     return esIndexOdrList;
+  }
+  
+  public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates, int tenantID)
+  {
+    if (includeBothDates)
+      {
+        Date tempfromDate = fromDate;
+        List<String> esIndexOdrList = new ArrayList<String>();
+        while(tempfromDate.getTime() <= toDate.getTime())
+          {
+            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          }
+        return esIndexOdrList;
+      }
+    else
+      {
+        return getEsIndexDates(fromDate, toDate);
+      }
   }
   
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
@@ -404,15 +423,15 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     switch (reportPeriodUnit.toUpperCase())
     {
       case "DAYS":
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
         break;
 
       case "WEEKS":
-        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
         break;
 
       case "MONTHS":
-        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
         break;
 
       default:
@@ -455,20 +474,13 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     Date toDate = reportGenerationDate;
     
     List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
-    StringBuilder esIndexBdrList = new StringBuilder();
-    boolean firstEntry = true;
-    for (String esIndexDate : esIndexDates)
-      {
-        if (!firstEntry) esIndexBdrList.append(",");
-        String indexName = esIndexBdr + esIndexDate;
-        esIndexBdrList.append(indexName);
-        firstEntry = false;
-      }
+    String esIndices = getESIndices(esIndexBdr, esIndexDates);
+    
 
-    log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and writing to " + csvfile);
+    log.info("Reading data from ES in (" + esIndices + ") and writing to " + csvfile);
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndices, QueryBuilders.matchAllQuery());
 
     String deliverableServiceTopic = Deployment.getDeliverableTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -513,5 +525,37 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       loyaltyProgramService.stop();
       log.info("The report " + csvfile + " is finished");
     }
+  }
+
+  /*********************
+   * 
+   * getESAllIndices
+   *
+   ********************/
+  
+  public static String getESAllIndices(String esIndexBdrInitial)
+  {
+    return esIndexBdrInitial + "*";
+  }
+  
+  /*********************
+   * 
+   * getESIndices
+   *
+   ********************/
+  
+  public static String getESIndices(String esIndexBdr, List<String> esIndexDates)
+  {
+    StringBuilder esIndexBdrList = new StringBuilder();
+    boolean firstEntry = true;
+    for (String esIndexDate : esIndexDates)
+      {
+        if (!firstEntry) esIndexBdrList.append(",");
+        String indexName = esIndexBdr + esIndexDate;
+        esIndexBdrList.append(indexName);
+        firstEntry = false;
+      }
+    return esIndexBdrList.toString();
+
   }
 }

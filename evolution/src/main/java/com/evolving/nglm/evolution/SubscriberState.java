@@ -230,11 +230,11 @@ public class SubscriberState implements StateStore
   //  setUCGState
   //
 
-  public void setUCGState(UCGState ucgState, Date evaluationDate)
+  public void setUCGState(UCGState ucgState, Date evaluationDate, int tenantID)
   {
     this.ucgRuleID = ucgState.getUCGRuleID();
     this.ucgEpoch = ucgState.getRefreshEpoch();
-    this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());
+    this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
   }
 
   /*****************************************
@@ -243,12 +243,12 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  public SubscriberState(String subscriberID)
+  public SubscriberState(String subscriberID, int tenantID)
   {
     try
       {
         this.subscriberID = subscriberID;
-        this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileConstructor().newInstance(subscriberID);
+        this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileConstructor().newInstance(subscriberID, tenantID);
         this.journeyStates = new HashSet<JourneyState>();
         this.recentJourneyStates = new HashSet<JourneyState>();
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>();

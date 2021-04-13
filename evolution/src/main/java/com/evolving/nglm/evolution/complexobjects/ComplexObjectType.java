@@ -116,7 +116,7 @@ public class ComplexObjectType extends GUIManagedObject
 
   private ComplexObjectType(ComplexObjectType type)
   {
-    super(type.getJSONRepresentation(), type.getEpoch());
+    super(type.getJSONRepresentation(), type.getEpoch(), type.getTenantID());
     this.availableElements = type.getAvailableElements();
     this.subfields = type.getSubfields();
   }
@@ -238,7 +238,7 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  public ComplexObjectType(JSONObject jsonRoot, long epoch, GUIManagedObject existingComplexObjectTypeUnchecked) throws GUIManagerException
+  public ComplexObjectType(JSONObject jsonRoot, long epoch, GUIManagedObject existingComplexObjectTypeUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -246,7 +246,7 @@ public class ComplexObjectType extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingComplexObjectTypeUnchecked != null) ? existingComplexObjectTypeUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingComplexObjectTypeUnchecked != null) ? existingComplexObjectTypeUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

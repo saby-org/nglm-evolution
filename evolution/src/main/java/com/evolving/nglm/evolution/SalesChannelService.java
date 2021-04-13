@@ -104,7 +104,7 @@ public class SalesChannelService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { salesChannelListener.salesChannelActivated((SalesChannel) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { salesChannelListener.salesChannelDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { salesChannelListener.salesChannelDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -119,11 +119,11 @@ public class SalesChannelService extends GUIService
   public String generateSalesChannelID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredSalesChannel(String salesChannelID) { return getStoredGUIManagedObject(salesChannelID); }
   public GUIManagedObject getStoredSalesChannel(String salesChannelID, boolean includeArchived) { return getStoredGUIManagedObject(salesChannelID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredSalesChannels() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredSalesChannels(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredSalesChannels(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredSalesChannels(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveSalesChannel(GUIManagedObject salesChannelUnchecked, Date date) { return isActiveGUIManagedObject(salesChannelUnchecked, date); }
   public SalesChannel getActiveSalesChannel(String salesChannelID, Date date) { return (SalesChannel) getActiveGUIManagedObject(salesChannelID, date); }
-  public Collection<SalesChannel> getActiveSalesChannels(Date date) { return (Collection<SalesChannel>) getActiveGUIManagedObjects(date); }
+  public Collection<SalesChannel> getActiveSalesChannels(Date date, int tenantID) { return (Collection<SalesChannel>) getActiveGUIManagedObjects(date, tenantID); }
 
   private static final String JOURNEY_SALES_CHANNEL_NAME = "journey"; 
   private static String journeySalesChannelID = null;
@@ -134,13 +134,13 @@ public class SalesChannelService extends GUIService
   *
   *****************************************/
   
-  public String getJourneySalesChannelID()
+  public String getJourneySalesChannelID(int tenantID)
   {
     if (journeySalesChannelID != null)
       {
         return journeySalesChannelID;
       }
-    for (GUIManagedObject mo : getStoredSalesChannels())
+    for (GUIManagedObject mo : getStoredSalesChannels(tenantID))
       {
         SalesChannel salesChannel = (SalesChannel) mo;
         if (salesChannel.getSalesChannelName().equalsIgnoreCase(JOURNEY_SALES_CHANNEL_NAME))
@@ -153,7 +153,7 @@ public class SalesChannelService extends GUIService
     if (journeySalesChannelID == null)
       {
         log.error("Unable to find journeySalesChannelID, exiting sales channels are :");
-        for (GUIManagedObject mo : getStoredSalesChannels()) log.error("  {}",((SalesChannel) mo).getSalesChannelName());
+        for (GUIManagedObject mo : getStoredSalesChannels(tenantID)) log.error("  {}",((SalesChannel) mo).getSalesChannelName());
       }
     return journeySalesChannelID;
   }
@@ -213,7 +213,7 @@ public class SalesChannelService extends GUIService
   *
   *****************************************/
 
-  public void removeSalesChannel(String salesChannelID, String userID) { removeGUIManagedObject(salesChannelID, SystemTime.getCurrentTime(), userID); }
+  public void removeSalesChannel(String salesChannelID, String userID, int tenantID) { removeGUIManagedObject(salesChannelID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

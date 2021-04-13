@@ -76,9 +76,9 @@ public abstract class Voucher extends GUIManagedObject {
     this.simpleOffer = (schemaVersion >= 2) ? valueStruct.getBoolean("simpleOffer") : false;
   }
 
-  public Voucher(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked) throws GUIManagerException {
+  public Voucher(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException {
 
-    super(jsonRoot, (existingVoucherUnchecked != null) ? existingVoucherUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingVoucherUnchecked != null) ? existingVoucherUnchecked.getEpoch() : epoch, tenantID);
 
     Voucher existingVoucher = (existingVoucherUnchecked != null && existingVoucherUnchecked instanceof Voucher) ? (Voucher) existingVoucherUnchecked : null;
 
@@ -114,7 +114,7 @@ public abstract class Voucher extends GUIManagedObject {
     VoucherType voucherType = voucherTypeService.getActiveVoucherType(getVoucherTypeId(), date);
     if(voucherType==null || voucherType.getCodeType().equals(VoucherType.CodeType.Unknown)) throw new GUIManagerException("unknown voucherType", getVoucherTypeId());
   }
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     ArrayList<String> supplierIDs=new ArrayList<>();

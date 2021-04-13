@@ -58,7 +58,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
   private static final Logger log = LoggerFactory.getLogger(GUIManagerLoyaltyReporting.class);
 
-  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -66,7 +66,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     super.contactPolicyService = contactPolicyService;
     super.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
     super.deliverableService = deliverableService;
-    super.deliverableSourceService = deliverableSourceService;
     super.exclusionInclusionTargetService = exclusionInclusionTargetService;
     super.journeyObjectiveService = journeyObjectiveService;
     super.journeyService = journeyService;
@@ -121,7 +120,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     /****************************************
     *
@@ -165,7 +164,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutLoyaltyProgram(String userID, JSONObject jsonRoot)
+  JSONObject processPutLoyaltyProgram(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
     *
@@ -243,7 +242,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         switch (LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true)))
         {
           case POINTS:
-            loyaltyProgram = new LoyaltyProgramPoints(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
+            loyaltyProgram = new LoyaltyProgramPoints(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService, tenantID);
             break;
 
 //          case BADGES:
@@ -279,10 +278,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
              *
              *****************************************/
 
-            revalidateSubscriberMessageTemplates(now);
-            revalidateOffers(now);
-            revalidateTargets(now);
-            revalidateJourneys(now);
+            revalidateSubscriberMessageTemplates(now, tenantID);
+            revalidateOffers(now, tenantID);
+            revalidateTargets(now, tenantID);
+            revalidateJourneys(now, tenantID);
           }
 
         /*****************************************
@@ -304,7 +303,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
 
         //
         //  store
@@ -339,7 +338,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processRemoveLoyaltyProgram(String userID, JSONObject jsonRoot){
+  JSONObject processRemoveLoyaltyProgram(String userID, JSONObject jsonRoot, int tenantID){
 
     /****************************************
     *
@@ -423,7 +422,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         // remove loyalty program
         //
 
-        loyaltyProgramService.removeLoyaltyProgram(loyaltyProgram.getGUIManagedObjectID(), userID);
+        loyaltyProgramService.removeLoyaltyProgram(loyaltyProgram.getGUIManagedObjectID(), userID, tenantID);
 
         //
         // remove dynamic criterion fields
@@ -435,10 +434,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         // revalidate
         //
 
-        revalidateSubscriberMessageTemplates(now);
-        revalidateOffers(now);
-        revalidateTargets(now);
-        revalidateJourneys(now);
+        revalidateSubscriberMessageTemplates(now, tenantID);
+        revalidateOffers(now, tenantID);
+        revalidateTargets(now, tenantID);
+        revalidateJourneys(now, tenantID);
       }
 
     /*****************************************
@@ -474,7 +473,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
    *
    *****************************************/
 
-  JSONObject processSetStatusLoyaltyProgram(String userID, JSONObject jsonRoot)
+  JSONObject processSetStatusLoyaltyProgram(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
      *
@@ -513,7 +512,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   {
                     case POINTS:
                       loyaltyProgram = new LoyaltyProgramPoints(elementRoot, epoch, existingElement,
-                          catalogCharacteristicService);
+                          catalogCharacteristicService, tenantID);
                       break;
 
 //          case BADGES:
@@ -538,10 +537,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                  *
                  *****************************************/
 
-                revalidateSubscriberMessageTemplates(now);
-                revalidateOffers(now);
-                revalidateTargets(now);
-                revalidateJourneys(now);
+                revalidateSubscriberMessageTemplates(now, tenantID);
+                revalidateOffers(now, tenantID);
+                revalidateTargets(now, tenantID);
+                revalidateJourneys(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -550,7 +549,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -583,7 +582,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetLoyaltyProgramList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  JSONObject processGetLoyaltyProgramList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     /*****************************************
     *
@@ -610,7 +609,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     else
       {
-        loyaltyProgramObjects = loyaltyProgramService.getStoredGUIManagedObjects(includeArchived);
+        loyaltyProgramObjects = loyaltyProgramService.getStoredGUIManagedObjects(includeArchived, tenantID);
       }
     for (GUIManagedObject loyaltyProgram : loyaltyProgramObjects)
       {
@@ -646,7 +645,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetLoyaltyProgramPointsEvents(String userID, JSONObject jsonRoot)
+  JSONObject processGetLoyaltyProgramPointsEvents(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -654,7 +653,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *
     *****************************************/
 
-    List<JSONObject> events = evaluateEnumeratedValues("loyaltyProgramPointsEventNames", SystemTime.getCurrentTime(), true);
+    List<JSONObject> events = evaluateEnumeratedValues("loyaltyProgramPointsEventNames", SystemTime.getCurrentTime(), true, tenantID);
 
     /*****************************************
     *
@@ -674,7 +673,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetLoyaltyProgramTypeList(String userID, JSONObject jsonRoot)
+  JSONObject processGetLoyaltyProgramTypeList(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -712,7 +711,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID) throws IOException
   {
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
     JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
@@ -732,11 +731,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
         try
           {
-            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
+            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null, tenantID);
             String reportName = report.getName();
 
-            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
-            String fileExtension = Deployment.getReportManagerFileExtension();
+            String outputPath = Deployment.getDeployment(tenantID).getReportManagerOutputPath()+File.separator;
+            String fileExtension = Deployment.getDeployment(tenantID).getReportManagerFileExtension();
 
             File folder = new File(outputPath);
             String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
@@ -1020,44 +1019,44 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetDashboardCounts(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetDashboardCounts(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
-    response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
-    response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
-    response.put("workflowCount", journeyCount(GUIManagedObjectType.Workflow));
-    response.put("loyaltyWorkflowCount", journeyCount(GUIManagedObjectType.LoyaltyWorkflow));
-    response.put("bulkCampaignCount", journeyCount(GUIManagedObjectType.BulkCampaign));
-    response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions(includeArchived).size());
-    response.put("pointCount", pointService.getStoredPoints(includeArchived).size());
-    response.put("offerCount", offerService.getStoredOffers(includeArchived).size());
-    response.put("loyaltyProgramCount", loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived).size());
-    response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies(includeArchived).size());
-    response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies(includeArchived).size());
-    response.put("dnboMatrixCount", dnboMatrixService.getStoredDNBOMatrixes(includeArchived).size());
-    response.put("callingChannelCount", callingChannelService.getStoredCallingChannels(includeArchived).size());
-    response.put("salesChannelCount", salesChannelService.getStoredSalesChannels(includeArchived).size());
-    response.put("sourceAddressCount", sourceAddressService.getStoredSourceAddresses(includeArchived).size());
-    response.put("supplierCount", supplierService.getStoredSuppliers(includeArchived).size());
-    response.put("productCount", productService.getStoredProducts(includeArchived).size());
-    response.put("voucherTypeCount", voucherTypeService.getStoredVoucherTypes(includeArchived).size());
-    response.put("voucherCount", voucherService.getStoredVouchers(includeArchived).size());
-    response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics(includeArchived).size());
-    response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives(includeArchived).size());
-    response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives(includeArchived).size());
-    response.put("productTypeCount", productTypeService.getStoredProductTypes(includeArchived).size());
-    response.put("deliverableCount", deliverableService.getStoredDeliverables(includeArchived).size());    
-    response.put("reportsCount", reportService.getStoredReports(includeArchived).size());
-    response.put("walletsCount", pointService.getStoredPoints(includeArchived).size() + tokenTypeService.getStoredTokenTypes(includeArchived).size() + voucherTypeService.getStoredVoucherTypes(includeArchived).size());
-    response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules(includeArchived).size());
-    response.put("targetCount", targetService.getStoredTargets(includeArchived).size());
-    response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived).size());
-    response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys(includeArchived).size());
-    response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies(includeArchived).size());
+    response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey, tenantID));
+    response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign, tenantID));
+    response.put("workflowCount", journeyCount(GUIManagedObjectType.Workflow, tenantID));
+    response.put("loyaltyWorkflowCount", journeyCount(GUIManagedObjectType.LoyaltyWorkflow, tenantID));
+    response.put("bulkCampaignCount", journeyCount(GUIManagedObjectType.BulkCampaign, tenantID));
+    response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions(includeArchived, tenantID).size());
+    response.put("pointCount", pointService.getStoredPoints(includeArchived, tenantID).size());
+    response.put("offerCount", offerService.getStoredOffers(includeArchived, tenantID).size());
+    response.put("loyaltyProgramCount", loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived, tenantID).size());
+    response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies(includeArchived, tenantID).size());
+    response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies(includeArchived, tenantID).size());
+    response.put("dnboMatrixCount", dnboMatrixService.getStoredDNBOMatrixes(includeArchived, tenantID).size());
+    response.put("callingChannelCount", callingChannelService.getStoredCallingChannels(includeArchived, tenantID).size());
+    response.put("salesChannelCount", salesChannelService.getStoredSalesChannels(includeArchived, tenantID).size());
+    response.put("sourceAddressCount", sourceAddressService.getStoredSourceAddresses(includeArchived, tenantID).size());
+    response.put("supplierCount", supplierService.getStoredSuppliers(includeArchived, tenantID).size());
+    response.put("productCount", productService.getStoredProducts(includeArchived, tenantID).size());
+    response.put("voucherTypeCount", voucherTypeService.getStoredVoucherTypes(includeArchived, tenantID).size());
+    response.put("voucherCount", voucherService.getStoredVouchers(includeArchived, tenantID).size());
+    response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics(includeArchived, tenantID).size());
+    response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives(includeArchived, tenantID).size());
+    response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives(includeArchived, tenantID).size());
+    response.put("productTypeCount", productTypeService.getStoredProductTypes(includeArchived, tenantID).size());
+    response.put("deliverableCount", deliverableService.getStoredDeliverables(includeArchived, tenantID).size());    
+    response.put("reportsCount", reportService.getStoredReports(includeArchived, tenantID).size());
+    response.put("walletsCount", pointService.getStoredPoints(includeArchived, tenantID).size() + tokenTypeService.getStoredTokenTypes(includeArchived, tenantID).size() + voucherTypeService.getStoredVoucherTypes(includeArchived, tenantID).size());
+    response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules(includeArchived, tenantID).size());
+    response.put("targetCount", targetService.getStoredTargets(includeArchived, tenantID).size());
+    response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived, tenantID).size());
+    response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys(includeArchived, tenantID).size());
+    response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies(includeArchived, tenantID).size());
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
-    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
-    response.put("resellerCount", resellerService.getStoredResellers(includeArchived).size());
+    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived, tenantID).size());
+    response.put("resellerCount", resellerService.getStoredResellers(includeArchived, tenantID).size());
     if (jsonRoot.containsKey("areaAvailablity"))
       {
         int mailTemplateCount = 0;
@@ -1066,7 +1065,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         int pushTemplateCount = 0;
         String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
         Collection<GUIManagedObject> mailTemplates = subscriberMessageTemplateService.getStoredMailTemplates(true,
-            includeArchived);
+            includeArchived, tenantID);
         if (mailTemplates.size() != 0 && mailTemplates != null)
           {
             for (GUIManagedObject template : mailTemplates)
@@ -1083,7 +1082,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }
           }
         Collection<GUIManagedObject> smsTemplates = subscriberMessageTemplateService.getStoredSMSTemplates(true,
-            includeArchived);
+            includeArchived, tenantID);
         if (smsTemplates.size() != 0 && smsTemplates != null)
           {
             for (GUIManagedObject template : smsTemplates)
@@ -1100,7 +1099,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }
           }
         Collection<GUIManagedObject> dialogTemplates = subscriberMessageTemplateService.getStoredDialogTemplates(true,
-            includeArchived);
+            includeArchived, tenantID);
         if (dialogTemplates.size() != 0 && dialogTemplates != null)
           {
             for (GUIManagedObject template : dialogTemplates)
@@ -1117,7 +1116,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }
           }
         Collection<GUIManagedObject> pushTemplates = subscriberMessageTemplateService.getStoredPushTemplates(true,
-            includeArchived);
+            includeArchived, tenantID);
         if (pushTemplates.size() != 0 && pushTemplates != null)
           {
             for (GUIManagedObject template : pushTemplates)
@@ -1139,10 +1138,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         response.put("dialogTemplateCount", dialogTemplateCount);
       }
     else {
-      response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived).size());
-      response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived).size());
-      response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived).size());
-      response.put("dialogTemplateCount", subscriberMessageTemplateService.getStoredDialogTemplates(true, includeArchived).size());
+      response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived, tenantID).size());
+      response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived, tenantID).size());
+      response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived, tenantID).size());
+      response.put("dialogTemplateCount", subscriberMessageTemplateService.getStoredDialogTemplates(true, includeArchived, tenantID).size());
       
     }
     return JSONUtilities.encodeObject(response);
@@ -1154,10 +1153,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  private int journeyCount(GUIManagedObjectType journeyType)
+  private int journeyCount(GUIManagedObjectType journeyType, int tenantID)
   {
     int result = 0;
-    for (GUIManagedObject journey : journeyService.getStoredJourneys())
+    for (GUIManagedObject journey : journeyService.getStoredJourneys(tenantID))
       {
         if (journey.getGUIManagedObjectType() == journeyType)
           {
@@ -1174,17 +1173,17 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetReportGlobalConfiguration(String userID, JSONObject jsonRoot)
+  JSONObject processGetReportGlobalConfiguration(String userID, JSONObject jsonRoot, int tenantID)
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     HashMap<String,Object> globalConfig = new HashMap<String,Object>();
     globalConfig.put("reportManagerZookeeperDir",   Deployment.getReportManagerZookeeperDir());
-    globalConfig.put("reportManagerOutputPath",     Deployment.getReportManagerOutputPath());
-    globalConfig.put("reportManagerDateFormat",     Deployment.getReportManagerDateFormat());
-    globalConfig.put("reportManagerFileExtension",  Deployment.getReportManagerFileExtension());
+    globalConfig.put("reportManagerOutputPath",     Deployment.getDeployment(tenantID).getReportManagerOutputPath());
+    globalConfig.put("reportManagerDateFormat",     Deployment.getDeployment(tenantID).getReportManagerDateFormat());
+    globalConfig.put("reportManagerFileExtension",  Deployment.getDeployment(tenantID).getReportManagerFileExtension());
     globalConfig.put("reportManagerCsvSeparator",   Deployment.getReportManagerCsvSeparator());
-    globalConfig.put("reportManagerStreamsTempDir", Deployment.getReportManagerStreamsTempDir());
+    globalConfig.put("reportManagerStreamsTempDir", Deployment.getDeployment(tenantID).getReportManagerStreamsTempDir());
     response.put("reportGlobalConfiguration", JSONUtilities.encodeObject(globalConfig));
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
@@ -1196,7 +1195,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetReportList(String userID, JSONObject jsonRoot, boolean includeArchived)
+  JSONObject processGetReportList(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     if (log.isTraceEnabled())
       {
@@ -1221,7 +1220,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     else
       {
-        reportObjects = reportService.getStoredReports(includeArchived);
+        reportObjects = reportService.getStoredReports(includeArchived, tenantID);
       }
     for (GUIManagedObject report : reportObjects)
       {
@@ -1249,7 +1248,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processLaunchReport(String userID, JSONObject jsonRoot)
+  JSONObject processLaunchReport(String userID, JSONObject jsonRoot, int tenantID)
   {
     log.trace("In processLaunchReport : "+jsonRoot);
     HashMap<String,Object> response = new HashMap<String,Object>();
@@ -1270,7 +1269,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           }
         else
           {
-            reportService.launchReport(report.getName(), backendSimulator);
+            reportService.launchReport(report.getName(), backendSimulator, tenantID);
             responseCode = "ok";
           }
       }
@@ -1284,7 +1283,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processPutReport(String userID, JSONObject jsonRoot)
+  JSONObject processPutReport(String userID, JSONObject jsonRoot, int tenantID)
   {
     log.trace("In processPutReport : "+jsonRoot);
     Date now = SystemTime.getCurrentTime();
@@ -1370,7 +1369,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     long epoch = epochServer.getKey();
     try
       {    	
-        Report report = new Report(jsonRoot, epoch, existingReport);
+        Report report = new Report(jsonRoot, epoch, existingReport, tenantID);
         log.trace("new report : "+report);
         if (!dryRun)
           {
@@ -1403,7 +1402,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetPartnerTypes(String userID, JSONObject jsonRoot)
+  JSONObject processGetPartnerTypes(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -1412,7 +1411,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *****************************************/
 
     List<JSONObject> partnerTypes = new ArrayList<JSONObject>();
-    for (PartnerType partnerType : Deployment.getPartnerTypes().values())
+    for (PartnerType partnerType : Deployment.getDeployment(tenantID).getPartnerTypes().values())
       {
         JSONObject partnerTypeJSON = partnerType.getJSONRepresentation();
         partnerTypes.add(partnerTypeJSON);
@@ -1436,7 +1435,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processGetBillingModes(String userID, JSONObject jsonRoot)
+  JSONObject processGetBillingModes(String userID, JSONObject jsonRoot, int tenantID)
   {
     /*****************************************
     *
@@ -1445,7 +1444,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *****************************************/
 
     List<JSONObject> billingModes = new ArrayList<JSONObject>();
-    for (BillingMode billingMode : Deployment.getBillingModes().values())
+    for (BillingMode billingMode : Deployment.getDeployment(tenantID).getBillingModes().values())
       {
         JSONObject billingModeJSON = billingMode.getJSONRepresentation();
         billingModes.add(billingModeJSON);
@@ -1469,7 +1468,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  JSONObject processLoyaltyProgramOptInOut(JSONObject jsonRoot, boolean optIn)throws GUIManagerException {
+  JSONObject processLoyaltyProgramOptInOut(JSONObject jsonRoot, boolean optIn, int tenantID)throws GUIManagerException {
     
     /****************************************
      *
@@ -1518,7 +1517,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         Date now = SystemTime.getCurrentTime();
 
         String activeLoyaltyProgramID = null;
-        for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(now))
+        for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(now, tenantID))
           {
             if (loyaltyProgramID.equals(loyaltyProgram.getLoyaltyProgramID()))
               {
@@ -1566,7 +1565,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         request.put("deliveryType", "loyaltyProgramFulfillment");
         JSONObject valueRes = JSONUtilities.encodeObject(request);
 
-        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null);
+        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null, tenantID);
         loyaltyProgramRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         String topic = Deployment.getDeliveryManagers().get(loyaltyProgramRequest.getDeliveryType()).getRequestTopic(loyaltyProgramRequest.getDeliveryPriority());
 

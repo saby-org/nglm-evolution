@@ -20,6 +20,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+// TODO EVPRO-99 must we split per tenant ???
 public class DynamicEventDeclarations extends GUIManagedObject
 {
   /*****************************************
@@ -87,9 +88,9 @@ public class DynamicEventDeclarations extends GUIManagedObject
   *
   *****************************************/
 
-  public DynamicEventDeclarations(JSONObject guiManagedObjectJson, Map<String, DynamicEventDeclaration> dynamicEventDeclarations)
+  public DynamicEventDeclarations(JSONObject guiManagedObjectJson, Map<String, DynamicEventDeclaration> dynamicEventDeclarations, int tenantID)
   {
-    super(guiManagedObjectJson, 1);
+    super(guiManagedObjectJson, 1, tenantID);
     this.dynamicEventDeclarations = dynamicEventDeclarations;
   }
 

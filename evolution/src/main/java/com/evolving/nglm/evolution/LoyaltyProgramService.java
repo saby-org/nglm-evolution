@@ -82,7 +82,7 @@ public class LoyaltyProgramService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { loyaltyProgramListener.loyaltyProgramActivated((LoyaltyProgram) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { loyaltyProgramListener.loyaltyProgramDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { loyaltyProgramListener.loyaltyProgramDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -97,11 +97,11 @@ public class LoyaltyProgramService extends GUIService
   public String generateLoyaltyProgramID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredLoyaltyProgram(String loyaltyProgramID) { return getStoredGUIManagedObject(loyaltyProgramID); }
   public GUIManagedObject getStoredLoyaltyProgram(String loyaltyProgramID, boolean includeArchived) { return getStoredGUIManagedObject(loyaltyProgramID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredLoyaltyPrograms() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredLoyaltyPrograms(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredLoyaltyPrograms(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredLoyaltyPrograms(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveLoyaltyProgram(GUIManagedObject loyaltyProgramUnchecked, Date date) { return isActiveGUIManagedObject(loyaltyProgramUnchecked, date); }
   public LoyaltyProgram getActiveLoyaltyProgram(String loyaltyProgramID, Date date) { return (LoyaltyProgram) getActiveGUIManagedObject(loyaltyProgramID, date); }
-  public Collection<LoyaltyProgram> getActiveLoyaltyPrograms(Date date) { return (Collection<LoyaltyProgram>) getActiveGUIManagedObjects(date); }
+  public Collection<LoyaltyProgram> getActiveLoyaltyPrograms(Date date, int tenantID) { return (Collection<LoyaltyProgram>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -143,9 +143,9 @@ public class LoyaltyProgramService extends GUIService
   *
   *****************************************/
 
-  public void removeLoyaltyProgram(String loyaltyProgramID, String userID) 
+  public void removeLoyaltyProgram(String loyaltyProgramID, String userID, int tenantID) 
   { 
-    removeGUIManagedObject(loyaltyProgramID, SystemTime.getCurrentTime(), userID);
+    removeGUIManagedObject(loyaltyProgramID, SystemTime.getCurrentTime(), userID, tenantID);
     // LoyaltyProgram loyaltyProgram = (LoyaltyProgram) getStoredLoyaltyProgram(loyaltyProgramID);
   }
   

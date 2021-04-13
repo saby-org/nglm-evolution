@@ -30,7 +30,8 @@ public class TokenOfferReportDriver extends ReportDriver{
 			String kafka, 
 			String elasticSearch, 
 			String csvFilename,
-			String[] params) {
+			String[] params,
+			int tenantID) {
     	log.debug("Processing Token Offer Report with "+report.getName());
     	
     	String esIndexSubscriber = getSubscriberProfileIndex(reportGenerationDate);

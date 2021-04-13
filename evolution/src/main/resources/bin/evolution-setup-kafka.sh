@@ -62,7 +62,6 @@ echo create_topic ${topic.tokenredeemed}                                        
 echo create_topic ${topic.tokenredeemed_fileconnector}                              $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.journeystatistic}                                         $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.journeymetric}                                            $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
-echo create_topic ${topic.deliverable.source}                                       $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.presentationlog}                                          $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.acceptancelog}                                            $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.tokenchange}                                              $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
@@ -87,6 +86,7 @@ echo create_topic ${topic.presentationlog_fileconnector}                        
 echo create_topic ${topic.acceptancelog_fileconnector}                              $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.voucherchange.request}                                    $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.voucherchange.response}                                   $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+create_topic ${topic.tenant}                                                   $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 
 #
 #  regression topics  

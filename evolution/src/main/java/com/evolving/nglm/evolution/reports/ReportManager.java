@@ -67,6 +67,7 @@ public class ReportManager implements Watcher
   protected static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
   protected static final String LOCK_SUBDIR = "lock";
   protected static final int sessionTimeout = 30*1000; // 30 seconds
+  
   protected ZooKeeper zk = null;
   protected static String zkHostList;
   protected static String brokerServers;
@@ -343,6 +344,10 @@ public class ReportManager implements Watcher
   // Called when a control file is created or deleted
   public void processChild2(String child) throws InterruptedException
   {
+    // TODO EVPRO-99 extract tenantID from child and take in account tenantID in the name of the file and zk lock
+    // TODO
+    // TODO !!!!
+    int tenantID = 1;
     String controlFile = controlDir + File.separator + child;
     String lockFile = lockDir + File.separator + child;
     log.trace("Checking if control exists : "+controlFile); // We might have been called for the suppression of the control node
@@ -373,7 +378,7 @@ public class ReportManager implements Watcher
                   final Date reportGenerationDate = new Date(JSONUtilities.decodeLong(jsonRoot, "reportGenerationDate", true));
                   String restOfLine = s.nextLine().trim();
                   s.close();
-                  Collection<GUIManagedObject> reports = reportService.getStoredReports();
+                  Collection<GUIManagedObject> reports = reportService.getStoredReports(tenantID);
                   Report report = null;
                   if (reportName != null)
                     {
@@ -404,7 +409,7 @@ public class ReportManager implements Watcher
                         {
                           log.debug("report = "+report);
                           log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
-                          allOK = handleReport(reportName, reportGenerationDate, report, restOfLine);
+                          allOK = handleReport(reportName, reportGenerationDate, report, restOfLine, tenantID);
                           reportManagerStatistics.incrementReportCount();
                           if (!allOK)
                             {
@@ -540,7 +545,7 @@ public class ReportManager implements Watcher
   *
   *****************************************/
   
-  private boolean handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine)
+  private boolean handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine, int tenantID)
   {
     long startReport = System.currentTimeMillis();
     log.trace("---> Starting report " + reportName + " " + restOfLine);
@@ -559,11 +564,11 @@ public class ReportManager implements Watcher
       }
     try
       {
-        String outputPath = Deployment.getReportManagerOutputPath();
+        String outputPath = Deployment.getDeployment(tenantID).getReportManagerOutputPath();
         log.trace("outputPath = " + outputPath);
-        String dateFormat = Deployment.getReportManagerDateFormat();
+        String dateFormat = Deployment.getDeployment(tenantID).getReportManagerDateFormat();
         log.trace("dateFormat = " + dateFormat);
-        String fileExtension = Deployment.getReportManagerFileExtension();
+        String fileExtension = Deployment.getDeployment(tenantID).getReportManagerFileExtension();
         log.trace("fileExtension = " + fileExtension);
         SimpleDateFormat sdf;
         try
@@ -575,7 +580,7 @@ public class ReportManager implements Watcher
             log.error("Config error : date format " + dateFormat + " is invalid, using default" + e.getLocalizedMessage(), e);
             sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
           }
-        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
         String fileSuffix = sdf.format(reportGenerationDate);
         String csvFilename = "" + outputPath + File.separator + reportName + "_" + fileSuffix + "." + fileExtension;
         log.trace("csvFilename = " + csvFilename);
@@ -586,7 +591,7 @@ public class ReportManager implements Watcher
         ReportDriver rd = cons.newInstance((Object[]) null);
         try
           {
-            rd.produceReport(report, reportGenerationDate, zkHostList, brokerServers, esNode, csvFilename, params);
+            rd.produceReport(report, reportGenerationDate, zkHostList, brokerServers, esNode, csvFilename, params, tenantID);
           } 
         catch (Exception e)
           {

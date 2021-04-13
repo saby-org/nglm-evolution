@@ -125,7 +125,7 @@ public class TargetService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { targetListener.targetActivated((Target) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { targetListener.targetDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { targetListener.targetDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -140,11 +140,11 @@ public class TargetService extends GUIService
   public String generateTargetID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredTarget(String targetID) { return getStoredGUIManagedObject(targetID); }
   public GUIManagedObject getStoredTarget(String targetID, boolean includeArchived) { return getStoredGUIManagedObject(targetID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredTargets() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredTargets(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredTargets(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredTargets(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveTarget(GUIManagedObject targetUnchecked, Date date) { return isActiveGUIManagedObject(targetUnchecked, date); }
   public Target getActiveTarget(String targetID, Date date) { return (Target) getActiveGUIManagedObject(targetID, date); }
-  public Collection<Target> getActiveTargets(Date date) { return (Collection<Target>) getActiveGUIManagedObjects(date); }
+  public Collection<Target> getActiveTargets(Date date, int tenantID) { return (Collection<Target>) getActiveGUIManagedObjects(date, tenantID); }
 
   
   /*****************************************
@@ -259,7 +259,7 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public void removeTarget(String targetID, String userID) { removeGUIManagedObject(targetID, SystemTime.getCurrentTime(), userID); }
+  public void removeTarget(String targetID, String userID, int tenantID) { removeGUIManagedObject(targetID, SystemTime.getCurrentTime(), userID, tenantID); }
   
   /*****************************************
   *
@@ -380,7 +380,7 @@ public class TargetService extends GUIService
                             String subscriberID = (alternateID != null) ? subscriberIDService.getSubscriberID(alternateID.getID(), line) : line;
                             if(subscriberID != null)
                               {
-                                SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.Target, Arrays.asList(target.getTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord());
+                                SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.Target, Arrays.asList(target.getTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord(), target.getTenantID());
                                 kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupTopic, stringKeySerde.serializer().serialize(subscriberGroupTopic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(subscriberGroupTopic, subscriberGroup)));
                               }
                             else

@@ -674,7 +674,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     List<NodeHistory> journeyNodeHistory =  unpackNodeHistory(schema.field("journeyNodeHistory").schema(), valueStruct.get("journeyNodeHistory"));
     List<StatusHistory> journeyStatusHistory =  unpackStatusHistory(schema.field("journeyStatusHistory").schema(), valueStruct.get("journeyStatusHistory"));
     Map<String, String> subscriberStratum = (Map<String,String>) valueStruct.get("subscriberStratum");
-    String specialExitStatus = valueStruct.getString("specialExitStatus");
+    String specialExitStatus = (schemaVersion >= 10) ? valueStruct.getString("specialExitStatus") : "";
     Date journeyExitDate = (schemaVersion >= 10) ? (Date) valueStruct.get("journeyExitDate") : null;
     //
     //  return

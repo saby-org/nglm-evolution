@@ -78,7 +78,7 @@ public class PointService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { pointListener.pointActivated((Point) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { pointListener.pointDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { pointListener.pointDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -105,11 +105,11 @@ public class PointService extends GUIService
   public String generatePointID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredPoint(String pointID) { return getStoredGUIManagedObject(pointID); }
   public GUIManagedObject getStoredPoint(String pointID, boolean includeArchived) { return getStoredGUIManagedObject(pointID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredPoints() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredPoints(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredPoints(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredPoints(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActivePoint(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date); }
   public Point getActivePoint(String pointID, Date date) { return (Point) getActiveGUIManagedObject(pointID, date); }
-  public Collection<Point> getActivePoints(Date date) { return (Collection<Point>) getActiveGUIManagedObjects(date); }
+  public Collection<Point> getActivePoints(Date date, int tenantID) { return (Collection<Point>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -148,8 +148,8 @@ public class PointService extends GUIService
   *
   *****************************************/
 
-  public void removePoint(String pointID, String userID) { 
-    removeGUIManagedObject(pointID, SystemTime.getCurrentTime(), userID);
+  public void removePoint(String pointID, String userID, int tenantID) { 
+    removeGUIManagedObject(pointID, SystemTime.getCurrentTime(), userID, tenantID);
   }
 
   /*****************************************

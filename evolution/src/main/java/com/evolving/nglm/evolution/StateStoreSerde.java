@@ -104,7 +104,15 @@ public class StateStoreSerde<T extends StateStore> implements Serde<T>
       @Override public void close() { }
       @Override public T deserialize(String topic, byte[] data)
       {
-        T result = connectSerde.deserializer().deserialize(topic, data);
+        T result = null;
+        try {
+          result = connectSerde.deserializer().deserialize(topic, data);
+        }
+        catch(Exception e)
+        {
+          System.out.println("Exception " + e);
+          throw e;
+        }
         if (result != null) result.setKafkaRepresentation(data);
         return result;
       }

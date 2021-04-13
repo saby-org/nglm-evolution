@@ -85,7 +85,7 @@ public class CommunicationChannelBlackoutService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { communicationChannelListener.communicationChannelBlackoutActivated((CommunicationChannelBlackoutPeriod) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { communicationChannelListener.communicationChannelBlackoutDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { communicationChannelListener.communicationChannelBlackoutDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -100,11 +100,11 @@ public class CommunicationChannelBlackoutService extends GUIService
   public String generateCommunicationChannelBlackoutID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredCommunicationChannelBlackout(String blackoutPeriodID) { return getStoredGUIManagedObject(blackoutPeriodID); }
   public GUIManagedObject getStoredCommunicationChannelBlackout(String blackoutPeriodID, boolean includeArchived) { return getStoredGUIManagedObject(blackoutPeriodID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredCommunicationChannelBlackouts() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredCommunicationChannelBlackouts(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredCommunicationChannelBlackouts(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredCommunicationChannelBlackouts(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveCommunicationChannelBlackout(GUIManagedObject blackoutPeriodUnchecked, Date date) { return isActiveGUIManagedObject(blackoutPeriodUnchecked, date); }
   public CommunicationChannelBlackoutPeriod getActiveCommunicationChannelBlackout(String communicationChannelID, Date date) { return (CommunicationChannelBlackoutPeriod) getActiveGUIManagedObject(communicationChannelID, date); }
-  public Collection<CommunicationChannelBlackoutPeriod> getActiveCommunicationChannelBlackout(Date date) { return (Collection<CommunicationChannelBlackoutPeriod>) getActiveGUIManagedObjects(date); }
+  public Collection<CommunicationChannelBlackoutPeriod> getActiveCommunicationChannelBlackout(Date date, int tenantID) { return (Collection<CommunicationChannelBlackoutPeriod>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -146,7 +146,7 @@ public class CommunicationChannelBlackoutService extends GUIService
   *
   *****************************************/
 
-  public void removeCommunicationChannelBlackout(String communicationChannelID, String userID) { removeGUIManagedObject(communicationChannelID, SystemTime.getCurrentTime(), userID); }
+  public void removeCommunicationChannelBlackout(String communicationChannelID, String userID, int tenantID) { removeGUIManagedObject(communicationChannelID, SystemTime.getCurrentTime(), userID, tenantID); }
   
   /*****************************************
   *

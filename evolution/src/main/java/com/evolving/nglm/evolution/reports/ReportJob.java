@@ -37,7 +37,7 @@ public class ReportJob extends ScheduledJob
   
   public ReportJob(long schedulingUniqueID, Report report, SchedulingInterval scheduling, ReportService reportService)
   {
-    super(schedulingUniqueID, report.getName()+"("+scheduling.getExternalRepresentation()+")", scheduling.getCron(), Deployment.getBaseTimeZone(), false);
+    super(schedulingUniqueID, report.getName()+"("+scheduling.getExternalRepresentation()+")", scheduling.getCron(), Deployment.getSystemTimeZone(), false); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     this.report = report;
     this.reportService = reportService;
     report.addJobID(schedulingUniqueID);

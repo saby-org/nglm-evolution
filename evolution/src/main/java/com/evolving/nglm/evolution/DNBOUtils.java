@@ -259,7 +259,7 @@ public class DNBOUtils
       Collection<ProposedOfferDetails> presentedOffers;
       try
         {
-          presentedOffers = TokenUtils.getOffers(now, token, subscriberEvaluationRequest, subscriberProfile, strategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplier);
+          presentedOffers = TokenUtils.getOffers(now, token, subscriberEvaluationRequest, subscriberProfile, strategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplier, subscriberEvaluationRequest.getTenantID());
         }
       catch (GetOfferException e)
         {
@@ -329,7 +329,7 @@ public class DNBOUtils
       
       int quantity = 1;
       // create an invalid purchase, so that the journey node uses "failed" connector
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       List<Action> res = new ArrayList<>();
@@ -540,7 +540,7 @@ public class DNBOUtils
       String salesChannelID = token.getPresentedOffersSalesChannel();
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext,  deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext,  deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       result.add(request);
@@ -677,7 +677,7 @@ public class DNBOUtils
       String salesChannelID = token.getPresentedOffersSalesChannel();
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       result.add(request);

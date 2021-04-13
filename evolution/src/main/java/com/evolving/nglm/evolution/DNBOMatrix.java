@@ -212,7 +212,7 @@ public class DNBOMatrix extends GUIManagedObject
   *
   *****************************************/
 
-  public DNBOMatrix(JSONObject jsonRoot, long epoch, GUIManagedObject existingDNBOMatrixUnchecked) throws GUIManagerException
+  public DNBOMatrix(JSONObject jsonRoot, long epoch, GUIManagedObject existingDNBOMatrixUnchecked, int tenantID) throws GUIManagerException
   {
     
     /*****************************************
@@ -221,7 +221,7 @@ public class DNBOMatrix extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingDNBOMatrixUnchecked != null) ? existingDNBOMatrixUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingDNBOMatrixUnchecked != null) ? existingDNBOMatrixUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -336,7 +336,7 @@ public class DNBOMatrix extends GUIManagedObject
   {
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> segmentationDimensionIDs = new ArrayList<>();

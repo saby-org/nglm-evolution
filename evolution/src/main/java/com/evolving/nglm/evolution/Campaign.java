@@ -7,9 +7,9 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 public class Campaign extends GUIManagedObject
 {
 
-  protected Campaign(String guiManagedObjectID)
+  protected Campaign(String guiManagedObjectID, int tenantID)
   {
-    super(guiManagedObjectID);
+    super(guiManagedObjectID, tenantID);
     throw new ServerRuntimeException("Campaign is marker only - not allowed to create an object");
   }
 

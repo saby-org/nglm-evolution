@@ -242,7 +242,7 @@ public class EvaluationCriterion
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("criterionContext", CriterionContext.schema());
     schemaBuilder.field("criterionField", Schema.STRING_SCHEMA);
     schemaBuilder.field("criterionOperator", Schema.STRING_SCHEMA);
@@ -250,6 +250,7 @@ public class EvaluationCriterion
     schemaBuilder.field("argumentBaseTimeUnit", Schema.STRING_SCHEMA);
     schemaBuilder.field("storyReference", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("criterionDefault", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -276,6 +277,7 @@ public class EvaluationCriterion
   private TimeUnit argumentBaseTimeUnit;
   private String storyReference;
   private boolean criterionDefault;
+  private int tenantID;
 
   //
   //  derived
@@ -290,7 +292,7 @@ public class EvaluationCriterion
   *
   *****************************************/
 
-  private EvaluationCriterion(CriterionContext criterionContext, CriterionField criterionField, CriterionOperator criterionOperator, String argumentExpression, TimeUnit argumentBaseTimeUnit, String storyReference, boolean criterionDefault)
+  private EvaluationCriterion(CriterionContext criterionContext, CriterionField criterionField, CriterionOperator criterionOperator, String argumentExpression, TimeUnit argumentBaseTimeUnit, String storyReference, boolean criterionDefault, int tenantID)
   {
     this.criterionContext = criterionContext;
     this.criterionField = criterionField;
@@ -301,6 +303,7 @@ public class EvaluationCriterion
     this.criterionDefault = criterionDefault;
     this.argument = null;
     this.referencesEvaluationDate = criterionField.getID().equals(CriterionField.EvaluationDateField);
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -309,14 +312,15 @@ public class EvaluationCriterion
   *
   *****************************************/
 
-  public EvaluationCriterion(JSONObject jsonRoot, CriterionContext criterionContext) throws GUIManagerException
+  public EvaluationCriterion(JSONObject jsonRoot, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     //
     //  basic fields (all but argument)
     //
 
+    this.tenantID = tenantID;
     this.criterionContext = criterionContext;
-    this.criterionField = criterionContext.getCriterionFields().get(JSONUtilities.decodeString(jsonRoot, "criterionField", true));
+    this.criterionField = criterionContext.getCriterionFields(criterionContext.getTenantID()).get(JSONUtilities.decodeString(jsonRoot, "criterionField", true));
     this.criterionOperator = CriterionOperator.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "criterionOperator", true));
     this.storyReference = JSONUtilities.decodeString(jsonRoot, "storyReference", false);
     this.criterionDefault = JSONUtilities.decodeBoolean(jsonRoot, "criterionDefault", Boolean.FALSE);
@@ -338,7 +342,7 @@ public class EvaluationCriterion
         JSONObject argumentJSON = JSONUtilities.decodeJSONObject(jsonRoot, "argument", false);
         this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", true) : null;
         this.argumentBaseTimeUnit = (argumentJSON != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(argumentJSON, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
-        parseArgument();
+        parseArgument(tenantID);
       }
     catch (ExpressionParseException|ExpressionTypeCheckException e)
       {
@@ -650,6 +654,7 @@ public class EvaluationCriterion
   public Expression getArgument() { return argument; }
   public String getStoryReference() { return storyReference; }
   public boolean getCriterionDefault() { return criterionDefault; }
+  public int getTenantID() { return tenantID; }
 
   /*****************************************
   *
@@ -679,6 +684,7 @@ public class EvaluationCriterion
     struct.put("argumentBaseTimeUnit", criterion.getArgumentBaseTimeUnit().getExternalRepresentation());
     struct.put("storyReference", criterion.getStoryReference());
     struct.put("criterionDefault", criterion.getCriterionDefault());
+    struct.put("tenantID", (short)criterion.getTenantID());
     return struct;
   }
 
@@ -704,12 +710,13 @@ public class EvaluationCriterion
 
     Struct valueStruct = (Struct) value;
     CriterionContext criterionContext = CriterionContext.unpack(new SchemaAndValue(schema.field("criterionContext").schema(), valueStruct.get("criterionContext")));
-    CriterionField criterionField = criterionContext.getCriterionFields().get(valueStruct.getString("criterionField"));
+    CriterionField criterionField = criterionContext.getCriterionFields(criterionContext.getTenantID()).get(valueStruct.getString("criterionField"));
     CriterionOperator criterionOperator = CriterionOperator.fromExternalRepresentation(valueStruct.getString("criterionOperator"));
     String argumentExpression = valueStruct.getString("argumentExpression");
     TimeUnit argumentBaseTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("argumentBaseTimeUnit"));
     String storyReference = valueStruct.getString("storyReference");
     boolean criterionDefault = valueStruct.getBoolean("criterionDefault");
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
 
     //
     //  validate
@@ -721,7 +728,7 @@ public class EvaluationCriterion
     //  construct
     //
 
-    EvaluationCriterion result = new EvaluationCriterion(criterionContext, criterionField, criterionOperator, argumentExpression, argumentBaseTimeUnit, storyReference, criterionDefault);
+    EvaluationCriterion result = new EvaluationCriterion(criterionContext, criterionField, criterionOperator, argumentExpression, argumentBaseTimeUnit, storyReference, criterionDefault, tenantID);
 
     //
     //  parse argument
@@ -729,7 +736,7 @@ public class EvaluationCriterion
 
      try
       {
-        result.parseArgument();
+        result.parseArgument(tenantID);
       }
     catch (ExpressionParseException|ExpressionTypeCheckException e)
       {
@@ -762,10 +769,10 @@ public class EvaluationCriterion
   *
   *****************************************/
 
-  public void parseArgument() throws ExpressionParseException, ExpressionTypeCheckException
+  public void parseArgument(int tenantiD) throws ExpressionParseException, ExpressionTypeCheckException
   {
-    ExpressionReader expressionReader = new ExpressionReader(criterionContext, argumentExpression, argumentBaseTimeUnit);
-    argument = expressionReader.parse(ExpressionContext.Criterion);
+    ExpressionReader expressionReader = new ExpressionReader(criterionContext, argumentExpression, argumentBaseTimeUnit, tenantiD);
+    argument = expressionReader.parse(ExpressionContext.Criterion, tenantiD);
   }
 
   /*****************************************
@@ -940,22 +947,22 @@ public class EvaluationCriterion
                     case Instant:
                       break;
                     case Minute:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MINUTE, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MINUTE, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
                       break;
                     case Hour:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.HOUR, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.HOUR, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
                       break;
                     case Day:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
                       break;
                     case Week:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DAY_OF_WEEK, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
                       break;
                     case Month:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MONTH, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.MONTH, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
                       break;
                     case Year:
-                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Deployment.getBaseTimeZone());
+                      criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
                       break;
                   }
               }
@@ -963,10 +970,10 @@ public class EvaluationCriterion
               
           case AniversaryCriterion:
             {
-              evaluatedArgument = RLMDateUtils.truncate((Date) evaluatedArgument, Calendar.DATE, Deployment.getBaseTimeZone());
-              criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getBaseTimeZone());
-              int yearOfEvaluatedArgument = RLMDateUtils.getField((Date) evaluatedArgument, Calendar.YEAR, Deployment.getBaseTimeZone());
-              criterionFieldValue = RLMDateUtils.setField((Date) criterionFieldValue, Calendar.YEAR, yearOfEvaluatedArgument, Deployment.getBaseTimeZone());
+              evaluatedArgument = RLMDateUtils.truncate((Date) evaluatedArgument, Calendar.DATE, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+              criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+              int yearOfEvaluatedArgument = RLMDateUtils.getField((Date) evaluatedArgument, Calendar.YEAR, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
+              criterionFieldValue = RLMDateUtils.setField((Date) criterionFieldValue, Calendar.YEAR, yearOfEvaluatedArgument, Deployment.getDeployment(evaluationRequest.getTenantID()).getBaseTimeZone());
               break;
             }
               
@@ -1556,7 +1563,7 @@ public class EvaluationCriterion
 
     if (argument != null)
       {
-        argument.esQuery(script, argumentBaseTimeUnit);
+        argument.esQuery(script, argumentBaseTimeUnit, tenantID);
         switch (argument.getType())
           {
             case StringExpression:

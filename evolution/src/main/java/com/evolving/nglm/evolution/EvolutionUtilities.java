@@ -68,7 +68,6 @@ public class EvolutionUtilities
   public static Date addTime(Date baseTime, int amount, TimeUnit timeUnit, String timeZone, RoundingSelection roundingSelection)
   {
     Date result = baseTime;
-    
     switch (timeUnit)
       {
         case Instant:
@@ -187,9 +186,9 @@ public class EvolutionUtilities
   }
 
   // this take care of the TimeZone, ie: day time saving
-  public static Date removeTime(Date baseTime, Period toRemove)
+  public static Date removeTime(Date baseTime, Period toRemove, int tenantID)
   {
-    return new Date(baseTime.toInstant().atZone(Deployment.getBaseZoneId()).minus(toRemove).toInstant().toEpochMilli());
+    return new Date(baseTime.toInstant().atZone(Deployment.getDeployment(tenantID).getBaseZoneId()).minus(toRemove).toInstant().toEpochMilli());
   }
   // this DOES NOT take care of the TimeZone, ie: day time saving (it means it can be inexact for a human mind of 1 hour, but it saved CPU)
   public static Date removeTime(Date baseTime, Duration toRemove)

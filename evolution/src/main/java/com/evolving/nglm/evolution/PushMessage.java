@@ -61,9 +61,9 @@ public class PushMessage extends SubscriberMessage
   *
   *****************************************/
 
-  public PushMessage(Object pushMessageJSON, String communicationChannelID, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  public PushMessage(Object pushMessageJSON, String communicationChannelID, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
-    super(pushMessageJSON, communicationChannelID, new HashMap<String, Boolean>(), subscriberMessageTemplateService, criterionContext);
+    super(pushMessageJSON, communicationChannelID, new HashMap<String, Boolean>(), subscriberMessageTemplateService, criterionContext, tenantID);
     
   }
   /*****************************************

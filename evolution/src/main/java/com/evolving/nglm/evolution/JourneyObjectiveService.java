@@ -107,7 +107,7 @@ public class JourneyObjectiveService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { journeyObjectiveListener.journeyObjectiveActivated((JourneyObjective) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { journeyObjectiveListener.journeyObjectiveDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { journeyObjectiveListener.journeyObjectiveDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -122,11 +122,11 @@ public class JourneyObjectiveService extends GUIService
   public String generateJourneyObjectiveID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredJourneyObjective(String journeyObjectiveID) { return getStoredGUIManagedObject(journeyObjectiveID); }
   public GUIManagedObject getStoredJourneyObjective(String journeyObjectiveID, boolean includeArchived) { return getStoredGUIManagedObject(journeyObjectiveID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredJourneyObjectives() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredJourneyObjectives(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredJourneyObjectives(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredJourneyObjectives(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveJourneyObjective(GUIManagedObject journeyObjectiveUnchecked, Date date) { return isActiveGUIManagedObject(journeyObjectiveUnchecked, date); }
   public JourneyObjective getActiveJourneyObjective(String journeyObjectiveID, Date date) { return (JourneyObjective) getActiveGUIManagedObject(journeyObjectiveID, date); }
-  public Collection<JourneyObjective> getActiveJourneyObjectives(Date date) { return (Collection<JourneyObjective>) getActiveGUIManagedObjects(date); }
+  public Collection<JourneyObjective> getActiveJourneyObjectives(Date date, int tenantID) { return (Collection<JourneyObjective>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -182,7 +182,7 @@ public class JourneyObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void removeJourneyObjective(String journeyObjectiveID, String userID) { removeGUIManagedObject(journeyObjectiveID, SystemTime.getCurrentTime(), userID); }
+  public void removeJourneyObjective(String journeyObjectiveID, String userID, int tenantID) { removeGUIManagedObject(journeyObjectiveID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

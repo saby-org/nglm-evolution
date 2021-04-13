@@ -34,7 +34,7 @@ public class ExtractLauncher implements Runnable
     try
     {
       sdf = new SimpleDateFormat(Deployment.getExtractManagerDateFormat());
-      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
     }
     catch (IllegalArgumentException e)
     {
@@ -107,7 +107,7 @@ public class ExtractLauncher implements Runnable
             String data = new String(d, utf8Charset);
             log.info("Got data " + data);
             JSONObject extractItemJSON = (JSONObject) (new JSONParser()).parse(data);
-            handleExtract(new ExtractItem(extractItemJSON));
+            handleExtract(new ExtractItem(extractItemJSON, 0)); // TODO EVPRO-99 check this value with Stefan, mus we split per tenant ?
             extractManagerStatistics.incrementExtractCount();
           }
           catch (KeeperException | InterruptedException | NoSuchElementException e)

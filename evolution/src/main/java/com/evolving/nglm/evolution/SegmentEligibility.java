@@ -104,7 +104,7 @@ public class SegmentEligibility implements Segment
   *
   *****************************************/
 
-  SegmentEligibility(JSONObject jsonRoot) throws GUIManagerException
+  SegmentEligibility(JSONObject jsonRoot, int tenantID) throws GUIManagerException
   {
     this.id = JSONUtilities.decodeString(jsonRoot, "id", true);
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
@@ -115,12 +115,12 @@ public class SegmentEligibility implements Segment
 
     try
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile(tenantID), tenantID);
         this.dependentOnExtendedSubscriberProfile = false;
       }
     catch (GUIManagerException e)
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullDynamicProfile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullDynamicProfile(tenantID), tenantID);
         this.dependentOnExtendedSubscriberProfile = true;
       }
   }
@@ -131,12 +131,12 @@ public class SegmentEligibility implements Segment
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, CriterionContext context) throws GUIManagerException
+  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, CriterionContext context, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context)); 
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context, tenantID)); 
       }
     return result;
   }
@@ -165,9 +165,12 @@ public class SegmentEligibility implements Segment
     {
       //this is not follow code formating convention to be more readable.
       //the method equals from EvaluationCriterion cannot be used to get diff because contains Ojects.equals on types that are not override equals
-      if(!eligilitySegment.getProfileCriteria().stream().anyMatch(p -> (p.getCriterionOperator().equals(criterion.getCriterionOperator())
-                                                                    && (p.getArgumentExpression().equals(criterion.getArgumentExpression())))
-                                                                    && (p.getCriterionField().equals(criterion.getCriterionField())))) return false;
+      // some operators have no argument ("is known/is not known"), need to take care of that special case
+      if(!eligilitySegment.getProfileCriteria().stream().anyMatch(
+          p -> (   p.getCriterionOperator().equals(criterion.getCriterionOperator())
+                && (  ((p.getArgumentExpression() == null) && (criterion.getArgumentExpression() == null))
+                    || p.getArgumentExpression().equals(criterion.getArgumentExpression()))
+                && p.getCriterionField().equals(criterion.getCriterionField())))) return false;
     }
     return true;
   }

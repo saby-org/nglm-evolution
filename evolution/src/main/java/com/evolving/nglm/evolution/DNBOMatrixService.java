@@ -80,7 +80,7 @@ public class DNBOMatrixService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { dnboMatrixListener.dnboMatrixActivated((DNBOMatrix) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { dnboMatrixListener.dnboMatrixDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { dnboMatrixListener.dnboMatrixDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -107,11 +107,11 @@ public class DNBOMatrixService extends GUIService
   public String generateDNBOMatrixID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID) { return getStoredGUIManagedObject(dnboMatrixID); }
   public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID, boolean includeArchived) { return getStoredGUIManagedObject(dnboMatrixID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredDNBOMatrixes() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredDNBOMatrixes(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredDNBOMatrixes(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredDNBOMatrixes(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveDNBOMatrix(GUIManagedObject dnboMatrixUnchecked, Date date) { return isActiveGUIManagedObject(dnboMatrixUnchecked, date); }
   public DNBOMatrix getActiveDNBOMatrix(String dnboMatrixID, Date date) { return (DNBOMatrix) getActiveGUIManagedObject(dnboMatrixID, date); }
-  public Collection<DNBOMatrix> getActiveDNBOMatrixes(Date date) { return (Collection<DNBOMatrix>) getActiveGUIManagedObjects(date); }
+  public Collection<DNBOMatrix> getActiveDNBOMatrixes(Date date, int tenantID) { return (Collection<DNBOMatrix>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -158,7 +158,7 @@ public class DNBOMatrixService extends GUIService
   *
   *****************************************/
 
-  public void removeDNBOMatrix(String dnboMatrixID, String userID) { removeGUIManagedObject(dnboMatrixID, SystemTime.getCurrentTime(), userID); }
+  public void removeDNBOMatrix(String dnboMatrixID, String userID, int tenantID) { removeGUIManagedObject(dnboMatrixID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

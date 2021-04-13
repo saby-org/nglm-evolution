@@ -91,7 +91,7 @@ public class DynamicEventDeclarationsService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { dynamicEventDeclarationsListener.dynamicEventDeclarationsActivated((DynamicEventDeclarations) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { dynamicEventDeclarationsListener.dynamicEventDeclarationsDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { dynamicEventDeclarationsListener.dynamicEventDeclarationsDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -105,7 +105,7 @@ public class DynamicEventDeclarationsService extends GUIService
 
   public String generateDynamicEventDeclarationsID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredDynamicEventDeclarations(String dynamicEventDeclarationsID) { return getStoredGUIManagedObject(dynamicEventDeclarationsID); }
-  public Collection<GUIManagedObject> getStoredDynamicEventDeclarationss() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredDynamicEventDeclarationss(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
   public boolean isActiveDynamicEventDeclarations(GUIManagedObject dynamicEventDeclarationsUnchecked, Date date) { return isActiveGUIManagedObject(dynamicEventDeclarationsUnchecked, date); }
   public DynamicEventDeclarations getActiveDynamicEventDeclarations(String dynamicEventDeclarationsID, Date date) { return (DynamicEventDeclarations) getActiveGUIManagedObject(dynamicEventDeclarationsID, date); }
   
@@ -131,12 +131,12 @@ public class DynamicEventDeclarationsService extends GUIService
   *
   *****************************************/
 
-  public void refreshLoyaltyProgramChangeEvent(LoyaltyProgramService loyaltyProgramService)
+  public void refreshLoyaltyProgramChangeEvent(LoyaltyProgramService loyaltyProgramService, int tenantID)
   {
     DynamicEventDeclaration loyaltyProgramPointChangeEventDeclaration;
     try
       {
-        loyaltyProgramPointChangeEventDeclaration = new DynamicEventDeclaration("tier update in loyalty program", ProfileLoyaltyProgramChangeEvent.class.getName(), Deployment.getProfileLoyaltyProgramChangeEventTopic(), EventRule.Standard, getProfileLoyaltyProgramChangeCriterionFields(loyaltyProgramService));
+        loyaltyProgramPointChangeEventDeclaration = new DynamicEventDeclaration("tier update in loyalty program", ProfileLoyaltyProgramChangeEvent.class.getName(), Deployment.getProfileLoyaltyProgramChangeEventTopic(), EventRule.Standard, getProfileLoyaltyProgramChangeCriterionFields(loyaltyProgramService, tenantID));
       }
     catch (GUIManagerException e)
       {
@@ -161,7 +161,7 @@ public class DynamicEventDeclarationsService extends GUIService
     JSONObject guiManagedObjectJson = new JSONObject();
     guiManagedObjectJson.put("id", DynamicEventDeclarations.singletonID);
     guiManagedObjectJson.put("active", Boolean.TRUE);
-    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap);
+    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap, tenantID);
 
     //
     // put
@@ -176,9 +176,9 @@ public class DynamicEventDeclarationsService extends GUIService
   *
   *****************************************/
 
-  public void refreshSegmentationChangeEvent(SegmentationDimensionService segmentationDimensionService)
+  public void refreshSegmentationChangeEvent(SegmentationDimensionService segmentationDimensionService, int tenantID)
   {
-    if (!Deployment.getEnableProfileSegmentChange()) 
+    if (!Deployment.getDeployment(tenantID).getEnableProfileSegmentChange()) 
       {
         return;
       }
@@ -186,7 +186,7 @@ public class DynamicEventDeclarationsService extends GUIService
     DynamicEventDeclaration segmentChangeEventDeclaration;
     try
       {
-        segmentChangeEventDeclaration = new DynamicEventDeclaration("segment update", ProfileSegmentChangeEvent.class.getName(), Deployment.getProfileSegmentChangeEventTopic(), EventRule.Standard, getProfileSegmentChangeCriterionFields(segmentationDimensionService));
+        segmentChangeEventDeclaration = new DynamicEventDeclaration("segment update", ProfileSegmentChangeEvent.class.getName(), Deployment.getProfileSegmentChangeEventTopic(), EventRule.Standard, getProfileSegmentChangeCriterionFields(segmentationDimensionService, tenantID));
       }
     catch (GUIManagerException e)
       {
@@ -211,7 +211,7 @@ public class DynamicEventDeclarationsService extends GUIService
     JSONObject guiManagedObjectJson = new JSONObject();
     guiManagedObjectJson.put("id", DynamicEventDeclarations.singletonID);
     guiManagedObjectJson.put("active", Boolean.TRUE);
-    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap);
+    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap, tenantID);
 
     //
     // put
@@ -225,11 +225,11 @@ public class DynamicEventDeclarationsService extends GUIService
   *  getProfileLoyaltyProgramChangeCriterionFields
   *
   *****************************************/
-  private Map<String, CriterionField> getProfileLoyaltyProgramChangeCriterionFields(LoyaltyProgramService loyaltyProgramService) throws GUIManagerException
+  private Map<String, CriterionField> getProfileLoyaltyProgramChangeCriterionFields(LoyaltyProgramService loyaltyProgramService, int tenantID) throws GUIManagerException
   {
 
     Map<String, CriterionField> result = new HashMap<>();
-    for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(SystemTime.getCurrentTime()))
+    for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(SystemTime.getCurrentTime(), tenantID))
       {
         switch (loyaltyProgram.getLoyaltyProgramType())
           {
@@ -349,11 +349,11 @@ public class DynamicEventDeclarationsService extends GUIService
   *  getProfileSegmentChangeCriterionFields
   *
   *****************************************/
-  private Map<String, CriterionField> getProfileSegmentChangeCriterionFields(SegmentationDimensionService segmentationDimensionService) throws GUIManagerException
+  private Map<String, CriterionField> getProfileSegmentChangeCriterionFields(SegmentationDimensionService segmentationDimensionService, int tenantID) throws GUIManagerException
   {
 
     Map<String, CriterionField> result = new HashMap<>();
-    for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime()))
+    for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime(), tenantID))
       {
         // for each dimension, generate Old, New and isUpdated dimension criterion
         JSONObject criterionFieldOLDJSON = new JSONObject();
@@ -420,7 +420,7 @@ public class DynamicEventDeclarationsService extends GUIService
   *
   *****************************************/
 
-  public void removeDynamicEventDeclarations(String dynamicEventDeclarationsID, String userID) { removeGUIManagedObject(dynamicEventDeclarationsID, SystemTime.getCurrentTime(), userID); }
+  public void removeDynamicEventDeclarations(String dynamicEventDeclarationsID, String userID, int tenantID) { removeGUIManagedObject(dynamicEventDeclarationsID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

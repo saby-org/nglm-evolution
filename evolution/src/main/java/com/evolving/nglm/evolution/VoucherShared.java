@@ -72,9 +72,9 @@ public class VoucherShared extends Voucher implements StockableItem {
     this.stockableItemID = "voucher-shared-" + getVoucherID();
   }
 
-  public VoucherShared(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked) throws GUIManagerException {
+  public VoucherShared(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException {
 
-    super(jsonRoot, epoch, existingVoucherUnchecked);
+    super(jsonRoot, epoch, existingVoucherUnchecked, tenantID);
 
     // not allow this type change
     if(existingVoucherUnchecked instanceof VoucherPersonal) throw new GUIManagerException("can not modify Personal to Shared Voucher type",existingVoucherUnchecked.getGUIManagedObjectDisplay());

@@ -134,6 +134,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
       return false;
     }
     
+    // TODO EVPRO-99 check if the update must be splitt per tenant... ??? ...???
     offersMap.update();
     modulesMap.updateFromElasticsearch(elasticsearch);
     loyaltyProgramsMap.update();
@@ -233,9 +234,9 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   public void dailyDefinitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
     
     //
@@ -262,9 +263,9 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   public void dailyPreview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 i used the systemTimeZone instead of tenant specific time zone, to be checked
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
     
     //
@@ -292,8 +293,8 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   public void hourlyDefinitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
     
     //
@@ -321,8 +322,8 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   public void hourlyPreview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
     
     //

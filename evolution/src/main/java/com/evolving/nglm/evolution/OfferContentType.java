@@ -50,9 +50,9 @@ public abstract class OfferContentType extends GUIManagedObject {
     this.catalogCharacteristics = (List<String>) valueStruct.get("catalogCharacteristics");
   }
 
-  public OfferContentType(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferContentTypeUnchecked) throws GUIManagerException {
+  public OfferContentType(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferContentTypeUnchecked, int tenantID) throws GUIManagerException {
 
-    super(jsonRoot, (existingOfferContentTypeUnchecked != null) ? existingOfferContentTypeUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingOfferContentTypeUnchecked != null) ? existingOfferContentTypeUnchecked.getEpoch() : epoch, tenantID);
 
     OfferContentType existingOfferContentType = (existingOfferContentTypeUnchecked != null && existingOfferContentTypeUnchecked instanceof OfferContentType) ? (OfferContentType) existingOfferContentTypeUnchecked : null;
     

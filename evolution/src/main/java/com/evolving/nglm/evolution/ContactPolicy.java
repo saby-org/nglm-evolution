@@ -202,7 +202,7 @@ public class ContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public ContactPolicy(JSONObject jsonRoot, long epoch, GUIManagedObject existingContactPolicyUnchecked) throws GUIManagerException
+  public ContactPolicy(JSONObject jsonRoot, long epoch, GUIManagedObject existingContactPolicyUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -210,7 +210,7 @@ public class ContactPolicy extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingContactPolicyUnchecked != null) ? existingContactPolicyUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingContactPolicyUnchecked != null) ? existingContactPolicyUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

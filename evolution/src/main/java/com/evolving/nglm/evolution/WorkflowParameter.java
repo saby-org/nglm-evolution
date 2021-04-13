@@ -103,7 +103,7 @@ public class WorkflowParameter
   *
   *****************************************/
 
-  public WorkflowParameter(JSONObject jsonRoot, JourneyService journeyService, CriterionContext criterionContext) throws GUIManagerException
+  public WorkflowParameter(JSONObject jsonRoot, JourneyService journeyService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     //
     //  workflow
@@ -121,7 +121,7 @@ public class WorkflowParameter
     //  workflow parameters
     //
 
-    this.workflowParameters = decodeWorkflowParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), workflow, criterionContext);
+    this.workflowParameters = decodeWorkflowParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), workflow, criterionContext, tenantID);
   }
 
   /*****************************************
@@ -130,7 +130,7 @@ public class WorkflowParameter
   *
   *****************************************/
 
-  private SimpleParameterMap decodeWorkflowParameters(JSONArray jsonArray, Journey workflow, CriterionContext criterionContext) throws GUIManagerException
+  private SimpleParameterMap decodeWorkflowParameters(JSONArray jsonArray, Journey workflow, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -186,7 +186,7 @@ public class WorkflowParameter
           }
         else
           {
-            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
             workflowParameters.put(parameterID, parameterExpressionValue);
             switch (parameterExpressionValue.getType())
               {

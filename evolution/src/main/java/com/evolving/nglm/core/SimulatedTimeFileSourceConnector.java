@@ -78,7 +78,7 @@ public class SimulatedTimeFileSourceConnector extends FileSourceConnector
       try
         {
           JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(record);
-          DateValue simulatedTime = new DateValue(RLMDateUtils.parseDate(JSONUtilities.decodeString(jsonRoot, "simulatedTime", true), "yyyy-MM-dd'T'HH:mm:ssXXX", Deployment.getBaseTimeZone()));
+          DateValue simulatedTime = new DateValue(RLMDateUtils.parseDate(JSONUtilities.decodeString(jsonRoot, "simulatedTime", true), "yyyy-MM-dd'T'HH:mm:ssXXX", Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
           result = Collections.<KeyValue>singletonList(new KeyValue(StringKey.schema(), "simulatedTime", DateValue.schema(), DateValue.pack(simulatedTime)));
         }
       catch (org.json.simple.parser.ParseException|JSONUtilitiesException|ServerRuntimeException e)

@@ -71,12 +71,13 @@ public class PointBalance
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("point_balance");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("expirationDates", SchemaBuilder.array(Timestamp.SCHEMA));
     schemaBuilder.field("points", SchemaBuilder.array(Schema.INT32_SCHEMA));
     schemaBuilder.field("earnedHistory", MetricHistory.schema());
     schemaBuilder.field("consumedHistory", MetricHistory.schema());
     schemaBuilder.field("expiredHistory", MetricHistory.schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("redemptionHistory", MetricHistory.schema()); // Number of time we *consume* (debit) a bunch of points.
     schema = schemaBuilder.build();
   };
@@ -104,6 +105,7 @@ public class PointBalance
   private MetricHistory earnedHistory;
   private MetricHistory consumedHistory;
   private MetricHistory expiredHistory;
+  private int tenantID;
   private MetricHistory redemptionHistory;
 
   /*****************************************
@@ -116,6 +118,7 @@ public class PointBalance
   public MetricHistory getEarnedHistory() { return earnedHistory; }
   public MetricHistory getConsumedHistory() { return consumedHistory; }
   public MetricHistory getExpiredHistory() { return expiredHistory; }
+  public int getTenantID() { return tenantID; }
   public MetricHistory getRedemptionHistory() { return redemptionHistory; }
 
   /*****************************************
@@ -127,10 +130,10 @@ public class PointBalance
   public PointBalance()
   {
     this.balances = new TreeMap<Date,Integer>();
-    this.earnedHistory = new MetricHistory(0, 0);   // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
-    this.consumedHistory = new MetricHistory(0, 0); // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
-    this.expiredHistory = new MetricHistory(0, 0);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
-    this.redemptionHistory = new MetricHistory(0, 0);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.earnedHistory = new MetricHistory(0, 0, tenantID);   // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.consumedHistory = new MetricHistory(0, 0, tenantID); // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.expiredHistory = new MetricHistory(0, 0, tenantID);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.redemptionHistory = new MetricHistory(0, 0, tenantID);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
   }
 
   /*****************************************
@@ -139,12 +142,13 @@ public class PointBalance
   *
   *****************************************/
 
-  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory, MetricHistory redemptionHistory)
+  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory, MetricHistory redemptionHistory, int tenantID)
   {
     this.balances = balances;
     this.earnedHistory = earnedHistory;
     this.consumedHistory = consumedHistory;
     this.expiredHistory = expiredHistory;
+    this.tenantID = tenantID;
     this.redemptionHistory = redemptionHistory;
   }
 
@@ -160,6 +164,7 @@ public class PointBalance
     this.earnedHistory = new MetricHistory(pointBalance.getEarnedHistory());
     this.consumedHistory = new MetricHistory(pointBalance.getConsumedHistory());
     this.expiredHistory = new MetricHistory(pointBalance.getExpiredHistory());
+    this.tenantID = pointBalance.getTenantID();
     this.redemptionHistory = new MetricHistory(pointBalance.getRedemptionHistory());
   }
 
@@ -211,7 +216,7 @@ public class PointBalance
   *
   *****************************************/
 
-  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR, String tier)
+  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR, String tier, int tenantID)
   {
     //
     //  validate
@@ -265,7 +270,7 @@ public class PointBalance
               //  get related deliverable
               //
               
-              Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate);
+              Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate, tenantID);
               Deliverable searchedDeliverable = null;
               for(Deliverable deliverable : deliverables){
                 if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(point.getPointID())){
@@ -281,7 +286,7 @@ public class PointBalance
                   //  generate fake commodityDeliveryResponse (always generate BDR when bonuses expire, needed to get BDRs)
                   //
                   
-                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null, tier);
+                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null, tier, tenantID);
                   
                 }
               
@@ -308,7 +313,7 @@ public class PointBalance
             //  expiration date
             //
 
-            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getBaseTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
+            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getDeployment(tenantID).getBaseTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
             if(pointFulfillmentResponse != null){ pointFulfillmentResponse.setDeliverableExpirationDate(expirationDate); }
 
             //
@@ -347,7 +352,7 @@ public class PointBalance
             //  generate fake commodityDeliveryResponse (needed to get BDRs)
             //
             
-            Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate);
+            Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate, tenantID);
             Deliverable searchedDeliverable = null;
             for(Deliverable deliverable : deliverables){
               if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(point.getPointID())){
@@ -356,7 +361,7 @@ public class PointBalance
               }
             }
             if(generateBDR){
-              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate, tier);
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate, tier, tenantID);
             }
            
           }
@@ -411,7 +416,7 @@ public class PointBalance
             //  generate fake commodityDeliveryResponse (needed to get BDRs)
             //
             
-            Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate);
+            Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate, tenantID);
             Deliverable searchedDeliverable = null;
             for(Deliverable deliverable : deliverables){
               if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(point.getPointID())){
@@ -420,7 +425,7 @@ public class PointBalance
               }
             }
             if(generateBDR){
-              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null, tier);
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null, tier, tenantID);
             }
             
           }
@@ -456,6 +461,7 @@ public class PointBalance
     struct.put("earnedHistory", MetricHistory.pack(pointBalance.getEarnedHistory()));
     struct.put("consumedHistory", MetricHistory.pack(pointBalance.getConsumedHistory()));
     struct.put("expiredHistory", MetricHistory.pack(pointBalance.getExpiredHistory()));
+    struct.put("tenantID", (short)pointBalance.getTenantID());
     struct.put("redemptionHistory", MetricHistory.pack(pointBalance.getRedemptionHistory()));
     return struct;
   }
@@ -491,13 +497,15 @@ public class PointBalance
     MetricHistory earnedHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("earnedHistory").schema(), valueStruct.get("earnedHistory")));
     MetricHistory consumedHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("consumedHistory").schema(), valueStruct.get("consumedHistory")));
     MetricHistory expiredHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("expiredHistory").schema(), valueStruct.get("expiredHistory")));
-    MetricHistory redemptionHistory = (schemaVersion >= 2)? MetricHistory.unpack(new SchemaAndValue(schema.field("redemptionHistory").schema(), valueStruct.get("redemptionHistory"))) : new MetricHistory(0, 0);
+    
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
+    MetricHistory redemptionHistory = (schemaVersion >= 2)? MetricHistory.unpack(new SchemaAndValue(schema.field("redemptionHistory").schema(), valueStruct.get("redemptionHistory"))) : new MetricHistory(0, 0, tenantID);
 
     //  
     //  return
     //
 
-    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory, redemptionHistory);
+    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory, redemptionHistory, tenantID);
   }
   
   /*****************************************
@@ -506,7 +514,7 @@ public class PointBalance
   *
   *****************************************/
 
-  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate, String origin){
+  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate, String origin, int tenantID){
     
     //
     //  generate fake commodityDeliveryResponse (needed to get BDRs)
@@ -541,7 +549,7 @@ public class PointBalance
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : generating fake response DONE");
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : sending fake response ...");
 
-    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration);
+    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration, tenantID);
     commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryStatus.SUCCESS);
     commodityDeliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
     commodityDeliveryRequest.setStatusMessage("Success");

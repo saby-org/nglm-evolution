@@ -80,7 +80,7 @@ public class ProductService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { productListener.productActivated((Product) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { productListener.productDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { productListener.productDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -97,6 +97,7 @@ public class ProductService extends GUIService
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("supplierID", guiManagedObject.getJSONRepresentation().get("supplierID"));
     result.put("imageURL", guiManagedObject.getJSONRepresentation().get("imageURL"));
+    result.put("remainingStock", guiManagedObject.getJSONRepresentation().get("remainingStock"));
     return result;
   }
   
@@ -109,12 +110,27 @@ public class ProductService extends GUIService
   public String generateProductID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredProduct(String productID) { return getStoredGUIManagedObject(productID); }
   public GUIManagedObject getStoredProduct(String productID, boolean includeArchived) { return getStoredGUIManagedObject(productID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredProducts() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredProducts(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredProducts(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredProducts(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveProductThroughInterval(GUIManagedObject productUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(productUnchecked, startDate, endDate); }
   public boolean isActiveProduct(GUIManagedObject productUnchecked, Date date) { return isActiveGUIManagedObject(productUnchecked, date); }
   public Product getActiveProduct(String productID, Date date) { return (Product) getActiveGUIManagedObject(productID, date); }
-  public Collection<Product> getActiveProducts(Date date) { return (Collection<Product>) getActiveGUIManagedObjects(date); }
+  public Collection<Product> getActiveProducts(Date date, int tenantID) { return (Collection<Product>) getActiveGUIManagedObjects(date, tenantID); }
+
+  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  public GUIManagedObject getStoredProductWithCurrentStocks(String productID, boolean includeArchived){
+    GUIManagedObject uncheckedProduct = getStoredProduct(productID,includeArchived);
+    if(!(uncheckedProduct instanceof Product)) return uncheckedProduct;//cant do more than normal one
+    uncheckedProduct.getJSONRepresentation().put("remainingStock",StockMonitor.getRemainingStock((Product)uncheckedProduct));
+    return uncheckedProduct;
+  }
+  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  public Collection<GUIManagedObject> getStoredProductsWithCurrentStocks(boolean includeArchived, int tenantID) {
+    Collection<GUIManagedObject> toRet = getStoredGUIManagedObjects(includeArchived, tenantID);
+    // populate all with stocks info
+    toRet.forEach(product->getStoredProductWithCurrentStocks(product.getGUIManagedObjectID(),true));
+    return toRet;
+  }
 
   /*****************************************
   *
@@ -170,7 +186,7 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void removeProduct(String productID, String userID) { removeGUIManagedObject(productID, SystemTime.getCurrentTime(), userID); }
+  public void removeProduct(String productID, String userID, int tenantID) { removeGUIManagedObject(productID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

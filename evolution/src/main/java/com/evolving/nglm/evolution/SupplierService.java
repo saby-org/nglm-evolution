@@ -103,7 +103,7 @@ public class SupplierService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { supplierListener.supplierActivated((Supplier) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { supplierListener.supplierDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { supplierListener.supplierDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -118,11 +118,11 @@ public class SupplierService extends GUIService
   public String generateSupplierID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredSupplier(String supplierID) { return getStoredGUIManagedObject(supplierID); }
   public GUIManagedObject getStoredSupplier(String supplierID, boolean includeArchived) { return getStoredGUIManagedObject(supplierID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredSuppliers() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredSuppliers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredSuppliers(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredSuppliers(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveSupplier(GUIManagedObject supplierUnchecked, Date date) { return isActiveGUIManagedObject(supplierUnchecked, date); }
   public Supplier getActiveSupplier(String supplierID, Date date) { return (Supplier) getActiveGUIManagedObject(supplierID, date); }
-  public Collection<Supplier> getActiveSuppliers(Date date) { return (Collection<Supplier>) getActiveGUIManagedObjects(date); }
+  public Collection<Supplier> getActiveSuppliers(Date date, int tenantID) { return (Collection<Supplier>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -178,7 +178,7 @@ public class SupplierService extends GUIService
   *
   *****************************************/
 
-  public void removeSupplier(String supplierID, String userID) { removeGUIManagedObject(supplierID, SystemTime.getCurrentTime(), userID); }
+  public void removeSupplier(String supplierID, String userID, int tenantID) { removeGUIManagedObject(supplierID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

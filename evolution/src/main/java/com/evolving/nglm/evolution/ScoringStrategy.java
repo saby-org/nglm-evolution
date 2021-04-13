@@ -256,7 +256,7 @@ public class ScoringStrategy extends GUIManagedObject
   *
   *****************************************/
 
-  public ScoringStrategy(JSONObject jsonRoot, long epoch, GUIManagedObject existingScoringStrategyUnchecked) throws GUIManagerException
+  public ScoringStrategy(JSONObject jsonRoot, long epoch, GUIManagedObject existingScoringStrategyUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -264,7 +264,7 @@ public class ScoringStrategy extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingScoringStrategyUnchecked != null) ? existingScoringStrategyUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingScoringStrategyUnchecked != null) ? existingScoringStrategyUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -283,7 +283,7 @@ public class ScoringStrategy extends GUIManagedObject
     //  simple
     //
     
-    this.scoringEngine = Deployment.getScoringEngines().get(JSONUtilities.decodeString(jsonRoot, "scoringEngineID", true));
+    this.scoringEngine = Deployment.getDeployment(tenantID).getScoringEngines().get(JSONUtilities.decodeString(jsonRoot, "scoringEngineID", true));
     this.dimensionID = JSONUtilities.decodeString(jsonRoot, "dimensionID", true);
 
     //
@@ -375,7 +375,7 @@ public class ScoringStrategy extends GUIManagedObject
     
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> segmentationDimensionIDs = new ArrayList<>();

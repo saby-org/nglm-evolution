@@ -3,11 +3,7 @@ package com.evolving.nglm.evolution.elasticsearch;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -23,10 +19,7 @@ import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.*;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -34,8 +27,11 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.client.sniff.Sniffer;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -105,21 +101,21 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     }
     return "journeystatistic-" + journeyID.toLowerCase(); // same rule as JourneyStatisticESSinkConnector
   }
-  
+
   /*****************************************
   *
   * Constructor wrapper (because super() must be the first statement in a constructor)
   *
   *****************************************/
-  private static RestClientBuilder initRestClientBuilder(String serverHost, int serverPort, int connectTimeoutInMs, int queryTimeoutInMs, String userName, String userPassword) {
-    RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(serverHost, serverPort, "http"));
+  private static RestClientBuilder initRestClientBuilder(ElasticsearchConnectionSettings elasticsearchConnectionSettings) {
+    RestClientBuilder restClientBuilder = RestClient.builder(elasticsearchConnectionSettings.getHosts());
     restClientBuilder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback()
     {
       @Override
       public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder)
       {
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(userName, userPassword));
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(elasticsearchConnectionSettings.getUser(), elasticsearchConnectionSettings.getPassword()));
         return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
       }
     });
@@ -128,20 +124,51 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     {
       @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
       {
-        return requestConfigBuilder.setConnectTimeout(connectTimeoutInMs).setSocketTimeout(queryTimeoutInMs);
+        return requestConfigBuilder.setConnectTimeout(elasticsearchConnectionSettings.getConnectTimeout()).setSocketTimeout(elasticsearchConnectionSettings.getQueryTimeout());
       }
     });
     
     return restClientBuilder;
   }
+
+  public static HttpHost[] parseServersConf(String servers) throws IllegalArgumentException {
+
+    if (servers == null || servers.trim().isEmpty()) throw new IllegalArgumentException("bad servers conf for "+servers);
+
+    List<HttpHost> toRet = new ArrayList<>();
+    for(String serverString:servers.trim().split(",")) {
+      String[] server = serverString.split(":");
+      if(server.length!=2) throw new IllegalArgumentException("bad server conf for "+server);
+      try { toRet.add(new HttpHost(server[0],Integer.valueOf(server[1]),"http")); }
+      catch (NumberFormatException e) { throw new IllegalArgumentException("bad server port conf for "+server); }
+    }
+
+    return toRet.toArray(new HttpHost[toRet.size()]);
+
+  }
+
+  private Sniffer sniffer;// can be null if targeting only 1 host;
   
   /*****************************************
   *
-  * Constructor
+  * Constructors
   *
   *****************************************/
-  public ElasticsearchClientAPI(String serverHost, int serverPort, int connectTimeoutInMs, int queryTimeoutInMs, String userName, String userPassword) throws ElasticsearchStatusException, ElasticsearchException {
-    super(initRestClientBuilder(serverHost, serverPort, connectTimeoutInMs, queryTimeoutInMs, userName, userPassword));
+  public ElasticsearchClientAPI(String connectionSettingsConfigName) throws ElasticsearchStatusException, ElasticsearchException {
+    this(connectionSettingsConfigName,false);
+  }
+  public ElasticsearchClientAPI(String connectionSettingsConfigName, boolean forConnect/*this as a special default*/) throws ElasticsearchStatusException, ElasticsearchException {
+    super(initRestClientBuilder(Deployment.getElasticsearchConnectionSettings(connectionSettingsConfigName, forConnect)));
+    if(Deployment.getElasticsearchConnectionSettings(connectionSettingsConfigName, forConnect).getHosts().length>1) sniffer = Sniffer.builder(this.getLowLevelClient()).build();//if only 1 host provided, we do not put Sniffer (to keep the previous behavior ESRouter only)
+    log.info("new ElasticsearchClientAPI created from elasticsearchConnectionSetting "+connectionSettingsConfigName);
+  }
+
+  // this is dirty, but could not find a clean way to intercept the super close call (can not just override super method)
+  // anyway I don't think there is much valid reason to have instances with lifetime smaller than jvm, if so it need to be closed using this one
+  // ( so CAN NOT BE USED in a try-with-resources statement )
+  public void closeCleanly() throws IOException {
+    if(sniffer!=null) sniffer.close();
+    super.close();
   }
   
   /*****************************************
@@ -600,7 +627,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     }
   }
 
-  public Map<String, Map<String, Long>> getMetricsPerStatus(String journeyID) throws ElasticsearchClientException
+  public Map<String, Map<String, Long>> getMetricsPerStatus(String journeyID, int tenantID) throws ElasticsearchClientException
   {
     Map<String, Map<String, Long>> result = new LinkedHashMap<>();
     /*
@@ -677,7 +704,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           AggregationBuilders.terms(JOURNEYSTATISTIC_STATUS_FIELD)
                              .field(JOURNEYSTATISTIC_STATUS_FIELD).size(MAX_BUCKETS);
       String field = "";
-      for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+      for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getDeployment(tenantID).getJourneyMetricConfiguration().getMetrics().values()) {
         field = journeyMetricDeclaration.getESFieldPrior();
         aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders.sum(field).field(field));
         field = journeyMetricDeclaration.getESFieldDuring();
@@ -731,7 +758,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       for(Bucket bucket : buckets.getBuckets()) {
         Aggregations subAgg = bucket.getAggregations();
         Map<String, Long> result2 = new LinkedHashMap<>();
-        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPrior(),  subAgg, result2);
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldDuring(), subAgg, result2);
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPost(),   subAgg, result2);
@@ -846,5 +873,22 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       e.printStackTrace();
       throw new ElasticsearchClientException(e.getMessage());
     }
+  }
+  
+  public List<String> getAllIndices(String indexPrefix)
+  {
+    List<String> result = new ArrayList<String>();
+    try
+      {
+        GetIndexResponse getIndexResponse = this.indices().get(new GetIndexRequest(indexPrefix + "*"), RequestOptions.DEFAULT);
+        String[] indices = getIndexResponse.getIndices();
+        if (indices != null && indices.length > 0) result = Arrays.asList(indices);
+      } 
+    catch (IOException e)
+      {
+        if (log.isErrorEnabled()) log.error("elastic search getAllIndices error, {}", e.getMessage());
+        e.printStackTrace();
+      }
+    return result;
   }
 }

@@ -80,7 +80,7 @@ public class SegmentContactPolicyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { segmentContactPolicyListener.segmentContactPolicyActivated((SegmentContactPolicy) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { segmentContactPolicyListener.segmentContactPolicyDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { segmentContactPolicyListener.segmentContactPolicyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -95,11 +95,11 @@ public class SegmentContactPolicyService extends GUIService
   public String generateSegmentContactPolicyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredSegmentContactPolicy(String segmentContactPolicyID) { return getStoredGUIManagedObject(segmentContactPolicyID); }
   public GUIManagedObject getStoredSegmentContactPolicy(String segmentContactPolicyID, boolean includeArchived) { return getStoredGUIManagedObject(segmentContactPolicyID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredSegmentContactPolicys() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredSegmentContactPolicys(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredSegmentContactPolicys(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredSegmentContactPolicys(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveSegmentContactPolicy(GUIManagedObject segmentContactPolicyUnchecked, Date date) { return isActiveGUIManagedObject(segmentContactPolicyUnchecked, date); }
   public SegmentContactPolicy getActiveSegmentContactPolicy(String segmentContactPolicyID, Date date) { return (SegmentContactPolicy) getActiveGUIManagedObject(segmentContactPolicyID, date); }
-  public Collection<SegmentContactPolicy> getActiveSegmentContactPolicys(Date date) { return (Collection<SegmentContactPolicy>) getActiveGUIManagedObjects(date); }
+  public Collection<SegmentContactPolicy> getActiveSegmentContactPolicys(Date date, int tenantID) { return (Collection<SegmentContactPolicy>) getActiveGUIManagedObjects(date, tenantID); }
   public SegmentContactPolicy getSingletonSegmentContactPolicy() { return getActiveSegmentContactPolicy(SegmentContactPolicy.singletonID, SystemTime.getCurrentTime()); }
 
   /*****************************************
@@ -156,7 +156,7 @@ public class SegmentContactPolicyService extends GUIService
   *
   *****************************************/
 
-  public void removeSegmentContactPolicy(String segmentContactPolicyID, String userID) { removeGUIManagedObject(segmentContactPolicyID, SystemTime.getCurrentTime(), userID); }
+  public void removeSegmentContactPolicy(String segmentContactPolicyID, String userID, int tenantID) { removeGUIManagedObject(segmentContactPolicyID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

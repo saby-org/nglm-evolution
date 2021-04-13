@@ -103,7 +103,7 @@ public class SubscriberTraceControlFileSourceConnector extends FileSourceConnect
       //  verify number of fields (version 1)
       //
 
-      if (tokens.length != 3)
+      if (tokens.length >= 3)
         {
           log.error("processRecord unknown record format: {}", record);
           return Collections.<KeyValue>emptyList();
@@ -140,6 +140,12 @@ public class SubscriberTraceControlFileSourceConnector extends FileSourceConnect
         {
           log.error("processRecord empty subscriberTraceEnabled: {}", record);
           return Collections.<KeyValue>emptyList();
+        }
+      
+      int tenant = 1; // by default
+      if(tokens.length == 4)
+        {
+          tenant = Integer.parseInt(tokens[3]);
         }
 
       /*****************************************
@@ -205,7 +211,7 @@ public class SubscriberTraceControlFileSourceConnector extends FileSourceConnect
       List<KeyValue> result = null;
       if (effectiveSubscriberID != null)
         {
-          SubscriberTraceControl subscriberTraceControl = new SubscriberTraceControl(effectiveSubscriberID, subscriberTraceEnabled.booleanValue());
+          SubscriberTraceControl subscriberTraceControl = new SubscriberTraceControl(effectiveSubscriberID, subscriberTraceEnabled.booleanValue(), tenant);
           result = Collections.<KeyValue>singletonList(new KeyValue((autoProvision ? "subscribertracecontrol-assignsubscriberid" : "subscribertracecontrol"), Schema.STRING_SCHEMA, effectiveSubscriberID, SubscriberTraceControl.schema(), SubscriberTraceControl.pack(subscriberTraceControl)));
         }
       else

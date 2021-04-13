@@ -46,11 +46,12 @@ public abstract class SubscriberMessage
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_message");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberMessageTemplateID", Schema.STRING_SCHEMA);
     schemaBuilder.field("communicationChannelID", Schema.OPTIONAL_STRING_SCHEMA); // A enlever
     schemaBuilder.field("parameterTags", SimpleParameterMap.schema());
     schemaBuilder.field("dialogMessages", SchemaBuilder.map(Schema.STRING_SCHEMA, DialogMessage.schema()).name("message_dialog_messages").schema());
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
 
@@ -70,6 +71,7 @@ public abstract class SubscriberMessage
   private String communicationChannelID = null;
   private SimpleParameterMap parameterTags = new SimpleParameterMap();
   private Map<String, DialogMessage> dialogMessages = new HashMap<String, DialogMessage>();
+  private int tenantID;
 
   /*****************************************
   *
@@ -81,6 +83,7 @@ public abstract class SubscriberMessage
   public String getCommunicationChannelID() { return communicationChannelID; }
   public SimpleParameterMap getParameterTags() { return parameterTags; }
   public Map<String, DialogMessage> getDialogMessages() { return dialogMessages; }
+  public int getTenantID() { return tenantID; }
   
   /****************************************
   *
@@ -96,9 +99,10 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  protected SubscriberMessage(Object subscriberMessageJSON, String communicationChannelID, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  protected SubscriberMessage(Object subscriberMessageJSON, String communicationChannelID, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     this.communicationChannelID = communicationChannelID;
+    this.tenantID = tenantID;
     
     /*****************************************
     *
@@ -126,7 +130,7 @@ public abstract class SubscriberMessage
         //  parameterTags
         //
         
-        parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "macros", new JSONArray()), subscriberMessageTemplate, criterionContext);
+        parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "macros", new JSONArray()), subscriberMessageTemplate, criterionContext, tenantID);
       }
     
     /*****************************************
@@ -152,7 +156,7 @@ public abstract class SubscriberMessage
         for (String dialogMessageField : dialogMessageFields.keySet())
           {
             boolean mandatory = dialogMessageFields.get(dialogMessageField);
-            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext, true));
+            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext, true, tenantID));
           }
       }
   }
@@ -164,7 +168,7 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  private SimpleParameterMap decodeParameterTags(JSONArray jsonArray, SubscriberMessageTemplate subscriberMessageTemplate, CriterionContext criterionContext) throws GUIManagerException
+  private SimpleParameterMap decodeParameterTags(JSONArray jsonArray, SubscriberMessageTemplate subscriberMessageTemplate, CriterionContext criterionContext, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -213,10 +217,10 @@ public abstract class SubscriberMessage
                   String parameterValue = JSONUtilities.decodeString(parameterJSON, "campaignValue", false);
                   
                   // check if the value refers a criterion or a simple String...
-                  CriterionField tagCriterionField = criterionContext.getCriterionFields().get(parameterValue);
+                  CriterionField tagCriterionField = criterionContext.getCriterionFields(tenantID).get(parameterValue);
                   
                   if(tagCriterionField != null) {
-                    ParameterExpression parameterExpression = new ParameterExpression(parameterValue, null, criterionContext);
+                    ParameterExpression parameterExpression = new ParameterExpression(parameterValue, null, criterionContext, tenantID);
                     parameterTags.put(parameterID, parameterExpression);
                   }
                   else {
@@ -230,7 +234,7 @@ public abstract class SubscriberMessage
           }
         else
           {
-            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext, tenantID);
             parameterTags.put(parameterID, parameterExpressionValue);
             switch (parameterExpressionValue.getType())
               {
@@ -281,6 +285,7 @@ public abstract class SubscriberMessage
     String communicationChannelID = schema.field("communicationChannelID") != null ? valueStruct.getString("communicationChannelID") : null;
     SimpleParameterMap parameterTags = SimpleParameterMap.unpack(new SchemaAndValue(schema.field("parameterTags").schema(), valueStruct.get("parameterTags")));    
     Map<String,DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (Map<String,Object>) valueStruct.get("dialogMessages"));
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     
     //
     //  return
@@ -289,6 +294,7 @@ public abstract class SubscriberMessage
     this.subscriberMessageTemplateID = subscriberMessageTemplateID;
     this.communicationChannelID = communicationChannelID;
     this.parameterTags = parameterTags;
+    this.tenantID = tenantID;
   }
 
 
@@ -338,6 +344,7 @@ public abstract class SubscriberMessage
     struct.put("communicationChannelID", subscriberMessage.getCommunicationChannelID());
     struct.put("parameterTags", SimpleParameterMap.pack(subscriberMessage.getParameterTags()));
     struct.put("dialogMessages", packDialogMessages(subscriberMessage.getDialogMessages()));
+    struct.put("tenantID", (short)subscriberMessage.getTenantID());
     return struct;
   }
 

@@ -151,7 +151,7 @@ public class OfferObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public OfferObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferObjectiveUnchecked) throws GUIManagerException
+  public OfferObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferObjectiveUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -159,7 +159,7 @@ public class OfferObjective extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingOfferObjectiveUnchecked != null) ? existingOfferObjectiveUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingOfferObjectiveUnchecked != null) ? existingOfferObjectiveUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -257,7 +257,7 @@ public class OfferObjective extends GUIManagedObject
       }
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());

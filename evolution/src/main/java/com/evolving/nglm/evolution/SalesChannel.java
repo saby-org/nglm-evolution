@@ -155,7 +155,7 @@ public class SalesChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public SalesChannel(JSONObject jsonRoot, long epoch, GUIManagedObject existingSalesChannelUnchecked) throws GUIManagerException
+  public SalesChannel(JSONObject jsonRoot, long epoch, GUIManagedObject existingSalesChannelUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -163,7 +163,7 @@ public class SalesChannel extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSalesChannelUnchecked != null) ? existingSalesChannelUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingSalesChannelUnchecked != null) ? existingSalesChannelUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -298,7 +298,7 @@ public class SalesChannel extends GUIManagedObject
     }
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     result.put("reseller", getResellerIDs());

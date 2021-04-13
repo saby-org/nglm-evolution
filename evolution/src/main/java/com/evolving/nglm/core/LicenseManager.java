@@ -557,14 +557,13 @@ public class LicenseManager
   
   private void startLicenseManagement()
   {
-    if (currentLicense == null) throw new ServerRuntimeException("invariant violoation: current license should not be null");
+    if (currentLicense == null) throw new ServerRuntimeException("invariant violation: current license should not be null");
 
     //
     //  json
     //
 
-    JSONObject jsonRoot = Deployment.getJSONRoot();
-    JSONObject licenseManagementJson = JSONUtilities.decodeJSONObject(jsonRoot, "licenseManagement", true);
+    JSONObject licenseManagementJson = Deployment.getLicenseManagement();
 
     //
     //  time, node, andcomponent limit alarming
@@ -1838,15 +1837,15 @@ public class LicenseManager
                 break;
 
               case "day":
-                alarmTime = RLMDateUtils.addDays(referenceTime, timeValue, Deployment.getBaseTimeZone());
+                alarmTime = RLMDateUtils.addDays(referenceTime, timeValue, Deployment.getSystemTimeZone());
                 break;
 
               case "week":
-                alarmTime = RLMDateUtils.addWeeks(referenceTime, timeValue, Deployment.getBaseTimeZone());
+                alarmTime = RLMDateUtils.addWeeks(referenceTime, timeValue, Deployment.getSystemTimeZone());
                 break;
 
               case "month":
-                alarmTime = RLMDateUtils.addMonths(referenceTime, timeValue, Deployment.getBaseTimeZone());
+                alarmTime = RLMDateUtils.addMonths(referenceTime, timeValue, Deployment.getSystemTimeZone());
                 break;
 
               default:

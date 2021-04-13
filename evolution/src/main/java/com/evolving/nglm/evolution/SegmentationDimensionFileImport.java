@@ -201,7 +201,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionFileImport(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs) throws GUIManagerException
+  public SegmentationDimensionFileImport(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -209,7 +209,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     *
     *****************************************/
 
-    super(jsonRoot, epoch, existingSegmentationDimensionUnchecked);
+    super(jsonRoot, epoch, existingSegmentationDimensionUnchecked, tenantID);
 
     /*****************************************
     *

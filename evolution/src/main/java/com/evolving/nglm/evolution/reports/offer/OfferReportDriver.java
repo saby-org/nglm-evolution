@@ -42,7 +42,7 @@ public class OfferReportDriver extends ReportDriver
    * 
    ****************************************/
 
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.info("Entered OfferReportDriver.produceReport");
 
@@ -78,8 +78,8 @@ public class OfferReportDriver extends ReportDriver
     ZipOutputStream writer = null;
     try
       {
-        log.info("no. of Offers :" + offerService.getStoredOffers().size());
-        if (offerService.getStoredOffers().size() == 0)
+        log.info("no. of Offers :" + offerService.getStoredOffers(tenantID).size());
+        if (offerService.getStoredOffers(tenantID).size() == 0)
           {
             log.info("No Offers ");
           }
@@ -90,7 +90,7 @@ public class OfferReportDriver extends ReportDriver
             // do not include tree structure in zipentry, just csv filename
             ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
             writer.putNextEntry(entry);
-            Collection<GUIManagedObject> offers = offerService.getStoredOffers();
+            Collection<GUIManagedObject> offers = offerService.getStoredOffers(tenantID);
             int nbOffers = offers.size();
             log.debug("offer list size : " + nbOffers);
 
@@ -309,7 +309,7 @@ public class OfferReportDriver extends ReportDriver
                                     if (meansOfPaymentObject != null)
                                       {
                                         meansOfPayment = "" + meansOfPaymentObject.getJSONRepresentation().get("display");
-                                        for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
+                                        for (SupportedCurrency supportedCurrency : Deployment.getDeployment(offer.getTenantID()).getSupportedCurrencies().values())
                                           {
                                             JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
                                             if (id.equals(supportedCurrencyJSON.get("id")))

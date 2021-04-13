@@ -105,7 +105,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   static
   {
     DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
 
     headerFieldsOrder.add(moduleId);
     headerFieldsOrder.add(featureId);
@@ -629,9 +629,28 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     while(tempfromDate.getTime() < toDate.getTime())
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       }
     return esIndexOdrList;
+  }
+  
+  public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates, int tenantID)
+  {
+    if (includeBothDates)
+      {
+        Date tempfromDate = fromDate;
+        List<String> esIndexOdrList = new ArrayList<String>();
+        while(tempfromDate.getTime() <= toDate.getTime())
+          {
+            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          }
+        return esIndexOdrList;
+      }
+    else
+      {
+        return getEsIndexDates(fromDate, toDate);
+      }
   }
 
 
@@ -649,20 +668,45 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     switch (reportPeriodUnit.toUpperCase())
     {
       case "DAYS":
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
         break;
 
       case "WEEKS":
-        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
         break;
 
       case "MONTHS":
-        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
         break;
 
       default:
         break;
     }
     return fromDate;
+  }
+  
+  public static String getESAllIndices(String esIndexOdrInitial)
+  {
+    return esIndexOdrInitial + "*";
+  }
+  
+  /*********************
+   * 
+   * getESIndices
+   *
+   ********************/
+  
+  public static String getESIndices(String esIndexOdr, List<String> esIndexDates)
+  {
+    StringBuilder esIndexOdrList = new StringBuilder();
+    boolean firstEntry = true;
+    for (String esIndexDate : esIndexDates)
+      {
+        if (!firstEntry) esIndexOdrList.append(",");
+        String indexName = esIndexOdr + esIndexDate;
+        esIndexOdrList.append(indexName);
+        firstEntry = false;
+      }
+    return esIndexOdrList.toString();
   }
 }

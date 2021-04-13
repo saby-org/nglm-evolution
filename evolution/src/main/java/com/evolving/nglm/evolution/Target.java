@@ -273,7 +273,7 @@ public class Target extends GUIManagedObject
   *
   *****************************************/
 
-  public Target(JSONObject jsonRoot, long epoch, GUIManagedObject existingTargetUnchecked) throws GUIManagerException
+  public Target(JSONObject jsonRoot, long epoch, GUIManagedObject existingTargetUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -281,7 +281,7 @@ public class Target extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingTargetUnchecked != null) ? existingTargetUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingTargetUnchecked != null) ? existingTargetUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -338,7 +338,7 @@ public class Target extends GUIManagedObject
           if (segments.size() > 0)
             {
               JSONObject segment0 = (JSONObject) segments.get(0);
-              this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(segment0, "profileCriteria", true), new ArrayList<EvaluationCriterion>());
+              this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(segment0, "profileCriteria", true), new ArrayList<EvaluationCriterion>(), tenantID);
             }
           break;
       }
@@ -361,7 +361,7 @@ public class Target extends GUIManagedObject
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeCriteria(JSONArray jsonArray, List<EvaluationCriterion> universalCriteria) throws GUIManagerException
+  private List<EvaluationCriterion> decodeCriteria(JSONArray jsonArray, List<EvaluationCriterion> universalCriteria, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
 
@@ -379,7 +379,7 @@ public class Target extends GUIManagedObject
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.DynamicProfile));
+            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.DynamicProfile(tenantID), tenantID));
           }
       }
 

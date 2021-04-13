@@ -50,7 +50,7 @@ public class JourneyImpactReportDriver extends ReportDriver
    *
    ****************************************/
 
-  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.debug("Processing Journey Impact Report with "+report+" and "+params);
 
@@ -62,38 +62,6 @@ public class JourneyImpactReportDriver extends ReportDriver
     journeyService = new JourneyService(kafkaNode, "journeysreportcsvwriter-journeyservice-" + apiProcessKey, journeyTopic, false);
     journeyService.start();
 
-    // ESROUTER can have two access points
-    // need to cut the string to get at least one
-    String node = null;
-    int port = 0;
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
-    String username = null;
-    String password = null;
-
-    if (elasticSearch.contains(","))
-      {
-        String[] split = elasticSearch.split(",");
-        if (split[0] != null)
-          {
-            Scanner s = new Scanner(split[0]);
-            s.useDelimiter(":");
-            node = s.next();
-            port = s.nextInt();
-            username = s.next();
-            password = s.next();
-            s.close();
-          }
-      } else
-        {
-          Scanner s = new Scanner(elasticSearch);
-          s.useDelimiter(":");
-          node = s.next();
-          port = s.nextInt();
-          username = s.next();
-          password = s.next();
-          s.close();
-        }
 
     if (csvFilename == null)
       {
@@ -111,12 +79,12 @@ public class JourneyImpactReportDriver extends ReportDriver
     // holding the zip writers of tmp files
     Map<String,ZipOutputStream> tmpZipFiles = new HashMap<>();
 
-    ElasticsearchClientAPI elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
+    ElasticsearchClientAPI elasticsearchReaderClient = new ElasticsearchClientAPI("ReportManager");
     ReportsCommonCode.initializeDateFormats();
 
     try
     {
-      Collection<GUIManagedObject> journeys = journeyService.getStoredJourneys();
+      Collection<GUIManagedObject> journeys = journeyService.getStoredJourneys(tenantID);
       int nbJourneys = journeys.size();
       log.info("journeys list size : " + nbJourneys);
 
@@ -169,7 +137,7 @@ public class JourneyImpactReportDriver extends ReportDriver
 //                      }
 //                }
               
-              Map<String, Map<String, Long>> metricsPerStatus = elasticsearchReaderClient.getMetricsPerStatus(journeyID);
+              Map<String, Map<String, Long>> metricsPerStatus = elasticsearchReaderClient.getMetricsPerStatus(journeyID, journey.getTenantID());
               
               // We have data for this journey, write it to tmp file
 
@@ -296,7 +264,7 @@ public class JourneyImpactReportDriver extends ReportDriver
     } finally {
       try {
         if (elasticsearchReaderClient != null) {
-          elasticsearchReaderClient.close();
+          elasticsearchReaderClient.closeCleanly();
         }
       } catch (IOException e) {
         log.info("Exception generating "+csvFilename, e);

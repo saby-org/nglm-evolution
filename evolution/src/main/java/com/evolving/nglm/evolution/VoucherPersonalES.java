@@ -103,18 +103,18 @@ public class VoucherPersonalES {
   }
 
   // return an instance from GetResponse
-  public VoucherPersonalES(GetResponse getResponse){
+  public VoucherPersonalES(GetResponse getResponse, int tenantID){
     this.voucherCode=getResponse.getId();
-    this.expiryDate=getDateFromESDateFormated(ES_FIELDS.expiryDate,(String)getResponse.getSourceAsMap().get(ES_FIELDS.expiryDate.name()));
+    this.expiryDate=getDateFromESDateFormated(ES_FIELDS.expiryDate,(String)getResponse.getSourceAsMap().get(ES_FIELDS.expiryDate.name()), tenantID);
     this.voucherId=(String)getResponse.getSourceAsMap().get(ES_FIELDS.voucherId.name());
     this.subscriberId=(String)getResponse.getSourceAsMap().get(ES_FIELDS.subscriberId.name());
     this.fileId=(String)getResponse.getSourceAsMap().get(ES_FIELDS.fileId.name());
   }
 
   // return an instance from ES SearchHit
-  public VoucherPersonalES(SearchHit searchHit){
+  public VoucherPersonalES(SearchHit searchHit, int tenantID){
     this.voucherCode=searchHit.getId();
-    this.expiryDate=getDateFromESDateFormated(ES_FIELDS.expiryDate,(String)searchHit.getSourceAsMap().get(ES_FIELDS.expiryDate.name()));
+    this.expiryDate=getDateFromESDateFormated(ES_FIELDS.expiryDate,(String)searchHit.getSourceAsMap().get(ES_FIELDS.expiryDate.name()), tenantID);
     this.voucherId=(String)searchHit.getSourceAsMap().get(ES_FIELDS.voucherId.name());
     this.subscriberId=(String)searchHit.getSourceAsMap().get(ES_FIELDS.subscriberId.name());
     this.fileId=(String)searchHit.getSourceAsMap().get(ES_FIELDS.fileId.name());
@@ -122,12 +122,12 @@ public class VoucherPersonalES {
 
   public static String getESFormatedDate(ES_FIELDS field, Date value){
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(field.format);
-    simpleDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    simpleDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     return new SimpleDateFormat(field.format).format(value);
   }
 
-  public static Date getDateFromESDateFormated(ES_FIELDS field, String date) {
-    return RLMDateUtils.parseDate(date,field.format,Deployment.getBaseTimeZone());
+  public static Date getDateFromESDateFormated(ES_FIELDS field, String date, int tenantID) {
+    return RLMDateUtils.parseDate(date,field.format,Deployment.getDeployment(tenantID).getBaseTimeZone());
   }
 
   // construct the DeleteByQuery for deleting by voucherId, fileId and expiryDate
@@ -138,7 +138,7 @@ public class VoucherPersonalES {
                     .filter(QueryBuilders.termQuery(ES_FIELDS.voucherId.name(),voucherId))
                     .filter(QueryBuilders.termQuery(ES_FIELDS.fileId.name(),fileId))
                     .mustNot(QueryBuilders.existsQuery(ES_FIELDS.subscriberId.name()))//do not delete already allocated voucher
-                    .filter(QueryBuilders.rangeQuery(ES_FIELDS.expiryDate.name()).lt(getESFormatedDate(ES_FIELDS.expiryDate, expiryDate)))
+                    .filter(QueryBuilders.rangeQuery(ES_FIELDS.expiryDate.name()).lt(getESFormatedDate(ES_FIELDS.expiryDate, expiryDate))) 
     );
     request.setAbortOnVersionConflict(false);//don't stop entire update on version conflict
     return request;
@@ -271,9 +271,9 @@ public class VoucherPersonalES {
   }
 
   // construct the SearchRequest to get stock info per voucherId->voucherFile->expired/expired
-  public static SearchRequest getSearchRequestGettingVoucherStocksInfo(String index, String voucherId) {
+  public static SearchRequest getSearchRequestGettingVoucherStocksInfo(String index, String voucherId, int tenantID) {
 
-    String dateConsideredForExpiry=getESFormatedDate(ES_FIELDS.expiryDate,EvolutionUtilities.addTime(SystemTime.getCurrentTime(),Deployment.getMinExpiryDelayForVoucherDeliveryInHours(), EvolutionUtilities.TimeUnit.Hour,Deployment.getBaseTimeZone()));
+    String dateConsideredForExpiry=getESFormatedDate(ES_FIELDS.expiryDate,EvolutionUtilities.addTime(SystemTime.getCurrentTime(),Deployment.getMinExpiryDelayForVoucherDeliveryInHours(), EvolutionUtilities.TimeUnit.Hour,Deployment.getDeployment(tenantID).getBaseTimeZone()));
 
     int aggTermSize = 1000;// should be way lower, safety
 

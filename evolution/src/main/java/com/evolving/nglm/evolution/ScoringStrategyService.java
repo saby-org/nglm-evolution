@@ -101,7 +101,7 @@ public class ScoringStrategyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { scoringStrategyListener.scoringStrategyActivated((ScoringStrategy) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { scoringStrategyListener.scoringStrategyDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { scoringStrategyListener.scoringStrategyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -129,11 +129,11 @@ public class ScoringStrategyService extends GUIService
   public String generateScoringStrategyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredScoringStrategy(String scoringStrategyID) { return getStoredGUIManagedObject(scoringStrategyID); }
   public GUIManagedObject getStoredScoringStrategy(String scoringStrategyID, boolean includeArchived) { return getStoredGUIManagedObject(scoringStrategyID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredScoringStrategies() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredScoringStrategies(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredScoringStrategies(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredScoringStrategies(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveScoringStrategy(GUIManagedObject scoringStrategyUnchecked, Date date) { return isActiveGUIManagedObject(scoringStrategyUnchecked, date); }
   public ScoringStrategy getActiveScoringStrategy(String scoringStrategyID, Date date) { return (ScoringStrategy) getActiveGUIManagedObject(scoringStrategyID, date); }
-  public Collection<ScoringStrategy> getActiveScoringStrategies(Date date) { return (Collection<ScoringStrategy>) getActiveGUIManagedObjects(date); }
+  public Collection<ScoringStrategy> getActiveScoringStrategies(Date date, int tenantID) { return (Collection<ScoringStrategy>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -149,7 +149,7 @@ public class ScoringStrategyService extends GUIService
   *
   *****************************************/
 
-  public void removeScoringStrategy(String scoringStrategyID, String userID) { removeGUIManagedObject(scoringStrategyID, SystemTime.getCurrentTime(), userID); }
+  public void removeScoringStrategy(String scoringStrategyID, String userID, int tenantID) { removeGUIManagedObject(scoringStrategyID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

@@ -92,6 +92,7 @@ public class DeliveryManagerAccount
     private boolean creditable;
     private boolean debitable;
     private String label;
+    private int tenantID;
     
     //
     //  accessors
@@ -102,20 +103,21 @@ public class DeliveryManagerAccount
     public boolean getCreditable() { return creditable; }
     public boolean getDebitable() { return debitable; }
     public String getLabel() { return label; }
-    
+    public int getTenantID() { return tenantID; }
     /*****************************************
     *
     *  constructor
     *
     *****************************************/
 
-    public Account(String externalAccountID, String name, boolean creditable, boolean debitable, String label, JSONObject characteristics)
+    public Account(String externalAccountID, String name, boolean creditable, boolean debitable, String label, int tenantID, JSONObject characteristics)
     {
       this.externalAccountID = externalAccountID;
       this.name = name;
       this.creditable = creditable;
       this.debitable = debitable;
       this.label = label;
+      this.tenantID = tenantID;
     }
 
     /*****************************************
@@ -131,6 +133,7 @@ public class DeliveryManagerAccount
       this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
       this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);
       this.label = JSONUtilities.decodeString(jsonRoot, "label", false);
+      this.tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
       }
        
   }

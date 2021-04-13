@@ -115,6 +115,16 @@ public class NGLMRuntime
         Thread simulatedTimeThread = new Thread(simulatedTime, "SimulatedTimeService");
         simulatedTimeThread.start();
       }
+    
+    //
+    // Deployments initialization for all tenants
+    //
+    
+    for(Integer tenantID : Deployment.getTenantIDs())
+      {
+        Deployment.getDeployment(tenantID);
+        com.evolving.nglm.evolution.Deployment.getDeployment(tenantID);
+      }
   }
 
   //

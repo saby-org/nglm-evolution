@@ -107,12 +107,12 @@ public class TokenType extends GUIManagedObject
   // getExpirationDate
   //
 
-  public Date getExpirationDate(Date creationDate) {
+  public Date getExpirationDate(Date creationDate, int tenantID) {
     Date result = EvolutionUtilities.addTime(
         creationDate, 
         this.getValidity().getPeriodQuantity(),
         this.getValidity().getPeriodType(),
-        Deployment.getBaseTimeZone(),
+        Deployment.getDeployment(tenantID).getBaseTimeZone(),
         this.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
     return result;
   }
@@ -189,7 +189,7 @@ public class TokenType extends GUIManagedObject
   *
   *****************************************/
 
-  public TokenType(JSONObject jsonRoot, long epoch, GUIManagedObject existingTokenTypeUnchecked) throws GUIManagerException
+  public TokenType(JSONObject jsonRoot, long epoch, GUIManagedObject existingTokenTypeUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -197,7 +197,7 @@ public class TokenType extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingTokenTypeUnchecked != null) ? existingTokenTypeUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingTokenTypeUnchecked != null) ? existingTokenTypeUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

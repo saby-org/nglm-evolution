@@ -225,7 +225,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
    *
    *****************************************/
 
-  public LoyaltyProgram(JSONObject jsonRoot, long epoch, GUIManagedObject existingLoyaltyProgramUnchecked, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  public LoyaltyProgram(JSONObject jsonRoot, long epoch, GUIManagedObject existingLoyaltyProgramUnchecked, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     /*****************************************
      *
@@ -233,7 +233,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
      *
      *****************************************/
 
-    super(jsonRoot, (existingLoyaltyProgramUnchecked != null) ? existingLoyaltyProgramUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingLoyaltyProgramUnchecked != null) ? existingLoyaltyProgramUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
      *

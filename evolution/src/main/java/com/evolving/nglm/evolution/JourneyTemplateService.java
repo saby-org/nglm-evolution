@@ -81,7 +81,7 @@ public class JourneyTemplateService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { journeyTemplateListener.journeyTemplateActivated((Journey) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { journeyTemplateListener.journeyTemplateDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { journeyTemplateListener.journeyTemplateDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -122,11 +122,11 @@ public class JourneyTemplateService extends GUIService
   public String generateJourneyTemplateID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredJourneyTemplate(String journeyTemplateID) { return getStoredGUIManagedObject(journeyTemplateID); }
   public GUIManagedObject getStoredJourneyTemplate(String journeyTemplateID, boolean includeArchived) { return getStoredGUIManagedObject(journeyTemplateID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredJourneyTemplates() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredJourneyTemplates(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredJourneyTemplates(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredJourneyTemplates(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveJourneyTemplate(GUIManagedObject journeyTemplateUnchecked, Date date) { return isActiveGUIManagedObject(journeyTemplateUnchecked, date); }
   public Journey getActiveJourneyTemplate(String journeyTemplateID, Date date) { return (Journey) getActiveGUIManagedObject(journeyTemplateID, date); }
-  public Collection<Journey> getActiveJourneyTemplates(Date date) { return (Collection<Journey>) getActiveGUIManagedObjects(date); }
+  public Collection<Journey> getActiveJourneyTemplates(Date date, int tenantID) { return (Collection<Journey>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -182,7 +182,7 @@ public class JourneyTemplateService extends GUIService
   *
   *****************************************/
 
-  public void removeJourneyTemplate(String journeyTemplateID, String userID) { removeGUIManagedObject(journeyTemplateID, SystemTime.getCurrentTime(), userID); }
+  public void removeJourneyTemplate(String journeyTemplateID, String userID, int tenantID) { removeGUIManagedObject(journeyTemplateID, SystemTime.getCurrentTime(), userID, tenantID); }
 
   /*****************************************
   *

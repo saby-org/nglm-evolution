@@ -567,7 +567,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferUnchecked, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  public Offer(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferUnchecked, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -575,7 +575,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    super(jsonRoot, (existingOfferUnchecked != null) ? existingOfferUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingOfferUnchecked != null) ? existingOfferUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -594,7 +594,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.initialPropensity = getValidPropensity(JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", false));
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
+    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true), tenantID);
     this.offerOfferObjectives = decodeOfferObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectives", true), catalogCharacteristicService);
     this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
     this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
@@ -624,12 +624,12 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray) throws GUIManagerException
+  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, int tenantID) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.DynamicProfile));
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.DynamicProfile(tenantID), tenantID));
       }
     return result;
   }
@@ -899,7 +899,7 @@ public class Offer extends GUIManagedObject implements StockableItem
    * 
    *******************************/
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());

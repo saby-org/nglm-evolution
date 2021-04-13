@@ -59,9 +59,9 @@ public class JourneyCleanUpTask
   public void start() 
   {
     Date now = SystemTime.getCurrentTime();
-    Date journeyExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysJourneys(), Deployment.getBaseTimeZone());
-    Date campaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysCampaigns(), Deployment.getBaseTimeZone());
-    Date bulkCampaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysBulkCampaigns(), Deployment.getBaseTimeZone());
+    Date journeyExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysJourneys(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ??? 
+    Date campaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysCampaigns(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date bulkCampaignExpirationDate = RLMDateUtils.addDays(now, -1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysBulkCampaigns(), Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     
     // Init list of indices to check 
     Set<String> lowerCaseIDs = getESLowerCaseJourneyIDs();
@@ -109,7 +109,7 @@ public class JourneyCleanUpTask
   *****************************************/
   /**
    * Build the map of <lowerCaseJourneyID, journeyID> of all active journeys 
-   * in the system. The goal is to be able to retrive the "real" journeyID 
+   * in the system. The goal is to be able to retrieve the "real" journeyID 
    * from the lowerCase one extracted from Elasticsearch.
    * 
    * We do not retrieve archived journeys. Therefore, if a journey has been
@@ -120,7 +120,7 @@ public class JourneyCleanUpTask
   {
     Map<String, String> result = new HashMap<String, String>();
     
-    for(GUIManagedObject object : this.journeyService.getStoredJourneys(false)) {
+    for(GUIManagedObject object : this.journeyService.getStoredJourneys(false, 0)) { // TODO EVPRO-99 check
       result.put(JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(object.getGUIManagedObjectID()), object.getGUIManagedObjectID());
     }
     

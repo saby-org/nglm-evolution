@@ -38,6 +38,7 @@ public class SubscriberEvaluationRequest
   private ParameterMap evaluationVariables;
   private List<String> traceDetails;
   private HashMap<String, String> miscData = new HashMap(); // for data provided in special cases (like tags...)
+  private int tenantID;
 
   /*****************************************
   *
@@ -49,7 +50,7 @@ public class SubscriberEvaluationRequest
   //  constructor -- complete
   //  
 
-  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, JourneyLink journeyLink, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate)
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, JourneyLink journeyLink, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate, int tenantID)
   {
     this.subscriberProfile = subscriberProfile;
     this.extendedSubscriberProfile = extendedSubscriberProfile;
@@ -62,33 +63,34 @@ public class SubscriberEvaluationRequest
     this.nextEvaluationDates = new TreeSet<Date>();
     this.evaluationVariables = new ParameterMap();
     this.traceDetails = new ArrayList<String>();
+    this.tenantID = tenantID;
   }
 
   //
   //  constructor -- standard
   //
 
-  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date evaluationDate)
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date evaluationDate, int tenantID)
   {
-    this(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, null, null, null, null, evaluationDate);
+    this(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, null, null, null, null, evaluationDate, tenantID);
   }
 
   //
   //  constructor -- standard
   //
 
-  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date evaluationDate)
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date evaluationDate, int tenantID)
   {
-    this(subscriberProfile, (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, evaluationDate);
+    this(subscriberProfile, (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, evaluationDate, tenantID);
   }
   
   //
   //  constructor -- for targetting based on Trigger event
   //
 
-  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate)
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate, int tenantID)
   {
-    this(subscriberProfile, null, subscriberGroupEpochReader, null, null, null, subscriberStreamEvent, evaluationDate);
+    this(subscriberProfile, null, subscriberGroupEpochReader, null, null, null, subscriberStreamEvent, evaluationDate, tenantID);
   }
 
   /*****************************************
@@ -109,6 +111,7 @@ public class SubscriberEvaluationRequest
   public SortedSet<Date> getNextEvaluationDates() { return nextEvaluationDates; }
   public boolean getSubscriberTraceEnabled() { return subscriberProfile.getSubscriberTraceEnabled(); }
   public Map<String, String> getMiscData() { return miscData; }
+  public int getTenantID() { return tenantID; }
   
   /*****************************************
   *
@@ -126,8 +129,8 @@ public class SubscriberEvaluationRequest
 
   public String getLanguage()
   {
-    String languageID = (String) CriterionContext.Profile.getCriterionFields().get("subscriber.language").retrieve(this);
-    String language = (languageID != null && Deployment.getSupportedLanguages().get(languageID) != null) ? Deployment.getSupportedLanguages().get(languageID).getName() : Deployment.getBaseLanguage();
+    String languageID = (String) CriterionContext.Profile(tenantID).getCriterionFields(tenantID).get("subscriber.language").retrieve(this);
+    String language = (languageID != null && Deployment.getDeployment(getTenantID()).getSupportedLanguages().get(languageID) != null) ? Deployment.getDeployment(getTenantID()).getSupportedLanguages().get(languageID).getName() : Deployment.getDeployment(getTenantID()).getBaseLanguage();
     return language;
   }
 

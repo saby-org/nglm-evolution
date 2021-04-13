@@ -292,11 +292,11 @@ public class TokenUtils
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService,
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
-      String msisdn, Supplier supplier) throws GetOfferException
+      String msisdn, Supplier supplier, int tenantID) throws GetOfferException
   {
     // check if we can call this PS
     int maximumPresentationsPeriodDays = presentationStrategy.getMaximumPresentationsPeriodDays();
-    Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getBaseTimeZone());
+    Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getDeployment(tenantID).getBaseTimeZone());
     List<Date> presentationDates = token.getPresentationDates();
     List<Date> newPresentationDates = new ArrayList<>();
     for (Date date : presentationDates)
@@ -372,7 +372,7 @@ public class TokenUtils
         Collection<ProposedOfferDetails> localScoring = scoringCache.get(scoringStrategyID);
         if (localScoring == null) // cache miss
           {
-            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, msisdn, supplier);
+            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, msisdn, supplier, tenantID);
             scoringCache.put(scoringStrategyID, localScoring);
           }
         if (localScoring.size() < indexResult+1)
@@ -394,10 +394,10 @@ public class TokenUtils
     CatalogCharacteristicService catalogCharacteristicService,
     ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
     SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,
-    OfferService offerService, StringBuffer returnedLog, String msisdn, Supplier supplier) throws GetOfferException
+    OfferService offerService, StringBuffer returnedLog, String msisdn, Supplier supplier, int tenantID) throws GetOfferException
   {
     String logFragment;
-    ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader);
+    ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader, tenantID);
     logFragment = "getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringSegment for " + msisdn + " " + selectedScoringSegment;
     returnedLog.append(logFragment+", ");
     if (log.isDebugEnabled())
@@ -405,7 +405,7 @@ public class TokenUtils
       log.debug(logFragment);
     }
 
-    Set<Offer> offersForAlgo = getOffersToOptimize(now, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, subscriberGroupEpochReader, supplier, productService, voucherService);
+    Set<Offer> offersForAlgo = getOffersToOptimize(now, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
 
     OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
     if (algo == null)
@@ -439,7 +439,7 @@ public class TokenUtils
             algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
             productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService,
             subscriberGroupEpochReader,
-            segmentationDimensionService, dnboMatrixAlgorithmParameters, returnedLog);
+            segmentationDimensionService, dnboMatrixAlgorithmParameters, returnedLog, tenantID);
 
     if (offerAvailabilityFromPropensityAlgo == null)
       {
@@ -450,7 +450,7 @@ public class TokenUtils
     // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
     //
     Set<String> offerObjectiveIds = selectedScoringSegment.getAlwaysAppendOfferObjectiveIDs();
-    for(Offer offer : offerService.getActiveOffers(now))
+    for(Offer offer : offerService.getActiveOffers(now, tenantID))
       {
         boolean inList = true;
         for (OfferObjectiveInstance offerObjective : offer.getOfferObjectives()) 
@@ -511,13 +511,13 @@ public class TokenUtils
   }
   
   private static Set<Offer> getOffersToOptimize(Date now, Set<String> catalogObjectiveIDs,
-      SubscriberProfile subscriberProfile, OfferService offerService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService)
+      SubscriberProfile subscriberProfile, OfferService offerService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService, int tenantID)
   {
     // Browse all offers:
     // - filter by offer objective coming from the split strategy
     // - filter by profile of subscriber
     // Return a set of offers that can be optimised
-    Collection<Offer> offers = offerService.getActiveOffers(SystemTime.getCurrentTime());
+    Collection<Offer> offers = offerService.getActiveOffers(SystemTime.getCurrentTime(), tenantID);
     Set<Offer> result = new HashSet<>();
     List<Token> tokens = subscriberProfile.getTokens();
     Collection<Offer>filteredOffers = new ArrayList<>(); 
@@ -592,7 +592,7 @@ public class TokenUtils
       Long maximumPresentationsPeriodDaysStr = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
       long maximumPresentationsPeriodDays = maximumPresentationsPeriodDaysStr != null ? maximumPresentationsPeriodDaysStr : 365L;  // default value
       
-      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getBaseTimeZone());
+      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getDeployment(tenantID).getBaseTimeZone());
 
       for (String catalogObjectiveID : catalogObjectiveIDs)
       {
@@ -602,7 +602,7 @@ public class TokenUtils
           log.trace("    offerID : "+offer.getOfferID()+" offerObjectiveID : "+offerObjective.getOfferObjectiveID());
           if (offerObjective.getOfferObjectiveID().equals(catalogObjectiveID))
           {
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
             if (offer.evaluateProfileCriteria(evaluationRequest))
             {
               // check if we can still present this offer
@@ -646,11 +646,11 @@ public class TokenUtils
   }
   
   private static ScoringSegment getScoringSegment(ScoringStrategy strategy, SubscriberProfile subscriberProfile,
-      ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader) throws GetOfferException
+      ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID) throws GetOfferException
   {
     // let retrieve the first sub strategy that maps this user:
     Date now = SystemTime.getCurrentTime();
-    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
+    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
     ScoringSegment selectedScoringSegment = strategy.evaluateScoringSegments(evaluationRequest);
     if (log.isDebugEnabled())
       {

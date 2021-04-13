@@ -7,9 +7,9 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 public class Workflow extends GUIManagedObject
 {
 
-  protected Workflow(String guiManagedObjectID)
+  protected Workflow(String guiManagedObjectID, int tenantID)
   {
-    super(guiManagedObjectID);
+    super(guiManagedObjectID, tenantID);
     throw new ServerRuntimeException("Bulk Campaign is marker only - not allowed to create an object");
   }
 

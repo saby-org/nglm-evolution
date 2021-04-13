@@ -115,7 +115,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                 journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
                 journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
                   {
                     journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
                     journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
@@ -179,6 +179,8 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     journeyService.start();
 
     try {
+
+sdfsf // TODO EVPRO-99 is all tenant (0) ok here ?
       Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys();
       List<Journey> activeJourneys = new ArrayList<>();
       Date yesterdayAtZeroHour = ReportUtils.yesterdayAtZeroHour(reportGenerationDate);

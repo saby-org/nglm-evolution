@@ -185,7 +185,7 @@ public class CommunicationChannelBlackoutPeriod extends GUIManagedObject
    *
    *****************************************/
 
-  public CommunicationChannelBlackoutPeriod(JSONObject jsonRoot, long epoch, GUIManagedObject existingBlackoutPeriodUnchecked) throws GUIManagerException
+  public CommunicationChannelBlackoutPeriod(JSONObject jsonRoot, long epoch, GUIManagedObject existingBlackoutPeriodUnchecked, int tenantID) throws GUIManagerException
   {
 
     /*****************************************
@@ -194,7 +194,7 @@ public class CommunicationChannelBlackoutPeriod extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingBlackoutPeriodUnchecked != null) ? existingBlackoutPeriodUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingBlackoutPeriodUnchecked != null) ? existingBlackoutPeriodUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *

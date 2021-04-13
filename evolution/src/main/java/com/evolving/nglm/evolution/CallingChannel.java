@@ -147,7 +147,7 @@ public class CallingChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public CallingChannel(JSONObject jsonRoot, long epoch, GUIManagedObject existingCallingChannelUnchecked) throws GUIManagerException
+  public CallingChannel(JSONObject jsonRoot, long epoch, GUIManagedObject existingCallingChannelUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -155,7 +155,7 @@ public class CallingChannel extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingCallingChannelUnchecked != null) ? existingCallingChannelUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingCallingChannelUnchecked != null) ? existingCallingChannelUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -227,7 +227,7 @@ public class CallingChannel extends GUIManagedObject
       }
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());

@@ -119,9 +119,9 @@ public class JourneyObjective extends GUIManagedObject implements GUIManagedObje
   //
   
   public Integer getEffectiveTargetingLimitMaxSimultaneous() { return targetingLimitMaxSimultaneous != null ? targetingLimitMaxSimultaneous : new Integer(Integer.MAX_VALUE); }
-  public Date getEffectiveWaitingPeriodEndDate(Date now) { return (targetingLimitMaxSimultaneous != null && targetingLimitMaxSimultaneous == 1 && targetingLimitWaitingPeriodDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitWaitingPeriodDuration,  targetingLimitWaitingPeriodTimeUnit, Deployment.getBaseTimeZone(), RoundingSelection.NoRound) : now; }
+  public Date getEffectiveWaitingPeriodEndDate(Date now, int tenantID) { return (targetingLimitMaxSimultaneous != null && targetingLimitMaxSimultaneous == 1 && targetingLimitWaitingPeriodDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitWaitingPeriodDuration,  targetingLimitWaitingPeriodTimeUnit, Deployment.getDeployment(tenantID).getBaseTimeZone(), RoundingSelection.NoRound) : now; }
   public Integer getEffectiveTargetingLimitMaxOccurrence() { return targetingLimitMaxOccurrence != null ? targetingLimitMaxOccurrence : new Integer(Integer.MAX_VALUE); }
-  public Date getEffectiveSlidingWindowStartDate(Date now) { return (targetingLimitSlidingWindowDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitSlidingWindowDuration,  targetingLimitSlidingWindowTimeUnit, Deployment.getBaseTimeZone(), RoundingSelection.NoRound) : now; }
+  public Date getEffectiveSlidingWindowStartDate(Date now, int tenantID) { return (targetingLimitSlidingWindowDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitSlidingWindowDuration,  targetingLimitSlidingWindowTimeUnit, Deployment.getDeployment(tenantID).getBaseTimeZone(), RoundingSelection.NoRound) : now; }
   
   /*****************************************
   *
@@ -210,7 +210,7 @@ public class JourneyObjective extends GUIManagedObject implements GUIManagedObje
   *
   *****************************************/
 
-  public JourneyObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingJourneyObjectiveUnchecked) throws GUIManagerException
+  public JourneyObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingJourneyObjectiveUnchecked, int tenantID) throws GUIManagerException
   {
     /*****************************************
     *
@@ -218,7 +218,7 @@ public class JourneyObjective extends GUIManagedObject implements GUIManagedObje
     *
     *****************************************/
 
-    super(jsonRoot, (existingJourneyObjectiveUnchecked != null) ? existingJourneyObjectiveUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingJourneyObjectiveUnchecked != null) ? existingJourneyObjectiveUnchecked.getEpoch() : epoch, tenantID);
 
     /*****************************************
     *
@@ -383,7 +383,7 @@ public class JourneyObjective extends GUIManagedObject implements GUIManagedObje
       }
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> contactPolicyIDs = new ArrayList<String>();

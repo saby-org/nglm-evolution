@@ -144,9 +144,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(EvolutionEventContext context, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource, String journeyID)
+  public JourneyRequest(EvolutionEventContext context, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource, String journeyID, int tenantID)
   {
-    super(context, "journeyFulfillment", deliveryRequestSource);
+    super(context, "journeyFulfillment", deliveryRequestSource, tenantID);
     this.journeyRequestID = context.getUniqueKey();
     this.eventDate = context.now();
     this.journeyID = journeyID;
@@ -165,9 +165,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(EvolutionEventContext context, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource, String workflowID, SimpleParameterMap boundParameters)
+  public JourneyRequest(EvolutionEventContext context, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource, String workflowID, SimpleParameterMap boundParameters, int tenantID)
   {
-    super(context, "journeyFulfillment", deliveryRequestSource);
+    super(context, "journeyFulfillment", deliveryRequestSource, tenantID);
     this.journeyRequestID = context.getUniqueKey();
     this.eventDate = context.now();
     this.journeyID = workflowID;
@@ -186,9 +186,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, String uniqueKey, String subscriberID, String deliveryRequestSource, boolean universalControlGroup)
+  public JourneyRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, String uniqueKey, String subscriberID, String deliveryRequestSource, boolean universalControlGroup, int tenantID)
   {
-    super(subscriberProfile,subscriberGroupEpochReader,uniqueKey, subscriberID, "journeyFulfillment", deliveryRequestSource, universalControlGroup);
+    super(subscriberProfile,subscriberGroupEpochReader,uniqueKey, subscriberID, "journeyFulfillment", deliveryRequestSource, universalControlGroup, tenantID);
     this.journeyRequestID = uniqueKey;
     this.eventDate = SystemTime.getCurrentTime();
     this.journeyID = deliveryRequestSource;
@@ -207,9 +207,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  public JourneyRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
   {
-    super(originatingRequest,jsonRoot);
+    super(originatingRequest,jsonRoot, tenantID);
     this.journeyRequestID = JSONUtilities.decodeString(jsonRoot, "journeyRequestID", true);
     this.eventDate = JSONUtilities.decodeDate(jsonRoot, "eventDate", true);
     this.journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
@@ -348,7 +348,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   ****************************************/
   
-  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
   {
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
     guiPresentationMap.put(DELIVERABLEID, getJourneyID());
@@ -362,7 +362,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     guiPresentationMap.put(ORIGIN, "");
   }
   
-  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
+  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
   {
     thirdPartyPresentationMap.put(DELIVERABLEID, getJourneyID());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, 1);

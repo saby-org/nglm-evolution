@@ -121,7 +121,7 @@ public class UploadedFileService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { uploadedFileListener.fileActivated((UploadedFile) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { uploadedFileListener.fileDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { uploadedFileListener.fileDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -157,11 +157,11 @@ public class UploadedFileService extends GUIService
   public String generateFileID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredUploadedFile(String fileID) { return getStoredGUIManagedObject(fileID); }
   public GUIManagedObject getStoredUploadedFile(String fileID, boolean includeArchived) { return getStoredGUIManagedObject(fileID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredUploadedFiles() { return getStoredGUIManagedObjects(); }
-  public Collection<GUIManagedObject> getStoredUploadedFiles(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
+  public Collection<GUIManagedObject> getStoredUploadedFiles(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredUploadedFiles(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveUploadedFile(GUIManagedObject uploadedFileUnchecked, Date date) { return isActiveGUIManagedObject(uploadedFileUnchecked, date); }
   public UploadedFile getActiveUploadedFile(String uploadedFileID, Date date) { return (UploadedFile) getActiveGUIManagedObject(uploadedFileID, date); }
-  public Collection<UploadedFile> getActiveUploadedFiles(Date date) { return (Collection<UploadedFile>) getActiveGUIManagedObjects(date); }
+  public Collection<UploadedFile> getActiveUploadedFiles(Date date, int tenantID) { return (Collection<UploadedFile>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
@@ -198,7 +198,7 @@ public class UploadedFileService extends GUIService
       StringWriter stackTraceWriter = new StringWriter();
       e.printStackTrace(new PrintWriter(stackTraceWriter, true));
       log.error("Exception saving file: putUploadedFile API: {}", stackTraceWriter.toString());
-      removeGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), now, userID);
+      removeGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), now, userID, guiManagedObject.getTenantID());
     }finally {
       if(destFile != null) {
         destFile.flush();
@@ -315,7 +315,7 @@ public class UploadedFileService extends GUIService
       StringWriter stackTraceWriter = new StringWriter();
       e.printStackTrace(new PrintWriter(stackTraceWriter, true));
       log.error("Exception saving file: putUploadedFileWithVariables API: {}", stackTraceWriter.toString());
-      removeGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), now, userID);
+      removeGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), now, userID, guiManagedObject.getTenantID());
     }finally {
       if(destFile != null) {
         destFile.flush();
@@ -655,13 +655,13 @@ public class UploadedFileService extends GUIService
   *
   *****************************************/
 
-  public void deleteUploadedFile(String fileID, String userID, UploadedFile uploadedFile) {
+  public void deleteUploadedFile(String fileID, String userID, UploadedFile uploadedFile, int tenantID) {
     
     //
     // remove UploadedFile object
     //
 
-    removeGUIManagedObject(fileID, SystemTime.getCurrentTime(), userID); 
+    removeGUIManagedObject(fileID, SystemTime.getCurrentTime(), userID, tenantID); 
 
     //
     // remove file

@@ -7,9 +7,9 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 public class BulkCampaign extends GUIManagedObject
 {
 
-  protected BulkCampaign(String guiManagedObjectID)
+  protected BulkCampaign(String guiManagedObjectID, int tenantID)
   {
-    super(guiManagedObjectID);
+    super(guiManagedObjectID, tenantID);
     throw new ServerRuntimeException("Bulk Campaign is marker only - not allowed to create an object");
   }
 
