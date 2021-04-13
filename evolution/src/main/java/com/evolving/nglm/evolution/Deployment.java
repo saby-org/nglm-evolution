@@ -256,7 +256,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   // EVPRO-886
   private static int nodesTransitionsHistorySize;
 
-
   private  boolean enableContactPolicyProcessing;
   
   //EVPRO-865  
@@ -508,7 +507,9 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   //EVPRO-574
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
-
+  
+  //EVPRO-865
+  public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
   // EVPRO-886
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
 

@@ -194,12 +194,32 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
                 historyJSON.put("date", ReportsCommonCode.getDateString(date));
                 outputJSON.add(historyJSON);
               }
-          }
-        journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
+            journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
+            
+            if (journeyStats.containsKey("journeyExitDate") && journeyStats.get("journeyExitDate") != null)
+              {
 
-        //
-        // result
-        //
+                Object journeyExitDateObj = journeyStats.get("journeyExitDate");
+                if (journeyExitDateObj instanceof String)
+                  {
+                    journeyInfo.put("journeyExitDate", ReportsCommonCode.parseDate((String) journeyExitDateObj));
+
+                  }
+                else
+                  {
+                    log.info(journeyExitDateObj + " is of wrong type : "+journeyExitDateObj.getClass().getName());
+                  }
+              
+              }
+            else
+              {
+                journeyInfo.put("journeyExitDate", null);
+              }
+
+
+            //
+            // result
+            //
 
         String journeyID = journeyInfo.get("journeyID").toString();
         if (result.containsKey(journeyID))
