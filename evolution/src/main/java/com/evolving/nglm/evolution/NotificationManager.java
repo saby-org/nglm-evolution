@@ -1099,16 +1099,26 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         int threadNumber = split2.length==2 ? Integer.parseInt(split2[1]) : defaultThreadNumber;
         for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
           if(cc.getName().equals(channel)){
-            log.info("NotificationManager: starting plugin for "+channel+" with "+threadNumber+" threads");
-            new NotificationManager(deliveryManagerKey,cc,threadNumber).startDelivery();
+            int nbInstances = JSONUtilities.decodeInteger(cc.getDeliveryManagerDeclaration().getJSONRepresentation(), "nbInstancePerProcess", 1);
+            log.warn("Number of instances for channel " + channel + " is " + nbInstances);
+            for(int i=0; i<nbInstances; i++)
+              {
+                log.info("NotificationManager: starting plugin for "+channel+" with "+threadNumber+" threads");
+                new NotificationManager(deliveryManagerKey,cc,threadNumber).startDelivery();
+              }
           }
         }
       }
     } else{
       // otherwise all ones
       for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
-        log.info("NotificationManager: starting plugin for "+cc.getName()+" with "+defaultThreadNumber+" threads");
-        new NotificationManager(deliveryManagerKey,cc,defaultThreadNumber).startDelivery();
+        int nbInstances = JSONUtilities.decodeInteger(cc.getDeliveryManagerDeclaration().getJSONRepresentation(), "nbInstancePerProcess", 1);
+        log.warn("Number of instances for channel " + cc.getName() + " is " + nbInstances);
+        for(int i=0; i<nbInstances; i++)
+          {
+            log.info("NotificationManager: starting plugin for "+cc.getName()+" with "+defaultThreadNumber+" threads");
+            new NotificationManager(deliveryManagerKey,cc,defaultThreadNumber).startDelivery();
+          }
       }
     }
 

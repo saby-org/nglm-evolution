@@ -698,12 +698,12 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     log.info("Configuration " + Deployment.getDeliveryManagers());
 
     
-    INFulfillmentManager manager = new INFulfillmentManager(deliveryManagerKey, pluginName, pluginConfiguration);
-
-    //
-    //  run
-    //
-
-    manager.run();
+    int nbInstances = JSONUtilities.decodeInteger(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "nbInstancePerProcess", 1);
+    log.warn("Number of instances " + nbInstances);
+    
+    for(int i=0; i < nbInstances; i++)
+      {        
+        new INFulfillmentManager(deliveryManagerKey, pluginName, pluginConfiguration);        
+      }
   }
 }
