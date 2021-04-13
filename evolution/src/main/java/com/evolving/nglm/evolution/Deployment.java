@@ -285,9 +285,6 @@ public class Deployment extends com.evolving.nglm.core.Deployment
    *
    *****************************************/
 
-  //EVPRO-865
-  public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
-
   //
   //  evolution accessors
   //
@@ -509,7 +506,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
   
   //EVPRO-865
-  public static String getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
+  public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
   // EVPRO-886
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
 

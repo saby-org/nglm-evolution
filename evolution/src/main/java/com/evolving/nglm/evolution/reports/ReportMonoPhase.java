@@ -779,8 +779,8 @@ public class ReportMonoPhase
 
   private ElasticsearchClientAPI getESAPI(String nodes)
   {
-    int connectTimeout = Deployment.getElasticsearchConnectionSettings("ReportManager").get("ReportManager").getConnectTimeout();
-    int queryTimeout = Deployment.getElasticsearchConnectionSettings("ReportManager").get("ReportManager").getQueryTimeout();
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings("ReportManager", false).getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings("ReportManager", false).getQueryTimeout();
     return new ElasticsearchClientAPI("ReportManager");
   }
 
