@@ -3413,18 +3413,18 @@ public class EvolutionEngine
           {
             Date earliestDateToKeep = null;
             Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            if (maximumAcceptancesPeriodDays != null) {
+            if (maximumAcceptancesPeriodDays != Offer.UNSET) {
               earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getBaseTimeZone());
             } else {
               Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
-              if (maximumAcceptancesPeriodMonths != null) {
+              if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
                 if (maximumAcceptancesPeriodMonths == 1) { // current month
                   earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getBaseTimeZone());
                 } else {
                   earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getBaseTimeZone());
                 }
               } else {
-                log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both null, using 1 day");
+                log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
                 earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
               }
             }

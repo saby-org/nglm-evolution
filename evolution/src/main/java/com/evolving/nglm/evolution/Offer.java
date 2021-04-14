@@ -47,6 +47,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   //
   private static final Logger log = LoggerFactory.getLogger(Offer.class);
 
+  public static final int UNSET = -123;
+  
   //
   //  initial propensity
   //
@@ -361,7 +363,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     boolean simpleOffer = (schemaVersion >= 3) ? valueStruct.getBoolean("simpleOffer") : false;
     Integer maximumAcceptances = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptances") : Integer.MAX_VALUE;
     Integer maximumAcceptancesPeriodDays = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptancesPeriodDays") : 1;
-    Integer maximumAcceptancesPeriodMonths = (schemaVersion >= 4) ? valueStruct.getInt32("maximumAcceptancesPeriodMonths") : 1;
+    Integer maximumAcceptancesPeriodMonths = (schema.field("maximumAcceptancesPeriodMonths")!= null) ? valueStruct.getInt32("maximumAcceptancesPeriodMonths") : 1;
     
     //
     //  return
@@ -611,10 +613,10 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false), catalogCharacteristicService);
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
     this.maximumAcceptances = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptances", Integer.MAX_VALUE);
-    this.maximumAcceptancesPeriodDays = null;
-    this.maximumAcceptancesPeriodMonths = null;
-    Integer maximumAcceptancesPeriod = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriod", null);
-    if (maximumAcceptancesPeriod != null) { // new version
+    this.maximumAcceptancesPeriodDays = UNSET;
+    this.maximumAcceptancesPeriodMonths = UNSET;
+    Integer maximumAcceptancesPeriod = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriod", UNSET);
+    if (maximumAcceptancesPeriod != UNSET) { // new version
       String maximumAcceptancesUnitStr = JSONUtilities.decodeString(jsonRoot, "maximumAcceptancesUnit", TimeUnit.Day.getExternalRepresentation());
       TimeUnit maximumAcceptancesUnit = TimeUnit.fromExternalRepresentation(maximumAcceptancesUnitStr);
       if (maximumAcceptancesUnit.equals(TimeUnit.Day)) {
