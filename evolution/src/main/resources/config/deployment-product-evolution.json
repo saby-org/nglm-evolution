@@ -13,6 +13,9 @@
   "topicRetentionDay"         : 4,
   "topicRetentionLongDay"     : 31,
 
+  "guiConfigurationSoftRetentionDays" : 7,
+  "guiConfigurationRetentionDays" : 92,
+
   "kafkaRetentionDaysExpiredTokens"   : 31,
   "kafkaRetentionDaysExpiredVouchers" : 31,
   "kafkaRetentionDaysJourneys"        : 31,

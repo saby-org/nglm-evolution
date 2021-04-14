@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -13,6 +14,7 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
@@ -36,6 +38,7 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
   private String referenceDataTopic;
   private Properties consumerProperties;
   private KafkaConsumer<byte[], byte[]> consumer = null;
+  private Map<TopicPartition,Long> consumedOffsets;
   private Thread readerThread = null;
   private Converter converter;
   private UnpackValue<V> unpackValue;
@@ -105,6 +108,9 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
     consumerProperties.put("enable.auto.commit", "false");
     consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,com.evolving.nglm.evolution.Deployment.getGuiConfigurationInitialConsumerMaxPollRecords());// speed up initial read
+    consumerProperties.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG,com.evolving.nglm.evolution.Deployment.getGuiConfigurationInitialConsumerMaxFetchBytes());// speed up initial read
+    consumerProperties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,com.evolving.nglm.evolution.Deployment.getGuiConfigurationInitialConsumerMaxFetchBytes());// speed up initial read
     this.consumerProperties = consumerProperties;
     this.consumer = new KafkaConsumer<>(this.consumerProperties);
 
@@ -123,6 +129,11 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
     //
 
     readReferenceData(true);
+
+    // once initial read over can lower a lot memory, we expect one record at a time update
+    consumerProperties.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG,1024);
+    consumerProperties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,1024);
+    reconnectConsumer();
 
     //
     //  read updates
@@ -167,28 +178,9 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
           }
       }
 
-    //
-    //  initialize consumedOffsets
-    //
-        
-    boolean consumedAllAvailable = false;
-    Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
-    for (TopicPartition topicPartition : consumer.assignment())
+
+    while (!stopRequested)
       {
-        consumedOffsets.put(topicPartition, consumer.position(topicPartition) - 1L);
-      }
-    
-    //
-    //  read
-    //
-        
-    do
-      {
-        /*****************************************
-        *
-        *  poll
-        *
-        *****************************************/
 
         ConsumerRecords<byte[], byte[]> records= ConsumerRecords.<byte[], byte[]>empty();
         try
@@ -197,78 +189,75 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
           }
         catch (WakeupException e)
           {
-            log.info("wakeup while reading topic "+referenceDataTopic);
+            if (!stopRequested) log.info("wakeup while reading topic "+referenceDataTopic);
           }
 
-        /*****************************************
-        *
-        *  process
-        *
-        *****************************************/
+        if (stopRequested) continue;
 
-        for (ConsumerRecord<byte[], byte[]> record : records)
-          {
-            /*****************************************
-            *
-            *  parse
-            *
-            *****************************************/
+        Map<Bytes, byte[]> toLoad = new HashMap<>();//key is Bytes and not byte[] directly, primitive byte array would not behave as expected regarding Map contract (hashcode and equals)
+        int sizeConsumed=0;// for debug logging
+        for(ConsumerRecord<byte[],byte[]> record:records){
+          toLoad.put(new Bytes(record.key()),record.value());
+          sizeConsumed+=record.serializedKeySize()+record.serializedValueSize();
+          consumedOffsets.put(new TopicPartition(record.topic(), record.partition()), record.offset());
+        }
 
-            ReferenceDataRecord referenceDataRecord = new ReferenceDataRecord(record);
+        if(log.isDebugEnabled()) log.debug("will process "+toLoad.size()+" records, after reading "+sizeConsumed+" bytes for "+records.count()+" total records");
 
-            //
-            //  remove or add
-            //
+        Iterator<Map.Entry<Bytes,byte[]>> groupedRecordIterator = toLoad.entrySet().iterator();
+        while(groupedRecordIterator.hasNext()){
 
-            if(referenceDataRecord.getDeleted()){
-              remove(referenceDataRecord.getKey());
-            }else{
-              put(referenceDataRecord.getKey(),referenceDataRecord.getValue());
-            }
+          Map.Entry<Bytes,byte[]> record = groupedRecordIterator.next();
+          groupedRecordIterator.remove();
 
-		    //
-		    //  offsets
-		    //
-
-		    consumedOffsets.put(new TopicPartition(record.topic(), record.partition()), record.offset());
-
+          ReferenceDataRecord referenceDataRecord = new ReferenceDataRecord(referenceDataTopic,record.getValue());
+          if(referenceDataRecord.getDeleted()){
+            remove(referenceDataRecord.getKey());
+          }else{
+            put(referenceDataRecord.getKey(),referenceDataRecord.getValue());
           }
 
+        }
 
-        //
-        //  consumed all available?
-        //
 
-        Set<TopicPartition> assignedPartitions = consumer.assignment();
-        Map<TopicPartition,Long> availableOffsets = getEndOffsets();
-        consumedAllAvailable = true;
-        for (TopicPartition partition : availableOffsets.keySet())
+        if(readInitialTopicRecords){
+          //
+          //  consumed all available?
+          //
+
+          Map<TopicPartition,Long> availableOffsets = getEndOffsets();
+          boolean consumedAllAvailable = true;
+          for (TopicPartition partition : availableOffsets.keySet())
           {
             Long availableOffsetForPartition = availableOffsets.get(partition);
             Long consumedOffsetForPartition = consumedOffsets.get(partition);
             if (consumedOffsetForPartition == null)
-              {
-                consumedOffsetForPartition = consumer.position(partition) - 1L;
-                consumedOffsets.put(partition, consumedOffsetForPartition);
-              }
+            {
+              consumedOffsetForPartition = consumer.position(partition) - 1L;
+              consumedOffsets.put(partition, consumedOffsetForPartition);
+            }
             if (consumedOffsetForPartition < availableOffsetForPartition-1)
-              {
-                consumedAllAvailable = false;
-                break;
-              }
+            {
+              consumedAllAvailable = false;
+              break;
+            }
           }
+          if(consumedAllAvailable) return;
+        }
+
       }
-    while (!stopRequested && (! consumedAllAvailable || ! readInitialTopicRecords));
+
   }
 
   // so far, those 3 methods COPY/PAST from GUIService class, as lot of this code
   private void assignAllTopicPartitions(){
+    boolean freshAsignment = consumedOffsets == null;
     if(this.consumer!=null){
       Set<TopicPartition> partitions = new HashSet<>();
       List<PartitionInfo> partitionInfos=null;
       while(partitionInfos==null){
         try{
-          partitionInfos=this.consumer.partitionsFor(this.referenceDataTopic, Duration.ofSeconds(5));
+          partitionInfos=consumer.partitionsFor(referenceDataTopic, Duration.ofSeconds(5));
         }catch (TimeoutException e){
           // a kafka broker might just be down, consumer.partitionsFor() can ends up timeout trying on this one
           reconnectConsumer();
@@ -276,22 +265,28 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
         }catch (WakeupException e){
         }
       }
+      if(freshAsignment) consumedOffsets = new HashMap<>();
       for (PartitionInfo partitionInfo : partitionInfos) {
-        partitions.add(new TopicPartition(this.referenceDataTopic, partitionInfo.partition()));
+        TopicPartition topicPartition = new TopicPartition(referenceDataTopic, partitionInfo.partition());
+        partitions.add(topicPartition);
       }
-      this.consumer.assign(partitions);
+      consumer.assign(partitions);
+      for(Map.Entry<TopicPartition,Long> position:consumedOffsets.entrySet()){
+        if(freshAsignment) consumedOffsets.put(position.getKey(), consumer.position(position.getKey()) - 1L);
+        consumer.seek(position.getKey(),position.getValue());
+      }
     }else{
       log.error("NULL kafka consumer while assigning topic partitions "+this.referenceDataTopic);
     }
   }
   private Map<TopicPartition, Long> getEndOffsets(){
-    if(this.consumer==null){
+    if(consumer==null){
       log.error("NULL kafka consumer reading end offets");
       return Collections.emptyMap();
     }
     while(true){
       try{
-        return this.consumer.endOffsets(this.consumer.assignment());
+        return consumer.endOffsets(consumer.assignment());
       }catch (TimeoutException e){
         // a kafka broker might just be down, consumer.endOffsets() can ends up timeout trying on this one
         reconnectConsumer();
@@ -301,8 +296,8 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
     }
   }
   private void reconnectConsumer(){
-    if(this.consumer!=null) this.consumer.close();
-    this.consumer=new KafkaConsumer<byte[], byte[]>(this.consumerProperties);
+    if(consumer!=null) consumer.close();
+    consumer=new KafkaConsumer<byte[], byte[]>(this.consumerProperties);
     assignAllTopicPartitions();
   }
 
@@ -343,9 +338,9 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
     private V getValue() { return value; }
     private boolean getDeleted() { return deleted; }
 
-    private ReferenceDataRecord(ConsumerRecord<byte[], byte[]> record)
+    private ReferenceDataRecord(String recordTopic, byte[] recordValue)
     {
-      V value = unpackValue.unpack(converter.toConnectData(record.topic(), record.value()));
+      V value = unpackValue.unpack(converter.toConnectData(recordTopic, recordValue));
       this.key = value.getKey();
       this.value = value;
       this.deleted = value.getDeleted();

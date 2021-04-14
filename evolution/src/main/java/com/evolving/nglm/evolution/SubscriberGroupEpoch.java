@@ -222,4 +222,16 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
 
     return new SubscriberGroupEpoch(primaryID, epoch, display, active);
   }
+
+  @Override
+  public String toString() {
+    return "SubscriberGroupEpoch{" +
+            "primaryID='" + primaryID + '\'' +
+            ", epoch=" + epoch +
+            ", display='" + display + '\'' +
+            ", active=" + active +
+            ", zookeeperVersion=" + zookeeperVersion +
+            '}';
+  }
+
 }

@@ -6,7 +6,7 @@
 
 package com.evolving.nglm.core;
 
-import com.evolving.nglm.evolution.DeliveryRequest;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -236,6 +236,7 @@ public class NGLMRuntime
     simulatedTimeConsumerProperties.put("enable.auto.commit", "false");
     simulatedTimeConsumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     simulatedTimeConsumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    simulatedTimeConsumerProperties.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG,1024);
     KafkaConsumer<byte[], byte[]> simulatedTimeConsumer = new KafkaConsumer<>(simulatedTimeConsumerProperties);
 
     //

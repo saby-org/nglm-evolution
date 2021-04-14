@@ -252,9 +252,15 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static int kafkaRetentionDaysMDR;
   private static int kafkaRetentionDaysTargets;
   private static int journeysReportMaxParallelThreads;
-  
+
   // EVPRO-886
   private static int nodesTransitionsHistorySize;
+
+  private static int guiConfigurationSoftRetentionDays;// "soft" this is the number of days after which we stopped loading in memory deleted GUIManagedObjects
+  private static int guiConfigurationRetentionDays;// this is the number of days after which we delete record from topic deleted GUIManagedObjects
+  private static long guiConfigurationCleanerThreadPeriodMs;
+  private static int guiConfigurationInitialConsumerMaxPollRecords;
+  private static int guiConfigurationInitialConsumerMaxFetchBytes;
 
   private  boolean enableContactPolicyProcessing;
   
@@ -491,6 +497,11 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   public static int getKafkaRetentionDaysBDR() { return kafkaRetentionDaysBDR; }
   public static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
   public boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
+  public static int getGuiConfigurationSoftRetentionDays() { return guiConfigurationSoftRetentionDays; }
+  public static int getGuiConfigurationRetentionDays() { return guiConfigurationRetentionDays; }
+  public static long getGuiConfigurationCleanerThreadPeriodMs() { return guiConfigurationCleanerThreadPeriodMs; }
+  public static int getGuiConfigurationInitialConsumerMaxPollRecords() { return guiConfigurationInitialConsumerMaxPollRecords; }
+  public static int getGuiConfigurationInitialConsumerMaxFetchBytes() { return guiConfigurationInitialConsumerMaxFetchBytes; }
   public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
   public static String getExtractManagerOutputPath() { return extractManagerOutputPath; } // TODO EVPRO-99 check tenant ?
   public static String getExtractManagerDateFormat() { return extractManagerDateFormat; }// TODO EVPRO-99 check tenant ?
@@ -504,7 +515,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   //EVPRO-574
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
-  
+
   //EVPRO-865
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
   // EVPRO-886
@@ -2001,7 +2012,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
       //
       //  firstDayOfTheWeek EVPRO-865
       //
@@ -2038,7 +2049,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
 
       //
       //  partnerTypes
@@ -3047,7 +3058,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
-      
+
       //
       //  stockRefreshPeriod
       //
@@ -3318,7 +3329,11 @@ public class Deployment extends com.evolving.nglm.core.Deployment
 
       try
         {
-          enableContactPolicyProcessing = JSONUtilities.decodeBoolean(jsonRoot, "enableContactPolicyProcessing", Boolean.TRUE);
+          guiConfigurationSoftRetentionDays = JSONUtilities.decodeInteger(jsonRoot, "guiConfigurationSoftRetentionDays", 7);
+          guiConfigurationRetentionDays = JSONUtilities.decodeInteger(jsonRoot, "guiConfigurationRetentionDays", 92);
+          guiConfigurationCleanerThreadPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "guiConfigurationCleanerThreadPeriodSeconds", 3600) * 1000;
+          guiConfigurationInitialConsumerMaxPollRecords  = JSONUtilities.decodeInteger(jsonRoot, "guiConfigurationInitialConsumerMaxPollRecords", 10000);
+          guiConfigurationInitialConsumerMaxFetchBytes = JSONUtilities.decodeInteger(jsonRoot, "guiConfigurationInitialConsumerMaxFetchBytes", 32*1024*1024);
         }
       catch (JSONUtilitiesException e)
         {
@@ -3368,7 +3383,7 @@ public class Deployment extends com.evolving.nglm.core.Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
       //
       // all dynamic topics
       //

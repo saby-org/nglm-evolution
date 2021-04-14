@@ -415,8 +415,9 @@ public abstract class DeliveryManager
         try{
           if(waitingForCorrelatorUpdate!=null){
             List<DeliveryRequest> toSendBackTimeout = new ArrayList<>();
-            // concurrent scan non locking (no clue if this is risky)
-            waitingForCorrelatorUpdate.entrySet().forEach(entry->{if(entry.getValue().getTimeout().before(SystemTime.getCurrentTime())) toSendBackTimeout.add(entry.getValue());});
+            synchronized (this){
+              waitingForCorrelatorUpdate.entrySet().forEach(entry->{if(entry.getValue().getTimeout().before(SystemTime.getCurrentTime())) toSendBackTimeout.add(entry.getValue());});
+            }
             for(DeliveryRequest deliveryRequest:toSendBackTimeout){
               deliveryRequest.setDeliveryStatus(DeliveryStatus.FailedTimeout);
               // note there is no synchronisation so the request response might have been sent in the mean time, which should be OK and just throw then an info log
