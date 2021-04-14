@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
@@ -76,7 +77,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("offer");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("initialPropensity", Schema.FLOAT64_SCHEMA);
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
@@ -91,6 +92,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schemaBuilder.field("maximumAcceptances", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("maximumAcceptancesPeriodDays", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("maximumAcceptancesPeriodMonths", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -127,6 +129,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   private boolean simpleOffer;
   private Integer maximumAcceptances;
   private Integer maximumAcceptancesPeriodDays;
+  private Integer maximumAcceptancesPeriodMonths;
 
   //
   //  derived
@@ -161,6 +164,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public boolean getSimpleOffer() { return simpleOffer; }
   public Integer getMaximumAcceptances() { return maximumAcceptances; }
   public Integer getMaximumAcceptancesPeriodDays() { return maximumAcceptancesPeriodDays; }
+  public Integer getMaximumAcceptancesPeriodMonths() { return maximumAcceptancesPeriodMonths; }
  
   /*****************************************
   *
@@ -179,7 +183,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths)
   {
     super(schemaAndValue);
     this.initialPropensity = getValidPropensity(initialPropensity);
@@ -196,6 +200,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.simpleOffer = simpleOffer;
     this.maximumAcceptances = maximumAcceptances;
     this.maximumAcceptancesPeriodDays = maximumAcceptancesPeriodDays;
+    this.maximumAcceptancesPeriodMonths = maximumAcceptancesPeriodMonths;
   }
 
   /*****************************************
@@ -222,6 +227,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("simpleOffer", offer.getSimpleOffer());
     struct.put("maximumAcceptances", offer.getMaximumAcceptances());
     struct.put("maximumAcceptancesPeriodDays", offer.getMaximumAcceptancesPeriodDays());
+    struct.put("maximumAcceptancesPeriodMonths", offer.getMaximumAcceptancesPeriodMonths());
     return struct;
   }
 
@@ -355,12 +361,13 @@ public class Offer extends GUIManagedObject implements StockableItem
     boolean simpleOffer = (schemaVersion >= 3) ? valueStruct.getBoolean("simpleOffer") : false;
     Integer maximumAcceptances = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptances") : Integer.MAX_VALUE;
     Integer maximumAcceptancesPeriodDays = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptancesPeriodDays") : 1;
+    Integer maximumAcceptancesPeriodMonths = (schemaVersion >= 4) ? valueStruct.getInt32("maximumAcceptancesPeriodMonths") : 1;
     
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths);
   }
   
   /*****************************************
@@ -604,7 +611,22 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false), catalogCharacteristicService);
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
     this.maximumAcceptances = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptances", Integer.MAX_VALUE);
-    this.maximumAcceptancesPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriodDays", 1);
+    this.maximumAcceptancesPeriodDays = null;
+    this.maximumAcceptancesPeriodMonths = null;
+    Integer maximumAcceptancesPeriod = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriod", null);
+    if (maximumAcceptancesPeriod != null) { // new version
+      String maximumAcceptancesUnitStr = JSONUtilities.decodeString(jsonRoot, "maximumAcceptancesUnit", TimeUnit.Day.getExternalRepresentation());
+      TimeUnit maximumAcceptancesUnit = TimeUnit.fromExternalRepresentation(maximumAcceptancesUnitStr);
+      if (maximumAcceptancesUnit.equals(TimeUnit.Day)) {
+        this.maximumAcceptancesPeriodDays = maximumAcceptancesPeriod;
+      } else if (maximumAcceptancesUnit.equals(TimeUnit.Month)) {
+        this.maximumAcceptancesPeriodMonths = maximumAcceptancesPeriod;
+      } else {
+        throw new GUIManagerException("Unsupported unit for maximumAcceptancesUnit", maximumAcceptancesUnitStr);
+      }
+    } else { // old version
+      this.maximumAcceptancesPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriodDays", 1);
+    }
 
     /*****************************************
     *
