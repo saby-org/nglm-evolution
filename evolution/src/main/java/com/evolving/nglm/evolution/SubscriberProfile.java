@@ -458,15 +458,15 @@ public abstract class SubscriberProfile
                 loyalty.put("loyaltyProgramEpoch", program.getValue().getLoyaltyProgramEpoch());
                 loyalty.put("loyaltyProgramName", loyaltyProgram.getLoyaltyProgramName());
                 loyalty.put("loyaltyProgramDisplay", loyaltyProgram.getLoyaltyProgramDisplay());
-                loyalty.put("loyaltyProgramEnrollmentDate", program.getValue().getLoyaltyProgramEnrollmentDate().getTime());
-                loyalty.put("loyaltyProgramExitDate", program.getValue().getLoyaltyProgramExitDate());
+                loyalty.put("loyaltyProgramEnrollmentDate", RLMDateUtils.formatDateForElasticsearchDefault(program.getValue().getLoyaltyProgramEnrollmentDate()));
+                loyalty.put("loyaltyProgramExitDate", RLMDateUtils.formatDateForElasticsearchDefault(program.getValue().getLoyaltyProgramExitDate()));
                 
                 if(loyaltyProgram instanceof LoyaltyProgramPoints) 
                   {                
                     LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
                     LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) program.getValue();
                     if(loyaltyProgramPointsState.getTierName() != null){ loyalty.put("tierName", loyaltyProgramPointsState.getTierName()); }
-                    if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyalty.put("tierUpdateDate", loyaltyProgramPointsState.getTierEnrollmentDate()); }
+                    if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyalty.put("tierUpdateDate", RLMDateUtils.formatDateForElasticsearchDefault(loyaltyProgramPointsState.getTierEnrollmentDate())); }
                     if(loyaltyProgramPointsState.getPreviousTierName() != null){ loyalty.put("previousTierName", loyaltyProgramPointsState.getPreviousTierName()); }
                     Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
                     Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
@@ -586,12 +586,12 @@ public abstract class SubscriberProfile
             for (Date expirationDate : point.getValue().getBalances().keySet())
               {
                 JSONObject pointInfo = new JSONObject();
-                pointInfo.put("date", expirationDate.getTime());
+                pointInfo.put("date", RLMDateUtils.formatDateForElasticsearchDefault(expirationDate));
                 pointInfo.put("amount", point.getValue().getBalances().get(expirationDate));
                 expirationDates.add(pointInfo);
               }
             obj.put("expirationDates", JSONUtilities.encodeArray(expirationDates));
-            obj.put(EARLIEST_EXPIRATION_DATE, earliestExpirationDate != null ? earliestExpirationDate.getTime() : null);
+            obj.put(EARLIEST_EXPIRATION_DATE, earliestExpirationDate != null ? RLMDateUtils.formatDateForElasticsearchDefault(earliestExpirationDate) : null);
             obj.put(EARLIEST_EXPIRATION_QUANTITY, earliestExpirationQuantity);
             obj.put(CURRENT_BALANCE, point.getValue().getBalance(SystemTime.getCurrentTime()));
             obj.put("pointID", point.getKey());
@@ -642,8 +642,8 @@ public abstract class SubscriberProfile
         obj.put("voucherID",voucher.getVoucherID());
         obj.put("voucherCode",voucher.getVoucherCode());
         obj.put("voucherStatus",voucher.getVoucherStatus().getExternalRepresentation());
-        obj.put("voucherExpiryDate",voucher.getVoucherExpiryDate().getTime());
-        obj.put("voucherDeliveryDate",voucher.getVoucherDeliveryDate().getTime());
+        obj.put("voucherExpiryDate", RLMDateUtils.formatDateForElasticsearchDefault(voucher.getVoucherExpiryDate()));
+        obj.put("voucherDeliveryDate", RLMDateUtils.formatDateForElasticsearchDefault(voucher.getVoucherDeliveryDate()));
         array.add(obj);
       }
       result.put("vouchers", array);

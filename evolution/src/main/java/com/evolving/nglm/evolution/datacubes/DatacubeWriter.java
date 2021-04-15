@@ -90,7 +90,7 @@ public class DatacubeWriter
   // Only used when overloaded. Will stop every reader (datacube generator) !
   // Should not be used in nominal case
   private void forceWrite() {
-    log.warn("[DatacubeWriter]: Waiting queue is OVERLOADED. Start of RECOVER phase. Priority has been switched to writing task. Every datacube tasks will be stopped.");
+    log.warn("[DatacubeWriter]: Waiting queue is OVERLOADED. Start of RECOVER phase. Priority has been switched to writing task. Every datacube tasks will pause and wait.");
     // This lock is taken and will stop every datacube generation trying to take the resource (by calling pause() ).
     synchronized(activeReaderSetterLock) {
       long remaining;
