@@ -179,7 +179,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
       Date yesterdayAtZeroHour = ReportUtils.yesterdayAtZeroHour(reportGenerationDate);
       Date yesterdayAtMidnight = ReportUtils.yesterdayAtMidnight(reportGenerationDate);
       for (GUIManagedObject gmo : allJourneys) {
-        if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(yesterdayAtZeroHour)) {
+        if (gmo instanceof Journey && gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(yesterdayAtZeroHour)) {
           activeJourneys.add((Journey) gmo);
         }
       }
