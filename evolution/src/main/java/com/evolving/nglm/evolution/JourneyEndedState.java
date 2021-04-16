@@ -1,6 +1,8 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import org.apache.kafka.connect.data.*;
@@ -135,14 +137,14 @@ public class JourneyEndedState
    */
   public boolean populateMetricsPrior(SubscriberState subscriberState, Date journeyEntryDate, int tenantID)
   {
-    if(!Deployment.getJourneyMetricConfiguration().isEnabled()) {
+    if(!DeploymentCommon.getJourneyMetricConfiguration().isEnabled()) {
       return false;
     }
 
     boolean subscriberStateUpdated = false;
-    Date journeyEntryDay = RLMDateUtils.truncate(journeyEntryDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * Deployment.getJourneyMetricConfiguration().getPriorPeriodDays(), Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date journeyEntryDay = RLMDateUtils.truncate(journeyEntryDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
+    Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * Deployment.getJourneyMetricConfiguration().getPriorPeriodDays(), Deployment.getDeployment(tenantID).getTimeZone());
+    Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getDeployment(tenantID).getTimeZone());
 
     for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
       MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
@@ -202,11 +204,11 @@ public class JourneyEndedState
     }
 
     boolean subscriberStateUpdated = false;
-    Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, Deployment.getDeployment(tenantID).getJourneyMetricConfiguration().getPostPeriodDays(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
+    Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getDeployment(tenantID).getTimeZone());
+    Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, Deployment.getDeployment(tenantID).getJourneyMetricConfiguration().getPostPeriodDays(), Deployment.getDeployment(tenantID).getTimeZone());
 
-    if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getDeployment(tenantID).getBaseTimeZone()))) {
+    if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getDeployment(tenantID).getTimeZone()))) {
       subscriberStateUpdated = true;
 
       for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getDeployment(tenantID).getJourneyMetricConfiguration().getMetrics().values()) {

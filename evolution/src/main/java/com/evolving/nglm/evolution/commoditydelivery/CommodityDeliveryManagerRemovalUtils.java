@@ -2,7 +2,6 @@ package com.evolving.nglm.evolution.commoditydelivery;
 
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.Deployment;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.simple.JSONObject;

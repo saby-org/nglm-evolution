@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.ReferenceDataReader;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.json.simple.JSONObject;
@@ -49,7 +50,7 @@ public abstract class BonusDelivery extends DeliveryRequest
     if(this.getDiplomaticBriefcase().get(CommodityDeliveryManager.COMMODITY_DELIVERY_BRIEFCASE)==null) return;
     try {
       JSONObject jsonCommodityDeliveryRequest = (JSONObject)(new JSONParser()).parse(this.getDiplomaticBriefcase().get(CommodityDeliveryManager.COMMODITY_DELIVERY_BRIEFCASE));
-      this.commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(this,jsonCommodityDeliveryRequest,Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE),this.getTenantID());
+      this.commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(this,jsonCommodityDeliveryRequest,DeploymentCommon.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE),this.getTenantID());
     } catch (ParseException e) {
       throw new RuntimeException(e);
     }

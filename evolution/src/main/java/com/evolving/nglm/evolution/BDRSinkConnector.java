@@ -10,6 +10,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -86,11 +87,11 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       String type = valueStruct.getString("deliveryType");
 
       //  safety guard - return null
-      if(type == null || type.equals("") || Deployment.getDeliveryManagers().get(type)==null ) {
+      if(type == null || type.equals("") || DeploymentCommon.getDeliveryManagers().get(type)==null ) {
         return null;
       }
 
-      return (BonusDelivery) Deployment.getDeliveryManagers().get(type).getRequestSerde().unpack(new SchemaAndValue(commodityValueSchema, commodityValue));
+      return (BonusDelivery) DeploymentCommon.getDeliveryManagers().get(type).getRequestSerde().unpack(new SchemaAndValue(commodityValueSchema, commodityValue));
 
     }
     
@@ -118,7 +119,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
       documentMap.put("eventID", commodityRequest.getEventID());
-      documentMap.put("deliverableExpirationDate", commodityRequest.getBonusDeliveryDeliverableExpirationDate()!=null?dateFormat.format(commodityRequest.getBonusDeliveryDeliverableExpirationDate()):"");
+      documentMap.put("deliverableExpirationDate", commodityRequest.getBonusDeliveryDeliverableExpirationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(commodityRequest.getBonusDeliveryDeliverableExpirationDate()):"");
       documentMap.put("providerID", commodityRequest.getBonusDeliveryProviderId());
       documentMap.put("deliverableID", commodityRequest.getBonusDeliveryDeliverableId());
       documentMap.put("deliverableQty", commodityRequest.getBonusDeliveryDeliverableQty());
