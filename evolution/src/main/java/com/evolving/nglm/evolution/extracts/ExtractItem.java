@@ -50,7 +50,6 @@ public class ExtractItem
       for (int i = 0; i < evaluationCritetionListJSON.size(); i++)
       {
         EvaluationCriterion evaluationCriterion = new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile(tenantID),tenantID);
-        evaluationCriterion.setUseESQueryNoPainless(true);
         evaluationCriterionList.add(evaluationCriterion);
       }
     }
@@ -73,7 +72,6 @@ public class ExtractItem
       for (int i = 0; i < evaluationCritetionListJSON.size(); i++)
       {
         EvaluationCriterion evaluationCriterion = new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile(tenantID),tenantID);
-        evaluationCriterion.setUseESQueryNoPainless(true);
         evaluationCriterionList.add(evaluationCriterion);
       }
     }
@@ -165,6 +163,10 @@ public class ExtractItem
     Map criterionMap = new HashMap();
     criterionMap.put("criterionField", criterion.getCriterionField().getID());
     criterionMap.put("criterionOperator", criterion.getCriterionOperator().getExternalRepresentation());
+    if(criterion.getUseESQueryNoPainless() != null)
+    {
+      criterionMap.put("useESQueryNoPainless",criterion.getUseESQueryNoPainless());
+    }
     Map argument = null;
     if(criterion.getArgument() != null)
     {

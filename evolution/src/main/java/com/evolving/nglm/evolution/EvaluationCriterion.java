@@ -660,17 +660,6 @@ public class EvaluationCriterion
   public Boolean getUseESQueryNoPainless(){return  useESQueryNoPainless;}
 
   /*****************************************
-   *
-   *  setters
-   *
-   *****************************************/
-  //this method was defined especially for extracts becasue there is needed to use no painless
-  public void setUseESQueryNoPainless(Boolean useESQueryNoPainless)
-  {
-    this.useESQueryNoPainless = useESQueryNoPainless;
-  }
-
-  /*****************************************
   *
   *  serde
   *
