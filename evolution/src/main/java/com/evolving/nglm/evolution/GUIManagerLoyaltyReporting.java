@@ -295,7 +295,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             break;
             
           case MISSION:
-            String effectiveEndDateStr = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false);
             Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", false);
             if (durationInDays != null)
               {
