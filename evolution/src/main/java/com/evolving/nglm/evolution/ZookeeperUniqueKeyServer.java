@@ -15,6 +15,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.UniqueKeyServer;
 

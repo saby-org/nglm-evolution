@@ -29,7 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -672,8 +674,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
       
       super(esFields);
-      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
-      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
+      try {
+        setCreationDate(RLMDateUtils.parseDateFromREST((String) esFields.get("creationDate")));
+        setDeliveryDate(RLMDateUtils.parseDateFromREST((String) esFields.get("eventDatetime")));
+      }
+      catch(java.text.ParseException e) {
+        throw new ServerRuntimeException(e);
+      }
       
       //
       //  this

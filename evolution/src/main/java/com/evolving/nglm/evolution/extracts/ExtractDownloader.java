@@ -1,7 +1,7 @@
 package com.evolving.nglm.evolution.extracts;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 import org.json.simple.JSONObject;

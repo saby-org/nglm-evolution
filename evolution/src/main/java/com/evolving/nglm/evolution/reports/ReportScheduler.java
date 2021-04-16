@@ -9,9 +9,9 @@ package com.evolving.nglm.evolution.reports;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.LoggerInitialization;
 import com.evolving.nglm.evolution.Report;
@@ -31,7 +31,6 @@ public class ReportScheduler {
   private static final Logger log = LoggerFactory.getLogger(ReportScheduler.class);
   private ReportService reportService;
   private JobScheduler reportScheduler;
-  private long uniqueID = 0;
 
   /*****************************************
   *
@@ -116,7 +115,7 @@ public class ReportScheduler {
         if(scheduling.equals(SchedulingInterval.NONE))
     		continue;
         
-        ScheduledJob reportJob = new ReportJob(uniqueID++, report, scheduling, reportService);
+        ScheduledJob reportJob = new ReportJob(report, scheduling, reportService);
         if(reportJob.isProperlyConfigured())
           {
             log.info("--> scheduling "+report.getName()+" with jobIDs "+report.getJobIDs());

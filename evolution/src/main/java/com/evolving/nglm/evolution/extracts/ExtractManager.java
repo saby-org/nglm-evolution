@@ -6,7 +6,7 @@
 
 package com.evolving.nglm.evolution.extracts;
 
-import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.reports.ReportManager;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;

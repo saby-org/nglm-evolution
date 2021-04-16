@@ -3,7 +3,6 @@ package com.evolving.nglm.evolution.propensity;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import org.json.simple.JSONObject;
 
 import java.util.Date;

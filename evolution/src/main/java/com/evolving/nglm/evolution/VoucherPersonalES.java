@@ -1,7 +1,9 @@
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.get.GetResponse;
@@ -32,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.text.ParseException;
 import java.util.*;
 
 public class VoucherPersonalES {
@@ -43,7 +45,7 @@ public class VoucherPersonalES {
     subscriberId("keyword"),
     voucherId("keyword"),
     fileId("keyword"),
-    expiryDate("date", com.evolving.nglm.core.Deployment.getElasticsearchDateFormat());
+    expiryDate("date", RLMDateUtils.DatePattern.ELASTICSEARCH_UNIVERSAL_TIMESTAMP.get());
 
     private String type;
     private String format;
@@ -105,7 +107,7 @@ public class VoucherPersonalES {
   // return an instance from GetResponse
   public VoucherPersonalES(GetResponse getResponse, int tenantID){
     this.voucherCode=getResponse.getId();
-    this.expiryDate=getDateFromESDateFormated(ES_FIELDS.expiryDate,(String)getResponse.getSourceAsMap().get(ES_FIELDS.expiryDate.name()), tenantID);
+    this.expiryDate=parseVoucherDate((String)getResponse.getSourceAsMap().get(ES_FIELDS.expiryDate.name()));
     this.voucherId=(String)getResponse.getSourceAsMap().get(ES_FIELDS.voucherId.name());
     this.subscriberId=(String)getResponse.getSourceAsMap().get(ES_FIELDS.subscriberId.name());
     this.fileId=(String)getResponse.getSourceAsMap().get(ES_FIELDS.fileId.name());
@@ -114,20 +116,22 @@ public class VoucherPersonalES {
   // return an instance from ES SearchHit
   public VoucherPersonalES(SearchHit searchHit, int tenantID){
     this.voucherCode=searchHit.getId();
-    this.expiryDate=getDateFromESDateFormated(ES_FIELDS.expiryDate,(String)searchHit.getSourceAsMap().get(ES_FIELDS.expiryDate.name()), tenantID);
+    this.expiryDate=parseVoucherDate((String)searchHit.getSourceAsMap().get(ES_FIELDS.expiryDate.name()));
     this.voucherId=(String)searchHit.getSourceAsMap().get(ES_FIELDS.voucherId.name());
     this.subscriberId=(String)searchHit.getSourceAsMap().get(ES_FIELDS.subscriberId.name());
     this.fileId=(String)searchHit.getSourceAsMap().get(ES_FIELDS.fileId.name());
   }
-
-  public static String getESFormatedDate(ES_FIELDS field, Date value){
-    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(field.format);
-    simpleDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    return new SimpleDateFormat(field.format).format(value);
-  }
-
-  public static Date getDateFromESDateFormated(ES_FIELDS field, String date, int tenantID) {
-    return RLMDateUtils.parseDate(date,field.format,Deployment.getDeployment(tenantID).getBaseTimeZone());
+  
+  // Wrap the exception in a runtime one.
+  public static Date parseVoucherDate(String date) {
+    try
+      {
+        return RLMDateUtils.parseDateFromElasticsearch(date);
+      } 
+    catch (ParseException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
   }
 
   // construct the DeleteByQuery for deleting by voucherId, fileId and expiryDate
@@ -138,7 +142,7 @@ public class VoucherPersonalES {
                     .filter(QueryBuilders.termQuery(ES_FIELDS.voucherId.name(),voucherId))
                     .filter(QueryBuilders.termQuery(ES_FIELDS.fileId.name(),fileId))
                     .mustNot(QueryBuilders.existsQuery(ES_FIELDS.subscriberId.name()))//do not delete already allocated voucher
-                    .filter(QueryBuilders.rangeQuery(ES_FIELDS.expiryDate.name()).lt(getESFormatedDate(ES_FIELDS.expiryDate, expiryDate))) 
+                    .filter(QueryBuilders.rangeQuery(ES_FIELDS.expiryDate.name()).lt(RLMDateUtils.formatDateForElasticsearchDefault(expiryDate))) 
     );
     request.setAbortOnVersionConflict(false);//don't stop entire update on version conflict
     return request;
@@ -149,7 +153,7 @@ public class VoucherPersonalES {
     DeleteByQueryRequest request = new DeleteByQueryRequest(index);
     request.setQuery(
       QueryBuilders.boolQuery()
-        .filter(QueryBuilders.rangeQuery(ES_FIELDS.expiryDate.name()).lt(getESFormatedDate(ES_FIELDS.expiryDate, expiryDate)))
+        .filter(QueryBuilders.rangeQuery(ES_FIELDS.expiryDate.name()).lt(RLMDateUtils.formatDateForElasticsearchDefault(expiryDate)))
     );
     request.setAbortOnVersionConflict(false);//don't stop entire update on version conflict
     return request;
@@ -203,7 +207,7 @@ public class VoucherPersonalES {
     BoolQueryBuilder builder = QueryBuilders.boolQuery();
     builder.mustNot(QueryBuilders.existsQuery(ES_FIELDS.subscriberId.name()));// no subscriberId associated, voucher is not allocated yet
     builder.filter().add(QueryBuilders.termQuery(ES_FIELDS.voucherId.name(),voucherId));
-    builder.filter().add(QueryBuilders.rangeQuery(ES_FIELDS.expiryDate.name()).gte(getESFormatedDate(ES_FIELDS.expiryDate, minExpiryDate)));//with expiry date after minExpiryDate
+    builder.filter().add(QueryBuilders.rangeQuery(ES_FIELDS.expiryDate.name()).gte(RLMDateUtils.formatDateForElasticsearchDefault(minExpiryDate)));//with expiry date after minExpiryDate
 
     request.source(SearchSourceBuilder.searchSource().version(true).seqNoAndPrimaryTerm(true)//needed if a "reservation need to happen, "for optimistic concurrency update control"
     .query(builder)
@@ -248,7 +252,7 @@ public class VoucherPersonalES {
                 .startObject()
                 .field(ES_FIELDS.voucherId.name(),voucher.getVoucherId())
                 .field(ES_FIELDS.fileId.name(),voucher.getFileId())
-                .field(ES_FIELDS.expiryDate.name(),getESFormatedDate(ES_FIELDS.expiryDate,voucher.getExpiryDate()))
+                .field(ES_FIELDS.expiryDate.name(),RLMDateUtils.formatDateForElasticsearchDefault(voucher.getExpiryDate()))
                 .endObject()
         );
         requests.add(request);
@@ -273,7 +277,7 @@ public class VoucherPersonalES {
   // construct the SearchRequest to get stock info per voucherId->voucherFile->expired/expired
   public static SearchRequest getSearchRequestGettingVoucherStocksInfo(String index, String voucherId, int tenantID) {
 
-    String dateConsideredForExpiry=getESFormatedDate(ES_FIELDS.expiryDate,EvolutionUtilities.addTime(SystemTime.getCurrentTime(),Deployment.getMinExpiryDelayForVoucherDeliveryInHours(), EvolutionUtilities.TimeUnit.Hour,Deployment.getDeployment(tenantID).getBaseTimeZone()));
+    String dateConsideredForExpiry=RLMDateUtils.formatDateForElasticsearchDefault(EvolutionUtilities.addTime(SystemTime.getCurrentTime(),Deployment.getMinExpiryDelayForVoucherDeliveryInHours(), EvolutionUtilities.TimeUnit.Hour,Deployment.getDeployment(tenantID).getTimeZone()));
 
     int aggTermSize = 1000;// should be way lower, safety
 

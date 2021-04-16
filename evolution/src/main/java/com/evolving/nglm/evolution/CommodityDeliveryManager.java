@@ -422,7 +422,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       if(deliverableExpirationDate!=null) return deliverableExpirationDate;
       // but if empty we will compute it (so might be not a real one), for all the others cases, based on delivery date
       if(getDeliveryDate()!= null && validityPeriodType!=null && validityPeriodType!=TimeUnit.Unknown && validityPeriodQuantity!=null){
-        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getDeployment(tenantID).getBaseTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
+        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
       }
       // should be null here
       return deliverableExpirationDate;
@@ -619,24 +619,29 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       //
       
       super(esFields);
-      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
-      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("eventDatetime")));
-      
-      //
-      //  this
-      //
-      
-      this.providerID = (String) esFields.get("providerID");
-      this.commodityID = (String) esFields.get("deliverableID");
-      String esOperation = (String) esFields.get("operation");
-      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(esOperation != null ? esOperation.toLowerCase() : esOperation);
-      this.amount = (int) esFields.get("deliverableQty");
-      this.validityPeriodType = TimeUnit.Year;
-      this.validityPeriodQuantity = 1;
-      this.deliverableExpirationDate = getDateFromESString(esDefaultDateFormat, (String) esFields.get("deliverableExpirationDate"));
-      CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
-      this.commodityDeliveryStatus = commodityDeliveryStatus;
-      this.statusMessage = (String) esFields.get("returnCodeDetails");
+      try {
+        setCreationDate(RLMDateUtils.parseDateFromREST((String) esFields.get("creationDate")));
+        setDeliveryDate(RLMDateUtils.parseDateFromREST((String) esFields.get("eventDatetime")));
+        
+        //
+        //  this
+        //
+        
+        this.providerID = (String) esFields.get("providerID");
+        this.commodityID = (String) esFields.get("deliverableID");
+        String esOperation = (String) esFields.get("operation");
+        this.operation = CommodityDeliveryOperation.fromExternalRepresentation(esOperation != null ? esOperation.toLowerCase() : esOperation);
+        this.amount = (int) esFields.get("deliverableQty");
+        this.validityPeriodType = TimeUnit.Year;
+        this.validityPeriodQuantity = 1;
+        this.deliverableExpirationDate = RLMDateUtils.parseDateFromREST((String) esFields.get("deliverableExpirationDate"));
+        CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
+        this.commodityDeliveryStatus = commodityDeliveryStatus;
+        this.statusMessage = (String) esFields.get("returnCodeDetails");
+      }
+      catch(java.text.ParseException e) {
+        throw new ServerRuntimeException(e);
+      }
     }
     /*****************************************
     *

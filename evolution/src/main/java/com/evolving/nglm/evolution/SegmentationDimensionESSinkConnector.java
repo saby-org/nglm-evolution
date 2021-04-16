@@ -12,6 +12,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.SystemTime;
@@ -145,7 +146,7 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
                 }
             }
           documentMap.put("segments",  segments);
-          documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+          documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
         }
       return documentMap;
     }

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.RLMDateUtils.DatePattern;
 
 public class SnapshotTask
 {
@@ -33,19 +34,21 @@ public class SnapshotTask
   private ElasticsearchClientAPI elasticsearch;
   private String snapshotName;
   private String srcIndex;
-  private String destIndexPrefix;
+  private String destIndexPrefix; 
+  private SimpleDateFormat dayFormat;
 
   /*****************************************
   *
   * Constructor
   *
   *****************************************/
-  public SnapshotTask(String snapshotName, String srcIndex, String destIndexPrefix, ElasticsearchClientAPI elasticsearch) 
+  public SnapshotTask(String snapshotName, String srcIndex, String destIndexPrefix, ElasticsearchClientAPI elasticsearch, String timezone) 
   {
     this.elasticsearch = elasticsearch;
     this.snapshotName = snapshotName;
     this.srcIndex = srcIndex;
     this.destIndexPrefix = destIndexPrefix;
+    this.dayFormat = RLMDateUtils.createLocalDateFormat(DatePattern.LOCAL_DAY, timezone);
   }
 
   /*****************************************
@@ -64,7 +67,7 @@ public class SnapshotTask
   *****************************************/
   public void run(Date snapshotDate) 
   {
-    String requestedDate = RLMDateUtils.printDay(snapshotDate);
+    String requestedDate = dayFormat.format(snapshotDate);
     
     try
       {

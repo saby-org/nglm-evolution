@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 
@@ -75,7 +76,7 @@ public class JourneyMetricESSinkConnector extends SimpleESSinkConnector
       
       // @rl: check null to prevent overriding fields with null ?
       if(journeyMetric.getJourneyExitDate() != null) {
-        documentMap.put("journeyExitDate", (journeyMetric.getJourneyExitDate() != null)? RLMDateUtils.printTimestamp(journeyMetric.getJourneyExitDate()) : null);
+        documentMap.put("journeyExitDate", (journeyMetric.getJourneyExitDate() != null)? RLMDateUtils.formatDateForElasticsearchDefault(journeyMetric.getJourneyExitDate()) : null);
       }
 
       //

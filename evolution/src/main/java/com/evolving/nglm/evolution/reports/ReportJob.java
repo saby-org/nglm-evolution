@@ -9,7 +9,7 @@ package com.evolving.nglm.evolution.reports;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.ReportService;
@@ -35,12 +35,12 @@ public class ReportJob extends ScheduledJob
   *  
   *****************************************/
   
-  public ReportJob(long schedulingUniqueID, Report report, SchedulingInterval scheduling, ReportService reportService)
+  public ReportJob(Report report, SchedulingInterval scheduling, ReportService reportService)
   {
-    super(schedulingUniqueID, report.getName()+"("+scheduling.getExternalRepresentation()+")", scheduling.getCron(), Deployment.getSystemTimeZone(), false); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    super(report.getName()+"("+scheduling.getExternalRepresentation()+")", scheduling.getCron(), Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     this.report = report;
     this.reportService = reportService;
-    report.addJobID(schedulingUniqueID);
+    report.addJobID(getSchedulingID());
   }
 
   @Override

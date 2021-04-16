@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -78,10 +79,10 @@ public class SimulatedTimeFileSourceConnector extends FileSourceConnector
       try
         {
           JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(record);
-          DateValue simulatedTime = new DateValue(RLMDateUtils.parseDate(JSONUtilities.decodeString(jsonRoot, "simulatedTime", true), "yyyy-MM-dd'T'HH:mm:ssXXX", Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+          DateValue simulatedTime = new DateValue(RLMDateUtils.parseDateFromREST(JSONUtilities.decodeString(jsonRoot, "simulatedTime", true)));
           result = Collections.<KeyValue>singletonList(new KeyValue(StringKey.schema(), "simulatedTime", DateValue.schema(), DateValue.pack(simulatedTime)));
         }
-      catch (org.json.simple.parser.ParseException|JSONUtilitiesException|ServerRuntimeException e)
+      catch (org.json.simple.parser.ParseException|ParseException|JSONUtilitiesException|ServerRuntimeException e)
         {
           log.info("processRecord error parsing: {}", record);
           log.info("processRecord unknown unparsable json: {}", e.getMessage());

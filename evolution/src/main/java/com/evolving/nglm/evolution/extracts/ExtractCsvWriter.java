@@ -7,7 +7,7 @@
 package com.evolving.nglm.evolution.extracts;
 
 import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;

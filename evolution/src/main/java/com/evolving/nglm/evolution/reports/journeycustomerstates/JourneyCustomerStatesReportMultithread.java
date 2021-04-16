@@ -16,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -73,7 +73,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
             Object subscriberIDField = journeyStats.get(subscriberID);
             journeyInfo.put(customerID, subscriberIDField);
           }
-        for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+        for (AlternateID alternateID : DeploymentCommon.getAlternateIDs().values())
           {
             if (journeyStats.get(alternateID.getID()) != null)
               {
@@ -309,7 +309,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
     String esIndexJourney  = args[1];
     String csvfile         = args[2];
 
-    journeyService = new JourneyService(Deployment.getBrokerServers(), "journeycustomerstatesreportMultithread-journeyservice-JourneyCustomerStatesReportMultithread", Deployment.getJourneyTopic(), false);
+    journeyService = new JourneyService(DeploymentCommon.getBrokerServers(), "journeycustomerstatesreportMultithread-journeyservice-JourneyCustomerStatesReportMultithread", DeploymentCommon.getJourneyTopic(), false);
     journeyService.start();
     
     try {

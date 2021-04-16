@@ -24,8 +24,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
@@ -354,8 +357,13 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     public PushNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
-      setCreationDate(getDateFromESString(esDateFormat, (String) esFields.get("creationDate")));
-      setDeliveryDate(getDateFromESString(esDateFormat, (String) esFields.get("deliveryDate")));
+      try {
+        setCreationDate(RLMDateUtils.parseDateFromREST((String) esFields.get("creationDate")));
+        setDeliveryDate(RLMDateUtils.parseDateFromREST((String) esFields.get("deliveryDate")));
+      }
+      catch(java.text.ParseException e) {
+        throw new ServerRuntimeException(e);
+      }
       
       this.destination = (String) esFields.get("destination");
       this.language = (String) esFields.get("language");

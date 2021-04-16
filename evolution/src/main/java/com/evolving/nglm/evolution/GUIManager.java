@@ -87,6 +87,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
@@ -638,8 +639,6 @@ public class GUIManager
 
   private static final int RESTAPIVersion = 1;
   private static Method guiManagerExtensionEvaluateEnumeratedValuesMethod;
-  private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
-  private static DateFormat esDateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
   //
   //  instance
@@ -820,7 +819,6 @@ public class GUIManager
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
-    String tenantTopic = "tenant";
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
@@ -1254,7 +1252,7 @@ public class GUIManager
         *  remove unused deliverables
         *
         *****************************************/
-        for(int tenantID : Deployment.getDeployments().keySet())
+        for(int tenantID : Deployment.getTenantIDs())
           {
         
           for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime(), tenantID))
@@ -1294,7 +1292,7 @@ public class GUIManager
     //  catalogCharacteristics
     //
 
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (catalogCharacteristicService.getStoredCatalogCharacteristics(tenantID).size() == 0)
           {
@@ -1318,7 +1316,7 @@ public class GUIManager
     //  tokenTypes
     //
     
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (tokenTypeService.getStoredTokenTypes(tenantID).size() == 0)
           {
@@ -1341,7 +1339,7 @@ public class GUIManager
     //
     //  productTypes
     //
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (productTypeService.getStoredProductTypes(tenantID).size() == 0)
           {
@@ -1366,7 +1364,7 @@ public class GUIManager
     //
 
     // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {   
         try
         {
@@ -1407,7 +1405,7 @@ public class GUIManager
     //
     //  calling channels
     //
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (callingChannelService.getStoredCallingChannels(tenantID).size() == 0)
           {
@@ -1431,7 +1429,7 @@ public class GUIManager
     //  sales channels
     //
 
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (salesChannelService.getStoredSalesChannels(tenantID).size() == 0)
           {
@@ -1455,7 +1453,7 @@ public class GUIManager
     //  suppliers
     //
     
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (supplierService.getStoredSuppliers(tenantID).size() == 0)
           {
@@ -1478,7 +1476,7 @@ public class GUIManager
     //
     //  products
     //
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (productService.getStoredProducts(tenantID).size() == 0)
           {
@@ -1502,7 +1500,7 @@ public class GUIManager
     //  Source Addresses not before communicationChannels
     //
     
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (sourceAddressService.getStoredSourceAddresss(tenantID).size() == 0)
           {
@@ -1525,7 +1523,7 @@ public class GUIManager
     //
     //  contactPolicies
     //
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (contactPolicyService.getStoredContactPolicies(tenantID).size() == 0)
           {
@@ -1549,7 +1547,7 @@ public class GUIManager
     //  journeyTemplates
     //
     
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (journeyTemplateService.getStoredJourneyTemplates(tenantID).size() == 0)
           {
@@ -1574,7 +1572,7 @@ public class GUIManager
     //  journeyObjectives
     //
 
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (journeyObjectiveService.getStoredJourneyObjectives(tenantID).size() == 0)
           {
@@ -1598,7 +1596,7 @@ public class GUIManager
     //  offerObjectives
     //
 
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (offerObjectiveService.getStoredOfferObjectives(tenantID).size() == 0)
           {
@@ -1622,7 +1620,7 @@ public class GUIManager
     //
     //  segmentationDimensions
     //
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (segmentationDimensionService.getStoredSegmentationDimensions(tenantID).size() == 0)
           {
@@ -1645,7 +1643,7 @@ public class GUIManager
     //
     //  complexObject
     //
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         if (complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), tenantID).size() == 0)
           {
@@ -1674,7 +1672,7 @@ public class GUIManager
     //
     // remove all existing simple profile dimensions
     //
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions(tenantID))
           {
@@ -1695,7 +1693,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile(tenantID).getCriterionFields(tenantID);
         for (CriterionField criterion : profileCriterionFields.values())
@@ -1864,7 +1862,7 @@ public class GUIManager
     resellerService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     segmentContactPolicyService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     dynamicEventDeclarationsService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
-    for(int tenantID : Deployment.getDeployments().keySet())
+    for(int tenantID : Deployment.getTenantIDs())
       {
         dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService, tenantID);
         dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService, tenantID);
@@ -2323,9 +2321,8 @@ public class GUIManager
     *****************************************/
     
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
-    long uniqueID = 0;
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
-    ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getSystemTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+    ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     if(recurrnetCampaignCreationJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
@@ -5533,8 +5530,8 @@ public class GUIManager
                 
                 // DeliveriesCount 
                 if(showDeliveriesCount) {
-                  Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay);
-                  Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay);
+                  Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay, journey.getTenantID());
+                  Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay, journey.getTenantID());
                   
                   long messagesSuccess = 0;
                   long messagesFailure = 0;
@@ -6922,7 +6919,7 @@ public class GUIManager
     Date targetDay;
     try {
       Date startDate = GUIManagedObject.parseDateField(bulkCampaignEffectiveStartDate);
-      targetDay = RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      targetDay = RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
     } catch (JSONUtilitiesException e) {
       response.put("responseCode", "invalidStartDate");
       return JSONUtilities.encodeObject(response);
@@ -6935,7 +6932,7 @@ public class GUIManager
     long plannedCapacity = 0;
     for (GUIManagedObject journey : journeyService.getStoredJourneys(false, tenantID)) {
       if ( journey.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign) && journey.getEffectiveStartDate() != null) {
-        Date startDate = RLMDateUtils.truncate(journey.getEffectiveStartDate(), Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        Date startDate = RLMDateUtils.truncate(journey.getEffectiveStartDate(), Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
         Object templateIDObj = journey.getJSONRepresentation().get("journeyTemplateID"); // only in JSON representation
         String templateID = (templateIDObj != null && templateIDObj instanceof String) ? (String) templateIDObj : null;
         
@@ -18321,12 +18318,6 @@ public class GUIManager
     String fromDateReq = JSONUtilities.decodeString(jsonRoot, "fromDate", false);
     String toDateReq = JSONUtilities.decodeString(jsonRoot, "toDate", false);
 
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-
     /*****************************************
     *
     *  resolve subscriberID
@@ -18373,17 +18364,17 @@ public class GUIManager
                     if (fromDateReq == null || fromDateReq.isEmpty() || toDateReq == null || toDateReq.isEmpty())
                       {
                         toDate = now;
-                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getDeployment(tenantID).getTimeZone());
                       }
                     else if (toDateReq == null || toDateReq.isEmpty())
                       {
                         toDate = now;
-                        fromDate = RLMDateUtils.parseDate(fromDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                        fromDate = RLMDateUtils.parseDateFromDay(fromDateReq, Deployment.getDeployment(tenantID).getTimeZone());
                       }
                     else
                       {
-                        toDate = RLMDateUtils.parseDate(toDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                        toDate = RLMDateUtils.parseDateFromDay(toDateReq, Deployment.getDeployment(tenantID).getTimeZone());
+                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getDeployment(tenantID).getTimeZone());
                       }
 
                     //
@@ -18414,7 +18405,7 @@ public class GUIManager
                 response.put("responseCode", "ok");
               }
           }
-        catch (SubscriberProfileServiceException e)
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
           {
             throw new GUIManagerException(e);
           }
@@ -18458,11 +18449,6 @@ public class GUIManager
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
     JSONArray deliverableIDs = JSONUtilities.decodeJSONArray(jsonRoot, "deliverableIDs", false);
 
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
     
     //
     //  filters
@@ -18516,8 +18502,8 @@ public class GUIManager
                 // read history
                 //
 
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone()), filters, tenantID);
-                List<SearchHit> hits = getESHits(searchRequest);
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
                     Map<String, Object> esFields = hit.getSourceAsMap();
@@ -18534,7 +18520,7 @@ public class GUIManager
                 response.put("responseCode", "ok");
               }
           }
-        catch (SubscriberProfileServiceException e)
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
           {
             throw new GUIManagerException(e);
           }
@@ -18586,12 +18572,6 @@ public class GUIManager
     if (offerID != null && !offerID.isEmpty()) filters.add(QueryBuilders.matchQuery("offerID", offerID));
     if (salesChannelID != null && !salesChannelID.isEmpty()) filters.add(QueryBuilders.matchQuery("salesChannelID", salesChannelID));
 
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-
     /*****************************************
     *
     *  resolve subscriberID
@@ -18624,8 +18604,8 @@ public class GUIManager
                 List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
                 
                 List<DeliveryRequest> ODRs = new ArrayList<DeliveryRequest>();
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone()), filters, tenantID);
-                List<SearchHit> hits = getESHits(searchRequest);
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
                     PurchaseFulfillmentRequest purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
@@ -18681,7 +18661,7 @@ public class GUIManager
                 response.put("responseCode", "ok");
               }
           }
-        catch (SubscriberProfileServiceException e)
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
           {
             throw new GUIManagerException(e);
           }
@@ -18732,12 +18712,6 @@ public class GUIManager
     if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
     if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
 
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-
     /*****************************************
     *
     *  resolve subscriberID
@@ -18768,8 +18742,8 @@ public class GUIManager
             else
               {
                 List<JSONObject> messagesJson = new ArrayList<JSONObject>();
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone()), filters, tenantID);
-                List<SearchHit> hits = getESHits(searchRequest);
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
                     String channelID = (String) hit.getSourceAsMap().get("channelID");
@@ -18790,7 +18764,7 @@ public class GUIManager
                             String requestClass = Deployment.getDeliveryManagers().get(deliveryType).getRequestClassName();
                             if (requestClass != null)
                               {
-                                DeliveryRequest notification = getNotificationDeliveryRequest(requestClass, hit);
+                                DeliveryRequest notification = ElasticsearchClientAPI.getNotificationDeliveryRequest(requestClass, hit);
                                 if (notification != null)
                                   {
                                     Map<String, Object> esNotificationMap = notification.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
@@ -18809,7 +18783,7 @@ public class GUIManager
                 response.put("responseCode", "ok");
               }
           }
-        catch (SubscriberProfileServiceException e)
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
           {
             throw new GUIManagerException(e);
           }
@@ -18850,14 +18824,18 @@ public class GUIManager
     
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
 
-
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-    Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, dateFormat, tenantID), tenantID);
-    Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, dateFormat, tenantID), tenantID);
+    Date journeyStartDate;
+    Date journeyEndDate;
+    try
+      {
+        String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+        journeyStartDate = prepareStartDate(RLMDateUtils.parseDateFromDay(journeyStartDateStr, timeZone), timeZone);
+        journeyEndDate = prepareEndDate(RLMDateUtils.parseDateFromDay(journeyEndDateStr, timeZone), timeZone);
+      } 
+    catch (java.text.ParseException e1)
+      {
+        throw new GUIManagerException(e1);
+      }
 
     /*****************************************
     *
@@ -18889,8 +18867,8 @@ public class GUIManager
             else
               {
                 List<JSONObject> journeysJson = new ArrayList<JSONObject>();
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerJourneys, subscriberID, journeyStartDate, filters, tenantID);
-                List<SearchHit> hits = getESHits(searchRequest);
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerJourneys, subscriberID, journeyStartDate, filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
                 Map<String, JourneyHistory> journeyHistoryMap = new HashMap<String, JourneyHistory>(hits.size());
                 for (SearchHit hit : hits)
                   {
@@ -19141,13 +19119,18 @@ public class GUIManager
     
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
 
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-    Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, dateFormat, tenantID), tenantID);
-    Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, dateFormat, tenantID), tenantID);
+    Date campaignStartDate;
+    Date campaignEndDate;
+    try
+      {
+        String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+        campaignStartDate = prepareStartDate(RLMDateUtils.parseDateFromDay(campaignStartDateStr, timeZone), timeZone);
+        campaignEndDate = prepareEndDate(RLMDateUtils.parseDateFromDay(campaignEndDateStr, timeZone), timeZone);
+      } 
+    catch (java.text.ParseException e1)
+      {
+        throw new GUIManagerException(e1);
+      }
 
     /*****************************************
     *
@@ -19180,8 +19163,8 @@ public class GUIManager
               {
                 List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
                 
-                SearchRequest searchRequest = getSearchRequest(API.getCustomerCampaigns, subscriberID, campaignStartDate, filters, tenantID);
-                List<SearchHit> hits = getESHits(searchRequest);
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerCampaigns, subscriberID, campaignStartDate, filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
                 Map<String, JourneyHistory> journeyHistoryMap = new HashMap<String, JourneyHistory>(hits.size());
                 for (SearchHit hit : hits)
                   {
@@ -23960,12 +23943,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   String startDateString = JSONUtilities.decodeString(jsonRoot, "startDate", false);
   String endDateString = JSONUtilities.decodeString(jsonRoot, "endDate", false);
   String offerObjective = JSONUtilities.decodeString(jsonRoot, "objective", false);
-
-  Date offerStartDate = prepareStartDate(getDateFromString(startDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN, tenantID), tenantID);
-  Date offerEndDate = prepareEndDate(getDateFromString(endDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN, tenantID), tenantID);
-
+      
   try
   {
+    String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+    Date offerStartDate = prepareStartDate(RLMDateUtils.parseDateFromDay(startDateString, timeZone), timeZone);
+    Date offerEndDate = prepareEndDate(RLMDateUtils.parseDateFromDay(endDateString, timeZone), timeZone);
+    
     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
     if (subscriberProfile == null)
       {
@@ -24065,7 +24049,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         response.put("responseCode", "ok");
       }
   }
-  catch(SubscriberProfileServiceException spe)
+  catch(SubscriberProfileServiceException | java.text.ParseException spe)
   {
     String str = "unable to process request getOffersList " + spe.getLocalizedMessage();
     log.error(str);
@@ -27875,53 +27859,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       }
     return result;
   }
-
-
-  /*****************************************
-  *
-  *  getDateFromString
-  *
-  *****************************************/
-
-  private Date getDateFromString(String dateString, String dateFormat, int tenantID)
-  {
-    Date result = null;
-    if (dateString != null)
-      {
-        result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone());
-      }
-    return result;
-  }
-  
-
-  /*****************************************
-   *
-   *  getDateFromString
-   *
-   *****************************************/
-
-  private Date getDateFromString(String dateString, String dateFormat, String pattern, int tenantID) throws GUIManagerException
-  {
-    Date result = null;
-    if (dateString != null)
-      {
-        if (pattern != null && !dateString.matches(pattern))
-          {
-            throw new GUIManagerException("Bad Field Value", "(invalid date/format expected in "+dateFormat+" and found "+dateString+")");
-          }
-        try 
-          {
-            result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getDeployment(tenantID).getBaseTimeZone(), false);
-          }
-        catch(Exception ex)
-          {
-            throw new GUIManagerException("Bad Field Value", "(invalid date/format expected in "+dateFormat+" and found "+dateString+")");
-          }
-        
-      }
-    return result;
-  }
-
   
   /*****************************************
   *
@@ -27929,13 +27866,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private Date prepareEndDate(Date endDate, int tenantID)
+  public static Date prepareEndDate(Date endDate, String timeZone)
   {
     Date result = null;
     if (endDate != null)
       {
         Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        cal.setTimeZone(TimeZone.getTimeZone(timeZone));
         cal.setTime(endDate);
         cal.set(Calendar.HOUR_OF_DAY, 23);
         cal.set(Calendar.MINUTE, 59);
@@ -27951,13 +27888,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private Date prepareStartDate(Date startDate, int tenantID)
+  public static Date prepareStartDate(Date startDate, String timeZone)
   {
     Date result = null;
     if (startDate != null)
       {
         Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        cal.setTimeZone(TimeZone.getTimeZone(timeZone));
         cal.setTime(startDate);
         cal.set(Calendar.HOUR_OF_DAY, 00);
         cal.set(Calendar.MINUTE, 00);
@@ -28544,15 +28481,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *  getDateString
   *
   *****************************************/
-
+  @Deprecated // TODO EVPRO-99 TO BE REMOVED
   private String getDateString(Date date, int tenantID)
   {
     String result = null;
     if (date == null) return result;
     try
       {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         result = dateFormat.format(date);
       }
     catch (Exception e)
@@ -28863,9 +28800,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      *
      ************************************/
 
-    public RecurrentCampaignCreationJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    public RecurrentCampaignCreationJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
     {
-      super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
+      super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
     }
 
     /***********************************
@@ -28877,7 +28814,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     @Override protected void run()
     {
       if (log.isDebugEnabled()) log.debug("creating recurrent campaigns");
-      String tz = Deployment.getSystemTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct ? 
+      String tz = Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct ? 
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
@@ -28987,7 +28924,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               boolean exists = false;
               for (Journey subJourney : recurrentSubJourneys)
                 {
-                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getDeployment(subJourney.getTenantID()).getBaseTimeZone()) == 0;
+                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getDeployment(subJourney.getTenantID()).getTimeZone()) == 0;
                   if (exists) break;
                 }
               if (!exists && limitCount > 0)
@@ -29014,9 +28951,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer lastCreatedOccurrenceNumber, int tenantID)
     {
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
-      String timeZone = Deployment.getDeployment(tenantID).getBaseTimeZone();
+      String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
       Date rawEffectiveEntryPeriodEndDate = recurrentJourney.getRawEffectiveEntryPeriodEndDate();
-      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getDeployment(tenantID).getBaseTimeZone());
+      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getDeployment(tenantID).getTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       boolean active = recurrentJourney.getActive();
       for (Date startDate : journeyCreationDates)
@@ -29041,7 +28978,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           Date recRawEffectiveEntryPeriodEndDate = null;
           if (rawEffectiveEntryPeriodEndDate != null)
             {
-              int daysBetweenEntryPeriodEndDateAndStartDate = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(rawEffectiveEntryPeriodEndDate, Calendar.DATE, timeZone), Deployment.getDeployment(tenantID).getBaseTimeZone());
+              int daysBetweenEntryPeriodEndDateAndStartDate = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(rawEffectiveEntryPeriodEndDate, Calendar.DATE, timeZone), Deployment.getDeployment(tenantID).getTimeZone());
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.addDays(RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone), daysBetweenEntryPeriodEndDateAndStartDate, timeZone);
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, timeZone), timeZone);
               recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.MINUTE, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.MINUTE, timeZone), timeZone);
@@ -29073,9 +29010,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
           journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
           journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
-          journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
-          journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(endDate));
-          journeyJSON.put("effectiveEntryPeriodEndDate", recurrentJourney.formatDateField(recRawEffectiveEntryPeriodEndDate));
+          journeyJSON.put("effectiveStartDate", RLMDateUtils.formatDateForREST(startDate, timeZone));
+          journeyJSON.put("effectiveEndDate", RLMDateUtils.formatDateForREST(endDate, timeZone));
+          journeyJSON.put("effectiveEntryPeriodEndDate", RLMDateUtils.formatDateForREST(recRawEffectiveEntryPeriodEndDate, timeZone));
           
           //
           //  create and activate
@@ -29124,11 +29061,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           switch (scheduling)
             {
               case "week":
-                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
                 break;
 
               case "month":
-                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
                 break;
 
               default:
@@ -29136,7 +29073,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
           String dayOf = String.valueOf(day);
           if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
-          firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getDeployment(tenantID).getTimeZone());
         }
 
       //
@@ -29145,7 +29082,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
       if ("month".equalsIgnoreCase(scheduling))
         {
-          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
           for (String day : runEveryDay)
             {
               if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
@@ -29162,15 +29099,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     {
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
+          return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
         }
       else
         {
-          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
           c.setTime(now);
-          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
           return firstDate;
         }
     }
@@ -29181,20 +29118,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     private Date getLastDate(Date now, int dayOf, int tenantID)
     {
-      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
+          return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getTimeZone());
         }
       else
         {
-          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
           c.setTime(now);
           int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
-          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
+          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getDeployment(tenantID).getTimeZone());
           return lastDate;
         }
     }
@@ -29206,7 +29143,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-
+  // TODO EVPRO-99 @rl IS THIS USED SOMEWHERE ??
   public class TargetValidityCheckJob extends ScheduledJob
   {
     /***********************************
@@ -29215,9 +29152,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      *
      ************************************/
 
-    public TargetValidityCheckJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    public TargetValidityCheckJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
     {
-      super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
+      super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
     }
 
     /***********************************
@@ -29229,7 +29166,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     @Override protected void run()
     {
       if (log.isDebugEnabled()) log.debug("deleting expired targets");
-      String tz = Deployment.getSystemTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+      String tz = Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
@@ -29333,7 +29270,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               boolean exists = false;
               for (Journey subJourney : recurrentSubJourneys)
                 {
-                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getSystemTimeZone()) == 0; // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getDefault().getTimeZone()) == 0; // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
                   if (exists) break;
                 }
               if (!exists && limitCount > 0)
@@ -29360,8 +29297,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer lastCreatedOccurrenceNumber)
     {
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
-      String timeZone = Deployment.getDeployment(recurrentJourney.getTenantID()).getBaseTimeZone();
-      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getDeployment(recurrentJourney.getTenantID()).getBaseTimeZone());
+      String timeZone = Deployment.getDeployment(recurrentJourney.getTenantID()).getTimeZone();
+      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getDeployment(recurrentJourney.getTenantID()).getTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       for (Date startDate : journeyCreationDates)
         {
@@ -29402,8 +29339,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
           journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
           journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
-          journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
-          journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(endDate));
+          journeyJSON.put("effectiveStartDate", RLMDateUtils.formatDateForREST(startDate, timeZone));
+          journeyJSON.put("effectiveEndDate", RLMDateUtils.formatDateForREST(endDate, timeZone));
 
           //
           //  create and activate
@@ -29452,11 +29389,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           switch (scheduling)
             {
               case "week":
-                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
                 break;
                 
               case "month":
-                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
                 break;
 
               default:
@@ -29464,7 +29401,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
           String dayOf = String.valueOf(day);
           if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
-          firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getDeployment(tenantID).getTimeZone());
         }
       
       //
@@ -29473,7 +29410,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       
       if ("month".equalsIgnoreCase(scheduling))
         {
-          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
           for (String day : runEveryDay)
             {
               if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
@@ -29490,15 +29427,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     {
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
+          return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
         }
       else
         {
-          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
           c.setTime(now);
-          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
           return firstDate;
         }
     }
@@ -29509,20 +29446,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     
     private Date getLastDate(Date now, int dayOf, int tenantID)
     {
-      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
+          return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getTimeZone());
         }
       else
         {
-          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
           c.setTime(now);
           int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
-          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
+          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getDeployment(tenantID).getTimeZone());
           return lastDate;
         }
     }
@@ -29770,8 +29707,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 productService.removeProduct(existingproductID, userID, tenantID);
               }
 
-            /**
-             * ********************************
+            /**********************************
              * 
              * create a voucher with offer name
              * 
@@ -29806,8 +29742,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
             voucher.validate(voucherTypeService, uploadedFileService, now);
 
-            /**
-             * **********************
+            /************************
              * 
              * store voucher
              * 
@@ -30308,7 +30243,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     return JSONUtilities.encodeObject(response);
 
   }
-
   
   public JSONObject processSoftwareVersions(String userID, JSONObject jsonRoot, int tenantID)
   {
@@ -30317,248 +30251,5 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     response.put("customerVersion", com.evolving.nglm.core.Deployment.getDeployment(tenantID).getCustomerVersion());
     return JSONUtilities.encodeObject(response);
   }
-  
-  /*********************************
-   * 
-   * getSearchRequest
-   * 
-   ********************************/
-  
-  private SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters, int tenantID)
-  {
-    SearchRequest searchRequest = null;
-    String index = null;
-    BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("subscriberID", subscriberId));
-    Date indexFilterDate = RLMDateUtils.addDays(SystemTime.getCurrentTime(), -7, Deployment.getDeployment(tenantID).getBaseTimeZone());
-    
-    //
-    //  filters
-    //
-    
-    for (QueryBuilder filter : filters)
-      {
-        query = query.filter(filter);
-      }
-    
-    switch (api)
-    {
-      case getCustomerBDRs:
-        if (startDate != null)
-          {
-            if (indexFilterDate.before(startDate))
-              {
-                List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
-                index = getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
-              }
-            else
-              {
-                index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
-              }
-            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(esDateFormat.format(startDate)));
-          }
-        else
-          {
-            index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
-          }
-        break;
-        
-      case getCustomerODRs:
-        if (startDate != null)
-          {
-            if (indexFilterDate.before(startDate))
-              {
-                List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
-                index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
-              }
-            else
-              {
-                index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
-              }
-            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(esDateFormat.format(startDate)));
-          }
-        else
-          {
-            index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
-          }
-        break;
-        
-      case getCustomerMessages:
-        if (startDate != null)
-          {
-            if (indexFilterDate.before(startDate))
-              {
-                List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
-                index = getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
-              }
-            else
-              {
-                index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
-              }
-            query = query.filter(QueryBuilders.rangeQuery("creationDate").gte(esDateFormat.format(startDate)));
-          }
-        else
-          {
-            index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
-          }
-        break;
-        
-      case getCustomerCampaigns:
-      case getCustomerJourneys:
-        index = JourneyCustomerStatisticsReportDriver.JOURNEY_ES_INDEX + "*";
-        break;
-        
-      default:
-        break;
-    }
-    
-    //
-    //  searchRequest
-    //
-    
-    searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
-    
-    //
-    //  return
-    //
-    
-    return searchRequest;
-  }
-  
-  /*****************************************
-  *
-  * getNotificationDeliveryRequest
-  *
-  *****************************************/
-  
-  private DeliveryRequest getNotificationDeliveryRequest(String requestClass, SearchHit hit)
-  {
-    DeliveryRequest deliveryRequest = null;
-    if (requestClass.equals(MailNotificationManagerRequest.class.getName()))
-      {
-        deliveryRequest = new MailNotificationManagerRequest(hit.getSourceAsMap());
-      }
-    else if(requestClass.equals(SMSNotificationManagerRequest.class.getName()))
-      {
-        deliveryRequest = new SMSNotificationManagerRequest(hit.getSourceAsMap());
-      }
-    else if (requestClass.equals(NotificationManagerRequest.class.getName()))
-      {
-        deliveryRequest = new NotificationManagerRequest(hit.getSourceAsMap());
-      }
-    else if (requestClass.equals(PushNotificationManagerRequest.class.getName()))
-      {
-        deliveryRequest = new PushNotificationManagerRequest(hit.getSourceAsMap());
-      }
-    else
-      {
-        if (log.isErrorEnabled()) log.error("invalid requestclass {}", requestClass);
-      }
-    return deliveryRequest;
-  }
-  
-  /*****************************************
-  *
-  *  getESHits
-  *
-  *****************************************/
-  
-  private List<SearchHit> getESHits(SearchRequest searchRequest) throws GUIManagerException
-  {
-    List<SearchHit> hits = new ArrayList<SearchHit>();
-    Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
-    searchRequest.scroll(scroll);
-    searchRequest.source().size(1000);
-    try
-      {
-        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
-        String scrollId = searchResponse.getScrollId(); // always null
-        SearchHit[] searchHits = searchResponse.getHits().getHits();
-        while (searchHits != null && searchHits.length > 0)
-          {
-            //
-            //  add
-            //
-            
-            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
-            
-            //
-            //  scroll
-            //
-            
-            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
-            scrollRequest.scroll(scroll);
-            searchResponse = elasticsearch.searchScroll(scrollRequest, RequestOptions.DEFAULT);
-            scrollId = searchResponse.getScrollId();
-            searchHits = searchResponse.getHits().getHits();
-          }
-      } 
-    catch (IOException e)
-      {
-        log.error("IOException in ES qurery {}", e.getMessage());
-        throw new GUIManagerException(e);
-      }
-    
-    //
-    //  return
-    //
-    
-    return hits;
-  }
-  
-  /*****************************************
-  *
-  * getExistingIndices
-  *
-  *****************************************/
-  
-  private String getExistingIndices(String indexCSV, String defaulteValue)
-  {
-    String result = null;
-    StringBuilder existingIndexes = new StringBuilder();
-    boolean firstEntry = true;
-    
-    if (indexCSV != null)
-      {
-        for (String index : indexCSV.split(","))
-          {
-            if(index.endsWith("*")) 
-              {
-                if (!firstEntry) existingIndexes.append(",");
-                existingIndexes.append(index); 
-                firstEntry = false;
-                continue;
-              }
-            else
-              {
-                GetIndexRequest request = new GetIndexRequest(index);
-                request.local(false); 
-                request.humanReadable(true); 
-                request.includeDefaults(false); 
-                try
-                {
-                  boolean exists = elasticsearch.indices().exists(request, RequestOptions.DEFAULT);
-                  if (exists) 
-                    {
-                      if (!firstEntry) existingIndexes.append(",");
-                      existingIndexes.append(index);
-                      firstEntry = false;
-                    }
-                } 
-              catch (IOException e)
-                {
-                  log.info("Exception " + e.getLocalizedMessage());
-                }
-              }
-          }
-        result = existingIndexes.toString();
-      }
-    result = result == null || result.trim().isEmpty() ? defaulteValue : result;
-    if (log.isDebugEnabled()) log.debug("reading data from index {}", result);
-    return result;
-  }
-
 }
 

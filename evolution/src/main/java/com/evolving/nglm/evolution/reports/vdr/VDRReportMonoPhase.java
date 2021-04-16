@@ -1,9 +1,9 @@
 package com.evolving.nglm.evolution.reports.vdr;
 
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.DeliveryRequest;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferService;
@@ -75,8 +75,8 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
     {
-      DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-      DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+      DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");    // TODO EVPRO-99
+      DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       
       headerFieldsOrder.add(customerID);
       for (AlternateID alternateID : Deployment.getAlternateIDs().values())
@@ -489,7 +489,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     while (tempfromDate.getTime() <= toDate.getTime())
       {
         esIndexVDRList.add(DATE_FORMAT.format(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       }
     return esIndexVDRList;
   }
@@ -512,17 +512,17 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       {
         case "DAYS":
           fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity,
-              Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+              Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
           break;
 
         case "WEEKS":
           fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity,
-              Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+              Deployment.getDefault().getTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
           break;
 
         case "MONTHS":
           fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity,
-              Deployment.getSystemTimeZone());
+              Deployment.getDefault().getTimeZone());
           break;
 
         default:

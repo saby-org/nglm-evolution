@@ -35,8 +35,7 @@ public class PaymentMeansMap extends GUIManagedObjectMap<PaymentMean>
   * GUIManagedObjectMap implementation
   *
   *****************************************/
-  // TODO: for the moment, we also retrieve archived objects
-  protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredPaymentMeans(true, tenantID); }
+  @Override protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredPaymentMeans(true, tenantID); }
   
   /*****************************************
   *

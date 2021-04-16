@@ -12,6 +12,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.JSONUtilities;
@@ -119,9 +120,9 @@ public class JourneyObjective extends GUIManagedObject implements GUIManagedObje
   //
   
   public Integer getEffectiveTargetingLimitMaxSimultaneous() { return targetingLimitMaxSimultaneous != null ? targetingLimitMaxSimultaneous : new Integer(Integer.MAX_VALUE); }
-  public Date getEffectiveWaitingPeriodEndDate(Date now, int tenantID) { return (targetingLimitMaxSimultaneous != null && targetingLimitMaxSimultaneous == 1 && targetingLimitWaitingPeriodDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitWaitingPeriodDuration,  targetingLimitWaitingPeriodTimeUnit, Deployment.getDeployment(tenantID).getBaseTimeZone(), RoundingSelection.NoRound) : now; }
+  public Date getEffectiveWaitingPeriodEndDate(Date now, int tenantID) { return (targetingLimitMaxSimultaneous != null && targetingLimitMaxSimultaneous == 1 && targetingLimitWaitingPeriodDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitWaitingPeriodDuration,  targetingLimitWaitingPeriodTimeUnit, Deployment.getDeployment(tenantID).getTimeZone(), RoundingSelection.NoRound) : now; }
   public Integer getEffectiveTargetingLimitMaxOccurrence() { return targetingLimitMaxOccurrence != null ? targetingLimitMaxOccurrence : new Integer(Integer.MAX_VALUE); }
-  public Date getEffectiveSlidingWindowStartDate(Date now, int tenantID) { return (targetingLimitSlidingWindowDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitSlidingWindowDuration,  targetingLimitSlidingWindowTimeUnit, Deployment.getDeployment(tenantID).getBaseTimeZone(), RoundingSelection.NoRound) : now; }
+  public Date getEffectiveSlidingWindowStartDate(Date now, int tenantID) { return (targetingLimitSlidingWindowDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitSlidingWindowDuration,  targetingLimitSlidingWindowTimeUnit, Deployment.getDeployment(tenantID).getTimeZone(), RoundingSelection.NoRound) : now; }
   
   /*****************************************
   *
@@ -417,7 +418,7 @@ public class JourneyObjective extends GUIManagedObject implements GUIManagedObje
         String contactPolicyID = (String) jr.get("contactPolicyID");
         ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
         documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
-        documentMap.put("timestamp",     RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+        documentMap.put("timestamp",     RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
       }
     return documentMap;
   }

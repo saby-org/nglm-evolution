@@ -36,8 +36,7 @@ public class JourneysMap extends GUIManagedObjectMap<Journey>
   * GUIManagedObjectMap implementation
   *
   *****************************************/
-  // TODO: for the moment, we also retrieve archived objects
-  protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredJourneys(true, tenantID); }
+  @Override protected Collection<GUIManagedObject> getCollection(int tenantID) { return this.service.getStoredJourneys(true, tenantID); }
   
   /*****************************************
   *
@@ -67,6 +66,17 @@ public class JourneysMap extends GUIManagedObjectMap<Journey>
       return journey.getEffectiveStartDate().getTime();
     } else {
       log.error("Could not retrieve journey start date from journeyID "+ journeyID);
+      return 0;
+    }
+  }
+  
+  public int getTenant(String journeyID)
+  {
+    Journey journey = this.guiManagedObjects.get(journeyID);
+    if(journey != null) {
+      return journey.getTenantID();
+    } else {
+      log.error("Could not retrieve tenantID from journeyID "+ journeyID);
       return 0;
     }
   }

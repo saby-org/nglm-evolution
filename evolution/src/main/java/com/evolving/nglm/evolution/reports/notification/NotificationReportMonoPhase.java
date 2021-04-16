@@ -1,10 +1,10 @@
 package com.evolving.nglm.evolution.reports.notification;
 
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.DialogTemplate;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
@@ -54,7 +54,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
 {
 
   private static final Logger log = LoggerFactory.getLogger(NotificationReportMonoPhase.class);
-  private static final DateFormat DATE_FORMAT;
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
 
   private JourneyService journeyService;
@@ -80,8 +79,8 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private static final String source = "source";
   private static final String communicationChannel = "communicationChannel";
   
-  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
+  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
 
   private static final String messageContent = "messageContent";
   private static final String templateID = "templateID";
@@ -90,9 +89,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
   {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-
     headerFieldsOrder.add(moduleId);
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(moduleName);
@@ -614,29 +610,33 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     }
   }
   
+  @Deprecated // TO BE FACTORIZED
   private static List<String> getEsIndexDates(final Date fromDate, Date toDate)
   {
+    String timeZone =  Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 refactor with tenant
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
  // to get the reports with yesterday's date only
     while(tempfromDate.getTime() < toDate.getTime())	
       {
-        esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        esIndexOdrList.add(RLMDateUtils.formatDateDay(tempfromDate, timeZone)); // TODO Refactor for week (EVPRO-869)
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, timeZone); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
       }
     return esIndexOdrList;
   }
   
+  @Deprecated // TO BE FACTORIZED
   public static List<String> getEsIndexDates(final Date fromDate, Date toDate, boolean includeBothDates, int tenantID)
   {
     if (includeBothDates)
       {
+        String timeZone =  Deployment.getDeployment(tenantID).getTimeZone();
         Date tempfromDate = fromDate;
         List<String> esIndexOdrList = new ArrayList<String>();
         while(tempfromDate.getTime() <= toDate.getTime())
           {
-            esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
-            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            esIndexOdrList.add(RLMDateUtils.formatDateDay(tempfromDate, timeZone)); // TODO Refactor for week (EVPRO-869)
+            tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, timeZone);
           }
         return esIndexOdrList;
       }
@@ -660,15 +660,15 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     switch (reportPeriodUnit.toUpperCase())
     {
       case "DAYS":
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         break;
 
       case "WEEKS":
-        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         break;
 
       case "MONTHS":
-        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
         break;
 
       default:

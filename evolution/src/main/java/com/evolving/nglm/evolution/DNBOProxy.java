@@ -60,6 +60,7 @@ import org.apache.kafka.common.errors.WakeupException;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.AssignSubscriberIDs;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.NGLMRuntime;

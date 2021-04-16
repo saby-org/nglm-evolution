@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 
@@ -130,7 +131,7 @@ public class SubscriberEvaluationRequest
   public String getLanguage()
   {
     String languageID = (String) CriterionContext.Profile(tenantID).getCriterionFields(tenantID).get("subscriber.language").retrieve(this);
-    String language = (languageID != null && Deployment.getDeployment(getTenantID()).getSupportedLanguages().get(languageID) != null) ? Deployment.getDeployment(getTenantID()).getSupportedLanguages().get(languageID).getName() : Deployment.getDeployment(getTenantID()).getBaseLanguage();
+    String language = (languageID != null && Deployment.getDeployment(getTenantID()).getSupportedLanguages().get(languageID) != null) ? Deployment.getDeployment(getTenantID()).getSupportedLanguages().get(languageID).getName() : Deployment.getDeployment(getTenantID()).getLanguage();
     return language;
   }
 

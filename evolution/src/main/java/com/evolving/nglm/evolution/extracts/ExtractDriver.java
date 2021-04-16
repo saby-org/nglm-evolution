@@ -10,17 +10,13 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.*;
-import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
-import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportObjects;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * this class is driving reading from elastic search, put data in topic and write data to csv and compress data

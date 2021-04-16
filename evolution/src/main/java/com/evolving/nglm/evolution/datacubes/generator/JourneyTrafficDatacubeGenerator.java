@@ -18,13 +18,14 @@ import org.elasticsearch.search.aggregations.bucket.range.ParsedDateRange;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -33,7 +34,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  public static final String DATACUBE_ES_INDEX_PREFIX = "datacube_journeytraffic-";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_journeytraffic-";
+  public static final String DATACUBE_ES_INDEX_PREFIX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX_PREFIX = "journeystatistic-";
   private static final String FILTER_STRATUM_PREFIX = "subscriberStratum.";
   private static final String METRIC_CONVERSION_COUNT = "metricConversionCount";
@@ -59,9 +61,9 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public JourneyTrafficDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)  
+  public JourneyTrafficDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, int tenantID, String timeZone)  
   {
-    super(datacubeName, elasticsearch, datacubeWriter);
+    super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);
@@ -75,6 +77,16 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
     this.basicFilterFields.add("sample");
     this.filterFields = new ArrayList<String>();
   }
+  
+  public JourneyTrafficDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
+    this(datacubeName,
+        datacubeManager.getElasticsearchClientAPI(),
+        datacubeManager.getDatacubeWriter(),
+        datacubeManager.getSegmentationDimensionService(),
+        datacubeManager.getJourneyService(),
+        tenantID,
+        Deployment.getDeployment(tenantID).getTimeZone());
+  }
 
   /*****************************************
   *
@@ -85,10 +97,10 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   { 
     return DATA_ES_INDEX_PREFIX + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID); 
   }
-  
+
   @Override protected String getDatacubeESIndex() 
   { 
-    return DATACUBE_ES_INDEX_PREFIX + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID); 
+    return DATACUBE_ES_INDEX_PREFIX(this.tenantID) + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID); 
   }
 
   /*****************************************
@@ -119,7 +131,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
     }
     // Number of day needed after EndDate for JourneyMetrics to be pushed. - Add 24 hours to be sure (due to truncation, see populateMetricsPost)
     int maximumPostPeriod = Deployment.getJourneyMetricConfiguration().getPostPeriodDays() + 1;
-    Date stopDate = RLMDateUtils.addDays(journey.getEffectiveEndDate(), maximumPostPeriod, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date stopDate = RLMDateUtils.addDays(journey.getEffectiveEndDate(), maximumPostPeriod, this.getTimeZone());
     if(publishDate.after(stopDate)) {
       log.info("JourneyID=" + this.journeyID + " has ended more than " + maximumPostPeriod + " days ago. No data will be published anymore.");
       return false;
@@ -181,7 +193,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
     
     metricAggregations.add(AggregationBuilders.sum(METRIC_CONVERSION_COUNT).field("conversionCount"));
     metricAggregations.add(AggregationBuilders.dateRange(METRIC_CONVERTED_TODAY).field("lastConversionDate")
-        .addRange(RLMDateUtils.printTimestamp(metricTargetDayStart), RLMDateUtils.printTimestamp(metricTargetDayAfterStart)));
+        .addRange(this.printTimestamp(metricTargetDayStart), this.printTimestamp(metricTargetDayAfterStart)));
 
     Map<String, JourneyMetricDeclaration> journeyMetricsMap = Deployment.getJourneyMetricConfiguration().getMetrics();
     if(! journeyMetricsMap.entrySet().isEmpty()) {
@@ -281,14 +293,14 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
     this.journeyID = journeyID;
     this.publishDate = publishDate;
 
-    Date tomorrow = RLMDateUtils.addDays(publishDate, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date tomorrow = RLMDateUtils.addDays(publishDate, 1, this.getTimeZone());
     // Dates: YYYY-MM-dd 00:00:00.000
-    Date beginningOfToday = RLMDateUtils.truncate(publishDate, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date beginningOfToday = RLMDateUtils.truncate(publishDate, Calendar.DATE, this.getTimeZone());
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
     this.metricTargetDayStart = beginningOfToday;
     this.metricTargetDayAfterStart = beginningOfTomorrow;
     
-    String timestamp = RLMDateUtils.printTimestamp(publishDate);
+    String timestamp = this.printTimestamp(publishDate);
     long targetPeriod = publishDate.getTime() - journeyStartDateTime;
     this.run(timestamp, targetPeriod);
   }

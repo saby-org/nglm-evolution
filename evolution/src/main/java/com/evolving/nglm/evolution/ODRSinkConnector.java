@@ -1,7 +1,5 @@
 package com.evolving.nglm.evolution;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -14,6 +12,8 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
@@ -47,9 +47,6 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   
   public static class ODRSinkConnectorTask extends StreamESSinkTask<PurchaseFulfillmentRequest>
   {
-    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
-    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
-
     /*****************************************
     *
     *  start
@@ -140,9 +137,10 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", purchaseManager.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(purchaseManager.getAlternateIDs(), documentMap);
+      documentMap.put("tenantID", purchaseManager.getTenantID());
       documentMap.put("deliveryRequestID", purchaseManager.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", purchaseManager.getOriginatingDeliveryRequestID());
-      documentMap.put("eventDatetime", purchaseManager.getEventDate()!=null?dateFormat.format(purchaseManager.getEventDate()):"");
+      documentMap.put("eventDatetime", purchaseManager.getEventDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(purchaseManager.getEventDate()):"");
       documentMap.put("eventID", purchaseManager.getEventID());
       documentMap.put("offerID", purchaseManager.getOfferID());
       documentMap.put("offerQty", purchaseManager.getQuantity());
@@ -230,7 +228,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       documentMap.put("returnCode", code);
       documentMap.put("returnCodeDetails", purchaseManager.getOfferDeliveryReturnCodeDetails());
       documentMap.put("vouchers", voucherList);
-      documentMap.put("creationDate", purchaseManager.getCreationDate()!=null?dateFormat.format(purchaseManager.getCreationDate()):"");
+      documentMap.put("creationDate", purchaseManager.getCreationDate() != null ? RLMDateUtils.formatDateForElasticsearchDefault(purchaseManager.getCreationDate()):"");
       
       return documentMap;
     }

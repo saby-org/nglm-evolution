@@ -15,6 +15,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 

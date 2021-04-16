@@ -17,9 +17,9 @@ import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Report;
 
 
@@ -36,8 +36,8 @@ public abstract class ReportDriver
   private static final DateFormat DATE_FORMAT;
   static
   {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");   // TODO EVPRO-99
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
   }
 
   /**********************
@@ -75,7 +75,7 @@ public abstract class ReportDriver
     String topicSuffix = "";
     try
       {
-        SimpleDateFormat sdf = new SimpleDateFormat(DateFormat);
+        SimpleDateFormat sdf = new SimpleDateFormat(DateFormat);   // TODO EVPRO-99
         topicSuffix = sdf.format(reportGenerationDate);
       } catch (IllegalArgumentException e)
       {
@@ -93,7 +93,7 @@ public abstract class ReportDriver
   
   public String getSubscriberProfileIndex(final Date requestedDate)
   {
-    if (0 == RLMDateUtils.truncatedCompareTo(requestedDate, SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getSystemTimeZone())) // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    if (0 == RLMDateUtils.truncatedCompareTo(requestedDate, SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getDefault().getTimeZone())) // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       {
         return "subscriberprofile";
       }

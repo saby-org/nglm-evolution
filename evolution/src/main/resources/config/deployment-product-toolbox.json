@@ -1362,6 +1362,14 @@
             { "id" : "evolution.voucher.redeem", "name" : "voucher.redeem" },
             { "id" : "evolution.voucher.validate", "name" : "voucher.validate" }
           ]
+       },
+       {
+         "id"  : "2005",
+         "name"  : "Dialogues",
+         "color" : "#A2A18D",
+         "items" :
+           [
+           ]
        }
     ],
 

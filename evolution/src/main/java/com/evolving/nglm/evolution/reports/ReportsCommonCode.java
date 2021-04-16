@@ -6,9 +6,10 @@
 
 package com.evolving.nglm.evolution.reports;
 
-import com.evolving.nglm.evolution.Deployment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.Deployment;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,10 +22,10 @@ public class ReportsCommonCode
 {
   
   public static List<SimpleDateFormat> standardDateFormats = new ArrayList<SimpleDateFormat>();
-  public static final ThreadLocal<SimpleDateFormat> deploymentDateFormat = ThreadLocal.withInitial(
+  public static final ThreadLocal<SimpleDateFormat> deploymentDateFormat = ThreadLocal.withInitial(   // TODO EVPRO-99
       () -> {
         SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
         return sdf;
       });
 
@@ -42,13 +43,13 @@ public class ReportsCommonCode
     {
       if (standardDateFormats.isEmpty())
         {
-          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));
-          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
-          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));
-          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX"));
-          for (SimpleDateFormat standardDateFormat : standardDateFormats)
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));   // TODO EVPRO-99
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));   // TODO EVPRO-99
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));   // TODO EVPRO-99
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX"));   // TODO EVPRO-99
+          for (SimpleDateFormat standardDateFormat : standardDateFormats)   // TODO EVPRO-99
             {
-              standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+              standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
             }
         }
     }
@@ -66,7 +67,7 @@ public class ReportsCommonCode
     if (dateString != null)
       {
         boolean ableToParse = false;
-        for (SimpleDateFormat standardDateFormat : standardDateFormats)
+        for (SimpleDateFormat standardDateFormat : standardDateFormats)   // TODO EVPRO-99
           {
             synchronized (standardDateFormat)
               {

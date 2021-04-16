@@ -15,7 +15,6 @@ import org.elasticsearch.search.aggregations.bucket.composite.DateHistogramValue
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 
-import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.JourneyService;
@@ -66,9 +65,9 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public VDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, VoucherService voucherService, SupplierService supplierService)  
+  public VDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, VoucherService voucherService, SupplierService supplierService, int tenantID, String timeZone)  
   {
-    super(datacubeName, elasticsearch, datacubeWriter);
+    super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
 
     this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();
@@ -158,7 +157,7 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
       // The timestamp retrieve from the Date Histogram is the START of the interval. 
       // But here we want to timestamp at the END (+ 1hour -1ms)
       Date date = new Date(time + 3600*1000 - 1);
-      filters.put("timestamp", RLMDateUtils.printTimestamp(date));
+      filters.put("timestamp", this.printTimestamp(date));
     }
   }
 
@@ -209,22 +208,22 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   public void dailyDefinitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getSystemTimeZone());// TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
+    Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone());  
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());  // 00:00:00.000 
+    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);   // 23:59:59.999
     
     //
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetDay = RLMDateUtils.printDay(yesterday);
-    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+    this.targetDay = this.printDay(yesterday);
+    this.targetTimestamp = this.printTimestamp(endOfYesterday);
 
     //
     // Timestamp & period
     //
-    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+    String timestamp = this.printTimestamp(endOfYesterday);
     long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     
     this.run(timestamp, targetPeriod);
@@ -238,22 +237,22 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   public void dailyPreview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone()); // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone()); 
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());  
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone()); // 00:00:00.000 
     Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                       
     
     //
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetDay = RLMDateUtils.printDay(now);
-    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
+    this.targetDay = this.printDay(now);
+    this.targetTimestamp = this.printTimestamp(endOfToday);
 
     //
     // Timestamp & period
     //
-    String timestamp = RLMDateUtils.printTimestamp(now);
+    String timestamp = this.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     
     this.run(timestamp, targetPeriod);
@@ -268,16 +267,16 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   public void hourlyDefinitive()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone()); 
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());        // 00:00:00.000 
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
     
     //
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetDay = RLMDateUtils.printDay(yesterday);
-    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfYesterday);
+    this.targetDay = this.printDay(yesterday);
+    this.targetTimestamp = this.printTimestamp(endOfYesterday);
 
     //
     // Timestamp & period
@@ -297,16 +296,16 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   public void hourlyPreview()
   {
     Date now = SystemTime.getCurrentTime();
-    Date tomorrow = RLMDateUtils.addDays(now, 1, Deployment.getSystemTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getSystemTimeZone());        // 00:00:00.000 // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+    Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone()); 
+    Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());        // 00:00:00.000 
     Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
     
     //
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetDay = RLMDateUtils.printDay(now);
-    this.targetTimestamp = RLMDateUtils.printTimestamp(endOfToday);
+    this.targetDay = this.printDay(now);
+    this.targetTimestamp = this.printTimestamp(endOfToday);
 
     //
     // Timestamp & period

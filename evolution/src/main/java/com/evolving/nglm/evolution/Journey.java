@@ -41,6 +41,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
@@ -2096,7 +2097,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
               case AniversaryCriterion:
               case DateCriterion:
-                boundParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
+                boundParameters.put(parameterName, parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
                 
               case TimeCriterion:
@@ -2992,7 +2993,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 
               case DateCriterion:
               case AniversaryCriterion:
-                nodeParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
+                nodeParameters.put(parameterName, parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
                 
               case TimeCriterion:
@@ -3486,7 +3487,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
               case AniversaryCriterion:
               case DateCriterion:
-                outputConnectorParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
+                outputConnectorParameters.put(parameterName, parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
                 
               case TimeCriterion:
@@ -4326,6 +4327,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     // documentMap
     //
     documentMap.put("journeyID", this.getJourneyID());
+    documentMap.put("tenantID", this.getTenantID());
     documentMap.put("display", this.getGUIManagedObjectDisplay());
     documentMap.put("description", (description != null)? description: "");
     documentMap.put("type", this.getGUIManagedObjectType().getExternalRepresentation());
@@ -4333,10 +4335,10 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     documentMap.put("targets", targets);
     documentMap.put("targetCount", targetCount);
     documentMap.put("objectives", objectives);
-    documentMap.put("startDate", RLMDateUtils.printTimestamp(this.getEffectiveStartDate()));
-    documentMap.put("endDate", RLMDateUtils.printTimestamp(this.getEffectiveEndDate()));
+    documentMap.put("startDate", RLMDateUtils.formatDateForElasticsearchDefault(this.getEffectiveStartDate()));
+    documentMap.put("endDate", RLMDateUtils.formatDateForElasticsearchDefault(this.getEffectiveEndDate()));
     documentMap.put("active", this.getActive());
-    documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+    documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
     documentMap.put("status", journeyService.getJourneyStatus(this).getExternalRepresentation());
 
     //

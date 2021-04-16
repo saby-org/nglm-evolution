@@ -1,9 +1,10 @@
 package com.evolving.nglm.evolution.extracts;
 
-import com.evolving.nglm.evolution.Deployment;
 import org.apache.zookeeper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.Deployment;
 
 import java.io.File;
 import java.io.IOException;

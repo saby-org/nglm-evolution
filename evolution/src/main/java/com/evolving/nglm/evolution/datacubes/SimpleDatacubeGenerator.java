@@ -1,11 +1,13 @@
 package com.evolving.nglm.evolution.datacubes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -45,9 +47,9 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   * Constructor
   *
   *****************************************/
-  public SimpleDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter) 
+  public SimpleDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, int tenantID, String timeZone) 
   {
-    super(datacubeName, elasticsearch, datacubeWriter);
+    super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
   }
   
   /*****************************************
@@ -74,10 +76,10 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   *  overridable functions
   *
   *****************************************/
-  // Target every documents of the index by default, can be overriden.
-  protected QueryBuilder getSubsetQuery() 
+  // To be able to add additional filters
+  protected List<QueryBuilder> getFilterQueries() 
   {
-    return QueryBuilders.matchAllQuery();
+    return Collections.emptyList();
   }
   
   /*****************************************
@@ -115,11 +117,18 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
     }
     
     //
+    // Build query - we use filter because we don't care about score, therefore it is faster.
+    //
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    query.filter().add(QueryBuilders.termQuery("tenantID", this.tenantID)); // filter to keep only tenant related items !
+    query.filter().addAll(getFilterQueries()); // Additional filters
+    
+    //
     // Datacube request
     //
     SearchSourceBuilder datacubeRequest = new SearchSourceBuilder()
         .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-        .query(getSubsetQuery())
+        .query(query)
         .aggregation(compositeAggregation)
         .size(0);
     
@@ -167,6 +176,9 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
           filters.replace(key, UNDEFINED_BUCKET_VALUE);
         }
       }
+      
+      // Special filter: tenantID 
+      filters.put("tenantID", this.tenantID);
       
       //
       // Extract metrics

@@ -8,7 +8,6 @@
 
 package com.evolving.nglm.core;
 
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,44 +21,171 @@ import java.util.TimeZone;
 
 import org.apache.commons.lang3.time.DateUtils;
 
-import com.evolving.nglm.evolution.Deployment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RLMDateUtils
 {
-
   private static final Logger log = LoggerFactory.getLogger(RLMDateUtils.class);
 
   /*****************************************
   *
-  *  display methods
+  * date parsing & display
   *
   *****************************************/
-  
-  // SimpleDateFormat is not threadsafe. 
-  // In order to avoid instantiating the same object again an again we use a ThreadLocal static variable
-  
-  public static final ThreadLocal<DateFormat> TIMESTAMP_FORMAT = ThreadLocal.withInitial(()->{ 
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ"); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone()));  
-    return sdf;
-  });
-  
-  public static final String printTimestamp(Date date) {
-    return TIMESTAMP_FORMAT.get().format(date);
+  public enum DatePattern
+  {
+    ELASTICSEARCH_UNIVERSAL_TIMESTAMP("yyyy-MM-dd HH:mm:ss.SSSZ"),
+    REST_UNIVERSAL_TIMESTAMP_DEFAULT("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"),
+    REST_UNIVERSAL_TIMESTAMP_ALTERNATE("yyyy-MM-dd'T'HH:mm:ssXXX"),
+    LOCAL_DAY("yyyy-MM-dd");
+    private String pattern;
+    private DatePattern(String pattern) { this.pattern = pattern; }
+    public String get() { return pattern; }
   }
   
-  public static final ThreadLocal<DateFormat> DAY_FORMAT = ThreadLocal.withInitial(()->{
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    return sdf;
-  });
-  
-  public static final String printDay(Date date) {
-    return DAY_FORMAT.get().format(date);
+  /**
+   * WARNING: SimpleDateFormat is not threadsafe. Do not use it in a multi-thread context.
+   * WARNING: Avoid calling this method multiple time, do not use it as a one-line format/parse method !!
+   * In general, use the format/parse methods provided later
+   */
+  public static SimpleDateFormat createLocalDateFormat(DatePattern pattern, String timezone) {
+    SimpleDateFormat result = new SimpleDateFormat(pattern.get());
+    result.setTimeZone(TimeZone.getTimeZone(timezone));
+    return result;
   }
   
+  /*****************************************
+  *
+  * local date formats (per time-zone)
+  *
+  *****************************************/
+  // This structure start empty for every thread. SimpleDateFormat will only be instantiated when needed.
+  // The main reason for that is, we are in static code and we cannot access Deployment per tenant as 
+  // it has not been extracted yet.
+  //
+  // !REMINDER: SimpleDateFormat is not threadsafe. In order to avoid instantiating the same object
+  // again an again we use a ThreadLocal static variable.
+  //
+  // Map(TimeZone -> Map(Pattern -> Formatter))
+  private static final ThreadLocal<Map<String,Map<String,SimpleDateFormat>>> LOCAL_DATE_FORMATS = ThreadLocal.withInitial(()->{
+    return new HashMap<String,Map<String,SimpleDateFormat>>();
+  });
+  
+  private static final SimpleDateFormat getLocalDateFormat(DatePattern pattern, String timeZone) {
+    Map<String,Map<String,SimpleDateFormat>> allFormats = LOCAL_DATE_FORMATS.get();
+    if(allFormats.get(timeZone) == null) {
+      allFormats.put(timeZone, new HashMap<String,SimpleDateFormat>());
+    }
+    Map<String,SimpleDateFormat> timeZoneFormats = allFormats.get(timeZone);
+    if(timeZoneFormats.get(pattern.get()) == null) {
+      timeZoneFormats.put(pattern.get(), createLocalDateFormat(pattern, timeZone));
+    }
+    
+    return timeZoneFormats.get(pattern.get());
+  }
+
+  private static Date parseDate(String stringDate, DatePattern pattern, String timeZone) throws ParseException
+  {
+    Date result = null;
+
+    SimpleDateFormat dateFormat = getLocalDateFormat(pattern, timeZone);
+    if (stringDate != null && stringDate.trim().length() > 0)
+      {
+        result = dateFormat.parse(stringDate.trim());
+      }
+    
+    return result;
+  }
+  
+  private static String formatDate(Date date, DatePattern pattern, String timeZone)
+  {
+    SimpleDateFormat dateFormat = getLocalDateFormat(pattern, timeZone);
+    return (date != null) ? dateFormat.format(date) : null;
+  }
+
+  //
+  // Public parse & format (Day, Elasticsearch, REST, etc.)
+  //
+  public static String formatDateDay(Date date, String timeZone) { return formatDate(date, DatePattern.LOCAL_DAY, timeZone); }
+  public static Date parseDateFromDay(String stringDate, String timeZone) throws ParseException { return parseDate(stringDate, DatePattern.LOCAL_DAY, timeZone); }
+  
+  public static String formatDateForREST(Date date, String timeZone) { return formatDate(date, DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT, timeZone); }
+  public static String formatDateForElasticsearch(Date date, String timeZone) { return formatDate(date, DatePattern.ELASTICSEARCH_UNIVERSAL_TIMESTAMP, timeZone); }
+  // For the moment we will display all date in the same time-zone for ES (the "common" one that act as a default)
+  // because it is more convenient. This could be improved in the future !
+  @Deprecated 
+  public static String formatDateForElasticsearchDefault(Date date) { return formatDateForElasticsearch(date, Deployment.getDefault().getTimeZone()); }
+  
+  /*****************************************
+  *
+  * universal date PARSERS
+  *
+  *****************************************/
+  // Here we will need a parser that does not depend on Deployment settings (such as time-zone)
+  // Mainly to parse dates from Deployment.json (to avoid circular dependency) 
+  //
+  // /!\ Most of the date format are TIME-ZONE DEPENDENT, but here we will only use universal date formats. 
+  // Therefore they can be translated into a date without any time-zone consideration. 
+  // It is usually UTC date format, or a date format with a fix offset with UTC (e.g. +0200).
+  //
+  // Therefore, we do NOT NEED to specify any time-zone in the following SimpleDateFormat 
+  //
+  // !REMINDER: Usually we should NEVER use SimpleDateFormat without time-zone, but here, because 
+  // we will only PARSE string to date, and never display them, we can omit that.
+  //
+  // !REMINDER: SimpleDateFormat is not threadsafe. In order to avoid instantiating the same object
+  // again an again we use a ThreadLocal static variable.
+  //
+  // This variable is PRIVATE and should never be used outside RLMDateUtils and for anything 
+  // else but parsing strings.
+  
+  private static final ThreadLocal<List<SimpleDateFormat>> REST_UNIVERSAL_DATE_FORMATS = ThreadLocal.withInitial(()->{
+    List<SimpleDateFormat> result = new ArrayList<SimpleDateFormat>();
+    result.add(new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()));
+    result.add(new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_ALTERNATE.get()));
+    return result;
+  });
+  
+  public static final Date parseDateFromREST(String stringDate) throws ParseException {
+    List<SimpleDateFormat> formats = REST_UNIVERSAL_DATE_FORMATS.get();
+    Date result = null;
+    ParseException parseException = null;
+
+    if (stringDate == null || stringDate.trim().length() <= 0) {
+      return null;
+    }
+    String input = stringDate.trim();
+    
+    for (SimpleDateFormat format : formats)
+      {
+        try
+          {
+            result = format.parse(input);
+            parseException = null;
+          }
+        catch (ParseException e)
+          {
+            result = null;
+            parseException = e;
+          }
+        
+        if (result != null) {
+          break;
+        }
+      }
+    
+    if (parseException != null)
+      {
+        throw parseException;
+      }
+    
+    return result;
+  }
+  
+  // Here we re-use the default SimpleDateFormat for ES. But we could also do something similar to REST if a circular dependency appear.
+  public static Date parseDateFromElasticsearch(String stringDate) throws ParseException { return parseDate(stringDate, DatePattern.ELASTICSEARCH_UNIVERSAL_TIMESTAMP, Deployment.getDefault().getTimeZone()); }
+
   /*****************************************
   *
   *  utility methods
@@ -502,57 +628,6 @@ public class RLMDateUtils
     return result;
   }
 
-  /*****************************************
-  *
-  *  parseDate
-  *
-  *****************************************/
-
-  public static Date parseDate(String stringDate, String format, String timeZone)
-  {
-    Date result = null;
-    try
-      {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(format);
-        dateFormat.setTimeZone(TimeZone.getTimeZone(timeZone));
-        if (stringDate != null && stringDate.trim().length() > 0)
-          {
-            result = dateFormat.parse(stringDate.trim());
-          }
-      }
-    catch (ParseException e)
-      {
-        throw new ServerRuntimeException("parseDateField", e);
-      }
-    return result;
-  }
-  
-  /*****************************************
-  *
-  *  parseDate
-  *
-  *****************************************/
-
-  public static Date parseDate(String stringDate, String format, String timeZone, boolean lenient)
-  {
-    Date result = null;
-    try
-      {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(format);
-        dateFormat.setLenient(lenient);
-        dateFormat.setTimeZone(TimeZone.getTimeZone(timeZone));
-        if (stringDate != null && stringDate.trim().length() > 0)
-          {
-            result = dateFormat.parse(stringDate.trim());
-          }
-      }
-    catch (ParseException e)
-      {
-        throw new ServerRuntimeException("parseDateField", e);
-      }
-    return result;
-  }
-  
   /*****************************************
   *
   *  calendars pool

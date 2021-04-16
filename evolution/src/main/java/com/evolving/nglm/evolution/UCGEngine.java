@@ -252,7 +252,7 @@ public class UCGEngine
     CronFormat ucgEvaluation = null;
     try
       {
-        ucgEvaluation = new CronFormat(Deployment.getUCGEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getSystemTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        ucgEvaluation = new CronFormat(Deployment.getUCGEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
       }
     catch (UtilitiesException e)
       {

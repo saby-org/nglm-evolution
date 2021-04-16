@@ -15,8 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -67,7 +67,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
             Object subscriberIDField = journeyStats.get(subscriberID);
             journeyInfo.put(customerID, subscriberIDField);
           }
-        for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+        for (AlternateID alternateID : DeploymentCommon.getAlternateIDs().values())
           {
             if (journeyStats.get(alternateID.getID()) != null)
               {
@@ -111,7 +111,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
         journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
         journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
-        for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
+        for (JourneyMetricDeclaration journeyMetricDeclaration : DeploymentCommon.getJourneyMetricConfiguration().getMetrics().values())
           {
             journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
             journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
@@ -170,7 +170,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     String esIndexJourney = args[1];
     String csvfile = args[2];
     
-    journeyService = new JourneyService(Deployment.getBrokerServers(), "JourneyCustomerStatisticsReportMultithread-journeyservice-JourneyCustomerStatisticsReportMultithread", Deployment.getJourneyTopic(), false);
+    journeyService = new JourneyService(DeploymentCommon.getBrokerServers(), "JourneyCustomerStatisticsReportMultithread-journeyservice-JourneyCustomerStatisticsReportMultithread", DeploymentCommon.getJourneyTopic(), false);
     journeyService.start();
 
     try {

@@ -127,7 +127,7 @@ public class JourneyRewardsMap
   }
   
   private void pushInMapping(String journeyID, DatacubeWriter datacubeWriter) throws ElasticsearchException, IOException {
-    String timestamp = RLMDateUtils.printTimestamp(SystemTime.getCurrentTime());
+    String timestamp = RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime());
     
     List<UpdateRequest> list = new LinkedList<UpdateRequest>();
     for(String reward: this.rewards) {

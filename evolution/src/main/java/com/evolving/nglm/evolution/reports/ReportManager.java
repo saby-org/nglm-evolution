@@ -43,10 +43,10 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CriterionContext;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.DynamicCriterionFieldService;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.LoggerInitialization;
@@ -72,7 +72,7 @@ public class ReportManager implements Watcher
   protected static String zkHostList;
   protected static String brokerServers;
   protected static String esNode;
-  protected DateFormat dfrm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z z");
+  protected DateFormat dfrm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z z");   // TODO EVPRO-99
   private static ReportManagerStatistics reportManagerStatistics;
   private ReportService reportService = null;
   private boolean gotSessionExpired;
@@ -573,14 +573,14 @@ public class ReportManager implements Watcher
         SimpleDateFormat sdf;
         try
           {
-            sdf = new SimpleDateFormat(dateFormat);
+            sdf = new SimpleDateFormat(dateFormat);    // TODO EVPRO-99
           } 
         catch (IllegalArgumentException e)
           {
             log.error("Config error : date format " + dateFormat + " is invalid, using default" + e.getLocalizedMessage(), e);
-            sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
+            sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...    // TODO EVPRO-99
           }
-        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         String fileSuffix = sdf.format(reportGenerationDate);
         String csvFilename = "" + outputPath + File.separator + reportName + "_" + fileSuffix + "." + fileExtension;
         log.trace("csvFilename = " + csvFilename);

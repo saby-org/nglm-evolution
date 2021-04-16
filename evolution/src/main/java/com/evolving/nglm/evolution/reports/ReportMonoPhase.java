@@ -46,7 +46,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.JourneyService;
@@ -580,7 +581,7 @@ public class ReportMonoPhase
     Entry<String, QueryBuilder> indexEntry = esIndex.entrySet().iterator().next();
     String indexList = indexEntry.getKey(); // this is in lowercase...
     QueryBuilder query = indexEntry.getValue();
-    int maxParallelThreads = Deployment.getJourneysReportMaxParallelThreads();
+    int maxParallelThreads = DeploymentCommon.getJourneysReportMaxParallelThreads();
     try {
       elasticsearchReaderClient = getESAPI(esNode);    // used by getIndices()
       String[] indicesToRead = getIndices(indexList);

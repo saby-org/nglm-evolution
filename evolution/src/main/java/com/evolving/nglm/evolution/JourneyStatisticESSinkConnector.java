@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -158,6 +159,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("journeyID", journeyStatistic.getJourneyID());
       documentMap.put("subscriberID", journeyStatistic.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(journeyStatistic.getAlternateIDs(), documentMap);
+      documentMap.put("tenantID", journeyStatistic.getTenantID());
       documentMap.put("transitionDate", journeyStatistic.getTransitionDate());
       documentMap.put("nodeHistory", journeyNodeTrunc);
       documentMap.put("statusHistory", journeyStatus);
@@ -171,9 +173,9 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
       documentMap.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
       documentMap.put("conversionCount", journeyStatistic.getConversionCount());
-      documentMap.put("lastConversionDate", journeyStatistic.getLastConversionDate() != null ? RLMDateUtils.printTimestamp(journeyStatistic.getLastConversionDate()) : null);
+      documentMap.put("lastConversionDate", journeyStatistic.getLastConversionDate() != null ? RLMDateUtils.formatDateForElasticsearchDefault(journeyStatistic.getLastConversionDate()) : null);
       documentMap.put("journeyComplete", journeyStatistic.getJourneyComplete());
-      documentMap.put("journeyExitDate", (journeyStatistic.getJourneyExitDate() != null)? RLMDateUtils.printTimestamp(journeyStatistic.getJourneyExitDate()) : null);
+      documentMap.put("journeyExitDate", (journeyStatistic.getJourneyExitDate() != null)? RLMDateUtils.formatDateForElasticsearchDefault(journeyStatistic.getJourneyExitDate()) : null);
       
       documentMap.put("nodeID", journeyStatistic.getToNodeID());
       if(journeyStatistic.getSpecialExitStatus() != null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty()) {

@@ -24,6 +24,7 @@ import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
@@ -366,8 +367,8 @@ public abstract class Expression
             break;
 
           case DateExpression:
-            DateFormat scriptDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-            script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");
+            DateFormat scriptDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
+            script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");   // TODO EVPRO-99
             script.append("def rightDT_" + getNodeID() + " = rightSF_" + getNodeID() + ".parse(\"" + scriptDateFormat.format((Date) constant) + "\"); ");
             script.append("def rightCalendar_" + getNodeID() + " = rightSF_" + getNodeID() + ".getCalendar(); ");
             script.append("rightCalendar_" + getNodeID() + ".setTime(rightDT_" + getNodeID() + "); ");
@@ -556,22 +557,22 @@ public abstract class Expression
                 case Instant:
                   break;
                 case Minute:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MINUTE, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MINUTE, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getTimeZone());
                   break;
                 case Hour:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.HOUR, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.HOUR, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getTimeZone());
                   break;
                 case Day:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DATE, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DATE, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getTimeZone());
                   break;
                 case Week:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DAY_OF_WEEK, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.DAY_OF_WEEK, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getTimeZone());
                   break;
                 case Month:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MONTH, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.MONTH, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getTimeZone());
                   break;
                 case Year:
-                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.YEAR, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getBaseTimeZone());
+                  referenceValue = RLMDateUtils.truncate((Date) referenceValue, Calendar.YEAR, Deployment.getDeployment(subscriberEvaluationRequest.getTenantID()).getTimeZone());
                   break;
               }
             break;
@@ -635,7 +636,7 @@ public abstract class Expression
           case DateExpression:
             script.append("def right_" + getNodeID() + "; ");
             script.append("if (doc." + esField + ".size() != 0) { ");
-            script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");
+            script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");   // TODO EVPRO-99
             script.append("def rightMillis_" + getNodeID() + " = doc." + esField + ".value.getMillis(); ");
             script.append("def rightCalendar_" + getNodeID() +" = rightSF_" + getNodeID() + ".getCalendar(); ");
             script.append("rightCalendar_" + getNodeID() + ".setTimeInMillis(rightMillis_" + getNodeID() + "); ");
@@ -2456,10 +2457,10 @@ public abstract class Expression
       *
       *****************************************/
 
-      DateFormat standardDayFormat = new SimpleDateFormat("yyyy-MM-dd");
-      DateFormat standardDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-      standardDayFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
-      standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getBaseTimeZone()));
+      DateFormat standardDayFormat = new SimpleDateFormat("yyyy-MM-dd");   // TODO EVPRO-99
+      DateFormat standardDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");   // TODO EVPRO-99
+      standardDayFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+      standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
       Date date = null;
       if (date == null) try { date = standardDateFormat.parse(arg.trim()); } catch (ParseException e) { }
       if (date == null) try { date = standardDayFormat.parse(arg.trim()); } catch (ParseException e) { }
@@ -2476,22 +2477,22 @@ public abstract class Expression
           case Instant:
             break;
           case Minute:
-            date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getDeployment(tenantID).getTimeZone());
             break;
           case Hour:
-            date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getDeployment(tenantID).getTimeZone());
             break;
           case Day:
-            date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
             break;
           case Week:
-            date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
             break;
           case Month:
-            date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
             break;
           case Year:
-            date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getDeployment(tenantID).getTimeZone());
             break;
         }
       
@@ -2553,22 +2554,22 @@ public abstract class Expression
             case Instant:
               break;
             case Minute:
-              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Hour:
-              date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Day:
-              date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Week:
-              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Month:
-              date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Year:
-              date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getDeployment(tenantID).getTimeZone());
               break;
           }
         }
@@ -2586,16 +2587,16 @@ public abstract class Expression
             date = RLMDateUtils.addHours(date, number.intValue());
             break;
           case Day:
-            date = RLMDateUtils.addDays(date, number.intValue(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.addDays(date, number.intValue(), Deployment.getDeployment(tenantID).getTimeZone());
             break;
           case Week:
-            date = RLMDateUtils.addWeeks(date, number.intValue(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.addWeeks(date, number.intValue(), Deployment.getDeployment(tenantID).getTimeZone());
             break;
           case Month:
-            date = RLMDateUtils.addMonths(date, number.intValue(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.addMonths(date, number.intValue(), Deployment.getDeployment(tenantID).getTimeZone());
             break;
           case Year:
-            date = RLMDateUtils.addYears(date, number.intValue(), Deployment.getDeployment(tenantID).getBaseTimeZone());
+            date = RLMDateUtils.addYears(date, number.intValue(), Deployment.getDeployment(tenantID).getTimeZone());
             break;
         }
       
@@ -2609,22 +2610,22 @@ public abstract class Expression
             case Instant:
               break;
             case Minute:
-              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Hour:
-              date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.HOUR, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Day:
-              date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Week:
-              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Month:
-              date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
               break;
             case Year:
-              date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              date = RLMDateUtils.truncate(date, Calendar.YEAR, Deployment.getDeployment(tenantID).getTimeZone());
               break;
           }
         }
@@ -2745,15 +2746,15 @@ public abstract class Expression
               int hh = Integer.parseInt(args[0]);
               int mm = Integer.parseInt(args[1]);
               int ss = Integer.parseInt(args[2]);
-              if (RLMDateUtils.truncatedEquals(nextDayDate, dateAddDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone()))
+              if (RLMDateUtils.truncatedEquals(nextDayDate, dateAddDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone()))
                 {
                   //
                   //  expected exit time of nextDayDate
                   //
                   
-                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getTimeZone());
                   
                   if (nextDayDate.before(dateAddDate))
                     {
@@ -2761,7 +2762,7 @@ public abstract class Expression
                       //  go to next day
                       //
                       
-                      nextDayDate = RLMDateUtils.addDays(nextDayDate, 7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                      nextDayDate = RLMDateUtils.addDays(nextDayDate, 7, Deployment.getDeployment(tenantID).getTimeZone());
                     }
                   watingDates.add(nextDayDate);
                 }
@@ -2772,9 +2773,9 @@ public abstract class Expression
                   //
                   
                   Date expectedDate = nextDayDate;
-                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getBaseTimeZone());
-                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getTimeZone());
                   watingDates.add(expectedDate);
                 }
             }
@@ -2786,15 +2787,15 @@ public abstract class Expression
           int mm = Integer.parseInt(args[1]);
           int ss = Integer.parseInt(args[2]);
           Date now = SystemTime.getCurrentTime();
-          if (RLMDateUtils.truncatedEquals(now, dateAddDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone()))
+          if (RLMDateUtils.truncatedEquals(now, dateAddDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone()))
             {
               //
               //  expected exit time of today
               //
               
-              now = RLMDateUtils.setField(now, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getBaseTimeZone());
-              now = RLMDateUtils.setField(now, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getBaseTimeZone());
-              now = RLMDateUtils.setField(now, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getTimeZone());
               
               if (now.before(dateAddDate))
                 {
@@ -2802,7 +2803,7 @@ public abstract class Expression
                   //  go to next day
                   //
                   
-                  now = RLMDateUtils.addDays(now, 1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+                  now = RLMDateUtils.addDays(now, 1, Deployment.getDeployment(tenantID).getTimeZone());
                 }
               watingDates.add(now);
             }
@@ -2813,9 +2814,9 @@ public abstract class Expression
               //
               
               Date expectedDate = now;
-              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getBaseTimeZone());
-              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getBaseTimeZone());
-              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getBaseTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getDeployment(tenantID).getTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getDeployment(tenantID).getTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getDeployment(tenantID).getTimeZone());
               watingDates.add(expectedDate);
             }
         }
@@ -2841,18 +2842,18 @@ public abstract class Expression
     private Date getNextDayDate(Date now, int dayOfWeek, int tenantID)
     {
       Date tempDate = now;
-      if (dayOfWeek == RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone())) 
+      if (dayOfWeek == RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone())) 
         {
           return now;
         }
-      else if(dayOfWeek < RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getBaseTimeZone()))
+      else if(dayOfWeek < RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone()))
         {
-          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getDeployment(tenantID).getBaseTimeZone());
-          tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getDeployment(tenantID).getTimeZone());
+          tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getDeployment(tenantID).getTimeZone());
         }
       else 
         {
-          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getDeployment(tenantID).getTimeZone());
         }
       return tempDate;
     }
@@ -2872,27 +2873,27 @@ public abstract class Expression
         case DaysUntilFunction:
           // RLMDateUtils.daysBetween() is always >=0
           if (now.before(date))
-            res = RLMDateUtils.daysBetween(now, date, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            res = RLMDateUtils.daysBetween(now, date, Deployment.getDeployment(tenantID).getTimeZone());
           else
-            res = -RLMDateUtils.daysBetween(date, now, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            res = -RLMDateUtils.daysBetween(date, now, Deployment.getDeployment(tenantID).getTimeZone());
           break;
         case MonthsUntilFunction:
           if (now.before(date))
-            res = RLMDateUtils.monthsBetween(now, date, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            res = RLMDateUtils.monthsBetween(now, date, Deployment.getDeployment(tenantID).getTimeZone());
           else
-            res = -RLMDateUtils.monthsBetween(date, now, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            res = -RLMDateUtils.monthsBetween(date, now, Deployment.getDeployment(tenantID).getTimeZone());
           break;
         case DaysSinceFunction:
           if (date.before(now))
-            res = RLMDateUtils.daysBetween(date, now, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            res = RLMDateUtils.daysBetween(date, now, Deployment.getDeployment(tenantID).getTimeZone());
           else
-            res = -RLMDateUtils.daysBetween(now, date, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            res = -RLMDateUtils.daysBetween(now, date, Deployment.getDeployment(tenantID).getTimeZone());
           break;
         case MonthsSinceFunction:
           if (date.before(now))
-            res = RLMDateUtils.monthsBetween(date, now, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            res = RLMDateUtils.monthsBetween(date, now, Deployment.getDeployment(tenantID).getTimeZone());
           else
-            res = -RLMDateUtils.monthsBetween(now, date, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            res = -RLMDateUtils.monthsBetween(now, date, Deployment.getDeployment(tenantID).getTimeZone());
           break;
         default:
           throw new ExpressionEvaluationException();
@@ -3049,8 +3050,8 @@ public abstract class Expression
       *
       ****************************************/
       
-      script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss\"); ");
-      script.append("rightSF_" + getNodeID() + ".setTimeZone(TimeZone.getTimeZone(\"" + Deployment.getDeployment(tenantID).getBaseTimeZone() + "\")); ");
+      script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss\"); ");   // TODO EVPRO-99
+      script.append("rightSF_" + getNodeID() + ".setTimeZone(TimeZone.getTimeZone(\"" + Deployment.getDeployment(tenantID).getTimeZone() + "\")); ");
       script.append("def rightDT_" + getNodeID() + " = rightSF_" + getNodeID() + ".parse(right_" + arguments.get(0).getNodeID() + "); ");
       script.append("def rightCalendar_" + getNodeID() + " = rightSF_" + getNodeID() + ".getCalendar(); ");
       script.append("rightCalendar_" + getNodeID() + ".setTime(rightDT_" + getNodeID() + "); ");

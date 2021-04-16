@@ -16,6 +16,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberTrace;
@@ -234,7 +235,7 @@ public class SubscriberState implements StateStore
   {
     this.ucgRuleID = ucgState.getUCGRuleID();
     this.ucgEpoch = ucgState.getRefreshEpoch();
-    this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getBaseTimeZone());
+    this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
   }
 
   /*****************************************

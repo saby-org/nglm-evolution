@@ -10,7 +10,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
@@ -75,7 +77,7 @@ public class VoucherService extends GUIService {
 
   public VoucherService(String bootstrapServers, String groupID, String voucherTopic, boolean masterService, VoucherListener voucherListener, boolean notifyOnSignificantChange, ElasticsearchClientAPI elasticsearch, UploadedFileService uploadedFileService) {
     super(bootstrapServers, "voucherService", groupID, voucherTopic, masterService, getSuperListener(voucherListener), "putVoucher", "removeVoucher", notifyOnSignificantChange);
-    this.voucherPersonalESService = new VoucherPersonalESService(elasticsearch,masterService,com.evolving.nglm.core.Deployment.getElasticsearchLiveVoucherShards(),com.evolving.nglm.core.Deployment.getElasticsearchLiveVoucherReplicas());
+    this.voucherPersonalESService = new VoucherPersonalESService(elasticsearch,masterService,Deployment.getElasticsearchLiveVoucherShards(),Deployment.getElasticsearchLiveVoucherReplicas());
     this.uploadedFileService = uploadedFileService;
 
     if(masterService){
@@ -204,7 +206,7 @@ public class VoucherService extends GUIService {
     }
 
     // this is a bulk delete of all vouchers a while after expiryDate is past, clean up of ES
-    Date expiryDate=EvolutionUtilities.addTime(now,-1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getDeployment(tenantID).getBaseTimeZone());
+    Date expiryDate=EvolutionUtilities.addTime(now,-1 * Deployment.getDeployment(tenantID).getElasticsearchRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getDeployment(tenantID).getTimeZone());
     // safety
     if(now.before(expiryDate)){
       log.error("VoucherPersonalESService-cleanUpExpiredVouchers : bug, expiryDate for cleanup is after now !! "+now+" vs "+expiryDate);
@@ -320,7 +322,7 @@ public class VoucherService extends GUIService {
       final String voucherID=voucher.getVoucherID();
       final String fileID=voucherFile.getFileId();
       Date voucherExpiryDate=voucherFile.getExpiryDate()!=null?voucherFile.getExpiryDate():voucherFile.getRelativeLatestExpiryDate();
-      String esVoucherExpiryDate=VoucherPersonalES.getESFormatedDate(VoucherPersonalES.ES_FIELDS.expiryDate,voucherExpiryDate);
+      String esVoucherExpiryDate=RLMDateUtils.formatDateForElasticsearchDefault(voucherExpiryDate);
 
       // do we have to update expiry date ? Do it before importing file
       if(expiryDateChanged){
@@ -432,7 +434,7 @@ public class VoucherService extends GUIService {
           int totalNbVouchersAdded=0;
           int nbOfLines=0;
           BufferedReader reader;
-          Date expiryDate = VoucherPersonalES.getDateFromESDateFormated(VoucherPersonalES.ES_FIELDS.expiryDate,job.getExpiryDate(), uploadedFile.getTenantID());
+          Date expiryDate = VoucherPersonalES.parseVoucherDate(job.getExpiryDate());
           boolean alreadyExpired=expiryDate.before(SystemTime.getCurrentTime());
           try{
             List<VoucherPersonalES> vouchersToAdd = new ArrayList<VoucherPersonalES>();

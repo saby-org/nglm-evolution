@@ -1,6 +1,8 @@
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import org.apache.kafka.connect.data.*;
 import org.json.simple.JSONObject;
@@ -72,7 +74,7 @@ public class VoucherFile {
     // if no expiryDate coming from GUI with file, we have a relative expiryDate from voucherType expiryPeriod
     // this is just an attempt to give smallest expiry period before biggest (we order ES request by date)
     // but note, we wont keep that behavior consistent if VoucherType expiry period is modified, this is too much complexity to track this change
-    this.relativeLatestExpiryDate = EvolutionUtilities.addTime(voucher.getEffectiveEndDate(),voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getDeployment(tenantID).getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown:EvolutionUtilities.RoundingSelection.NoRound);
+    this.relativeLatestExpiryDate = EvolutionUtilities.addTime(voucher.getEffectiveEndDate(),voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getDeployment(tenantID).getTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown:EvolutionUtilities.RoundingSelection.NoRound);
   }
 
   @Override

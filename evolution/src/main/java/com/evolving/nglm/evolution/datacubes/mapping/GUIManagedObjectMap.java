@@ -12,6 +12,11 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.GUIManagedObject;
 
+/**
+ * Create a Map of all GUIManagedObject of a certain type in the system.
+ *  - for all tenant - for the moment (this could be changed later)
+ *  - even the archived items
+ */
 public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
 {
   private static final Logger log = LoggerFactory.getLogger(GUIManagedObjectMap.class);
@@ -85,7 +90,7 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   {
     this.reset();
     
-    for(GUIManagedObject object : getCollection(0)) // TODO EVPRO-99 do we need to split per tenant ?? ??
+    for(GUIManagedObject object : getCollection(0)) // For all tenants
       {
         if(this.typeOfT.isInstance(object))
           {

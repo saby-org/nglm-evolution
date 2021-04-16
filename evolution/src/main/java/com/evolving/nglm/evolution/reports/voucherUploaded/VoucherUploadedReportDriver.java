@@ -3,7 +3,6 @@ package com.evolving.nglm.evolution.reports.voucherUploaded;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
