@@ -14,6 +14,8 @@ import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 
 
 public class BDRSinkConnector extends SimpleESSinkConnector
@@ -94,7 +96,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       return (BonusDelivery) DeploymentCommon.getDeliveryManagers().get(type).getRequestSerde().unpack(new SchemaAndValue(commodityValueSchema, commodityValue));
 
     }
-    
+
     /*****************************************
     *
     *  getDocumentMap

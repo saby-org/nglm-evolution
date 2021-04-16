@@ -84,7 +84,9 @@
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
   "ESRetentionDaysVDR"              : 45,
-  
+  "comment": "WARNING: here it is in week",
+  "ESRetentionWeeksDatacubeJourneys": 3,
+
   "connectTask": {
 		"default": {
 			"initialWait": 50,
@@ -95,6 +97,7 @@
 			"retries": 19
 		}
   },
+
 
   "hourlyReportCronEntryString"   : "0 * * * *",
   "dailyReportCronEntryString"    : "5 2 * * *",

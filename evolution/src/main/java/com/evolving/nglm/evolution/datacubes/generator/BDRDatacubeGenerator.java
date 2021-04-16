@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -63,7 +65,9 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   private JourneysMap journeysMap;
 
   private boolean hourlyMode;
-  private String targetDay;
+  private String targetWeek;
+  private Date targetWindowStart;
+  private Date targetWindowEnd;
   private String targetTimestamp;
 
   /*****************************************
@@ -121,8 +125,8 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Elasticsearch indices settings
   *
   *****************************************/
-  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDay); }
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
+  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetWeek); }
 
   /*****************************************
   *
@@ -257,7 +261,9 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetDay = this.printDay(yesterday);
+    this.targetWeek = RLMDateUtils.printISOWeek(yesterday);
+    this.targetWindowStart = beginningOfYesterday;
+    this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = this.printTimestamp(endOfYesterday);
 
     //
@@ -286,7 +292,9 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetDay = this.printDay(now);
+    this.targetWeek = RLMDateUtils.printISOWeek(now);
+    this.targetWindowStart = beginningOfToday;
+    this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = this.printTimestamp(endOfToday);
 
     //
@@ -308,14 +316,17 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone());
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());        // 00:00:00.000
-    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                     // 23:59:59.999
+    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
     
     //
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetDay = this.printDay(yesterday);
+    this.targetWeek = RLMDateUtils.printISOWeek(yesterday);
+    this.targetWindowStart = beginningOfYesterday;
+    this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = this.printTimestamp(endOfYesterday);
 
     //
@@ -337,14 +348,17 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());        // 00:00:00.000
-    Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                              // 23:59:59.999
+    Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
     
     //
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetDay = this.printDay(now);
+    this.targetWeek = RLMDateUtils.printISOWeek(now);
+    this.targetWindowStart = beginningOfToday;
+    this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = this.printTimestamp(endOfToday);
 
     //

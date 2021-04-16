@@ -22,6 +22,7 @@ import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.MetricHistory;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeManager;
+import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
@@ -45,6 +46,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   private SegmentationDimensionsMap segmentationDimensionList;
   private JourneysMap journeysMap;
   private JourneyRewardsMap journeyRewardsList;
+  private JourneyService journeyService;
   
   private String journeyID;
   private Date publishDate;
@@ -61,6 +63,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);
     this.journeyRewardsList = new JourneyRewardsMap(elasticsearch);
+    this.journeyService = journeyService;
     
     //
     // Filter fields
@@ -90,7 +93,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   
   @Override protected String getDatacubeESIndex() 
   { 
-    return DATACUBE_ES_INDEX_PREFIX(this.tenantID) + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID);
+    return DATACUBE_ES_INDEX_PREFIX(this.tenantID) + DatacubeUtils.retrieveJourneyEndWeek(this.journeyID, this.journeyService);
   }
 
   /*****************************************

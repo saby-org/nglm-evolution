@@ -29,23 +29,21 @@ public class BDRReportDriver extends ReportDriver
   }
 
   @Override
-  public List<FilterObject> reportFilters() {
-	  List<FilterObject> result = new ArrayList<>();
-	  
-	  result.add(new FilterObject(BDRReportMonoPhase.moduleName,         ColumnType.MULTIPLE_STRING, new String[] {"Journey_Manager", "Loyalty_Program"}));
-	  result.add(new FilterObject(BDRReportMonoPhase.deliverableDisplay, ColumnType.MULTIPLE_STRING, new String[] {"OnNetMinutes"}));
-	  
-	  
-	  return result;
+  public List<FilterObject> reportFilters()
+  {
+    List<FilterObject> result = new ArrayList<>();
+    result.add(new FilterObject(BDRReportMonoPhase.moduleName, ColumnType.MULTIPLE_STRING, new String[] { "Journey_Manager", "Loyalty_Program" }));
+    result.add(new FilterObject(BDRReportMonoPhase.deliverableDisplay, ColumnType.MULTIPLE_STRING, new String[] { "OnNetMinutes" }));
+    return result;
   }
-@Override
-public List<String> reportHeader() {
-	List<String> result = new ArrayList<>();
-	  
-	  result.add(BDRReportMonoPhase.moduleName);
-	  result.add(BDRReportMonoPhase.deliverableDisplay);
-	  
-	  return result;
-}
+
+  @Override
+  public List<String> reportHeader()
+  {
+    List<String> result = new ArrayList<>();
+    result.add(BDRReportMonoPhase.moduleName);
+    result.add(BDRReportMonoPhase.deliverableDisplay);
+    return result;
+  }
 
 }

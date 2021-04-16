@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
@@ -48,6 +49,12 @@ public class VDRSinkConnector extends SimpleESSinkConnector
       Object voucherChangeValue = sinkRecord.value();
       Schema voucherChangeValueSchema = sinkRecord.valueSchema();
       return VoucherChange.unpack(new SchemaAndValue(voucherChangeValueSchema, voucherChangeValue));
+    }
+    
+    @Override
+    protected String getDocumentIndexName(VoucherChange voucherChange)
+    {
+      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(voucherChange.getEventDate());
     }
 
     @Override public Map<String,Object> getDocumentMap(VoucherChange voucherChange)

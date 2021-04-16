@@ -26,6 +26,7 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeManager;
+import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -50,6 +51,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   private List<String> basicFilterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
   private JourneysMap journeysMap;
+  private JourneyService journeyService;
   
   private String journeyID;
   private Date publishDate;
@@ -67,6 +69,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);
+    this.journeyService = journeyService;
     
     //
     // Filter fields
@@ -100,7 +103,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
 
   @Override protected String getDatacubeESIndex() 
   { 
-    return DATACUBE_ES_INDEX_PREFIX(this.tenantID) + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID); 
+    return DATACUBE_ES_INDEX_PREFIX(this.tenantID) + DatacubeUtils.retrieveJourneyEndWeek(this.journeyID, this.journeyService);
   }
 
   /*****************************************
@@ -294,7 +297,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
     this.publishDate = publishDate;
 
     Date tomorrow = RLMDateUtils.addDays(publishDate, 1, this.getTimeZone());
-    // Dates: YYYY-MM-dd 00:00:00.000
+    // Dates: yyyy-MM-dd 00:00:00.000
     Date beginningOfToday = RLMDateUtils.truncate(publishDate, Calendar.DATE, this.getTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
     this.metricTargetDayStart = beginningOfToday;

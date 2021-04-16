@@ -243,9 +243,11 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysJourneys;
   private static int elasticsearchRetentionDaysCampaigns;
   private static int elasticsearchRetentionDaysBulkCampaigns;
+  private static int elasticsearchRetentionWeeksDatacubeJourneys;
   
   private static Map<String, ConnectTaskConfiguration> connectTask = new HashMap<>();
   private static ConnectTaskConfiguration connectTaskConfigDefault;
+  
   
   //
   // Kafka
@@ -512,6 +514,8 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
+  public static int getElasticsearchRetentionWeeksDatacubeJourneys() { return elasticsearchRetentionWeeksDatacubeJourneys; }
+
   //
   // Kafka
   //
@@ -790,6 +794,8 @@ public class DeploymentCommon
     elasticsearchRetentionDaysJourneys = jsonReader.decodeInteger("ESRetentionDaysJourneys");
     elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
     elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
+    elasticsearchRetentionWeeksDatacubeJourneys = jsonReader.decodeInteger("ESRetentionWeeksDatacubeJourneys");
+
 
     // journeyMetricDeclarations
     DeploymentJSONReader journeyMetricConfigurationJsonReader = jsonReader.get("journeyMetrics");

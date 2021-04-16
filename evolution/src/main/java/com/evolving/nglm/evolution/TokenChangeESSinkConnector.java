@@ -49,6 +49,12 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
       Schema tokenChangeValueSchema = sinkRecord.valueSchema();
       return TokenChange.unpack(new SchemaAndValue(tokenChangeValueSchema, tokenChangeValue));
     }
+    
+    @Override
+    protected String getDocumentIndexName(TokenChange tokenChange)
+    {
+      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(tokenChange.getEventDate());
+    }
 
     @Override public Map<String,Object> getDocumentMap(TokenChange tokenChange)
     {

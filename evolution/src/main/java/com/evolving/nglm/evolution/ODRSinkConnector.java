@@ -118,7 +118,18 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       Schema purchaseManagerValueSchema = sinkRecord.valueSchema();
       return PurchaseFulfillmentRequest.unpack(new SchemaAndValue(purchaseManagerValueSchema, purchaseManagertValue)); 
     }
+
+    /*****************************************
+    *
+    *  getDocumentIndexName
+    *
+    *****************************************/
     
+    @Override
+    protected String getDocumentIndexName(PurchaseFulfillmentRequest purchaseManager)
+    {
+      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(purchaseManager.getEventDate());
+    }
     
     /*****************************************
     *

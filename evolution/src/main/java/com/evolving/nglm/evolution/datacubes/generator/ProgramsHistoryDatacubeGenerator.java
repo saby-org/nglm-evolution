@@ -449,7 +449,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone());
     Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
     
-    // Dates: YYYY-MM-dd 00:00:00.000
+    // Dates: yyyy-MM-dd 00:00:00.000
     Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
@@ -480,7 +480,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
     Date afterTomorrow = RLMDateUtils.addDays(now, 2, this.getTimeZone());
     
-    // Dates: YYYY-MM-dd 00:00:00.000
+    // Dates: yyyy-MM-dd 00:00:00.000
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
     Date beginningDayAfterTomorrow = RLMDateUtils.truncate(afterTomorrow, Calendar.DATE, this.getTimeZone());

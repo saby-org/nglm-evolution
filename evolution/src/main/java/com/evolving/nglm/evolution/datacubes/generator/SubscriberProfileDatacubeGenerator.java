@@ -239,9 +239,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone());
     Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
     
-    // Dates: YYYY-MM-dd 00:00:00.000
+    // Dates: yyyy-MM-dd 00:00:00.000
     Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
-    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone()); 
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
 
     this.metricTargetDay = this.printDay(yesterday);
@@ -271,7 +271,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone());
     Date twodaysafter = RLMDateUtils.addDays(now, 2, this.getTimeZone());
 
-    // Dates: YYYY-MM-dd 00:00:00.000
+    // Dates: yyyy-MM-dd 00:00:00.000
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());
     Date beginningOfTwodaysafter = RLMDateUtils.truncate(twodaysafter, Calendar.DATE, this.getTimeZone());
