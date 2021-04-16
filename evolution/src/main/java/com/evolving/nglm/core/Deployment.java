@@ -102,8 +102,6 @@ public class Deployment extends DeploymentCommon
   public String getLanguageID() { return baseLanguageID; }
   public String getCountry() { return country; }
   
-  private static Map<String, ConnectTaskConfiguration> connectTask = new HashMap<>();
-  private static ConnectTaskConfiguration connectTaskConfigDefault;
   //
   // Elasticsearch
   //
@@ -222,29 +220,5 @@ public class Deployment extends DeploymentCommon
         EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile(tenantID), tenantID);
         getJourneyUniversalEligibilityCriteria().add(evaluationCriterion);                  
       }
-  }
-
-  public static int getConnectTaskInitialWait(String connectorName)
-  {
-    int res;
-    ConnectTaskConfiguration connectTaskConfig = connectTask.get(connectorName);
-    if (connectTaskConfig != null) {
-      res = connectTaskConfig.getInitialWait();
-    } else {
-      res = connectTaskConfigDefault.getInitialWait();
-    }
-    return res;
-  }
-
-  public static int getConnectTaskRetries(String connectorName)
-  {
-    int res;
-    ConnectTaskConfiguration connectTaskConfig = connectTask.get(connectorName);
-    if (connectTaskConfig != null) {
-      res = connectTaskConfig.getRetries();
-    } else {
-      res = connectTaskConfigDefault.getRetries();
-    }
-    return res;
   }
 }

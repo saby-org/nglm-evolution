@@ -28,6 +28,7 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.CallingChannelProperty;
 import com.evolving.nglm.evolution.CatalogCharacteristicUnit;
 import com.evolving.nglm.evolution.CommunicationChannel;
@@ -242,6 +243,10 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysJourneys;
   private static int elasticsearchRetentionDaysCampaigns;
   private static int elasticsearchRetentionDaysBulkCampaigns;
+  
+  private static Map<String, ConnectTaskConfiguration> connectTask = new HashMap<>();
+  private static ConnectTaskConfiguration connectTaskConfigDefault;
+  
   //
   // Kafka
   //
@@ -807,6 +812,24 @@ public class DeploymentCommon
       } else {
         journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
       }
+    }
+    
+    try
+    {
+      //  connectTask
+      JSONObject connectTaskJSON = jsonReader.decodeJSONObject("connectTask");
+      for (Object key : connectTaskJSON.keySet()) {
+        connectTask.put((String) key, new ConnectTaskConfiguration((JSONObject) connectTaskJSON.get(key)));
+      }
+      connectTaskConfigDefault = connectTask.get("default");
+      if (connectTaskConfigDefault == null) {
+        log.info("connectTask section has no \"default\", using hard-coded values");
+        connectTaskConfigDefault = new ConnectTaskConfiguration(50, 8);
+      }
+    }
+  catch (JSONUtilitiesException e)
+    {
+      throw new ServerRuntimeException("deployment", e);
     }
     
     //
@@ -1631,6 +1654,30 @@ public class DeploymentCommon
           }
       }
     return supportedLanguageID;
+  }
+  
+  public static int getConnectTaskInitialWait(String connectorName)
+  {
+    int res;
+    ConnectTaskConfiguration connectTaskConfig = connectTask.get(connectorName);
+    if (connectTaskConfig != null) {
+      res = connectTaskConfig.getInitialWait();
+    } else {
+      res = connectTaskConfigDefault.getInitialWait();
+    }
+    return res;
+  }
+
+  public static int getConnectTaskRetries(String connectorName)
+  {
+    int res;
+    ConnectTaskConfiguration connectTaskConfig = connectTask.get(connectorName);
+    if (connectTaskConfig != null) {
+      res = connectTaskConfig.getRetries();
+    } else {
+      res = connectTaskConfigDefault.getRetries();
+    }
+    return res;
   }
   
   /*****************************************
