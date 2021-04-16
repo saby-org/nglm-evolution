@@ -466,6 +466,13 @@ public class DeploymentCommon
   private static int nodesTransitionsHistorySize;
   private static int firstDayOfTheWeek;
   private static int journeysReportMaxParallelThreads;
+  
+  private static int guiConfigurationSoftRetentionDays;// "soft" this is the number of days after which we stopped loading in memory deleted GUIManagedObjects
+  private static int guiConfigurationRetentionDays;// this is the number of days after which we delete record from topic deleted GUIManagedObjects
+  private static long guiConfigurationCleanerThreadPeriodMs;
+  private static int guiConfigurationInitialConsumerMaxPollRecords;
+  private static int guiConfigurationInitialConsumerMaxFetchBytes;
+
 
   
   /*****************************************
@@ -536,6 +543,13 @@ public class DeploymentCommon
   public static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
+  
+  public static int getGuiConfigurationSoftRetentionDays() { return guiConfigurationSoftRetentionDays; }
+  public static int getGuiConfigurationRetentionDays() { return guiConfigurationRetentionDays; }
+  public static long getGuiConfigurationCleanerThreadPeriodMs() { return guiConfigurationCleanerThreadPeriodMs; }
+  public static int getGuiConfigurationInitialConsumerMaxPollRecords() { return guiConfigurationInitialConsumerMaxPollRecords; }
+  public static int getGuiConfigurationInitialConsumerMaxFetchBytes() { return guiConfigurationInitialConsumerMaxFetchBytes; }
+
   
   //
   // Topics
@@ -1386,6 +1400,13 @@ public class DeploymentCommon
     if (reportManagerFieldSurrounder.length() > 1) {
       throw new ServerRuntimeException("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
     }
+    
+    guiConfigurationSoftRetentionDays = jsonReader.decodeInteger("guiConfigurationSoftRetentionDays");
+    guiConfigurationRetentionDays = jsonReader.decodeInteger("guiConfigurationRetentionDays");
+    guiConfigurationCleanerThreadPeriodMs = jsonReader.decodeInteger("guiConfigurationCleanerThreadPeriodSeconds") * 1000;
+    guiConfigurationInitialConsumerMaxPollRecords  = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxPollRecords");
+    guiConfigurationInitialConsumerMaxFetchBytes = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxFetchBytes");
+
 
     //
     // configuration for extracts

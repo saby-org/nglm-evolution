@@ -28116,6 +28116,16 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
       return new RenamedProfileCriterionField(criterionFieldID, display, deleted);
     }
+
+    @Override
+    public String toString() {
+      return "RenamedProfileCriterionField{" +
+          "criterionFieldID='" + criterionFieldID + '\'' +
+          ", display='" + display + '\'' +
+          ", deleted=" + deleted +
+          '}';
+    }
+
   }
   
   /*****************************************

@@ -1,25 +1,13 @@
-/****************************************************************************
-*
-*  GUIService.java
-*
-****************************************************************************/
-
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.GUIManagedObject.ElasticSearchMapping;
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.errors.RecordTooLargeException;
 import org.apache.kafka.common.errors.TimeoutException;
+import org.apache.kafka.common.utils.Bytes;
 import org.json.simple.JSONObject;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -33,8 +21,6 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
@@ -82,6 +68,7 @@ public class GUIService
   *****************************************/
 
   private volatile boolean stopRequested = false;
+  private ConcurrentHashMap<String,Date> forFullDeletionObjects = new ConcurrentHashMap<>();// to trigger object full delete on topic (Date is "deleted" date)
   private HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> storedPerTenantGUIManagedObjects = new HashMap<>();
   private HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> availablePerTenantGUIManagedObjects = new HashMap<>();
   private HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> activePerTenantGUIManagedObjects = new HashMap<>();
@@ -91,9 +78,25 @@ public class GUIService
   private TreeSet<ScheduleEntry> schedule = new TreeSet<ScheduleEntry>();
   private String guiManagedObjectTopic;
   private String guiAuditTopic = Deployment.getGUIAuditTopic();
+
   private KafkaProducer<byte[], byte[]> kafkaProducer;
+  // singleton instance lazy init for all services
+  private static class KafkaProducerInstanceHolder{
+    private static KafkaProducer<byte[], byte[]> kafkaProducer;
+    static {
+      Properties producerProperties = new Properties();
+      producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Deployment.getBrokerServers());
+      producerProperties.put(ProducerConfig.ACKS_CONFIG, "all");
+      producerProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
+      producerProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
+      kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+    }
+    private static KafkaProducer<byte[], byte[]> getKafkaProducer(){return kafkaProducer;}
+  }
+
   private Properties guiManagedObjectsConsumerProperties;
   private KafkaConsumer<byte[], byte[]> guiManagedObjectsConsumer;
+  private Map<TopicPartition,Long> consumedOffsets;
   private boolean masterService;
   Thread schedulerThread = null;
   Thread listenerThread = null;
@@ -173,23 +176,13 @@ public class GUIService
         try
           {
             this.serviceStatistics = new GUIServiceStatistics(serviceName);
+            kafkaProducer = KafkaProducerInstanceHolder.getKafkaProducer();
           }
         catch (ServerException e)
           {
             throw new ServerRuntimeException("Could not initialize statistics");
           }
       }
-
-    //
-    //  set up producer
-    //
-
-    Properties producerProperties = new Properties();
-    producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-    producerProperties.put(ProducerConfig.ACKS_CONFIG, "all");
-    producerProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-    producerProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
     
     //
     // set up consumer
@@ -201,6 +194,9 @@ public class GUIService
     consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+	consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,Deployment.getGuiConfigurationInitialConsumerMaxPollRecords());// speed up initial read
+    consumerProperties.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG,Deployment.getGuiConfigurationInitialConsumerMaxFetchBytes());// speed up initial read
+	consumerProperties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,Deployment.getGuiConfigurationInitialConsumerMaxFetchBytes());// speed up initial read
     guiManagedObjectsConsumerProperties = consumerProperties;
     guiManagedObjectsConsumer = new KafkaConsumer<>(guiManagedObjectsConsumerProperties);
     
@@ -218,12 +214,45 @@ public class GUIService
       {
         guiManagedObjectsConsumer.close();
       }
+    else
+      {
+        // once initial read over can lower a lot memory, we expect one record at a time update
+        guiManagedObjectsConsumerProperties.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG,1024);
+        guiManagedObjectsConsumerProperties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,1024);
+        reconnectConsumer();
+      }
 
     //
     //  initialize listenerQueue
     //
 
     listenerQueue.clear();
+
+    // if master service, start background thread for topic deletion
+    if(masterService){
+
+      Timer cleaner = new Timer("GUIService-deleted-object-cleaner",true);
+      cleaner.scheduleAtFixedRate(new TimerTask() {
+        @Override
+        public void run() {
+          for(Map.Entry<String,Date> entry:forFullDeletionObjects.entrySet()){
+            Date toRemoveFromTopicDate = RLMDateUtils.addDays(entry.getValue(),Deployment.getGuiConfigurationRetentionDays(),Deployment.getDefault().getTimeZone());
+            if(SystemTime.getCurrentTime().after(toRemoveFromTopicDate)){
+              log.info("removing from topic {}, deleted on {}", entry.getKey(), entry.getValue());
+              forFullDeletionObjects.remove(entry.getKey());
+              try{
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(entry.getKey())), null)).get();
+              } catch (InterruptedException|ExecutionException e) {
+                log.error("error deleting to kafka "+entry.getKey(),e);
+              }
+            }
+          }
+        }
+      },DeploymentCommon.getGuiConfigurationCleanerThreadPeriodMs(),Deployment.getGuiConfigurationCleanerThreadPeriodMs());
+
+    }
+
+
   }
 
   /*****************************************
@@ -447,7 +476,7 @@ public class GUIService
     if(guiManagedObject==null) return false;
     if(!guiManagedObject.getAccepted()) return false;
     Map<String,GUIManagedObject> activeGUIManagedObjects = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, guiManagedObject.getTenantID());
-    if(activeGUIManagedObjects == null) return false;   
+    if(activeGUIManagedObjects == null) return false;
     if(activeGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID())==null) return false;
     if(guiManagedObject.getEffectiveStartDate().after(date)) return false;
     if(guiManagedObject.getEffectiveEndDate().before(date)) return false;
@@ -474,7 +503,7 @@ public class GUIService
   {
     if(guiManagedObjectID==null) return null;
     Map<String,GUIManagedObject> activeGUIManagedObjects = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, 0);
-    if(activeGUIManagedObjects == null)  activeGUIManagedObjects = new ConcurrentHashMap<>();      
+    if(activeGUIManagedObjects == null)  activeGUIManagedObjects = new ConcurrentHashMap<>();
     GUIManagedObject guiManagedObject = activeGUIManagedObjects.get(guiManagedObjectID);
     if (isActiveGUIManagedObject(guiManagedObject, date))
       return guiManagedObject;
@@ -486,7 +515,7 @@ public class GUIService
   {
     if(guiManagedObjectID==null) return null;
     Map<String,GUIManagedObject> interruptedGUIManagedObjects = createAndGetTenantSpecificMap(interruptedPerTenantGUIManagedObjects, 0);
-    if(interruptedGUIManagedObjects == null)  interruptedGUIManagedObjects = new ConcurrentHashMap<>();   
+    if(interruptedGUIManagedObjects == null)  interruptedGUIManagedObjects = new ConcurrentHashMap<>();
     GUIManagedObject guiManagedObject = interruptedGUIManagedObjects.get(guiManagedObjectID);
     if (isInterruptedGUIManagedObject(guiManagedObject, date))
       return guiManagedObject;
@@ -504,7 +533,7 @@ public class GUIService
   {
     Collection<GUIManagedObject> result = new HashSet<GUIManagedObject>();
     Map<String,GUIManagedObject> activeGUIManagedObjects = createAndGetTenantSpecificMap(activePerTenantGUIManagedObjects, tenantID);
-    if(activeGUIManagedObjects == null)  activeGUIManagedObjects = new ConcurrentHashMap<>();    
+    if(activeGUIManagedObjects == null)  activeGUIManagedObjects = new ConcurrentHashMap<>();
     for (GUIManagedObject guiManagedObject : activeGUIManagedObjects.values())
 	  {
 		if (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0 && date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
@@ -520,7 +549,7 @@ public class GUIService
   *  per tenant Map utilities
   *
   *****************************************/
-  
+
   private Map<String,GUIManagedObject> createAndGetTenantSpecificMap(HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>> currentTenantMap, int tenantID)
   {
     Map<String,GUIManagedObject> result = currentTenantMap.get(tenantID);
@@ -538,23 +567,23 @@ public class GUIService
       }
     return result;
   }
-  
+
   private void putSpecificAndAllTenants(HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>>  currentTenantMap, GUIManagedObject guiManagedObject)
   {
     Map<String,GUIManagedObject> tenantMap = createAndGetTenantSpecificMap(currentTenantMap, guiManagedObject.getTenantID());
     tenantMap.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
     // add also in the map related to tenant 0 i.e All tenants..
     Map<String,GUIManagedObject> allTenantMap = createAndGetTenantSpecificMap(currentTenantMap, 0);
-    allTenantMap.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);   
+    allTenantMap.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
   }
-  
+
   private void removeSpecificAndAllTenants(HashMap<Integer, ConcurrentHashMap<String,GUIManagedObject>>  currentTenantMap, String guiManagedObjectID, int tenantID)
   {
     Map<String,GUIManagedObject> tenantMap = createAndGetTenantSpecificMap(currentTenantMap, tenantID);
     tenantMap.remove(guiManagedObjectID);
     // add also in the map related to tenant 0 i.e All tenants..
     Map<String,GUIManagedObject> allTenantMap = createAndGetTenantSpecificMap(currentTenantMap, 0);
-    allTenantMap.remove(guiManagedObjectID);   
+    allTenantMap.remove(guiManagedObjectID);
   }
 
   /*****************************************
@@ -565,9 +594,14 @@ public class GUIService
 
   public void putGUIManagedObject(GUIManagedObject guiManagedObject, Date date, boolean newObject, String userID)
   {
+
+    log.info("put {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObject.getGUIManagedObjectID());
+
     //
     //  created/updated date
     //
+
+    if(!masterService) throw new RuntimeException("can not update conf outside the master service");
 
     GUIManagedObject existingStoredGUIManagedObject = createAndGetTenantSpecificMap(storedPerTenantGUIManagedObjects, guiManagedObject.getTenantID()).get(guiManagedObject.getGUIManagedObjectID());
     guiManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
@@ -618,8 +652,9 @@ public class GUIService
   protected void removeGUIManagedObject(String guiManagedObjectID, Date date, String userID, int tenantID)
   {
 
-    if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID " + guiManagedObjectID + " " + tenantID);
-    
+    log.info("{} remove {}", this.getClass().getSimpleName(), guiManagedObjectID);
+    if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID"+ guiManagedObjectID + " " + tenantID);
+    if(!masterService) throw new RuntimeException("can not update conf outside the master service");
     //
     //  created/updated date
     //
@@ -668,11 +703,45 @@ public class GUIService
     if(guiManagedObjectID==null) throw new RuntimeException("null guiManagedObjectID");
     synchronized (this)
       {
+
+        // handle deleted case first and return, avoiding easy NPE after
+        if(guiManagedObject==null || guiManagedObject.getDeleted()){
+          // if still in memory, check if needs to be removed
+          GUIManagedObject storedGuiManagedObject=createAndGetTenantSpecificMap(storedPerTenantGUIManagedObjects,tenantID).get(guiManagedObjectID);
+          if(storedGuiManagedObject!=null){
+
+            // don't check with stored one (previous version), if this is an update
+            if(guiManagedObject!=null) storedGuiManagedObject=guiManagedObject;
+
+            if (serviceStatistics != null) serviceStatistics.updateRemoveCount(guiManagedObjectID);
+
+            removeSpecificAndAllTenants(availablePerTenantGUIManagedObjects,guiManagedObjectID,storedGuiManagedObject.getTenantID());
+            removeSpecificAndAllTenants(activePerTenantGUIManagedObjects,guiManagedObjectID,storedGuiManagedObject.getTenantID());
+            removeSpecificAndAllTenants(interruptedPerTenantGUIManagedObjects,guiManagedObjectID,storedGuiManagedObject.getTenantID());
+
+            Date toRemoveFromMemoryDate = RLMDateUtils.addDays(storedGuiManagedObject.getUpdatedDate(),Deployment.getGuiConfigurationSoftRetentionDays(),Deployment.getDefault().getTimeZone());
+            if(SystemTime.getCurrentTime().after(toRemoveFromMemoryDate)){
+              log.info("removing from memory {} {}, deleted on {}", storedGuiManagedObject.getClass().getSimpleName(),storedGuiManagedObject.getGUIManagedObjectID(),storedGuiManagedObject.getUpdatedDate());
+              removeSpecificAndAllTenants(storedPerTenantGUIManagedObjects,guiManagedObjectID,storedGuiManagedObject.getTenantID());
+              // if master service and not yet "topic deleted", need to keep track of it, to initiate a topic delete later
+              if(masterService && guiManagedObject!=null){
+                forFullDeletionObjects.put(storedGuiManagedObject.getGUIManagedObjectID(),storedGuiManagedObject.getUpdatedDate());
+              }
+            }else{
+              putSpecificAndAllTenants(storedPerTenantGUIManagedObjects,storedGuiManagedObject);
+              ScheduleEntry scheduleEntry = new ScheduleEntry(new Date(toRemoveFromMemoryDate.getTime()+1),storedGuiManagedObject.getGUIManagedObjectID(),storedGuiManagedObject.getTenantID());
+              schedule.add(scheduleEntry);
+              this.notifyAll();
+            }
+          }
+          return;
+        }
+
         //
         //  accepted?
         //
 
-        boolean accepted = (guiManagedObject != null) && guiManagedObject.getAccepted();
+        boolean accepted = guiManagedObject.getAccepted();
 
         //
         //  created/updated dates
@@ -689,31 +758,13 @@ public class GUIService
         boolean inActivePeriod = !guiManagedObject.getDeleted() && (guiManagedObject.getEffectiveStartDate()==null || guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (guiManagedObject.getEffectiveEndDate()==null || date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
         boolean active = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
         boolean future = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) > 0);
-        boolean deleted = (guiManagedObject == null) || guiManagedObject.getDeleted();
 
         //
         //  store
         //
 
-        if (guiManagedObject != null)
-          {
-            putSpecificAndAllTenants(storedPerTenantGUIManagedObjects, guiManagedObject);
-            if (serviceStatistics != null)
-              {
-                if (! deleted)
-                  serviceStatistics.updatePutCount(guiManagedObject.getGUIManagedObjectID());
-                else
-                  serviceStatistics.updateRemoveCount(guiManagedObjectID);
-              }
-          }
-        else
-          {
-            removeSpecificAndAllTenants(storedPerTenantGUIManagedObjects, guiManagedObjectID, tenantID);
-            if (serviceStatistics != null)
-              {
-                serviceStatistics.updateRemoveCount(guiManagedObjectID);
-              }
-          }
+        putSpecificAndAllTenants(storedPerTenantGUIManagedObjects, guiManagedObject);
+        if (serviceStatistics != null) serviceStatistics.updatePutCount(guiManagedObject.getGUIManagedObjectID());
 
         //
         //  existingActiveGUIManagedObject
@@ -836,35 +887,10 @@ public class GUIService
             return;
           }
       }
-    
-    //
-    //  initialize consumedOffsets
-    //
-        
-    Date readStartDate = SystemTime.getCurrentTime();
-    boolean consumedAllAvailable = false;
-    Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
-    try {
-      for (TopicPartition topicPartition : guiManagedObjectsConsumer.assignment())
-        {
-          consumedOffsets.put(topicPartition, guiManagedObjectsConsumer.position(topicPartition) - 1L);
-        }
-    } catch (WakeupException e) {
-      if (stopRequested)
-        return;
-      else
-        log.info("wakeup while reading topic "+guiManagedObjectTopic);
-    }
-    
-    //
-    //  read
-    //
-        
-    do
+
+	Date readStartDate = SystemTime.getCurrentTime();
+	while (!stopRequested)
       {
-        //
-        // poll
-        //
 
         ConsumerRecords<byte[], byte[]> guiManagedObjectRecords=ConsumerRecords.<byte[], byte[]>empty();
         try
@@ -876,80 +902,76 @@ public class GUIService
             if (!stopRequested) log.info("wakeup while reading topic "+guiManagedObjectTopic);
           }
 
-        //
-        //  processing?
-        //
-
         if (stopRequested) continue;
-        
-        //
-        //  process
-        //
 
         Date now = SystemTime.getCurrentTime();
-        for (ConsumerRecord<byte[], byte[]> guiManagedObjectRecord : guiManagedObjectRecords)
+        Map<Bytes, byte[]> toLoad = new HashMap<>();//key is Bytes and not byte[] directly, primitive byte array would not behave as expected regarding Map contract (hashcode and equals)
+        int sizeConsumed=0;// for debug logging
+        for(ConsumerRecord<byte[],byte[]> record:guiManagedObjectRecords){
+          toLoad.put(new Bytes(record.key()),record.value());
+          sizeConsumed+=record.serializedKeySize()+record.serializedValueSize();
+          consumedOffsets.put(new TopicPartition(record.topic(), record.partition()), record.offset());
+        }
+
+        if(log.isDebugEnabled()) log.debug("will process "+toLoad.size()+" records, after reading "+sizeConsumed+" bytes for "+guiManagedObjectRecords.count()+" total records");
+
+        Iterator<Map.Entry<Bytes,byte[]>> groupedRecordIterator = toLoad.entrySet().iterator();
+        while(groupedRecordIterator.hasNext()){
+
+          Map.Entry<Bytes,byte[]> record = groupedRecordIterator.next();
+          groupedRecordIterator.remove();
+
+          String guiManagedObjectID =  stringKeySerde.deserializer().deserialize(guiManagedObjectTopic, record.getKey().get()).getKey();
+          GUIManagedObject guiManagedObject;
+          try
           {
-            //
-            //  parse
-            //
-
-            String guiManagedObjectID =  stringKeySerde.deserializer().deserialize(guiManagedObjectRecord.topic(), guiManagedObjectRecord.key()).getKey();
-            GUIManagedObject guiManagedObject;
-            try
-              {
-                guiManagedObject = guiManagedObjectSerde.optionalDeserializer().deserialize(guiManagedObjectRecord.topic(), guiManagedObjectRecord.value());
-              }
-            catch (SerializationException e)
-              {
-                log.info("error reading guiManagedObject on " + guiManagedObjectTopic + " : {}", e.getMessage());
-                guiManagedObject = incompleteObjectSerde.optionalDeserializer().deserialize(guiManagedObjectRecord.topic(), guiManagedObjectRecord.value());
-              }
-
-            if (guiManagedObject != null)
-              log.debug("read {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObjectID);
-            else
-              log.info("clearing {}", guiManagedObjectID);
-
-            //
-            //  process
-            //
-
-            processGUIManagedObject(guiManagedObjectID, guiManagedObject, readInitialTopicRecords ? readStartDate : now, guiManagedObject.getTenantID());
-            
-            //
-            //  offsets
-            //
-
-            consumedOffsets.put(new TopicPartition(guiManagedObjectRecord.topic(), guiManagedObjectRecord.partition()), guiManagedObjectRecord.offset());
+            guiManagedObject = guiManagedObjectSerde.optionalDeserializer().deserialize(guiManagedObjectTopic, record.getValue());
+          }
+          catch (SerializationException e)
+          {
+            log.info("error reading guiManagedObject on " + guiManagedObjectTopic + " : {}", e.getMessage());
+            guiManagedObject = incompleteObjectSerde.optionalDeserializer().deserialize(guiManagedObjectTopic, record.getValue());
           }
 
-        //
-        //  consumed all available?
-        //
+          if (guiManagedObject != null) log.info("read {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObject.getGUIManagedObjectID());
 
-        Set<TopicPartition> assignedPartitions = guiManagedObjectsConsumer.assignment();
-        Map<TopicPartition,Long> availableOffsets = getEndOffsets();
-        consumedAllAvailable = true;
-        for (TopicPartition partition : availableOffsets.keySet())
+          int tenantId = guiManagedObject!=null ? guiManagedObject.getTenantID() : 0;//deleted case (null value)
+          processGUIManagedObject(guiManagedObjectID, guiManagedObject, readInitialTopicRecords ? readStartDate : now, tenantId);
+
+        }
+
+
+        if(readInitialTopicRecords){
+          //
+          //  consumed all available?
+          //
+
+          Map<TopicPartition,Long> availableOffsets = getEndOffsets();
+          boolean consumedAllAvailable = true;
+          for (TopicPartition partition : availableOffsets.keySet())
           {
             Long availableOffsetForPartition = availableOffsets.get(partition);
             Long consumedOffsetForPartition = consumedOffsets.get(partition);
             if (consumedOffsetForPartition == null)
-              {
-                consumedOffsetForPartition = guiManagedObjectsConsumer.position(partition) - 1L;
-                consumedOffsets.put(partition, consumedOffsetForPartition);
-              }
+            {
+              consumedOffsetForPartition = guiManagedObjectsConsumer.position(partition) - 1L;
+              consumedOffsets.put(partition, consumedOffsetForPartition);
+            }
             if (consumedOffsetForPartition < availableOffsetForPartition-1)
-              {
-                consumedAllAvailable = false;
-                break;
-              }
+            {
+              consumedAllAvailable = false;
+              break;
+            }
           }
+          if(consumedAllAvailable) return;
+		}
+
       }
-    while (!stopRequested && (! consumedAllAvailable || ! readInitialTopicRecords));
+
   }
 
   private void assignAllTopicPartitions(){
+    boolean freshAsignment = consumedOffsets == null;
     if(guiManagedObjectsConsumer!=null){
       Set<TopicPartition> partitions = new HashSet<>();
       List<PartitionInfo> partitionInfos=null;
@@ -963,10 +985,16 @@ public class GUIService
         }catch (WakeupException e){
         }
       }
+      if(freshAsignment) consumedOffsets = new HashMap<>();
       for (PartitionInfo partitionInfo : partitionInfos) {
-        partitions.add(new TopicPartition(guiManagedObjectTopic, partitionInfo.partition()));
+        TopicPartition topicPartition = new TopicPartition(guiManagedObjectTopic, partitionInfo.partition());
+        partitions.add(topicPartition);
       }
       guiManagedObjectsConsumer.assign(partitions);
+      for(Map.Entry<TopicPartition,Long> position:consumedOffsets.entrySet()){
+        if(freshAsignment) consumedOffsets.put(position.getKey(), guiManagedObjectsConsumer.position(position.getKey()) - 1L);
+        guiManagedObjectsConsumer.seek(position.getKey(),position.getValue());
+      }
     }else{
       log.error("NULL kafka consumer while assigning topic partitions "+guiManagedObjectTopic);
     }
