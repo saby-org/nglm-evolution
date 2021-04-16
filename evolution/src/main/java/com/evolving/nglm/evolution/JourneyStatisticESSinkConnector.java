@@ -147,9 +147,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       for(NodeHistory node : journeyStatistic.getJourneyNodeHistory()) {
         journeyNode.add(node.toString());
       }
-      int historySize = journeyNode.size();
-      List<String> journeyNodeTrunc = journeyNode.subList(Math.max(historySize - Deployment.getNodesTransitionsHistorySize(), 0), historySize);
-      
+
       List<String> journeyStatus = new ArrayList<String>();
       for(StatusHistory status : journeyStatistic.getJourneyStatusHistory()) {
         journeyStatus.add(status.toString());
@@ -161,7 +159,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       SinkConnectorUtils.putAlternateIDs(journeyStatistic.getAlternateIDs(), documentMap);
       documentMap.put("tenantID", journeyStatistic.getTenantID());
       documentMap.put("transitionDate", journeyStatistic.getTransitionDate());
-      documentMap.put("nodeHistory", journeyNodeTrunc);
+      documentMap.put("nodeHistory", journeyNode);
       documentMap.put("statusHistory", journeyStatus);
       documentMap.put("rewardHistory", journeyReward);
       

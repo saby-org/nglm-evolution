@@ -356,6 +356,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   //  derived
   //
 
+  public boolean journeyMetricsNeeded()
+  {
+    return this.fullStatistics && this.getGUIManagedObjectType() == GUIManagedObjectType.Campaign;
+  }
+
   public boolean getAutoTargeted()
   {
     boolean result = false;

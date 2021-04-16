@@ -50,6 +50,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -447,7 +449,6 @@ public class GUIManager
     getDashboardCounts("getDashboardCounts"),
     getCustomer("getCustomer"),
     getCustomerMetaData("getCustomerMetaData"),
-    getCustomerActivityByDateRange("getCustomerActivityByDateRange"),
     getCustomerBDRs("getCustomerBDRs"),
     getCustomerODRs("getCustomerODRs"),
     getCustomerMessages("getCustomerMessages"),
@@ -865,7 +866,7 @@ public class GUIManager
     // ZookeeperUniqueKeyServer
     //
  
-    zuks = new ZookeeperUniqueKeyServer("commoditydelivery");
+    zuks = new ZookeeperUniqueKeyServer(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
     zuksVoucherChange = new ZookeeperUniqueKeyServer("voucherchange");
 
     //
@@ -2155,7 +2156,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APISimpleHandler(API.getDashboardCounts));
         restServer.createContext("/nglm-guimanager/getCustomer", new APISimpleHandler(API.getCustomer));
         restServer.createContext("/nglm-guimanager/getCustomerMetaData", new APISimpleHandler(API.getCustomerMetaData));
-        restServer.createContext("/nglm-guimanager/getCustomerActivityByDateRange", new APISimpleHandler(API.getCustomerActivityByDateRange));
         restServer.createContext("/nglm-guimanager/getCustomerBDRs", new APISimpleHandler(API.getCustomerBDRs));
         restServer.createContext("/nglm-guimanager/getCustomerODRs", new APISimpleHandler(API.getCustomerODRs));
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
@@ -3684,10 +3684,6 @@ public class GUIManager
 
                 case getCustomerMetaData:
                   jsonResponse = processGetCustomerMetaData(userID, jsonRoot, tenantID);
-                  break;
-
-                case getCustomerActivityByDateRange:
-                  jsonResponse = processGetCustomerActivityByDateRange(userID, jsonRoot, tenantID);
                   break;
 
                 case getCustomerBDRs:
@@ -18223,7 +18219,7 @@ public class GUIManager
       {
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -18488,7 +18484,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -18593,7 +18589,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -18733,7 +18729,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -18858,7 +18854,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -19153,7 +19149,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -19452,7 +19448,7 @@ public class GUIManager
 
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
       if (baseSubscriberProfile == null)
         {
           response.put("responseCode", "CustomerNotFound");
@@ -19555,7 +19551,7 @@ public class GUIManager
      *****************************************/
     try
     {
-      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
       if (baseSubscriberProfile == null)
         {
           response.put("responseCode", "CustomerNotFound");
@@ -19795,7 +19791,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
             if (subscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -21708,7 +21704,7 @@ public class GUIManager
       {
         try
           {
-            baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+            baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
             if (baseSubscriberProfile == null)
               {
                 responseCode = "CustomerNotFound";
@@ -21885,7 +21881,7 @@ public class GUIManager
     
     String deliveryRequestID = zuks.getStringKey();
     try {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       GUIManagedObject pointObject = pointService.getStoredPoint(bonusID);
       com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit validityPeriodType = null;
       int validityPeriod = 0;
@@ -21895,8 +21891,8 @@ public class GUIManager
         validityPeriodType = point.getValidity().getPeriodType();
         validityPeriod = point.getValidity().getPeriodQuantity();
       }
-     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
-    } catch (SubscriberProfileServiceException e) {
+     CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+    } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       throw new GUIManagerException(e);
     }
 
@@ -21982,9 +21978,9 @@ public class GUIManager
     
     String deliveryRequestID = zuks.getStringKey();
     try {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
-    } catch (SubscriberProfileServiceException e) {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+    } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       throw new GUIManagerException(e);
     }
     
@@ -23285,7 +23281,7 @@ public class GUIManager
 
     try
     {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (subscriberProfile == null)
         {
           response.put("responseCode", "CustomerNotFound");
@@ -23398,7 +23394,7 @@ public class GUIManager
 
     try
     {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (subscriberProfile == null)
         {
           response.put("responseCode", "CustomerNotFound");
@@ -23625,7 +23621,7 @@ public class GUIManager
 
     try
     {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       if (subscriberProfile == null)
         {
           response.put("responseCode", "CustomerNotFound");
@@ -23838,7 +23834,7 @@ public class GUIManager
 
   try
   {
-    SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+    SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
     if (subscriberProfile == null)
       {
         response.put("responseCode", "CustomerNotFound");
@@ -23950,7 +23946,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     Date offerStartDate = prepareStartDate(RLMDateUtils.parseDateFromDay(startDateString, timeZone), timeZone);
     Date offerEndDate = prepareEndDate(RLMDateUtils.parseDateFromDay(endDateString, timeZone), timeZone);
     
-    SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+    SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
     if (subscriberProfile == null)
       {
         response.put("responseCode", "CustomerNotFound");

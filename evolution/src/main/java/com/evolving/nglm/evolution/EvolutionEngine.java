@@ -40,8 +40,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.connect.json.JsonConverter;
@@ -215,7 +213,6 @@ public class EvolutionEngine
   private static KafkaStreams streams = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private static ReadOnlyKeyValueStore<StringKey, ExtendedSubscriberProfile> extendedSubscriberProfileStore = null;
-  private static ReadOnlyKeyValueStore<StringKey, SubscriberHistory> subscriberHistoryStore = null;
   private static final int RESTAPIVersion = 1;
   private static HttpServer subscriberProfileServer;
   private static HttpServer internalServer;
@@ -318,7 +315,6 @@ public class EvolutionEngine
 
     String subscriberStateChangeLog = Deployment.getSubscriberStateChangeLog();
     String extendedSubscriberProfileChangeLog = Deployment.getExtendedSubscriberProfileChangeLog();
-    String subscriberHistoryChangeLog = Deployment.getSubscriberHistoryChangeLog();
 
     //
     //  (force load of SubscriberProfile class)
@@ -720,7 +716,6 @@ public class EvolutionEngine
     //
 
     final Serde<SubscriberState> subscriberStateSerde = SubscriberState.stateStoreSerde();
-    final Serde<SubscriberHistory> subscriberHistorySerde = SubscriberHistory.stateStoreSerde();
     final Serde<ExtendedSubscriberProfile> extendedSubscriberProfileSerde = ExtendedSubscriberProfile.stateStoreSerde();
 
     /*****************************************
@@ -993,21 +988,6 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  subscriberHistory -- update
-    *
-    *****************************************/
-
-    //
-    //  aggregate
-    //
-
-    //KeyValueBytesStoreSupplier subscriberHistorySupplier = Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
-    KeyValueBytesStoreSupplier subscriberHistorySupplier = isInMemoryStateStores?Stores.inMemoryKeyValueStore(subscriberHistoryChangeLog):Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
-    Materialized subscriberHistoryStoreSchema = Materialized.<StringKey, SubscriberHistory>as(subscriberHistorySupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberHistorySerde);
-    KTable<StringKey, SubscriberHistory> subscriberHistory = evolutionEngineOutputsWithSubscriberState.filter(EvolutionEngine::filterForHistoryStateStore).groupByKey().aggregate(EvolutionEngine::nullSubscriberHistory, EvolutionEngine::updateSubscriberHistory, subscriberHistoryStoreSchema);
-
-    /*****************************************
-    *
     *  sink
     *
     *****************************************/
@@ -1211,7 +1191,6 @@ public class EvolutionEngine
           {
             subscriberStateStore = streams.store(Deployment.getSubscriberStateChangeLog(), QueryableStoreTypes.keyValueStore());
             extendedSubscriberProfileStore = streams.store(Deployment.getExtendedSubscriberProfileChangeLog(), QueryableStoreTypes.keyValueStore());
-            subscriberHistoryStore = streams.store(Deployment.getSubscriberHistoryChangeLog(), QueryableStoreTypes.keyValueStore());
             stateStoresInitialized = true;
           }
         catch (InvalidStateStoreException e)
@@ -1720,13 +1699,8 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  public static SubscriberState updateSubscriberState(StringKey aggKey, SubscriberStateOutputWrapper evolutionHackyEvent, SubscriberState currentSubscriberState)
+  public static SubscriberState updateSubscriberState(StringKey aggKey, SubscriberStateOutputWrapper evolutionHackyEvent, SubscriberState previousSubscriberState)
   {
-    /****************************************
-    *
-    *  get (or create) entry
-    *
-    ****************************************/
 
     SubscriberStreamEvent evolutionEvent = evolutionHackyEvent.getOriginalEvent();
 
@@ -1736,7 +1710,7 @@ public class EvolutionEngine
     *
     ****************************************/
     int tenantID;
-    if(currentSubscriberState == null)
+    if(previousSubscriberState == null)
       {
         // ensure this event is of type Auto
         if(evolutionEvent instanceof AutoProvisionSubscriberStreamEvent)
@@ -1750,32 +1724,28 @@ public class EvolutionEngine
       }
     else
       {
-        tenantID = currentSubscriberState.getSubscriberProfile().getTenantID();
+        tenantID = previousSubscriberState.getSubscriberProfile().getTenantID();
       }
 
-    SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
+    // NO MORE DEEP COPY !!!!
+	// previous one or new empty
+    SubscriberState subscriberState = (previousSubscriberState != null) ? previousSubscriberState : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
+    // keep the previous stored byte[]
+    byte[] storedBefore = (previousSubscriberState != null) ? previousSubscriberState.getKafkaRepresentation() : new byte[0];// this empty means as well subscriber was not existing before
+    // need to save the previous scheduled evaluation
+	Set<TimedEvaluation> scheduledEvaluationsBefore = new TreeSet<>(subscriberState.getScheduledEvaluations());
+	// and clean it
+	subscriberState.getScheduledEvaluations().clear();
+
+    boolean subscriberStateUpdated = previousSubscriberState == null;
+
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
     EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, SystemTime.getCurrentTime());
-    boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     if(log.isTraceEnabled()) log.trace("updateSubscriberState on event "+evolutionEvent.getClass().getSimpleName()+ " for "+evolutionEvent.getSubscriberID());
 
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
     Date now = context.now();
-
-    /*****************************************
-    *
-    *  clear state
-    *
-    *****************************************/
-
-    subscriberStateUpdated = cleanSubscriberState(subscriberState, now) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -1786,13 +1756,12 @@ public class EvolutionEngine
     switch (evolutionEvent.getSubscriberAction())
       {
         case Cleanup:
-          updateScheduledEvaluations((currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet(), Collections.<TimedEvaluation>emptySet());
+          updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
           return null;
           
         case Delete:
-          cleanSubscriberState(currentSubscriberState, now);
-          SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
-          return currentSubscriberState;
+          SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+          return subscriberState;
       }
     
     /*****************************************
@@ -1914,18 +1883,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    updateScheduledEvaluations((currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet(), subscriberState.getScheduledEvaluations());
-
-    /*****************************************
-    *
-    *  to forward DelireryRequest "response" to history state store
-    *
-    *****************************************/
-    if (evolutionEvent instanceof DeliveryRequest)
-      {
-        DeliveryRequest deliveryResponse = (DeliveryRequest)evolutionEvent;
-        if (deliveryResponse.isToStoreInHistoryStateStore()) subscriberState.setDeliveryResponse(deliveryResponse);
-      }
+    updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());
 
     /*****************************************
     *
@@ -1944,7 +1902,7 @@ public class EvolutionEngine
 
     if (subscriberProfile.getSubscriberTraceEnabled())
       {
-        subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentSubscriberState, subscriberState, context.getSubscriberTraceDetails())));
+        subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, subscriberState, context.getSubscriberTraceDetails())));
         subscriberStateUpdated = true;
       }
 
@@ -1966,7 +1924,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    Pair<String,JSONObject> resExternalAPI = callExternalAPI(evolutionEvent, currentSubscriberState, subscriberState);
+    Pair<String,JSONObject> resExternalAPI = callExternalAPI(evolutionEvent, subscriberState);
     JSONObject jsonObject = resExternalAPI.getSecondElement();
     if (jsonObject != null)
       {
@@ -1994,16 +1952,12 @@ public class EvolutionEngine
 
     if (subscriberStateUpdated)
       {
-        SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+        SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);//build the new
         evolutionEngineStatistics.updateSubscriberStateSize(subscriberState.getKafkaRepresentation());
-        // this does not really prevent final exception (as SubscriberState deep copy is not really possible)
-		// what "catch" exception at the end is our EvolutionProductionExceptionHandler
-		// but we still keep that, that "should" avoid to produce outputs we are too big
         if (subscriberState.getKafkaRepresentation().length > 950000)
           {
             log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
-            cleanSubscriberState(currentSubscriberState, now);
-            SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
+            if(storedBefore.length>0) subscriberState.setKafkaRepresentation(storedBefore);//put back the old
             subscriberStateUpdated = false;
           }
       }
@@ -2019,243 +1973,7 @@ public class EvolutionEngine
         evolutionHackyEvent.enrichWithSubscriberState(subscriberState);
     }
 
-    return subscriberStateUpdated ? subscriberState : currentSubscriberState;
-  }
-
-  /*****************************************
-  *
-  *  cleanSubscriberState
-  *
-  *****************************************/
-
-  private static boolean cleanSubscriberState(SubscriberState subscriberState, Date now)
-  {
-    //
-    //  abort if null
-    //
-
-    if (subscriberState == null)
-      {
-        return false;
-      }
-
-    //
-    //  subscriberStateUpdated
-    //
-
-    boolean subscriberStateUpdated = false;
-
-    //
-    //  scheduledEvaluations
-    //
-
-    if (subscriberState.getScheduledEvaluations().size() > 0)
-      {
-        subscriberState.getScheduledEvaluations().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  journeyRequests
-    //
-
-    if (subscriberState.getJourneyRequests().size() > 0)
-      {
-        subscriberState.getJourneyRequests().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  journeyResponses
-    //
-
-    if (subscriberState.getJourneyResponses().size() > 0)
-      {
-        subscriberState.getJourneyResponses().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  loyaltyProgramRequests
-    //
-
-    if (subscriberState.getLoyaltyProgramRequests().size() > 0)
-      {
-        subscriberState.getLoyaltyProgramRequests().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  loyaltyProgramResponses
-    //
-
-    if (subscriberState.getLoyaltyProgramResponses().size() > 0)
-      {
-        subscriberState.getLoyaltyProgramResponses().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  pointFulfillmentResponses
-    //
-
-    if (subscriberState.getPointFulfillmentResponses().size() > 0)
-      {
-        subscriberState.getPointFulfillmentResponses().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  deliveryRequests
-    //
-
-    if (subscriberState.getDeliveryRequests().size() > 0)
-      {
-        subscriberState.getDeliveryRequests().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  journeyStatistics
-    //
-
-    if (subscriberState.getJourneyStatisticWrappers().size() > 0)
-      {
-        subscriberState.getJourneyStatisticWrappers().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  journeyMetrics
-    //
-
-    if (subscriberState.getJourneyMetrics().size() > 0)
-      {
-        subscriberState.getJourneyMetrics().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  subscriberTrace
-    //
-
-    if (subscriberState.getSubscriberTrace() != null)
-      {
-        subscriberState.setSubscriberTrace(null);
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  profileChangeEvents cleaning
-    //
-
-    if (subscriberState.getProfileChangeEvents() != null)
-      {
-        subscriberState.getProfileChangeEvents().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  tokenChange cleaning
-    //
-
-    if (subscriberState.getTokenChanges() != null)
-      {
-        subscriberState.getTokenChanges().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  voucherChange cleaning
-    //
-
-    if (subscriberState.getVoucherChanges() != null)
-    {
-      for (JourneyState journeyState : subscriberState.getJourneyStates())
-        {
-          if (journeyState.getVoucherChanges() != null) journeyState.getVoucherChanges().clear();
-        }
-      subscriberState.getVoucherChanges().clear();
-      subscriberStateUpdated = true;
-    }
-
-
-    //
-    //  profileSegmentChangeEvents cleaning
-    //
-
-    if (subscriberState.getProfileSegmentChangeEvents() != null)
-      {
-        subscriberState.getProfileSegmentChangeEvents().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  profileLoayltyProgramChangeEvents cleaning
-    //
-
-    if (subscriberState.getProfileLoyaltyProgramChangeEvents() != null)
-      {
-        subscriberState.getProfileLoyaltyProgramChangeEvents().clear();
-        subscriberStateUpdated = true;
-      }
-    
-
-    //
-    //  externalAPIOutput
-    //
-   if (subscriberState.getExternalAPIOutput() != null)
-      {
-        subscriberState.setExternalAPIOutput(null);
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  executeActionOtherSubscribers cleaning
-    //
-
-    if (subscriberState.getExecuteActionOtherSubscribers() != null)
-      {
-        subscriberState.getExecuteActionOtherSubscribers().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  voucherActions cleaning
-    //
-
-    if (subscriberState.getVoucherActions() != null)
-      {
-        subscriberState.getVoucherActions().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  journeyTriggerEventActions cleaning
-    //
-
-    if (subscriberState.getJourneyTriggerEventActions() != null)
-      {
-        subscriberState.getJourneyTriggerEventActions().clear();
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  subscriberProfileForceUpdates cleaning
-    //
-
-    if (subscriberState.getSubscriberProfileForceUpdates() != null)
-      {
-        subscriberState.getSubscriberProfileForceUpdates().clear();
-        subscriberStateUpdated = true;
-      }
-
-
-    //
-    //  return
-    //
-
-    return subscriberStateUpdated;
+    return subscriberState;
   }
   
   /*****************************************
@@ -2864,7 +2582,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static Pair<String,JSONObject> callExternalAPI(SubscriberStreamEvent evolutionEvent, SubscriberState currentSubscriberState, SubscriberState subscriberState)
+  private static Pair<String,JSONObject> callExternalAPI(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState)
   {
     /*****************************************
     *
@@ -2885,7 +2603,8 @@ public class EvolutionEngine
       {
         try
         {
-          result = (Pair<String,JSONObject>) evolutionEngineExternalAPIMethod.invoke(null, currentSubscriberState, subscriberState, evolutionEvent, journeyService);
+          //TODO: twice the same subscriberState now (EVPRO-885 remove our broken deep copy of SubscriberState)
+          result = (Pair<String,JSONObject>) evolutionEngineExternalAPIMethod.invoke(null, subscriberState, subscriberState, evolutionEvent, journeyService);
         }
         catch (RuntimeException|IllegalAccessException|InvocationTargetException e)
         {
@@ -4551,9 +4270,11 @@ public class EvolutionEngine
     //TODO: before EVPRO-325 all restriction to enter journey were done based on subscriberState.getRecentJourneyStates(), now it is on subscriberState.getSubscriberProfile().getSubscriberJourneysEnded()
     // so it is important to migrate data, but once all customer run over this version, this should be removed
     // ------ START DATA MIGRATION COULD BE REMOVED
-    for(JourneyState recentJourneyState:subscriberState.getRecentJourneyStates()){
-      if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(recentJourneyState.getJourneyID())==null && !recentJourneyState.isSpecialExit()){
-        subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(recentJourneyState.getJourneyID(),recentJourneyState.getExpirationDate(retentionService)!=null?recentJourneyState.getExpirationDate(retentionService):now);
+    if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().isEmpty()){
+      for(JourneyState recentJourneyState:subscriberState.getOldRecentJourneyStates()){
+        if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(recentJourneyState.getJourneyID())==null && !recentJourneyState.isSpecialExit()){
+          subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(recentJourneyState.getJourneyID(),recentJourneyState.getJourneyExitDate()!=null?recentJourneyState.getJourneyExitDate():now);
+        }
       }
     }
     // ------ END DATA MIGRATION COULD BE REMOVED
@@ -4946,10 +4667,40 @@ public class EvolutionEngine
                           }
                       }
                   }
-                
+
+                /******************************************
+                *
+                *  pass is customer in the exclusion list?
+                *
+                *******************************************/
+
+                if (enterJourney && currentStatus == null)
+                  {
+                    if (!journey.getAppendExclusionLists() && exclusionList)
+                      {
+                        currentStatus = SubscriberJourneyStatus.Excluded;
+                        context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
+                      }
+                  }
+
+                /*****************************************
+                *
+                * pass is customer UCG?
+                *
+                *****************************************/
+
+                if (enterJourney && currentStatus == null)
+                  {
+                    if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                      {
+                        currentStatus = SubscriberJourneyStatus.UniversalControlGroup;
+                        context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
+                      }
+                  }
+
                 /*********************************************
                 *
-                *  pass max number of customers in journey
+                *  pass max number of customers in journey !!KEEP THIS THE LAST CHECK OR DOUBLE THINK THE STOCK MANAGEMENT!!
                 *
                 **********************************************/
 
@@ -4964,39 +4715,8 @@ public class EvolutionEngine
                       {
                         journeyMaxNumberOfCustomersReserved=true;
                       }
-
-                  }
-                }
-
-            /******************************************
-            *
-            *  pass is customer in the exclusion list?
-            *
-            *******************************************/
-
-            if (enterJourney && currentStatus == null)
-              {
-                if (!journey.getAppendExclusionLists() && exclusionList)
-                  {
-                    currentStatus = SubscriberJourneyStatus.Excluded;
-                    context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
                   }
 
-              }
-
-            /*****************************************
-            *
-            * pass is customer UCG?
-            *
-            *****************************************/
-
-            if (enterJourney && currentStatus == null)
-              {
-                if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
-                  {
-                    currentStatus = SubscriberJourneyStatus.UniversalControlGroup;
-                    context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
-                  }
               }
 
             /*****************************************
@@ -5085,16 +4805,8 @@ public class EvolutionEngine
                 if (currentStatus != null) // EVPRO-530
                 {
                   // keep the current status only if it has not been kept before...
-                  boolean keep = true;
-                  for(JourneyState current : subscriberState.getRecentJourneyStates())
-                    {
-                      if(current.getJourneyID().equals(journey.getJourneyID()) && currentStatus.equals(current.getSpecialExitReason()))
-                        {
-                          keep = false;
-                          break;
-                        }
-                    }
-                  if(keep)
+                  SubscriberJourneyStatus previousStatus = subscriberState.getSubscriberProfile().getSubscriberJourneys().get(journey.getJourneyID());
+                  if(previousStatus==null)
                     {
                       journeyState.setJourneyNodeID(journey.getEndNodeID());
                       journeyState.setSpecialExitReason(currentStatus);
@@ -5139,7 +4851,7 @@ public class EvolutionEngine
                 //
                 // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
                 //
-                if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign && journey.getFullStatistics())
+                if (journey.journeyMetricsNeeded())
                   {
                     boolean metricsUpdated = journeyState.populateMetricsPrior(subscriberState, tenantID);
                     subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
@@ -5924,7 +5636,9 @@ public class EvolutionEngine
 
     for (JourneyState journeyState : inactiveJourneyStates)
       {
-        subscriberState.getRecentJourneyStates().add(journeyState);
+        // MIGHT BE WRONG? : assuming we will have to do post metrics if we already have prior or during
+        if(!journeyState.getJourneyMetricsPrior().isEmpty() || !journeyState.getJourneyMetricsDuring().isEmpty()) subscriberState.getJourneyEndedStates().add(journeyState.getJourneyEndedState());
+
         subscriberState.getJourneyStates().remove(journeyState);
         if(!journeyState.isSpecialExit()) 
           {
@@ -5940,42 +5654,39 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    for (JourneyState journeyState : subscriberState.getRecentJourneyStates())
+    Iterator<JourneyEndedState> journeyEndedStateIterator = subscriberState.getJourneyEndedStates().iterator();
+    while (journeyEndedStateIterator.hasNext())
       {
-        if (journeyState.getJourneyCloseDate() == null)
-          {
-            GUIManagedObject journey = journeyService.getStoredJourney(journeyState.getJourneyID(), true);
+        JourneyEndedState journeyEndedState = journeyEndedStateIterator.next();
+        GUIManagedObject journey = journeyService.getStoredJourney(journeyEndedState.getJourneyID(), true);
 
-            //
-            // Check if JourneyMetrics are enabled.
-            // JourneyMetrics should only be generated for Campaigns (not journeys nor bulk campaigns)
-            //
-            if (journey == null) {
-              log.warn("Unable to retrieve journey " + journeyState.getJourneyID() + ". It will be closed without publishing any JourneyMetrics.");
+        //
+        // Check if JourneyMetrics are enabled.
+        // JourneyMetrics should only be generated for Campaigns (not journeys nor bulk campaigns)
+        //
+        if (journey == null) {
+          log.warn("Unable to retrieve journey " + journeyEndedState.getJourneyID() + ". It will be closed without publishing any JourneyMetrics.");
+          journeyEndedStateIterator.remove();
+          subscriberStateUpdated = true;
+        }
+        else if (((Journey) journey).journeyMetricsNeeded()) {
+          boolean metricsUpdated = journeyEndedState.populateMetricsPost(subscriberState, now, tenantID);
+          subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
 
-              journeyState.setJourneyCloseDate(now);
-              subscriberStateUpdated = true;
-            }
-            else if ((journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) && ((Journey) journey).getFullStatistics()) {
-              boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now, tenantID);
-              subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
-              
-              if (metricsUpdated) {
-                // Create a JourneyMetric to be added to JourneyStatistic from journeyState
-                subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
-                
-                journeyState.setJourneyCloseDate(now);
-                subscriberStateUpdated = true;
-              }
-            }
-            else {
-              //
-              // Close journey if JourneyMetrics are disabled
-              //
-              journeyState.setJourneyCloseDate(now);
-              subscriberStateUpdated = true;
-            }
+          if (metricsUpdated) {
+            // Create a JourneyMetric to be added to JourneyStatistic from journeyState
+            subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyEndedState));
+            journeyEndedStateIterator.remove();
+            subscriberStateUpdated = true;
           }
+        }
+        else {
+          //
+          // Close journey if JourneyMetrics are disabled
+          //
+          journeyEndedStateIterator.remove();
+          subscriberStateUpdated = true;
+        }
       }
 
     /*****************************************
@@ -6318,163 +6029,6 @@ public class EvolutionEngine
 
   /*****************************************
   *
-  *  nullSubscriberHistory
-  *
-  ****************************************/
-
-  public static SubscriberHistory nullSubscriberHistory() { return (SubscriberHistory) null; }
-
-  /*****************************************
-  *
-  *  updateSubscriberHistory
-  *
-  *****************************************/
-
-  public static SubscriberHistory updateSubscriberHistory(StringKey aggKey, SubscriberStateOutputWrapper subscriberStateOutputWrapper, SubscriberHistory currentSubscriberHistory)
-  {
-
-    if(log.isTraceEnabled()) log.trace("updateSubscriberHistory for "+subscriberStateOutputWrapper.getSubscriberState().getSubscriberID()+" on event "+subscriberStateOutputWrapper.getOriginalEvent().getClass().getSimpleName());
-
-    SubscriberHistory subscriberHistory = (currentSubscriberHistory != null) ? new SubscriberHistory(currentSubscriberHistory) : new SubscriberHistory(subscriberStateOutputWrapper.getSubscriberState().getSubscriberID(), subscriberStateOutputWrapper.getSubscriberState().getSubscriberProfile().getTenantID());
-    boolean subscriberHistoryUpdated = currentSubscriberHistory==null;
-
-    switch (subscriberStateOutputWrapper.getOriginalEvent().getSubscriberAction())
-      {
-        case Cleanup:
-          return null;
-          
-        case Delete:
-          SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
-          return currentSubscriberHistory;
-      }
-
-    if (currentSubscriberHistory!=null && SystemTime.currentTimeMillis() > subscriberHistory.getLastCleaningDate().getTime() +  86_400_000/*scan for retention no more than once a day (no retention if no more event coming in)*/)
-      {
-		subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory, subscriberStateOutputWrapper.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberHistoryUpdated;
-        if(subscriberHistory.getJourneyHistory().isEmpty() && subscriberHistory.getDeliveryRequests().isEmpty()) return null;
-        subscriberHistory.setLastCleaningDate(SystemTime.getCurrentTime());
-      }
-
-    if (subscriberStateOutputWrapper.getSubscriberState().getDeliveryResponse()!=null)
-      {
-        subscriberHistoryUpdated = updateSubscriberHistoryDeliveryRequests(subscriberStateOutputWrapper.getSubscriberState().getDeliveryResponse(), subscriberHistory) || subscriberHistoryUpdated;
-      }
-
-    if (subscriberStateOutputWrapper.getSubscriberState().getJourneyStatisticWrappers()!=null)
-      {
-        for(JourneyStatistic journeyStatistic:subscriberStateOutputWrapper.getSubscriberState().getJourneyStatisticWrappers())
-          {
-            subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics(journeyStatistic, subscriberHistory) || subscriberHistoryUpdated;
-          }
-      }
-
-
-    if (subscriberHistoryUpdated)
-      {
-        SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory);
-        evolutionEngineStatistics.updateSubscriberHistorySize(subscriberHistory.getKafkaRepresentation());
-      }
-
-    return subscriberHistoryUpdated ? subscriberHistory : currentSubscriberHistory;
-  }
-
-  /*****************************************
-  *
-  *  updateSubscriberHistoryDeliveryRequests
-  *
-  *****************************************/
-
-  private static boolean updateSubscriberHistoryDeliveryRequests(DeliveryRequest deliveryRequest, SubscriberHistory subscriberHistory)
-  {
-
-    /*****************************************
-    *
-    *  add to history
-    *
-    *****************************************/
-
-    //
-    //  find sorted location to insert
-    //
-
-    int i = 0;
-    while (i < subscriberHistory.getDeliveryRequests().size() && subscriberHistory.getDeliveryRequests().get(i).compareTo(deliveryRequest) <= 0)
-      {
-        i += 1;
-      }
-
-    //
-    //  insert
-    //
-
-    subscriberHistory.getDeliveryRequests().add(i, deliveryRequest);
-
-    /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return true;
-  }
-
-  /*****************************************
-  *
-  *  updateSubscriberHistoryJourneyStatistics
-  *
-  *****************************************/
-
-  private static boolean updateSubscriberHistoryJourneyStatistics(JourneyStatistic journeyStatistic, SubscriberHistory subscriberHistory)
-  {
-    /*****************************************
-    *
-    *  clear older history
-    *
-    *****************************************/
-
-    //
-    //  TBD DEW
-    //
-
-    /*****************************************
-    *
-    *  add to subscriberHistory
-    *
-    *****************************************/
-    
-    ListIterator<JourneyHistory> iterator = subscriberHistory.getJourneyHistory().listIterator();
-    JourneyHistory updatedHistory = null;
-    while (iterator.hasNext()) 
-      {
-        JourneyHistory history = iterator.next();
-        if(history.getJourneyID().equals(journeyStatistic.getJourneyID())) 
-          {
-            updatedHistory = new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory(), journeyStatistic.getLastConversionDate(), journeyStatistic.getConversionCount());
-            iterator.remove();
-            break;
-          }
-      }
-
-    if(updatedHistory != null)
-      {
-        subscriberHistory.getJourneyHistory().add(new JourneyHistory(updatedHistory));
-      }    
-    else 
-      {
-        subscriberHistory.getJourneyHistory().add(new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory(), journeyStatistic.getLastConversionDate(), journeyStatistic.getConversionCount()));
-      }
-    
-    /*****************************************
-     *
-     *  return
-     *
-     *****************************************/
-
-    return true;
-  }
-
-  /*****************************************
-  *
   *  enhancePeriodicEvaluation
   *
   *****************************************/
@@ -6582,26 +6136,13 @@ public class EvolutionEngine
     return new KeyValue<StringKey, ExternalAPIOutput>(new StringKey(value.getTopicID()), value);
   }
 
-  private static boolean filterForHistoryStateStore(StringKey key, SubscriberStateOutputWrapper value)
-  {
-	  if(log.isTraceEnabled()) log.trace("filterForHistoryStateStore("+key+") called on "+value.getOriginalEvent().getClass().getSimpleName());
-    // to store DeliveryRequest "reponse"
-    if(value.getSubscriberState().getDeliveryResponse()!=null) return true;
-    // to store journeyStatistic
-    if(value.getSubscriberState().getJourneyStatisticWrappers()!=null && value.getSubscriberState().getJourneyStatisticWrappers().size()>0) return true;
-    // for the cleanup
-    if(value.getOriginalEvent() instanceof CleanupSubscriber) return true;
-    // else filtered out
-    return false;
-  }
-
   /*****************************************
   *
   *  generateSubscriberTraceMessage
   *
   *****************************************/
 
-  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, SubscriberState currentSubscriberState, SubscriberState subscriberState, List<String> subscriberTraceDetails)
+  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState, List<String> subscriberTraceDetails)
   {
     /*****************************************
     *
@@ -6641,7 +6182,7 @@ public class EvolutionEngine
     //  field -- currentSubscriberState
     //
 
-    JsonNode currentSubscriberStateNode = (currentSubscriberState != null) ? deserializer.deserialize(null, converter.fromConnectData(null, SubscriberState.schema(),  SubscriberState.pack(currentSubscriberState))) : null;
+    JsonNode currentSubscriberStateNode = (subscriberState.getKafkaRepresentation()!=null && subscriberState.getKafkaRepresentation().length>0) ? deserializer.deserialize(null, subscriberState.getKafkaRepresentation()) : null;
 
     //
     //  field -- subscriberState
@@ -7234,7 +6775,6 @@ public class EvolutionEngine
 
         String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
         boolean includeExtendedSubscriberProfile = JSONUtilities.decodeBoolean(jsonRoot, "includeExtendedSubscriberProfile", Boolean.FALSE);
-        boolean includeHistory = JSONUtilities.decodeBoolean(jsonRoot, "includeHistory", Boolean.FALSE);
         boolean forSupport = JSONUtilities.decodeBoolean(jsonRoot, "forSupport", Boolean.FALSE);// this is not a getSubscriberProfile this is a "get statestores data" call, only meant for support troubleshooting
 
         /*****************************************
@@ -7247,11 +6787,11 @@ public class EvolutionEngine
         switch (api)
           {
             case getSubscriberProfile:
-              apiResponse = processGetSubscriberProfile(subscriberID, includeExtendedSubscriberProfile, includeHistory, forSupport);
+              apiResponse = processGetSubscriberProfile(subscriberID, includeExtendedSubscriberProfile, forSupport);
               break;
 
             case retrieveSubscriberProfile:
-              apiResponse = processRetrieveSubscriberProfile(subscriberID, includeExtendedSubscriberProfile, includeHistory, forSupport);
+              apiResponse = processRetrieveSubscriberProfile(subscriberID, includeExtendedSubscriberProfile, forSupport);
               break;
           }
 
@@ -7348,7 +6888,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private byte[] processGetSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory, boolean forSupport) throws ServerException
+  private byte[] processGetSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean forSupport) throws ServerException
   {
     //
     //  timeout
@@ -7377,7 +6917,6 @@ public class EvolutionEngine
     request.put("apiVersion", 1);
     request.put("subscriberID", subscriberID);
     request.put("includeExtendedSubscriberProfile", includeExtendedSubscriberProfile);
-    request.put("includeHistory", includeHistory);
     request.put("forSupport", forSupport);
     JSONObject requestJSON = JSONUtilities.encodeObject(request);
 
@@ -7526,7 +7065,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private byte[] processRetrieveSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory, boolean forSupport) throws ServerException
+  private byte[] processRetrieveSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean forSupport) throws ServerException
   {
     /*****************************************
     *
@@ -7537,7 +7076,6 @@ public class EvolutionEngine
     SubscriberProfile subscriberProfile = null;
     SubscriberState subscriberState = null;
     ExtendedSubscriberProfile extendedSubscriberProfile = null;
-    SubscriberHistory subscriberHistory = null;
 
     /*****************************************
     *
@@ -7658,70 +7196,6 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  retrieve subscriberHistory from local store (if necessary)
-    *
-    *****************************************/
-
-    if (subscriberProfile != null && includeHistory)
-      {
-        now = SystemTime.getCurrentTime();
-        retainedException = null;
-        stateStoreCallCompleted = false;
-        while (! stateStoreCallCompleted && now.before(timeout))
-          {
-            //
-            //  wait for streams
-            //
-
-            waitForStreams(timeout);
-
-            //
-            //  query
-            //
-
-            try
-              {
-                long startTime = DurationStat.startTime();
-                subscriberHistory = subscriberHistoryStore.get(new StringKey(subscriberID));
-                statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberHistoryStore")
-                                        .withLabel(StatsBuilders.LABEL.operation.name(),"get")
-                                        .getStats().add(startTime);
-                stateStoreCallCompleted = true;
-              }
-            catch (InvalidStateStoreException e)
-              {
-                retainedException = new ServerException(e);
-              }
-
-            //
-            //  now
-            //
-
-            now = SystemTime.getCurrentTime();
-          }
-
-        //
-        //  timeout
-        //
-
-        if (! stateStoreCallCompleted)
-          {
-            throw retainedException;
-          }
-
-        //
-        //  add subscriberHistory
-        //
-
-        if (subscriberHistory != null)
-          {
-            subscriberProfile = subscriberProfile.copy();
-            subscriberProfile.setSubscriberHistory(subscriberHistory);
-          }
-      }
-
-    /*****************************************
-    *
     *  response
     *
     *****************************************/
@@ -7750,17 +7224,10 @@ public class EvolutionEngine
           ps.write("\"subscriberState\":".getBytes());
           messageFormatter.writeTo(record,ps);
         }
-        if(subscriberHistory!=null){
-          // a fake record (partition and offset not accurate)
-          ConsumerRecord<byte[],byte[]> record = new ConsumerRecord<>(Deployment.getSubscriberHistoryChangeLogTopic(),0,0L,null, SubscriberHistory.serde().serializer().serialize(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory));
-          if(subscriberState!=null) ps.write(",".getBytes());
-          ps.write("\"subscriberHistory\":".getBytes());
-          messageFormatter.writeTo(record,ps);
-        }
         if(extendedSubscriberProfile!=null){
           // a fake record (partition and offset not accurate)
           ConsumerRecord<byte[],byte[]> record = new ConsumerRecord<>(Deployment.getExtendedSubscriberProfileChangeLogTopic(),0,0L,null, ExtendedSubscriberProfile.stateStoreSerde().serializer().serialize(Deployment.getExtendedSubscriberProfileChangeLogTopic(), extendedSubscriberProfile));
-          if(subscriberState!=null||subscriberHistory!=null) ps.write(",".getBytes());
+          if(subscriberState!=null) ps.write(",".getBytes());
           ps.write("\"extendedSubscriberProfile\":".getBytes());
           messageFormatter.writeTo(record,ps);
         }
@@ -7830,7 +7297,6 @@ public class EvolutionEngine
             //
 
             log.info("SubscriberStateSize: {}", evolutionEngineStatistics.getSubscriberStateSize().toString());
-            log.info("SubscriberHistorySize: {}", evolutionEngineStatistics.getSubscriberHistorySize().toString());
             log.info("ExtendedProfileSize: {}", evolutionEngineStatistics.getExtendedProfileSize().toString());
 
             //

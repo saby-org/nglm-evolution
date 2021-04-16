@@ -14,13 +14,7 @@
 
   "kafkaRetentionDaysExpiredTokens"   : 31,
   "kafkaRetentionDaysExpiredVouchers" : 31,
-  "kafkaRetentionDaysJourneys"        : 31,
-  "kafkaRetentionDaysCampaigns"       : 31,
-  "kafkaRetentionDaysBulkCampaigns"   : 7,
   "kafkaRetentionDaysLoyaltyPrograms" : 31,
-  "kafkaRetentionDaysODR"             : 91,
-  "kafkaRetentionDaysBDR"             : 91,
-  "kafkaRetentionDaysMDR"             : 91,
   "kafkaRetentionDaysTargets"         : 7,
   
   "firstDayOfTheWeek"                 : "Monday",
@@ -90,6 +84,17 @@
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
   "ESRetentionDaysVDR"              : 45,
+  
+  "connectTask": {
+		"default": {
+			"initialWait": 50,
+			"retries": 18
+		},
+		"extendedsubscriberprofile_es_sink_connector": {
+			"initialWait": 100,
+			"retries": 19
+		}
+  },
 
   "hourlyReportCronEntryString"   : "0 * * * *",
   "dailyReportCronEntryString"    : "5 2 * * *",
@@ -168,8 +173,6 @@
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
   "extendedSubscriberProfileChangeLog"                   : "${changelog.evolutionengine.extendedsubscriberprofile}",
   "extendedSubscriberProfileChangeLogTopic"              : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
-  "subscriberHistoryChangeLog"                           : "${changelog.evolutionengine.subscriberhistory}",
-  "subscriberHistoryChangeLogTopic"                      : "${changelog.evolutionengine.subscriberhistory.topic}",
   "tokenChangeTopic"                                     : "${topic.tokenchange}",
   "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
   "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",

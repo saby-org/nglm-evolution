@@ -520,13 +520,13 @@ public class PointBalance
     //  generate fake commodityDeliveryResponse (needed to get BDRs)
     //
     
-    DeliveryManagerDeclaration commodityDeliveryManagerDeclaration = Deployment.getDeliveryManagers().get("commodityDelivery");
+    DeliveryManagerDeclaration commodityDeliveryManagerDeclaration = Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
 
     HashMap<String,Object> commodityDeliveryRequestData = new HashMap<String,Object>();
     
     commodityDeliveryRequestData.put("deliveryRequestID", context.getUniqueKey());
     commodityDeliveryRequestData.put("originatingRequest", true); 
-    commodityDeliveryRequestData.put("deliveryType", "commodityDelivery");
+    commodityDeliveryRequestData.put("deliveryType", CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
 
     commodityDeliveryRequestData.put("eventID", (eventID == null ? "unknown" : eventID));
     commodityDeliveryRequestData.put("moduleID", moduleID);

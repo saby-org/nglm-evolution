@@ -170,7 +170,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public static class EmptyFulfillmentRequest extends DeliveryRequest implements BonusDelivery
+  public static class EmptyFulfillmentRequest extends BonusDelivery
   {
     /*****************************************
     *
@@ -256,19 +256,6 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setStatus(EmptyFulfillmentStatus status) { this.status = status; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
-
-    //
-    //  bonus delivery accessors
-    //
-
-    public int getBonusDeliveryReturnCode() { return getReturnCode() == null ? 0 : getReturnCode(); }
-    public String getBonusDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
-    public String getBonusDeliveryOrigin() { return ""; }
-    public String getBonusDeliveryProviderId() { return getProviderID(); }
-    public String getBonusDeliveryDeliverableId() { return getCommodityID(); }
-    public String getBonusDeliveryDeliverableName() { return getCommodityName(); }
-    public int getBonusDeliveryDeliverableQty() { return getAmount(); }
-    public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
 
     /*****************************************
     *

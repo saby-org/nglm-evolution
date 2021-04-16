@@ -18,6 +18,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -28,7 +29,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
-
+import org.elasticsearch.common.unit.TimeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -165,6 +166,10 @@ public abstract class SimpleESSinkTask extends SinkTask
         ByteSizeValue byteLimit = (batchSize == -1L) ? new ByteSizeValue(-1) : new ByteSizeValue(batchSize, ByteSizeUnit.MB);
         builder.setBulkSize(byteLimit);
         builder.setConcurrentRequests(1);
+        int initialWait = Deployment.getConnectTaskInitialWait(connectorName);
+        int retries = Deployment.getConnectTaskRetries(connectorName);
+        builder.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(initialWait), retries));
+        log.info("{} -- initialWait: {}, retries: {}", connectorName, initialWait, retries);        
         bulkProcessor = builder.build();
       }
     catch (ElasticsearchException e)

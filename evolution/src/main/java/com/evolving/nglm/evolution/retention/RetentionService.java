@@ -36,14 +36,14 @@ public class RetentionService {
 
 		SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
 
-		//journeys
-		boolean subscriberUpdated = !filterOutRetentionOver(subscriberState.getRecentJourneyStates().iterator(), RetentionType.KAFKA_DELETION).isEmpty();
+		boolean subscriberUpdated = false;
 
 		// those for journeys are kept forever till campaign is deleted
 		Iterator<String> iterator = subscriberProfile.getSubscriberJourneys().keySet().iterator();
 		while(iterator.hasNext()){
 			String journeyId = iterator.next();
 			if(journeyService.getStoredJourney(journeyId)==null){
+				subscriberUpdated=true;
 				iterator.remove();
 				subscriberProfile.getSubscriberJourneysEnded().remove(journeyId);// they should all be in as well
 			}
@@ -52,6 +52,7 @@ public class RetentionService {
 		while(iterator.hasNext()){
 			String journeyId = iterator.next();
 			if(journeyService.getStoredJourney(journeyId)==null){
+				subscriberUpdated=true;
 				iterator.remove();
 				subscriberProfile.getSubscriberJourneysEnded().remove(journeyId);
 			}
@@ -79,36 +80,6 @@ public class RetentionService {
 
 		// vouchers
 		subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getVouchers().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
-
-		return subscriberUpdated;
-
-	}
-
-	// the kafka subscriberHistory clean up
-	public boolean cleanSubscriberHistory(SubscriberHistory subscriberHistory, int tenantID){
-
-		if(log.isTraceEnabled()) log.trace("cleanSubscriberHistory called for "+subscriberHistory.getSubscriberID());
-
-		boolean subscriberUpdated = false;
-
-		//TODO: before EVPRO-325 too much deliveryRequest were stored, not enough filtering, hence a forced cleaning that can be removed once all customers are in the right version
-		// ------ START CLEANING COULD BE REMOVED
-		Iterator<DeliveryRequest> iterator = subscriberHistory.getDeliveryRequests().iterator();
-		while (iterator.hasNext()){
-			DeliveryRequest toCheck = iterator.next();
-			if(!toCheck.isToStoreInHistoryStateStore()){
-				if(log.isDebugEnabled()) log.debug("cleaning history of "+toCheck.getClass().getSimpleName());
-				iterator.remove();
-				subscriberUpdated = true;
-			}
-		}
-		// ------ END CLEANING COULD BE REMOVED
-
-		// deliveryRequest
-		subscriberUpdated = !filterOutRetentionOver(subscriberHistory.getDeliveryRequests().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
-
-		// journeyStatistics
-		subscriberUpdated = !filterOutRetentionOver(subscriberHistory.getJourneyHistory().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
 
 		return subscriberUpdated;
 
@@ -145,24 +116,6 @@ public class RetentionService {
 	public boolean isExpired(Expirable expirable){
 		if(expirable==null||expirable.getExpirationDate(this)==null) return false;
 		return SystemTime.getCurrentTime().after(expirable.getExpirationDate(this));
-	}
-
-	// this is shared code hence grouped
-	public Duration getJourneyRetention(RetentionType type, String journeyID) {
-		GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-		if(journey==null) return java.time.Duration.ofDays(Integer.MIN_VALUE);//deleted journey clean now
-		switch (type){
-			case KAFKA_DELETION:
-				switch (journey.getGUIManagedObjectType()){
-					case BulkCampaign:
-						return java.time.Duration.ofDays(Deployment.getKafkaRetentionDaysBulkCampaigns());
-					case Journey:
-						return java.time.Duration.ofDays(Deployment.getKafkaRetentionDaysJourneys());
-				}
-				return java.time.Duration.ofDays(Deployment.getKafkaRetentionDaysCampaigns());
-		}
-		log.info("no retention applying for {} of type {}",journey.getGUIManagedObjectType(),type);
-		return null;
 	}
 	
 	public Duration getTargetRetention(RetentionType type, String targetID) {
