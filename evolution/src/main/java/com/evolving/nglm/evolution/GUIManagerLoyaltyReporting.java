@@ -299,7 +299,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", false);
             if (durationInDays != null)
               {
-                Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(effectiveEndDateStr), durationInDays, Deployment.getSystemTimeZone());
+                String effectiveStartDateStr = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", true);
+                Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(effectiveStartDateStr), durationInDays, Deployment.getSystemTimeZone());
                 jsonRoot.put("effectiveEndDate", GUIManagedObject.formatDateField(effectiveEndDate));
               }
             loyaltyProgram = new LoyaltyProgramMission(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService, tenantID);
