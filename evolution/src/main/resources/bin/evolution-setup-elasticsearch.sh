@@ -224,7 +224,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $EL
       "deliveryRequestID" : { "type" : "keyword" },
       "deliverableID" : { "type" : "keyword" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
-      "deliverableExpiration" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "deliverableExpirationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "creationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "deliverableQty" : { "type" : "integer", "index" : "false" },
       "operation" : { "type" : "keyword" },

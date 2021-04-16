@@ -67,7 +67,7 @@ public class VDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("origin", voucherChange.getOrigin());
       documentMap.put("moduleID", voucherChange.getModuleID());
       documentMap.put("featureID", voucherChange.getFeatureID()); 
-      documentMap.put("expiryDate", voucherChange.getNewVoucherExpiryDate()); 
+      documentMap.put("expiryDate", RLMDateUtils.formatDateForElasticsearchDefault(voucherChange.getNewVoucherExpiryDate())); 
       
       return documentMap;
     }

@@ -148,7 +148,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("evaluationDate", RLMDateUtils.formatDateForElasticsearchDefault(now)); // @rl TODO: has the exact same content as lastUpdateDate, wrong date format (no timezone), is it used somewhere ? Purpose seems to be the date of evaluation of every metricHistory. Keep only one, maybe remove this one, if not used ?
       documentMap.put("evolutionSubscriberStatus", (subscriberProfile.getEvolutionSubscriberStatus() != null) ? subscriberProfile.getEvolutionSubscriberStatus().getExternalRepresentation() : null);
       documentMap.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-      documentMap.put("evolutionSubscriberStatusChangeDate", subscriberProfile.getEvolutionSubscriberStatusChangeDate());
+      documentMap.put("evolutionSubscriberStatusChangeDate", RLMDateUtils.formatDateForElasticsearchDefault(subscriberProfile.getEvolutionSubscriberStatusChangeDate()));
       documentMap.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
       documentMap.put("language", subscriberProfile.getLanguage());
       documentMap.put("segments", subscriberProfile.getSegments(subscriberGroupEpochReader));

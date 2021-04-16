@@ -958,7 +958,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
               {
                 index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
               }
-            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearch(startDate, timeZone)));
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
           }
         else
           {
@@ -979,7 +979,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
               {
                 index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
               }
-            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearch(startDate, timeZone)));
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
           }
         else
           {
@@ -1000,7 +1000,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
               {
                 index = NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL);
               }
-            query = query.filter(QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.formatDateForElasticsearch(startDate, timeZone)));
+            query = query.filter(QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
           }
         else
           {
