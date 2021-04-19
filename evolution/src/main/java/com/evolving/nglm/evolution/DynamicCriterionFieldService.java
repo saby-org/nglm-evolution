@@ -22,6 +22,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
@@ -124,9 +125,9 @@ public class DynamicCriterionFieldService extends GUIService
 
   public void addLoyaltyProgramCriterionFields(LoyaltyProgram loyaltyProgram, boolean newLoyaltyProgram) throws GUIManagerException
   {
-    addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tier", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
     if (loyaltyProgram instanceof LoyaltyProgramPoints)
       {
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tier", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
         LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "rewardpoint.balance", CriterionDataType.IntegerCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "statuspoint.balance", CriterionDataType.IntegerCriterion, null);
@@ -139,7 +140,16 @@ public class DynamicCriterionFieldService extends GUIService
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierupdatedate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
-      }    
+      }
+    else if (loyaltyProgram instanceof LoyaltyProgramChallenge)
+      {
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "level", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "score", CriterionDataType.IntegerCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "lastScoreChangeDate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "levelupdatedate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
+      }
   }
   /*****************************************
   *
@@ -207,6 +217,13 @@ public class DynamicCriterionFieldService extends GUIService
               availableValuesField.add(tier.getTierName());  
             }
           break;
+          
+        case CHALLENGE:
+          for (ChallengeLevel level : ((LoyaltyProgramChallenge) loyaltyProgram).getLevels())
+            {
+              availableValuesField.add(level.getLevelName());  
+            }
+          break;
       }
     return availableValuesField;
   }
@@ -221,19 +238,25 @@ public class DynamicCriterionFieldService extends GUIService
   public void removeLoyaltyProgramCriterionFields(GUIManagedObject loyaltyProgram)
   {
     String prefix = "loyaltyprogram" + "." + loyaltyProgram.getGUIManagedObjectID() + ".";
-    removeDynamicCriterionField(prefix + "tier", null, loyaltyProgram.getTenantID());
-    removeDynamicCriterionField(prefix + "rewardpoint.balance", null, loyaltyProgram.getTenantID());
-    removeDynamicCriterionField(prefix + "statuspoint.balance", null, loyaltyProgram.getTenantID());
-    
     if (loyaltyProgram instanceof LoyaltyProgramPoints)
       {
         LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+        
+        removeDynamicCriterionField(prefix + "tier", null, loyaltyProgram.getTenantID());
+    	removeDynamicCriterionField(prefix + "rewardpoint.balance", null, loyaltyProgram.getTenantID());
+    	removeDynamicCriterionField(prefix + "statuspoint.balance", null, loyaltyProgram.getTenantID());
         String statusPointID = loyaltyProgramPoints.getStatusPointsID();
         String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
         removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpirydate", null, loyaltyProgram.getTenantID());
         removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpirydate", null, loyaltyProgram.getTenantID());
         removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpiryquantity", null, loyaltyProgram.getTenantID());
         removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpiryquantity", null, loyaltyProgram.getTenantID());
+      }
+    else if (loyaltyProgram instanceof LoyaltyProgramChallenge)
+      {
+        removeDynamicCriterionField(prefix + "level", null, loyaltyProgram.getTenantID());
+        removeDynamicCriterionField(prefix + "score", null, loyaltyProgram.getTenantID());
+        removeDynamicCriterionField(prefix + "lastScoreChangeDate", null, loyaltyProgram.getTenantID());
       }
   }
 
@@ -426,7 +449,9 @@ public class DynamicCriterionFieldService extends GUIService
   *
   *****************************************/
 
+
   public void removeDynamicCriterionField(String dynamicCriterionFieldID, String userID, int tenantID) { removeGUIManagedObject(dynamicCriterionFieldID, SystemTime.getCurrentTime(), userID, tenantID); }
+
 
   /*****************************************
   *

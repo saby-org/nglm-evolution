@@ -108,9 +108,13 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramPointsEvents; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallengeList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallengeSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram_POINT.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgram; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram_CHALLENGE.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgramChallenge; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgram; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallenge; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyProgram; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyWorkflowList; echo
@@ -273,6 +277,7 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/d
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomer; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerAvailableCampaigns; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "mainAccountBalance" : 9, "vendorName": "name"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "score" : 21, "challengeID": "1"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateCustomer; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "fromDate" : "2018-10-12", "toDate" : "2018-12-12"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerActivityByDateRange; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerBDRs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerODRs; echo

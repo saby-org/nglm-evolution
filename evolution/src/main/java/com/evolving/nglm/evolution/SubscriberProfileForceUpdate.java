@@ -165,6 +165,18 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
             this.parameterMap.put(metaData.getName(), value);
           }
       }
+    
+    //
+    // score can be updated // hack
+    //
+    
+    Integer score = JSONUtilities.decodeInteger(jsonRoot, "score", false);
+    String challengeID = JSONUtilities.decodeString(jsonRoot, "challengeID", false);
+    if (challengeID != null && !challengeID.isEmpty() && score != null)
+      {
+        this.parameterMap.put("score", score);
+        this.parameterMap.put("challengeID", challengeID);
+      }
   }
 
   /*****************************************

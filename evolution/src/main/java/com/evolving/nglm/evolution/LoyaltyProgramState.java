@@ -60,6 +60,7 @@ public class LoyaltyProgramState implements Cleanable
   {
     List<ConnectSerde<? extends LoyaltyProgramState>> loyaltyProgramStateSerdes = new ArrayList<ConnectSerde<? extends LoyaltyProgramState>>();
     loyaltyProgramStateSerdes.add(LoyaltyProgramPointsState.serde());
+    loyaltyProgramStateSerdes.add(LoyaltyProgramChallengeState.serde());
     commonSerde = new ConnectSerde<LoyaltyProgramState>("loyaltyProgramState", false, loyaltyProgramStateSerdes.toArray(new ConnectSerde[0]));
   }
 
@@ -95,6 +96,7 @@ public class LoyaltyProgramState implements Cleanable
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public Date getLoyaltyProgramEnrollmentDate() { return loyaltyProgramEnrollmentDate; }
   public Date getLoyaltyProgramExitDate() { return loyaltyProgramExitDate; }
+  public void setLoyaltyProgramExitDate(Date date) { this.loyaltyProgramExitDate = date; }
 
   @Override public Date getExpirationDate(RetentionService retentionService) { return getLoyaltyProgramExitDate(); }
   @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
