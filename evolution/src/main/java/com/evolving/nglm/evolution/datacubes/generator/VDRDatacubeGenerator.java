@@ -15,6 +15,7 @@ import org.elasticsearch.search.aggregations.bucket.composite.DateHistogramValue
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.JourneyService;
@@ -23,6 +24,7 @@ import com.evolving.nglm.evolution.OfferObjectiveService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.SupplierService;
 import com.evolving.nglm.evolution.VoucherService;
+import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
@@ -49,7 +51,6 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   private List<String> filterFields;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
-  private OfferObjectivesMap offerObjectivesMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
@@ -65,13 +66,12 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public VDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, VoucherService voucherService, SupplierService supplierService, int tenantID, String timeZone)  
+  public VDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, VoucherService voucherService, SupplierService supplierService, int tenantID, String timeZone)  
   {
     super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
 
     this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();
-    this.offerObjectivesMap = new OfferObjectivesMap(offerObjectiveService);
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
@@ -90,6 +90,19 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("action");
     
    }
+  
+  public VDRDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
+    this(datacubeName,
+        datacubeManager.getElasticsearchClientAPI(),
+        datacubeManager.getDatacubeWriter(),
+        datacubeManager.getOfferService(),
+        datacubeManager.getLoyaltyProgramService(),
+        datacubeManager.getJourneyService(),
+        datacubeManager.getVoucherService(),
+        datacubeManager.getSupplierService(),
+        tenantID,
+        Deployment.getDeployment(tenantID).getTimeZone());
+  }
 
   /*****************************************
   *
@@ -125,7 +138,6 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     
     offersMap.update();
     modulesMap.updateFromElasticsearch(elasticsearch);
-    offerObjectivesMap.update();
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();

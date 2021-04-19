@@ -17,6 +17,7 @@ import com.evolving.nglm.evolution.datacubes.generator.ODRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.ProgramsChangesDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.ProgramsHistoryDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.SubscriberProfileDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.VDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 
 public class DatacubeJobs
@@ -48,6 +49,14 @@ public class DatacubeJobs
         return MDRHourlyPreview(config, datacubeManager);
       case MDRHourlyDefinitive:
         return MDRHourlyDefinitive(config, datacubeManager);
+      case VDRDailyPreview:
+        return VDRDailyPreview(config, datacubeManager);
+      case VDRDailyDefinitive:
+        return VDRDailyDefinitive(config, datacubeManager);
+      case VDRHourlyPreview:
+        return VDRHourlyPreview(config, datacubeManager);
+      case VDRHourlyDefinitive:
+        return VDRHourlyDefinitive(config, datacubeManager);
       case LoyaltyProgramsPreview:
         return LoyaltyProgramsPreview(config, datacubeManager);
       case LoyaltyProgramsDefinitive:
@@ -383,6 +392,84 @@ public class DatacubeJobs
       protected void asyncRun()
       {
         hourlyMdrDatacubeDefinitive.hourlyDefinitive();
+      }
+    };
+  }
+
+  /*****************************************
+   * VDR daily preview
+   *
+   * This will generated a datacube preview of the day from the detailedrecords_vouchers-YYYY-MM-dd index of the day
+   * Those data are not definitive, the day is not ended yet, new VDR can still be added.
+   *****************************************/
+  private static ScheduledJob VDRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
+    // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
+    VDRDatacubeGenerator dailyVdrDatacubePreview = new VDRDatacubeGenerator(NAME_PREFIX(config)+"VDR:Daily(Preview)", config.getTenantID(), datacubeManager);
+    
+    return new AsyncScheduledJob(config)
+    {
+      @Override
+      protected void asyncRun()
+      {
+        dailyVdrDatacubePreview.dailyPreview();
+      }
+    };
+  }
+  
+  /*****************************************
+   * VDR daily definitive
+   *
+   * This will generated a datacube every day from the detailedrecords_vouchers-YYYY-MM-dd index of the previous day.
+   *****************************************/
+  private static ScheduledJob VDRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
+    // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
+    VDRDatacubeGenerator dailyVdrDatacubeDefinitive = new VDRDatacubeGenerator(NAME_PREFIX(config)+"VDR:Daily(Definitive)", config.getTenantID(), datacubeManager);
+    
+    return new AsyncScheduledJob(config)
+    {
+      @Override
+      protected void asyncRun()
+      {
+        dailyVdrDatacubeDefinitive.dailyDefinitive();
+      }
+    };
+  }
+  
+  /*****************************************
+   * VDR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_vouchers-YYYY-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new VDR can still be added.
+   *****************************************/
+  private static ScheduledJob VDRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
+    // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
+    VDRDatacubeGenerator hourlyVdrDatacubePreview = new VDRDatacubeGenerator(NAME_PREFIX(config)+"VDR:Hourly(Preview)", config.getTenantID(), datacubeManager);
+    
+    return new AsyncScheduledJob(config)
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyVdrDatacubePreview.hourlyPreview();
+      }
+    };
+  }
+  
+  /*****************************************
+   * VDR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_vouchers-YYYY-MM-dd index of the previous day.
+   *****************************************/
+  private static ScheduledJob VDRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
+    // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
+    VDRDatacubeGenerator hourlyVdrDatacubeDefinitive = new VDRDatacubeGenerator(NAME_PREFIX(config)+"VDR:Hourly(Definitive)", config.getTenantID(), datacubeManager);
+    
+    return new AsyncScheduledJob(config)
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyVdrDatacubeDefinitive.hourlyDefinitive();
       }
     };
   }

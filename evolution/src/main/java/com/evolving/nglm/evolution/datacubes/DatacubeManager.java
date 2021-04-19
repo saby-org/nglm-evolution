@@ -189,6 +189,8 @@ public class DatacubeManager
   public OfferObjectiveService getOfferObjectiveService() { return offerObjectiveService; }
   public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
   public ResellerService getResellerService() { return resellerService; }
+  public VoucherService getVoucherService() { return voucherService; }
+  public SupplierService getSupplierService() { return supplierService; }
   
   public ElasticsearchClientAPI getElasticsearchClientAPI() { return elasticsearchRestClient; }
   
