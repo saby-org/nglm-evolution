@@ -245,7 +245,7 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionWeeksDatacubeJourneys;
   
-  private static Map<String, ConnectTaskConfiguration> connectTask = new HashMap<>();
+  private static Map<String, ConnectTaskConfiguration> connectTask;
   private static ConnectTaskConfiguration connectTaskConfigDefault;
   
   
@@ -260,13 +260,7 @@ public class DeploymentCommon
   private static String topicRetentionLongMs;
   private static int kafkaRetentionDaysExpiredTokens;
   private static int kafkaRetentionDaysExpiredVouchers;
-  private static int kafkaRetentionDaysJourneys;
-  private static int kafkaRetentionDaysCampaigns;
-  private static int kafkaRetentionDaysBulkCampaigns;
   private static int kafkaRetentionDaysLoyaltyPrograms;
-  private static int kafkaRetentionDaysODR;
-  private static int kafkaRetentionDaysBDR;
-  private static int kafkaRetentionDaysMDR;
   private static int kafkaRetentionDaysTargets;
   //
   // Topics
@@ -324,8 +318,6 @@ public class DeploymentCommon
   private static String subscriberStateChangeLogTopic;
   private static String extendedSubscriberProfileChangeLog;
   private static String extendedSubscriberProfileChangeLogTopic;
-  private static String subscriberHistoryChangeLog;
-  private static String subscriberHistoryChangeLogTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
   private static String presentationLogTopic;
@@ -534,13 +526,7 @@ public class DeploymentCommon
   public static String getTopicRetentionLongMs() { return topicRetentionLongMs; }
   public static int getKafkaRetentionDaysExpiredTokens() { return kafkaRetentionDaysExpiredTokens; }
   public static int getKafkaRetentionDaysExpiredVouchers() { return kafkaRetentionDaysExpiredVouchers; }
-  public static int getKafkaRetentionDaysJourneys() { return kafkaRetentionDaysJourneys; }
-  public static int getKafkaRetentionDaysCampaigns() { return kafkaRetentionDaysCampaigns; }
-  public static int getKafkaRetentionDaysBulkCampaigns() { return kafkaRetentionDaysBulkCampaigns; }
   public static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
-  public static int getKafkaRetentionDaysODR() { return kafkaRetentionDaysODR; }
-  public static int getKafkaRetentionDaysBDR() { return kafkaRetentionDaysBDR; }
-  public static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
   
@@ -549,7 +535,6 @@ public class DeploymentCommon
   public static long getGuiConfigurationCleanerThreadPeriodMs() { return guiConfigurationCleanerThreadPeriodMs; }
   public static int getGuiConfigurationInitialConsumerMaxPollRecords() { return guiConfigurationInitialConsumerMaxPollRecords; }
   public static int getGuiConfigurationInitialConsumerMaxFetchBytes() { return guiConfigurationInitialConsumerMaxFetchBytes; }
-
   
   //
   // Topics
@@ -607,8 +592,6 @@ public class DeploymentCommon
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getExtendedSubscriberProfileChangeLog() { return extendedSubscriberProfileChangeLog; }
   public static String getExtendedSubscriberProfileChangeLogTopic() { return extendedSubscriberProfileChangeLogTopic; }
-  public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
-  public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
@@ -810,46 +793,16 @@ public class DeploymentCommon
     elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
     elasticsearchRetentionWeeksDatacubeJourneys = jsonReader.decodeInteger("ESRetentionWeeksDatacubeJourneys");
 
-
-    // journeyMetricDeclarations
-    DeploymentJSONReader journeyMetricConfigurationJsonReader = jsonReader.get("journeyMetrics");
-    if( journeyMetricConfigurationJsonReader.keySet().isEmpty() ) {
-      // JourneyMetric are therefore disabled
-      journeyMetricConfiguration = new JourneyMetricConfiguration();
-    } else {
-      int priorPeriodDays = journeyMetricConfigurationJsonReader.decodeInteger("priorPeriodDays");
-      if(priorPeriodDays < 1) {
-        throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'priorPeriodDays' field cannot be negative or zero.");
-      }
-      
-      int postPeriodDays = journeyMetricConfigurationJsonReader.decodeInteger("postPeriodDays");
-      if(postPeriodDays < 1) {
-        throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'postPeriodDays' field cannot be negative or zero.");
-      }
-      Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = journeyMetricConfigurationJsonReader.decodeMapFromArray(JourneyMetricDeclaration.class, "metrics");
-      if(journeyMetricDeclarations.isEmpty()) { // JourneyMetric are therefore disabled
-        journeyMetricConfiguration = new JourneyMetricConfiguration();
-      } else {
-        journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
-      }
-    }
     
-    try
-    {
-      //  connectTask
-      JSONObject connectTaskJSON = jsonReader.decodeJSONObject("connectTask");
-      for (Object key : connectTaskJSON.keySet()) {
-        connectTask.put((String) key, new ConnectTaskConfiguration((JSONObject) connectTaskJSON.get(key)));
-      }
-      connectTaskConfigDefault = connectTask.get("default");
-      if (connectTaskConfigDefault == null) {
-        log.info("connectTask section has no \"default\", using hard-coded values");
-        connectTaskConfigDefault = new ConnectTaskConfiguration(50, 8);
-      }
+    // connectTask
+    connectTask = new HashMap<>();
+    JSONObject connectTaskJSON = jsonReader.decodeJSONObject("connectTask");
+    for (Object key : connectTaskJSON.keySet()) {
+      connectTask.put((String) key, new ConnectTaskConfiguration((JSONObject) connectTaskJSON.get(key)));
     }
-  catch (JSONUtilitiesException e)
-    {
-      throw new ServerRuntimeException("deployment", e);
+    connectTaskConfigDefault = connectTask.get("default");
+    if (connectTaskConfigDefault == null) {
+      throw new ServerRuntimeException("connectTask section must have a \"default\" configuration.");
     }
     
     //
@@ -863,18 +816,7 @@ public class DeploymentCommon
     topicRetentionLongMs = ""+(jsonReader.decodeInteger("topicRetentionLongDay") * 24 * 3600 * 1000L);
     kafkaRetentionDaysExpiredTokens = jsonReader.decodeInteger("kafkaRetentionDaysExpiredTokens");
     kafkaRetentionDaysExpiredVouchers = jsonReader.decodeInteger("kafkaRetentionDaysExpiredVouchers");
-    kafkaRetentionDaysJourneys = jsonReader.decodeInteger("kafkaRetentionDaysJourneys");
-    kafkaRetentionDaysCampaigns = jsonReader.decodeInteger("kafkaRetentionDaysCampaigns");
-    // adjusting and warning if too low for journey metric feature to work
-    if(Deployment.getJourneyMetricConfiguration().getPostPeriodDays() > kafkaRetentionDaysCampaigns+2){
-      kafkaRetentionDaysCampaigns = Deployment.getJourneyMetricConfiguration().getPostPeriodDays() + 2;
-      log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric postPeriodDays of "+Deployment.getJourneyMetricConfiguration().getPostPeriodDays()+" (need at least 2 days more)");
-    }
-    kafkaRetentionDaysBulkCampaigns = jsonReader.decodeInteger("kafkaRetentionDaysBulkCampaigns");
     kafkaRetentionDaysLoyaltyPrograms = jsonReader.decodeInteger("kafkaRetentionDaysLoyaltyPrograms");
-    kafkaRetentionDaysODR = jsonReader.decodeInteger("kafkaRetentionDaysODR");
-    kafkaRetentionDaysBDR = jsonReader.decodeInteger("kafkaRetentionDaysBDR");
-    kafkaRetentionDaysMDR = jsonReader.decodeInteger("kafkaRetentionDaysMDR");
     kafkaRetentionDaysTargets = jsonReader.decodeInteger("kafkaRetentionDaysTargets");
     maxPollIntervalMs = jsonReader.decodeInteger("maxPollIntervalMs");
     purchaseTimeoutMs = jsonReader.decodeInteger("purchaseTimeoutMs");
@@ -946,8 +888,6 @@ public class DeploymentCommon
     subscriberStateChangeLogTopic = jsonReader.decodeString("subscriberStateChangeLogTopic");
     extendedSubscriberProfileChangeLog = jsonReader.decodeString("extendedSubscriberProfileChangeLog");
     extendedSubscriberProfileChangeLogTopic = jsonReader.decodeString("extendedSubscriberProfileChangeLogTopic");
-    subscriberHistoryChangeLog = jsonReader.decodeString("subscriberHistoryChangeLog");
-    subscriberHistoryChangeLogTopic = jsonReader.decodeString("subscriberHistoryChangeLogTopic");
     journeyStatisticTopic = jsonReader.decodeString("journeyStatisticTopic");
     journeyMetricTopic = jsonReader.decodeString("journeyMetricTopic");
     presentationLogTopic = jsonReader.decodeString("presentationLogTopic");
@@ -1110,6 +1050,29 @@ public class DeploymentCommon
     initialComplexObjectJSONArray = jsonReader.decodeJSONArray("initialComplexObjects");
 
     generateSimpleProfileDimensions = jsonReader.decodeBoolean("generateSimpleProfileDimensions"); // TODO EVPRO-99 move in Deployment ?
+    
+    // journeyMetricDeclarations
+    DeploymentJSONReader journeyMetricConfigurationJsonReader = jsonReader.get("journeyMetrics");
+    if( journeyMetricConfigurationJsonReader.keySet().isEmpty() ) {
+      // JourneyMetric are therefore disabled
+      journeyMetricConfiguration = new JourneyMetricConfiguration();
+    } else {
+      int priorPeriodDays = journeyMetricConfigurationJsonReader.decodeInteger("priorPeriodDays");
+      if(priorPeriodDays < 1) {
+        throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'priorPeriodDays' field cannot be negative or zero.");
+      }
+      
+      int postPeriodDays = journeyMetricConfigurationJsonReader.decodeInteger("postPeriodDays");
+      if(postPeriodDays < 1) {
+        throw new ServerRuntimeException("ERROR: Bad 'journeyMetrics' settings. 'postPeriodDays' field cannot be negative or zero.");
+      }
+      Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = journeyMetricConfigurationJsonReader.decodeMapFromArray(JourneyMetricDeclaration.class, "metrics");
+      if(journeyMetricDeclarations.isEmpty()) { // JourneyMetric are therefore disabled
+        journeyMetricConfiguration = new JourneyMetricConfiguration();
+      } else {
+        journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
+      }
+    }
     
     //
     //  profileCriterionFields
@@ -1406,7 +1369,6 @@ public class DeploymentCommon
     guiConfigurationCleanerThreadPeriodMs = jsonReader.decodeInteger("guiConfigurationCleanerThreadPeriodSeconds") * 1000;
     guiConfigurationInitialConsumerMaxPollRecords  = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxPollRecords");
     guiConfigurationInitialConsumerMaxFetchBytes = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxFetchBytes");
-
 
     //
     // configuration for extracts
