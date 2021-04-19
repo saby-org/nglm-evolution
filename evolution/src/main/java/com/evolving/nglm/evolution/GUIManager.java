@@ -29348,30 +29348,30 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           List<Date> tmpOccouranceDates = new ArrayList<Date>();
           if ("week".equalsIgnoreCase(scheduling))
             {
-              Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK);
+              Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK, challenge.getTenantID());
               Date tempStartDate = RLMDateUtils.addWeeks(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
-              Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
+              Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK, challenge.getTenantID());
+              Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK, challenge.getTenantID());
               while(RLMDateUtils.truncatedCompareTo(lastDateOfThisWk, lastDateOfStartDateWk, Calendar.DATE, tz) >= 0)
                 {
-                  tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
+                  tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay(), challenge.getTenantID()));
                   tempStartDate = RLMDateUtils.addWeeks(tempStartDate, scheduligInterval, tz);
-                  lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
-                  firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
+                  lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK, challenge.getTenantID());
+                  firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK, challenge.getTenantID());
                 }
             }
           else if ("month".equalsIgnoreCase(scheduling))
             {
-              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
+              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH,challenge.getTenantID());
               Date tempStartDate = RLMDateUtils.addMonths(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
-              Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
+              Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
+              Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
               while(RLMDateUtils.truncatedCompareTo(lastDateOfThisMonth, lastDateOfStartDateMonth, Calendar.DATE, tz) >= 0)
                 {
-                  tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
+                  tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay(), challenge.getTenantID()));
                   tempStartDate = RLMDateUtils.addMonths(tempStartDate, scheduligInterval, tz);
-                  firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
-                  lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
+                  firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
+                  lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
                 }
             }
           else if ("day".equalsIgnoreCase(scheduling))
@@ -29493,9 +29493,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     //  getExpectedCreationDates
     //
     
-    private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay)
+    private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
     {
-      String tz = Deployment.getSystemTimeZone();
+      String tz = Deployment.getDeployment(tenantID).getBaseTimeZone();
       List<Date> result = new ArrayList<Date>();
       while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
         {
@@ -29537,9 +29537,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     //  getFirstDate
     //
     
-    private Date getFirstDate(Date now, int dayOf)
+    private Date getFirstDate(Date now, int dayOf, int tenantID)
     {
-      String tz = Deployment.getSystemTimeZone();
+      String tz = Deployment.getDeployment(tenantID).getBaseTimeZone();
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
           Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
@@ -29559,9 +29559,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     //  getLastDate
     //
     
-    private Date getLastDate(Date now, int dayOf)
+    private Date getLastDate(Date now, int dayOf, int tenantID)
     {
-      String tz = Deployment.getSystemTimeZone();
+      String tz = Deployment.getDeployment(tenantID).getBaseTimeZone();
       Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
