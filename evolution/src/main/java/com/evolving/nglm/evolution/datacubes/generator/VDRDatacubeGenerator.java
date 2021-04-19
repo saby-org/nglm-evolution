@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.DateHistogramValuesSourceBuilder;
@@ -40,7 +42,8 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_vdr";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_vdr";
+  public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_vouchers-";
   
   /*****************************************
@@ -58,7 +61,9 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   private SuppliersMap suppliersMap;
 
   private boolean hourlyMode;
-  private String targetDay;
+  private String targetWeek;
+  private Date targetWindowStart;
+  private Date targetWindowEnd;
   private String targetTimestamp;
 
   /*****************************************
@@ -109,8 +114,20 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Elasticsearch indices settings
   *
   *****************************************/
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
-  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDay); }
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
+  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetWeek); }
+
+  //
+  // Target day
+  //
+  @Override
+  protected List<QueryBuilder> getFilterQueries() 
+  {
+    return Collections.singletonList(QueryBuilders.boolQuery().must(QueryBuilders
+        .rangeQuery("eventDatetime")
+        .gte(this.printTimestamp(this.targetWindowStart))
+        .lt(this.printTimestamp(this.targetWindowEnd)))); // End not included
+  }
 
   /*****************************************
   *
@@ -229,7 +246,9 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetDay = this.printDay(yesterday);
+    this.targetWeek = RLMDateUtils.formatDateISOWeek(yesterday, this.timeZone);
+    this.targetWindowStart = beginningOfYesterday;
+    this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = this.printTimestamp(endOfYesterday);
 
     //
@@ -258,7 +277,9 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetDay = this.printDay(now);
+    this.targetWeek = RLMDateUtils.formatDateISOWeek(now, this.timeZone);
+    this.targetWindowStart = beginningOfToday;
+    this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = this.printTimestamp(endOfToday);
 
     //
@@ -280,6 +301,7 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, this.getTimeZone()); 
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, this.getTimeZone());
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());        // 00:00:00.000 
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
     
@@ -287,7 +309,9 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetDay = this.printDay(yesterday);
+    this.targetWeek = RLMDateUtils.formatDateISOWeek(yesterday, this.timeZone);
+    this.targetWindowStart = beginningOfYesterday;
+    this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = this.printTimestamp(endOfYesterday);
 
     //
@@ -309,6 +333,7 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   {
     Date now = SystemTime.getCurrentTime();
     Date tomorrow = RLMDateUtils.addDays(now, 1, this.getTimeZone()); 
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, this.getTimeZone());
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, this.getTimeZone());        // 00:00:00.000 
     Date endOfToday = RLMDateUtils.addMilliseconds(beginningOfTomorrow, -1);                                        // 23:59:59.999
     
@@ -316,7 +341,9 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetDay = this.printDay(now);
+    this.targetWeek = RLMDateUtils.formatDateISOWeek(now, this.timeZone);
+    this.targetWindowStart = beginningOfToday;
+    this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = this.printTimestamp(endOfToday);
 
     //

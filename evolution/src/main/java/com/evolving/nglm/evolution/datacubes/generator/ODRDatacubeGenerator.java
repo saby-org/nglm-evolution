@@ -144,6 +144,18 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX(this.tenantID); }
   @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetWeek); }
 
+  //
+  // Target day
+  //
+  @Override
+  protected List<QueryBuilder> getFilterQueries() 
+  {
+    return Collections.singletonList(QueryBuilders.boolQuery().must(QueryBuilders
+        .rangeQuery("eventDatetime")
+        .gte(this.printTimestamp(this.targetWindowStart))
+        .lt(this.printTimestamp(this.targetWindowEnd)))); // End not included
+  }
+  
   /*****************************************
   *
   * Filters settings
@@ -291,7 +303,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetWeek = RLMDateUtils.printISOWeek(yesterday);
+    this.targetWeek = RLMDateUtils.formatDateISOWeek(yesterday, this.timeZone);
     this.targetWindowStart = beginningOfYesterday;
     this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = this.printTimestamp(endOfYesterday);
@@ -322,7 +334,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = false;
-    this.targetWeek = RLMDateUtils.printISOWeek(now);
+    this.targetWeek = RLMDateUtils.formatDateISOWeek(now, this.timeZone);
     this.targetWindowStart = beginningOfToday;
     this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = this.printTimestamp(endOfToday);
@@ -354,7 +366,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetWeek = RLMDateUtils.printISOWeek(yesterday);
+    this.targetWeek = RLMDateUtils.formatDateISOWeek(yesterday, this.timeZone);
     this.targetWindowStart = beginningOfYesterday;
     this.targetWindowEnd = beginningOfToday;
     this.targetTimestamp = this.printTimestamp(endOfYesterday);
@@ -386,7 +398,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     // Run configurations
     //
     this.hourlyMode = true;
-    this.targetWeek = RLMDateUtils.printISOWeek(now);
+    this.targetWeek = RLMDateUtils.formatDateISOWeek(now, this.timeZone);
     this.targetWindowStart = beginningOfToday;
     this.targetWindowEnd = beginningOfTomorrow;
     this.targetTimestamp = this.printTimestamp(endOfToday);

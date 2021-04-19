@@ -411,7 +411,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     ReportCsvFactory reportFactory = new VDRReportMonoPhase();
     if (log.isInfoEnabled()) log.info("Reading data from ES in (" + esIndexVDRList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexVDRList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.printTimestamp(fromDate)).lte(RLMDateUtils.printTimestamp(toDate)));
+    esIndexWithQuery.put(esIndexVDRList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate)));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -507,7 +507,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     Set<String> esIndexList = new HashSet<String>();
     while(tempfromDate.getTime() <= toDate.getTime())
       {
-        esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
+        esIndexList.add(RLMDateUtils.formatDateISOWeek(tempfromDate, Deployment.getDefault().getTimeZone())); // potential error, missing the true timezone
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDefault().getTimeZone());
       }
     return esIndexList;

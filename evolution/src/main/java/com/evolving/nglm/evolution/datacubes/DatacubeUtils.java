@@ -5,6 +5,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
@@ -58,7 +59,8 @@ public class DatacubeUtils
   
   public static String retrieveJourneyEndWeek(String journeyID, JourneyService journeyService) {
     GUIManagedObject object = journeyService.getStoredJourney(journeyID, true);
-    return RLMDateUtils.printISOWeek(object.getEffectiveEndDate());
+    String timeZone = DeploymentCommon.getDeployment(object.getTenantID()).getTimeZone();
+    return RLMDateUtils.formatDateISOWeek(object.getEffectiveEndDate(), timeZone);
   }
 
 }

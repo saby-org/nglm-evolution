@@ -60,7 +60,7 @@ public interface ReportCsvFactory
     Set<String> esIndexList = new HashSet<String>();
     while(tempfromDate.getTime() < toDate.getTime())
       {
-        esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
+        esIndexList.add(RLMDateUtils.formatDateISOWeek(tempfromDate, Deployment.getDefault().getTimeZone())); // potential error, missing the true timezone
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDefault().getTimeZone());
       }
     return esIndexList;
@@ -80,7 +80,7 @@ public interface ReportCsvFactory
         Set<String> esIndexList = new HashSet<String>();
         while(tempfromDate.getTime() <= toDate.getTime())
           {
-            esIndexList.add(RLMDateUtils.printISOWeek(tempfromDate));
+            esIndexList.add(RLMDateUtils.formatDateISOWeek(tempfromDate, Deployment.getDefault().getTimeZone())); // potential error, missing the true timezone
             tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDefault().getTimeZone());
           }
         return esIndexList;

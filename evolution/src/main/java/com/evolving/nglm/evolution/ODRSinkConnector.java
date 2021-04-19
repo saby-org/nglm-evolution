@@ -13,6 +13,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -128,7 +129,8 @@ public class ODRSinkConnector extends SimpleESSinkConnector
     @Override
     protected String getDocumentIndexName(PurchaseFulfillmentRequest purchaseManager)
     {
-      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(purchaseManager.getEventDate());
+      String timeZone = DeploymentCommon.getDeployment(purchaseManager.getTenantID()).getTimeZone();
+      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(purchaseManager.getEventDate(), timeZone);
     }
     
     /*****************************************

@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -53,7 +54,8 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
     @Override
     protected String getDocumentIndexName(TokenChange tokenChange)
     {
-      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(tokenChange.getEventDate());
+      String timeZone = DeploymentCommon.getDeployment(0).getTimeZone(); // TODO EVPRO-99 ERROR! This should be mapped to tenantID.
+      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(tokenChange.getEventDate(), timeZone);
     }
 
     @Override public Map<String,Object> getDocumentMap(TokenChange tokenChange)

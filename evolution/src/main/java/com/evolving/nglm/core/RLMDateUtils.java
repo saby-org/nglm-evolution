@@ -40,7 +40,8 @@ public class RLMDateUtils
     ELASTICSEARCH_UNIVERSAL_TIMESTAMP("yyyy-MM-dd HH:mm:ss.SSSZ"),
     REST_UNIVERSAL_TIMESTAMP_DEFAULT("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"),
     REST_UNIVERSAL_TIMESTAMP_ALTERNATE("yyyy-MM-dd'T'HH:mm:ssXXX"),
-    LOCAL_DAY("yyyy-MM-dd");
+    LOCAL_DAY("yyyy-MM-dd"),
+    LOCAL_ISO_WEEK("YYYY-'w'ww");
     private String pattern;
     private DatePattern(String pattern) { this.pattern = pattern; }
     public String get() { return pattern; }
@@ -52,16 +53,28 @@ public class RLMDateUtils
    * In general, use the format/parse methods provided later
    */
   public static SimpleDateFormat createLocalDateFormat(DatePattern pattern, String timezone) {
-    SimpleDateFormat result = new SimpleDateFormat(pattern.get());
+    SimpleDateFormat result;
+    
+    if(pattern == DatePattern.LOCAL_ISO_WEEK) {
+      /** 
+       * SPECIAL CASE
+       * Here we use YYYY (Week year) because 2021-01-03 must display 2020-53 for instance
+       * We also use Locale.FRANCE just to enforce ISO Week system (Monday as first day of week, minimum of 4 days for the first week of year, 1 to 53)
+       * DO NOT USE Locale.US as it use non-standard Week system !
+       * Always keep Local.FRANCE to enforce ISO week system, even if in another LOCALE (it should not have other impact than that)
+       * DO ONLY USE this print for internal purpose as ISO week may not be the convention specified by the tenant.
+       * REMINDER: Locale.FRANCE is for display convention, the time-zone used is still the tenant time-zone (it will not be converted in France time-zone)
+       */
+      result = new SimpleDateFormat(pattern.get(), Locale.FRANCE); // YYYY-'w'ww
+    }
+    else {
+      result = new SimpleDateFormat(pattern.get());
+    }
+    
     result.setTimeZone(TimeZone.getTimeZone(timezone));
     return result;
   }
   
-  /*****************************************
-  *
-  * local date formats (per time-zone)
-  *
-  *****************************************/
   // This structure start empty for every thread. SimpleDateFormat will only be instantiated when needed.
   // The main reason for that is, we are in static code and we cannot access Deployment per tenant as 
   // it has not been extracted yet.
@@ -105,28 +118,10 @@ public class RLMDateUtils
     SimpleDateFormat dateFormat = getLocalDateFormat(pattern, timeZone);
     return (date != null) ? dateFormat.format(date) : null;
   }
-
-  /*****************************************
-  *
-  * public date formatters
-  *
-  *****************************************/
-  public static String formatDateDay(Date date, String timeZone) { return formatDate(date, DatePattern.LOCAL_DAY, timeZone); }
-  public static String formatDateForREST(Date date, String timeZone) { return formatDate(date, DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT, timeZone); }
-  
-  /**
-   * We will display all dates in the same time-zone in Elasticsearch (the "common" one that act as a default)
-   * 
-   * REMINDER that display format in Elasticsearch is only for debug purpose.
-   * Because readers from Elasticsearch (datacubes, rapports, Grafana) exploit the date object (extracted from long/parsed) and not the display string.
-   * The only purpose of this display is to be read by users that investigate directly inside Elasticsearch documents (from Elasticsearch Head plugin for instance).
-   */
-  private static String formatDateForElasticsearch(Date date, String timeZone) { return formatDate(date, DatePattern.ELASTICSEARCH_UNIVERSAL_TIMESTAMP, timeZone); }
-  public static String formatDateForElasticsearchDefault(Date date) { return formatDateForElasticsearch(date, Deployment.getDefault().getTimeZone()); }
   
   /*****************************************
   *
-  * public date parsers
+  * universal date parsers
   *
   *****************************************/
   // Here we will need a parser that does not depend on Deployment settings (such as time-zone)
@@ -154,7 +149,10 @@ public class RLMDateUtils
     return result;
   });
   
-  public static final Date parseDateFromREST(String stringDate) throws ParseException {
+  /**
+   * No time-zone required because we know it is in an universal format !
+   */
+  private static final Date parseUniversalDate(String stringDate) throws ParseException {
     List<SimpleDateFormat> formats = REST_UNIVERSAL_DATE_FORMATS.get();
     Date result = null;
     ParseException parseException = null;
@@ -189,42 +187,36 @@ public class RLMDateUtils
     
     return result;
   }
+
+  /*****************************************
+  *
+  * public date formatters
+  *
+  *****************************************/
+  public static String formatDateISOWeek(Date date, String timeZone) { return formatDate(date, DatePattern.LOCAL_ISO_WEEK, timeZone); }
+  public static String formatDateDay(Date date, String timeZone) { return formatDate(date, DatePattern.LOCAL_DAY, timeZone); }
+  public static String formatDateForREST(Date date, String timeZone) { return formatDate(date, DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT, timeZone); }
+  
+  /**
+   * We will display all dates in the same time-zone in Elasticsearch (the "common" one that act as a default)
+   * 
+   * REMINDER that display format in Elasticsearch is only for debug purpose.
+   * Because readers from Elasticsearch (datacubes, rapports, Grafana) exploit the date object (extracted from long/parsed) and not the display string.
+   * The only purpose of this display is to be read by users that investigate directly inside Elasticsearch documents (from Elasticsearch Head plugin for instance).
+   */
+  private static String formatDateForElasticsearch(Date date, String timeZone) { return formatDate(date, DatePattern.ELASTICSEARCH_UNIVERSAL_TIMESTAMP, timeZone); }
+  public static String formatDateForElasticsearchDefault(Date date) { return formatDateForElasticsearch(date, Deployment.getDefault().getTimeZone()); }
+  
+  /*****************************************
+  *
+  * public date parsers
+  *
+  *****************************************/
+  public static Date parseDateFromREST(String stringDate) throws ParseException { return parseUniversalDate(stringDate);  }
   
   // Here we re-use the default SimpleDateFormat for ES. But we could also do something similar to REST if a circular dependency appear.
   public static Date parseDateFromElasticsearch(String stringDate) throws ParseException { return parseDate(stringDate, DatePattern.ELASTICSEARCH_UNIVERSAL_TIMESTAMP, Deployment.getDefault().getTimeZone()); }
-
   public static Date parseDateFromDay(String stringDate, String timeZone) throws ParseException { return parseDate(stringDate, DatePattern.LOCAL_DAY, timeZone); }
-  
-  
-  // SimpleDateFormat is not threadsafe. 
-  // In order to avoid instantiating the same object again an again we use a ThreadLocal static variable
-  
-  public static final ThreadLocal<DateFormat> TIMESTAMP_FORMAT = ThreadLocal.withInitial(()->{ 
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ"); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
-    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone()));  
-    return sdf;
-  });
-  
-  public static final String printTimestamp(Date date) {
-	    return TIMESTAMP_FORMAT.get().format(date);
-	  }
-
-  
-  // IMPORTANTE NOTES : 
-  // Here we use YYYY (Week year) because 2021-01-03 must display 2020-53 for instance
-  // We also use Locale.FRANCE just to enforce ISO Week system (Monday as first day of week, minimum of 4 days for the first week of year, 1 to 53)
-  // DO NOT USE Locale.US as it use non-standard Week system !
-  // Always keep Local.FRANCE to enforce ISO week system, even if in another LOCALE (it should not have other impact than that)
-  // DO ONLY USE this print for internal purpose as ISO week may not be the convention specified by the tenant.
-  public static final ThreadLocal<DateFormat> WEEK_FORMAT = ThreadLocal.withInitial(()->{
-    SimpleDateFormat sdf = new SimpleDateFormat("YYYY-'w'ww", Locale.FRANCE);
-    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone()));
-    return sdf;
-  });
-  
-  public static final String printISOWeek(Date date) {
-    return WEEK_FORMAT.get().format(date);
-  }
   
   /*****************************************
   *

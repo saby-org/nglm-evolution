@@ -99,6 +99,19 @@ public class BDRSinkConnector extends SimpleESSinkConnector
 
     /*****************************************
     *
+    *  getDocumentIndexName
+    *
+    *****************************************/
+    
+    @Override
+    protected String getDocumentIndexName(BonusDelivery commodityRequest)
+    {
+      String timeZone = DeploymentCommon.getDeployment(commodityRequest.getTenantID()).getTimeZone();
+      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(commodityRequest.getEventDate(), timeZone);
+    }
+    
+    /*****************************************
+    *
     *  getDocumentMap
     *
     *****************************************/

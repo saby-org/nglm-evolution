@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -54,7 +55,8 @@ public class VDRSinkConnector extends SimpleESSinkConnector
     @Override
     protected String getDocumentIndexName(VoucherChange voucherChange)
     {
-      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(voucherChange.getEventDate());
+      String timeZone = DeploymentCommon.getDeployment(0).getTimeZone(); // TODO EVPRO-99 ERROR! This should be mapped to tenantID.
+      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(voucherChange.getEventDate(), timeZone);
     }
 
     @Override public Map<String,Object> getDocumentMap(VoucherChange voucherChange)

@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -109,20 +110,26 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
     protected String getDocumentIndexName(MessageDelivery notification)
     {
       Date timestamp;
+      int tenantID;
       if (notification instanceof MailNotificationManagerRequest) {
+        tenantID = ((MailNotificationManagerRequest) notification).getTenantID();
         timestamp = ((MailNotificationManagerRequest) notification).getCreationDate();
       }
       else if (notification instanceof SMSNotificationManagerRequest) {
+        tenantID = ((SMSNotificationManagerRequest) notification).getTenantID();
         timestamp = ((SMSNotificationManagerRequest) notification).getCreationDate();
       }
       else if (notification instanceof NotificationManagerRequest) {
+        tenantID = ((NotificationManagerRequest) notification).getTenantID();
         timestamp = ((NotificationManagerRequest) notification).getCreationDate();
       }
       else {
+        tenantID = ((PushNotificationManagerRequest) notification).getTenantID();
         timestamp = ((PushNotificationManagerRequest) notification).getCreationDate();
       }
-      
-      return this.getDefaultIndexName() + RLMDateUtils.printISOWeek(timestamp);
+
+      String timeZone = DeploymentCommon.getDeployment(tenantID).getTimeZone();
+      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(timestamp, timeZone);
     }
     
     /*****************************************

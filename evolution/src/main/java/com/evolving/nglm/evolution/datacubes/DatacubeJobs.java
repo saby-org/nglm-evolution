@@ -164,7 +164,7 @@ public class DatacubeJobs
   /*****************************************
    * ODR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of the day from the detailedrecords_offers-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new ODR can still be added.
    *****************************************/
   private static ScheduledJob ODRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
@@ -184,7 +184,7 @@ public class DatacubeJobs
   /*****************************************
    * ODR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_offers-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob ODRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -204,7 +204,7 @@ public class DatacubeJobs
   /*****************************************
    * ODR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_offers-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of every hour from the detailedrecords_offers-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new ODR can still be added.
    *****************************************/
   private static ScheduledJob ODRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
@@ -224,7 +224,7 @@ public class DatacubeJobs
   /*****************************************
    * ODR hourly definitive
    *
-   * This will generated a datacube of every hour from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube of every hour from the detailedrecords_offers-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob ODRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -243,7 +243,7 @@ public class DatacubeJobs
   /*****************************************
    * BDR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_bonuses-YYYY-MM-dd index of the day
+   * This will generated a datacube preview of the day from the detailedrecords_bonuses-yyyy-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new BDR can still be added.
    *****************************************/
   private static ScheduledJob BDRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
@@ -263,7 +263,7 @@ public class DatacubeJobs
   /*****************************************
    * BDR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_bonuses-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob BDRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -282,7 +282,7 @@ public class DatacubeJobs
   /*****************************************
    * BDR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_bonuses-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of every hour from the detailedrecords_bonuses-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new BDR can still be added.
    *****************************************/
   private static ScheduledJob BDRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
@@ -302,7 +302,7 @@ public class DatacubeJobs
   /*****************************************
    * BDR hourly definitive
    *
-   * This will generated a datacube of every hour from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube of every hour from the detailedrecords_bonuses-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob BDRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -321,7 +321,7 @@ public class DatacubeJobs
   /*****************************************
    * MDR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_messages-YYYY-MM-dd index of the day
+   * This will generated a datacube preview of the day from the detailedrecords_messages-yyyy-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new MDR can still be added.
    *****************************************/
   private static ScheduledJob MDRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
@@ -341,7 +341,7 @@ public class DatacubeJobs
   /*****************************************
    * MDR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_messages-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob MDRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -360,7 +360,7 @@ public class DatacubeJobs
   /*****************************************
    * MDR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_messages-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of every hour from the detailedrecords_messages-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new MDR can still be added.
    *****************************************/
   private static ScheduledJob MDRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
@@ -380,7 +380,7 @@ public class DatacubeJobs
   /*****************************************
    * MDR hourly definitive
    *
-   * This will generated a datacube of every hour from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube of every hour from the detailedrecords_messages-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob MDRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -399,7 +399,7 @@ public class DatacubeJobs
   /*****************************************
    * VDR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_vouchers-YYYY-MM-dd index of the day
+   * This will generated a datacube preview of the day from the detailedrecords_vouchers-yyyy-MM-dd index of the day
    * Those data are not definitive, the day is not ended yet, new VDR can still be added.
    *****************************************/
   private static ScheduledJob VDRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
@@ -419,7 +419,7 @@ public class DatacubeJobs
   /*****************************************
    * VDR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_vouchers-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_vouchers-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob VDRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -438,7 +438,7 @@ public class DatacubeJobs
   /*****************************************
    * VDR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_vouchers-YYYY-MM-dd index of the current day
+   * This will generated a datacube preview of every hour from the detailedrecords_vouchers-yyyy-MM-dd index of the current day
    * Those data are not definitive, the day is not ended yet, new VDR can still be added.
    *****************************************/
   private static ScheduledJob VDRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
@@ -458,7 +458,7 @@ public class DatacubeJobs
   /*****************************************
    * VDR hourly definitive
    *
-   * This will generated a datacube of every hour from the detailedrecords_vouchers-YYYY-MM-dd index of the previous day.
+   * This will generated a datacube of every hour from the detailedrecords_vouchers-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob VDRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).

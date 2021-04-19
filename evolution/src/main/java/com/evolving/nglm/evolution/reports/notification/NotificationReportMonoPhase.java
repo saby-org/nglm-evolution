@@ -567,7 +567,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     log.info("Reading data from ES in (" + esIndexNotifList.toString() + ") indexes and writing to " + csvfile);
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.printTimestamp(fromDate)).lte(RLMDateUtils.printTimestamp(toDate)));
+    esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate)));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();

@@ -64,6 +64,9 @@ public class JourneyCleanUpTask
   {
     Date now = SystemTime.getCurrentTime();
     
+    //
+    // Removal of journeystatistic indexes
+    //
     // Here days are converted into hours. Therefore we do not take into account timezone. A retention of 15 days means 360 hours.
     Date journeyExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getElasticsearchRetentionDaysJourneys()); // TODO EVPRO-99 for the moment, same for every tenant
     Date campaignExpirationDate = RLMDateUtils.addHours(now, -24 * Deployment.getElasticsearchRetentionDaysCampaigns()); // TODO EVPRO-99 for the moment, same for every tenant
@@ -110,8 +113,11 @@ public class JourneyCleanUpTask
     //
     // Removal of datacube indexes
     //
-    Date datacubeJourneyExpirationDate = RLMDateUtils.addDays(now, -7* Deployment.getDefault().getElasticsearchRetentionWeeksDatacubeJourneys(), Deployment.getDefault().getTimeZone());
-    String lastKeptWeek = RLMDateUtils.printISOWeek(datacubeJourneyExpirationDate);
+    // WARNING: JourneyDatacube indexes retention is based on "default" time-zone (because we remove all journeys from all tenant at the same time)
+    // This could be improved by taking the "higher" timezone (with the higher offset) to be more precise. For the moment it is not necessary 
+    // because those indexes retention are in "week" and here we are talking about several hours offset from the expected retention date.
+    Date datacubeJourneyExpirationDate = RLMDateUtils.addDays(now, -7* Deployment.getElasticsearchRetentionWeeksDatacubeJourneys(), Deployment.getDefault().getTimeZone());
+    String lastKeptWeek = RLMDateUtils.formatDateISOWeek(datacubeJourneyExpirationDate, Deployment.getDefault().getTimeZone());
     
     
     // Init list of weeks to check 
