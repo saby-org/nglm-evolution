@@ -695,7 +695,7 @@ public class JSONUtilities
   
   public static JSONArray jsonCopyArray(JSONArray source) {
     JSONArray result = new JSONArray();
-    for(Object value : result) {
+    for(Object value : source) {
       result.add(jsonCopy(value));
     }
     
