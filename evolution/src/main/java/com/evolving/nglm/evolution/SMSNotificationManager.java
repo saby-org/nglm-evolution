@@ -358,8 +358,8 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     {
       super(esFields);
       try {
-        setCreationDate(RLMDateUtils.parseDateFromREST((String) esFields.get("creationDate")));
-        setDeliveryDate(RLMDateUtils.parseDateFromREST((String) esFields.get("deliveryDate")));
+        setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
+        setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
       }
       catch(java.text.ParseException e) {
         throw new ServerRuntimeException(e);
