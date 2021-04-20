@@ -285,6 +285,7 @@ public class ReportService extends GUIService
             
             //zk.create(znode, reportName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
             zk.create(znode, zkData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
+            log.info("RAJ K node created {}", znode);
           }
         catch (KeeperException e)
           {
