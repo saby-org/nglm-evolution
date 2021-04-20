@@ -405,7 +405,7 @@ public class Report extends GUIManagedObject
   
   public int getMissingReportArearCount()
   {
-    int result = 0;
+    int result = 7;
     try
       {
         Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(getReportClass());

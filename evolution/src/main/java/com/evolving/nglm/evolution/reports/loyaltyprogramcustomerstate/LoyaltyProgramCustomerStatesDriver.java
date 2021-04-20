@@ -8,8 +8,11 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+
 import java.util.Date;
 
+@ReportTypeDef(reportType = "subscriberprofile")
 public class LoyaltyProgramCustomerStatesDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(LoyaltyProgramCustomerStatesDriver.class);

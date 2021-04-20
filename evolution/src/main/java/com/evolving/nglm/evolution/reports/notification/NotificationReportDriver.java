@@ -11,7 +11,9 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
 
+@ReportTypeDef(reportType = "detailedrecords")
 public class NotificationReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(NotificationReportDriver.class);

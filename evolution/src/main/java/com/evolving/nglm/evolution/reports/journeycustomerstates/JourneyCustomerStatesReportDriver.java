@@ -10,9 +10,11 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
 
 import java.util.Date;
 
+@ReportTypeDef(reportType = "journeys")
 public class JourneyCustomerStatesReportDriver extends ReportDriver
 {
 
