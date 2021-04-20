@@ -18376,7 +18376,7 @@ public class GUIManager
                 // read history
                 //
 
-                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerBDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
                 List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
@@ -18478,7 +18478,7 @@ public class GUIManager
                 List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
                 
                 List<DeliveryRequest> ODRs = new ArrayList<DeliveryRequest>();
-                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
                 List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
@@ -18616,7 +18616,7 @@ public class GUIManager
             else
               {
                 List<JSONObject> messagesJson = new ArrayList<JSONObject>();
-                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerMessages, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
                 List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
                 for (SearchHit hit : hits)
                   {
