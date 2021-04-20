@@ -94,7 +94,7 @@
   "ESRetentionDaysVDR"              : 45,
 
   "hourlyReportCronEntryString"   : "0 * * * *",
-  "dailyReportCronEntryString"    : "* * * * *",
+  "dailyReportCronEntryString"    : "5 2 * * *",
   "weeklyReportCronEntryString"   : "10 2 * * 0",
   "monthlyReportCronEntryString"  : "15 3 1 * *",
   

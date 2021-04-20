@@ -261,7 +261,7 @@ public class ReportService extends GUIService
     //
     
     Collections.sort(pendingReportsForDates, Collections.reverseOrder());
-    pendingReportsForDates = pendingReportsForDates.stream().limit(Long.valueOf(report.getMissingReportArearCount() + 1L)).collect(Collectors.toList());
+    if (launchPendingReports) pendingReportsForDates = pendingReportsForDates.stream().limit(Long.valueOf(report.getMissingReportArearCount())).collect(Collectors.toList());
     
     //
     //  log

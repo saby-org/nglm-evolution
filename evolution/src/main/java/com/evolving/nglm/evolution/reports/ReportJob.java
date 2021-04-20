@@ -54,16 +54,15 @@ public class ReportJob extends ScheduledJob
     else
       {
         if (log.isInfoEnabled()) log.info("reportJob " + report.getName() + " : launch report");
-        log.info("RAJ K launching Report {}", report.getGUIManagedObjectDisplay());
         Thread thread = new Thread( () -> 
         { 
           reportService.launchReport(report, false);
-          try { Thread.sleep(30L*1000); } catch (InterruptedException e) { e.printStackTrace(); } // wait for 30s 
-          log.info("RAJ K launching pending Report {}", report.getGUIManagedObjectDisplay());
+          try { Thread.sleep(300L*1000); } catch (InterruptedException e) { e.printStackTrace(); } // wait for 300s (5mins) - enough to launch todays report - then launch the other dates report
           if (log.isInfoEnabled()) log.info("reportJob " + report.getName() + " : launch pending report");
           reportService.launchReport(report, true);
         }
         );
+        thread.setName(report.getName() + " launcher");
         thread.start();
         
         
