@@ -240,16 +240,35 @@ public class ReportService extends GUIService
     //  getPendingReportsForDates
     //
     
-    Set<Date> pendingReportsForDates = getPendingReportsForDates(report);
-    pendingReportsForDates.add(now);
+    Set<Date> pendingReportDates = getPendingReportsForDates(report);
+    pendingReportDates.add(now);
+    
+    
+    //
+    //  set to list
+    //
+    
+    List<Date> pendingReportsForDates = pendingReportDates.stream().collect(Collectors.toList());
+    
+    //
+    //  sort
+    //
     
     log.info("RAJ K before sort pendingReportsForDates {}", pendingReportsForDates);
-    pendingReportsForDates = pendingReportsForDates.stream().sorted().collect(Collectors.toSet());
+    Collections.sort(pendingReportsForDates);
     log.info("RAJ K after sort pendingReportsForDates {}", pendingReportsForDates);
+    
+    //
+    //  log
+    //
     
     StringBuilder dateRAJKString = new StringBuilder();
     pendingReportsForDates.forEach(dt -> dateRAJKString.append("," + printDate(dt)));
     if(log.isInfoEnabled()) log.info("generating reoports of {} for dates {}", report.getName(), dateRAJKString);
+    
+    //
+    //  launchReport
+    //
     
     for (Date date : pendingReportsForDates)
       {
