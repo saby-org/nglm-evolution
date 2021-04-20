@@ -409,8 +409,8 @@ public class CommodityDeliveryManager
       
       super(esFields);
       try {
-        setCreationDate(RLMDateUtils.parseDateFromREST((String) esFields.get("creationDate")));
-        setDeliveryDate(RLMDateUtils.parseDateFromREST((String) esFields.get("eventDatetime")));
+        setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
+        setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("eventDatetime")));
         
         //
         //  this
@@ -423,7 +423,7 @@ public class CommodityDeliveryManager
         this.amount = (int) esFields.get("deliverableQty");
         this.validityPeriodType = TimeUnit.Year;
         this.validityPeriodQuantity = 1;
-        this.deliverableExpirationDate = RLMDateUtils.parseDateFromREST((String) esFields.get("deliverableExpirationDate"));
+        this.deliverableExpirationDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliverableExpirationDate"));
         CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
         this.commodityDeliveryStatus = commodityDeliveryStatus;
         this.statusMessage = (String) esFields.get("returnCodeDetails");
