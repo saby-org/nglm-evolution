@@ -18,9 +18,9 @@ public class ReportGenerationDateComperator implements Comparator<String>
       {
         try
           {
-            Date date1 = RLMDateUtils.TIMESTAMP_FORMAT.get().parse(splittedString1[0]);
-            Date date2 = RLMDateUtils.TIMESTAMP_FORMAT.get().parse(splittedString2[0]);
-            return date1.compareTo(date2);
+            Date date1 = RLMDateUtils.DAY_FORMAT.get().parse(splittedString1[1]);
+            Date date2 = RLMDateUtils.DAY_FORMAT.get().parse(splittedString2[1]);
+            return date2.compareTo(date1);
           } 
         catch (ParseException e)
           {

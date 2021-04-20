@@ -296,7 +296,7 @@ public class ReportService extends GUIService
     //  znode
     //
     
-    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "_" + RLMDateUtils.printTimestamp(reportGenerationDate) + "_"; // this is decomposed in ReportGenerationDateComperator
+    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "_" + RLMDateUtils.printDay(reportGenerationDate) + "_"; // this is decomposed in ReportGenerationDateComperator
     
     //
     //  data
