@@ -290,7 +290,6 @@ public class ReportManager implements Watcher
         try 
         {
           List<String> children = zk.getChildren(serviceControlDir, this); // get the children and renew watch
-          log.info("RAJ K children {}", children);
           processChildren(children);
         }
         catch (KeeperException e) { handleSessionExpired(e, "Error processing report"); }
