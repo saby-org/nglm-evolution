@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -53,6 +54,7 @@ import com.evolving.nglm.evolution.LoggerInitialization;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.ReportService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 
 /**
  * This class uses Zookeeper to launch the generation of reports. 
@@ -86,6 +88,7 @@ public class ReportManager implements Watcher
   private static String controlDir;
   private static String lockDir;
   private static String topDir;
+  
 
   //this will be overwriten in inherited classes. IN this way the inherited classes will not have to implement process methos from watcher
   protected String serviceControlDir;

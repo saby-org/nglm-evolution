@@ -240,7 +240,11 @@ public class ReportService extends GUIService
     //  getPendingReportsForDates
     //
     
-    Set<Date> pendingReportDates = getPendingReportsForDates(report);
+    Set<Date> pendingReportDates = new HashSet<Date>();
+    if (report.getMissingReportArearCount() > 0)
+      {
+        pendingReportDates = getPendingReportsForDates(report);
+      }
     pendingReportDates.add(now);
     
     
@@ -258,13 +262,19 @@ public class ReportService extends GUIService
     Collections.sort(pendingReportsForDates, Collections.reverseOrder());
     log.info("RAJ K after sort pendingReportsForDates {}", pendingReportsForDates);
     
+    pendingReportsForDates = pendingReportsForDates.stream().limit(Long.valueOf(report.getMissingReportArearCount() + 1L)).collect(Collectors.toList());
+    log.info("RAJ K after limiting the arear count to 2, pendingReportsForDates {}", pendingReportsForDates);
+    
     //
     //  log
     //
     
-    StringBuilder dateRAJKString = new StringBuilder();
-    pendingReportsForDates.forEach(dt -> dateRAJKString.append("," + printDate(dt)));
-    if(log.isInfoEnabled()) log.info("generating reoports of {} for dates {}", report.getName(), dateRAJKString);
+    if(log.isInfoEnabled())
+      {
+        StringBuilder dateRAJKString = new StringBuilder();
+        pendingReportsForDates.forEach(dt -> dateRAJKString.append("," + printDate(dt)));
+        log.info("generating reoports of {} for dates {}", report.getName(), dateRAJKString);
+      }
     
     //
     //  launchReport
@@ -288,7 +298,7 @@ public class ReportService extends GUIService
     //  znode
     //
     
-    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "_" + RLMDateUtils.printTimestamp(reportGenerationDate) + "_" + "-"; // this is decomposed in ReportGenerationDateComperator
+    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "_" + RLMDateUtils.printTimestamp(reportGenerationDate) + "_"; // this is decomposed in ReportGenerationDateComperator
     
     //
     //  data

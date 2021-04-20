@@ -253,6 +253,10 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   private static int kafkaRetentionDaysTargets;
   private static int journeysReportMaxParallelThreads;
   
+  private static int detailedrecordReportsArrearCount;
+  private static int journeyReportsArrearCount;
+  private static int subscriberprofileReportsArrearCount;
+  
   // EVPRO-886
   private static int nodesTransitionsHistorySize;
 
@@ -504,6 +508,10 @@ public class Deployment extends com.evolving.nglm.core.Deployment
   //EVPRO-574
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
+  
+  public static int getDetailedrecordReportsArrearCount() { return detailedrecordReportsArrearCount; }
+  public static int getJourneyReportsArrearCount() { return journeyReportsArrearCount; }
+  public static int getSubscriberprofileReportsArrearCount() { return subscriberprofileReportsArrearCount; }
   
   //EVPRO-865
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
@@ -3084,6 +3092,9 @@ public class Deployment extends com.evolving.nglm.core.Deployment
               reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", System.getProperty("java.io.tmpdir"));
               reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties", "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000");
               journeysReportMaxParallelThreads = JSONUtilities.decodeInteger(reportManager, "journeysReportMaxParallelThreads", 10);
+              detailedrecordReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "detailedrecordReportsArrearCount", 7);
+              journeyReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "journeyReportsArrearCount", 2);
+              subscriberprofileReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "subscriberprofileReportsArrearCount", 2);
             }
           else
             {

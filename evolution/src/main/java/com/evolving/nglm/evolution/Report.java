@@ -21,8 +21,11 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
+import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
 
 public class Report extends GUIManagedObject 
 {
@@ -51,6 +54,35 @@ public class Report extends GUIManagedObject
     public String getExternalRepresentation() { return externalRepresentation; }
     public String getCron() { return cron; }
     public static SchedulingInterval fromExternalRepresentation(String externalRepresentation) { for (SchedulingInterval enumeratedValue : SchedulingInterval.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
+  }
+  
+  /*****************************************
+  *
+  *  ReportType
+  *
+  *****************************************/
+  
+  public enum ReportType
+  {
+    DETAILEDRECORDS("detailedrecords"), JOURNEYS("journeys"), SUBSCRIBERPROFILE("subscriberprofile"), UNKNOWN("(unknown)");
+    private String externalRepresentation;
+    private ReportType(String externalRepresentation)
+    {
+      this.externalRepresentation = externalRepresentation;
+    }
+    public String getExternalRepresentation()
+    {
+      return externalRepresentation;
+    }
+    public static ReportType fromExternalRepresentation(String externalRepresentation)
+    {
+      for (ReportType enumeratedValue : ReportType.values())
+        {
+          if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation))
+            return enumeratedValue;
+        }
+      return UNKNOWN;
+    }
   }
 
   /*****************************************
@@ -369,6 +401,47 @@ public class Report extends GUIManagedObject
         + (getEffectiveStartDate() != null ? "getEffectiveStartDate()="+ getEffectiveStartDate() + ", " : "")
         + (getEffectiveEndDate() != null ? "getEffectiveEndDate()=" + getEffectiveEndDate() + ", " : "")
         + "getActive()=" + getActive() + ", getAccepted()=" + getAccepted() + "]";
+  }
+  
+  public int getMissingReportArearCount()
+  {
+    int result = 0;
+    try
+      {
+        Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(getReportClass());
+        ReportTypeDef reportTypeDef = (ReportTypeDef) reportClass.getAnnotation(ReportTypeDef.class);
+        if (reportTypeDef != null)
+          {
+            String reportType = reportTypeDef.reportType();
+            if (reportType != null)
+              {
+                ReportType reportTyp = ReportType.fromExternalRepresentation(reportType);
+                switch (reportTyp)
+                {
+                  case DETAILEDRECORDS:
+                    result = Deployment.getDetailedrecordReportsArrearCount();
+                    break;
+                    
+                  case JOURNEYS:
+                    result = Deployment.getJourneyReportsArrearCount();
+                    break;
+                    
+                  case SUBSCRIBERPROFILE:
+                    result = Deployment.getJourneyReportsArrearCount();
+                    break;
+
+                  default:
+                    log.error("invalid report type declearation in {} ",reportClass.getName());
+                    break;
+                }
+              }
+          }
+      } 
+    catch (ClassNotFoundException e)
+      {
+        e.printStackTrace();
+      }
+    return result;
   }
 
 }
