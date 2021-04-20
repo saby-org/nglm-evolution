@@ -313,7 +313,9 @@ public class ReportManager implements Watcher
   {
     if (children != null && !children.isEmpty())
       {
-        Collections.sort(children); // we are getting an unsorted list
+        log.info("RAJ K before sorting the children {}", children);
+        Collections.sort(children, new ReportGenerationDateComperator());// we are getting an unsorted list
+        log.info("RAJ K after sorting the children {}", children);
         for (String child : children)
           {
             processChild(child);

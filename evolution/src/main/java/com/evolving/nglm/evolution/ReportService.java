@@ -58,6 +58,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportGenerationDateComperator;
 import com.evolving.nglm.evolution.reports.ReportManager;
 
 public class ReportService extends GUIService
@@ -268,7 +269,7 @@ public class ReportService extends GUIService
     //  znode
     //
     
-    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + RLMDateUtils.printTimestamp(reportGenerationDate) + "-" + reportName + "-";
+    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "_" + RLMDateUtils.printTimestamp(reportGenerationDate) + "_" + "-"; // this is decomposed in ReportGenerationDateComperator
     
     //
     //  data
