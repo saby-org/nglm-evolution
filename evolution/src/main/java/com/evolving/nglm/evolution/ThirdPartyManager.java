@@ -103,6 +103,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
@@ -4192,6 +4193,9 @@ public class ThirdPartyManager
               return JSONUtilities.encodeObject(response);
             }
         } 
+      
+       
+      deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
 
         if (!sync)
           {
@@ -6286,7 +6290,22 @@ public class ThirdPartyManager
         ));
     keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
     if (sync) {
-      return handleWaitingResponse(waitingResponse);
+      PurchaseFulfillmentRequest result =  handleWaitingResponse(waitingResponse);
+        if (result != null)
+          {
+            if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
+              {
+                return handleWaitingResponse(waitingResponse);
+              }
+            else
+              {
+                int returnCode = result.getStatus().getReturnCode();
+                String returnMessage = result.getStatus().name();
+                JSONObject additionalInformation = new JSONObject();
+                additionalInformation.put("deliveryRequestID", result.getDeliveryRequestID());
+                throw new ThirdPartyManagerException(returnMessage, returnCode, additionalInformation);
+              }
+          }
     }
     return purchaseRequest;
   }
