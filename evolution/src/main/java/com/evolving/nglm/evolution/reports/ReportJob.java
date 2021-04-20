@@ -55,11 +55,36 @@ public class ReportJob extends ScheduledJob
       {
         log.info("reportJob " + report.getName() + " : launch report");
         log.info("RAJ K launching Report {}", report.getGUIManagedObjectDisplay());
-        reportService.launchReport(report);
+        Thread thread = new Thread( () -> 
+        { 
+          reportService.launchReport(report);
+          try { Thread.sleep(getjobID()); } catch (InterruptedException e) { e.printStackTrace(); }
+          log.info("RAJ K launching pending Report {}", report.getGUIManagedObjectDisplay());
+          // RAJ K to do
+          
+        }
+        );
+        thread.start();
         
-        long waitTimeSec = 75L; // RAJ K
-        log.info("Wait " + waitTimeSec + " seconds for contention management...");// RAJ K
-        try { Thread.sleep(waitTimeSec*1000L); } catch (InterruptedException ie) {}// RAJ K
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
       }
     log.info("reportJob " + report.getName() + " : end execution");
   }
