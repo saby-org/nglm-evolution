@@ -54,7 +54,12 @@ public class ReportJob extends ScheduledJob
     else
       {
         log.info("reportJob " + report.getName() + " : launch report");
+        log.info("RAJ K launching Report {}", report.getGUIManagedObjectDisplay());
         reportService.launchReport(report);
+        
+        long waitTimeSec = 10L + (long) (new java.util.Random().nextInt(50)); // RAJ K
+        log.info("Wait " + waitTimeSec + " seconds for contention management...");// RAJ K
+        try { Thread.sleep(waitTimeSec*1000L); } catch (InterruptedException ie) {}// RAJ K
       }
     log.info("reportJob " + report.getName() + " : end execution");
   }
