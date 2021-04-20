@@ -57,10 +57,10 @@ public class ReportJob extends ScheduledJob
         log.info("RAJ K launching Report {}", report.getGUIManagedObjectDisplay());
         Thread thread = new Thread( () -> 
         { 
-          reportService.launchReport(report);
-          try { Thread.sleep(getjobID()); } catch (InterruptedException e) { e.printStackTrace(); }
+          reportService.launchReport(report, false);
+          try { Thread.sleep(30L*1000); } catch (InterruptedException e) { e.printStackTrace(); } // wait for 30s 
           log.info("RAJ K launching pending Report {}", report.getGUIManagedObjectDisplay());
-          // RAJ K to do
+          reportService.launchReport(report, true);
           
         }
         );

@@ -217,7 +217,8 @@ public class ReportService extends GUIService
           }
         else
           {
-            launchReport(report);
+            launchReport(report, false);
+            launchReport(report, true);
           }
       }
   }
@@ -228,7 +229,7 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  public void launchReport(Report report)
+  public void launchReport(Report report, boolean launchPendingReports)
   {
     //
     //  now
@@ -241,11 +242,12 @@ public class ReportService extends GUIService
     //
     
     Set<Date> pendingReportDates = new HashSet<Date>();
-    if (report.getMissingReportArearCount() > 0)
+    if (launchPendingReports && report.getMissingReportArearCount() > 0)
       {
         pendingReportDates = getPendingReportsForDates(report);
       }
-    pendingReportDates.add(now);
+    
+    if (!launchPendingReports) pendingReportDates.add(now);
     
     
     //
