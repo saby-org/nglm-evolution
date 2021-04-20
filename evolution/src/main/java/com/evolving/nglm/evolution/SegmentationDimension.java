@@ -281,7 +281,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
     Map<String,Object> documentMap = new HashMap<String,Object>();
     
     // We read all data from JSONRepresentation()
-    // because native data in object is sometimes not correct
+    // because native data in object is sometimes not correct @rl ? - this needs some explaination
     
     JSONObject jr = this.getJSONRepresentation();
     if (jr != null)
@@ -290,7 +290,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
         documentMap.put("display",       jr.get("display"));
         documentMap.put("targetingType", jr.get("targetingType"));
         documentMap.put("active",        jr.get("active"));
-        documentMap.put("createdDate",   GUIManagedObject.parseDateField((String) jr.get("createdDate")));
+        documentMap.put("createdDate",   RLMDateUtils.formatDateForElasticsearchDefault(GUIManagedObject.parseDateField((String) jr.get("createdDate")))); // @rl - Ugly
         JSONArray segmentsJSON = (JSONArray) jr.get("segments");
         List<Map<String,String>> segments = new ArrayList<>();
         if (segmentsJSON != null)
