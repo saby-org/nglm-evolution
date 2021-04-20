@@ -571,6 +571,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   case CHALLENGE:
                     loyaltyProgram = new LoyaltyProgramChallenge(elementRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
                     break;
+                    
+                  case MISSION:
+                    loyaltyProgram = new LoyaltyProgramMission(elementRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
+                    break;
 
                   case Unknown:
                     throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", false));
