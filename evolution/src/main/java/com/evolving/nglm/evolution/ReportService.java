@@ -242,6 +242,10 @@ public class ReportService extends GUIService
     Set<Date> pendingReportsForDates = getPendingReportsForDates(report);
     pendingReportsForDates.add(now);
     
+    log.info("RAJ K before sort pendingReportsForDates {}", pendingReportsForDates);
+    pendingReportsForDates = pendingReportsForDates.stream().sorted().collect(Collectors.toSet());
+    log.info("RAJ K after sort pendingReportsForDates {}", pendingReportsForDates);
+    
     StringBuilder dateRAJKString = new StringBuilder();
     pendingReportsForDates.forEach(dt -> dateRAJKString.append("," + printDate(dt)));
     if(log.isInfoEnabled()) log.info("generating reoports of {} for dates {}", report.getName(), dateRAJKString);
@@ -264,7 +268,7 @@ public class ReportService extends GUIService
     //  znode
     //
     
-    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "-";
+    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + RLMDateUtils.printTimestamp(reportGenerationDate) + "-" + reportName + "-";
     
     //
     //  data
