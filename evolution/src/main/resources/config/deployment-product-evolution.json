@@ -964,7 +964,7 @@
     "reportManagerStreamsTempDir" : "/tmp",
     "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000",
     "journeysReportMaxParallelThreads" : 10,
-    "detailedrecordReportsArrearCount" : 2,
+    "detailedrecordReportsArrearCount" : 7,
     "journeyReportsArrearCount" : 2,
     "subscriberprofileReportsArrearCount" : 2
   },
