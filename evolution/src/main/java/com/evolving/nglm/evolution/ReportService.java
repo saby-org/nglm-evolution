@@ -255,7 +255,7 @@ public class ReportService extends GUIService
     //
     
     log.info("RAJ K before sort pendingReportsForDates {}", pendingReportsForDates);
-    Collections.sort(pendingReportsForDates);
+    Collections.sort(pendingReportsForDates, Collections.reverseOrder());
     log.info("RAJ K after sort pendingReportsForDates {}", pendingReportsForDates);
     
     //
@@ -307,8 +307,7 @@ public class ReportService extends GUIService
             // Create new file in control dir with reportName inside, to trigger report generation
             //
             
-            //zk.create(znode, reportName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
-            zk.create(znode, zkData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
+            zk.create(znode, zkData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL); //zk.create(znode, reportName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
             log.info("RAJ K node created {}", znode);
           }
         catch (KeeperException e)
