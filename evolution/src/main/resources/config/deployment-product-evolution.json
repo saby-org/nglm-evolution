@@ -225,6 +225,7 @@
   "journeyMetricTopic"                                   : "${topic.journeymetric}",
   "presentationLogTopic"                                 : "${topic.presentationlog}",
   "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
+  "subscriberPredictionsPushTopic"                       : "${topic.subscriberpredictionspush}",
   "subscriberMessageTemplateTopic"                       : "${topic.template.subscribermessage}",
   "uploadedFileTopic"                                    : "${topic.uploadedfile}",
   "targetTopic"                                          : "${topic.target}",

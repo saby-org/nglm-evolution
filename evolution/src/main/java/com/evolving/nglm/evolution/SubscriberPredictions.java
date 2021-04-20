@@ -10,6 +10,9 @@ import org.apache.kafka.connect.data.Struct;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamEvent;
+import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
+import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 
 public class SubscriberPredictions
 {
@@ -115,6 +118,109 @@ public class SubscriberPredictions
       return getNcileInterval(10);
     }
   }
+  
+
+  /*****************************************
+  *
+  * SubscriberPredictionsPush
+  * Object pushed by prediction module in Evolution kafka queue.
+  *
+  *****************************************/
+  public static class SubscriberPredictionsPush implements SubscriberStreamEvent
+  {
+    /*****************************************
+    *
+    * Schema
+    *
+    *****************************************/
+    public static final Schema schema = buildSchema();
+    private static Schema buildSchema()
+    {
+      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+      schemaBuilder.name("subscriberpredictionpush");
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.field("subscriberID",  Schema.STRING_SCHEMA);
+      schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
+      schemaBuilder.field("predictions",   SchemaBuilder.array(Prediction.schema));
+      return schemaBuilder.build();
+    };  
+    
+    private static ConnectSerde<SubscriberPredictionsPush> serde = new ConnectSerde<SubscriberPredictionsPush>(schema, false, SubscriberPredictionsPush.class, SubscriberPredictionsPush::pack, SubscriberPredictionsPush::unpack);
+    public static Schema schema() { return schema; }
+    public static ConnectSerde<SubscriberPredictionsPush> serde() { return serde; }
+    
+    /*****************************************
+    *
+    * Pack
+    *
+    *****************************************/
+    public static Object pack(Object value)
+    {
+      SubscriberPredictionsPush subscriberPredictionsPush = (SubscriberPredictionsPush) value;
+      
+      Struct struct = new Struct(schema);
+      struct.put("subscriberID", subscriberPredictionsPush.subscriberID);
+      struct.put("eventDate", subscriberPredictionsPush.eventDate.getTime());
+      struct.put("predictions",  subscriberPredictionsPush.predictions.stream().map(Prediction::pack).collect(Collectors.toList()));
+      return struct;
+    }
+    
+    /*****************************************
+    *
+    * Unpack
+    *
+    *****************************************/
+    public static SubscriberPredictionsPush unpack(SchemaAndValue schemaAndValue)
+    {
+      Schema schema = schemaAndValue.schema();
+      Object value = schemaAndValue.value();
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+
+      //
+      // unpack
+      //
+      Struct valueStruct = (Struct) value;
+      String subscriberID = valueStruct.getString("subscriberID");
+      Long eventDate = valueStruct.getInt64("eventDate");
+      List<Prediction> predictions = ((List<Object>) valueStruct.get("predictions")).stream()
+          .map(v -> Prediction.unpack(new SchemaAndValue(schema, v))).collect(Collectors.toList());
+      
+      return new SubscriberPredictionsPush(subscriberID, new Date(eventDate), predictions);
+    }
+    
+    /*****************************************
+    *
+    * Properties
+    *
+    *****************************************/
+    public String subscriberID;
+    public Date eventDate;
+    public List<Prediction> predictions;
+    
+    public SubscriberPredictionsPush(String subscriberID, Date eventDate, List<Prediction> predictions) {
+      this.subscriberID = subscriberID;
+      this.eventDate = eventDate;
+      this.predictions = predictions;
+    }
+
+    /*****************************************
+    *
+    * SubscriberStreamEvent
+    *
+    *****************************************/
+    @Override public String getSubscriberID() { return this.subscriberID; }
+    @Override public Date getEventDate() { return this.eventDate; }
+    @Override public Schema subscriberStreamEventSchema() { return schema; }
+    @Override public Object subscriberStreamEventPack(Object value) { return pack(value); }
+    @Override public DeliveryPriority getDeliveryPriority() { return DeliveryRequest.DeliveryPriority.High;} // @rl not sure ?
+  }
+  
+
+  /*****************************************
+  *
+  * SubscriberPrediction
+  *
+  *****************************************/
   
   /*****************************************
   *
@@ -224,5 +330,25 @@ public class SubscriberPredictions
   {
     this.current = new HashMap<>(predictions.current);
     this.previous = new HashMap<>(predictions.previous);
+  }
+  
+  /*****************************************
+  *
+  * Update
+  *
+  *****************************************/
+  public void update(SubscriberPredictionsPush push) 
+  {
+    for(Prediction prediction: push.predictions) {
+      Long predictionID = prediction.predictionID;
+      if(this.current.get(predictionID) == null) {
+        // New prediction 
+        this.current.put(predictionID, prediction);
+      }
+      else {
+        this.previous.put(predictionID, this.current.get(predictionID));
+        this.current.put(predictionID, prediction);
+      }
+    }
   }
 }
