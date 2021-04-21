@@ -11,7 +11,7 @@ import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
 
-@ReportTypeDef(reportType = "detailedrecords")
+@ReportTypeDef(reportType = "subscriberprofile")
 public class CustomerPointDetailsDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(CustomerPointDetailsDriver.class);
