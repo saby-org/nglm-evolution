@@ -14,12 +14,24 @@ opc-api-<_KEY_>:
     DNBOSettings__DNBOEngineSettings__SalesChannelId: <_OPC_WEB_SALE_CHANNEL_ID_>
     DNBOSettings__DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
     DNBOSettings__RedisConfigurationSettings__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_CONNECTION_STRING_>,allowAdmin=true,syncTimeout=5000'
-    ReportSettings__ApiElasticsearchUrl: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/'
+    ReportSettings__ApiElasticsearchUrl: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/'   
+    ReportSettings__ODUser: 'admin'
+    ReportSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
+    DNBOSettings__DNBOEngineSettings__MsisdnParam: '<_OPC_DNBO_MSISDNPARAM_>'
+    DNBOSettings__DNBOEngineSettings__ChannelIDParam: '<_OPC_DNBO_CHANNELIDPARAM_>'
+    DNBOSettings__DNBOEngineSettings__SalesChannelIDParam: '<_OPC_DNBO_SALESCHANNELIDPARAM_>'
+    DNBOSettings__DNBOEngineSettings__UserIDParam: '<_OPC_DNBO_USERIDPARAM_>'
+    DNBOSettings__DNBOEngineSettings__LanguageParam: '<_OPC_DNBO_LANGUAGEPARAM_>'
+    DNBOSettings__DNBOEngineSettings__OfferIDParam: '<_OPC_DNBO_OFFERIDPARAM_>'
+    DNBOSettings__DNBOEngineSettings__OfferIDRespField: '<_OPC_DNBO_OFFERIDRESPFIELD_>'
+    DNBOSettings__DNBOEngineSettings__OfferNameRespField: '<_OPC_DNBO_OFFERNAMERESPFIELD_>'
+    DNBOSettings__DNBOEngineSettings__OfferDescriptionRespField: '<_OPC_DNBO_OFFERDESCRIPTIONRESPFIELD_>'
+    DNBOSettings__DNBOEngineSettings__ActionTypeNameRespField: '<_OPC_DNBO_ACTIONTYPENAMERESPFIELD_>'
+    DNBOSettings__DNBOEngineSettings__PresentOffers: '<_OPC_DNBO_PRESENTOFFERS_>'
+    DNBOSettings__DNBOEngineSettings__AcceptOffer: '<_OPC_DNBO_ACCEPTOFFER_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     OPC_API_PORT: <_PORT_>
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
-    ReportSettings__ODUser: 'admin'
-    ReportSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/opc-api-<_KEY_>/mnt

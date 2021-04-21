@@ -1,13 +1,13 @@
 fwkauth-api-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}fwkauth.api:${gui-fwk.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
-  environment:
-    TZ: <_DEPLOYMENT_TIMEZONE_>
-    FWK_AUTH_API_PORT: <_PORT_>
+  environment:   
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
     FwkAuthSettings__EnableClientIPAuthorization: '<_FWKAUTHSETTINGS_ENABLECLIENTIPAUTHORIZATION_>'
     FwkAuthSettings__TokenTimeOutInMinutes: '<_FKWAUTHSETTINGS_TOKENTIMEOUTINMINUTES_>'
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
+    TZ: <_DEPLOYMENT_TIMEZONE_>
+    FWK_AUTH_API_PORT: <_PORT_>
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/fwkauth-api-<_KEY_>/mnt
