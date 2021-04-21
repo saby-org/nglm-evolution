@@ -82,7 +82,7 @@ public class ComplexObjectUtils
         instances.add(instance);        
       }
     
-    Map<String, DataModelFieldValue> valueSubFields = instance.getFieldValues();
+    Map<String, DataModelFieldValue> valueSubFields = instance.getFieldValuesForModification();
     if(value == null)
       {
         valueSubFields.remove(subfieldType.getSubfieldName());
@@ -165,7 +165,7 @@ public class ComplexObjectUtils
     ComplexObjectInstance instance = null;
     for(ComplexObjectInstance current : instances) { if(current.getElementID().equals(elementID)) { instance = current; break; }}
     if(instance == null) { return null; }
-    Map<String, DataModelFieldValue> values = instance.getFieldValues();
+    Map<String, DataModelFieldValue> values = instance.getFieldValuesReadOnly();
     if(values == null) { return null; }
     DataModelFieldValue value = values.get(subfieldName);
     if(value == null) { return null; }    

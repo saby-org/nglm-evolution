@@ -1260,7 +1260,7 @@ public abstract class CriterionFieldRetriever
           }
       }
     if(instance == null) { return null; }
-    Map<String, DataModelFieldValue> values = instance.getFieldValues();
+    Map<String, DataModelFieldValue> values = instance.getFieldValuesReadOnly();
     if(values == null) { return null; }
     DataModelFieldValue elementValue = values.get(subfieldName);
     if(elementValue == null) { return null; }
