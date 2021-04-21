@@ -911,9 +911,9 @@ public class GUIManager
           // send the evaluate target order to evolution engine
           //
 
-          if (journey.getTargetID() != null)
+          if (journey.getTargetIDs() != null)
           {
-            EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(journey.getJourneyID()), journey.getTargetID());
+            EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(journey.getJourneyID()), journey.getTargetIDs());
             kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets
                   .serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
           }

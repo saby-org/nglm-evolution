@@ -4574,7 +4574,7 @@ public class EvolutionEngine
                     // - All Subscribers is considered as Target with no target specified, so this case is handled by Target case                   
                     
                     // 1- Compute inAnyTargetOrTrigger: if no trigger or no target, then this boolean is set to true 
-                    List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now, tenantID);
+                    List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now);
                     if(journey.getTargetingEventCriteria() != null && !journey.getTargetingEventCriteria().isEmpty()) { targetsAndTriggerCriteria.add(journey.getTargetingEventCriteria()); }
                     boolean inAnyTargetOrTrigger = targetsAndTriggerCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
                     List<EvaluationCriterion> targets = new ArrayList<>();
