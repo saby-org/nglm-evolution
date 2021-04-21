@@ -764,8 +764,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       
       super(esFields);
       try {
-        setCreationDate(RLMDateUtils.parseDateFromREST((String) esFields.get("creationDate")));
-        setDeliveryDate(RLMDateUtils.parseDateFromREST((String) esFields.get("eventDatetime")));
+        setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
+        setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("eventDatetime")));
       }
       catch(java.text.ParseException e) {
         throw new ServerRuntimeException(e);
