@@ -54,6 +54,11 @@ public class ReportJob extends ScheduledJob
     else
       {
         if (log.isInfoEnabled()) log.info("reportJob " + report.getName() + " : launch report");
+        
+        //
+        // light job threads to launch (to launch scheduled jobs asynchronously) EVPRO-1005
+        //
+        
         Thread thread = new Thread( () -> 
         { 
           reportService.launchReport(report, false);
@@ -64,26 +69,6 @@ public class ReportJob extends ScheduledJob
         );
         thread.setName(report.getName() + " launcher");
         thread.start();
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
       }
     log.info("reportJob " + report.getName() + " : end execution");
   }
