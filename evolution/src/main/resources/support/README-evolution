@@ -508,7 +508,7 @@ docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-
 --
 
 -- request the generation of a journey report
-docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> create /evolving/nglm/reports/control/launchReport-customerReport_2021-04-19 00:00:00.000+0530_000000001 '{"reportName":"customerReport","reportGenerationDate":1606150469246}'
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> create /evolving/nglm/reports/control/launchReport-customerReport_2021-04-19_000000001 '{"reportName":"customerReport","reportGenerationDate":1606150469246}'
 
 -- check reports being requested
 docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> ls /evolving/nglm/reports/control
@@ -517,10 +517,10 @@ docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-
 docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> ls /evolving/nglm/reports/lock
 
 -- remove a report control file
-docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> delete /evolving/nglm/reports/control/launchReport-customerReport_2021-04-19 00:00:00.000+0530_0000000006
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> delete /evolving/nglm/reports/control/launchReport-customerReport_2021-04-19_0000000006
 
 -- remove a report lock file
-docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> delete /evolving/nglm/reports/lock/launchReport-customerReport_2021-04-19 00:00:00.000+0530_0000000006
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> delete /evolving/nglm/reports/lock/launchReport-customerReport_2021-04-19_0000000006
 
 docker service logs ev-reportmanager_reportmanager-001 --tail 100 -f
 docker service logs ev-reportscheduler_reportscheduler-001 --tail 100 -f
