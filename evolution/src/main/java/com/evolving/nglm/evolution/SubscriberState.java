@@ -119,7 +119,7 @@ public class SubscriberState implements StateStore
   private List<LoyaltyProgramRequest> loyaltyProgramResponses;
   private List<PointFulfillmentRequest> pointFulfillmentResponses;
   private List<DeliveryRequest> deliveryRequests;
-  private List<JourneyStatistic> journeyStatisticWrappers;
+  private Map<String,JourneyStatistic> journeyStatisticWrappers;
   private List<JourneyMetric> journeyMetrics;
   private List<ProfileChangeEvent> profileChangeEvents;
   private List<ProfileSegmentChangeEvent> profileSegmentChangeEvents;
@@ -167,7 +167,8 @@ public class SubscriberState implements StateStore
   public List<LoyaltyProgramRequest> getLoyaltyProgramResponses() { return loyaltyProgramResponses; }
   public List<PointFulfillmentRequest> getPointFulfillmentResponses() { return pointFulfillmentResponses; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
-  public List<JourneyStatistic> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
+  public Map<String,JourneyStatistic> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
+  public void addJourneyStatistic(JourneyStatistic journeyStatistic) { journeyStatisticWrappers.put(journeyStatistic.getJourneyInstanceID(),journeyStatistic); }
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
   public List<ProfileChangeEvent> getProfileChangeEvents() { return profileChangeEvents; }
   public List<ProfileSegmentChangeEvent> getProfileSegmentChangeEvents() { return profileSegmentChangeEvents; }
@@ -268,7 +269,7 @@ public class SubscriberState implements StateStore
         this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>();
         this.pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
-        this.journeyStatisticWrappers = new ArrayList<JourneyStatistic>();
+        this.journeyStatisticWrappers = new HashMap<>();
         this.journeyMetrics = new ArrayList<JourneyMetric>();
         this.profileChangeEvents = new ArrayList<ProfileChangeEvent>();
         this.profileSegmentChangeEvents = new ArrayList<ProfileSegmentChangeEvent>();
@@ -324,7 +325,7 @@ public class SubscriberState implements StateStore
     this.loyaltyProgramResponses = new ArrayList<>();
     this.pointFulfillmentResponses = new ArrayList<>();
     this.deliveryRequests = new ArrayList<>();
-    this.journeyStatisticWrappers = new ArrayList<>();
+    this.journeyStatisticWrappers = new HashMap<>();
     this.journeyMetrics = new ArrayList<>();
     this.profileChangeEvents = new ArrayList<>();
     this.profileSegmentChangeEvents = new ArrayList<>();
