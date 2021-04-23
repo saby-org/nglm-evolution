@@ -86,6 +86,7 @@ public class ContactPolicyProcessor
         if(!request.getModule().equals(DeliveryRequest.Module.Journey_Manager)) return false;
 
         Journey journey = journeyService.getActiveJourney(request.getFeatureID(), now);
+        if (journey == null) return false; // journey has been removed
         Set<JourneyObjectiveInstance> journeyObjectivesInstances = journey.getJourneyObjectiveInstances();
         for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectivesInstances)
           {

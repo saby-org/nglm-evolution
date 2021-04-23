@@ -356,7 +356,7 @@ public abstract class DeliveryManager
     Properties routingConsumerProperties = new Properties();
     routingConsumerProperties.put("bootstrap.servers", bootstrapServers);
     routingConsumerProperties.put("group.id", groupIdForRouting + "-routing");
-    log.info("MK creating routing consumer with group = " + groupIdForRouting + "-routing");
+    log.info("creating routing consumer with group = " + groupIdForRouting + "-routing");
     routingConsumerProperties.put("auto.offset.reset", "earliest");
     routingConsumerProperties.put("enable.auto.commit", "false");
     routingConsumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");

@@ -17,6 +17,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -344,10 +345,6 @@ public class ReportManager implements Watcher
   // Called when a control file is created or deleted
   public void processChild2(String child) throws InterruptedException
   {
-    // TODO EVPRO-99 extract tenantID from child and take in account tenantID in the name of the file and zk lock
-    // TODO
-    // TODO !!!!
-    int tenantID = 1;
     String controlFile = controlDir + File.separator + child;
     String lockFile = lockDir + File.separator + child;
     log.trace("Checking if control exists : "+controlFile); // We might have been called for the suppression of the control node
@@ -376,6 +373,7 @@ public class ReportManager implements Watcher
                   JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(reportMetadata);
                   String reportName = JSONUtilities.decodeString(jsonRoot, "reportName", true);
                   final Date reportGenerationDate = new Date(JSONUtilities.decodeLong(jsonRoot, "reportGenerationDate", true));
+                  int tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
                   String restOfLine = s.nextLine().trim();
                   s.close();
                   Collection<GUIManagedObject> reports = reportService.getStoredReports(tenantID);
@@ -415,12 +413,12 @@ public class ReportManager implements Watcher
                             {
                               if (safeguardCount > 3)
                                 {
-                                  log.info("There was an issue producing " + reportName + ", stop retrying");
+                                  log.info("There was an issue producing " + reportName + " for tenant " + tenantID + ", stop retrying");
                                   allOK = true; // after a while, stop, this should stay exceptional
                                 }
                               else
                                 {
-                                  log.info("There was an issue producing " + reportName + ", restarting it after 1 minute, occurence " + (++safeguardCount));
+                                  log.info("There was an issue producing " + reportName + " for tenant " + tenantID + ", restarting it after 1 minute, occurence " + (++safeguardCount));
                                   try { Thread.sleep(60*1000L); } catch (InterruptedException ie) {} // wait 1 minute
                                 }
                             }
@@ -564,7 +562,7 @@ public class ReportManager implements Watcher
       }
     try
       {
-        String outputPath = Deployment.getDeployment(tenantID).getReportManagerOutputPath();
+        String outputPath = ReportService.getReportOutputPath(tenantID);
         log.trace("outputPath = " + outputPath);
         String dateFormat = Deployment.getDeployment(tenantID).getReportManagerDateFormat();
         log.trace("dateFormat = " + dateFormat);
@@ -582,7 +580,7 @@ public class ReportManager implements Watcher
           }
         sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         String fileSuffix = sdf.format(reportGenerationDate);
-        String csvFilename = "" + outputPath + File.separator + reportName + "_" + fileSuffix + "." + fileExtension;
+        String csvFilename = "" + outputPath + File.separator + reportName + "_" + tenantID + "_" + fileSuffix + "." + fileExtension;
         log.trace("csvFilename = " + csvFilename);
 
         @SuppressWarnings("unchecked")
