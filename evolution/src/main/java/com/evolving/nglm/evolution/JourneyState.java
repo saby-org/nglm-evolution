@@ -311,5 +311,12 @@ public class JourneyState
   public boolean populateMetricsPrior(SubscriberState subscriberState, int tenantID){
     return this.getJourneyEndedState().populateMetricsPrior(subscriberState,this.getJourneyEntryDate(),tenantID);
   }
+
+  // native Object hashCode is to heavy for this object heavily used in hashset
+  @Override public int hashCode(){ return getJourneyInstanceID().hashCode(); }
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof JourneyState)) return false;
+    return getJourneyInstanceID().equals(obj);
+  }
   
 }

@@ -257,7 +257,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   private List<EvaluationCriterion> eligibilityCriteria;
   private List<EvaluationCriterion> targetingCriteria;
   private List<EvaluationCriterion> targetingEventCriteria;
-  private List<String> targetID;
+  private Map<String,List<EvaluationCriterion>> targets;
   private String startNodeID;
   private String endNodeID;
   private Set<JourneyObjectiveInstance> journeyObjectiveInstances; 
@@ -303,7 +303,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   public List<EvaluationCriterion> getEligibilityCriteria() { return eligibilityCriteria; }
   public List<EvaluationCriterion> getTargetingCriteria() { return targetingCriteria; }
   public List<EvaluationCriterion> getTargetingEventCriteria() { return targetingEventCriteria; }
-  public List<String> getTargetID() { return targetID; }
+  public Set<String> getTargetIDs() { return targets.keySet(); }
   public String getStartNodeID() { return startNodeID; }
   public String getEndNodeID() { return endNodeID; }
   public Set<JourneyObjectiveInstance> getJourneyObjectiveInstances() { return journeyObjectiveInstances;  }
@@ -399,76 +399,20 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   }
 
   //
-  //  getAllCriteria
+  //  getAllCriteria (to filter inactive ones)
   //
-
-  public List<List<EvaluationCriterion>> getAllTargetsCriteria(TargetService targetService, Date now, int tenantID)
+  private List<EvaluationCriterion> falseCriterion;// move it to a global place ??
+  public List<List<EvaluationCriterion>> getAllTargetsCriteria(TargetService targetService, Date now)
   {
-    try
-      {
-        //
-        // result
-        //
-
-        List<List<EvaluationCriterion>> result = new ArrayList<List<EvaluationCriterion>>();
-
-        //
-        // target
-        //
-
-        if (targetID != null && !targetID.isEmpty())
-          {
-
-            for (String currentTargetID : targetID)
-              {
-                //
-                // get the target
-                //
-
-                Target target = targetService.getActiveTarget(currentTargetID, now);
-
-                //
-                // target not active -- automatic false criteria
-                //
-
-                if (target == null)
-                  {
-                    Map<String, Object> falseCriterionArgumentJSON = new LinkedHashMap<String, Object>();
-                    Map<String, Object> falseCriterionJSON = new LinkedHashMap<String, Object>();
-                    falseCriterionArgumentJSON.put("expression", "false");
-                    falseCriterionJSON.put("criterionField", "internal.false");
-                    falseCriterionJSON.put("criterionOperator", "<>");
-                    falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
-                    List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile(tenantID), tenantID));
-                    result.add(toAdd);
-                  }
-
-                else
-                  {
-                    Map<String, Object> targetCriterionArgumentJSON = new LinkedHashMap<String, Object>();
-                    Map<String, Object> targetCriterionJSON = new LinkedHashMap<String, Object>();
-                    targetCriterionArgumentJSON.put("expression", "'" + currentTargetID + "'");
-                    targetCriterionJSON.put("criterionField", "internal.targets");
-                    targetCriterionJSON.put("criterionOperator", "contains");
-                    targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
-                    List<EvaluationCriterion> toAdd = new ArrayList<>();
-                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile(tenantID), tenantID));
-                    result.add(toAdd);
-                  }
-              }
-          }
-
-        //
-        // return
-        //
-
-        return result;
+    List<List<EvaluationCriterion>> result = new ArrayList<>(targets.size());
+    for(Map.Entry<String,List<EvaluationCriterion>> target:targets.entrySet()){
+      if(targetService.getActiveTarget(target.getKey(),now)!=null){
+        result.add(target.getValue());
+      }else{
+        result.add(falseCriterion);
       }
-    catch (GUIManagerException e)
-      {
-        throw new ServerRuntimeException(e);
-      }
+    }
+    return result;
   }
 
   //
@@ -671,7 +615,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, boolean recurrenceActive, Integer priority, String targetingFileVariableID)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetIDs, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber, boolean recurrenceActive, Integer priority, String targetingFileVariableID)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -682,7 +626,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     this.eligibilityCriteria = eligibilityCriteria;
     this.targetingCriteria = targetingCriteria;
     this.targetingEventCriteria = targetingEventCriteria;
-    this.targetID = targetID;
+    try {
+      this.targets = initTargets(targetIDs);
+    } catch (GUIManagerException e) {
+      throw new RuntimeException(e);
+    }
     this.startNodeID = startNodeID;
     this.endNodeID = endNodeID;
     this.journeyObjectiveInstances = journeyObjectiveInstances;
@@ -724,7 +672,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     struct.put("eligibilityCriteria", packCriteria(journey.getEligibilityCriteria()));
     struct.put("targetingCriteria", packCriteria(journey.getTargetingCriteria()));
     struct.put("targetingEventCriteria", packCriteria(journey.getTargetingEventCriteria()));
-    struct.put("targetID", journey.getTargetID());
+    struct.put("targetID", new ArrayList<>(journey.getTargetIDs()));
     struct.put("startNodeID", journey.getStartNodeID());
     struct.put("endNodeID", journey.getEndNodeID());
     struct.put("journeyObjectives", packJourneyObjectiveInstances(journey.getJourneyObjectiveInstances()));
@@ -1202,7 +1150,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         this.targetingEventCriteria = new ArrayList<>();
       }
 
-    this.targetID = decodeTargetIDs(JSONUtilities.decodeJSONArray(jsonRoot, "targetID", new JSONArray()));
+    this.targets = initTargets(decodeTargetIDs(JSONUtilities.decodeJSONArray(jsonRoot, "targetID", new JSONArray())));
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
     this.appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", Boolean.FALSE);
     this.appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", Boolean.FALSE);
@@ -1847,6 +1795,33 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
       {
         this.setEpoch(epoch);
       }
+  }
+
+  private Map<String,List<EvaluationCriterion>> initTargets(List<String> targetIds) throws GUIManagerException {
+    HashMap<String,List<EvaluationCriterion>> result = new HashMap<>();
+    for(String targetId:targetIds){
+      Map<String, Object> targetCriterionArgumentJSON = new LinkedHashMap<>();
+      Map<String, Object> targetCriterionJSON = new LinkedHashMap<>();
+      targetCriterionArgumentJSON.put("expression", "'" + targetId + "'");
+      targetCriterionJSON.put("criterionField", "internal.targets");
+      targetCriterionJSON.put("criterionOperator", "contains");
+      targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
+      List<EvaluationCriterion> toAdd = new ArrayList<>();
+      toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile(this.getTenantID()), this.getTenantID()));
+      result.put(targetId,toAdd);
+    }
+
+    // init the internal false as well (used instead of normal target if target got deactivated at runtime)
+    Map<String, Object> falseCriterionArgumentJSON = new LinkedHashMap<>();
+    Map<String, Object> falseCriterionJSON = new LinkedHashMap<>();
+    falseCriterionArgumentJSON.put("expression", "false");
+    falseCriterionJSON.put("criterionField", "internal.false");
+    falseCriterionJSON.put("criterionOperator", "<>");
+    falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
+    this.falseCriterion = new ArrayList<>();
+    falseCriterion.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile(this.getTenantID()), this.getTenantID()));
+
+    return result;
   }
   
   public void createOrConsolidateHardcodedMessageTemplates(SubscriberMessageTemplateService subscriberMessageTemplateService, String journeyID, JourneyService journeyService) throws GUIManagerException
@@ -2508,10 +2483,10 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     *
     ****************************************/
 
-    if (targetID != null)
+    if (targets != null)
       {
         
-        for(String currentTargetID : targetID){
+        for(String currentTargetID : targets.keySet()){
           
           //
           //  retrieve target
@@ -3826,7 +3801,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         epochChanged = epochChanged || ! Objects.equals(eligibilityCriteria, existingJourney.getEligibilityCriteria());
         epochChanged = epochChanged || ! Objects.equals(targetingCriteria, existingJourney.getTargetingCriteria());
         epochChanged = epochChanged || ! Objects.equals(targetingEventCriteria, existingJourney.getTargetingEventCriteria());
-        epochChanged = epochChanged || ! Objects.equals(targetID, existingJourney.getTargetID());
+        epochChanged = epochChanged || ! Objects.equals(getTargetIDs(), existingJourney.getTargetIDs());
         epochChanged = epochChanged || ! Objects.equals(startNodeID, existingJourney.getStartNodeID());
         epochChanged = epochChanged || ! Objects.equals(endNodeID, existingJourney.getEndNodeID());
         epochChanged = epochChanged || ! Objects.equals(journeyObjectiveInstances, existingJourney.getJourneyObjectiveInstances());
@@ -4067,7 +4042,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
 			result.put("journeyobjective", journeyObjectiveIDs);
 
-			targetIDs = getTargetID();
+			targetIDs = new ArrayList<>(getTargetIDs());
 
 			for (EvaluationCriterion internalTarget : internalTargets) {
 				if (internalTarget != null && internalTarget.getCriterionField() != null
@@ -4145,7 +4120,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
 			result.put("journeyobjective", journeyObjIDs);
 
-			targetIDs = getTargetID();
+			targetIDs = new ArrayList<>(getTargetIDs());
 
 			for (EvaluationCriterion internalTarget : internalTargets1) {
 				if (internalTarget != null && internalTarget.getCriterionField() != null
@@ -4194,7 +4169,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 			result.put("point", blkpointIDs);
 			result.put("dialogtemplate", dialogIDs);
 
-			targetIDs = getTargetID();
+			targetIDs = new ArrayList<>(getTargetIDs());
 			result.put("target", targetIDs);
 
 			List<String> jourObjIDs = getJourneyObjectiveInstances().stream()
@@ -4284,7 +4259,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     //
     // TODO @rl: use ElasticsearchUtils ?
     String targets = "";
-    for(String targetID : this.getTargetID()) {
+    for(String targetID : this.getTargetIDs()) {
       GUIManagedObject target = targetService.getStoredGUIManagedObject(targetID);
       if(target != null) {
         String targetDisplay = target.getGUIManagedObjectDisplay();

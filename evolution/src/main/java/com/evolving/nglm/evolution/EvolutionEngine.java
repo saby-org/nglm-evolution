@@ -4574,7 +4574,7 @@ public class EvolutionEngine
                     // - All Subscribers is considered as Target with no target specified, so this case is handled by Target case                   
                     
                     // 1- Compute inAnyTargetOrTrigger: if no trigger or no target, then this boolean is set to true 
-                    List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now, tenantID);
+                    List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now);
                     if(journey.getTargetingEventCriteria() != null && !journey.getTargetingEventCriteria().isEmpty()) { targetsAndTriggerCriteria.add(journey.getTargetingEventCriteria()); }
                     boolean inAnyTargetOrTrigger = targetsAndTriggerCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
                     List<EvaluationCriterion> targets = new ArrayList<>();
@@ -4824,7 +4824,7 @@ public class EvolutionEngine
                 boolean statusUpdated = journeyState.getJourneyHistory()
                             .addStatusInformation(SystemTime.getCurrentTime(), journeyState, false, currentStatus);
                 subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context,
+                subscriberState.addJourneyStatistic(new JourneyStatistic(context,
                                           subscriberState.getSubscriberID(),
                                           journeyState.getJourneyHistory(),
                                           journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader),
@@ -4970,7 +4970,7 @@ public class EvolutionEngine
           boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
           subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
           boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-          subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now));
+          subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now));
           inactiveJourneyStates.add(journeyState);
           continue;
         }
@@ -5041,7 +5041,7 @@ public class EvolutionEngine
                               boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
                               subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                               boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                              subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
+                              subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                               inactiveJourneyStates.add(journeyState);
                               break;
                             }
@@ -5227,7 +5227,7 @@ public class EvolutionEngine
                                   boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
                                   subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                                   boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                                  subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
+                                  subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                                   inactiveJourneyStates.add(journeyState);
                                   break;
                                 }
@@ -5437,7 +5437,7 @@ public class EvolutionEngine
                                   boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
                                   subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                                   boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                                  subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
+                                  subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                                   inactiveJourneyStates.add(journeyState);
                                   break;
                                 }
@@ -5526,7 +5526,7 @@ public class EvolutionEngine
                 
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, journeyNode.getExitNode());
                 if(journey.isWorkflow())
-                  {  
+                  {
                     // retrieve the journey state of the calling campaign
                 	JourneyState sourceJourneyState = null;
                     if(subscriberState.getJourneyStates() != null)
@@ -5541,19 +5541,19 @@ public class EvolutionEngine
                       }
                     if(sourceJourneyState != null)
                       {
-                        subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), sourceJourneyState.getJourneyHistory(), journeyState.getJourneyHistory(), sourceJourneyState, journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
+                        subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), sourceJourneyState.getJourneyHistory(), journeyState.getJourneyHistory(), sourceJourneyState, journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
                       }
                     else
                       {
                         // error...generate a jounrey statistic for the workflow as it it was a normal journey for debug help
                         log.warn("Can't retrieve source journey state for workflow " + journeyState.getJourneyID() + " and subscriber " + subscriberState.getSubscriberID());
-                        subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
+                        subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
                       }
                   }
                 else
                   {
                 	// normal case
-                	subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
+                	subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
                   }
                 /*****************************************
                 *
@@ -6080,7 +6080,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getLoyaltyProgramRequests());
         result.addAll(subscriberState.getPointFulfillmentResponses());
         result.addAll(subscriberState.getDeliveryRequests());
-        result.addAll(subscriberState.getJourneyStatisticWrappers());
+        result.addAll(subscriberState.getJourneyStatisticWrappers().values());
         result.addAll(subscriberState.getJourneyMetrics());
         result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
         result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
