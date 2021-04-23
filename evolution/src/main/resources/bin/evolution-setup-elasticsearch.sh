@@ -30,18 +30,18 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -u $E
     }
   },
   "mappings" : {
-   "dynamic_templates": [ {
-       "strings_as_keywords": {
-         "match_mapping_type": "string",
-         "mapping": { "type": "keyword" }
-       }
-     }, {
-       "numerics_as_integers": {
-         "match_mapping_type": "long",
-         "mapping": { "type": "integer" }
-       }
-     }
-   ]
+    "_meta": { "root" : { "version": Deployment.getElasticsearchRootTemplateVersion() } },
+    "dynamic_templates": [ {
+      "strings_as_keywords": {
+        "match_mapping_type": "string",
+        "mapping": { "type": "keyword" }
+      }
+    }, {
+      "numerics_as_integers": {
+        "match_mapping_type": "long",
+        "mapping": { "type": "integer" }
+      }
+    }]
   }
 }'
 echo
@@ -67,6 +67,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
     }
   },
   "mappings" : {
+    "_meta": { "subscriberprofile" : { "version": Deployment.getElasticsearchSubscriberprofileTemplateVersion() } },
     "properties" : {
       "subscriberID"                        : { "type" : "keyword" },
       "tenantID"                            : { "type" : "integer" },
@@ -216,6 +217,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $EL
     "opendistro.index_state_management.policy_id": "bdr_policy"
   },
   "mappings" : {
+    "_meta": { "bdr" : { "version": Deployment.getElasticsearchBdrTemplateVersion() } },
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
       "tenantID" : { "type" : "integer" },
@@ -284,6 +286,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -u $
     "opendistro.index_state_management.policy_id": "token_policy"
   },
   "mappings" : {
+    "_meta": { "token" : { "version": Deployment.getElasticsearchTokenTemplateVersion() } },
     "properties" : {
       "subscriberID"  : { "type" : "keyword" },
       "tenantID"      : { "type" : "integer" },
@@ -343,6 +346,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -u $EL
     "opendistro.index_state_management.policy_id": "odr_policy"
   },
   "mappings" : {
+    "_meta": { "odr" : { "version": Deployment.getElasticsearchOdrTemplateVersion() } },
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
       "tenantID" : { "type" : "integer" },
@@ -415,6 +419,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
     "opendistro.index_state_management.policy_id": "vdr_policy"
   },
   "mappings" : {
+    "_meta": { "vdr" : { "version": Deployment.getElasticsearchVdrTemplateVersion() } },
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
       "tenantID" : { "type" : "integer" },
@@ -479,6 +484,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
     "opendistro.index_state_management.policy_id": "mdr_policy"
   },
   "mappings" : {
+    "_meta": { "mdr" : { "version": Deployment.getElasticsearchMdrTemplateVersion() } },
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
       "tenantID" : { "type" : "integer" },
@@ -512,6 +518,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeysta
 {
   "index_patterns": ["journeystatistic*"],
   "mappings" : {
+    "_meta": { "journeystatistic" : { "version": Deployment.getElasticsearcJourneystatisticTemplateVersion() } },
     "properties" : {
       "journeyInstanceID" : { "type" : "keyword" },
       "journeyID" : { "type" : "keyword" },
@@ -591,6 +598,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_s
 {
   "index_patterns": ["t*_datacube_subscriberprofile"],
   "mappings" : {
+    "_meta": { "datacube_subscriberprofile" : { "version": Deployment.getElasticsearchDatacubeSubscriberprofileTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -605,6 +613,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_l
 {
   "index_patterns": ["t*_datacube_loyaltyprogramshistory"],
   "mappings" : {
+    "_meta": { "datacube_loyaltyprogramshistory" : { "version": Deployment.getElasticsearchDatacubeLoyaltyprogramshistoryTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -627,6 +636,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_l
 {
   "index_patterns": ["t*_datacube_loyaltyprogramschanges"],
   "mappings" : {
+    "_meta": { "datacube_loyaltyprogramschanges" : { "version": Deployment.getElasticsearchDatacubeLoyaltyprogramschangesTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -645,6 +655,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_j
 {
   "index_patterns": ["t*_datacube_journeytraffic-*"],
   "mappings" : {
+    "_meta": { "datacube_journeytraffic" : { "version": Deployment.getElasticsearchDatacubeJourneytrafficTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -664,6 +675,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_j
 {
   "index_patterns": ["t*_datacube_journeyrewards-*"],
   "mappings" : {
+    "_meta": { "datacube_journeyrewards" : { "version": Deployment.getElasticsearchDatacubeJourneyrewardsTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -679,6 +691,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_o
 {
   "index_patterns": ["t*_datacube_odr"],
   "mappings" : {
+    "_meta": { "datacube_odr" : { "version": Deployment.getElasticsearchDatacubeOdrTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -701,6 +714,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_b
 {
   "index_patterns": ["t*_datacube_bdr"],
   "mappings" : {
+    "_meta": { "datacube_bdr" : { "version": Deployment.getElasticsearchDatacubeBdrTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -723,6 +737,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_m
 {
   "index_patterns": ["t*_datacube_messages"],
   "mappings" : {
+    "_meta": { "datacube_messages" : { "version": Deployment.getElasticsearchDatacubeMessagesTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -746,6 +761,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_v
 {
   "index_patterns": ["datacube_vdr"],
   "mappings" : {
+    "_meta": { "datacube_vdr" : { "version": Deployment.getElasticsearchDatacubeVdrTemplateVersion() } },
     "properties" : {
       "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "period" : { "type" : "long" },
@@ -775,6 +791,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_mo
 {
   "index_patterns": ["mapping_modules"],
   "mappings" : {
+    "_meta": { "mapping_modules" : { "version": Deployment.getElasticsearchMappingModulesTemplateVersion() } },
     "properties" : {
       "moduleID" : { "type" : "keyword" },
       "moduleName" : { "type" : "keyword" },
@@ -831,6 +848,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_jo
 {
   "index_patterns": ["mapping_journeys"],
   "mappings" : {
+    "_meta": { "mapping_journeys" : { "version": Deployment.getElasticsearchMappingJourneysTemplateVersion() } },
     "properties" : {
       "journeyID" : { "type" : "keyword" },
       "tenantID" : { "type" : "integer" },
@@ -854,6 +872,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_jo
 {
   "index_patterns": ["mapping_journeyrewards"],
   "mappings" : {
+    "_meta": { "mapping_journeyrewards" : { "version": Deployment.getElasticsearchMappingJourneyrewardsTemplateVersion() } },
     "properties" : {
       "journeyID" : { "type" : "keyword" },
       "reward" : { "type" : "keyword" },
@@ -867,6 +886,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_de
 {
   "index_patterns": ["mapping_deliverables"],
   "mappings" : {
+    "_meta": { "mapping_deliverables" : { "version": Deployment.getElasticsearchMappingDeliverablesTemplateVersion() } },
     "properties" : {
       "deliverableID" : { "type" : "keyword" },
       "deliverableName" : { "type" : "keyword" },
@@ -881,6 +901,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_ba
 {
   "index_patterns": ["mapping_basemanagement"],
   "mappings" : {
+    "_meta": { "mapping_basemanagement" : { "version": Deployment.getElasticsearchMappingBasemanagementTemplateVersion() } },
     "properties" : {
       "id"            : { "type" : "keyword" },
       "display"       : { "type" : "keyword" },
@@ -903,6 +924,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_jo
 {
   "index_patterns": ["mapping_journeyobjective"],
   "mappings" : {
+    "_meta": { "mapping_journeyobjective" : { "version": Deployment.getElasticsearchMappingJourneyobjectiveTemplateVersion() } },
     "properties" : {
       "id"            : { "type" : "keyword" },
       "display"       : { "type" : "keyword" },

@@ -244,7 +244,8 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysCampaigns;
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionWeeksDatacubeJourneys;
-  
+  private static Map<String, Long> elasticsearchTemplatesVersion;
+
   private static Map<String, ConnectTaskConfiguration> connectTask;
   private static ConnectTaskConfiguration connectTaskConfigDefault;
   
@@ -514,6 +515,30 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
   public static int getElasticsearchRetentionWeeksDatacubeJourneys() { return elasticsearchRetentionWeeksDatacubeJourneys; }
+  public static Map<String, Long> getElasticsearchTemplatesVersion() { return elasticsearchTemplatesVersion; }
+  public static Long getElasticsearchRootTemplateVersion() { return elasticsearchTemplatesVersion.get("root"); }
+  public static Long getElasticsearchSubscriberprofileTemplateVersion() { return elasticsearchTemplatesVersion.get("subscriberprofile"); }
+  public static Long getElasticsearchBdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_bonuses"); }
+  public static Long getElasticsearchTokenTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_tokens"); }
+  public static Long getElasticsearchOdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_offers"); }
+  public static Long getElasticsearchVdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_vouchers"); }
+  public static Long getElasticsearchMdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_messages"); }
+  public static Long getElasticsearcJourneystatisticTemplateVersion() { return elasticsearchTemplatesVersion.get("journeystatistic"); }
+  public static Long getElasticsearchDatacubeSubscriberprofileTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_subscriberprofile"); }
+  public static Long getElasticsearchDatacubeLoyaltyprogramshistoryTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramshistory"); }
+  public static Long getElasticsearchDatacubeLoyaltyprogramschangesTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramschanges"); }
+  public static Long getElasticsearchDatacubeJourneytrafficTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_journeytraffic"); }
+  public static Long getElasticsearchDatacubeJourneyrewardsTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_journeyrewards"); }
+  public static Long getElasticsearchDatacubeOdrTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_odr"); }
+  public static Long getElasticsearchDatacubeBdrTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_bdr"); }
+  public static Long getElasticsearchDatacubeMessagesTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_messages"); }
+  public static Long getElasticsearchDatacubeVdrTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_vdr"); }
+  public static Long getElasticsearchMappingModulesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_modules"); }
+  public static Long getElasticsearchMappingJourneysTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeys"); }
+  public static Long getElasticsearchMappingJourneyrewardsTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyrewards"); }
+  public static Long getElasticsearchMappingDeliverablesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_deliverables"); }
+  public static Long getElasticsearchMappingBasemanagementTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_basemanagment"); }
+  public static Long getElasticsearchMappingJourneyobjectiveTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyobjective"); }
 
   //
   // Kafka
@@ -792,6 +817,11 @@ public class DeploymentCommon
     elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
     elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
     elasticsearchRetentionWeeksDatacubeJourneys = jsonReader.decodeInteger("ESRetentionWeeksDatacubeJourneys");
+    JSONObject elasticsearchTemplatesVersionJSON = jsonReader.decodeJSONObject("elasticsearchTemplatesVersion");
+    elasticsearchTemplatesVersion = new LinkedHashMap<String, Long>();
+    for (Object key : elasticsearchTemplatesVersionJSON.keySet()) {
+      elasticsearchTemplatesVersion.put((String) key, (Long) elasticsearchTemplatesVersionJSON.get(key));
+    }
 
     
     // connectTask

@@ -7,6 +7,7 @@
 package com.evolving.nglm.core;
 
 import com.evolving.nglm.evolution.*;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
 import com.evolving.nglm.evolution.kafka.Topic;
 import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
@@ -119,6 +120,15 @@ public class EvolutionSetup
       System.out.println("= ELASTICSEARCH                                                                =");
       System.out.println("================================================================================");
       handleElasticsearchUpdate(elasticsearchUpdateFilePath);
+
+      //
+      // elasticSearch index upgrade - check for each indexes their template version and try to upgrade them if needed
+      //
+      System.out.println("");
+      System.out.println("================================================================================");
+      System.out.println("= ELASTICSEARCH INDEXES UPGRADE (BETA)                                         =");
+      System.out.println("================================================================================");
+      handleElasticsearchUpgrade(elasticsearchUpdateFilePath);
   
       //
       // kafka connect setup (must be last, after topics & indexes setup)
@@ -199,6 +209,114 @@ public class EvolutionSetup
       } else {
         System.out.println("[DISPLAY] INFO: Item has been updated.");
       }
+    }
+  }
+
+  /****************************************
+   *
+   * handleElasticsearch
+   *
+   ****************************************/
+
+  private static void handleElasticsearchUpgrade(String elasticsearchUpdateFilePath) throws ParseException, EvolutionSetupException{
+    //
+    // Retrieve master root info
+    //
+    List<CurlCommand> curls = handleCurlFile(elasticsearchUpdateFilePath);
+    CurlCommand templateCmd = null;
+    for(CurlCommand cmd : curls) {
+      if(cmd.url.endsWith("_template/root")) {
+        templateCmd = new CurlCommand(cmd.verb, cmd.url.replace("/_template/root", "/"), cmd.username, cmd.password, cmd.jsonBody);
+        break;
+      }
+    }
+    if(templateCmd == null) {
+      throw new EvolutionSetupException("Unable to retrieve master info.");
+    }
+    
+    //
+    // Retrieve indexes list (GET http://HOST:PORT/*)
+    //
+    List<String> indexes = new LinkedList<String>();
+    ObjectHolder<String> responseBody = new ObjectHolder<String>();
+    ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
+    JSONObject answer;
+    executeCurl(templateCmd.url + "*", "{}", "-XGET", templateCmd.username, templateCmd.password, httpResponseCode, responseBody);
+    if(httpResponseCode.getValue() == 200) {
+      answer = (JSONObject) (new JSONParser()).parse(responseBody.getValue());
+    } 
+    else {
+      throw new EvolutionSetupException("Unable to retrieve Elasticsearch index list: "+ responseBody.getValue());
+    }
+    
+    for(Object key: answer.keySet()) {
+      indexes.add((String) key);
+    }
+    
+    //
+    // Retrieve indexes _template version for every index
+    //
+    Map<String,Long> templatesVersions = Deployment.getElasticsearchTemplatesVersion();
+    Map<String, Map<String,Long>> indexesVersions = new LinkedHashMap<String, Map<String,Long>>();
+    for(String index: indexes) {
+      responseBody = new ObjectHolder<String>();
+      httpResponseCode = new ObjectHolder<Integer>();
+      answer = null;
+      Map<String,Long> versions = new LinkedHashMap<String,Long>();
+      executeCurl(templateCmd.url + index, "{}", "-XGET", templateCmd.username, templateCmd.password, httpResponseCode, responseBody);
+      if(httpResponseCode.getValue() == 200) {
+        answer = (JSONObject) (new JSONParser()).parse(responseBody.getValue());
+        try {
+          JSONObject info = (JSONObject) answer.get(index);
+          JSONObject mappings = (JSONObject) info.get("mappings");
+          JSONObject meta = (JSONObject) mappings.get("_meta");
+          for(Object template : meta.keySet()) {
+            if(templatesVersions.get(template) == null) {
+              continue;
+            }
+            Long version = (Long) ((JSONObject) meta.get(template)).get("version");
+            if(version != null) {
+              versions.put((String) template, version);
+            }
+          }
+        }
+        catch (Exception e) {
+          // Unable to retrieve version, check if upgrade from Evolution version < 2.0.0
+          String template = ElasticsearchUpgrade.recoverTemplateVersion0(index);
+          if(template != null) {
+            versions.put(template, 0L); // before Evolution 2.0.0 : set template version to 0
+          }
+          else {
+            // If index is not referenced, discard it 
+            continue;
+          }
+        }
+        
+        indexesVersions.put(index, versions);
+      } 
+      else {
+        throw new EvolutionSetupException("Unable to retrieve mapping from "+index+" ES index. "+ responseBody.getValue());
+      }
+    }
+    
+    //
+    // Check all _template version
+    //
+    boolean allOk = true;
+    List<String> upgradeNeeded = new LinkedList<String>();
+    for(String index: indexesVersions.keySet()) {
+      Map<String,Long> versions = indexesVersions.get(index);
+      for(String template: versions.keySet()) {
+        Long version = versions.get(template);
+        if(templatesVersions.get(template) != version) {
+          upgradeNeeded.add(index);
+          allOk = false;
+        }
+        System.out.println("[DISPLAY] Checking '"+template+"' template for index ["+index+"] (current: "+version+", expected: "+templatesVersions.get(template)+").");
+      }
+    }
+    if(!allOk) {
+      throw new EvolutionSetupException("Your system require some manual updates (found some Elasticsearch indexes in deprecated version).");
     }
   }
 

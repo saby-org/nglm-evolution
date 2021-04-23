@@ -92,6 +92,32 @@
   "ESRetentionDaysVDR"              : 45,
   "ESRetentionWeeksDatacubeJourneys.comment": "WARNING: here it is in week",
   "ESRetentionWeeksDatacubeJourneys": 3,
+  
+  "elasticsearchTemplatesVersion" : {
+    "root":                             1,
+    "subscriberprofile":                1,
+    "detailedrecords_bonuses":          1,
+    "detailedrecords_tokens":           1,
+    "detailedrecords_offers":           1,
+    "detailedrecords_vouchers":         1,
+    "detailedrecords_messages":         1,
+    "journeystatistic":                 1,
+    "datacube_subscriberprofile":       1,
+    "datacube_loyaltyprogramshistory":  1,
+    "datacube_loyaltyprogramschanges":  1,
+    "datacube_journeytraffic":          1,
+    "datacube_journeyrewards":          1,
+    "datacube_odr":                     1,
+    "datacube_bdr":                     1,
+    "datacube_messages":                1,
+    "datacube_vdr":                     1,
+    "mapping_modules":                  1,
+    "mapping_journeys":                 1,
+    "mapping_journeyrewards":           1,
+    "mapping_deliverables":             1,
+    "mapping_basemanagment":            1,
+    "mapping_journeyobjective":         1
+  },
 
   "connectTask": {
     "default":                                        { "initialWait": 50,  "retries": 18 },
