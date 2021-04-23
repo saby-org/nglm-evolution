@@ -93,6 +93,7 @@
   "ESRetentionWeeksDatacubeJourneys.comment": "WARNING: here it is in week",
   "ESRetentionWeeksDatacubeJourneys": 3,
   
+  "elasticsearchTemplateVersionFailOnCheck" : true,
   "elasticsearchTemplatesVersion" : {
     "root":                             1,
     "subscriberprofile":                1,

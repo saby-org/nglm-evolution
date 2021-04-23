@@ -316,7 +316,13 @@ public class EvolutionSetup
       }
     }
     if(!allOk) {
-      throw new EvolutionSetupException("Your system require some manual updates (found some Elasticsearch indexes in deprecated version).");
+      if(Deployment.getElasticsearchTemplateVersionFailOnCheck()) {
+        throw new EvolutionSetupException("Your system require some manual updates (found some Elasticsearch indexes in deprecated version).");
+      }
+      else {
+        System.out.println("[WARNING]: Your system require some manual updates (found some Elasticsearch indexes in deprecated version).");
+        System.out.println("[WARNING]: Template version check failed, but fail-on-check is disable, deployment will continue.");
+      }
     }
   }
 

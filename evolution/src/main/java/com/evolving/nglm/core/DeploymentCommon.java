@@ -244,6 +244,7 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysCampaigns;
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionWeeksDatacubeJourneys;
+  private static boolean elasticsearchTemplateVersionFailOnCheck;
   private static Map<String, Long> elasticsearchTemplatesVersion;
 
   private static Map<String, ConnectTaskConfiguration> connectTask;
@@ -515,6 +516,7 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
   public static int getElasticsearchRetentionWeeksDatacubeJourneys() { return elasticsearchRetentionWeeksDatacubeJourneys; }
+  public static boolean getElasticsearchTemplateVersionFailOnCheck() { return elasticsearchTemplateVersionFailOnCheck; }
   public static Map<String, Long> getElasticsearchTemplatesVersion() { return elasticsearchTemplatesVersion; }
   public static Long getElasticsearchRootTemplateVersion() { return elasticsearchTemplatesVersion.get("root"); }
   public static Long getElasticsearchSubscriberprofileTemplateVersion() { return elasticsearchTemplatesVersion.get("subscriberprofile"); }
@@ -817,6 +819,7 @@ public class DeploymentCommon
     elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
     elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
     elasticsearchRetentionWeeksDatacubeJourneys = jsonReader.decodeInteger("ESRetentionWeeksDatacubeJourneys");
+    elasticsearchTemplateVersionFailOnCheck = jsonReader.decodeBoolean("elasticsearchTemplateVersionFailOnCheck");
     JSONObject elasticsearchTemplatesVersionJSON = jsonReader.decodeJSONObject("elasticsearchTemplatesVersion");
     elasticsearchTemplatesVersion = new LinkedHashMap<String, Long>();
     for (Object key : elasticsearchTemplatesVersionJSON.keySet()) {
