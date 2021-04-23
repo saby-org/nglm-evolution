@@ -92,6 +92,19 @@ public class ReportService extends GUIService
   public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "ReportService", groupID, reportTopic, masterService, getSuperListener(reportListener), "putReport", "removeReport", notifyOnSignificantChange);
+    for (int tenantID : Deployment.getTenantIDs()) {
+      String fullPath = getReportOutputPath(tenantID);
+      Path path = Paths.get(fullPath);
+      try
+        {
+          Files.createDirectories(path);
+        }
+      catch (IOException e)
+        {
+          log.error("Cannot create directory to store reports for tenant " + tenantID + " : " + fullPath + " : " + e.getLocalizedMessage());
+        }
+    }
+
     for(int tenantID : Deployment.getTenantIDs())
       {
         File f = validateAndgetReportDirectory(tenantID);
@@ -201,7 +214,7 @@ public class ReportService extends GUIService
     if (!backendSimulator)
       {
         Date now = SystemTime.getCurrentTime(); 
-        launchReport(reportName, now);
+        launchReport(reportName, now, tenantID);
       }
     else
       {
@@ -217,7 +230,7 @@ public class ReportService extends GUIService
           }
         else
           {
-            launchReport(report);
+            launchReport(report, tenantID);
           }
       }
   }
@@ -228,7 +241,7 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  public void launchReport(Report report)
+  public void launchReport(Report report, int tenantID)
   {
     //
     //  now
@@ -240,7 +253,7 @@ public class ReportService extends GUIService
     //  getPendingReportsForDates
     //
     
-    Set<Date> pendingReportsForDates = getPendingReportsForDates(report);
+    Set<Date> pendingReportsForDates = getPendingReportsForDates(report, tenantID);
     pendingReportsForDates.add(now);
     
     StringBuilder dateRAJKString = new StringBuilder();
@@ -249,8 +262,20 @@ public class ReportService extends GUIService
     
     for (Date date : pendingReportsForDates)
       {
-        launchReport(report.getName(), date);
+        launchReport(report.getName(), date, tenantID);
       }
+  }
+  
+  public static String buildControlNodename(String reportName, int tenantID) {
+    return "launchReport-" + reportName + "-" + tenantID;
+  }
+  
+  public static String buildFullControlNodename(String reportName, int tenantID) {
+    return ReportManager.getControlDir() + File.separator + buildControlNodename(reportName, tenantID) + "-"; // "-" at the end because a random int will be appended (sequential node)
+  }
+  
+  public static String getReportOutputPath(int tenantID) {
+    return Deployment.getDeployment(tenantID).getReportManagerOutputPath()+File.separator+tenantID+File.separator;
   }
   
   /***************************
@@ -259,13 +284,13 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  public void launchReport(String reportName, final Date reportGenerationDate)
+  public void launchReport(String reportName, final Date reportGenerationDate, int tenantID)
   {
     //
     //  znode
     //
     
-    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "-";
+    String znode = buildFullControlNodename(reportName, tenantID);
     
     //
     //  data
@@ -274,6 +299,7 @@ public class ReportService extends GUIService
     JSONObject zkJSON = new JSONObject();
     zkJSON.put("reportName", reportName);
     zkJSON.put("reportGenerationDate", reportGenerationDate.getTime());
+    zkJSON.put("tenantID", tenantID);
     byte[] zkData = zkJSON.toJSONString().getBytes(StandardCharsets.UTF_8);
     
     if (getZKConnection())
@@ -307,7 +333,7 @@ public class ReportService extends GUIService
 	  return (zookeeper != null) && (zookeeper.getState() == States.CONNECTED);
   }
   
-  public boolean isReportRunning(String reportName) {
+  public boolean isReportRunning(String reportName, int tenantID) {
     try
       { 
         if (getZKConnection()) 
@@ -315,9 +341,9 @@ public class ReportService extends GUIService
             List<String> children = zk.getChildren(ReportManager.getControlDir(), false);
             for(String child : children) 
               {
-                if(child.contains(reportName)) 
+                if(child.contains(buildControlNodename(reportName,tenantID))) 
                   {
-                    String znode = ReportManager.getControlDir() + File.separator+child;
+                    String znode = ReportManager.getControlDir() + File.separator + child; // child contains sequential unknown part
                     return (zk.exists(znode, false) != null);
                   }
               }
@@ -480,7 +506,7 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  private Set<Date> getPendingReportsForDates(Report report)
+  private Set<Date> getPendingReportsForDates(Report report,int tenantID)
   {
     Set<Date> pendingDates = new HashSet<Date>();
     
@@ -496,7 +522,7 @@ public class ReportService extends GUIService
     //
     
     Set<Date> generatedDates = new HashSet<Date>();
-    final Path dir = Paths.get(Deployment.getDeployment(report.getTenantID()).getReportManagerOutputPath());
+    final Path dir = Paths.get(getReportOutputPath(tenantID));
     try
       {
         final DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir, filter);
@@ -505,7 +531,7 @@ public class ReportService extends GUIService
           {
             Path generatedReportFilePath = iterator.next();
             String fileName = generatedReportFilePath.getFileName().toString();
-            Date reportDate = getReportDate(fileName, report.getName(), report.getTenantID());
+            Date reportDate = getReportDate(fileName, report.getName(), tenantID);
             if (reportDate != null) generatedDates.add(reportDate);
           }
         dirStream.close();
@@ -781,7 +807,7 @@ public class ReportService extends GUIService
     //  create
     //
     
-    File reportDirectoryFile = new File(Deployment.getDeployment(tenantID).getReportManagerOutputPath());
+    File reportDirectoryFile = new File(getReportOutputPath(tenantID));
     
     //
     // validate

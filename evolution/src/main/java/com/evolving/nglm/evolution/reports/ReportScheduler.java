@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.evolution.reports;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +33,7 @@ public class ReportScheduler {
   
   private static final Logger log = LoggerFactory.getLogger(ReportScheduler.class);
   private ReportService reportService;
-  private JobScheduler reportScheduler;
+  private Map<Integer,JobScheduler> reportScheduler;
 
   /*****************************************
   *
@@ -46,7 +49,7 @@ public class ReportScheduler {
       @Override public void reportActivated(Report report)
       {
         log.info("report activated : " + report);
-        scheduleReport(report);
+        scheduleReport(report, 0); // TODO : which tenant ?
       }
       @Override public void reportDeactivated(String guiManagedObjectID)
       {
@@ -56,13 +59,19 @@ public class ReportScheduler {
     reportService = new ReportService(Deployment.getBrokerServers(), "reportscheduler-reportservice-001", Deployment.getReportTopic(), false, reportListener);
     reportService.start();
     log.trace("ReportService started");
-    reportScheduler = new JobScheduler("report");
+    
+    // create a ReportScheduler per tenant
+    reportScheduler = new HashMap<>();
+    for (int tenantID : Deployment.getTenantIDs()) {
+      reportScheduler.put(tenantID, new JobScheduler("report-"+tenantID));
+    }
     
     // EVPRO-266 process all existing reports
-    for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime(), 0)) // 0 will return for all tenants
-      {
-        scheduleReport(report);
+    for (int tenantID : Deployment.getTenantIDs()) {
+      for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime(), tenantID)) {
+        scheduleReport(report, tenantID);
       }
+    }
 
     /*****************************************
     *
@@ -82,7 +91,9 @@ public class ReportScheduler {
   private void run()
   {
     log.info("Starting scheduler");
-    reportScheduler.runScheduler();
+    for (int tenantID : Deployment.getTenantIDs()) {
+      reportScheduler.get(tenantID).runScheduler();
+    }
   }
   
   /*****************************************
@@ -91,18 +102,18 @@ public class ReportScheduler {
   *
   *****************************************/
   
-  private void scheduleReport(Report report)
+  private void scheduleReport(Report report, int tenantID)
   {    
     //
     // First deschedule all jobs associated with this report 
     //
     String reportID = report.getReportID();
-    for (ScheduledJob job : reportScheduler.getAllJobs())
+    for (ScheduledJob job : reportScheduler.get(tenantID).getAllJobs())
       {
        if (job != null && job.isProperlyConfigured() && job instanceof ReportJob && reportID.equals(((ReportJob) job).getReportID()))
          {
-           log.info("desceduling " + job + " because it ran for " + report.getName());
-           reportScheduler.deschedule(job);
+           log.info("desceduling " + job + " for tenant " + tenantID + " because it ran for " + report.getName());
+           reportScheduler.get(tenantID).deschedule(job);
          }
       }
 
@@ -111,19 +122,19 @@ public class ReportScheduler {
     //
     for (SchedulingInterval scheduling : report.getEffectiveScheduling())
       {
-        log.info("processing "+report.getName()+" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
+        log.info("processing "+report.getName()+ " for tenant " + tenantID +" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
         if(scheduling.equals(SchedulingInterval.NONE))
     		continue;
         
-        ScheduledJob reportJob = new ReportJob(report, scheduling, reportService);
+        ScheduledJob reportJob = new ReportJob(report, scheduling, reportService, tenantID);
         if(reportJob.isProperlyConfigured())
           {
-            log.info("--> scheduling "+report.getName()+" with jobIDs "+report.getJobIDs());
-            reportScheduler.schedule(reportJob);
+            log.info("--> scheduling "+report.getName()+ " for tenant " + tenantID +" with jobIDs "+report.getJobIDs());
+            reportScheduler.get(tenantID).schedule(reportJob);
           }
         else
           {
-            log.info("issue when configuring "+report.getName());
+            log.info("issue when configuring "+report.getName() + " for tenant " + tenantID);
           }
       }
   }
