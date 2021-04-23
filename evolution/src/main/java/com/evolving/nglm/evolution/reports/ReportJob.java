@@ -25,6 +25,7 @@ public class ReportJob extends ScheduledJob
 
   private Report report;
   private ReportService reportService;
+  private int tenantID;
   private static final Logger log = LoggerFactory.getLogger(ReportJob.class);
 
   public String getReportID() { return (report != null) ? report.getReportID() : null; }
@@ -35,11 +36,12 @@ public class ReportJob extends ScheduledJob
   *  
   *****************************************/
   
-  public ReportJob(Report report, SchedulingInterval scheduling, ReportService reportService)
+  public ReportJob(Report report, SchedulingInterval scheduling, ReportService reportService, int tenantID)
   {
     super(report.getName()+"("+scheduling.getExternalRepresentation()+")", scheduling.getCron(), Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
     this.report = report;
     this.reportService = reportService;
+    this.tenantID = tenantID;
     report.addJobID(getSchedulingID());
   }
 
@@ -47,14 +49,14 @@ public class ReportJob extends ScheduledJob
   protected void run()
   {
     log.info("reportJob " + report.getName() + " : start execution");
-    if (reportService.isReportRunning(report.getName()))
+    if (reportService.isReportRunning(report.getName(), tenantID))
       {
         log.info("Trying to schedule report "+report.getName()+" but it is already running");
       }
     else
       {
         log.info("reportJob " + report.getName() + " : launch report");
-        reportService.launchReport(report);
+        reportService.launchReport(report, tenantID);
       }
     log.info("reportJob " + report.getName() + " : end execution");
   }

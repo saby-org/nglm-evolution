@@ -735,7 +735,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null, tenantID);
             String reportName = report.getName();
 
-            String outputPath = Deployment.getDeployment(tenantID).getReportManagerOutputPath()+File.separator;
+            String outputPath = ReportService.getReportOutputPath(tenantID);
             String fileExtension = Deployment.getDeployment(tenantID).getReportManagerFileExtension();
 
             File folder = new File(outputPath);
@@ -1180,7 +1180,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     HashMap<String,Object> globalConfig = new HashMap<String,Object>();
     globalConfig.put("reportManagerZookeeperDir",   Deployment.getReportManagerZookeeperDir());
-    globalConfig.put("reportManagerOutputPath",     Deployment.getDeployment(tenantID).getReportManagerOutputPath());
+    globalConfig.put("reportManagerOutputPath",     ReportService.getReportOutputPath(tenantID));
     globalConfig.put("reportManagerDateFormat",     Deployment.getDeployment(tenantID).getReportManagerDateFormat());
     globalConfig.put("reportManagerFileExtension",  Deployment.getDeployment(tenantID).getReportManagerFileExtension());
     globalConfig.put("reportManagerCsvSeparator",   Deployment.getReportManagerCsvSeparator());
@@ -1230,7 +1230,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             log.trace("In processGetReportList, adding : " + report);
           }
         JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
-        reportResponse.put("isRunning", reportService.isReportRunning(((Report)report).getName()));
+        reportResponse.put("isRunning", reportService.isReportRunning(((Report)report).getName(), tenantID));
         reports.add(reportResponse);
       }
     HashMap<String,Object> response = new HashMap<String,Object>();
@@ -1264,7 +1264,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     else
       {
-        if (reportService.isReportRunning(report.getName()))
+        if (reportService.isReportRunning(report.getName(), tenantID))
           {
             responseCode = "reportIsAlreadyRunning";
           }

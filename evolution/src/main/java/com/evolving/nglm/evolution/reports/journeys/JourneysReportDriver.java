@@ -228,6 +228,19 @@ public class JourneysReportDriver extends ReportDriver
       journeyService.stop();
       pointService.stop();
       journeyObjectiveService.stop();
+      
+      // TODO : remove debug delay !!
+      /*
+      try
+        {
+          Thread.sleep(10000);
+        }
+      catch (InterruptedException e)
+        {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      */
     }
   }
    
