@@ -1,6 +1,8 @@
 package com.evolving.nglm.evolution.datacubes.generator;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -58,7 +60,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);
-    this.journeyRewardsList = new JourneyRewardsMap(elasticsearch);
+    this.journeyRewardsList = new JourneyRewardsMap(journeyService, elasticsearch);
     
     //
     // Filter fields
@@ -122,10 +124,9 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     }
     
     //
-    // Rewards list update
+    // Check rewards
     //
-    this.journeyRewardsList.updateAndPush(this.journeyID, this.getDataESIndex(), datacubeWriter);
-    if(this.journeyRewardsList.getRewards().isEmpty()) {
+    if(this.journeyRewardsList.getRewards(this.journeyID).isEmpty()) {
       log.info("No rewards found in JourneyID=" + this.journeyID + " journey statistics.");
       // It is useless to generate a rewards datacube if there is not any rewards.
       return false;
@@ -176,7 +177,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     // Those aggregations need to be recomputed with the update of journeyRewardsList
     List<AggregationBuilder> metricAggregations = new ArrayList<AggregationBuilder>();
     
-    for(String reward : journeyRewardsList.getRewards()) 
+    for(String reward : journeyRewardsList.getRewards(this.journeyID)) 
       {
         metricAggregations.add(AggregationBuilders.sum(reward).field("rewards." + reward));
       }
@@ -194,7 +195,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
       return metrics;
     }
 
-    for(String reward : journeyRewardsList.getRewards()) 
+    for(String reward : journeyRewardsList.getRewards(this.journeyID)) 
       {
         ParsedSum rewardAggregation = compositeBucket.getAggregations().get(reward);
         if (rewardAggregation == null) {
@@ -207,6 +208,25 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     return metrics;
   }
 
+  /*****************************************
+  *
+  * Initialization -- special
+  *
+  *****************************************/
+  public void init() 
+  {
+    try 
+      {
+        this.journeyRewardsList.updateAndPush(datacubeWriter);
+      }
+    catch(IOException|RuntimeException e)
+      {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Initialization failed: "+stackTraceWriter.toString()+"");
+      }
+  }
+  
   /*****************************************
   *
   * Run
