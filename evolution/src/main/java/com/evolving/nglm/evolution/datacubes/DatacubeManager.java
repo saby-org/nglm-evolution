@@ -871,6 +871,7 @@ public class DatacubeManager
         Date endOfLastHour = RLMDateUtils.addMilliseconds(truncatedHour, -1); // XX:59:59.999
        
         journeysMap.update();
+        rewardsDatacube.init(); // This special datacube need to be initialized, because we do not want to run this phase before each run inside the sequence !
         
         // Special: All those datacubes are still made sequentially, therefore we prevent any writing during it to optimize computation time.
         datacubeWriter.pause();

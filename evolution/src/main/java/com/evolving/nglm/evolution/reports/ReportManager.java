@@ -531,8 +531,9 @@ public class ReportManager implements Watcher
 
   private void handleSessionExpired(KeeperException e, String msg)
   {
-    if (e.code() == Code.SESSIONEXPIRED || e.code() == Code.CONNECTIONLOSS)
+    if (e.code().intValue() == Code.SESSIONEXPIRED.intValue() || e.code().intValue() == Code.CONNECTIONLOSS.intValue())
       {
+        log.info("gotSessionExpired");
         gotSessionExpired = true;
       }
     log.error(msg, e);
