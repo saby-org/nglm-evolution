@@ -234,11 +234,11 @@ public class SubscriberIDService
               }
             else if(tenantID.intValue() != tmpTenantID)
               {
-                log.warn("Dfferent tenantID for " + subscriberID);
-              }            
+                log.warn("Different tenantID for " + subscriberID);
+              }
+            result.put(alternateID, subscriberID);
+            result.put("tenantID", ""+tenantID);
           }
-        result.put(alternateID, subscriberID);
-        result.put("tenantID", ""+tenantID);
       }
 
     //
