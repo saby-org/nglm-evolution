@@ -928,6 +928,16 @@ public class ReportUtils {
       }
   }
 
+  public static Date oneDayBefore(Date currentDate)
+  {
+    Calendar c = Calendar.getInstance();
+    c.setTime(currentDate);
+    c.add(Calendar.HOUR_OF_DAY, -24); // go back 24 hours
+    Date dayBefore = c.getTime();
+    return dayBefore;
+  }
+
+  
   public static Date yesterdayAtMidnight(Date currentDate)
   {
     Calendar c = Calendar.getInstance();
@@ -951,16 +961,4 @@ public class ReportUtils {
     Date yesterdayAtZeroHour = c.getTime();
     return yesterdayAtZeroHour;
   }
-
-
-  public static Date oneDayBefore(Date currentDate)
-  {
-    Calendar c = Calendar.getInstance();
-    c.setTime(currentDate);
-    c.add(Calendar.HOUR_OF_DAY, -24); // go back 24 hours
-    Date dayBefore = c.getTime();
-    return dayBefore;
-  }
-
-  
 }
