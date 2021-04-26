@@ -2544,7 +2544,6 @@ public class EvolutionEngine
           voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
         }
       }
-      log.info("RAJ K voucherChange is {}", voucherChange);
       //need to respond
       subscriberState.getVoucherChanges().add(voucherChange);
       subscriberUpdated=true;
