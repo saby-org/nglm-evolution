@@ -8,6 +8,7 @@ package com.evolving.nglm.core;
 
 import com.evolving.nglm.evolution.*;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
 import com.evolving.nglm.evolution.kafka.Topic;
 import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
@@ -256,7 +257,7 @@ public class EvolutionSetup
     //
     // Retrieve indexes _template version for every index
     //
-    Map<String,Long> templatesVersions = Deployment.getElasticsearchTemplatesVersion();
+    Map<String,Long> templatesVersions = Deployment.getElasticsearchTemplatesVersion();    
     Map<String, Map<String,Long>> indexesVersions = new LinkedHashMap<String, Map<String,Long>>();
     for(String index: indexes) {
       responseBody = new ObjectHolder<String>();
@@ -303,26 +304,152 @@ public class EvolutionSetup
     // Check all _template version
     //
     boolean allOk = true;
-    List<String> upgradeNeeded = new LinkedList<String>();
+    Set<String> upgradeNeeded = new HashSet<String>(); // Set to prevent adding it several time. Index is a unique ID.
     for(String index: indexesVersions.keySet()) {
       Map<String,Long> versions = indexesVersions.get(index);
       for(String template: versions.keySet()) {
+        /**
+         * @rl: For the moment, I did not implement how to manage properly the root template.
+         * This would require a mechanism to retrieve the "tmpIndex" from another template.
+         */
+        if(template.equals("root")) { continue; }
+        
         Long version = versions.get(template);
         if(templatesVersions.get(template) != version) {
           upgradeNeeded.add(index);
           allOk = false;
+          System.out.println("[DISPLAY] Checking '"+template+"' template for index ["+index+"]. NOK: current: "+version+", expected: "+templatesVersions.get(template)+".");
         }
-        System.out.println("[DISPLAY] Checking '"+template+"' template for index ["+index+"] (current: "+version+", expected: "+templatesVersions.get(template)+").");
+        else {
+          System.out.println("[DISPLAY] Checking '"+template+"' template for index ["+index+"]. OK: current: "+version+", expected: "+templatesVersions.get(template)+".");
+        }
       }
     }
+    
+    //
+    // Automatic upgrade or bypass
+    //
+    Map<String,Long> bypassVersions = Deployment.getElasticsearchIndexByPassVersion();
     if(!allOk) {
-      if(Deployment.getElasticsearchTemplateVersionFailOnCheck()) {
-        throw new EvolutionSetupException("Your system require some manual updates (found some Elasticsearch indexes in deprecated version).");
+      System.out.println("[DISPLAY]: Some Elasticsearch indexes need an upgrade. Retrieving automatic upgrades.");
+      allOk = true;
+      for(String index: upgradeNeeded) {
+        Map<String,Long> versions = indexesVersions.get(index);
+        for(String template: versions.keySet()) {
+          /**
+           * @rl: For the moment, I did not implement how to manage properly the root template.
+           * This would require a mechanism to retrieve the "tmpIndex" from another template.
+           */
+          if(template.equals("root")) { continue; }
+          
+          Long version = versions.get(template);
+          //
+          // Fast forward to another version (bypass)
+          //
+          if(bypassVersions.get(template) != null && version < bypassVersions.get(template)) {
+            System.out.println("[DISPLAY] By-passing '"+template+"' template for index ["+index+"] from version "+version+" to version "+bypassVersions.get(template)+".");
+            version = bypassVersions.get(template);
+          }
+          
+          //
+          // Upgrading
+          //
+          if(templatesVersions.get(template) != version) {
+            System.out.println("[DISPLAY] Upgrading '"+template+"' template for index ["+index+"] in version "+templatesVersions.get(template)+".");
+            allOk = upgradeIndex(index, template, version, templateCmd) && allOk; // ! Order is important, we want to call the function even if allOk is already false !
+          }
+        }
       }
-      else {
-        System.out.println("[WARNING]: Your system require some manual updates (found some Elasticsearch indexes in deprecated version).");
-        System.out.println("[WARNING]: Template version check failed, but fail-on-check is disable, deployment will continue.");
-      }
+    }
+    
+    //
+    // Manual upgrade needed
+    //
+    if(!allOk) {
+      throw new EvolutionSetupException("Your system require some manual updates (found some Elasticsearch indexes in deprecated version).");
+    }
+  }
+  
+  /**
+   * Will try to upgrade the index to the current version from the version @param from.
+   * @return if upgrade were successful
+   * @throws EvolutionSetupException 
+   */
+  private static boolean upgradeIndex(String index, String template, Long from, CurlCommand rootHttpCmd) throws EvolutionSetupException {
+    Map<Long, IndexPatch> patches = ElasticsearchUpgrade.PATCHES.get(template);
+    if(patches == null || patches.get(from) == null) {
+      System.out.println("[WARNING]: Unable to retrieve any automatic upgrade for template "+template+" from version "+from+" for index ["+index+"].");
+      return false;
+    }
+    
+    IndexPatch patch = patches.get(from);
+    if(patch.script == null) {
+      System.out.println("[WARNING]: Upgrade for template "+template+" from version "+from+" for index ["+index+"] cannot be done automatically.");
+      return false;
+    }
+
+    //
+    // Reindex (index) in (tmpIndex) + apply transform
+    //
+    ObjectHolder<String> responseBody = new ObjectHolder<String>();
+    ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
+    String jsonBody = reindexBodyBuilder(index, patch.tmpIndex, patch.script);
+    // refresh=true force ES to refresh the shard to make the result of the operation visible to search 
+    // instantaneously (without waiting for the next refresh to happen)
+    // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html#docs-reindex-api-query-params
+    executeCurl(rootHttpCmd.url + "_reindex?refresh=true", jsonBody, "-XPOST", rootHttpCmd.username, rootHttpCmd.password, httpResponseCode, responseBody);
+    if(httpResponseCode.getValue() != 200) {
+      System.out.println("[DEBUG] Transform="+patch.script);
+      throw new EvolutionSetupException("Unable to perform _reindex on ["+index+"]. Dont forget to manually remove ["+patch.tmpIndex+"] temporary index. "+ responseBody.getValue());
+    }
+    
+    //
+    // Remove (index)
+    //
+    System.out.println("[DISPLAY] Removing ["+index+"] index.");
+    responseBody = new ObjectHolder<String>();
+    httpResponseCode = new ObjectHolder<Integer>();
+    executeCurl(rootHttpCmd.url + index, "{}", "-XDELETE", rootHttpCmd.username, rootHttpCmd.password, httpResponseCode, responseBody);
+    if(httpResponseCode.getValue() != 200) {
+      throw new EvolutionSetupException("Unable to remove ["+index+"]. Dont forget to manually remove ["+patch.tmpIndex+"] temporary index. "+ responseBody.getValue());
+    }
+    
+    //
+    // Reindex (tmpIndex) in (index)
+    //
+    responseBody = new ObjectHolder<String>();
+    httpResponseCode = new ObjectHolder<Integer>();
+    String destIndex = patch.transform.get(index);
+    jsonBody = reindexBodyBuilder(patch.tmpIndex, destIndex, "");
+    // refresh=true force ES to refresh the shard to make the result of the operation visible to search 
+    // instantaneously (without waiting for the next refresh to happen)
+    // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html#docs-reindex-api-query-params
+    executeCurl(rootHttpCmd.url + "_reindex?refresh=true", jsonBody, "-XPOST", rootHttpCmd.username, rootHttpCmd.password, httpResponseCode, responseBody);
+    if(httpResponseCode.getValue() != 200) {
+      throw new EvolutionSetupException("Unable to perform _reindex on ["+patch.tmpIndex+"]. Dont forget to manually remove ["+patch.tmpIndex+"] & ["+destIndex+"] temporary indexes. "+ responseBody.getValue());
+    }
+    
+    //
+    // Remove (tmpIndex)
+    //
+    System.out.println("[DISPLAY] Removing ["+patch.tmpIndex+"] index.");
+    responseBody = new ObjectHolder<String>();
+    httpResponseCode = new ObjectHolder<Integer>();
+    executeCurl(rootHttpCmd.url + patch.tmpIndex, "{}", "-XDELETE", rootHttpCmd.username, rootHttpCmd.password, httpResponseCode, responseBody);
+    if(httpResponseCode.getValue() != 200) {
+      throw new EvolutionSetupException("Unable to remove ["+patch.tmpIndex+"]. Dont forget to manually remove ["+patch.tmpIndex+"] & ["+destIndex+"] temporary indexes. "+ responseBody.getValue());
+    }
+    
+    return true;
+  }
+
+  private static String reindexBodyBuilder(String srcIndex, String destIndex, String transformScript) {
+    System.out.println("[DISPLAY] Moving (_reindex) from ["+ srcIndex + "] to [" + destIndex + "]." );
+    if(transformScript == "") {
+      return "{ \"source\": { \"index\": \""+ srcIndex +"\" }, \"dest\": { \"index\": \""+ destIndex +"\" } }";
+    }
+    else {
+      return "{ \"source\": { \"index\": \""+ srcIndex +"\" }, \"dest\": { \"index\": \""+ destIndex +"\" }, \"script\": { \"source\": \""+ transformScript +"\" } }";
     }
   }
 

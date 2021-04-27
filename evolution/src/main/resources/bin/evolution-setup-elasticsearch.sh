@@ -431,7 +431,6 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "returnStatus" : { "type" : "keyword" },
       "voucherCode" : { "type" : "keyword" },
       "voucherID" : { "type" : "keyword" },
-      "opertaion" : { "type" : "keyword" },      
       "returnCode" : { "type" : "keyword" },
       "expiryDate" : { "type" : "keyword" }
     }
@@ -759,7 +758,7 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_vdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["datacube_vdr"],
+  "index_patterns": ["t*_datacube_vdr"],
   "mappings" : {
     "_meta": { "datacube_vdr" : { "version": Deployment.getElasticsearchDatacubeVdrTemplateVersion() } },
     "properties" : {
@@ -789,7 +788,7 @@ echo
 #
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_modules -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["mapping_modules"],
+  "index_patterns": ["mapping_modules*"],
   "mappings" : {
     "_meta": { "mapping_modules" : { "version": Deployment.getElasticsearchMappingModulesTemplateVersion() } },
     "properties" : {
@@ -846,7 +845,7 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["mapping_journeys"],
+  "index_patterns": ["mapping_journeys*"],
   "mappings" : {
     "_meta": { "mapping_journeys" : { "version": Deployment.getElasticsearchMappingJourneysTemplateVersion() } },
     "properties" : {
@@ -870,7 +869,7 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyrewards -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["mapping_journeyrewards"],
+  "index_patterns": ["mapping_journeyrewards*"],
   "mappings" : {
     "_meta": { "mapping_journeyrewards" : { "version": Deployment.getElasticsearchMappingJourneyrewardsTemplateVersion() } },
     "properties" : {
@@ -884,7 +883,7 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["mapping_deliverables"],
+  "index_patterns": ["mapping_deliverables*"],
   "mappings" : {
     "_meta": { "mapping_deliverables" : { "version": Deployment.getElasticsearchMappingDeliverablesTemplateVersion() } },
     "properties" : {
@@ -899,7 +898,7 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["mapping_basemanagement"],
+  "index_patterns": ["mapping_basemanagement*"],
   "mappings" : {
     "_meta": { "mapping_basemanagement" : { "version": Deployment.getElasticsearchMappingBasemanagementTemplateVersion() } },
     "properties" : {
@@ -922,7 +921,7 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyobjective -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["mapping_journeyobjective"],
+  "index_patterns": ["mapping_journeyobjective*"],
   "mappings" : {
     "_meta": { "mapping_journeyobjective" : { "version": Deployment.getElasticsearchMappingJourneyobjectiveTemplateVersion() } },
     "properties" : {
