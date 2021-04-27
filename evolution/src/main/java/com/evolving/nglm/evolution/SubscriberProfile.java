@@ -1329,7 +1329,8 @@ public abstract class SubscriberProfile
   public void setTokens(List<Token> tokens){ this.tokens = tokens; }
   public void setLanguageID(String languageID) { this.languageID = languageID; }
   public void setExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile) { this.extendedSubscriberProfile = extendedSubscriberProfile; }
-
+  public void setTenantID(int tenantID) { this.tenantID = tenantID; }
+  
   //
   //  setEvolutionSubscriberStatus
   //
