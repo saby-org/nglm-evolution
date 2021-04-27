@@ -9,6 +9,7 @@ package com.evolving.nglm.core;
 import com.evolving.nglm.evolution.BillingMode;
 import com.evolving.nglm.evolution.CommunicationChannelTimeWindow;
 import com.evolving.nglm.evolution.CriterionContext;
+import com.evolving.nglm.evolution.DeliveryManagerAccount;
 import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.PropensityRule;
@@ -84,6 +85,8 @@ public class Deployment extends DeploymentCommon
   private Map<String,SupportedTimeUnit> supportedTimeUnits;
   private List<EvaluationCriterion> journeyUniversalEligibilityCriteria;
   private PropensityRule propensityRule;
+  private Map<String,DeliveryManagerAccount> deliveryManagerAccounts;
+
   
   
   /*****************************************
@@ -117,7 +120,8 @@ public class Deployment extends DeploymentCommon
   public Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public List<EvaluationCriterion> getJourneyUniversalEligibilityCriteria() { return journeyUniversalEligibilityCriteria; } 
   public PropensityRule getPropensityRule() { return propensityRule; }
-  
+  public Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; } // TODO EVPRO-99 deliveryManager accounts per tenant ?
+
   /*****************************************
   *
   * Constructor (needs to be empty for newInstance calls)
@@ -219,5 +223,21 @@ public class Deployment extends DeploymentCommon
         EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile(tenantID), tenantID);
         getJourneyUniversalEligibilityCriteria().add(evaluationCriterion);                  
       }
+    
+    
+    //
+    //  deliveryManagerAccounts
+    //
+    deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
+    JSONArray deliveryManagerAccountValues = jsonReader.decodeJSONArray("deliveryManagerAccounts");
+    for (int i=0; i<deliveryManagerAccountValues.size(); i++)
+      {
+        JSONObject deliveryManagerAccountJSON = (JSONObject) deliveryManagerAccountValues.get(i);
+        DeliveryManagerAccount deliveryManagerAccount = new DeliveryManagerAccount(deliveryManagerAccountJSON);
+        if(deliveryManagerAccount != null ){
+          deliveryManagerAccounts.put(deliveryManagerAccount.getProviderID(), deliveryManagerAccount);
+        }
+      }
+
   }
 }

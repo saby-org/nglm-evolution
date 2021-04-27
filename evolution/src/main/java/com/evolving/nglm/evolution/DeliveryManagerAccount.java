@@ -133,8 +133,7 @@ public class DeliveryManagerAccount
       this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
       this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);
       this.label = JSONUtilities.decodeString(jsonRoot, "label", false);
-      this.tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
-      }
-       
+    }
+      
   }
 }

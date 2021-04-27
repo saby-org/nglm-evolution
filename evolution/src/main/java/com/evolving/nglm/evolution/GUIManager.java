@@ -1102,185 +1102,184 @@ public class GUIManager
     *****************************************/
 
     long providerEpoch = epochServer.getKey();
-    for (DeliveryManagerAccount deliveryManagerAccount : Deployment.getDeliveryManagerAccounts().values())
-      {
-        /*****************************************
-        *
-        *  provider
-        *
-        *****************************************/
-
-        String providerID = deliveryManagerAccount.getProviderID();
-        DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(providerID);
-        if (provider == null)
-          {
-            throw new ServerRuntimeException("Delivery manager accounts : could not retrieve provider with ID " + providerID);
-          }
-
-        /*****************************************
-        *
-        *  accounts
-        *
-        *****************************************/
-
-        Set<String> configuredDeliverableIDs = new HashSet<String>();
-        Set<String> configuredPaymentMeanIDs = new HashSet<String>();
-        for (Account account : deliveryManagerAccount.getAccounts())
-          {
-            /*****************************************
-            *
-            *  create/update deliverable 
-            *
-            *****************************************/
-
-            if (account.getCreditable())
-              {
-                //
-                //  find existing deliverable (by name) and use/generate deliverableID
-                //
-
-                GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverableByName(account.getName(), account.getTenantID()); // TODO EVPRO-99
-                String deliverableID = (existingDeliverable != null) ? existingDeliverable.getGUIManagedObjectID() : deliverableService.generateDeliverableID();
-                configuredDeliverableIDs.add(deliverableID);
-
-                //
-                //  deliverable
-                //
-
-                Deliverable deliverable = null;
-                try
-                  {
-                    Map<String, Object> deliverableMap = new HashMap<String, Object>();
-                    deliverableMap.put("id", deliverableID);
-                    deliverableMap.put("fulfillmentProviderID", providerID);
-                    deliverableMap.put("externalAccountID", account.getExternalAccountID());
-                    deliverableMap.put("name", account.getName());
-                    deliverableMap.put("display", account.getName());
-                    deliverableMap.put("active", true);
-                    deliverableMap.put("unitaryCost", 0);
-                    deliverableMap.put("readOnly", true);
-                    deliverableMap.put("generatedFromAccount", true);
-                    deliverableMap.put("label", account.getLabel());
-                    deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), providerEpoch, null, account.getTenantID());
-                  }
-                catch (GUIManagerException e)
-                  {
-                    throw new ServerRuntimeException("could not add deliverable related to provider "+providerID+" (account "+account.getName()+")", e);
-                  }
-
-                //
-                //  create/update deliverable if necessary)
-                //
-
-                if (existingDeliverable == null || ! Objects.equals(existingDeliverable, deliverable))
-                  {
-                    //
-                    //  log
-                    //
-
-                    log.info("provider deliverable {} {}", deliverableID, (existingDeliverable == null) ? "create" : "update");
-
-                    //
-                    //  create/update deliverable
-                    //
-
-                    deliverableService.putDeliverable(deliverable, (existingDeliverable == null), "0");
-                  }
-              }
-
-            /*****************************************
-            *
-            *  create/update paymentMean
-            *
-            *****************************************/
-
-            if (account.getDebitable())
-              {
-                //
-                //  find existing paymentMean (by name) and use/generate paymentMeanID
-                //
-
-                GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMeanByName(account.getName(), account.getTenantID());
-                String paymentMeanID = (existingPaymentMean != null) ? existingPaymentMean.getGUIManagedObjectID() : paymentMeanService.generatePaymentMeanID();
-                configuredPaymentMeanIDs.add(paymentMeanID);
-
-                //
-                //  paymentMean
-                //
-
-                PaymentMean paymentMean = null;
-                try
-                  {
-                    Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
-                    paymentMeanMap.put("id", paymentMeanID);
-                    paymentMeanMap.put("fulfillmentProviderID", providerID);
-                    paymentMeanMap.put("externalAccountID", account.getExternalAccountID());
-                    paymentMeanMap.put("name", account.getName());
-                    paymentMeanMap.put("display", account.getName());
-                    paymentMeanMap.put("active", true);
-                    paymentMeanMap.put("readOnly", true);
-                    paymentMeanMap.put("generatedFromAccount", true);
-                    paymentMeanMap.put("label", account.getLabel());
-                    paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), providerEpoch, null, account.getTenantID());
-                  }
-                catch (GUIManagerException e)
-                  {
-                    throw new ServerRuntimeException("could not add paymentMean related to provider "+providerID+" (account "+account.getName()+")", e);
-                  }
-
-                // 
-                //  create/update paymentMean (if ncessary)
-                //
-
-                if (existingPaymentMean == null || ! Objects.equals(existingPaymentMean, paymentMean))
-                  {
-                    //
-                    //  log
-                    //
-
-                    log.info("provider paymentMean {} {}", paymentMeanID, (existingPaymentMean == null) ? "create" : "update");
-
-                    //
-                    //  create/update paymentMean
-                    //
-
-                    paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), "0");
-                  }
-              }
-          }
-
-        /*****************************************
-        *
-        *  remove unused deliverables
-        *
-        *****************************************/
-        for(int tenantID : Deployment.getTenantIDs())
-          {
-        
-          for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime(), tenantID))
-            {
-              if (Objects.equals(providerID, deliverable.getFulfillmentProviderID()) && deliverable.getGeneratedFromAccount() && ! configuredDeliverableIDs.contains(deliverable.getDeliverableID()))
-                {
-                  deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0", tenantID);
-                  log.info("provider deliverable {} {}", deliverable.getDeliverableID(), "remove");
-                }
-            }
-          
-        
+    for(int tenantID : Deployment.getTenantIDs()) {
+      for (DeliveryManagerAccount deliveryManagerAccount : Deployment.getDeployment(tenantID).getDeliveryManagerAccounts().values())
+        {
           /*****************************************
           *
-          *  remove unused paymentMeans
+          *  provider
           *
           *****************************************/
-
-          for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime(), tenantID))
+  
+          String providerID = deliveryManagerAccount.getProviderID();
+          DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(providerID);
+          if (provider == null)
             {
-              if (Objects.equals(providerID, paymentMean.getFulfillmentProviderID()) && paymentMean.getGeneratedFromAccount() && ! configuredPaymentMeanIDs.contains(paymentMean.getPaymentMeanID()))
+              throw new ServerRuntimeException("Delivery manager accounts : could not retrieve provider with ID " + providerID);
+            }
+  
+          /*****************************************
+          *
+          *  accounts
+          *
+          *****************************************/
+  
+          Set<String> configuredDeliverableIDs = new HashSet<String>();
+          Set<String> configuredPaymentMeanIDs = new HashSet<String>();
+          for (Account account : deliveryManagerAccount.getAccounts())
+            {
+              /*****************************************
+              *
+              *  create/update deliverable 
+              *
+              *****************************************/
+  
+              if (account.getCreditable())
                 {
-                  paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0", tenantID);
-                  log.info("provider paymentMean {} {}", paymentMean.getPaymentMeanID(), "remove");
+                  //
+                  //  find existing deliverable (by name) and use/generate deliverableID
+                  //
+  
+                  GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverableByName(account.getName(), tenantID);
+                  String deliverableID = (existingDeliverable != null) ? existingDeliverable.getGUIManagedObjectID() : deliverableService.generateDeliverableID();
+                  configuredDeliverableIDs.add(deliverableID);
+  
+                  //
+                  //  deliverable
+                  //
+  
+                  Deliverable deliverable = null;
+                  try
+                    {
+                      Map<String, Object> deliverableMap = new HashMap<String, Object>();
+                      deliverableMap.put("id", deliverableID);
+                      deliverableMap.put("fulfillmentProviderID", providerID);
+                      deliverableMap.put("externalAccountID", account.getExternalAccountID());
+                      deliverableMap.put("name", account.getName());
+                      deliverableMap.put("display", account.getName());
+                      deliverableMap.put("active", true);
+                      deliverableMap.put("unitaryCost", 0);
+                      deliverableMap.put("readOnly", true);
+                      deliverableMap.put("generatedFromAccount", true);
+                      deliverableMap.put("label", account.getLabel());
+                      deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), providerEpoch, null, tenantID);
+                    }
+                  catch (GUIManagerException e)
+                    {
+                      throw new ServerRuntimeException("could not add deliverable related to provider "+providerID+" (account "+account.getName()+")", e);
+                    }
+  
+                  //
+                  //  create/update deliverable if necessary)
+                  //
+  
+                  if (existingDeliverable == null || ! Objects.equals(existingDeliverable, deliverable))
+                    {
+                      //
+                      //  log
+                      //
+  
+                      log.info("provider deliverable {} {}", deliverableID, (existingDeliverable == null) ? "create" : "update");
+  
+                      //
+                      //  create/update deliverable
+                      //
+  
+                      deliverableService.putDeliverable(deliverable, (existingDeliverable == null), "0");
+                    }
+                }
+  
+              /*****************************************
+              *
+              *  create/update paymentMean
+              *
+              *****************************************/
+  
+              if (account.getDebitable())
+                {
+                  //
+                  //  find existing paymentMean (by name) and use/generate paymentMeanID
+                  //
+  
+                  GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMeanByName(account.getName(), tenantID);
+                  String paymentMeanID = (existingPaymentMean != null) ? existingPaymentMean.getGUIManagedObjectID() : paymentMeanService.generatePaymentMeanID();
+                  configuredPaymentMeanIDs.add(paymentMeanID);
+  
+                  //
+                  //  paymentMean
+                  //
+  
+                  PaymentMean paymentMean = null;
+                  try
+                    {
+                      Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
+                      paymentMeanMap.put("id", paymentMeanID);
+                      paymentMeanMap.put("fulfillmentProviderID", providerID);
+                      paymentMeanMap.put("externalAccountID", account.getExternalAccountID());
+                      paymentMeanMap.put("name", account.getName());
+                      paymentMeanMap.put("display", account.getName());
+                      paymentMeanMap.put("active", true);
+                      paymentMeanMap.put("readOnly", true);
+                      paymentMeanMap.put("generatedFromAccount", true);
+                      paymentMeanMap.put("label", account.getLabel());
+                      paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), providerEpoch, null, tenantID);
+                    }
+                  catch (GUIManagerException e)
+                    {
+                      throw new ServerRuntimeException("could not add paymentMean related to provider "+providerID+" (account "+account.getName()+")", e);
+                    }
+  
+                  // 
+                  //  create/update paymentMean (if ncessary)
+                  //
+  
+                  if (existingPaymentMean == null || ! Objects.equals(existingPaymentMean, paymentMean))
+                    {
+                      //
+                      //  log
+                      //
+  
+                      log.info("provider paymentMean {} {}", paymentMeanID, (existingPaymentMean == null) ? "create" : "update");
+  
+                      //
+                      //  create/update paymentMean
+                      //
+  
+                      paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), "0");
+                    }
                 }
             }
+  
+          /*****************************************
+          *
+          *  remove unused deliverables
+          *
+          *****************************************/
+          
+            for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime(), tenantID))
+              {
+                if (Objects.equals(providerID, deliverable.getFulfillmentProviderID()) && deliverable.getGeneratedFromAccount() && ! configuredDeliverableIDs.contains(deliverable.getDeliverableID()))
+                  {
+                    deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0", tenantID);
+                    log.info("provider deliverable {} {}", deliverable.getDeliverableID(), "remove");
+                  }
+              }
+            
+          
+            /*****************************************
+            *
+            *  remove unused paymentMeans
+            *
+            *****************************************/
+  
+            for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime(), tenantID))
+              {
+                if (Objects.equals(providerID, paymentMean.getFulfillmentProviderID()) && paymentMean.getGeneratedFromAccount() && ! configuredPaymentMeanIDs.contains(paymentMean.getPaymentMeanID()))
+                  {
+                    paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0", tenantID);
+                    log.info("provider paymentMean {} {}", paymentMean.getPaymentMeanID(), "remove");
+                  }
+              }
         }
       }
 

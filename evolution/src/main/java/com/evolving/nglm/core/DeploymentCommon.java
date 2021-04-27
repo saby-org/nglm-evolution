@@ -421,7 +421,6 @@ public class DeploymentCommon
   private static Map<String,DNBOMatrixVariable> dnboMatrixVariables;
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers;
   private static Map<String,DeliveryManagerDeclaration> fulfillmentProviders;
-  private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts;
   private static Map<String,NodeType> nodeTypes;
   private static Map<String,ToolboxSection> journeyToolbox;
   private static Map<String,ToolboxSection> campaignToolbox;
@@ -706,7 +705,6 @@ public class DeploymentCommon
   public static Map<String,DNBOMatrixVariable> getDNBOMatrixVariables() { return dnboMatrixVariables; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
   public static Map<String,DeliveryManagerDeclaration> getFulfillmentProviders() { return fulfillmentProviders; } // TODO EVPRO-99 fulfillmentProviders accounts per tenant ?
-  public static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; } // TODO EVPRO-99 deliveryManager accounts per tenant ?
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; } // EVPRO-99 should not be per tenant...
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
@@ -1195,20 +1193,6 @@ public class DeploymentCommon
     for (CommunicationChannel cc:getCommunicationChannels().values())
       {
         if (cc.getDeliveryManagerDeclaration()!=null) deliveryManagers.put(cc.getDeliveryManagerDeclaration().getDeliveryType(),cc.getDeliveryManagerDeclaration());
-      }
-    
-    //
-    //  deliveryManagerAccounts
-    //
-    deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
-    JSONArray deliveryManagerAccountValues = jsonReader.decodeJSONArray("deliveryManagerAccounts");
-    for (int i=0; i<deliveryManagerAccountValues.size(); i++)
-      {
-        JSONObject deliveryManagerAccountJSON = (JSONObject) deliveryManagerAccountValues.get(i);
-        DeliveryManagerAccount deliveryManagerAccount = new DeliveryManagerAccount(deliveryManagerAccountJSON);
-        if(deliveryManagerAccount != null ){
-          deliveryManagerAccounts.put(deliveryManagerAccount.getProviderID(), deliveryManagerAccount);
-        }
       }
 
     //
