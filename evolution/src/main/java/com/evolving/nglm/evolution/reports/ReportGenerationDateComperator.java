@@ -18,8 +18,8 @@ public class ReportGenerationDateComperator implements Comparator<String>
       {
         try
           {
-            Date date1 = RLMDateUtils.DAY_FORMAT.get().parse(splittedString1[1]);
-            Date date2 = RLMDateUtils.DAY_FORMAT.get().parse(splittedString2[1]);
+            Date date1 = RLMDateUtils.parseDateFromDay(splittedString1[1], tz);
+            Date date2 = RLMDateUtils.parseDateFromDay(splittedString2[1], tz);
             return date2.compareTo(date1);
           } 
         catch (ParseException e)
