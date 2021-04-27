@@ -6,26 +6,49 @@
 
 package com.evolving.nglm.evolution.reports.offer;
 
-import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.reports.FilterObject;
-import com.evolving.nglm.evolution.reports.ReportDriver;
-import com.evolving.nglm.evolution.reports.ReportUtils;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.evolution.CatalogCharacteristic;
+import com.evolving.nglm.evolution.CatalogCharacteristicInstance;
+import com.evolving.nglm.evolution.CatalogCharacteristicService;
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.Offer;
+import com.evolving.nglm.evolution.OfferObjective;
+import com.evolving.nglm.evolution.OfferObjectiveInstance;
+import com.evolving.nglm.evolution.OfferObjectiveService;
+import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.PaymentMeanService;
+import com.evolving.nglm.evolution.Product;
+import com.evolving.nglm.evolution.ProductService;
+import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.SalesChannel;
+import com.evolving.nglm.evolution.SalesChannelService;
+import com.evolving.nglm.evolution.SupportedCurrency;
+import com.evolving.nglm.evolution.reports.FilterObject;
+import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
+@ReportTypeDef(reportType = "detailedrecords")
 public class OfferReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(OfferReportDriver.class);
