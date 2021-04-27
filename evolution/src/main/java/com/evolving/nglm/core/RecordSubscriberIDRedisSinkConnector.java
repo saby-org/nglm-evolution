@@ -97,7 +97,7 @@ public class RecordSubscriberIDRedisSinkConnector extends SimpleRedisSinkConnect
             byte[] alternateIDBytes = (recordSubscriberID.getAlternateID() != null) ? recordSubscriberID.getAlternateID().getBytes(StandardCharsets.UTF_8) : null;
           
             log.info("RecordSubscriberIDRedisSinkTask subscriberIDBytes " + Hex.encodeHexString( subscriberIDBytes ) );
-            log.info("RecordSubscriberIDRedisSinkTask alternateIDBytes " + Hex.encodeHexString( alternateIDBytes ) );
+            log.info("RecordSubscriberIDRedisSinkTask alternateIDBytes " + (alternateIDBytes != null ? Hex.encodeHexString( alternateIDBytes ) : null) );
       
             Integer reverseDBIndex = alternateID.getReverseRedisCacheIndex();
             cacheEntries.add(new CacheEntry(subscriberIDBytes, alternateIDBytes, reverseDBIndex, null, recordSubscriberID.getTenantID()));
