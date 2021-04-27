@@ -460,6 +460,9 @@ public class DeploymentCommon
   private static int nodesTransitionsHistorySize;
   private static int firstDayOfTheWeek;
   private static int journeysReportMaxParallelThreads;
+  private static int detailedrecordReportsArrearCount;
+  private static int journeyReportsArrearCount;
+  private static int subscriberprofileReportsArrearCount;
   
   private static int guiConfigurationSoftRetentionDays;// "soft" this is the number of days after which we stopped loading in memory deleted GUIManagedObjects
   private static int guiConfigurationRetentionDays;// this is the number of days after which we delete record from topic deleted GUIManagedObjects
@@ -556,6 +559,9 @@ public class DeploymentCommon
   public static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
+  public static int getDetailedrecordReportsArrearCount() { return detailedrecordReportsArrearCount; }
+  public static int getJourneyReportsArrearCount() { return journeyReportsArrearCount; }
+  public static int getSubscriberprofileReportsArrearCount() { return subscriberprofileReportsArrearCount; }
   
   public static int getGuiConfigurationSoftRetentionDays() { return guiConfigurationSoftRetentionDays; }
   public static int getGuiConfigurationRetentionDays() { return guiConfigurationRetentionDays; }
@@ -1392,6 +1398,9 @@ public class DeploymentCommon
     reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir");
     reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties");
     journeysReportMaxParallelThreads = JSONUtilities.decodeInteger(reportManager, "journeysReportMaxParallelThreads");
+    detailedrecordReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "detailedrecordReportsArrearCount", 7);
+    journeyReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "journeyReportsArrearCount", 2);
+    subscriberprofileReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "subscriberprofileReportsArrearCount", 2);
 
     if (reportManagerFieldSurrounder.length() > 1) {
       throw new ServerRuntimeException("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);

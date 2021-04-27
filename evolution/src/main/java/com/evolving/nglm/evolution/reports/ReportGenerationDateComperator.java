@@ -4,10 +4,12 @@ import java.text.ParseException;
 import java.util.Comparator;
 import java.util.Date;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 
 public class ReportGenerationDateComperator implements Comparator<String>
 {
+  private static String tz = Deployment.getDefault().getTimeZone();
 
   @Override
   public int compare(String o1, String o2)
