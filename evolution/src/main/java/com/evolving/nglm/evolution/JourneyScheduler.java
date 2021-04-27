@@ -2,6 +2,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -167,5 +168,21 @@ public class JourneyScheduler
     struct.put("runEveryWeekDay", journeyScheduler.getRunEveryWeekDay());
     struct.put("runEveryMonthDay", journeyScheduler.getRunEveryMonthDay());
     return struct;
+  }
+  
+  @Override
+  public boolean equals(Object obj)
+  {
+    boolean result = false;
+    if (obj instanceof JourneyScheduler)
+      {
+        JourneyScheduler scheduler = (JourneyScheduler) obj;
+        result = Objects.equals(getNumberOfOccurrences(), scheduler.getNumberOfOccurrences());
+        result = result && Objects.equals(getRunEveryDuration(), scheduler.getRunEveryDuration());
+        result = result && Objects.equals(getRunEveryUnit(), scheduler.getRunEveryUnit());
+        result = result && Objects.equals(getRunEveryUnit(), scheduler.getRunEveryUnit());
+        result = result && Objects.equals(getRunEveryMonthDay(), scheduler.getRunEveryMonthDay());
+      }
+    return result;
   }
 }

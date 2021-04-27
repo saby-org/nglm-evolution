@@ -25,19 +25,18 @@ import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.client.*;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.client.sniff.Sniffer;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -54,26 +53,21 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager;
-import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.GUIManager.API;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.ThirdPartyManager;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
@@ -1081,6 +1075,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   //
   // getESHits
   //
+  
   public List<SearchHit> getESHits(SearchRequest searchRequest) throws GUIManagerException
   {
     List<SearchHit> hits = new ArrayList<SearchHit>();
@@ -1127,6 +1122,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   //
   // getExistingIndices
   //
+  
   public String getExistingIndices(String indexCSV, String defaulteValue)
   {
     String result = null;
@@ -1171,5 +1167,44 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     result = result == null || result.trim().isEmpty() ? defaulteValue : result;
     if (log.isDebugEnabled()) log.debug("reading data from index {}", result);
     return result;
+  }
+  
+  public List<String> getAlreadyOptInSubscriberIDs(String loyaltyProgramID) throws ElasticsearchClientException
+  {
+    List<String> result = new ArrayList<String>();
+    try
+      {
+        QueryBuilder queryLoyaltyProgramID = QueryBuilders.termQuery("loyaltyPrograms.programID", loyaltyProgramID);
+        QueryBuilder queryEmptyExitDate = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramExitDate"));
+        QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(queryLoyaltyProgramID).filter(queryEmptyExitDate), ScoreMode.Total);
+        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(query));
+        List<SearchHit> hits = getESHits(searchRequest);
+        for (SearchHit hit : hits)
+          {
+            result.add(hit.getId());
+          }
+        return result;
+      } 
+    catch (ElasticsearchStatusException e)
+      {
+        if (e.status() == RestStatus.NOT_FOUND)
+          { 
+            // index not found
+            log.debug(e.getMessage());
+            return result;
+          }
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getDetailedMessage());
+      } 
+    catch (ElasticsearchException e)
+      {
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getDetailedMessage());
+      } 
+    catch (Exception e)
+      {
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getMessage());
+      }
   }
 }
