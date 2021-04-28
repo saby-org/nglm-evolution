@@ -686,6 +686,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.origin = (String) esFields.get("origin");
       this.resellerID = (String) esFields.get("resellerID");
       this.quantity = (Integer) esFields.get("offerQty");
+      this.returnCode = (Integer) esFields.get("returnCode");
       
       //
       // derived
