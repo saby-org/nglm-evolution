@@ -292,7 +292,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   private Date rescheduledDate;
   private MetricHistory notificationHistory;
   private Map<String,String> subscriberFields;
-  private int tenantID;
+  protected int tenantID;
 
   // internal, not stored
   private TopicPartition topicPartition;

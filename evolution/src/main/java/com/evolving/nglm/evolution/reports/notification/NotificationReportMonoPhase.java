@@ -61,6 +61,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private OfferService offerService;
   private LoyaltyProgramService loyaltyProgramService;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
+  private int tenantID;
 
   private static final String moduleId = "moduleID";
   private static final String featureId = "featureID";
@@ -328,7 +329,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
               {
                 Map<String,Object> tags = getAllTags(notifFields);
                 List<String> tagsList = getTags(tags, "tags");
-                SMSNotificationManagerRequest req = new SMSNotificationManagerRequest(tempID, lang, tagsList);
+                SMSNotificationManagerRequest req = new SMSNotificationManagerRequest(tempID, lang, tagsList, tenantID);
                 String actualMessage = req.getText(subscriberMessageTemplateService);
                 msgContentJSON.put("sms", truncateIfNecessary(actualMessage));
               }
@@ -338,7 +339,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
                 List<String> subjectTagsList = getTags(tags, "subjectTags");
                 List<String> textBodyTagsList = getTags(tags, "textBodyTags");
                 List<String> htmlBodyTagsList = getTags(tags, "htmlBodyTags");
-                MailNotificationManagerRequest req = new MailNotificationManagerRequest(tempID, lang, subjectTagsList, textBodyTagsList, htmlBodyTagsList);
+                MailNotificationManagerRequest req = new MailNotificationManagerRequest(tempID, lang, subjectTagsList, textBodyTagsList, htmlBodyTagsList, tenantID);
                 String actualSubject = req.getSubject(subscriberMessageTemplateService);
                 String actualTextBody = req.getTextBody(subscriberMessageTemplateService);
                 String actualHtmlBody = req.getHtmlBody(subscriberMessageTemplateService);
@@ -354,7 +355,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
             else // GenericTemplate
               {
                 Map<String, List<String>> tags = getAllTagsList(notifFields);
-                NotificationManagerRequest req = new NotificationManagerRequest(tempID, lang, tags);
+                NotificationManagerRequest req = new NotificationManagerRequest(tempID, lang, tags, tenantID);
                 Map<String, String> resolvedParameters = req.getResolvedParameters(subscriberMessageTemplateService);
                 msgContentJSON.putAll(resolvedParameters);
               }
@@ -549,6 +550,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         reportPeriodQuantity = Integer.parseInt(args[3]);
         reportPeriodUnit = args[4];
       }
+    tenantID = Integer.parseInt(args[5]);
     
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;

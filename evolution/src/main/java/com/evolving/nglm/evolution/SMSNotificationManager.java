@@ -279,11 +279,12 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     *
     *****************************************/
 
-    public SMSNotificationManagerRequest(String templateID, String language, List<String> messageTags)
+    public SMSNotificationManagerRequest(String templateID, String language, List<String> messageTags, int tenantID)
     {
       this.language = language;
       this.templateID = templateID;
       this.messageTags = messageTags;
+      this.tenantID = tenantID;
     }
 
     /*****************************************

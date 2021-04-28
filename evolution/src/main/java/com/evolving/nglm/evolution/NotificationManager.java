@@ -420,11 +420,12 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     *
     *****************************************/
 
-    public NotificationManagerRequest(String templateID, String language, Map<String, List<String>> tags)
+    public NotificationManagerRequest(String templateID, String language, Map<String, List<String>> tags, int tenantID)
     {
       this.language = language;
       this.templateID = templateID;
       this.tags = tags;
+      this.tenantID = tenantID;
     }
 
     /*****************************************

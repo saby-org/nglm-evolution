@@ -383,13 +383,14 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public MailNotificationManagerRequest(String templateID, String language, List<String> subjectTags, List<String> textBodyTags, List<String> htmlBodyTags)
+    public MailNotificationManagerRequest(String templateID, String language, List<String> subjectTags, List<String> textBodyTags, List<String> htmlBodyTags, int tenantID)
     {
       this.language = language;
       this.templateID = templateID;
       this.subjectTags = subjectTags;
       this.textBodyTags = textBodyTags;
       this.htmlBodyTags = htmlBodyTags;
+      this.tenantID = tenantID;
     }
 
     /*****************************************
