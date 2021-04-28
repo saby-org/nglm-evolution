@@ -150,6 +150,8 @@ public class ReportMonoPhase
     boolean res = true;
 
     elasticsearchReaderClient = new ElasticsearchClientAPI("ReportManager");
+    long totalBatchTime = 0L;
+    int nbBatch = 0;
     try {
       fos = new FileOutputStream(file);
       writer = new ZipOutputStream(fos);
@@ -247,6 +249,9 @@ public class ReportMonoPhase
                   log.info("Potential problem : scroll took " + elapsedBatch/1000.0 + " seconds to process, keepAlive of " + scroolKeepAlive + " seconds exceeded");
                   nbMaxTraces--;
                 }
+              totalBatchTime += elapsedBatch;
+              nbBatch++;
+              startBatch = System.currentTimeMillis();
               SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
               scrollRequest.scroll(scroll);
               searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
@@ -304,7 +309,7 @@ public class ReportMonoPhase
         log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
       }
     }
-    log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
+    log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION + " average time to process batch : " + ((nbBatch==0L)?"NA":(totalBatchTime/(long)nbBatch)) + " ms");
     return res;
   }
 
@@ -333,6 +338,8 @@ public class ReportMonoPhase
         Map<String,ZipOutputStream> tmpZipFiles = new HashMap<>();
 
         elasticsearchReaderClient = new ElasticsearchClientAPI("ReportManager");
+        long totalBatchTime = 0L;
+        int nbBatch = 0;
         try {
           int i = 0;
           int scroolKeepAlive = getScrollKeepAlive();
@@ -446,7 +453,9 @@ public class ReportMonoPhase
                         log.info("Potential problem : scroll took " + elapsedBatch/1000.0 + " seconds to process, keepAlive of " + scroolKeepAlive + " seconds exceeded");
                         nbMaxTraces--;
                       }
-
+                    totalBatchTime += elapsedBatch;
+                    nbBatch++;
+                    startBatch = System.currentTimeMillis();
                     SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                     scrollRequest.scroll(scroll);
                     searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
@@ -556,9 +565,9 @@ public class ReportMonoPhase
             log.error("Error while concatenating tmp files", e);
           }
         }
+        log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION + " average time to process batch : " + ((nbBatch==0L)?"NA":(totalBatchTime/(long)nbBatch)) + " ms");
+        return true;
       }
-    log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
-    return true;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -684,6 +693,8 @@ public class ReportMonoPhase
     activeThreads.incrementAndGet();
     ZipOutputStream writer = null;
     ElasticsearchClientAPI localESClient = null;
+    long totalBatchTime = 0L;
+    int nbBatch = 0;
     try {
       FileOutputStream fos = null;
       localESClient = getESAPI(esNode);
@@ -729,6 +740,9 @@ public class ReportMonoPhase
           log.info("Potential problem : scroll took " + elapsedBatch/1000.0 + " seconds to process, keepAlive of " + scroolKeepAlive + " seconds exceeded");
           nbMaxTraces--;
         }
+        totalBatchTime += elapsedBatch;
+        nbBatch++;
+        startBatch = System.currentTimeMillis();
         SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
         scrollRequest.scroll(scroll);
         searchResponse = localESClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
@@ -772,7 +786,7 @@ public class ReportMonoPhase
         log.info("Exception while releasing resources " + e.getLocalizedMessage());
       } finally {
         long elapsedThread = System.currentTimeMillis() - startThread;
-        log.info("Finished with subthread " + Thread.currentThread().getName() + " took " + elapsedThread + " ms, decreasing latch from " + latch.getCount() + " current active threads : " + activeThreads.decrementAndGet());
+        log.info("Finished with subthread " + Thread.currentThread().getName() + " took " + elapsedThread + " ms, decreasing latch from " + latch.getCount() + " current active threads : " + activeThreads.decrementAndGet() + " average time to process batch : " + ((nbBatch==0L)?"NA":(totalBatchTime/(long)nbBatch)) + " ms");
         latch.countDown(); // we're done
       }
     }
