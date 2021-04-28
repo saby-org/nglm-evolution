@@ -61,7 +61,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private OfferService offerService;
   private LoyaltyProgramService loyaltyProgramService;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private int tenantID;
+  private int tenantID = 0;
 
   private static final String moduleId = "moduleID";
   private static final String featureId = "featureID";
@@ -550,7 +550,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         reportPeriodQuantity = Integer.parseInt(args[3]);
         reportPeriodUnit = args[4];
       }
-    tenantID = Integer.parseInt(args[5]);
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
     
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;

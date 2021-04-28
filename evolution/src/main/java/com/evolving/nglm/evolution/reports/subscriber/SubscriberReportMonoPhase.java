@@ -59,14 +59,18 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   *  dumpElementToCsv
   *
   ****************************************/
-  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders, int tenantID) throws IOException
+  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
-
+    final int tenantID;
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
     Map<String, Object> elasticFields = map;
-
     if (elasticFields != null)
       {
+        if (elasticFields.get("tenantID") != null)
+          tenantID = (Integer) elasticFields.get("tenantID");
+        else
+          tenantID = 0;
+        
         if (elasticFields.get(subscriberID) != null)
           {
             result.put(customerID, elasticFields.get(subscriberID));
