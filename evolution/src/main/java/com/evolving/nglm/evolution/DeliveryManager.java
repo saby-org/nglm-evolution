@@ -8,6 +8,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -885,6 +886,7 @@ public abstract class DeliveryManager
    *
    *****************************************/
   private static final String CORRELATOR_UPDATE_KEY = "correlatorUpdate";
+  
   private void processSubmitCorrelatorUpdate(String correlator, JSONObject correlatorUpdate)
   {
     // construct a fake delivery request containing only correlatorUpdate to forward to the right instance
@@ -1145,83 +1147,109 @@ public abstract class DeliveryManager
         }
         setHackyDeliveryRequestInstanceIfNeeded(deliveryRequest);
         String correlatorUpdateJSON = deliveryRequest.getDiplomaticBriefcase().get(CORRELATOR_UPDATE_KEY);
-
-        if(correlatorUpdateJSON==null)
-        {
-          // this is the case we received a request that will wait for a correlator response
-
-          if(deliveryRequest.getCorrelator()==null)
+        boolean handleCorrelatorUpdate = false;
+        JSONObject correlatorForProcessCorrelatorUpdate = null;
+        DeliveryRequest deliveryRequestForProcessCorrelatorUpdate = null;
+                
+        
+        // Check the case:
+        // if correlatorUpdateJSON == null then we know this is a correlatorUpdate
+        //    Then : If the map does not contain this key already, push it because the completeRequest was not read yet
+        //           If the map contains the key already, then the processCompeteRequest has already been read so let handleCorrelatorUpdate and make needed info available...
+        // else (if correlatorUpdateJSON != null then we know this is a processCompleteRequest)
+        //    Then : If the map contains already the key, good, let handleCorrelatorUpdate and make needed info available...
+        //           If the map does not contain the key, then store this processCompleteRequest information into the map
+        if(correlatorUpdateJSON == null)
           {
-            log.warn("runReceiveCorrelatorWorker : received request for correlator response without correlator !");
-            continue;
+            // This is a correlator update 
+            if(deliveryRequest.getCorrelator()==null)
+              {
+                log.warn("runReceiveCorrelatorWorker : received request for correlator response without correlator !");
+                continue;
+              }
+              if(!deliveryRequest.getCorrelator().equals(correlator))
+              {
+                log.warn("runReceiveCorrelatorWorker : received badly routed correlator {} {} !", deliveryRequest.getCorrelator(), correlator);
+                continue;
+              }
+              
+              // check the map
+              if(!waitingForCorrelatorUpdate.containsKey(correlator))
+                {
+                  synchronized (this)
+                  {
+                    waitingForCorrelatorUpdate.put(correlator,deliveryRequest);
+                    if(log.isDebugEnabled()) log.debug("runReceiveCorrelatorWorker : adding waitingForCorrelatorUpdate {}, new waitingForCorrelatorUpdate size {}",correlator,waitingForCorrelatorUpdate.size());
+                  }
+                }
+              else 
+                {
+                  // completeRequest already happened
+                  handleCorrelatorUpdate = true;
+                  correlatorUpdateJSON = waitingForCorrelatorUpdate.get(correlator).getDiplomaticBriefcase().get(CORRELATOR_UPDATE_KEY);
+                  if(correlatorUpdateJSON == null)
+                    {
+                      {
+                        log.warn("runReceiveCorrelatorWorker : retrieved a correlator response from Map without CORRELATOR_UPDATE_KEY");
+                        continue;
+                      }
+                    }
+                  try
+                    {
+                      correlatorForProcessCorrelatorUpdate = (JSONObject) (new JSONParser()).parse(correlatorUpdateJSON);
+                    }
+                  catch (ParseException e)
+                    {
+                      log.error("runReceiveCorrelatorWorker : exception processing correlatorUpdate when retrieving from Map", e);
+                      continue;
+                    };
+                  deliveryRequestForProcessCorrelatorUpdate = deliveryRequest;
+                }
           }
-          if(!deliveryRequest.getCorrelator().equals(correlator))
+        else 
           {
-            log.warn("runReceiveCorrelatorWorker : received badly routed correlator {} {} !", deliveryRequest.getCorrelator(), correlator);
-            continue;
-          }
-
-          synchronized (this)
-          {
-            waitingForCorrelatorUpdate.put(correlator,deliveryRequest);
-            if(log.isDebugEnabled()) log.debug("runReceiveCorrelatorWorker : adding waitingForCorrelatorUpdate {}, new waitingForCorrelatorUpdate size {}",correlator,waitingForCorrelatorUpdate.size());
-          }
-
-        }
-        else
-        {
-          // this is the case we received a correlator response for a request we do have
-
-          //
-          //  parse
-          //
-
-          JSONObject correlatorUpdate = null;
-          try
-          {
-            if (correlatorUpdateJSON != null)
-            {
-              correlatorUpdate = (JSONObject) (new JSONParser()).parse(correlatorUpdateJSON);
+            // this is a complete request
+            if(!waitingForCorrelatorUpdate.containsKey(correlator))
+              {
+                // this updateCorrelator has still not been read, let store this completeRequest processing into the map
+                Date timeout = RLMDateUtils.addSeconds(SystemTime.getCurrentTime(), getCorrelatorUpdateTimeoutSeconds());
+                deliveryRequest.setTimeout(timeout);
+                synchronized (this)
+                {
+                  waitingForCorrelatorUpdate.put(correlator, deliveryRequest);
+                }
+                continue;
+              }
+            else {
+              // complete request and correlatorUpdate already present, this is the normal case...
+              handleCorrelatorUpdate = true;
+              try
+              {
+                correlatorForProcessCorrelatorUpdate = (JSONObject) (new JSONParser()).parse(correlatorUpdateJSON);
+              }
+              catch (ParseException e)
+              {
+                log.error("runReceiveCorrelatorWorker : exception processing correlatorUpdate during the Normal Case", e);
+                continue;
+              };
+              deliveryRequestForProcessCorrelatorUpdate = waitingForCorrelatorUpdate.get(correlator);
             }
           }
-          catch (org.json.simple.parser.ParseException e)
+        
+        if(handleCorrelatorUpdate)
           {
-            log.error("runReceiveCorrelatorWorker : exception processing correlatorUpdate", e);
-            correlatorUpdate = null;
+            //
+            //  log (debug)
+            //
+
+            if(log.isDebugEnabled()) log.debug("runReceiveCorrelatorWorker : call processCorrelatorUpdate {} , {} , {}", correlator, correlatorForProcessCorrelatorUpdate, deliveryRequestForProcessCorrelatorUpdate);
+
+            //
+            //  update
+            //
+
+            processCorrelatorUpdate(deliveryRequestForProcessCorrelatorUpdate, correlatorForProcessCorrelatorUpdate);
           }
-
-          //
-          //  deliveryRequest
-          //
-
-          if (correlatorUpdate != null)
-          {
-            synchronized (this)
-            {
-              deliveryRequest = waitingForCorrelatorUpdate.get(correlator);
-            }
-          }
-
-          if(deliveryRequest==null)
-          {
-            log.info("runReceiveCorrelatorWorker : received update for a request we do not store {}",correlator);
-            continue;
-          }
-
-          //
-          //  log (debug)
-          //
-
-          if(log.isDebugEnabled()) log.debug("runReceiveCorrelatorWorker : {} , {} , {}", correlator, correlatorUpdate, deliveryRequest);
-
-          //
-          //  update
-          //
-
-          processCorrelatorUpdate(deliveryRequest, correlatorUpdate);
-
-        }
-
       }
       if(correlatorUpdateRecords.count()>0){
         try{

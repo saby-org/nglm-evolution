@@ -270,13 +270,13 @@ public class SubscriberIDService
   public Pair<String, Integer> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException {
     Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
     String tenantIDString = subscriberIDs.get("tenantID");
-    Integer tenantID = null;
+    int tenantID = 1; // by default
     if(tenantIDString != null) 
       { 
         tenantID = Integer.parseInt(tenantIDString);
       }
     String subscriberID = subscriberIDs.get(alternateID);
-    if(subscriberID != null && tenantID != null) 
+    if(subscriberID != null) 
       {
         return new Pair<String, Integer>(subscriberIDs.get(alternateID), tenantID);
       }
