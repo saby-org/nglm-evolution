@@ -68,6 +68,10 @@ if [ "${DATACUBEMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-datacubemanager.yml ${DOCKER_STACK}-datacubemanager
 fi
 
+if [ "${ELASTICSEARCHMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-elasticsearchmanager.yml ${DOCKER_STACK}-elasticsearchmanager
+fi
+
 if [ "${EXTRACTMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-extractmanager.yml ${DOCKER_STACK}-extractmanager
 fi

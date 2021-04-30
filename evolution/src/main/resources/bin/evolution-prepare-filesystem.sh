@@ -307,6 +307,16 @@ if [ "$DATACUBEMANAGER_ENABLED" = "true" ]; then
    rm -f $DEPLOY_ROOT/config/logger/log4j-datacubemanager-001.xml
 fi
 
+#
+# Elasticsearch Manager
+#
+
+if [ "$ELASTICSEARCHMANAGER_ENABLED" = "true" ]; then
+   export HOST=$ELASTICSEARCHMANAGER_HOST
+   cat $DEPLOY_ROOT/config/logger/log4j-elasticsearchmanager.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-elasticsearchmanager-001.xml
+   scp $DEPLOY_ROOT/config/logger/log4j-elasticsearchmanager-001.xml $HOST:$NGLM_CONFIG_LOGS/log4j-elasticsearchmanager.xml
+   rm -f $DEPLOY_ROOT/config/logger/log4j-elasticsearchmanager-001.xml
+fi
 
 #
 #  Extract Manager

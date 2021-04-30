@@ -63,6 +63,9 @@ case "${ENTRYPOINT}" in
   "datacubemanager")  
     exec kafka-run-class -name datacubemanager -loggc com.evolving.nglm.evolution.datacubes.DatacubeManager
     ;;
+  "elasticsearchmanager")  
+    exec kafka-run-class -name elasticsearchmanager -loggc com.evolving.nglm.evolution.elasticsearch.ElasticsearchManager
+    ;;
   "notificationmanagermail")
     exec kafka-run-class -name notificationmanagermail -loggc com.evolving.nglm.evolution.MailNotificationManager $KEY $PLUGIN_NAME $PLUGIN_CONFIGURATION
     ;;

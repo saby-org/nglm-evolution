@@ -64,6 +64,7 @@
       { "id" : "default",                    "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
       { "id" : "connectDefault",             "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
       { "id" : "DatacubeManager",            "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 900000 },
+      { "id" : "ElasticsearchManager",       "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 7200000 },
       { "id" : "GUIManager",                 "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 7200000 },
       { "id" : "PreprocessorEngine",         "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },
       { "id" : "PurchaseFulfillmentManager", "hosts": "<_ES_SERVERS_>", "user": "<_ELASTICSEARCH_USERNAME_>", "password": "<_ELASTICSEARCH_USERPASSWORD_>", "connectTimeout" : 30000, "queryTimeout" : 60000 },

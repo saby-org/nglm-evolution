@@ -302,6 +302,7 @@
                     <include>config/reportmanager_jmx.yml</include>
                     <include>config/reportscheduler_jmx.yml</include>
                     <include>config/datacubemanager_jmx.yml</include>
+                    <include>config/elasticsearchmanager_jmx.yml</include>
                     <include>config/guimanager_jmx.yml</include>
                     <include>config/thirdpartymanager_jmx.yml</include>
                     <include>config/dnboproxy_jmx.yml</include>
@@ -345,6 +346,8 @@
                     <include>docker/reportscheduler.yml</include>
                     <include>docker/datacubemanager/*</include>
                     <include>docker/datacubemanager.yml</include>
+                    <include>docker/elasticsearchmanager/*</include>
+                    <include>docker/elasticsearchmanager.yml</include>
                     <include>docker/subscribergroup/*</include>
                     <include>docker/storeconfiguration/*</include>
                     <include>docker/upgrade/*</include>
@@ -384,6 +387,7 @@
                     <exclude>docker/reportmanager.yml</exclude>
                     <exclude>docker/reportscheduler.yml</exclude>
                     <exclude>docker/datacubemanager.yml</exclude>
+                    <exclude>docker/elasticsearchmanager.yml</exclude>
                     <exclude>docker/upgrade-preamble.yml</exclude>
                     <exclude>docker/upgrade-postamble.yml</exclude>
                     <exclude>docker/extractmanager.yml</exclude>
