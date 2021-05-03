@@ -68,7 +68,7 @@ public class EDREventsESFieldsDetails
   
   public String getEventName() { return eventName; }
   public List<ESField> getFields() { return fields; }
-  public List<String> getEsModelClass() { return esModelClasses; }
+  public List<String> getEsModelClasses() { return esModelClasses; }
   
   public class ESField
   {
