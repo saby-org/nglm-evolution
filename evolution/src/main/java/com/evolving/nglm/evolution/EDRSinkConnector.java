@@ -230,6 +230,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
                       try
                         {
                           value = m.invoke(document, null);
+                          value = normalize(value);
                           log.info("RAJ K value {}", value);
                           documentMap.put(field.getFieldName(), value);
                         } 
@@ -245,6 +246,16 @@ public class EDRSinkConnector extends SimpleESSinkConnector
           
         }
       return documentMap;
+    }
+
+    private Object normalize(Object value)
+    {
+      Object result = null;
+      if (value != null)
+        {
+          if (value instanceof Date) result = RLMDateUtils.formatDateForElasticsearchDefault((Date) value);
+        }
+      return result;
     }
 
     /*************************************************
