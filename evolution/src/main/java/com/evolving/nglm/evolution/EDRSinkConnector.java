@@ -248,9 +248,17 @@ public class EDRSinkConnector extends SimpleESSinkConnector
       return documentMap;
     }
 
+    /*************************************************
+     * 
+     * 
+     *  ignoreableDocument
+     * 
+     * 
+     ************************************************/
+    
     private Object normalize(Object value)
     {
-      Object result = null;
+      Object result = value;
       if (value != null)
         {
           if (value instanceof Date) result = RLMDateUtils.formatDateForElasticsearchDefault((Date) value);
