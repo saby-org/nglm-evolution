@@ -1,18 +1,18 @@
 package com.evolving.nglm.evolution;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
-import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -26,6 +26,7 @@ import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManager
 
 public class EDRSinkConnector extends SimpleESSinkConnector
 {
+  private static final Map<String, Method> EVENT_CLASS_METHOD_MAPPING = new ConcurrentHashMap<String, Method>();
   
   /****************************************
   *
@@ -188,30 +189,52 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     public Map<String, Object> getDocumentMap(Object document)
     {
       Map<String,Object> documentMap = new HashMap<String,Object>();
+      Class className = document.getClass();
       for (String eventName : Deployment.getEdrEventsESFieldsDetails().keySet())
         {
           EDREventsESFieldsDetails edrEventsESFieldsDetails = Deployment.getEdrEventsESFieldsDetails().get(eventName);
-          if (edrEventsESFieldsDetails.getEsModelClass().equals(document.getClass()))
+          if (edrEventsESFieldsDetails.getEsModelClass().equals(className.getName()))
             {
               for (ESField field : edrEventsESFieldsDetails.getFields())
                 {
-                  String fieldName = field.getFieldName();
                   Object value = null;
-                  if (field.getRetriever() != null)
+                  String methodToInvoke = className.getName().concat(".").concat(field.getRetrieverName());
+                  Method m = null;
+                  if (EVENT_CLASS_METHOD_MAPPING.containsKey(methodToInvoke))
+                    {
+                      m = EVENT_CLASS_METHOD_MAPPING.get(methodToInvoke);
+                    }
+                  else
                     {
                       try
                         {
-                          value = field.getRetriever().invoke(document, null);
+                          m = className.getMethod(field.getRetrieverName(), null);
+                          synchronized (EVENT_CLASS_METHOD_MAPPING)
+                            {
+                              EVENT_CLASS_METHOD_MAPPING.put(methodToInvoke, m);
+                            }
                         } 
-                      catch (Throwable e)
+                      catch (NoSuchMethodException | SecurityException e)
                         {
                           e.printStackTrace();
                         }
                     }
-                  documentMap.put(fieldName, value);
-                  
+                  if (m != null)
+                    {
+                      try
+                        {
+                          value = m.invoke(documentMap, null);
+                          documentMap.put(field.getFieldName(), value);
+                        } 
+                      catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+                        {
+                          e.printStackTrace();
+                        }
+                    }
                 }
+              break;
             }
+          
         }
       return documentMap;
     }

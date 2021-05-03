@@ -23,7 +23,7 @@ public class EDREventsESFieldsDetails
   //
   
   private String eventName;
-  private Class esModelClass;
+  private String esModelClass;
   private List<ESField> fields;
 
   /***************************
@@ -35,15 +35,7 @@ public class EDREventsESFieldsDetails
   public EDREventsESFieldsDetails(JSONObject jsonRoot)
   {
     this.eventName = JSONUtilities.decodeString(jsonRoot, "eventName", true).toUpperCase();
-    String esModelClassStr = JSONUtilities.decodeString(jsonRoot, "esModelClass", true);
-    try
-      {
-        this.esModelClass = Class.forName(esModelClassStr);
-      } 
-    catch (ClassNotFoundException e)
-      {
-        throw new RuntimeException("class not found " + e.getMessage());
-      }
+    this.esModelClass = JSONUtilities.decodeString(jsonRoot, "esModelClass", true);
     this.fields = decodeFields(jsonRoot);
 
   }
@@ -74,31 +66,21 @@ public class EDREventsESFieldsDetails
   
   public String getEventName() { return eventName; }
   public List<ESField> getFields() { return fields; }
-  public Class getEsModelClass() { return esModelClass; }
+  public String getEsModelClass() { return esModelClass; }
   
   public class ESField
   {
     private String fieldName;
     private String retrieverName;
-    private Method retriever = null;
     
     public ESField(JSONObject fieldJSON)
     {
       this.fieldName = JSONUtilities.decodeString(fieldJSON, "name", true);
       this.retrieverName = JSONUtilities.decodeString(fieldJSON, "retriever", true);
-      try
-        {
-          this.retriever = esModelClass.getMethod(fieldName, null);
-        } 
-      catch (NoSuchMethodException e)
-        {
-          throw new RuntimeException("retriever error " + e.getMessage());
-        }
     }
     
     public String getFieldName () { return fieldName; }
     public String getRetrieverName () { return retrieverName; }
-    public Method getRetriever () { return retriever; }
     
   }
 
