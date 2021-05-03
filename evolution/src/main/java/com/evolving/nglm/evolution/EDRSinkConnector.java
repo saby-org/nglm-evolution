@@ -190,11 +190,13 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     {
       Map<String,Object> documentMap = new HashMap<String,Object>();
       Class className = document.getClass();
+      log.info("RAJ K className {}", className);
       for (String eventName : Deployment.getEdrEventsESFieldsDetails().keySet())
         {
           EDREventsESFieldsDetails edrEventsESFieldsDetails = Deployment.getEdrEventsESFieldsDetails().get(eventName);
           if (edrEventsESFieldsDetails.getEsModelClass().contains(className.getName()))
             {
+              log.info("RAJ K EDREventsESFieldsDetails {}", edrEventsESFieldsDetails.getEventName());
               for (ESField field : edrEventsESFieldsDetails.getFields())
                 {
                   Object value = null;
@@ -216,18 +218,23 @@ public class EDRSinkConnector extends SimpleESSinkConnector
                         } 
                       catch (NoSuchMethodException | SecurityException e)
                         {
+                          if (log.isErrorEnabled()) log.error("error {}", e.getMessage()); //RAJ K
                           e.printStackTrace();
                         }
                     }
+                  log.info("RAJ K method {}", m);
                   if (m != null)
                     {
+                      log.info("RAJ K methodName {}", m.getName());
                       try
                         {
                           value = m.invoke(documentMap, null);
+                          log.info("RAJ K value {}", value);
                           documentMap.put(field.getFieldName(), value);
                         } 
                       catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
                         {
+                          if (log.isErrorEnabled()) log.error("error {}", e.getMessage()); //RAJ K
                           e.printStackTrace();
                         }
                     }
