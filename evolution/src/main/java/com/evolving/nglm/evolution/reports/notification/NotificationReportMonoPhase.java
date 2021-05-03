@@ -692,7 +692,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
    *
    ********************/
   
-  public static String getESIndices(String esIndex, List<String> esIndexWks)
+  public static String getESIndices(String esIndex, Set<String> esIndexWks)
   {
     StringBuilder esIndexList = new StringBuilder();
     boolean firstEntry = true;

@@ -525,7 +525,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
    *
    ********************/
   
-  public static String getESIndices(String esIndexBdr, List<String> esIndexWeeks)
+  public static String getESIndices(String esIndexBdr, Set<String> esIndexWeeks)
   {
     StringBuilder esIndexBdrList = new StringBuilder();
     boolean firstEntry = true;
