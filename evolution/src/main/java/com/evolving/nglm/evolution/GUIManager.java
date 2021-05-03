@@ -451,6 +451,7 @@ public class GUIManager
     getCustomer("getCustomer"),
     getCustomerMetaData("getCustomerMetaData"),
     getCustomerBDRs("getCustomerBDRs"),
+    getCustomerEDRs("getCustomerEDRs"),
     getCustomerODRs("getCustomerODRs"),
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),

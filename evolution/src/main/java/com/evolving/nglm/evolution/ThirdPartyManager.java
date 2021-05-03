@@ -268,7 +268,8 @@ public class ThirdPartyManager
     putSimpleOffer(32),
     getSimpleOfferList(33),
     removeSimpleOffer(34),
-    getResellerDetails(35);
+    getResellerDetails(35),
+    getCustomerEDRs(36);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -548,6 +549,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
       restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerEDRs", new APIHandler(API.getCustomerEDRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerPoints", new APIHandler(API.getCustomerPoints));
       restServer.createContext("/nglm-thirdpartymanager/creditBonus", new APIHandler(API.creditBonus));
@@ -839,6 +841,9 @@ public class ThirdPartyManager
               break;
             case getCustomerBDRs:
               jsonResponse = processGetCustomerBDRs(jsonRoot, tenantID);
+              break;
+            case getCustomerEDRs:
+              jsonResponse = processGetCustomerEDRs(jsonRoot, tenantID);
               break;
             case getCustomerODRs:
               jsonResponse = processGetCustomerODRs(jsonRoot, tenantID);
@@ -1320,6 +1325,78 @@ public class ThirdPartyManager
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
     }
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processGetCustomerEDRs
+   *
+   *****************************************/
+
+  private JSONObject processGetCustomerEDRs(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  {
+
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+
+    String startDateReq = readString(jsonRoot, "startDate", false);
+
+    //
+    // filters
+    //
+
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+
+    //
+    // process
+    //
+
+    String subscriberID = resolveSubscriberID(jsonRoot);
+    try
+      {
+        SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+        if (baseSubscriberProfile == null)
+          {
+            updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+          } else
+          {
+
+            List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
+
+            //
+            // read history
+            //
+
+            SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerEDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+            List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+            for (SearchHit hit : hits)
+              {
+                Map<String, Object> esFields = hit.getSourceAsMap();
+                CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
+                Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                BDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
+              }
+            response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
+            response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
+            updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+          }
+      } catch (SubscriberProfileServiceException | java.text.ParseException | GUIManagerException e)
+      {
+        log.error("SubscriberProfileServiceException ", e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+      }
     return JSONUtilities.encodeObject(response);
   }
 

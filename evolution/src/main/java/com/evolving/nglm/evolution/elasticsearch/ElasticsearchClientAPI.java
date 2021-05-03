@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -74,6 +75,7 @@ import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGen
 import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
+import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
@@ -926,6 +928,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   //
   // getSearchRequest
   //
+  
   public SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters, int tenantID)
   {
     String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
@@ -957,6 +960,35 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             else
               {
                 index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
+              }
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
+          }
+        else
+          {
+            index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
+          }
+        break;
+        
+      case getCustomerEDRs:
+        if (startDate != null)
+          {
+            if (indexFilterDate.before(startDate))
+              {
+                Set<String> weeks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                StringBuilder esIndexList = new StringBuilder();
+                boolean firstEntry = true;
+                for (String esIndexWk : weeks)
+                  {
+                    if (!firstEntry) esIndexList.append(",");
+                    String indexName = "detailedrecords_events-" + esIndexWk;
+                    esIndexList.append(indexName);
+                    firstEntry = false;
+                  }
+                index = this.getExistingIndices(esIndexList.toString(), "detailedrecords_events-*");
+              }
+            else
+              {
+                index = "detailedrecords_events-*";
               }
             query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
           }
@@ -1037,6 +1069,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     {
       case getCustomerBDRs:
         return getSearchRequest(GUIManager.API.getCustomerBDRs, subscriberId, startDate, filters, tenantID);
+      case getCustomerEDRs:
+        return getSearchRequest(GUIManager.API.getCustomerEDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerODRs:
         return getSearchRequest(GUIManager.API.getCustomerODRs, subscriberId, startDate, filters, tenantID);
       case getCustomerMessages:
