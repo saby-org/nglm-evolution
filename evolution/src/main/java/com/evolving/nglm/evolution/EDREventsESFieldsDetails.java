@@ -5,6 +5,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.management.RuntimeErrorException;
@@ -23,7 +24,7 @@ public class EDREventsESFieldsDetails
   //
   
   private String eventName;
-  private String esModelClass;
+  private List<String> esModelClasses;
   private List<ESField> fields;
 
   /***************************
@@ -35,7 +36,8 @@ public class EDREventsESFieldsDetails
   public EDREventsESFieldsDetails(JSONObject jsonRoot)
   {
     this.eventName = JSONUtilities.decodeString(jsonRoot, "eventName", true).toUpperCase();
-    this.esModelClass = JSONUtilities.decodeString(jsonRoot, "esModelClass", true);
+    String esModelClassesRaw = JSONUtilities.decodeString(jsonRoot, "esModelClasses", true);
+    this.esModelClasses = Arrays.asList(esModelClassesRaw.split(",", -1));
     this.fields = decodeFields(jsonRoot);
 
   }
@@ -66,7 +68,7 @@ public class EDREventsESFieldsDetails
   
   public String getEventName() { return eventName; }
   public List<ESField> getFields() { return fields; }
-  public String getEsModelClass() { return esModelClass; }
+  public List<String> getEsModelClass() { return esModelClasses; }
   
   public class ESField
   {

@@ -193,7 +193,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
       for (String eventName : Deployment.getEdrEventsESFieldsDetails().keySet())
         {
           EDREventsESFieldsDetails edrEventsESFieldsDetails = Deployment.getEdrEventsESFieldsDetails().get(eventName);
-          if (edrEventsESFieldsDetails.getEsModelClass().equals(className.getName()))
+          if (edrEventsESFieldsDetails.getEsModelClass().contains(className.getName()))
             {
               for (ESField field : edrEventsESFieldsDetails.getFields())
                 {

@@ -1272,17 +1272,26 @@
   
   "edrEventsESFieldsDetails" : 
   	[
-  		{ "eventName" : "BDR", "esModelClass" : "com.evolving.nglm.evolution.BonusDelivery", "fields" : 
-  		   	[
-  		   		{	"name" : "subscriberID", "retriever" : 	"getSubscriberID"	},
-  		   		{	"name" : "eventDatetime", "retriever" : "getDeliveryDate"	}
-  		   	]
+  		{ "eventName" : "BDR", "esModelClass" : "com.evolving.nglm.evolution.BonusDelivery", 
+  			"fields" : 
+  		   		[
+  		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
+  		   			{	"name" : "eventDatetime", 	"retriever" : 	"getDeliveryDate"	}
+  		   		]
   		},
-  		{ "eventName" : "ODR", "esModelClass" : "com.evolving.nglm.evolution.PurchaseFulfillmentRequest", "fields" : 
-  		   	[
-  		   		{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
-  		   		{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
-  		   	]
+  		{ "eventName" : "ODR", "esModelClass" : "com.evolving.nglm.evolution.PurchaseFulfillmentRequest", 
+  			"fields" : 
+  		   		[
+  		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
+  		   			{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
+  		   		]
+  		},
+  		{ "eventName" : "MDR", "esModelClass" : "com.evolving.nglm.evolution.MailNotificationManagerRequest,com.evolving.nglm.evolution.SMSNotificationManagerRequest,com.evolving.nglm.evolution.NotificationManagerRequest,com.evolving.nglm.evolution.PushNotificationManagerRequest", 
+  			"fields" : 
+  		   		[
+  		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
+  		   			{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
+  		   		]
   		}
   	]
 }

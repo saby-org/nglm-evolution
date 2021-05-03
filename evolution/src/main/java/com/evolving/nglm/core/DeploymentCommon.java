@@ -1398,6 +1398,7 @@ public class DeploymentCommon
     guiConfigurationInitialConsumerMaxFetchBytes = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxFetchBytes");
     
     JSONArray edrEventsESFieldsDetailsJSON = jsonReader.decodeJSONArray("edrEventsESFieldsDetails");
+    edrEventsESFieldsDetails = new LinkedHashMap<String, EDREventsESFieldsDetails>();
     for (int i = 0; i < edrEventsESFieldsDetailsJSON.size(); i++)
       {
         EDREventsESFieldsDetails edrEventsESField = new EDREventsESFieldsDetails((JSONObject) edrEventsESFieldsDetailsJSON.get(i));
