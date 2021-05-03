@@ -250,9 +250,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
 
     /*************************************************
      * 
-     * 
-     *  ignoreableDocument
-     * 
+     *  normalize
      * 
      ************************************************/
     
@@ -268,9 +266,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
 
     /*************************************************
      * 
-     * 
      *  ignoreableDocument
-     * 
      * 
      ************************************************/
     
