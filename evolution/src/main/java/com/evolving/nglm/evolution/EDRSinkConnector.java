@@ -188,6 +188,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     @Override
     public Map<String, Object> getDocumentMap(Object document)
     {
+      if (ignoreableDocument(document)) return null;
       Map<String,Object> documentMap = new HashMap<String,Object>();
       Class className = document.getClass();
       log.info("RAJ K className {}", className);
@@ -244,6 +245,25 @@ public class EDRSinkConnector extends SimpleESSinkConnector
           
         }
       return documentMap;
+    }
+
+    /*************************************************
+     * 
+     * 
+     *  ignoreableDocument
+     * 
+     * 
+     ************************************************/
+    
+    private boolean ignoreableDocument(Object document)
+    {
+      boolean result = false;
+      if(document instanceof BonusDelivery)
+        {
+          BonusDelivery bonusDelivery = (BonusDelivery) document;
+          result = bonusDelivery.getOriginatingSubscriberID() != null && bonusDelivery.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED);
+        }
+      return result;
     }
   }
 }
