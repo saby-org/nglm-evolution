@@ -838,6 +838,19 @@ public class EvolutionSetup
                     }
                   }
                 }
+                else if (connectorName.equals("edr_es_sink_connector"))
+                  {
+                    System.out.println("RAJ K cheking for edr_es_sink_connector"); // RAJ K TODO
+
+                    DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PurchaseFulfillmentManager.PURCHASEFULFILLMENT_DELIVERY_TYPE);
+                    if(deliveryManagerDeclaration!=null){
+                      for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
+                        toAdd.add(topic.getName());
+                      }
+                    }
+                  
+                  }
+                
                 // need to put some dynamic topic ?
                 if(!toAdd.isEmpty()){
                   JSONObject config = (JSONObject)connectorToSetup.get("config");

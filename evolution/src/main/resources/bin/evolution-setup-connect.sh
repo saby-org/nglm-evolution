@@ -362,5 +362,31 @@ prepare-curl -XPOST $CONNECT_URL_VDR_ES/connectors -H "Content-Type: application
        "batchSize" : "'$CONNECT_ES_VDR_BATCHSIZEMB'"
        }
    }'
+   
+
+#
+#  sink connector -- EDR (elasticsearch)
+#
+
+export CONNECT_URL_EDR_ES=${CONNECT_URL_EDR_ES:-$DEFAULT_CONNECT_URL}
+export CONNECT_ES_EDR_SINK_TASKS=${CONNECT_ES_EDR_SINK_TASKS:-$CONNECT_ES_DEFAULT_SINK_TASKS}
+export CONNECT_ES_EDR_BATCHRECORDCOUNT=${CONNECT_ES_EDR_BATCHRECORDCOUNT:-$CONNECT_ES_DEFAULT_BATCHRECORDCOUNT}
+export CONNECT_ES_EDR_BATCHSIZEMB=${CONNECT_ES_EDR_BATCHSIZEMB:-$CONNECT_ES_DEFAULT_BATCHSIZEMB}
+prepare-curl -XPOST $CONNECT_URL_EDR_ES/connectors -H "Content-Type: application/json" -d '
+   {
+     "name" : "edr_es_sink_connector",
+     "config" :
+       {
+       "connector.class" : "com.evolving.nglm.evolution.EDRSinkConnector",
+       "tasks.max" : '$CONNECT_ES_EDR_SINK_TASKS',
+       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+       "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+       "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
+       "indexName" : "detailedrecords_events-",
+       "batchRecordCount" : "'$CONNECT_ES_EDR_BATCHRECORDCOUNT'",
+       "batchSize" : "'$CONNECT_ES_EDR_BATCHSIZEMB'"
+       }
+   }'
 
 wait
