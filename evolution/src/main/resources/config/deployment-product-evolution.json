@@ -102,6 +102,7 @@
     "detailedrecords_offers":           2,
     "detailedrecords_vouchers":         2,
     "detailedrecords_messages":         2,
+    "detailedrecords_events":           2,
     "journeystatistic":                 2,
     "datacube_subscriberprofile":       2,
     "datacube_loyaltyprogramshistory":  2,
@@ -1267,6 +1268,21 @@
   "externalAPITopics" : [],
   
   "generateSimpleProfileDimensions" : true,
-    
-  "recurrentCampaignCreationDaysRange" : 3
+  "recurrentCampaignCreationDaysRange" : 3,
+  
+  "edrEventsESFieldsDetails" : 
+  	[
+  		{ "eventName" : "BDR", "esModelClass" : "com.evolving.nglm.evolution.BonusDelivery", "fields" : 
+  		   	[
+  		   		{	"name" : "subscriberID", "retriever" : "getSubscriberID"	},
+  		   		{	"name" : "eventDatetime", "retriever" : "getDeliveryDate"	}
+  		   	]
+  		},
+  		{ "eventName" : "ODR", "esModelClass" : "com.evolving.nglm.evolution.PurchaseFulfillmentRequest", "fields" : 
+  		   	[
+  		   		{	"name" : "subscriberID", "retriever" : "getSubscriberID"	},
+  		   		{	"name" : "eventDatetime", "retriever" : "getEventDate"	}
+  		   	]
+  		}
+  	]
 }

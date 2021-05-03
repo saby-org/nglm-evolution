@@ -797,58 +797,44 @@ public class EvolutionSetup
 
                 // connectors on dynamic topics special case (dirty, no real easy way..., the quickest I found)
                 List<String> toAdd = new ArrayList<>();
-                if(connectorName.equals("notification_es_sink_connector")){
-                  for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
-                    if(cc.getDeliveryManagerDeclaration()!=null){
-                      // this is for generic communication channels in fact...
-                      for(Topic topic:cc.getDeliveryManagerDeclaration().getResponseTopics()){
-                        toAdd.add(topic.getName());
-                        System.out.println("Prepare to add topic for notification_es_sink_connector: " + topic.getName());
-                      }
-                    }
-                    else
-                      {
-                        // for old channels // TODO remove asap // let retrieve the configuration through deliveryType
-                        DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(cc.getDeliveryType());
-                        if(dmd != null)
-                          {
-                            for(Topic topic:dmd.getResponseTopics()){
-                              toAdd.add(topic.getName());
-                              System.out.println("Prepare to add topic for old channels notification_es_sink_connector: " + topic.getName());
-                            }
-                          }
-                        else
-                          {
-                            System.out.println("notification_es_sink_connector Don't retrieve deliveryManager config for " + cc.getDeliveryType());
-                          }
-                      }
+                if (connectorName.equals("notification_es_sink_connector"))
+                  {
+                    toAdd.addAll(getMDRTopicsToSink());
+                  } 
+                else if (connectorName.equals("bdr_es_sink_connector"))
+                  {
+                    toAdd.addAll(getBDRTopicsToSink());
+                  } 
+                else if (connectorName.equals("odr_es_sink_connector"))
+                  {
+                    toAdd.addAll(getODRTopicsToSink());
                   }
-                }else if(connectorName.equals("bdr_es_sink_connector")){
-                  for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
-                    if(!deliveryManagerDeclaration.logBDR()) continue;//not to log BDR
-                    for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
-                      toAdd.add(topic.getName());
-                    }
-                  }
-                }else if(connectorName.equals("odr_es_sink_connector")){
-                  DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PurchaseFulfillmentManager.PURCHASEFULFILLMENT_DELIVERY_TYPE);
-                  if(deliveryManagerDeclaration!=null){
-                    for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
-                      toAdd.add(topic.getName());
-                    }
-                  }
-                }
                 else if (connectorName.equals("edr_es_sink_connector"))
                   {
-                    System.out.println("RAJ K cheking for edr_es_sink_connector"); // RAJ K TODO
-
-                    DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PurchaseFulfillmentManager.PURCHASEFULFILLMENT_DELIVERY_TYPE);
-                    if(deliveryManagerDeclaration!=null){
-                      for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
-                        toAdd.add(topic.getName());
+                    for (String event : Deployment.getEdrEventsESFieldsDetails().keySet())
+                      {
+                        switch (event)
+                        {
+                          case "MDR":
+                            toAdd.addAll(getMDRTopicsToSink());
+                            break;
+                            
+                          case "BDR":
+                            toAdd.addAll(getBDRTopicsToSink());
+                            break;
+                            
+                          case "ODR":
+                            toAdd.addAll(getODRTopicsToSink());
+                            break;
+                            
+                          case "VDR":
+                            break;
+                            
+                          default:
+                            System.out.println("ERROR event " + event + " yet not supported to log an EDR");
+                            throw new EvolutionSetupException("edr_es_sink_connector");
+                        }
                       }
-                    }
-                  
                   }
                 
                 // need to put some dynamic topic ?
@@ -1034,6 +1020,69 @@ public class EvolutionSetup
             System.out.println("[DISPLAY] WARNING: Problem while closing the reader " + connectorsFilePath);
           }
       }
+  }
+
+  private static Collection<? extends String> getMDRTopicsToSink()
+  {
+    Set<String> topics = new HashSet<String>();
+    for (CommunicationChannel cc : Deployment.getCommunicationChannels().values())
+      {
+        if (cc.getDeliveryManagerDeclaration() != null)
+          {
+            // this is for generic communication channels in fact...
+            for (Topic topic : cc.getDeliveryManagerDeclaration().getResponseTopics())
+              {
+                topics.add(topic.getName());
+                System.out.println("Prepare to add topic for notification_es_sink_connector: " + topic.getName());
+              }
+          } 
+        else
+          {
+            // for old channels // TODO remove asap // let retrieve the configuration
+            // through deliveryType
+            DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(cc.getDeliveryType());
+            if (dmd != null)
+              {
+                for (Topic topic : dmd.getResponseTopics())
+                  {
+                    topics.add(topic.getName());
+                    System.out.println("Prepare to add topic for old channels notification_es_sink_connector: " + topic.getName());
+                  }
+              } else
+              {
+                System.out.println("notification_es_sink_connector Don't retrieve deliveryManager config for " + cc.getDeliveryType());
+              }
+          }
+      }
+    return topics;
+  }
+
+  private static Collection<? extends String> getBDRTopicsToSink()
+  {
+    Set<String> topics = new HashSet<String>();
+    for (DeliveryManagerDeclaration deliveryManagerDeclaration : Deployment.getDeliveryManagers().values())
+      {
+        if (!deliveryManagerDeclaration.logBDR()) continue;// not to log BDR
+        for (Topic topic : deliveryManagerDeclaration.getResponseTopics())
+          {
+            topics.add(topic.getName());
+          }
+      }
+    return topics;
+  }
+
+  private static Collection<? extends String> getODRTopicsToSink()
+  {
+    Set<String> topics = new HashSet<String>();
+    DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PurchaseFulfillmentManager.PURCHASEFULFILLMENT_DELIVERY_TYPE);
+    if (deliveryManagerDeclaration != null)
+      {
+        for (Topic topic : deliveryManagerDeclaration.getResponseTopics())
+          {
+            topics.add(topic.getName());
+          }
+      }
+    return topics;
   }
 
   /****************************************

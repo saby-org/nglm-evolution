@@ -978,7 +978,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/edr -u $EL
     "opendistro.index_state_management.policy_id": "edr_policy"
   },
   "mappings" : {
-    "_meta": { "edr" : { "version": Deployment.getElasticsearchOdrTemplateVersion() } },
+    "_meta": { "edr" : { "version": Deployment.getElasticsearchEdrTemplateVersion() } },
     "properties" : {
       "subscriberID" : { "type" : "keyword" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
