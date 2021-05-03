@@ -90,6 +90,7 @@
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
   "ESRetentionDaysVDR"              : 45,
+  "ESRetentionDaysEDR"              : 45,
   "ESRetentionWeeksDatacubeJourneys.comment": "WARNING: here it is in week",
   "ESRetentionWeeksDatacubeJourneys": 3,
   
