@@ -228,7 +228,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
                       log.info("RAJ K methodName {}", m.getName());
                       try
                         {
-                          value = m.invoke(documentMap, null);
+                          value = m.invoke(document, null);
                           log.info("RAJ K value {}", value);
                           documentMap.put(field.getFieldName(), value);
                         } 
