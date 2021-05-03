@@ -1274,14 +1274,14 @@
   	[
   		{ "eventName" : "BDR", "esModelClass" : "com.evolving.nglm.evolution.BonusDelivery", "fields" : 
   		   	[
-  		   		{	"name" : "subscriberID", "retriever" : "getSubscriberID"	},
+  		   		{	"name" : "subscriberID", "retriever" : 	"getSubscriberID"	},
   		   		{	"name" : "eventDatetime", "retriever" : "getDeliveryDate"	}
   		   	]
   		},
   		{ "eventName" : "ODR", "esModelClass" : "com.evolving.nglm.evolution.PurchaseFulfillmentRequest", "fields" : 
   		   	[
-  		   		{	"name" : "subscriberID", "retriever" : "getSubscriberID"	},
-  		   		{	"name" : "eventDatetime", "retriever" : "getEventDate"	}
+  		   		{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
+  		   		{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
   		   	]
   		}
   	]

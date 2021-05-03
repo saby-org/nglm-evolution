@@ -201,7 +201,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
                     {
                       try
                         {
-                          value = field.getRetriever().invokeExact();
+                          value = field.getRetriever().invoke(document, null);
                         } 
                       catch (Throwable e)
                         {

@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,20 +80,17 @@ public class EDREventsESFieldsDetails
   {
     private String fieldName;
     private String retrieverName;
-    private MethodHandle retriever = null;
+    private Method retriever = null;
     
     public ESField(JSONObject fieldJSON)
     {
       this.fieldName = JSONUtilities.decodeString(fieldJSON, "name", true);
       this.retrieverName = JSONUtilities.decodeString(fieldJSON, "retriever", true);
-      
-      MethodType methodType = MethodType.methodType(Object.class);
-      MethodHandles.Lookup lookup = MethodHandles.lookup();
       try
         {
-          this.retriever = lookup.findStatic(esModelClass, retrieverName, methodType);
+          this.retriever = esModelClass.getMethod(fieldName, null);
         } 
-      catch (NoSuchMethodException | IllegalAccessException e)
+      catch (NoSuchMethodException e)
         {
           throw new RuntimeException("retriever error " + e.getMessage());
         }
@@ -100,7 +98,7 @@ public class EDREventsESFieldsDetails
     
     public String getFieldName () { return fieldName; }
     public String getRetrieverName () { return retrieverName; }
-    public MethodHandle getRetriever () { return retriever; }
+    public Method getRetriever () { return retriever; }
     
   }
 
