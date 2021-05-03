@@ -828,6 +828,7 @@ public class EvolutionSetup
                             break;
                             
                           case "VDR":
+                            toAdd.add(Deployment.getVoucherChangeResponseTopic());
                             break;
                             
                           default:

@@ -1292,6 +1292,13 @@
   		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
   		   			{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
   		   		]
+  		},
+  		{ "eventName" : "VDR", "esModelClasses" : "com.evolving.nglm.evolution.VoucherChange", 
+  			"fields" : 
+  		   		[
+  		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
+  		   			{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
+  		   		]
   		}
   	]
 }

@@ -99,6 +99,14 @@ public class EDRSinkConnector extends SimpleESSinkConnector
           
           result =  PurchaseFulfillmentRequest.unpack(new SchemaAndValue(recordValueSchema, recordValue)); 
         }
+      else if (schemaName.equals(VoucherChange.schema().name()))
+        {
+          //
+          //  ODR
+          //
+          
+          result =  VoucherChange.unpack(new SchemaAndValue(recordValueSchema, recordValue)); 
+        }
       else
         {
           //
@@ -175,6 +183,15 @@ public class EDRSinkConnector extends SimpleESSinkConnector
         {
           timeZone = DeploymentCommon.getDeployment(((BonusDelivery) unchecked).getTenantID()).getTimeZone();
           eventDate = ((BonusDelivery) unchecked).getCreationDate();
+        }
+      else if (unchecked instanceof VoucherChange)
+        {
+          //
+          //  VDR
+          //
+          
+          timeZone = DeploymentCommon.getDeployment(0).getTimeZone(); // TODO EVPRO-99 ERROR! This should be mapped to tenantID.
+          eventDate = ((VoucherChange) unchecked).getEventDate();
         }
       return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(eventDate, timeZone);
     }
