@@ -220,8 +220,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
                         } 
                       catch (NoSuchMethodException | SecurityException e)
                         {
-                          if (log.isErrorEnabled()) log.error("error {}", e.getMessage()); //RAJ K
-                          e.printStackTrace();
+                          if (log.isDebugEnabled()) log.debug("error {}", e.getMessage());
                         }
                     }
                   log.info("RAJ K method {}", m);
@@ -237,8 +236,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
                         } 
                       catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
                         {
-                          if (log.isErrorEnabled()) log.error("error {}", e.getMessage()); //RAJ K
-                          e.printStackTrace();
+                          if (log.isErrorEnabled()) log.error("error {}", e.getMessage());
                         }
                     }
                 }
