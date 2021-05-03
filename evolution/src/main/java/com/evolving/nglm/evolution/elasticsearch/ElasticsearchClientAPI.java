@@ -994,7 +994,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           }
         else
           {
-            index = BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL);
+            index = "detailedrecords_events-*";
           }
         break;
         
