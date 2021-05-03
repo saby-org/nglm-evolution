@@ -192,6 +192,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = new HashMap<String,Object>();
       Class className = document.getClass();
       log.info("RAJ K className {}", className);
+      boolean edrMapped = false;
       for (String eventName : Deployment.getEdrEventsESFieldsDetails().keySet())
         {
           EDREventsESFieldsDetails edrEventsESFieldsDetails = Deployment.getEdrEventsESFieldsDetails().get(eventName);
@@ -241,10 +242,11 @@ public class EDRSinkConnector extends SimpleESSinkConnector
                         }
                     }
                 }
+              edrMapped = true;
               break;
             }
-          
         }
+      if (!edrMapped) log.warn("EDR is not mapped for request {}", className.getName());
       return documentMap;
     }
 
