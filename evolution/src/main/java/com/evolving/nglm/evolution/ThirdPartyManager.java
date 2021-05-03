@@ -1373,7 +1373,7 @@ public class ThirdPartyManager
           } else
           {
 
-            List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
+            List<JSONObject> EDRsJson = new ArrayList<JSONObject>();
 
             //
             // read history
@@ -1384,11 +1384,9 @@ public class ThirdPartyManager
             for (SearchHit hit : hits)
               {
                 Map<String, Object> esFields = hit.getSourceAsMap();
-                CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
-                Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
-                BDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
+                EDRsJson.add(JSONUtilities.encodeObject(esFields));
               }
-            response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
+            response.put("EDRs", JSONUtilities.encodeArray(EDRsJson));
             response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
             updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
           }
