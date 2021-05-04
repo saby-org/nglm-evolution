@@ -16,7 +16,7 @@
 #
 if [ "${env.USE_REGRESSION}" = "1" ]
 then
-	# speed up refresh_interval for tests : 5s instead of 30s
+# speed up refresh_interval for tests : 5s instead of 30s
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["*"],
@@ -77,7 +77,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -u $E
       }
     }]
   }
-}'
+}'	
 fi
 echo
 
