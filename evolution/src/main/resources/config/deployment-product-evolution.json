@@ -228,6 +228,7 @@
   "presentationLogTopic"                                 : "${topic.presentationlog}",
   "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
   "subscriberPredictionsPushTopic"                       : "${topic.subscriberpredictionspush}",
+  "subscriberPredictionsRequestTopic"                    : "${topic.subscriberpredictionsrequest}",
   "subscriberMessageTemplateTopic"                       : "${topic.template.subscribermessage}",
   "uploadedFileTopic"                                    : "${topic.uploadedfile}",
   "targetTopic"                                          : "${topic.target}",

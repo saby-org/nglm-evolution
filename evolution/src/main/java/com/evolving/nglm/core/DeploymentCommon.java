@@ -338,6 +338,7 @@ public class DeploymentCommon
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
   private static String subscriberPredictionsPushTopic;
+  private static String subscriberPredictionsRequestTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
@@ -656,6 +657,7 @@ public class DeploymentCommon
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
   public static String getSubscriberPredictionsPushTopic() { return subscriberPredictionsPushTopic; }
+  public static String getSubscriberPredictionsRequestTopic() { return subscriberPredictionsRequestTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
@@ -971,6 +973,7 @@ public class DeploymentCommon
     presentationLogTopic = jsonReader.decodeString("presentationLogTopic");
     acceptanceLogTopic = jsonReader.decodeString("acceptanceLogTopic");
     subscriberPredictionsPushTopic = jsonReader.decodeString("subscriberPredictionsPushTopic");
+    subscriberPredictionsRequestTopic = jsonReader.decodeString("subscriberPredictionsRequestTopic");
     segmentContactPolicyTopic = jsonReader.decodeString("segmentContactPolicyTopic");
     profileChangeEventTopic = jsonReader.decodeString("profileChangeEventTopic");
     profileSegmentChangeEventTopic = jsonReader.decodeString("profileSegmentChangeEventTopic");

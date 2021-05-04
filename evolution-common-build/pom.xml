@@ -145,6 +145,7 @@
     <topic.acceptancelog>acceptancelog</topic.acceptancelog>
     <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
     <topic.subscriberpredictionspush>subscriberpredictionspush</topic.subscriberpredictionspush>
+    <topic.subscriberpredictionsrequest>subscriberpredictionsrequest</topic.subscriberpredictionsrequest>
     <topic.tokenchange>tokenchange</topic.tokenchange>
     <topic.profilechangeevent>profilechangeevent</topic.profilechangeevent>
     <topic.profilesegmentchangeevent>profilesegmentchangeevent</topic.profilesegmentchangeevent>
