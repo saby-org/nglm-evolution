@@ -152,6 +152,7 @@ public class GUIManagerGeneral extends GUIManager
     super.targetService = targetService;
     super.tokenTypeService = tokenTypeService;
     super.ucgRuleService = ucgRuleService;
+    super.predictionOrderService = guiManagerContext.getPredictionOrderService();
     super.uploadedFileService = uploadedFileService;
     super.voucherService = voucherService;
     super.voucherTypeService = voucherTypeService;
@@ -3368,6 +3369,218 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetPredictionOrderList
+  *
+  *****************************************/
+
+  JSONObject processGetPredictionOrderList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
+  {
+    //
+    // retrieve and convert ucg rules
+    //
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> orders = new ArrayList<JSONObject>();
+    Collection <GUIManagedObject> orderObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids")) {
+      JSONArray orderIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+      for (int i = 0; i < orderIDs.size(); i++) {
+        String orderID = orderIDs.get(i).toString();
+        GUIManagedObject predictionOrder = predictionOrderService.getStoredPredictionOrder(orderID, includeArchived);
+        if (predictionOrder == null)
+          {
+            HashMap<String, Object> response = new HashMap<String, Object>();
+            String responseCode;
+            responseCode = "predictionOrderNotFound";
+            response.put("responseCode", responseCode);
+            return JSONUtilities.encodeObject(response);
+          }
+        orderObjects.add(predictionOrder);
+      }
+    }
+    else {
+      orderObjects = predictionOrderService.getStoredPredictionOrders(includeArchived, tenantID);
+    }
+    
+    for (GUIManagedObject predictionOrder : orderObjects) {
+      orders.add(predictionOrderService.generateResponseJSON(predictionOrder, fullDetails, now));
+    }
+    
+    //
+    // response
+    //
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("predictionOrders", JSONUtilities.encodeArray(orders));
+    return JSONUtilities.encodeObject(response);
+    
+  }
+  
+  /*****************************************
+  *
+  *  processGetPredictionOrder
+  *
+  *****************************************/
+
+  JSONObject processGetPredictionOrder(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
+  {
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    String predictionOrderID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    //
+    // retrieve and decorate ucg rule
+    //
+    GUIManagedObject predictionOrder = predictionOrderService.getStoredPredictionOrder(predictionOrderID, includeArchived);
+    JSONObject orderJson = predictionOrderService.generateResponseJSON(predictionOrder, true, SystemTime.getCurrentTime());
+
+    //
+    // response
+    //
+    response.put("responseCode", (predictionOrder != null) ? "ok" : "predictionOrderNotFound");
+    if (predictionOrder != null) response.put("predictionOrder", orderJson);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processPutPredictionOrder
+  *
+  *****************************************/
+
+  JSONObject processPutPredictionOrder(String userID, JSONObject jsonRoot, int tenantID)
+  {
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    boolean dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", Boolean.FALSE); // false by default
+    String predictionOrderID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    
+    if (predictionOrderID == null) {
+      predictionOrderID = predictionOrderService.generatePredictionOrderID();
+      jsonRoot.put("id", predictionOrderID);
+    }
+    
+    //
+    // existing ?
+    //
+    GUIManagedObject existingPredictionOrder = predictionOrderService.getStoredPredictionOrder(predictionOrderID);
+
+    //
+    // read-only
+    //
+    if (existingPredictionOrder != null && existingPredictionOrder.getReadOnly()) {
+      response.put("id", existingPredictionOrder.getGUIManagedObjectID());
+      response.put("accepted", existingPredictionOrder.getAccepted());
+      response.put("valid", existingPredictionOrder.getAccepted());
+      response.put("processing", predictionOrderService.isActivePredictionOrder(existingPredictionOrder, now));
+      response.put("responseCode", "failedReadOnly");
+      return JSONUtilities.encodeObject(response);
+    }
+
+    //
+    // process
+    //
+    long epoch = epochServer.getKey();
+    try
+      {
+        PredictionOrder predictionOrder = new PredictionOrder(jsonRoot, epoch, existingPredictionOrder, tenantID);
+        
+        //
+        // store
+        //
+        if (!dryRun) {
+          predictionOrderService.putPredictionOrder(predictionOrder, (existingPredictionOrder == null), userID);
+        }
+
+        //
+        // response
+        //
+        response.put("id", predictionOrder.getGUIManagedObjectID());
+        response.put("accepted", predictionOrder.getAccepted());
+        response.put("valid", predictionOrder.getAccepted());
+        response.put("processing", predictionOrderService.isActivePredictionOrder(predictionOrder, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  log
+        //
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "predictionOrderNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemovePredictionOrder
+  *
+  *****************************************/
+
+  JSONObject processRemovePredictionOrder(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Date now = SystemTime.getCurrentTime();
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    List<String> predictionOrderIDs = new LinkedList<String>();
+    
+    //
+    // remove single item
+    //
+    if (jsonRoot.containsKey("id")) {
+      String predictionOrderID = JSONUtilities.decodeString(jsonRoot, "id", false);
+      predictionOrderIDs.add(predictionOrderID);
+    }
+    
+    //
+    // multiple deletion
+    //
+    if (jsonRoot.containsKey("ids")) {
+      predictionOrderIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+    }
+    
+    //
+    // check ids
+    //
+    for(String predictionOrderID: predictionOrderIDs){
+      GUIManagedObject predictionOrder = predictionOrderService.getStoredPredictionOrder(predictionOrderID);
+      if (predictionOrder == null){
+        response.put("responseCode", "predictionOrderNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+      else if (predictionOrder != null && !force && predictionOrder.getReadOnly()) {
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+    }
+    
+    //
+    // remove
+    //
+    for(String predictionOrderID: predictionOrderIDs){
+      predictionOrderService.removePredictionOrder(predictionOrderID, userID, tenantID);
+    }
+    
+    //
+    // response
+    //
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  processGetDeliverable

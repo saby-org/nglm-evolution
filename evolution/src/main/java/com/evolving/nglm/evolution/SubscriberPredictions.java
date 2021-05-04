@@ -274,20 +274,10 @@ public class SubscriberPredictions
     // unpack
     //
     Struct valueStruct = (Struct) value;
-    List<Prediction> currentArray = ((List<Object>) valueStruct.get("currentPredictions")).stream()
-        .map(v -> Prediction.unpack(new SchemaAndValue(schema, v))).collect(Collectors.toList());
-    List<Prediction> previousArray = ((List<Object>) valueStruct.get("previousPredictions")).stream()
-        .map(v -> Prediction.unpack(new SchemaAndValue(schema, v))).collect(Collectors.toList());
-    
-    //
-    // build
-    //
-    for(Prediction prediction : currentArray) {
-      result.current.put(prediction.predictionID, prediction);
-    }
-    for(Prediction prediction : previousArray) {
-      result.previous.put(prediction.predictionID, prediction);
-    }
+    result.current = ((List<Object>) valueStruct.get("currentPredictions")).stream()
+        .map(v -> Prediction.unpack(new SchemaAndValue(schema, v))).collect(Collectors.toMap(v -> v.predictionID, v -> v));
+    result.previous = ((List<Object>) valueStruct.get("previousPredictions")).stream()
+        .map(v -> Prediction.unpack(new SchemaAndValue(schema, v))).collect(Collectors.toMap(v -> v.predictionID, v -> v));
     
     return result;
   }

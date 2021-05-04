@@ -184,6 +184,7 @@
   "offerObjectiveTopic"                                  : "${topic.offerobjective}",
   "productTypeTopic"                                     : "${topic.producttype}",
   "ucgRuleTopic"                                         : "${topic.ucgrule}",
+  "predictionOrderTopic"                                 : "${topic.predictionorder}",
   "deliverableTopic"                                     : "${topic.deliverable}",
   "tokenTypeTopic"                                       : "${topic.tokentype}",  
   "otpTypeTopic"                                         : "${topic.otptype}",
