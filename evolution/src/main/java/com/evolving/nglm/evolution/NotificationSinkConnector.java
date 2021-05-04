@@ -154,7 +154,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         SinkConnectorUtils.putAlternateIDs(mailNotification.getAlternateIDs(), documentMap);
         documentMap.put("tenantID", mailNotification.getTenantID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
-        documentMap.put("originatingDeliveryRequestID", mailNotification.getOriginatingDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", emptyStringIfNull(mailNotification.getOriginatingDeliveryRequestID()));
         documentMap.put("eventID", "");
         documentMap.put("creationDate", mailNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(mailNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", mailNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(mailNotification.getDeliveryDate()):"");
@@ -187,7 +187,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         SinkConnectorUtils.putAlternateIDs(smsNotification.getAlternateIDs(), documentMap);
         documentMap.put("tenantID", smsNotification.getTenantID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
-        documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", emptyStringIfNull(smsNotification.getOriginatingDeliveryRequestID()));
         documentMap.put("eventID", "");
         documentMap.put("creationDate", smsNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(smsNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(smsNotification.getDeliveryDate()):"");
@@ -219,7 +219,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         SinkConnectorUtils.putAlternateIDs(notifNotification.getAlternateIDs(), documentMap);
         documentMap.put("tenantID", notifNotification.getTenantID());
         documentMap.put("deliveryRequestID", notifNotification.getDeliveryRequestID());
-        documentMap.put("originatingDeliveryRequestID", notifNotification.getOriginatingDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", emptyStringIfNull(notifNotification.getOriginatingDeliveryRequestID()));
         documentMap.put("eventID", "");
         documentMap.put("creationDate", notifNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(notifNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", notifNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(notifNotification.getDeliveryDate()):"");
@@ -247,7 +247,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         SinkConnectorUtils.putAlternateIDs(pushNotification.getAlternateIDs(), documentMap);
         documentMap.put("tenantID", pushNotification.getTenantID());
         documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
-        documentMap.put("originatingDeliveryRequestID", pushNotification.getOriginatingDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", emptyStringIfNull(pushNotification.getOriginatingDeliveryRequestID()));
         documentMap.put("eventID", "");
         documentMap.put("creationDate", pushNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(pushNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", pushNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(pushNotification.getDeliveryDate()):"");
@@ -265,8 +265,12 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("contactType", pushNotification.getContactType());
         documentMap.put("destination", pushNotification.getDestination());
       }
-      
       return documentMap;
+    }
+
+    private Object emptyStringIfNull(String originatingDeliveryRequestID)
+    {
+      return originatingDeliveryRequestID==null?"":originatingDeliveryRequestID;
     }
   }
 }

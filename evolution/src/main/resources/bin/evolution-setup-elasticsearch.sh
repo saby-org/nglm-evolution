@@ -14,6 +14,40 @@
 # Those settings will be applied by default to all indexes
 # Order is intentionally set to -10 (to be taken into account before every other templates).
 #
+if [ "${env.USE_REGRESSION}" = "1" ]
+then
+	# speed up refresh_interval for tests : 5s instead of 30s
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["*"],
+  "order": -10,
+  "settings" : {
+    "index" : {
+      "number_of_shards" : "Deployment.getElasticsearchDefaultShards()",
+      "number_of_replicas" : "Deployment.getElasticsearchDefaultReplicas()",
+      "refresh_interval" : "5s",
+      "translog" : { 
+        "durability" : "async", 
+        "sync_interval" : "10s" 
+      }
+    }
+  },
+  "mappings" : {
+    "_meta": { "root" : { "version": Deployment.getElasticsearchRootTemplateVersion() } },
+    "dynamic_templates": [ {
+      "strings_as_keywords": {
+        "match_mapping_type": "string",
+        "mapping": { "type": "keyword" }
+      }
+    }, {
+      "numerics_as_integers": {
+        "match_mapping_type": "long",
+        "mapping": { "type": "integer" }
+      }
+    }]
+  }
+}'
+else
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["*"],
@@ -44,6 +78,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -u $E
     }]
   }
 }'
+fi
 echo
 
 # -------------------------------------------------------------------------------
@@ -496,9 +531,10 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
       "origin" : { "type" : "keyword", "index" : "false" },
-      "returnCode" : { "type" : "keyword" },
+      "returnCode" : { "type" : "integer" },
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
+      "originatingDeliveryRequestID" : { "type" : "keyword" },
       "contactType" : { "type" : "keyword" }
     }
   }

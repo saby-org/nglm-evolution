@@ -56,11 +56,14 @@ public abstract class StreamESSinkTask<T> extends SimpleESSinkTask
       T item = unpackRecord(sinkRecord);
       if (item != null) {
         IndexRequest request = new IndexRequest(getDocumentIndexName(item));
-        request.source(getDocumentMap(item));
-        if (! getPipelineName().equals("")) {
-          request.setPipeline(getPipelineName());
+        Map<String, Object> docMap = getDocumentMap(item);
+        if (docMap != null) {
+          request.source(docMap);
+          if (! getPipelineName().equals("")) {
+            request.setPipeline(getPipelineName());
+          }
+          return Collections.<DocWriteRequest>singletonList(request);
         }
-        return Collections.<DocWriteRequest>singletonList(request);
       }
     }
       
