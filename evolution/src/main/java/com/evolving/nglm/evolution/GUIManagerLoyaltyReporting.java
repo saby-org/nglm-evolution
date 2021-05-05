@@ -295,12 +295,18 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             break;
             
           case MISSION:
-            Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", false);
-            if (durationInDays != null)
+            jsonRoot.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "entryStartDate", true));
+            String scheduleType = JSONUtilities.decodeString(jsonRoot, "scheduleType", true);
+            if (scheduleType == "FIXDURATION")
               {
-                String effectiveStartDateStr = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", true);
-                Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(effectiveStartDateStr), durationInDays, Deployment.getSystemTimeZone());
+                Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", true);
+                String entryEndDateStr = JSONUtilities.decodeString(jsonRoot, "entryEndDate", true);
+                Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(entryEndDateStr), durationInDays, Deployment.getSystemTimeZone());
                 jsonRoot.put("effectiveEndDate", GUIManagedObject.formatDateField(effectiveEndDate));
+              }
+            else
+              {
+                jsonRoot.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "entryEndDate", true));
               }
             loyaltyProgram = new LoyaltyProgramMission(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService, tenantID);
             break;
@@ -706,13 +712,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }
             else if (loyaltyProgramType == LoyaltyProgramType.MISSION)
               {
-                Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", false);
-                if (durationInDays != null) jsonRoot.remove("effectiveEndDate");
-                loyaltyPro.put("recurrence", recurrence);
                 if (loyaltyProgram instanceof LoyaltyProgramMission)
                   {
                     MissionStep lastStep = ((LoyaltyProgramMission) loyaltyProgram).getLastStep();
                     loyaltyPro.put("lastStep", lastStep == null ? null : lastStep.getStepName());
+                    
                     //
                     //  RAJ K
                     //

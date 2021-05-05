@@ -98,6 +98,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(LoyaltyProgram.commonSchema().version(), 1));
       for (Field field : LoyaltyProgram.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("proportionalProgression", Schema.BOOLEAN_SCHEMA);
+      schemaBuilder.field("scheduleType", Schema.STRING_SCHEMA);
+      schemaBuilder.field("entryStartDate", Timestamp.builder().schema());
+      schemaBuilder.field("entryEndDate", Timestamp.builder().schema());
+      schemaBuilder.field("duration", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("createContest", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("steps", SchemaBuilder.array(MissionStep.schema()).schema());
       schema = schemaBuilder.build();
@@ -138,6 +142,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *****************************************/
 
   private boolean proportionalProgression;
+  private String scheduleType;
+  private Date entryStartDate;
+  private Date entryEndDate;
+  private Integer duration;
   private boolean createContest;
   private List<MissionStep> steps = null;
 
@@ -150,6 +158,25 @@ public class LoyaltyProgramMission extends LoyaltyProgram
   public boolean getProportionalProgression()
   {
     return proportionalProgression;
+  }
+  public String getScheduleType()
+  {
+    return scheduleType;
+  }
+
+  public Date getEntryStartDate()
+  {
+    return entryStartDate;
+  }
+
+  public Date getEntryEndDate()
+  {
+    return entryEndDate;
+  }
+
+  public Integer getDuration()
+  {
+    return duration;
   }
   public boolean getCreateContest()
   {
@@ -236,6 +263,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
 
     this.proportionalProgression = JSONUtilities.decodeBoolean(jsonRoot, "proportionalProgression", Boolean.TRUE);
     if (!proportionalProgression) throw new GUIManagerException("currently only proportionalProgression is supported", "proportionalProgression");
+    this.scheduleType = JSONUtilities.decodeString(jsonRoot, "scheduleType", true);
+    this.entryStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "entryStartDate", true));
+    this.entryEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "entryEndDate", true));
+    this.duration = JSONUtilities.decodeInteger(jsonRoot, "duration", scheduleType.equals("FIXDURATION"));
     this.createContest = JSONUtilities.decodeBoolean(jsonRoot, "createContest", Boolean.FALSE);
     this.steps = decodeLoyaltyProgramSteps(JSONUtilities.decodeJSONArray(jsonRoot, "steps", true), proportionalProgression);
 
@@ -257,10 +288,14 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *
    *****************************************/
 
-  public LoyaltyProgramMission(SchemaAndValue schemaAndValue, boolean proportionalProgression, boolean createContest, List<MissionStep> steps)
+  public LoyaltyProgramMission(SchemaAndValue schemaAndValue, boolean proportionalProgression, String scheduleType, Date entryStartDate, Date entryEndDate, Integer duration, boolean createContest, List<MissionStep> steps)
   {
     super(schemaAndValue);
     this.proportionalProgression = proportionalProgression;
+    this.scheduleType = scheduleType;
+    this.entryStartDate = entryStartDate;
+    this.entryEndDate = entryEndDate;
+    this.duration = duration;
     this.createContest = createContest;
     this.steps = steps;
   }
@@ -277,6 +312,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     Struct struct = new Struct(schema);
     LoyaltyProgram.packCommon(struct, loyaltyProgramMission);
     struct.put("proportionalProgression", loyaltyProgramMission.getProportionalProgression());
+    struct.put("scheduleType", loyaltyProgramMission.getScheduleType());
+    struct.put("entryStartDate", loyaltyProgramMission.getEntryStartDate());
+    struct.put("entryEndDate", loyaltyProgramMission.getEntryEndDate());
+    struct.put("duration", loyaltyProgramMission.getDuration());
     struct.put("createContest", loyaltyProgramMission.getCreateContest());
     struct.put("steps", packLoyaltyProgramSteps(loyaltyProgramMission.getSteps()));
     return struct;
@@ -320,6 +359,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
 
     Struct valueStruct = (Struct) value;
     boolean proportionalProgression = valueStruct.getBoolean("proportionalProgression");
+    String scheduleType = valueStruct.getString("scheduleType");
+    Date entryStartDate = (Date) valueStruct.get("entryStartDate");
+    Date entryEndDate = (Date) valueStruct.get("entryEndDate");
+    Integer duration = valueStruct.getInt32("duration");
     boolean createContest = valueStruct.getBoolean("createContest");
     List<MissionStep> steps = unpackLoyaltyProgramTiers(schema.field("steps").schema(), valueStruct.get("steps"));
 
@@ -327,7 +370,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     // return
     //
 
-    return new LoyaltyProgramMission(schemaAndValue, proportionalProgression, createContest, steps);
+    return new LoyaltyProgramMission(schemaAndValue, proportionalProgression, scheduleType, entryStartDate, entryEndDate, duration, createContest, steps);
   }
 
   /*****************************************
