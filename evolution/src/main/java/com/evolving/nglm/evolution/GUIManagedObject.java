@@ -463,6 +463,38 @@ public abstract class GUIManagedObject
     this(jsonRoot, GUIManagedObjectType.Other, epoch, tenantID);
   }
 
+  //
+  //  constructor -- deep copy
+  // 
+  // @rl in fact this deep copy should never be needed because GUIManagedObject are never updated 
+  //     they are always re-created from serialization/deserialization from Kafka or created from REST API.
+  //     If that is true, we should put every properties of GUIManagerObject FINAL to avoid any add
+  //     of setters in the future.
+  //
+  /*
+  public GUIManagedObject(GUIManagedObject copy)
+  {
+    this.jsonRepresentation = copy.jsonRepresentation;
+    this.guiManagedObjectID = copy.guiManagedObjectID;
+    this.guiManagedObjectName = copy.guiManagedObjectName;
+    this.guiManagedObjectDisplay = copy.guiManagedObjectDisplay;
+    this.guiManagedObjectType = copy.guiManagedObjectType;
+    this.epoch = copy.epoch;
+    this.effectiveStartDate = copy.effectiveEndDate;
+    this.effectiveEndDate = copy.effectiveEndDate;
+    this.readOnly = copy.readOnly;
+    this.internalOnly = copy.internalOnly;
+    this.active = copy.active;
+    this.deleted = copy.deleted;
+    this.userID = copy.userID;
+    this.userName = copy.userName;
+    this.groupID = copy.groupID;
+    this.createdDate = copy.createdDate;
+    this.updatedDate = copy.updatedDate;
+    this.tenantID = copy.tenantID;
+  }
+  */
+
   /*****************************************
   *
   *  parseRepresentation

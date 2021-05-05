@@ -12,6 +12,8 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoggerInitialization;
+import com.evolving.nglm.evolution.PredictionOrderService;
+import com.evolving.nglm.evolution.PredictionOrganizer;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.VoucherService;
@@ -34,6 +36,7 @@ public class ElasticsearchManager
   //
   private static VoucherService voucherService;
   private static JourneyService journeyService;
+  private static PredictionOrderService predictionOrderService;
   
   //
   // Elasticsearch Client
@@ -45,6 +48,7 @@ public class ElasticsearchManager
   //
   private static JobScheduler elasticsearchJobScheduler;
   private static Thread schedulerThread;
+  private static Thread predictionThread;
 
   /*****************************************
   *
@@ -77,6 +81,13 @@ public class ElasticsearchManager
   {
     /*****************************************
     *
+    *  stop prediction
+    *
+    *****************************************/
+    PredictionOrganizer.close();
+    
+    /*****************************************
+    *
     *  stop threads
     *
     *****************************************/
@@ -89,6 +100,7 @@ public class ElasticsearchManager
     *****************************************/
     journeyService.stop();
     voucherService.stop();
+    predictionOrderService.stop();
     
     /*****************************************
     *
@@ -124,6 +136,8 @@ public class ElasticsearchManager
     journeyService.start();
     voucherService = new VoucherService(bootstrapServers, "NOT_USED", Deployment.getVoucherTopic());
     voucherService.start();
+    predictionOrderService = new PredictionOrderService(bootstrapServers, Deployment.getPredictionOrderTopic(), false);
+    predictionOrderService.start();
     
     //
     // initialize ES client & GUI client
@@ -165,9 +179,20 @@ public class ElasticsearchManager
     log.info("Service initialized.");
 
     //
-    //  run
+    //  run ES scheduler
     //
     schedulerThread = new Thread(elasticsearchJobScheduler::runScheduler);
     schedulerThread.start();
+    
+    //
+    //  run prediction organizer
+    //
+    predictionThread = new Thread(new Runnable() {
+      @Override public void run()
+      {
+        PredictionOrganizer.start(elasticsearchRestClient, predictionOrderService);
+      }
+    });
+    predictionThread.start();
   }
 }

@@ -137,10 +137,10 @@ public class SubscriberPredictions
     private static Schema buildSchema()
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("subscriberpredictionpush");
+      schemaBuilder.name("subscriber_predictions_push");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
       schemaBuilder.field("subscriberID",  Schema.STRING_SCHEMA);
-      schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
+      schemaBuilder.field("eventDate",     Schema.INT64_SCHEMA);
       schemaBuilder.field("predictions",   SchemaBuilder.array(Prediction.schema));
       return schemaBuilder.build();
     };  
@@ -213,6 +213,79 @@ public class SubscriberPredictions
     @Override public Schema subscriberStreamEventSchema() { return schema; }
     @Override public Object subscriberStreamEventPack(Object value) { return pack(value); }
     @Override public DeliveryPriority getDeliveryPriority() { return DeliveryRequest.DeliveryPriority.High;} // @rl not sure ?
+  }
+  
+  /*****************************************
+  *
+  * SubscriberPredictionsRequest
+  * Object pushed by Evolution to be read by the prediction module (list of subscribers)
+  *
+  *****************************************/
+  public static class SubscriberPredictionsRequest
+  {
+    /*****************************************
+    *
+    * Schema
+    *
+    *****************************************/
+    public static final Schema schema = buildSchema();
+    private static Schema buildSchema()
+    {
+      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+      schemaBuilder.name("subscriber_predictions_request");
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.field("subscribers",   SchemaBuilder.array(Schema.STRING_SCHEMA));
+      return schemaBuilder.build();
+    };  
+    
+    private static ConnectSerde<SubscriberPredictionsRequest> serde = new ConnectSerde<SubscriberPredictionsRequest>(schema, false, SubscriberPredictionsRequest.class, SubscriberPredictionsRequest::pack, SubscriberPredictionsRequest::unpack);
+    public static Schema schema() { return schema; }
+    public static ConnectSerde<SubscriberPredictionsRequest> serde() { return serde; }
+    
+    /*****************************************
+    *
+    * Pack
+    *
+    *****************************************/
+    public static Object pack(Object value)
+    {
+      SubscriberPredictionsRequest t = (SubscriberPredictionsRequest) value;
+      
+      Struct struct = new Struct(schema);
+      struct.put("subscribers",  t.subscribers);
+      return struct;
+    }
+    
+    /*****************************************
+    *
+    * Unpack
+    *
+    *****************************************/
+    public static SubscriberPredictionsRequest unpack(SchemaAndValue schemaAndValue)
+    {
+      Schema schema = schemaAndValue.schema();
+      Object value = schemaAndValue.value();
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+
+      //
+      // unpack
+      //
+      Struct valueStruct = (Struct) value;
+      List<String> subscribers = (List<String>) valueStruct.get("predictions");
+      
+      return new SubscriberPredictionsRequest(new HashSet<String>(subscribers));
+    }
+    
+    /*****************************************
+    *
+    * Properties
+    *
+    *****************************************/
+    public Set<String> subscribers;
+    
+    public SubscriberPredictionsRequest(Set<String> subscribers) {
+      this.subscribers = subscribers;
+    }
   }
   
 

@@ -41,6 +41,8 @@ public class ScheduledJobConfiguration
     SubscriberProfileSnapshot("SubscriberProfileSnapshot"),
     JourneystatisticCleanUp("JourneystatisticCleanUp"),
     ExpiredVoucherCleanUp("ExpiredVoucherCleanUp"),
+    PredictionWakeUp("PredictionWakeUp"),
+    PredictionRequest("PredictionRequest"),
     None("none");
     private String externalRepresentation;
     private Type(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

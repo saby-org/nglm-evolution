@@ -41,11 +41,13 @@ public class PredictionOrder extends GUIManagedObject
   *
   *****************************************/
   private static Schema schema = null;
+  private static int currentSchemaVersion = 1;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("prediction_order");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), currentSchemaVersion));
+    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("description",            Schema.STRING_SCHEMA);
     schemaBuilder.field("algorithm",              Schema.STRING_SCHEMA); // PredictionAlgorithm (unique string ID)
     schemaBuilder.field("annotation",             Schema.STRING_SCHEMA); // Field to be predicted 
@@ -69,6 +71,7 @@ public class PredictionOrder extends GUIManagedObject
     PredictionOrder t = (PredictionOrder) value;
     
     Struct struct = new Struct(schema);
+    packCommon(struct, t);
     struct.put("description", t.description);
     struct.put("algorithm", t.algorithm.getExternalRepresentation());
     struct.put("annotation", t.annotation);
@@ -184,7 +187,6 @@ public class PredictionOrder extends GUIManagedObject
       }
   }
   
-
   /*****************************************
   *
   * validate
@@ -209,6 +211,7 @@ public class PredictionOrder extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), predictionOrder.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(description, predictionOrder.getDescription());
+        epochChanged = epochChanged || ! Objects.equals(algorithm, predictionOrder.getAlgorithm());
         epochChanged = epochChanged || ! Objects.equals(annotation, predictionOrder.getAnnotation());
         epochChanged = epochChanged || ! Objects.equals(frequency, predictionOrder.getFrequency());
         epochChanged = epochChanged || ! Objects.equals(targetCriteria, predictionOrder.getTargetCriteria());
