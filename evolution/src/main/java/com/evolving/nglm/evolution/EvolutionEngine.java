@@ -3316,42 +3316,44 @@ public class EvolutionEngine
       {
         // This the request of an action (cf ActionManager)
         ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber)evolutionEvent;
-
-        // set some data used to execute the associated actions (those data are cleaned a bit later just before return)
-        evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
-        evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
-
         JourneyState originalJourneyState = executeActionOtherSubscriber.getOriginatedJourneyState();
         Journey originalJourney = evolutionEventContext.getJourneyService().getActiveJourney(executeActionOtherSubscriber.getOriginalJourneyID(), evolutionEventContext.now());
-        ActionManager actionManager = null;
-        JourneyNode originalJourneyNode = null;
-        if(executeActionOtherSubscriber.getOriginatingNodeID() != null)
-          {
-            originalJourneyNode = originalJourney.getJourneyNode(executeActionOtherSubscriber.getOriginatingNodeID());
-            actionManager = originalJourneyNode.getNodeType().getActionManager();
+        if (originalJourney != null) {
+          ActionManager actionManager = null;
+          JourneyNode originalJourneyNode = null;
+          if(executeActionOtherSubscriber.getOriginatingNodeID() != null)
+            {
+              originalJourneyNode = originalJourney.getJourneyNode(executeActionOtherSubscriber.getOriginatingNodeID());
+              actionManager = originalJourneyNode.getNodeType().getActionManager();
+            }
+          if (actionManager != null) {
+            // set some data used to execute the associated actions (those data are cleaned a bit later just before return)
+            evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
+            evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
+
+            // build new SubscriberEvaluationRequest
+            SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
+                evolutionEventContext.getSubscriberState().getSubscriberProfile(),
+                (ExtendedSubscriberProfile) null,
+                subscriberGroupEpochReader,
+                originalJourneyState,
+                originalJourneyNode,
+                null,
+                null,
+                evolutionEventContext.now, tenantID);
+            List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
+            handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest);
+
+            // clean temporary data to avoid next nodes considering this event
+            evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
+            evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(null);
+
+            return true;
+          } else {
+            log.info("No action manager originatingSubscriberID : " + executeActionOtherSubscriber.getOriginatingSubscriberID() + " journeyID : " + executeActionOtherSubscriber.getOriginalJourneyID() + " nodeID : " + executeActionOtherSubscriber.getOriginatingNodeID());
           }
-
-        if(actionManager != null) {
-          // build new SubscriberEvaluationRequest
-          SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
-              evolutionEventContext.getSubscriberState().getSubscriberProfile(),
-              (ExtendedSubscriberProfile) null,
-              subscriberGroupEpochReader,
-              originalJourneyState,
-              originalJourneyNode,
-              null,
-              null,
-              evolutionEventContext.now, tenantID);
-          List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
-          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest);
-
-          // clean temporary data to avoid next nodes considering this event
-          evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
-          evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(null);
-
-          return true;
         } else {
-          log.info("No action manager originatingSubscriberID : " + executeActionOtherSubscriber.getOriginatingSubscriberID() + " journeyID : " + executeActionOtherSubscriber.getOriginalJourneyID() + " nodeID : " + executeActionOtherSubscriber.getOriginatingNodeID());
+          log.info("journeyID : " + executeActionOtherSubscriber.getOriginalJourneyID() + " cannot be found");
         }
       }
     return false;
