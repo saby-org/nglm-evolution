@@ -809,34 +809,6 @@ public class EvolutionSetup
                   {
                     toAdd.addAll(getODRTopicsToSink());
                   }
-                else if (connectorName.equals("edr_es_sink_connector"))
-                  {
-                    for (String event : Deployment.getEdrEventsESFieldsDetails().keySet())
-                      {
-                        switch (event)
-                        {
-                          case "MDR":
-                            toAdd.addAll(getMDRTopicsToSink());
-                            break;
-                            
-                          case "BDR":
-                            toAdd.addAll(getBDRTopicsToSink());
-                            break;
-                            
-                          case "ODR":
-                            toAdd.addAll(getODRTopicsToSink());
-                            break;
-                            
-                          case "VDR":
-                            toAdd.add(Deployment.getVoucherChangeResponseTopic());
-                            break;
-                            
-                          default:
-                            System.out.println("ERROR event " + event + " yet not supported to log an EDR");
-                            throw new EvolutionSetupException("edr_es_sink_connector");
-                        }
-                      }
-                  }
                 
                 // need to put some dynamic topic ?
                 if(!toAdd.isEmpty()){

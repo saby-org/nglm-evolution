@@ -7,6 +7,9 @@
 package com.evolving.nglm.evolution;
 
 import java.io.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -126,10 +129,15 @@ public class EvolutionEngine
   public static final String DELIMITER = "-X-";
   static final String INTERNAL_VARIABLE_SUPPLIER = "XXEvolSupplier".toLowerCase();
   static final String INTERNAL_VARIABLE_RESELLER = "XXEvolReseller".toLowerCase();
-  
   static final String INTERNAL_ID_SUPPLIER = "InternalIDSupplier";
   static final String INTERNAL_ID_RESELLER = "InternalIDReseller";
-
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @java.lang.annotation.Target(ElementType.TYPE)
+  public @interface GenerateEDR
+  {
+  }
+  
   /*****************************************
   *
   *  enum

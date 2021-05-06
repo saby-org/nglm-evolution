@@ -38,7 +38,6 @@ import com.evolving.nglm.evolution.CustomerMetaData;
 import com.evolving.nglm.evolution.DNBOMatrixVariable;
 import com.evolving.nglm.evolution.DeliveryManagerAccount;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
-import com.evolving.nglm.evolution.EDREventsESFieldsDetails;
 import com.evolving.nglm.evolution.EvolutionEngine;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration;
 import com.evolving.nglm.evolution.EvolutionEngineExtension;
@@ -467,7 +466,6 @@ public class DeploymentCommon
   private static long guiConfigurationCleanerThreadPeriodMs;
   private static int guiConfigurationInitialConsumerMaxPollRecords;
   private static int guiConfigurationInitialConsumerMaxFetchBytes;
-  private static Map<String, EDREventsESFieldsDetails> edrEventsESFieldsDetails;
 
 
   
@@ -566,7 +564,6 @@ public class DeploymentCommon
   public static long getGuiConfigurationCleanerThreadPeriodMs() { return guiConfigurationCleanerThreadPeriodMs; }
   public static int getGuiConfigurationInitialConsumerMaxPollRecords() { return guiConfigurationInitialConsumerMaxPollRecords; }
   public static int getGuiConfigurationInitialConsumerMaxFetchBytes() { return guiConfigurationInitialConsumerMaxFetchBytes; }
-  public static Map<String, EDREventsESFieldsDetails> getEdrEventsESFieldsDetails() { return edrEventsESFieldsDetails; }
   
   //
   // Topics
@@ -1397,14 +1394,6 @@ public class DeploymentCommon
     guiConfigurationInitialConsumerMaxPollRecords  = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxPollRecords");
     guiConfigurationInitialConsumerMaxFetchBytes = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxFetchBytes");
     
-    JSONArray edrEventsESFieldsDetailsJSON = jsonReader.decodeJSONArray("edrEventsESFieldsDetails");
-    edrEventsESFieldsDetails = new LinkedHashMap<String, EDREventsESFieldsDetails>();
-    for (int i = 0; i < edrEventsESFieldsDetailsJSON.size(); i++)
-      {
-        EDREventsESFieldsDetails edrEventsESField = new EDREventsESFieldsDetails((JSONObject) edrEventsESFieldsDetailsJSON.get(i));
-        edrEventsESFieldsDetails.put(edrEventsESField.getEventName(), edrEventsESField);
-      }
-
     //
     // configuration for extracts
     //

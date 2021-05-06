@@ -1,32 +1,53 @@
 package com.evolving.nglm.evolution;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.EDREventsESFieldsDetails.ESField;
-import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
-import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
-import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
+import com.evolving.nglm.evolution.EvolutionEngine.GenerateEDR;
 
 public class EDRSinkConnector extends SimpleESSinkConnector
 {
-  private static final Map<String, Method> EVENT_CLASS_METHOD_MAPPING = new ConcurrentHashMap<String, Method>();
+  
+  private static final String timeZone = Deployment.getDefault().getTimeZone();
+  private static final Map<String, ConnectSerde<? extends EvolutionEngineEvent>> evolutionEngineEventSerdes = new HashMap<String, ConnectSerde<? extends EvolutionEngineEvent>>();
+  
+  @Override public void start(Map<String, String> properties)
+  {
+    List<String> toAdd = new ArrayList<>();
+    for (String eventName : Deployment.getEvolutionEngineEvents().keySet())
+      {
+        EvolutionEngineEventDeclaration engineEventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
+        if (engineEventDeclaration.getEventClass() != null && engineEventDeclaration.getEventClass().getAnnotation(GenerateEDR.class) != null)
+          {
+            toAdd.add(engineEventDeclaration.getEventTopic());
+            evolutionEngineEventSerdes.put(engineEventDeclaration.getEventTopic(), engineEventDeclaration.getEventSerde());
+          }
+      }
+    
+    if (toAdd.isEmpty())
+      {
+        stop();
+        return;
+      }
+    else 
+      {
+        String topicToAdd = String.join(",",toAdd);
+        properties.put("indexName", topicToAdd);
+        super.start(properties);
+      }
+  }
   
   /****************************************
   *
@@ -45,7 +66,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class EDRSinkConnectorTask extends StreamESSinkTask<Object>
+  public static class EDRSinkConnectorTask extends StreamESSinkTask<EvolutionEngineEvent>
   {
     /*****************************************
     *
@@ -80,121 +101,30 @@ public class EDRSinkConnector extends SimpleESSinkConnector
 
     /*****************************************
     *
-    *  unpackRecord
-    *
-    *****************************************/
-    
-    @Override public Object unpackRecord(SinkRecord sinkRecord) 
-    {
-      Object result = null;
-      
-      Object recordValue = sinkRecord.value();
-      Schema recordValueSchema = sinkRecord.valueSchema();
-      String schemaName = recordValueSchema.schema().name();
-      if (schemaName.equals(PurchaseFulfillmentRequest.schema().name()))
-        {
-          //
-          //  ODR
-          //
-          
-          result =  PurchaseFulfillmentRequest.unpack(new SchemaAndValue(recordValueSchema, recordValue)); 
-        }
-      else if (schemaName.equals(VoucherChange.schema().name()))
-        {
-          //
-          //  ODR
-          //
-          
-          result =  VoucherChange.unpack(new SchemaAndValue(recordValueSchema, recordValue)); 
-        }
-      else
-        {
-          //
-          //  BDR, MDR
-          //
-          
-          for (String type : DeploymentCommon.getDeliveryManagers().keySet())
-            {
-              DeliveryManagerDeclaration manager = DeploymentCommon.getDeliveryManagers().get(type);
-              String schema = manager.getRequestSerde().schema().name();
-              if (schemaName.equals(schema))
-                {
-                  result = manager.getRequestSerde().unpack(new SchemaAndValue(recordValueSchema, recordValue));
-                }
-            }
-        }
-      
-      //
-      //  return 
-      //
-      
-      return result;
-    }
-
-    /*****************************************
-    *
     *  getDocumentIndexName
     *
     *****************************************/
     
     @Override
-    protected String getDocumentIndexName(Object unchecked)
+    protected String getDocumentIndexName(EvolutionEngineEvent evolutionEngineEvent)
     {
-      String timeZone = Deployment.getDefault().getTimeZone();
-      Date eventDate = SystemTime.getCurrentTime();
-      if (unchecked instanceof PurchaseFulfillmentRequest)
-        {
-          //
-          //  ODR
-          //
-          
-          timeZone = DeploymentCommon.getDeployment(((PurchaseFulfillmentRequest) unchecked).getTenantID()).getTimeZone();
-          eventDate = ((PurchaseFulfillmentRequest) unchecked).getEventDate();
-        } 
-      else if (unchecked instanceof BonusDelivery)
-        {
-          //
-          //  BDR
-          //
-          
-          timeZone = DeploymentCommon.getDeployment(((BonusDelivery) unchecked).getTenantID()).getTimeZone();
-          eventDate = ((BonusDelivery) unchecked).getEventDate();
-        } 
-      else if (unchecked instanceof MailNotificationManagerRequest)
-        {
-          //
-          //  MDR
-          //
-          
-          timeZone = DeploymentCommon.getDeployment(((MailNotificationManagerRequest) unchecked).getTenantID()).getTimeZone();
-          eventDate = ((MailNotificationManagerRequest) unchecked).getCreationDate();
-        } 
-      else if (unchecked instanceof SMSNotificationManagerRequest)
-        {
-          timeZone = DeploymentCommon.getDeployment(((BonusDelivery) unchecked).getTenantID()).getTimeZone();
-          eventDate = ((BonusDelivery) unchecked).getCreationDate();
-        } 
-      else if (unchecked instanceof NotificationManagerRequest)
-        {
-          timeZone = DeploymentCommon.getDeployment(((BonusDelivery) unchecked).getTenantID()).getTimeZone();
-          eventDate = ((BonusDelivery) unchecked).getCreationDate();
-        } 
-      else if (unchecked instanceof PushNotificationManagerRequest)
-        {
-          timeZone = DeploymentCommon.getDeployment(((BonusDelivery) unchecked).getTenantID()).getTimeZone();
-          eventDate = ((BonusDelivery) unchecked).getCreationDate();
-        }
-      else if (unchecked instanceof VoucherChange)
-        {
-          //
-          //  VDR
-          //
-          
-          timeZone = DeploymentCommon.getDeployment(0).getTimeZone(); // TODO EVPRO-99 ERROR! This should be mapped to tenantID.
-          eventDate = ((VoucherChange) unchecked).getEventDate();
-        }
-      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(eventDate, timeZone);
+      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(evolutionEngineEvent.getEventDate(), timeZone);
     }
+    
+    /*****************************************
+    *
+    *  unpackRecord
+    *
+    *****************************************/
+    
+    @Override public EvolutionEngineEvent unpackRecord(SinkRecord sinkRecord)
+    {
+      Object eventValue = sinkRecord.value();
+      Schema eventValueSchema = sinkRecord.valueSchema();
+      ConnectSerde<? extends EvolutionEngineEvent> connectSerde = evolutionEngineEventSerdes.get(sinkRecord.topic());
+      return connectSerde.unpack(new SchemaAndValue(eventValueSchema, eventValue));
+    }
+
     
     /*****************************************
     *
@@ -203,66 +133,30 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     *****************************************/
     
     @Override
-    public Map<String, Object> getDocumentMap(Object document)
+    public Map<String, Object> getDocumentMap(EvolutionEngineEvent evolutionEngineEvent)
     {
-      if (ignoreableDocument(document)) return null;
-      Map<String,Object> documentMap = new HashMap<String,Object>();
-      Class className = document.getClass();
-      log.info("RAJ K className {}", className);
-      boolean edrMapped = false;
-      for (String eventName : Deployment.getEdrEventsESFieldsDetails().keySet())
+      if (ignoreableDocument(evolutionEngineEvent)) return null;
+      return prepareDocumentMap(evolutionEngineEvent);
+      
+    }
+    
+    /*************************************************
+     * 
+     *  prepareDocumentMap
+     * 
+     ************************************************/
+    
+    private Map<String, Object> prepareDocumentMap(EvolutionEngineEvent evolutionEngineEvent)
+    {
+      Map<String, Object> result = new HashMap<String, Object>();
+      for (String field : evolutionEngineEvent.getEDRDocumentMap().keySet())
         {
-          EDREventsESFieldsDetails edrEventsESFieldsDetails = Deployment.getEdrEventsESFieldsDetails().get(eventName);
-          if (edrEventsESFieldsDetails.getEsModelClasses().contains(className.getName()))
-            {
-              log.info("RAJ K EDREventsESFieldsDetails {}", edrEventsESFieldsDetails.getEventName());
-              for (ESField field : edrEventsESFieldsDetails.getFields())
-                {
-                  Object value = null;
-                  String methodToInvoke = className.getName().concat(".").concat(field.getRetrieverName());
-                  Method m = null;
-                  if (EVENT_CLASS_METHOD_MAPPING.containsKey(methodToInvoke))
-                    {
-                      m = EVENT_CLASS_METHOD_MAPPING.get(methodToInvoke);
-                    }
-                  else
-                    {
-                      try
-                        {
-                          m = className.getMethod(field.getRetrieverName(), null);
-                          synchronized (EVENT_CLASS_METHOD_MAPPING)
-                            {
-                              EVENT_CLASS_METHOD_MAPPING.put(methodToInvoke, m);
-                            }
-                        } 
-                      catch (NoSuchMethodException | SecurityException e)
-                        {
-                          if (log.isDebugEnabled()) log.debug("error {}", e.getMessage());
-                        }
-                    }
-                  log.info("RAJ K method {}", m);
-                  if (m != null)
-                    {
-                      log.info("RAJ K methodName {}", m.getName());
-                      try
-                        {
-                          value = m.invoke(document, null);
-                          value = normalize(value);
-                          log.info("RAJ K value {}", value);
-                          documentMap.put(field.getFieldName(), value);
-                        } 
-                      catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
-                        {
-                          if (log.isErrorEnabled()) log.error("error {}", e.getMessage());
-                        }
-                    }
-                }
-              edrMapped = true;
-              break;
-            }
+          Object value = evolutionEngineEvent.getEDRDocumentMap().get(field);
+          result.put(field, normalize(value));
         }
-      if (!edrMapped) log.warn("EDR is not mapped for request {}", className.getName());
-      return documentMap;
+      result.put("subscriberID", evolutionEngineEvent.getSubscriberID());
+      result.put("eventDate", evolutionEngineEvent.getEventDate());
+      return result;
     }
 
     /*************************************************
@@ -287,16 +181,14 @@ public class EDRSinkConnector extends SimpleESSinkConnector
      * 
      ************************************************/
     
-    private boolean ignoreableDocument(Object document)
+    private boolean ignoreableDocument(EvolutionEngineEvent evolutionEngineEvent)
     {
       boolean result = false;
-      if(document instanceof BonusDelivery)
-        {
-          BonusDelivery bonusDelivery = (BonusDelivery) document;
-          result = bonusDelivery.getOriginatingSubscriberID() != null && bonusDelivery.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED);
-        }
+      result = evolutionEngineEvent.getEvolutionEngineEventID() == null;
+      result = result || evolutionEngineEvent.getEDRDocumentMap() == null || evolutionEngineEvent.getEDRDocumentMap().isEmpty();
       return result;
     }
+
   }
 }
 

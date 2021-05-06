@@ -1268,37 +1268,6 @@
   "externalAPITopics" : [],
   
   "generateSimpleProfileDimensions" : true,
-  "recurrentCampaignCreationDaysRange" : 3,
+  "recurrentCampaignCreationDaysRange" : 3
   
-  "edrEventsESFieldsDetails" : 
-  	[
-  		{ "eventName" : "BDR", "esModelClasses" : "com.evolving.nglm.evolution.INFulfillmentManager$INFulfillmentRequest", 
-  			"fields" : 
-  		   		[
-  		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
-  		   			{	"name" : "eventDatetime", 	"retriever" : 	"getDeliveryDate"	}
-  		   		]
-  		},
-  		{ "eventName" : "ODR", "esModelClasses" : "com.evolving.nglm.evolution.PurchaseFulfillmentManager$PurchaseFulfillmentRequest", 
-  			"fields" : 
-  		   		[
-  		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
-  		   			{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
-  		   		]
-  		},
-  		{ "eventName" : "MDR", "esModelClasses" : "com.evolving.nglm.evolution.MailNotificationManager$MailNotificationManagerRequest,com.evolving.nglm.evolution.SMSNotificationManager$SMSNotificationManagerRequest,com.evolving.nglm.evolution.NotificationManager$NotificationManagerRequest,com.evolving.nglm.evolution.PushNotificationManager$PushNotificationManagerRequest", 
-  			"fields" : 
-  		   		[
-  		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
-  		   			{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
-  		   		]
-  		},
-  		{ "eventName" : "VDR", "esModelClasses" : "com.evolving.nglm.evolution.VoucherChange", 
-  			"fields" : 
-  		   		[
-  		   			{	"name" : "subscriberID", 	"retriever" : 	"getSubscriberID"	},
-  		   			{	"name" : "eventDatetime", 	"retriever" : 	"getEventDate"		}
-  		   		]
-  		}
-  	]
 }
