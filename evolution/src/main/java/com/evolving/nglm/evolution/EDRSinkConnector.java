@@ -1,9 +1,7 @@
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
@@ -141,7 +139,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
           result.put(field, normalize(value));
         }
       result.put("subscriberID", evolutionEngineEvent.getSubscriberID());
-      result.put("eventDate", evolutionEngineEvent.getEventDate());
+      result.put("eventDate", normalize(evolutionEngineEvent.getEventDate()));
       result.put("evolutionEngineEventID", evolutionEngineEvent.getEvolutionEngineEventID());
       return result;
     }
