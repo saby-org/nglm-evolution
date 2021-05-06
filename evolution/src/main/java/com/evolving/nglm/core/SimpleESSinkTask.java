@@ -154,7 +154,7 @@ public abstract class SimpleESSinkTask extends SinkTask
     try
       {
 
-        client = new ElasticsearchClientAPI(connectorName);
+        client = new ElasticsearchClientAPI(connectorName,true);
 
         //
         //  bulkProcessor
