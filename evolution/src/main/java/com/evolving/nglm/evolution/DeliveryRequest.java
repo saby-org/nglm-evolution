@@ -427,7 +427,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.originatingRequest = true;
     this.creationDate = context.now();
     this.subscriberID = context.getSubscriberState().getSubscriberID();
-    this.eventID = this.deliveryRequestID;
+    //this.eventID = this.deliveryRequestID;
+    this.eventID = context.getEvent().getEvolutionEngineEventID();
     this.moduleID = null;
     this.featureID = null;
     this.retries = 0;

@@ -8,7 +8,9 @@ package com.evolving.nglm.core;
 
 import org.apache.kafka.connect.data.Schema;
 
+import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 public interface SubscriberStreamEvent extends SubscriberStreamPriority
@@ -43,4 +45,11 @@ public interface SubscriberStreamEvent extends SubscriberStreamPriority
   public Object subscriberStreamEventPack(Object value);
   default public SubscriberAction getSubscriberAction() { return SubscriberAction.Standard; }
   default public UUID getTrackingID() { return null; }
+  
+  public default String generateEvolutionEngineEventID() { return UUID.randomUUID().toString(); }
+  public default String getEvolutionEngineEventID() { return null; }
+  public default Map<String, Object> getEDRDocumentMap()
+  {
+    return Collections.emptyMap();
+  }
 }
