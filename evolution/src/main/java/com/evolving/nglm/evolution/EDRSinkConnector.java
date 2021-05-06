@@ -140,6 +140,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
         }
       result.put("subscriberID", evolutionEngineEvent.getSubscriberID());
       result.put("eventDate", normalize(evolutionEngineEvent.getEventDate()));
+      result.put("eventName", normalize(evolutionEngineEvent.getEventName()));
       result.put("evolutionEngineEventID", evolutionEngineEvent.getEvolutionEngineEventID());
       return result;
     }
