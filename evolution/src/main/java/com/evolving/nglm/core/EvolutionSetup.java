@@ -7,6 +7,7 @@
 package com.evolving.nglm.core;
 
 import com.evolving.nglm.evolution.*;
+import com.evolving.nglm.evolution.EvolutionEngine.GenerateEDR;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
 import com.evolving.nglm.evolution.kafka.Topic;
@@ -809,6 +810,10 @@ public class EvolutionSetup
                   {
                     toAdd.addAll(getODRTopicsToSink());
                   }
+                else if (connectorName.equals("edr_es_sink_connector"))
+                  {
+                    toAdd.addAll(getEDRTopicsToSink());
+                  }
                 
                 // need to put some dynamic topic ?
                 if(!toAdd.isEmpty()){
@@ -993,6 +998,20 @@ public class EvolutionSetup
             System.out.println("[DISPLAY] WARNING: Problem while closing the reader " + connectorsFilePath);
           }
       }
+  }
+
+  private static Collection<? extends String> getEDRTopicsToSink()
+  {
+    Set<String> topics = new HashSet<String>();
+    for (String eventName : Deployment.getEvolutionEngineEvents().keySet())
+      {
+        EvolutionEngineEventDeclaration engineEventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
+        if (engineEventDeclaration.getEventClass() != null && engineEventDeclaration.getEventClass().getAnnotation(GenerateEDR.class) != null)
+          {
+            topics.add(engineEventDeclaration.getEventTopic());
+          }
+      }
+    return topics;
   }
 
   private static Collection<? extends String> getMDRTopicsToSink()

@@ -25,28 +25,15 @@ public class EDRSinkConnector extends SimpleESSinkConnector
   
   @Override public void start(Map<String, String> properties)
   {
-    List<String> toAdd = new ArrayList<>();
     for (String eventName : Deployment.getEvolutionEngineEvents().keySet())
       {
         EvolutionEngineEventDeclaration engineEventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
         if (engineEventDeclaration.getEventClass() != null && engineEventDeclaration.getEventClass().getAnnotation(GenerateEDR.class) != null)
           {
-            toAdd.add(engineEventDeclaration.getEventTopic());
             evolutionEngineEventSerdes.put(engineEventDeclaration.getEventTopic(), engineEventDeclaration.getEventSerde());
           }
       }
-    
-    if (toAdd.isEmpty())
-      {
-        stop();
-        return;
-      }
-    else 
-      {
-        String topicToAdd = String.join(",",toAdd);
-        properties.put("indexName", topicToAdd);
-        super.start(properties);
-      }
+    super.start(properties);
   }
   
   /****************************************
@@ -137,7 +124,6 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     {
       if (ignoreableDocument(evolutionEngineEvent)) return null;
       return prepareDocumentMap(evolutionEngineEvent);
-      
     }
     
     /*************************************************
