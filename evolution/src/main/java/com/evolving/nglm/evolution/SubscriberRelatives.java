@@ -8,11 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -67,7 +63,7 @@ public class SubscriberRelatives
    *****************************************/
 
   private String parentSubscriberID;
-  private Set<String> childrenSubscriberIDs; 
+  private List<String> childrenSubscriberIDs; 
 
   /*****************************************
    *
@@ -76,7 +72,7 @@ public class SubscriberRelatives
    *****************************************/
 
   public String getParentSubscriberID() { return parentSubscriberID; }
-  public Set<String> getChildrenSubscriberIDs() { return childrenSubscriberIDs; }
+  public List<String> getChildrenSubscriberIDs() { return childrenSubscriberIDs; }
 
   /*****************************************
    *
@@ -87,9 +83,15 @@ public class SubscriberRelatives
   public void setParentSubscriberID(String parentSubscriberID) { this.parentSubscriberID = parentSubscriberID; }
   public void addChildSubscriberID(String childSubscriberID) 
   {
-    if(!this.childrenSubscriberIDs.contains(childSubscriberID)) {
-      this.childrenSubscriberIDs.add(childSubscriberID);
-    }
+    if(!this.childrenSubscriberIDs.contains(childSubscriberID)) 
+      {
+        this.childrenSubscriberIDs.add(childSubscriberID);
+      }
+    
+    while(this.childrenSubscriberIDs.size() > 10)
+      {
+        this.childrenSubscriberIDs.remove(this.childrenSubscriberIDs.remove(0));
+      }
   }
   public void removeChildSubscriberID(String childSubscriberID)
   {
@@ -102,7 +104,7 @@ public class SubscriberRelatives
    *
    *****************************************/
 
-  public SubscriberRelatives(String parentSubscriberID, Set<String> childrenSubscriberIDs)
+  public SubscriberRelatives(String parentSubscriberID, List<String> childrenSubscriberIDs)
     {
       this.parentSubscriberID = parentSubscriberID;
       this.childrenSubscriberIDs = childrenSubscriberIDs;
@@ -117,7 +119,7 @@ public class SubscriberRelatives
   public SubscriberRelatives()
     {
       this.parentSubscriberID = null;
-      this.childrenSubscriberIDs = new LinkedHashSet<String>();
+      this.childrenSubscriberIDs = new ArrayList<String>();
     }
   
   /*****************************************
@@ -156,7 +158,7 @@ public class SubscriberRelatives
    *
    ****************************************/
 
-  private static List<Object> packChildrenSubscriberIDs(Set<String> childrenSubscriberIDs)
+  private static List<Object> packChildrenSubscriberIDs(List<String> childrenSubscriberIDs)
     {
       List<Object> result = new ArrayList<Object>();
       for (String childID : childrenSubscriberIDs)
@@ -188,7 +190,7 @@ public class SubscriberRelatives
 
       Struct valueStruct = (Struct) value;
       String parentSubscriberID = valueStruct.getString("parentSubscriberID");
-      Set<String> childrenSubscriberIDs = unpackChildrenSubscriberIDs((List<String>) valueStruct.get("childrenSubscriberIDs"));
+      List<String> childrenSubscriberIDs = unpackChildrenSubscriberIDs((List<String>) valueStruct.get("childrenSubscriberIDs"));
       
       //
       // validate
@@ -196,7 +198,7 @@ public class SubscriberRelatives
 
       if (childrenSubscriberIDs == null) 
         {
-          childrenSubscriberIDs = new LinkedHashSet<String>();
+          childrenSubscriberIDs = new ArrayList<String>();
         }
 
       //
@@ -212,9 +214,9 @@ public class SubscriberRelatives
    *
    *****************************************/
 
-  private static Set<String> unpackChildrenSubscriberIDs(List<String> childrenSubscriberIDs)
+  private static List<String> unpackChildrenSubscriberIDs(List<String> childrenSubscriberIDs)
     {
-      Set<String> result = new LinkedHashSet<String>();
+      List<String> result = new ArrayList<String>();
       for (String childID : childrenSubscriberIDs)
         {
           result.add(childID);

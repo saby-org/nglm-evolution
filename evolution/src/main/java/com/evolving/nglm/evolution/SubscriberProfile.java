@@ -673,7 +673,7 @@ public abstract class SubscriberProfile
                 
               }
             String parentID = relationship.getValue().getParentSubscriberID();
-            Set<String> childrenIDs = relationship.getValue().getChildrenSubscriberIDs();
+            List<String> childrenIDs = relationship.getValue().getChildrenSubscriberIDs();
             obj.put("relationshipName", relationshipName);
             obj.put("parentCustomerID", parentID);
             obj.put("childrenCount", childrenIDs.size());
