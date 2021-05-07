@@ -1005,25 +1005,6 @@ public class Deployment
 
 
       //
-      //  communicationChannels
-      //
-
-      try
-        {
-          JSONArray communicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
-          for (int i=0; i<communicationChannelsJSONArray.size(); i++)
-            {
-              JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);
-              CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON);
-              communicationChannels.put(communicationChannel.getID(), communicationChannel);
-            }
-        }
-      catch (GUIManagerException | JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  notificationDailyWindows
       //
 
@@ -2448,6 +2429,7 @@ public class Deployment
           for (int i=0; i<criterionFieldValues.size(); i++)
             {
               JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+              log.error("MK TRACE decoding " + criterionFieldJSON.toString());
               CriterionField criterionField = new CriterionField(criterionFieldJSON);
               profileCriterionFields.put(criterionField.getID(), criterionField);
               baseProfileCriterionFields.put(criterionField.getID(), criterionField);
@@ -2460,6 +2442,25 @@ public class Deployment
 
                 profileChangeGeneratedCriterionFields.putAll(generateProfileChangeCriterionFields(criterionField));
               }
+            }
+
+          //
+          //  communicationChannels (needs to be after "profileCriterionFields" because commChannels need them)
+          //
+
+          try
+            {
+              JSONArray communicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
+              for (int i=0; i<communicationChannelsJSONArray.size(); i++)
+                {
+                  JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);
+                  CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON);
+                  communicationChannels.put(communicationChannel.getID(), communicationChannel);
+                }
+            }
+          catch (GUIManagerException | JSONUtilitiesException e)
+            {
+              throw new ServerRuntimeException("deployment", e);
             }
 
 

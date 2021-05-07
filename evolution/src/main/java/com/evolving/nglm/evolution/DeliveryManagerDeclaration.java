@@ -233,7 +233,9 @@ public class DeliveryManagerDeclaration
         if(criterionField!=null){
           subscriberProfileFields.put(fieldId,criterionField);
         }else{
-          log.error("subscriberProfileFields {} in deliveryManagerDeclaration is not a profileCriterionField",fieldId);
+          StringBuilder fieldsSB = new StringBuilder();
+          Deployment.getProfileCriterionFields().keySet().stream().forEach(f -> fieldsSB.append(f+","));
+          log.error("subscriberProfileFields {} in deliveryManagerDeclaration is not a profileCriterionField, full list is {}",fieldId, fieldsSB);
         }
     }
     return subscriberProfileFields;

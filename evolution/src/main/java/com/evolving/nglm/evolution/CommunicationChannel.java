@@ -57,6 +57,7 @@ public class CommunicationChannel extends GUIManagedObject
     String workflowGUINodeSectionID;
     int toolboxTimeout;
     String toolboxTimeoutUnit;
+    int deliveryRatePerMinute;
     // not used for old channel
     private DeliveryManagerDeclaration deliveryManagerDeclaration;
 
@@ -199,6 +200,9 @@ public class CommunicationChannel extends GUIManagedObject
       this.allowGuiTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowGuiTemplate", Boolean.TRUE);
       this.allowInLineTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowInLineTemplate", Boolean.FALSE);
       this.isGeneric =  JSONUtilities.decodeBoolean(jsonRoot, "isGeneric", Boolean.FALSE);
+      this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", Integer.MAX_VALUE);
+      JSONArray subscriberProfileFields = JSONUtilities.decodeJSONArray(jsonRoot, "subscriberProfileFields", false);
+      
       // deliveryManagerDeclaration derived
       if(isGeneric())
         {
@@ -213,6 +217,9 @@ public class CommunicationChannel extends GUIManagedObject
           this.deliveryType = deliveryType;
           jsonRoot.put("deliveryType",deliveryType);
           jsonRoot.put("requestClass", NotificationManager.NotificationManagerRequest.class.getName());
+          jsonRoot.put("deliveryRatePerMinute", deliveryRatePerMinute);
+          jsonRoot.put("subscriberProfileFields", subscriberProfileFields);
+          
           try
             {
               this.deliveryManagerDeclaration = new DeliveryManagerDeclaration(jsonRoot);
