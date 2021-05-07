@@ -1783,7 +1783,7 @@ public class EvolutionEngine
         // This is the children that set or unset a parent for a given type of relation
         String relationshipDisplay = updateParentRelationshipEvent.getRelationshipDisplay();
         String relationshipID = null;
-        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
+        for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
           {
             if (supportedRelationship.getDisplay().equals(relationshipDisplay))
               {
@@ -1836,7 +1836,7 @@ public class EvolutionEngine
         UpdateChildrenRelationshipEvent updateChildrenRelationshipEvent = (UpdateChildrenRelationshipEvent)evolutionEvent;
         String relationshipDisplay = updateChildrenRelationshipEvent.getRelationshipDisplay();
         String relationshipID = null;
-        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
+        for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
           {
             if (supportedRelationship.getDisplay().equals(relationshipDisplay))
               {

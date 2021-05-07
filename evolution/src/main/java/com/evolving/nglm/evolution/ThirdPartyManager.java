@@ -874,7 +874,7 @@ public class ThirdPartyManager
               jsonResponse = processGetTokensCodesList(jsonRoot);
               break;
             case acceptOffer:
-              jsonResponse = processAcceptOffer(jsonRoot, sync, tenantID);
+              jsonResponse = processAcceptOffer(jsonRoot, sync);
               break;
             case purchaseOffer:
               jsonResponse = processPurchaseOffer(jsonRoot,sync);
@@ -4204,7 +4204,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processAcceptOffer(JSONObject jsonRoot, boolean sync, int tenantID) throws ThirdPartyManagerException
+  private JSONObject processAcceptOffer(JSONObject jsonRoot, boolean sync) throws ThirdPartyManagerException
   {
     /****************************************
      *
@@ -4346,12 +4346,12 @@ public class ThirdPartyManager
         if (!sync)
           {
             deliveryRequestID = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
+                moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
           }
         else
           {
             purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID);
+                moduleID, featureID, origin, resellerID, kafkaProducer);
 
             deliveryRequestID = purchaseResponse.getDeliveryRequestID();
           }
