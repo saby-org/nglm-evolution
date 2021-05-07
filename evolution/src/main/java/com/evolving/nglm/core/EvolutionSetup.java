@@ -6,15 +6,29 @@
 
 package com.evolving.nglm.core;
 
-import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.EvolutionEngine.GenerateEDR;
-import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
-import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
-import com.evolving.nglm.evolution.kafka.Topic;
-import kafka.zk.AdminZkClient;
-import kafka.zk.KafkaZkClient;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.apache.avro.data.Json;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -45,23 +59,17 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.CommunicationChannel;
+import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
+import com.evolving.nglm.evolution.kafka.Topic;
 import com.google.common.net.HttpHeaders;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import kafka.zk.AdminZkClient;
+import kafka.zk.KafkaZkClient;
 
 public class EvolutionSetup
 {
@@ -810,10 +818,6 @@ public class EvolutionSetup
                   {
                     toAdd.addAll(getODRTopicsToSink());
                   }
-                else if (connectorName.equals("edr_es_sink_connector"))
-                  {
-                    toAdd.addAll(getEDRTopicsToSink());
-                  }
                 
                 // need to put some dynamic topic ?
                 if(!toAdd.isEmpty()){
@@ -998,20 +1002,6 @@ public class EvolutionSetup
             System.out.println("[DISPLAY] WARNING: Problem while closing the reader " + connectorsFilePath);
           }
       }
-  }
-
-  private static Collection<? extends String> getEDRTopicsToSink()
-  {
-    Set<String> topics = new HashSet<String>();
-    for (String eventName : Deployment.getEvolutionEngineEvents().keySet())
-      {
-        EvolutionEngineEventDeclaration engineEventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
-        if (engineEventDeclaration.getEventClass() != null && engineEventDeclaration.getEventClass().getAnnotation(GenerateEDR.class) != null)
-          {
-            topics.add(engineEventDeclaration.getEventTopic());
-          }
-      }
-    return topics;
   }
 
   private static Collection<? extends String> getMDRTopicsToSink()

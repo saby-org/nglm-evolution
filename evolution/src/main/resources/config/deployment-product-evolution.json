@@ -236,6 +236,7 @@
   "sourceAddressTopic"                                   : "${topic.sourceaddress}",
   "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
+  "edrDetailsTopic"                           			 : "${topic.edrdetails}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
 
   "supportedDataTypes" :

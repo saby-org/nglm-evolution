@@ -347,6 +347,8 @@ public class DeploymentCommon
   private static String sourceAddressTopic;
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
+  private static String edrDetailsTopic;
+  
   //
   // Others
   //
@@ -647,6 +649,8 @@ public class DeploymentCommon
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
+  public static String getEdrDetailsTopic() { return edrDetailsTopic; }
+  
   //
   // Others
   //
@@ -941,6 +945,7 @@ public class DeploymentCommon
     sourceAddressTopic = jsonReader.decodeString("sourceAddressTopic");
     voucherChangeRequestTopic = jsonReader.decodeString("voucherChangeRequestTopic");
     voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
+    edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     

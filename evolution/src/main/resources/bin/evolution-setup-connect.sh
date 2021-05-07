@@ -379,6 +379,7 @@ prepare-curl -XPOST $CONNECT_URL_EDR_ES/connectors -H "Content-Type: application
        {
        "connector.class" : "com.evolving.nglm.evolution.EDRSinkConnector",
        "tasks.max" : '$CONNECT_ES_EDR_SINK_TASKS',
+       "topics" : "${topic.edrdetails}",
        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
        "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",

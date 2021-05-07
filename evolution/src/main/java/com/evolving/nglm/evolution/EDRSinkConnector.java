@@ -8,29 +8,18 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
-import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.EvolutionEngine.GenerateEDR;
 
 public class EDRSinkConnector extends SimpleESSinkConnector
 {
   
   private static final String timeZone = Deployment.getDefault().getTimeZone();
-  private static final Map<String, ConnectSerde<? extends EvolutionEngineEvent>> evolutionEngineEventSerdes = new HashMap<String, ConnectSerde<? extends EvolutionEngineEvent>>();
   
   @Override public void start(Map<String, String> properties)
   {
-    for (String eventName : Deployment.getEvolutionEngineEvents().keySet())
-      {
-        EvolutionEngineEventDeclaration engineEventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
-        if (engineEventDeclaration.getEventClass() != null && engineEventDeclaration.getEventClass().getAnnotation(GenerateEDR.class) != null)
-          {
-            evolutionEngineEventSerdes.put(engineEventDeclaration.getEventTopic(), engineEventDeclaration.getEventSerde());
-          }
-      }
     super.start(properties);
   }
   
@@ -51,7 +40,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class EDRSinkConnectorTask extends StreamESSinkTask<EvolutionEngineEvent>
+  public static class EDRSinkConnectorTask extends StreamESSinkTask<EDRDetails>
   {
     /*****************************************
     *
@@ -91,9 +80,9 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     *****************************************/
     
     @Override
-    protected String getDocumentIndexName(EvolutionEngineEvent evolutionEngineEvent)
+    protected String getDocumentIndexName(EDRDetails eDRDetails)
     {
-      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(evolutionEngineEvent.getEventDate(), timeZone);
+      return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(eDRDetails.getEventDate(), timeZone);
     }
     
     /*****************************************
@@ -102,12 +91,11 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     *
     *****************************************/
     
-    @Override public EvolutionEngineEvent unpackRecord(SinkRecord sinkRecord)
+    @Override public EDRDetails unpackRecord(SinkRecord sinkRecord)
     {
       Object eventValue = sinkRecord.value();
       Schema eventValueSchema = sinkRecord.valueSchema();
-      ConnectSerde<? extends EvolutionEngineEvent> connectSerde = evolutionEngineEventSerdes.get(sinkRecord.topic());
-      return connectSerde.unpack(new SchemaAndValue(eventValueSchema, eventValue));
+      return EDRDetails.unpack(new SchemaAndValue(eventValueSchema, eventValue));
     }
 
     
@@ -118,10 +106,9 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     *****************************************/
     
     @Override
-    public Map<String, Object> getDocumentMap(EvolutionEngineEvent evolutionEngineEvent)
+    public Map<String, Object> getDocumentMap(EDRDetails edrDetails)
     {
-      if (ignoreableDocument(evolutionEngineEvent)) return null;
-      return prepareDocumentMap(evolutionEngineEvent);
+      return prepareDocumentMap(edrDetails);
     }
     
     /*************************************************
@@ -130,18 +117,19 @@ public class EDRSinkConnector extends SimpleESSinkConnector
      * 
      ************************************************/
     
-    private Map<String, Object> prepareDocumentMap(EvolutionEngineEvent evolutionEngineEvent)
+    private Map<String, Object> prepareDocumentMap(EDRDetails edrDetails)
     {
       Map<String, Object> result = new HashMap<String, Object>();
-      for (String field : evolutionEngineEvent.getEDRDocumentMap().keySet())
+      ParameterMap parameterMap = edrDetails.getParameterMap();
+      for (String field : parameterMap.keySet())
         {
-          Object value = evolutionEngineEvent.getEDRDocumentMap().get(field);
+          Object value = parameterMap.get(field);
           result.put(field, normalize(value));
         }
-      result.put("subscriberID", evolutionEngineEvent.getSubscriberID());
-      result.put("eventDate", normalize(evolutionEngineEvent.getEventDate()));
-      result.put("eventName", normalize(evolutionEngineEvent.getEventName()));
-      result.put("evolutionEngineEventID", evolutionEngineEvent.getEvolutionEngineEventID());
+      result.put("subscriberID", edrDetails.getSubscriberID());
+      result.put("eventDate", normalize(edrDetails.getEventDate()));
+      result.put("eventName", normalize(edrDetails.getEventName()));
+      result.put("evolutionEngineEventID", edrDetails.getEventID());
       return result;
     }
 
@@ -160,21 +148,6 @@ public class EDRSinkConnector extends SimpleESSinkConnector
         }
       return result;
     }
-
-    /*************************************************
-     * 
-     *  ignoreableDocument
-     * 
-     ************************************************/
-    
-    private boolean ignoreableDocument(EvolutionEngineEvent evolutionEngineEvent)
-    {
-      boolean result = false;
-      result = evolutionEngineEvent.getEvolutionEngineEventID() == null;
-      result = result || evolutionEngineEvent.getEDRDocumentMap() == null || evolutionEngineEvent.getEDRDocumentMap().isEmpty();
-      return result;
-    }
-
   }
 }
 
