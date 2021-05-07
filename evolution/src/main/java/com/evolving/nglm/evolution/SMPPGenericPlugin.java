@@ -202,7 +202,7 @@ public class SMPPGenericPlugin implements NotificationInterface
         } else {
           try
           {
-            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile(0), 0);
             criterionArray[i] = evaluationCriterion;
             useCriteriaMode = true; // we have at least one valid criteria => criteria mode
           }
