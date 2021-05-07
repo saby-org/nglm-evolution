@@ -3567,8 +3567,23 @@ public class EvolutionEngine
           }
         else
           {
-            int maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            Date earliestDateToKeep = null;
+            Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
+            if (maximumAcceptancesPeriodDays != Offer.UNSET) {
+              earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getBaseTimeZone());
+            } else {
+              Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
+              if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
+                if (maximumAcceptancesPeriodMonths == 1) { // current month
+                  earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getBaseTimeZone());
+                } else {
+                  earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getBaseTimeZone());
+                }
+              } else {
+                log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
+                earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
+              }
+            }
             List<Date> cleanPurchaseHistory = new ArrayList<Date>();
             Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
             List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
