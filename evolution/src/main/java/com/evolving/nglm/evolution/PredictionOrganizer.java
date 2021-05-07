@@ -1,7 +1,10 @@
 package com.evolving.nglm.evolution;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -10,13 +13,24 @@ import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.LongKey;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberPredictions.SubscriberPredictionsRequest;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -59,6 +73,38 @@ public class PredictionOrganizer
       log.error("Error while trying to push a new prediction request.",e);
     }
   }
+
+  /*****************************************
+  *
+  * Elasticsearch search request
+  *
+  *****************************************/
+  /**
+   * Retrieve the list of all subscribers matching a list of EvaluationCriterion
+   */
+  public static List<String> getSubscribers(List<EvaluationCriterion> criteriaList, int tenantID, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException, GUIManagerException {
+    BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
+    query.filter().add(QueryBuilders.termQuery("tenantID", tenantID)); // filter to keep only tenant related subscribers.
+    
+    SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder().query(query);
+    
+    log.info(searchSourceRequest.toString());  // TODO debug
+
+    List<SearchHit> hits = elasticsearch.getESHits(new SearchRequest("subscriberprofile").source(searchSourceRequest));
+    
+    List<String> result = new LinkedList<String>();
+    for (SearchHit hit : hits) {
+      Map<String, Object> esFields = hit.getSourceAsMap();
+      if((String) esFields.get("subscriberID") != null) {
+        result.add((String) esFields.get("subscriberID"));
+      }
+    }
+    
+    log.info(result.toString()); // TODO debug
+    
+    return result;
+  }
+  
   
   /*****************************************
   *
@@ -103,12 +149,25 @@ public class PredictionOrganizer
         tenantID,
         Deployment.getDeployment(tenantID).getTimeZone());
     
+    String orderID = predictionOrderID;
     ScheduledJob newJob = new ScheduledJob(config)
     {
       @Override
       protected void run()
       {
-        log.info("JOB ------ DO SOMETHING ???? ");
+        log.info("JOB ------ DO SOMETHING ???? "); // TODO remove
+        PredictionOrder order = predictionOrders.get(orderID);
+        if(order != null) {
+          try {
+            getSubscribers(order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
+          } 
+          catch (ElasticsearchStatusException | IOException | GUIManagerException e) {
+            log.error("Unable to retrieve list of subscribers matching target criteria {}", e.getMessage());
+          }
+        }
+        else {
+          log.error("Something wrong happened, lost order reference.");
+        }
       }
     };
     

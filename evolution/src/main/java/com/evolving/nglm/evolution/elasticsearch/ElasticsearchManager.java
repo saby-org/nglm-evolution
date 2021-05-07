@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.evolution.CriterionContext;
+import com.evolving.nglm.evolution.DynamicCriterionFieldService;
 import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoggerInitialization;
@@ -34,6 +36,7 @@ public class ElasticsearchManager
   //
   // Services
   //
+  private static DynamicCriterionFieldService dynamicCriterionFieldService;
   private static VoucherService voucherService;
   private static JourneyService journeyService;
   private static PredictionOrderService predictionOrderService;
@@ -91,16 +94,17 @@ public class ElasticsearchManager
     *  stop threads
     *
     *****************************************/
-    elasticsearchJobScheduler.stop();
+    if (elasticsearchJobScheduler != null) elasticsearchJobScheduler.stop();
 
     /*****************************************
     *
     *  stop services
     *
     *****************************************/
-    journeyService.stop();
-    voucherService.stop();
-    predictionOrderService.stop();
+    if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
+    if (journeyService != null) journeyService.stop();
+    if (voucherService != null) voucherService.stop();
+    if (predictionOrderService != null) predictionOrderService.stop();
     
     /*****************************************
     *
@@ -127,17 +131,6 @@ public class ElasticsearchManager
     // Logger
     //
     new LoggerInitialization().initLogger();
-
-    //
-    // Services
-    //
-    String bootstrapServers = Deployment.getBrokerServers();
-    journeyService = new JourneyService(bootstrapServers, "NOT_USED", Deployment.getJourneyTopic(), false);
-    journeyService.start();
-    voucherService = new VoucherService(bootstrapServers, "NOT_USED", Deployment.getVoucherTopic());
-    voucherService.start();
-    predictionOrderService = new PredictionOrderService(bootstrapServers, Deployment.getPredictionOrderTopic(), false);
-    predictionOrderService.start();
     
     //
     // initialize ES client & GUI client
@@ -150,6 +143,21 @@ public class ElasticsearchManager
       {
         throw new ServerRuntimeException("could not initialize elasticsearch client", e);
       }
+
+    //
+    // Services
+    //
+    String bootstrapServers = Deployment.getBrokerServers();
+    // TODO: HUGLY but necessary (dependency CriterionContext.initialize(dynamicCriterionFieldService) with JourneyService)
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "NOT_USED", Deployment.getDynamicCriterionFieldTopic(), false);
+    CriterionContext.initialize(dynamicCriterionFieldService);
+    journeyService = new JourneyService(bootstrapServers, "NOT_USED", Deployment.getJourneyTopic(), false);
+    journeyService.start();
+    voucherService = new VoucherService(bootstrapServers, "NOT_USED", Deployment.getVoucherTopic(), elasticsearchRestClient);
+    voucherService.start();
+    predictionOrderService = new PredictionOrderService(bootstrapServers, Deployment.getPredictionOrderTopic(), false);
+    predictionOrderService.start();
+    dynamicCriterionFieldService.start();
     
     //
     // Job scheduling
