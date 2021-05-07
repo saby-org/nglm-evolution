@@ -4338,9 +4338,9 @@ public class ThirdPartyManager
                   RESTAPIGenericReturnCodes.PRODUCT_PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
               return JSONUtilities.encodeObject(response);
             }
-        } 
-      deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
-        if (!sync)
+        }
+      
+       if (!sync)
           {
             deliveryRequestID = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, 1,
                 moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
