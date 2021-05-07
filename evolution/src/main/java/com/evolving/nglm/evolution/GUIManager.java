@@ -25189,7 +25189,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", "0"); // No event here
+    request.put("eventID", "event from " + Module.fromExternalRepresentation(moduleID).toString()); // No event here
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
