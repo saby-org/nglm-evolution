@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.FileWithVariableEvent;
+import com.evolving.nglm.evolution.UpdateChildrenRelationshipEvent;
 
 import io.confluent.connect.avro.AvroConverter;
 import kafka.log.Log;
@@ -106,9 +107,11 @@ public class ConnectSerde<T> implements Serde<T>
     this.useWrapper = false;
     this.schemas.put(objectClass, schema);
     this.schemasByName.put(schemaName(schema), schema);
+    this.schemasByName.put(schemaName(UpdateChildrenRelationshipEvent.schema()), UpdateChildrenRelationshipEvent.schema());
     this.optionalSchemasByName.put(schemaName(schema), optionalSchema);
     this.packSchemas.put(schema, packSchema);
     this.unpackSchemas.put(schema, unpackSchema);
+    this.unpackSchemas.put(UpdateChildrenRelationshipEvent.schema(), UpdateChildrenRelationshipEvent::unpack);
 
     /****************************************
     *
@@ -705,7 +708,7 @@ public class ConnectSerde<T> implements Serde<T>
           break;
 
         default:
-          throw new RuntimeException("unsupported type in ConnectSerde: " + schema.type());
+          throw new RuntimeException("unsupported type in ConnectSerde: " + schema.type() + " " + schema);
       }
     return result;
   }

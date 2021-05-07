@@ -20,6 +20,12 @@ import org.apache.kafka.connect.source.SourceTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.ConnectSerde.PackSchema;
+import com.evolving.nglm.core.FileSourceTask.KeyValue;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.evolution.UpdateChildrenRelationshipEvent;
+import com.evolving.nglm.evolution.UpdateParentRelationshipEvent;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,6 +65,12 @@ public abstract class FileSourceTask extends SourceTask
   //
 
   private static final Logger log = LoggerFactory.getLogger(FileSourceTask.class);
+  
+  //
+  //  static
+  //
+  
+  private static SubscriberIDService subscriberIDService;
   
   //
   //  configuration
@@ -239,6 +251,12 @@ public abstract class FileSourceTask extends SourceTask
     //
 
     errorTopic = recordTopics.get("error");
+    
+    //
+    //  subscriberIDService
+    //
+
+    subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels());
 
     /*****************************************
     *
@@ -272,6 +290,8 @@ public abstract class FileSourceTask extends SourceTask
     Runnable runConsumer = new Runnable() { @Override public void run() { runConsumer(); } };
     Thread runConsumerThread = new Thread(runConsumer, "RunConsumer");
     runConsumerThread.start();
+    
+
   }
 
   /*****************************************
@@ -289,6 +309,13 @@ public abstract class FileSourceTask extends SourceTask
     *****************************************/
 
     stopRequested = true;
+    
+    //
+    //  subscriberIDService
+    //
+
+    if (subscriberIDService != null) subscriberIDService.close();
+
 
     /*****************************************
     *
@@ -662,6 +689,73 @@ public abstract class FileSourceTask extends SourceTask
 
             result = new ArrayList<SourceRecord>();
             long recordNumber = 0;
+            
+            /*****************************************
+            *
+            *  create a KeyValue event for the parent if needed
+            *
+            *****************************************/
+            ArrayList<KeyValue> eventToAdd = null;
+            for (KeyValue recordResult : recordResults)
+              {
+                //
+                //  hierarchy relationship event generation for the parent
+                //
+                
+                Object eventObject = recordResult.getValue();
+                
+                if(recordResult instanceof KeyValueWithParentUpdate && ((KeyValueWithParentUpdate)recordResult).getUpdateParentRelationshipEvent() != null)
+                  {
+                    KeyValueWithParentUpdate keyValueWithParentUpdate = (KeyValueWithParentUpdate)recordResult;
+                    UpdateParentRelationshipEvent parentRelationEvent = keyValueWithParentUpdate.getUpdateParentRelationshipEvent();
+                    // need to create an event to the parent if this one exists
+                    // but also update the event newParent with the parent's subscriberID
+                    try
+                      {
+                        if(parentRelationEvent.getNewParent() == null || parentRelationEvent.getNewParent().equals("")) { continue; /* the event is not used for hierarchy update */}
+                        String parentSubscriberID = subscriberIDService.getSubscriberID(parentRelationEvent.getNewParentAlternateIDName(), parentRelationEvent.getNewParent());
+                        if(parentSubscriberID != null)
+                          {
+                            // update original event with internal subscriberID as newParent
+                            parentRelationEvent.setNewParent(parentSubscriberID);
+                            keyValueWithParentUpdate.setValue(keyValueWithParentUpdate.getPackSchema().pack(parentRelationEvent));
+                            
+                            // generate an event for the parent
+                            UpdateChildrenRelationshipEvent updateChildrenRelationshipEvent = 
+                                new UpdateChildrenRelationshipEvent(
+                                    parentSubscriberID, 
+                                    SystemTime.getCurrentTime(), 
+                                    parentRelationEvent.getRelationshipDisplay(),
+                                    parentRelationEvent.getSubscriberID(),
+                                    parentRelationEvent.isDeletion());
+                            KeyValue keyValue = new KeyValue(
+                                recordResult.getRecordType(), 
+                                Schema.STRING_SCHEMA,
+                                parentSubscriberID, 
+                                UpdateChildrenRelationshipEvent.schema(), 
+                                UpdateChildrenRelationshipEvent.pack(updateChildrenRelationshipEvent));
+                            if(eventToAdd == null) { eventToAdd = new ArrayList<FileSourceTask.KeyValue>(); }
+                            eventToAdd.add(keyValue);
+                          }
+                        else 
+                          {
+                            log.warn("FileSourceTask.nextSourceRecords Exception Can't retrieve Parent information " + parentRelationEvent.getNewParentAlternateIDName() + " " + parentRelationEvent.getNewParent());
+                            parentRelationEvent.setNewParent(parentSubscriberID);
+                            keyValueWithParentUpdate.setValue(keyValueWithParentUpdate.getPackSchema().pack(parentRelationEvent));
+                          }
+                      }
+                    catch (SubscriberIDServiceException e)
+                      {
+                        log.warn("FileSourceTask.nextSourceRecords Exception  " + e.getClass().getName() + " for " + parentRelationEvent.getNewParentAlternateIDName() + " " + parentRelationEvent.getNewParent());
+                        e.printStackTrace();
+                      }                    
+                  }
+              }
+            if(eventToAdd != null) { 
+              recordResults = new ArrayList<>(recordResults); // to avoid an UnsupportedOperationException
+              recordResults.addAll(eventToAdd);
+            }
+            
             for (KeyValue recordResult : recordResults)
               {
                 //
@@ -692,7 +786,7 @@ public abstract class FileSourceTask extends SourceTask
                 //
 
                 result.add(new SourceRecord(sourcePartition, sourceOffset, recordTopic, recordResult.getKeySchema(), recordResult.getKey(), recordResult.getValueSchema(), recordResult.getValue()));
-
+                
                 //
                 //  increment recordNumber
                 //
@@ -1479,7 +1573,7 @@ public abstract class FileSourceTask extends SourceTask
     private Schema keySchema;
     private Object key;
     private Schema valueSchema;
-    private Object value;
+    protected Object value;
 
     //
     //  constructor
@@ -1516,6 +1610,33 @@ public abstract class FileSourceTask extends SourceTask
     public Object getKey() { return key; }
     public Schema getValueSchema() { return valueSchema; }
     public Object getValue() { return value; }
+  }
+  
+  public static class KeyValueWithParentUpdate extends KeyValue
+  {
+    private UpdateParentRelationshipEvent updateParentRelationshipEvent;
+    private PackSchema packSchema;
+    
+    public KeyValueWithParentUpdate(String recordType, Schema keySchema, Object key, Schema valueSchema, Object value, UpdateParentRelationshipEvent updateParentRelationshipEvent, PackSchema packSchema)
+      {
+        super(recordType, keySchema, key, valueSchema, value);
+        this.updateParentRelationshipEvent = updateParentRelationshipEvent;
+        this.packSchema = packSchema;
+      }
+    
+    public UpdateParentRelationshipEvent getUpdateParentRelationshipEvent() {
+      return updateParentRelationshipEvent;
+    }
+    
+    public PackSchema getPackSchema()
+    {
+      return packSchema;
+    }
+    
+    public void setValue(Object value)
+    {
+      this.value = value;
+    }
   }
 
   /*****************************************
