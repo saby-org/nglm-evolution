@@ -4192,9 +4192,6 @@ public class ThirdPartyManager
               return JSONUtilities.encodeObject(response);
             }
         } 
-      
-       
-      deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
 
         if (!sync)
           {
