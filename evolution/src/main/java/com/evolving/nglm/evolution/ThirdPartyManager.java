@@ -82,6 +82,7 @@ import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -4339,8 +4340,6 @@ public class ThirdPartyManager
             }
         } 
       deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
-      deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
-
         if (!sync)
           {
             deliveryRequestID = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, 1,
@@ -6425,7 +6424,22 @@ public class ThirdPartyManager
         ));
     keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
     if (sync) {
-      return handleWaitingResponse(waitingResponse);
+      PurchaseFulfillmentRequest result =  handleWaitingResponse(waitingResponse);
+        if (result != null)
+          {
+            if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
+              {
+                return handleWaitingResponse(waitingResponse);
+              }
+            else
+              {
+                int returnCode = result.getStatus().getReturnCode();
+                String returnMessage = result.getStatus().name();
+                JSONObject additionalInformation = new JSONObject();
+                additionalInformation.put("deliveryRequestID", result.getDeliveryRequestID());
+                throw new ThirdPartyManagerException(returnMessage, returnCode, additionalInformation);
+              }
+          }
     }
     return purchaseRequest;
   }
