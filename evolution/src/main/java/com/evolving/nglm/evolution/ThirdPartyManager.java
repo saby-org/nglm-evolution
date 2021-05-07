@@ -4339,8 +4339,6 @@ public class ThirdPartyManager
             }
         } 
       deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
-      
-       
       deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
 
         if (!sync)
