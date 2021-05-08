@@ -1764,6 +1764,129 @@ public class EvolutionEngine
           return subscriberState;
       }
     
+
+    
+    /*****************************************
+    *
+    *  update subscriber hierarchy
+    *
+    *****************************************/
+
+    if(evolutionEvent instanceof UpdateParentRelationshipEvent && ((UpdateParentRelationshipEvent)evolutionEvent).getNewParent() != null && ((UpdateParentRelationshipEvent)evolutionEvent).getRelationshipDisplay() != null)
+      {
+        UpdateParentRelationshipEvent updateParentRelationshipEvent = (UpdateParentRelationshipEvent)evolutionEvent;
+        // This is the children that set or unset a parent for a given type of relation
+        String relationshipDisplay = updateParentRelationshipEvent.getRelationshipDisplay();
+        String relationshipID = null;
+        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
+          {
+            if (supportedRelationship.getDisplay().equals(relationshipDisplay))
+              {
+                relationshipID = supportedRelationship.getID();
+                break;
+              }
+          }
+        if(relationshipID != null)
+          {
+            if(!updateParentRelationshipEvent.isDeletion())
+              {
+                // set a parent
+                SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
+                if(sr == null)
+                  {
+                    sr = new SubscriberRelatives();
+                    subscriberProfile.getRelations().put(relationshipID, sr);        
+                  }
+                sr.setParentSubscriberID(updateParentRelationshipEvent.getNewParent());
+              }
+            else 
+              {
+                // delete a parent
+                SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
+                if(sr != null)
+                  {
+                    // no need to keep this parent
+                    if(!updateParentRelationshipEvent.getNewParent().equals(sr.getParentSubscriberID()))
+                      {
+                        // just log a warn as we remove a parent for a relation that is not the expected one...
+                        log.warn("Delete parent " + sr.getParentSubscriberID() + " instead of " + updateParentRelationshipEvent.getNewParent() + " for suscriber " + evolutionEvent.getSubscriberID());
+                      }
+                    sr.setParentSubscriberID(null);
+                  }
+                else 
+                  {
+                    // we tried to delete a parent that does not exist, just log a WARN
+                    log.warn("Delete parent where no parent is referenced " + updateParentRelationshipEvent.getNewParent() + " for suscriber " + evolutionEvent.getSubscriberID());
+                  }
+              }
+          }
+        else 
+          {
+            log.warn("relationshipDisplay is unknown " + relationshipDisplay);
+          }
+      }
+    if(evolutionEvent instanceof UpdateChildrenRelationshipEvent)
+      {
+        // This is the parent that inserts or remove a childrem from its list for a given type of relation
+        UpdateChildrenRelationshipEvent updateChildrenRelationshipEvent = (UpdateChildrenRelationshipEvent)evolutionEvent;
+        String relationshipDisplay = updateChildrenRelationshipEvent.getRelationshipDisplay();
+        String relationshipID = null;
+        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
+          {
+            if (supportedRelationship.getDisplay().equals(relationshipDisplay))
+              {
+                relationshipID = supportedRelationship.getID();
+                break;
+              }
+          }
+        if(relationshipID != null)
+          {
+            if(!updateChildrenRelationshipEvent.isDeletion())
+              {
+                // add a children
+                SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
+                if(sr == null)
+                  {
+                    sr = new SubscriberRelatives();
+                    subscriberProfile.getRelations().put(relationshipID, sr);        
+                  }
+                sr.addChildSubscriberID(updateChildrenRelationshipEvent.getChildren());
+              }
+            else 
+              {
+                // remove a children
+                SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
+                if(sr != null)
+                  {
+                    sr.removeChildSubscriberID(updateChildrenRelationshipEvent.getChildren());
+                  }
+                else 
+                  {
+                    // we tried to delete a child that does not exist, just log a WARN
+                    log.warn("Delete child where no child is referenced " + updateChildrenRelationshipEvent.getChildren() + " for suscriber " + evolutionEvent.getSubscriberID());
+                  }                
+              }
+          }
+        else 
+          {
+            log.warn("relationshipDisplay is unknown " + relationshipDisplay );
+          } 
+      }    
+    
+    // now clean unused relations
+    ArrayList<String> toRemove = new ArrayList<>();
+    for(Map.Entry<String, SubscriberRelatives> sr : subscriberProfile.getRelations().entrySet())
+      {
+        if((sr.getValue().getChildrenSubscriberIDs() == null || sr.getValue().getChildrenSubscriberIDs().size() == 0) && sr.getValue().getParentSubscriberID() == null)
+          {
+            toRemove.add(sr.getKey());
+          }
+      }
+    for(String s : toRemove)
+      {
+        subscriberProfile.getRelations().remove(s);
+      }
+    
     /*****************************************
     *
     *  profileChangeEvent get Old Values
@@ -3164,8 +3287,24 @@ public class EvolutionEngine
           }
         else
           {
-            int maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+            Date earliestDateToKeep = null;
+            Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
+            if (maximumAcceptancesPeriodDays != Offer.UNSET) {
+              earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+            } else {
+              Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
+              if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
+                if (maximumAcceptancesPeriodMonths == 1) { // current month
+                  earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+                } else {
+                  earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getDeployment(tenantID).getTimeZone());
+                }
+              } else {
+                log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
+                earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+              }
+            }
+
             List<Date> cleanPurchaseHistory = new ArrayList<Date>();
             Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
             List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);

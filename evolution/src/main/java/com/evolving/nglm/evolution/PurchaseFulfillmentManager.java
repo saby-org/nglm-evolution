@@ -782,6 +782,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.origin = (String) esFields.get("origin");
       this.resellerID = (String) esFields.get("resellerID");
       this.quantity = (Integer) esFields.get("offerQty");
+      this.returnCode = (Integer) esFields.get("returnCode");
       
       //
       // derived
@@ -1396,9 +1397,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
         List<Date> purchaseHistory = offerPurchaseHistory.get(offerID);
         int alreadyPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
-        // "Allow no more than 0 purchases" OR "within 0 days" <==> unlimited (no limit check)
-        if ((offer.getMaximumAcceptances() > 0 && offer.getMaximumAcceptancesPeriodDays() > 0) &&
-            (alreadyPurchased+purchaseRequest.getQuantity() > offer.getMaximumAcceptances()))
+        // "Allow no more than 0 purchases" OR "within 0 days/months" <==> unlimited (no limit check)
+        boolean unlimited = (
+               (offer.getMaximumAcceptances() == 0)
+            || ((offer.getMaximumAcceptancesPeriodDays() != null) && (offer.getMaximumAcceptancesPeriodDays() == 0))
+            || ((offer.getMaximumAcceptancesPeriodMonths() != null) && (offer.getMaximumAcceptancesPeriodMonths() == 0)));
+        if (!unlimited && (alreadyPurchased+purchaseRequest.getQuantity() > offer.getMaximumAcceptances()))
           {
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
