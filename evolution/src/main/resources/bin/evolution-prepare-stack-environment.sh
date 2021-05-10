@@ -982,6 +982,22 @@ do
    fi
 done
 export GUI_AUDIT_SERVER_HOST
+
+#
+#  GUI DASHBOARD LINKS -- configuration
+#
+
+GUI_LINKS_SERVER_HOST=
+for TUPLE in $GUI_LINKS_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   if [ -z "$GUI_LINKS_SERVER_HOST" ]; then
+     GUI_LINKS_SERVER_HOST="$HOST"
+   fi
+done
+export GUI_LINKS_SERVER_HOST
+
 #
 #  thirdpartymanager -- configuration
 #
