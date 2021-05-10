@@ -155,7 +155,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("tenantID", mailNotification.getTenantID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", mailNotification.getOriginatingDeliveryRequestID());
-        documentMap.put("eventID", "");
+        documentMap.put("eventID", mailNotification.getEventID());
         documentMap.put("creationDate", mailNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(mailNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", mailNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(mailNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", mailNotification.getModuleID());
