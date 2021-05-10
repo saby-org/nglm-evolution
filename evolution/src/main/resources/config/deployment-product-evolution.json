@@ -818,6 +818,11 @@
       "permissions"  : ["API-GET-CUSTOMER-BDRS"]
     },
     {
+      "id"           : "getCustomerEDRs",
+      "methodName"   : "getCustomerEDRs",
+      "permissions"  : ["API-GET-CUSTOMER-BDRS"]
+    },
+    {
       "id"           : "getCustomerODRs",
       "methodName"   : "getCustomerODRs",
       "permissions"  : ["API-GET-CUSTOMER-ODRS"]
