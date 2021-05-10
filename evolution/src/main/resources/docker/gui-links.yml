@@ -1,8 +1,8 @@
-gui-links-logstash-<_KEY_>:
+gui-links-dashboard-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-gui.dashboardlinks:${gui-links.version}
   environment:
-    ELASTICSEARCH_HOST: '<_MASTER_ESROUTER_HOST_>'
-    ELASTICSEARCH_PORT: '<_MASTER_ESROUTER_PORT_>'
+    ELASTICSEARCH_HOST: '<_DL_ELASTICSEARCH_HOST_IP_>'
+    ELASTICSEARCH_PORT: '<_DL_ELASTICSEARCH_PORT_>'
     ELASTICSEARCH_ADMIN_USER: 'admin'
     ELASTICSEARCH_ADMIN_PASSWORD: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
     ELASTICSEARCH_INDEXNAME: 'dashboard_links'
@@ -24,3 +24,4 @@ gui-links-logstash-<_KEY_>:
         - engine.labels.hostname == <_GUI_LINKS_SERVER_HOST_>
   networks:
     - outside
+    
