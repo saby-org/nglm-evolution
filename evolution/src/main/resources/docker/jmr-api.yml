@@ -6,10 +6,8 @@ jmr-api-<_KEY_>:
     JmrSettings__JMRApiBaseUrl: "http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/"
     FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
-    JmrSettings__DateTimeFormat: 'yyyy-MM-ddTHH:mm:ss:fff+0600'
+    JmrSettings__DateTimeFormat: '<_JMR_DATE_TIME_FORMAT_>'
     JmrSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
-    TZ: <_DEPLOYMENT_TIMEZONE_>
-    JMR_API_PORT: <_PORT_>
     JmrSettings__EnableApprovalMode: '<_JMRSETTINGS_ENABLEAPPROVALMODE_>'
     JmrSettings__StartWithoutObjective: '<_JMRSETTINGS_STARTWITHOUTOBJECTIVE_>'
     JmrSettings__StartWithoutObjectiveContactPolicy: '<_JMRSETTINGS_STARTWITHOUTOBJECTIVECONTACTPOLICY_>'
@@ -20,11 +18,13 @@ jmr-api-<_KEY_>:
     JmrSettings__JMRSenderName: '<_JMRSETTINGS_JMRSENDERNAME_>'
     JmrSettings__CallBackURLAfterApproveCampain: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/campaigns/startAfterApprove'
     JmrSettings__CallBackURLAfterApproveJourney: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/journeys/startAfterApprove'
-    JmrSettings__CallBackURLAfterApproveBulkCampaign: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/bulkCampaigns/startAfterApprove'
-    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
+    JmrSettings__CallBackURLAfterApproveBulkCampaign: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/bulkCampaigns/startAfterApprove' 
     FwkSettings__FileType: '<_FWKSETTINGS_FILETYPE_>' 
     FwkSettings__MaxFileSizeInMB: '<_FWKSETTINGS_MAXFILESIZEINMB_>' 
     JmrSettings__FWKApiBaseUrl: 'http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/'
+    TZ: <_DEPLOYMENT_TIMEZONE_>
+    JMR_API_PORT: <_PORT_>
+    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/jmr-api-<_KEY_>/mnt

@@ -6,6 +6,8 @@ csr-web-<_KEY_>:
     csr_api_server_path_for_upload_files: "http://<_GUI_CSR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_CSR_API_SERVER_PORT_>/api/file/flowupload"
     CSR_DNBO_INSTALL: '${gui.opc.dnbo.display}'
     CSR_NBO_INSTALL: '<_CSR_NBO_INSTALL_>'
+    SHOW_CHALLENGES: '<_CSR_SHOW_CHALLENGES_>'
+    SHOW_MISSIONS: '<_CSR_SHOW_MISSIONS_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     CSR_WEB_PORT: <_PORT_>
   deploy:

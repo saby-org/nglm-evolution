@@ -6,7 +6,8 @@ opr-api-<_KEY_>:
     FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     OprSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
-    OprSettings__KibanaUrl: "http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>/"
+    OprSettings__ODUser: 'admin' 
+    OprSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     OPR_API_PORT: <_PORT_>
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'

@@ -4,10 +4,11 @@ opr-web-<_KEY_>:
     opr_api_server_path: "http://<_GUI_OPR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPR_API_SERVER_PORT_>/api/"
     opr_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
     opr_api_server_path_for_upload_files: "http://<_GUI_OPR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPR_API_SERVER_PORT_>/api/file/flowupload"
+    OPR_GRAFANA_MONITORING: "<_OPR_GRAFANA_MONITORING_>"    
+    OPR_URL_KIBANA_PATH: 'http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>'
+    OPR_URL_GRAFANA_PATH: "<_IAR_URL_GRAFANA_PATH_>"
+    WEB_URL_ALLOW: "<_WEB_URL_ALLOW_>"
     TZ: <_DEPLOYMENT_TIMEZONE_>
-    OPR_URL_ELASTICSEARCH_PATH: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>"
-    OPR_URL_KIBANA_PATH: "http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>"
-    WEB_URL_ALLOW: "<_OPR_URL_OTHERWEB_PATH_>"
     OPR_WEB_PORT: <_PORT_>
   deploy:
     restart_policy:
