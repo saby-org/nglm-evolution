@@ -1168,7 +1168,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     String result = null;
     StringBuilder existingIndexes = new StringBuilder();
     boolean firstEntry = true;
-    if (indexCSV != null && !indexCSV.trim().isBlank())
+    if (indexCSV != null && !indexCSV.trim().isEmpty())
       {
         for (String index : indexCSV.split(","))
           {
