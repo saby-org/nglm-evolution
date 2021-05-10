@@ -127,7 +127,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
           result.put(field, normalize(value));
         }
       result.put("subscriberID", edrDetails.getSubscriberID());
-      result.put("eventDate", normalize(edrDetails.getEventDate()));
+      result.put("eventDatetime", normalize(edrDetails.getEventDate()));
       result.put("eventName", normalize(edrDetails.getEventName()));
       result.put("eventID", edrDetails.getEventID());
       return result;

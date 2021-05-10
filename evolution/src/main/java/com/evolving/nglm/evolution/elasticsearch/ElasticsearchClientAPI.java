@@ -996,6 +996,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           {
             index = "detailedrecords_events-*";
           }
+        log.info("RAJ K looking into {} index", index);
         break;
         
       case getCustomerODRs:
