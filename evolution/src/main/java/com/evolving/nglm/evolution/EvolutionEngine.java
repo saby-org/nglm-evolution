@@ -6581,6 +6581,16 @@ public class EvolutionEngine
             {
               result = getUniqueKey();
             }
+          else if (event instanceof DeliveryRequest)
+            {
+              //
+              //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
+              //
+              
+              DeliveryRequest deliveryRes = (DeliveryRequest) event;
+              if (deliveryRes.getEventID() != null) result = deliveryRes.getEventID();
+              else result = engineEvent.getEventName();
+            }
           else
             {
               result = engineEvent.getEventName();
