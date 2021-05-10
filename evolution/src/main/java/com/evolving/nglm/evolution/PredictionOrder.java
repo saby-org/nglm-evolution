@@ -101,7 +101,7 @@ public class PredictionOrder extends GUIManagedObject
     result.annotation = valueStruct.getString("annotation");
     result.frequency = valueStruct.getString("frequency");
     result.targetCriteria = ((List<Object>) valueStruct.get("targetCriteria")).stream()
-        .map(v -> EvaluationCriterion.unpack(new SchemaAndValue(schema, v))).collect(Collectors.toList());
+        .map(v -> EvaluationCriterion.unpack(new SchemaAndValue(schema.field("targetCriteria").schema().valueSchema(), v))).collect(Collectors.toList());
     
     return result;
   }
