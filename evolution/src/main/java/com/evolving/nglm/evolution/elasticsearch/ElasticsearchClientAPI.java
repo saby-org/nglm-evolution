@@ -1162,13 +1162,13 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   //
   // getExistingIndices
   //
+  
   public String getExistingIndices(String indexCSV, String defaulteValue)
   {
     String result = null;
     StringBuilder existingIndexes = new StringBuilder();
     boolean firstEntry = true;
-    
-    if (indexCSV != null)
+    if (indexCSV != null && !indexCSV.trim().isBlank())
       {
         for (String index : indexCSV.split(","))
           {
