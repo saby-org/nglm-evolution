@@ -17,7 +17,6 @@ import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
@@ -188,7 +187,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("tenantID", smsNotification.getTenantID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
-        documentMap.put("eventID", "");
+        documentMap.put("eventID", smsNotification.getEventID());
         documentMap.put("creationDate", smsNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(smsNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(smsNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", smsNotification.getModuleID());
@@ -220,7 +219,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("tenantID", notifNotification.getTenantID());
         documentMap.put("deliveryRequestID", notifNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", notifNotification.getOriginatingDeliveryRequestID());
-        documentMap.put("eventID", "");
+        documentMap.put("eventID", notifNotification.getEventID());
         documentMap.put("creationDate", notifNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(notifNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", notifNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(notifNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", notifNotification.getModuleID());
@@ -248,7 +247,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("tenantID", pushNotification.getTenantID());
         documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", pushNotification.getOriginatingDeliveryRequestID());
-        documentMap.put("eventID", "");
+        documentMap.put("eventID", pushNotification.getEventID());
         documentMap.put("creationDate", pushNotification.getCreationDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(pushNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", pushNotification.getDeliveryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(pushNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", pushNotification.getModuleID());

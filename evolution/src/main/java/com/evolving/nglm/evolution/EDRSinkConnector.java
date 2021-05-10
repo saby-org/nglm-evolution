@@ -7,6 +7,8 @@ import java.util.Map;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
@@ -16,6 +18,11 @@ import com.evolving.nglm.core.StreamESSinkTask;
 
 public class EDRSinkConnector extends SimpleESSinkConnector
 {
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(EDRSinkConnector.class);
   
   @Override public void start(Map<String, String> properties)
   {
@@ -131,6 +138,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
       result.put("eventName", normalize(edrDetails.getEventName()));
       result.put("eventID", edrDetails.getEventID());
       result.put("tenantID", edrDetails.getTenantID());
+      log.info("RAJ K result {}", result);
       return result;
     }
 
