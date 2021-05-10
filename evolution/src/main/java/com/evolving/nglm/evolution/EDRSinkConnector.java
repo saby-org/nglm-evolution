@@ -138,7 +138,6 @@ public class EDRSinkConnector extends SimpleESSinkConnector
       result.put("eventName", normalize(edrDetails.getEventName()));
       result.put("eventID", edrDetails.getEventID());
       result.put("tenantID", edrDetails.getTenantID());
-      log.info("RAJ K result {}", result);
       return result;
     }
 
