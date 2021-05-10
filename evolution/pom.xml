@@ -54,6 +54,7 @@
     <gui-lpm.version>1.5.9</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.5</gui-audit.version>
+    <gui-links.version>1.0.1</gui-links.version>
 
     <!-- dependencies - mysql -->
     <mysql.gui.version>8.0.13</mysql.gui.version>    
