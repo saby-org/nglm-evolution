@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.LongKey;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
@@ -50,8 +52,10 @@ public class PredictionOrganizer
   * SubscriberPredictionsRequest producer
   *
   *****************************************/
+  private static int BATCH_SIZE = 1000;
+  
   private static String requestTopic = Deployment.getSubscriberPredictionsRequestTopic(); // Topic(SubscriberID, List<SubscriberID>)  
-  private static ConnectSerde<LongKey> keySerde = LongKey.serde();
+  private static ConnectSerde<StringKey> keySerde = StringKey.serde();
   private static ConnectSerde<SubscriberPredictionsRequest> valueSerde = SubscriberPredictionsRequest.serde();
   private static KafkaProducer<byte[], byte[]> kafkaProducer;
   static {
@@ -63,10 +67,10 @@ public class PredictionOrganizer
     kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
   }
   
-  public static void send(Long predictionID, Set<String> subscriberIDs) {
+  public static void send(String predictionID, Set<String> subscriberIDs) {
     try {
       kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, 
-          keySerde.serializer().serialize(requestTopic, new LongKey(predictionID)),
+          keySerde.serializer().serialize(requestTopic, new StringKey(predictionID)),
           valueSerde.serializer().serialize(requestTopic, new SubscriberPredictionsRequest(subscriberIDs)))).get();
     } 
     catch (InterruptedException|ExecutionException e) {
@@ -155,11 +159,29 @@ public class PredictionOrganizer
       @Override
       protected void run()
       {
-        log.info("JOB ------ DO SOMETHING ???? "); // TODO remove
         PredictionOrder order = predictionOrders.get(orderID);
         if(order != null) {
           try {
-            getSubscribers(order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
+            List<String> subscribers = getSubscribers(order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
+            Set<String> batch = new HashSet<String>();
+            
+            for(String subscriberID: subscribers) {
+              batch.add(subscriberID);
+              if(batch.size() >= BATCH_SIZE) {
+                //
+                // push
+                //
+                send(order.getGUIManagedObjectID(), batch);
+                batch = new HashSet<String>();
+              }
+            }
+            
+            //
+            // push remaining
+            //
+            if(batch.size() > 0) {
+              send(orderID, batch);
+            }
           } 
           catch (ElasticsearchStatusException | IOException | GUIManagerException e) {
             log.error("Unable to retrieve list of subscribers matching target criteria {}", e.getMessage());
@@ -192,7 +214,7 @@ public class PredictionOrganizer
         ScheduledJobConfiguration.Type.PredictionWakeUp, 
         true, // enabled 
         true, // schedule at restart
-        "* * * * *", // Every minute
+        "* * * * *", // Every minute // TODO CHANGE AFTER DEV ?
         0,
         Deployment.getDefault().getTimeZone());
     

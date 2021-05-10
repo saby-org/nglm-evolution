@@ -34,7 +34,7 @@ public class SubscriberPredictions
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("prediction");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-      schemaBuilder.field("predictionID",  Schema.INT64_SCHEMA);
+      schemaBuilder.field("predictionID",  Schema.STRING_SCHEMA);
       schemaBuilder.field("score",         Schema.FLOAT64_SCHEMA);
       schemaBuilder.field("position",      Schema.FLOAT64_SCHEMA);
       schemaBuilder.field("date",          Schema.INT64_SCHEMA);
@@ -73,7 +73,7 @@ public class SubscriberPredictions
       // unpack
       //
       Struct valueStruct = (Struct) value;
-      Long predictionID = valueStruct.getInt64("predictionID");
+      String predictionID = valueStruct.getString("predictionID");
       Double score = valueStruct.getFloat64("score");
       Double position = valueStruct.getFloat64("position");
       Long date = valueStruct.getInt64("date");
@@ -86,12 +86,12 @@ public class SubscriberPredictions
     * Properties
     *
     *****************************************/
-    public long predictionID;
+    public String predictionID;
     public double score;
     public double position; // [0,1[ (p/PopSize)
     public Date date;
     
-    public Prediction(long predictionID, double score, double position, Date date) {
+    public Prediction(String predictionID, double score, double position, Date date) {
       this.predictionID = predictionID;
       this.score = score; 
       this.position = position;
@@ -360,16 +360,16 @@ public class SubscriberPredictions
   * Properties
   *
   *****************************************/
-  private Map<Long, Prediction> current;  // Key is PredictionID
-  private Map<Long, Prediction> previous; // Key is PredictionID
+  private Map<String, Prediction> current;  // Key is PredictionID
+  private Map<String, Prediction> previous; // Key is PredictionID
 
   /*****************************************
   *
   * Accessors
   *
   *****************************************/
-  public Map<Long, Prediction> getCurrent(){ return this.current; }
-  public Map<Long, Prediction> getPrevious(){ return this.previous; }
+  public Map<String, Prediction> getCurrent(){ return this.current; }
+  public Map<String, Prediction> getPrevious(){ return this.previous; }
   public Double getPredictionScore(Long predictionID) { return (current.get(predictionID) != null) ? current.get(predictionID).score : null; }
   public Integer getPredictionDecile(Long predictionID) { return (current.get(predictionID) != null) ? current.get(predictionID).getDecileInterval() : null; }
 
@@ -403,7 +403,7 @@ public class SubscriberPredictions
   public void update(SubscriberPredictionsPush push) 
   {
     for(Prediction prediction: push.predictions) {
-      Long predictionID = prediction.predictionID;
+      String predictionID = prediction.predictionID;
       if(this.current.get(predictionID) == null) {
         // New prediction 
         this.current.put(predictionID, prediction);
