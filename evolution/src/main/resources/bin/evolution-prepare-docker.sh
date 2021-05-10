@@ -37,6 +37,7 @@ do
       docker pull ${env.DOCKER_REGISTRY}lpm.web:${gui-lpm.version}
       docker pull ${env.DOCKER_REGISTRY}lpm.api:${gui-lpm.version}
       docker pull ${env.DOCKER_REGISTRY}ev-gui.auditlogstash:${gui-audit.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-gui.dashboardlinks:${gui-links.version}
       docker pull ${env.DOCKER_REGISTRY}ev-e4o-flyway:${flyway.version}
       docker pull ${env.DOCKER_REGISTRY}ev-gui.sqlscripts:${flyway.gui.version}
 

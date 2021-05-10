@@ -992,8 +992,20 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/gui-audit.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
+#
+#  gui-links
+#
+
+for TUPLE in $GUI_LINKS_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   cat $DEPLOY_ROOT/docker/gui-links.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
 

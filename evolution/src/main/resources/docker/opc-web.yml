@@ -3,16 +3,24 @@ opc-web-<_KEY_>:
   environment:
     opc_api_server_path: "http://<_GUI_OPC_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPC_API_SERVER_PORT_>/api/"
     opc_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
-    opc_fwk_api_server_path_for_upload_files: "http://<_GUI_OPC_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPC_API_SERVER_PORT_>/api/file/flowupload"
-    TZ: <_DEPLOYMENT_TIMEZONE_>
+    opc_fwk_api_server_path_for_upload_files: "http://<_GUI_OPC_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPC_API_SERVER_PORT_>/api/file/flowupload"    
     OPC_DNBO_INSTALL: '${gui.opc.dnbo.display}'
     OPC_DNBO_Scoring_AlwaysAppendOfferObjectiveIDs: 'true'
     OPC_URL_KIBANA_PATH: 'http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>'
-    WEB_URL_ALLOW: "<_OPC_URL_OTHERWEB_PATH_>"
+    OPC_URL_GRAFANA_PATH: "<_IAR_URL_GRAFANA_PATH_>"
+    WEB_URL_ALLOW: "<_WEB_URL_ALLOW_>"
+    OPC_REGEX_DISPLAY: '<_OPC_REGEX_DISPLAY_>'
     OPC_SHOW_SUPPLIER_CATEGORY: '<_OPC_SHOW_SUPPLIER_CATEGORY_>'
     OPC_SHOW_SUPPLIER_LOCATION: '<_OPC_SHOW_SUPPLIER_LOCATION_>'
     OPC_SHOW_RESELLER_CATEGORY: '<_OPC_SHOW_RESELLER_CATEGORY_>'
     OPC_SHOW_RESELLER_LOCATION: '<_OPC_SHOW_RESELLER_LOCATION_>'
+    DIALOG_TEMPLATE_SMS: '<_DIALOG_TEMPLATE_SMS_>'
+    DIALOG_TEMPLATE_EMAIL: '<_DIALOG_TEMPLATE_EMAIL_>'
+    DIALOG_TEMPLATE_PUSH: '<_DIALOG_TEMPLATE_PUSH_>'
+    DIALOG_TEMPLATE_GENERIC: '<_DIALOG_TEMPLATE_GENERIC_>'
+    EXPORT_IMPORT_ENABLED: '<_OPC_EXPORT_IMPORT_ENABLED_>'
+    OPC_OFFER_ONLY_ONE_PRODUCT_OR_VOUCHER: '<_OPC_OFFER_ONLY_ONE_PRODUCT_OR_VOUCHER_>'
+    TZ: <_DEPLOYMENT_TIMEZONE_>
     OPC_WEB_PORT: <_PORT_>
   deploy:
     restart_policy:
@@ -27,4 +35,3 @@ opc-web-<_KEY_>:
         - engine.labels.hostname == <_GUI_OPC_WEB_SERVER_HOST_>
   networks:
     - outside
-

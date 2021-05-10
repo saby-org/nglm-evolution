@@ -7,15 +7,12 @@ fwk-api-<_KEY_>:
     FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     Audit__Nodes: '<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
-    Audit__Index: 'auditlogs-*'
-    TZ: <_DEPLOYMENT_TIMEZONE_>
-    FWK_API_PORT: <_PORT_>
+    Audit__Index: 'auditlogs-*'   
     FwkSettings__PasswordMinLength: <_FWKSETTINGS_PASSWORDMINLENGTH_>
     FwkSettings__PasswordDigitCheck: '<_FWKSETTINGS_PASSWORDDIGITCHECK_>'
     FwkSettings__PasswordUpperCheck: '<_FWKSETTINGS_PASSWORDUPPERCHECK_>'
     FwkSettings__PasswordLowerCheck: '<_FWKSETTINGS_PASSWORDLOWERCHECK_>'
     FwkSettings__PasswordSpecialCharsCheck: '<_FWKSETTINGS_PASSWORDSPECIALCHARSCHECK_>'
-    FwkSettings__PasswordDigitCheck: '<_FWKSETTINGS_PASSWORDDIGITCHECK_>'
     FwkSettings__PasswordHistoryCheckNo:  <_FWKSETTINGS_PASSWORDHISTORYCHECKNO_>
     FwkSettings__PasswordExpireDays: <_FWKSETTINGS_PASSWORDEXPIREDAYS_>
     FwkSettings__ResetPasswordTokenExpireMinutes: <_FWKSETTINGS_RESETPASSWORDTOKENEXPIREMINUTES_>
@@ -26,12 +23,14 @@ fwk-api-<_KEY_>:
     Email__Smtp__Port: <_FWKSETTINGS_EMAIL_SMTP_PORT_>
     Email__Smtp__Username: '<_FWKSETTINGS_EMAIL_SMTP_USERNAME_>'
     Email__Smtp__Password: '<_FWKSETTINGS_EMAIL_SMTP_PASSWORD_>'
-    Email__Smtp__EnableSsl: '<_FWKSETTINGS_EMAIL_SMTP_ENABLESSL_>'
-    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
+    Email__Smtp__EnableSsl: '<_FWKSETTINGS_EMAIL_SMTP_ENABLESSL_>'    
     FwkSettings__WebCallbackUrl: '<_FWKSETTINGS_WEBCALLBACKURL_>'
     FwkGuiManagerSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
     Audit__ODUser: 'admin'
     Audit__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
+    TZ: <_DEPLOYMENT_TIMEZONE_>
+    FWK_API_PORT: <_PORT_>
+    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/fwk-api-<_KEY_>/mnt

@@ -7,11 +7,11 @@ lpm-api-<_KEY_>:
     LPMSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     LPMSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
+    ReportSettings__ODUser: 'admin'
+    ReportSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     LPM_API_PORT: <_PORT_>
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
-    ReportSettings__ODUser: 'admin'
-    ReportSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/lpm-api-<_KEY_>/mnt
