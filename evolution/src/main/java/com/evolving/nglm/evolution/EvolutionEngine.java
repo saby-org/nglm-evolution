@@ -4242,6 +4242,7 @@ public class EvolutionEngine
   private static boolean updateEDRs(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
   {
     SubscriberState subscriberState = context.getSubscriberState();
+    int tenantID = subscriberState.getSubscriberProfile().getTenantID();
     EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) evolutionEvent;
     EvolutionEngineEventDeclaration declaration = Deployment.getEvolutionEngineEvents().get(engineEvent.getEventName());
     ParameterMap parameterMap = new ParameterMap();
@@ -4252,7 +4253,7 @@ public class EvolutionEngine
         Object value = criterionField.retrieve(evaluationRequest);
         parameterMap.put(field, value);
       }
-    EDRDetails edrDetails = new EDRDetails(context, subscriberState.getSubscriberID(), context.getEventID(), engineEvent.getEventName(), engineEvent.getEventDate(), parameterMap);
+    EDRDetails edrDetails = new EDRDetails(context, subscriberState.getSubscriberID(), context.getEventID(), engineEvent.getEventName(), engineEvent.getEventDate(), parameterMap, tenantID);
     subscriberState.addEDRDetails(edrDetails);
     return true;
   }

@@ -9,14 +9,13 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 
 public class EDRSinkConnector extends SimpleESSinkConnector
 {
-  
-  private static final String timeZone = Deployment.getDefault().getTimeZone();
   
   @Override public void start(Map<String, String> properties)
   {
@@ -82,6 +81,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
     @Override
     protected String getDocumentIndexName(EDRDetails eDRDetails)
     {
+      String timeZone = DeploymentCommon.getDeployment(eDRDetails.getTenantID()).getTimeZone();
       return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(eDRDetails.getEventDate(), timeZone);
     }
     
@@ -130,6 +130,7 @@ public class EDRSinkConnector extends SimpleESSinkConnector
       result.put("eventDatetime", normalize(edrDetails.getEventDate()));
       result.put("eventName", normalize(edrDetails.getEventName()));
       result.put("eventID", edrDetails.getEventID());
+      result.put("tenantID", edrDetails.getTenantID());
       return result;
     }
 
