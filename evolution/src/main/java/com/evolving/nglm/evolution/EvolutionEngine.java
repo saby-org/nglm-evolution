@@ -6588,7 +6588,7 @@ public class EvolutionEngine
         }
       else
         {
-          result = event.getClass().getName(); //RAJ K TODO
+          result = event.getClass().getSimpleName(); //RAJ K TODO
         }
       return result;
     }

@@ -1352,12 +1352,14 @@ public class ThirdPartyManager
      ****************************************/
 
     String startDateReq = readString(jsonRoot, "startDate", false);
+    String eventID = JSONUtilities.decodeString(jsonRoot, "eventID", false);
 
     //
     // filters
     //
 
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    if (eventID != null && !eventID.isEmpty()) filters.add(QueryBuilders.matchQuery("eventID", eventID));
 
     //
     // process
