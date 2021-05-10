@@ -66,7 +66,7 @@ public class VDRSinkConnector extends SimpleESSinkConnector
       documentMap.put(ES_FIELD_VOUCHER_CODE, voucherChange.getVoucherCode());
       documentMap.put(ES_FIELD_SUBSCRIBER_ID, voucherChange.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(voucherChange.getAlternateIDs(), documentMap);
-      documentMap.put("tenantID", -1); // TODO EVPRO-99 should be mapped to tenantID.
+      documentMap.put("tenantID", 1); // TODO EVPRO-99 should be mapped to tenantID.
       documentMap.put("voucherID", voucherChange.getVoucherID());
       documentMap.put("action", voucherChange.getAction());
       documentMap.put("eventDatetime", voucherChange.getEventDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(voucherChange.getEventDate()):"");
