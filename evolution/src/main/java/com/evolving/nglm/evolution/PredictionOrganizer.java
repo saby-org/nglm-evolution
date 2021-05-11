@@ -1,7 +1,10 @@
 package com.evolving.nglm.evolution;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -77,38 +80,6 @@ public class PredictionOrganizer
       log.error("Error while trying to push a new prediction request.",e);
     }
   }
-
-  /*****************************************
-  *
-  * Elasticsearch search request
-  *
-  *****************************************/
-  /**
-   * Retrieve the list of all subscribers matching a list of EvaluationCriterion
-   */
-  public static List<String> getSubscribers(List<EvaluationCriterion> criteriaList, int tenantID, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException, GUIManagerException {
-    BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
-    query.filter().add(QueryBuilders.termQuery("tenantID", tenantID)); // filter to keep only tenant related subscribers.
-    
-    SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder().query(query);
-    
-    log.info(searchSourceRequest.toString());  // TODO debug
-
-    List<SearchHit> hits = elasticsearch.getESHits(new SearchRequest("subscriberprofile").source(searchSourceRequest));
-    
-    List<String> result = new LinkedList<String>();
-    for (SearchHit hit : hits) {
-      Map<String, Object> esFields = hit.getSourceAsMap();
-      if((String) esFields.get("subscriberID") != null) {
-        result.add((String) esFields.get("subscriberID"));
-      }
-    }
-    
-    log.info(result.toString()); // TODO debug
-    
-    return result;
-  }
-  
   
   /*****************************************
   *
@@ -127,8 +98,13 @@ public class PredictionOrganizer
   private static Map<String, PredictionOrder> predictionOrders; // all orders               Map(PredictionOrderID, PredictionOrder)
   private static Map<String, ScheduledJob> predictionOrderJobs; // all corresponding jobs   Map(PredictionOrderID, ScheduledJob)
   
+  // StartDate: date when this "version" of the job ran for the first time - for "every duration" management.
+  // StartDate will be initialize when the job run for the first time, it will be null before.
+  private static Map<String, Date> predictionOrderStartDate;
+  
   private static void removeScheduledJob(String predictionOrderID) {
     ScheduledJob oldJob = predictionOrderJobs.remove(predictionOrderID);
+    predictionOrderStartDate.remove(predictionOrderID);
     log.info("Prediction order (ID="+predictionOrderID+") has been removed.");
     if(oldJob != null) {
       log.info("Removing job ("+oldJob.jobName+") from scheduling.");
@@ -138,6 +114,7 @@ public class PredictionOrganizer
   
   private static void updateScheduledJob(String predictionOrderID, PredictionOrder predictionOrder) {
     ScheduledJob oldJob = predictionOrderJobs.remove(predictionOrderID);
+    predictionOrderStartDate.remove(predictionOrderID);
     log.info("Prediction order (ID="+predictionOrderID+") has been modified.");
     if(oldJob != null) {
       log.info("Removing job ("+oldJob.jobName+") from scheduling.");
@@ -145,52 +122,28 @@ public class PredictionOrganizer
     }
     
     int tenantID = predictionOrder.getTenantID();
+    String cronScheduler;
+    try {
+      cronScheduler = predictionOrder.retrieveCronFrequency();
+    } catch (GUIManagerException e) {
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Error while scheduling a new job: "+stackTraceWriter.toString()+"");
+      return;
+    }
+    
     ScheduledJobConfiguration config = new ScheduledJobConfiguration("PredictionRequest-"+predictionOrderID, 
         ScheduledJobConfiguration.Type.PredictionRequest, 
         true, // enabled 
         false, // schedule at restart
-        "0,5,10,15,20,25,30,35,40,45,50,55 * * * *", // TODO !!!!!!!!!!!!! from frequency 
+        cronScheduler,
         tenantID,
         Deployment.getDeployment(tenantID).getTimeZone());
     
     String orderID = predictionOrderID;
     ScheduledJob newJob = new ScheduledJob(config)
     {
-      @Override
-      protected void run()
-      {
-        PredictionOrder order = predictionOrders.get(orderID);
-        if(order != null) {
-          try {
-            List<String> subscribers = getSubscribers(order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
-            Set<String> batch = new HashSet<String>();
-            
-            for(String subscriberID: subscribers) {
-              batch.add(subscriberID);
-              if(batch.size() >= BATCH_SIZE) {
-                //
-                // push
-                //
-                send(order.getGUIManagedObjectID(), batch);
-                batch = new HashSet<String>();
-              }
-            }
-            
-            //
-            // push remaining
-            //
-            if(batch.size() > 0) {
-              send(orderID, batch);
-            }
-          } 
-          catch (ElasticsearchStatusException | IOException | GUIManagerException e) {
-            log.error("Unable to retrieve list of subscribers matching target criteria {}", e.getMessage());
-          }
-        }
-        else {
-          log.error("Something wrong happened, lost order reference.");
-        }
-      }
+      @Override protected void run() { predictionJobRun(orderID); }
     };
     
     // replace old job by new one
@@ -206,6 +159,7 @@ public class PredictionOrganizer
     predictionOrderService = orderService;
     predictionOrders = new HashMap<String, PredictionOrder>();
     predictionOrderJobs = new HashMap<String, ScheduledJob>();
+    predictionOrderStartDate = new HashMap<String, Date>();
 
     //
     // Wake-up job: look if there is any new PredictionOrder - this mechanism could be replace by a listener in GUIService (if we had a modifiedListener and newListener)
@@ -251,6 +205,101 @@ public class PredictionOrganizer
   public static void close() {
     predictionJobScheduler.stop();
     kafkaProducer.close();
+  }
+
+  /*****************************************
+  *
+  * Prediction Job
+  *
+  *****************************************/
+  //
+  // predictionJobRun
+  //
+  public static void predictionJobRun(String orderID) {
+    PredictionOrder order = predictionOrders.get(orderID);
+    if(order != null) {
+      try {
+        if(skipRun(orderID, order)) {
+          return;
+        }
+        
+        List<String> subscribers = getSubscribers(order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
+        Set<String> batch = new HashSet<String>();
+        
+        for(String subscriberID: subscribers) {
+          batch.add(subscriberID);
+          if(batch.size() >= BATCH_SIZE) {
+            //
+            // push
+            //
+            send(order.getGUIManagedObjectID(), batch);
+            batch = new HashSet<String>();
+          }
+        }
+        
+        //
+        // push remaining
+        //
+        if(batch.size() > 0) {
+          send(orderID, batch);
+        }
+      } 
+      catch (ElasticsearchStatusException | IOException | GUIManagerException e) {
+        log.error("Unable to retrieve list of subscribers matching target criteria {}", e.getMessage());
+      }
+    }
+    else {
+      log.error("Something wrong happened, lost order reference.");
+    }
+  }
+  
+  /**
+   * skipRun
+   * Jobs are scheduled every day/week/month by CRON settings but, the "real" scheduling can be "every 3 weeks". 
+   * This cannot be managed by CRON directly (do not fit cron standard), therefore, before each run we need to 
+   * check if we skip it or not
+   */
+  public static boolean skipRun(String orderID, PredictionOrder predictionOrder) {
+    Date now = SystemTime.getCurrentTime();
+    Date start = predictionOrderStartDate.get(orderID);
+    if(start == null) {
+      //
+      // First run
+      //
+      predictionOrderStartDate.put(orderID, now);
+      return false;
+    }
+    
+    return !predictionOrder.isValidRun(start, now);
+  }
+  
+  // 
+  // Elasticsearch search request
+  //
+  /**
+   * Retrieve the list of all subscribers matching a list of EvaluationCriterion
+   */
+  public static List<String> getSubscribers(List<EvaluationCriterion> criteriaList, int tenantID, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException, GUIManagerException {
+    BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
+    query.filter().add(QueryBuilders.termQuery("tenantID", tenantID)); // filter to keep only tenant related subscribers.
+    
+    SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder().query(query);
+    
+    log.info(searchSourceRequest.toString());  // TODO debug
+
+    List<SearchHit> hits = elasticsearch.getESHits(new SearchRequest("subscriberprofile").source(searchSourceRequest));
+    
+    List<String> result = new LinkedList<String>();
+    for (SearchHit hit : hits) {
+      Map<String, Object> esFields = hit.getSourceAsMap();
+      if((String) esFields.get("subscriberID") != null) {
+        result.add((String) esFields.get("subscriberID"));
+      }
+    }
+    
+    log.info(result.toString()); // TODO debug
+    
+    return result;
   }
 }
 
