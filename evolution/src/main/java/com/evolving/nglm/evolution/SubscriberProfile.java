@@ -339,6 +339,41 @@ public abstract class SubscriberProfile
       }
     return result;
   }
+  
+  //
+  //  getSegmentsMap (map of <dimensionID,segmentID>)
+  //
+
+  public Map<String, String> getStatisticsSegmentsMap(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SegmentationDimensionService segmentationDimensionService)
+  {
+    Map<String, String> result = new HashMap<String, String>();
+    for (Pair<String, String> groupID : segments.keySet())
+      {
+        String dimensionID = groupID.getFirstElement();
+        boolean statistics = false;
+        if (dimensionID != null)
+          {
+            GUIManagedObject segmentationDimensionObject = segmentationDimensionService
+                .getStoredSegmentationDimension(dimensionID);
+            if (segmentationDimensionObject != null && segmentationDimensionObject instanceof SegmentationDimension)
+              {
+                SegmentationDimension segmenationDimension = (SegmentationDimension) segmentationDimensionObject;
+                statistics = segmenationDimension.getStatistics();
+              }
+          }
+        if (statistics)
+          {
+            int epoch = segments.get(groupID);
+            if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null
+                ? subscriberGroupEpochReader.get(dimensionID).getEpoch()
+                : 0))
+              {
+                result.put(dimensionID, groupID.getSecondElement());
+              }
+          }
+      }
+    return result;
+  }
 
   //
   //  getSegments (set of segmentID)

@@ -64,13 +64,14 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("segmentation_dimension");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),3));
     for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
     schemaBuilder.field("defaultSegmentID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("isSimpleProfileDimension", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schemaBuilder.field("numberOfSegments", Schema.INT32_SCHEMA);
     schemaBuilder.field("subscriberGroupEpoch", SubscriberGroupEpoch.schema());
+    schemaBuilder.field("statistics", Schema.BOOLEAN_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
 
@@ -91,6 +92,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
   private boolean isSimpleProfileDimension;
   private int numberOfSegments;
   private SubscriberGroupEpoch subscriberGroupEpoch;
+  private boolean statistics;
 
   /****************************************
   *
@@ -110,6 +112,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
   public boolean getIsSimpleProfileDimension() { return isSimpleProfileDimension; }
   public int getNumberOfSegments() { return numberOfSegments; }
   public SubscriberGroupEpoch getSubscriberGroupEpoch() { return subscriberGroupEpoch; }
+  public boolean getStatistics() { return statistics; }
   
   //
   //  setters
@@ -162,8 +165,8 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
     String defaultSegmentID = valueStruct.getString("defaultSegmentID");
     boolean isSimpleProfileDimension = valueStruct.getBoolean("isSimpleProfileDimension");
     int numberOfSegments = valueStruct.getInt32("numberOfSegments");
+    boolean statistics = (schema.field("statistics") != null) ? valueStruct.getBoolean("statistics") : false;
     SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpoch.unpack(new SchemaAndValue(schema.field("subscriberGroupEpoch").schema(), valueStruct.get("subscriberGroupEpoch")));
-    
     //
     //  return
     //
@@ -173,6 +176,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
     this.isSimpleProfileDimension = isSimpleProfileDimension;
     this.numberOfSegments = numberOfSegments;
     this.subscriberGroupEpoch = subscriberGroupEpoch;
+    this.statistics = statistics;
   }
 
   /*****************************************
@@ -189,6 +193,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
     struct.put("isSimpleProfileDimension", segmentationDimension.getIsSimpleProfileDimension());
     struct.put("numberOfSegments", segmentationDimension.getNumberOfSegments());
     struct.put("subscriberGroupEpoch", SubscriberGroupEpoch.pack(segmentationDimension.getSubscriberGroupEpoch()));
+    struct.put("statistics", segmentationDimension.getStatistics());
   }
   
   /*****************************************
@@ -218,6 +223,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
     this.isSimpleProfileDimension = JSONUtilities.decodeBoolean(jsonRoot, "isSimpleProfileDimension", Boolean.FALSE);
     this.numberOfSegments = JSONUtilities.decodeInteger(jsonRoot, "numberOfSegments", 0);
     this.subscriberGroupEpoch = new SubscriberGroupEpoch(this.getSegmentationDimensionID());
+    this.statistics = JSONUtilities.decodeBoolean(jsonRoot, "statistics", Boolean.FALSE);
   }
 
   /*****************************************
@@ -306,6 +312,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
           }
         documentMap.put("segments",  segments);
         documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
+        documentMap.put("statistics", jr.get("statistics"));
       }
     return documentMap;
   }

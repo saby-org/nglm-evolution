@@ -48,7 +48,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   //
 
   private static Schema schema = null;
-  private static int currentSchemaVersion = 11;
+  private static int currentSchemaVersion = 12;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
@@ -78,7 +78,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     schemaBuilder.field("journeyNodeHistory", SchemaBuilder.array(NodeHistory.schema()).schema());
     schemaBuilder.field("journeyStatusHistory", SchemaBuilder.array(StatusHistory.schema()).schema());
     schemaBuilder.field("journeyRewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
-    schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema());
     schemaBuilder.field("specialExitStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyExitDate", Timestamp.builder().optional().schema());    
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
@@ -128,7 +128,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   private List<NodeHistory> journeyNodeHistory;
   private List<StatusHistory> journeyStatusHistory;
   private List<RewardHistory> journeyRewardHistory;
-  private Map<String, String> subscriberStratum;
+  private Map<String, String> subscriberStratum; // Statistic stratum only
   private String specialExitStatus;
   private Date journeyExitDate;
   private int tenantID;
@@ -175,7 +175,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, Map<String, String> subscriberStratum, SubscriberProfile subscriberProfile)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, Map<String, String> statisticSubscriberStratum, SubscriberProfile subscriberProfile)
   {
     boolean thisJourneyComplete = false;
     this.journeyStatisticID = context.getUniqueKey();
@@ -207,7 +207,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory, null);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory, null);
-    this.subscriberStratum = subscriberStratum;
+    this.subscriberStratum = statisticSubscriberStratum;
     this.tenantID = subscriberProfile.getTenantID();
   }
 
@@ -496,7 +496,6 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
         this.subscriberStratum.put(key, journeyStatistic.getSubscriberStratum().get(key));
       }
     this.tenantID = journeyStatistic.getTenantID();
-
   }
   
   public StatusHistory getPreviousJourneyStatus()
@@ -685,6 +684,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     String specialExitStatus = (schemaVersion >= 10) ? valueStruct.getString("specialExitStatus") : "";
     Date journeyExitDate = (schemaVersion >= 10) ? (Date) valueStruct.get("journeyExitDate") : null;    
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
+    
     //
     //  return
     //
@@ -914,7 +914,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
         + (journeyStatusHistory != null ? "journeyStatusHistory=" + toString(journeyStatusHistory, maxLen) + ", " : "") 
         + (journeyRewardHistory != null ? "journeyRewardHistory=" + toString(journeyRewardHistory, maxLen) + ", " : "") 
         + (subscriberStratum != null ? "subscriberStratum=" + toString(subscriberStratum.entrySet(), maxLen) : "")
-        + (journeyExitDate != null ? "journeyExitDate=" + journeyExitDate + ", " : "") 
+        + (journeyExitDate != null ? "journeyExitDate=" + journeyExitDate + ", " : "")
         + "]";
   }
 

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,29 +14,38 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.nested.ParsedNested;
+import org.elasticsearch.search.aggregations.bucket.nested.ParsedReverseNested;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
+import com.evolving.nglm.evolution.SegmentationDimension;
+import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
+import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
@@ -42,6 +53,8 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_loyaltyprogramschanges";
   public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX = "subscriberprofile";
+  private static final String DATA_FILTER_STRATUM_PREFIX = "statisticsStratum."; // from journeystatistic index
+  private static final String DATACUBE_FILTER_STRATUM_PREFIX = "stratum."; // pushed in datacube index - same as SubscriberProfileDatacube
 
   /*****************************************
   *
@@ -49,6 +62,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   *
   *****************************************/
   private LoyaltyProgramsMap loyaltyProgramsMap;
+  private SegmentationDimensionsMap segmentationDimensionList;
 
   private long targetPeriod;
   private long targetPeriodStartIncluded;
@@ -59,11 +73,12 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService, int tenantID, String timeZone)
+  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService, int tenantID, String timeZone, SegmentationDimensionService segmentationDimensionService)
   {
     super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
     
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
+    this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
   }
   
   public ProgramsChangesDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
@@ -72,7 +87,8 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
         datacubeManager.getDatacubeWriter(),
         datacubeManager.getLoyaltyProgramService(),
         tenantID,
-        Deployment.getDeployment(tenantID).getTimeZone());
+        Deployment.getDeployment(tenantID).getTimeZone(),
+        datacubeManager.getSegmentationDimensionService());
   }
 
   /*****************************************
@@ -92,6 +108,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
     loyaltyProgramsMap.update();
+    this.segmentationDimensionList.update();
     return true;
   }
 
@@ -125,16 +142,45 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     sources.add(new TermsValuesSourceBuilder("tierChangeType").field("loyaltyPrograms.tierChangeType"));
     
     //
-    // Sub Aggregation DATE
+    // Sub Aggregation DATE - It is a filter (only one bucket), but for a field of the nested object.
     //
     
     RangeAggregationBuilder dateAgg = AggregationBuilders.range("DATE")
         .field("loyaltyPrograms.tierUpdateDate")
         .addRange(targetPeriodStartIncluded, targetPeriodStartIncluded + targetPeriod); // Reminder: from is included, to is excluded
     
+    //
+    // Sub Aggregations dimensions (only statistic dimensions)
+    //
+    TermsAggregationBuilder rootStratumBuilder = null; // first aggregation
+    TermsAggregationBuilder termStratumBuilder = null; // last aggregation
+    log.info("rootStratumBuilder"+rootStratumBuilder); // TODO DEBUG TO BE REMOVED
+    
+    for (String dimensionID : segmentationDimensionList.keySet()) {
+      GUIManagedObject segmentationObject = segmentationDimensionList.get(dimensionID);
+      if (segmentationObject != null && segmentationObject instanceof SegmentationDimension && ((SegmentationDimension) segmentationObject).getStatistics()) {
+        if (termStratumBuilder != null) {
+          TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
+              .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
+          termStratumBuilder = termStratumBuilder.subAggregation(temp);
+          termStratumBuilder = temp;
+        }
+        else {
+          termStratumBuilder = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
+              .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
+          rootStratumBuilder = termStratumBuilder;
+        }
+      }
+    }
+    
+    //
+    // Final
+    //
     AggregationBuilder aggregation = AggregationBuilders.nested("DATACUBE", "loyaltyPrograms").subAggregation(
-        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(ElasticsearchClientAPI.MAX_BUCKETS).subAggregation(dateAgg)
-    );
+        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(ElasticsearchClientAPI.MAX_BUCKETS).subAggregation(
+            dateAgg.subAggregation(
+              AggregationBuilders.reverseNested("REVERSE").subAggregation(
+                  rootStratumBuilder))));
     
     //
     // Datacube request
@@ -154,12 +200,79 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     String loyaltyProgramID = (String) filters.remove("loyaltyProgramID");
     filters.put("loyaltyProgram", loyaltyProgramsMap.getDisplay(loyaltyProgramID, "loyaltyProgram"));
     
+    //
+    // Dimensions
+    //
+    for (String dimensionID : segmentationDimensionList.keySet()) {
+      GUIManagedObject segmentationObject = segmentationDimensionList.get(dimensionID);
+      if (segmentationObject != null && segmentationObject instanceof SegmentationDimension && ((SegmentationDimension) segmentationObject).getStatistics()) {
+        String segmentID = (String) filters.remove(DATA_FILTER_STRATUM_PREFIX + dimensionID);
+        String dimensionDisplay = segmentationDimensionList.getDimensionDisplay(dimensionID, DATA_FILTER_STRATUM_PREFIX + dimensionID);
+        String fieldName = DATACUBE_FILTER_STRATUM_PREFIX + dimensionDisplay;
+        filters.put(fieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
+      }
+    }
+    
     // "newTier" stay the same (None is managed in extractDatacubeRows)
     // "previousTier" stay the same (None is managed in extractDatacubeRows)
     // "tierChangeType" stay the same
   }
   
-
+  /**
+   * Auxiliary recursive function for row extraction
+   * This function will explore the combination tree built from buckets.
+   * Each leaf of the tree represent a final combination. 
+   * The doc count of the combination will be retrieve in their leaf.
+   * 
+   * This recursive function will return every combination created from this 
+   * node as it was the root of the tree.
+   * 
+   * @return List[ Combination(Dimension, Segment) -> Count ]
+   */
+  private List<Pair<Map<String, String>, Long>> extractSegmentationStratum(ParsedTerms parsedTerms)
+  {
+    if (parsedTerms == null || parsedTerms.getBuckets() == null) {
+      log.error("stratum buckets are missing in search response.");
+      return Collections.emptyList();
+    }
+    log.info("------ TEST -------"); // TODO DEBUG - TO BE REMOVED
+    
+    List<Pair<Map<String, String>, Long>> result = new LinkedList<Pair<Map<String, String>, Long>>();
+    
+    String dimensionID = parsedTerms.getName();
+    for (Terms.Bucket stratumBucket : parsedTerms.getBuckets()) { // Explore each segment for this dimension.
+      String segmentID = stratumBucket.getKeyAsString();
+      
+      log.info("key" + segmentID); // TODO DEBUG - TO BE REMOVED
+      
+      Map<String, Aggregation> stratumBucketAggregation = stratumBucket.getAggregations().getAsMap();
+      if (stratumBucketAggregation == null || stratumBucketAggregation.isEmpty())  {
+        //
+        // Leaf - extract count
+        //
+        long count = stratumBucket.getDocCount();
+        Map<String, String> combination = new HashMap<String,String>();
+        combination.put(dimensionID, segmentID);                             // Add new dimension
+        result.add(new Pair<Map<String, String>, Long>(combination, count)); // Add this combination to the result
+      }
+      else {
+        //
+        // Node - recursive call
+        // 
+        for(Aggregation subAggregation :  stratumBucketAggregation.values()) {
+          List<Pair<Map<String, String>, Long>> childResults = extractSegmentationStratum((ParsedTerms) subAggregation);
+  
+          for (Pair<Map<String, String>, Long> stratum : childResults) {
+            stratum.getFirstElement().put(dimensionID, segmentID);           // Add new dimension
+            result.add(stratum);                                             // Add this combination to the result
+          }
+        }
+      }
+    }
+    
+    return result;
+  }
+  
   @Override
   protected List<Map<String, Object>> extractDatacubeRows(SearchResponse response, String timestamp, long period) throws ClassCastException
   {
@@ -189,7 +302,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
       log.error("Composite buckets are missing in search response.");
       return result;
     }
-    
+   
     for(ParsedComposite.ParsedBucket bucket: parsedComposite.getBuckets()) {
       //
       // Extract the filter
@@ -218,15 +331,39 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
         continue;
       }
 
-      // There must be only one bucket !
+      // There must be only one bucket ! - It is a filter
       for(org.elasticsearch.search.aggregations.bucket.range.Range.Bucket dateBucket: parsedRange.getBuckets()) {
-        long docCount = dateBucket.getDocCount();
+        if(dateBucket.getAggregations() == null) {
+          log.error("Aggregations in bucket is missing in search response.");
+          continue;
+        }
         
-        //
-        // Build row
-        //
-        Map<String, Object> row = extractRow(filters, docCount, timestamp, period, Collections.emptyMap());
-        result.add(row);
+        ParsedReverseNested parsedReverseNested = dateBucket.getAggregations().get("REVERSE");
+        if(parsedReverseNested == null || parsedReverseNested.getAggregations() == null) {
+          log.error("Reverse nested aggregation is missing in search response.");
+          continue;
+        }
+        
+        for(Aggregation parsedTerms : parsedReverseNested.getAggregations()) {
+          List<Pair<Map<String, String>, Long>> childResults = extractSegmentationStratum((ParsedTerms) parsedTerms);
+          
+          for (Pair<Map<String, String>, Long> stratum : childResults) {
+            Map<String, Object> filtersCopy = new HashMap<String, Object>(filters);
+            Long docCount = stratum.getSecondElement();
+            
+            for (String dimensionID : stratum.getFirstElement().keySet()) {
+              filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
+            }
+            
+            log.info("filtersCopy" + filtersCopy); // TODO DEBUG - TO BE REMOVED
+            
+            //
+            // Build row
+            //
+            Map<String, Object> row = extractRow(filtersCopy, docCount, timestamp, period, Collections.emptyMap());
+            result.add(row);
+          }
+        }
       }
     }
     
