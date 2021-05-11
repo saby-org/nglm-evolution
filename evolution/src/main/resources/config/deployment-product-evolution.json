@@ -44,11 +44,11 @@
     "VDR-daily-definitive"           : { "type": "VDR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
     "VDR-hourly-preview"             : { "type": "VDR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "VDR-hourly-definitive"          : { "type": "VDR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
-    "LoyaltyPrograms-preview"        : { "type": "LoyaltyPrograms-preview",      "enabled": true, "scheduledAtRestart":  true, "cronEntry": "0 * * * *" },
+    "LoyaltyPrograms-preview"        : { "type": "LoyaltyPrograms-preview",      "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "LoyaltyPrograms-definitive"     : { "type": "LoyaltyPrograms-definitive",   "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
     "SubscriberProfile-preview"      : { "type": "SubscriberProfile-preview",    "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "SubscriberProfile-definitive"   : { "type": "SubscriberProfile-definitive", "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
-    "Journeys"                       : { "type": "Journeys",                     "enabled": true,  "scheduledAtRestart": true, "cronEntry": "1 * * * *" }
+    "Journeys"                       : { "type": "Journeys",                     "enabled": true,  "scheduledAtRestart": false, "cronEntry": "1 * * * *" }
   },
   "elasticsearchJobsScheduling" : {
     "SubscriberProfileSnapshot"      : { "type": "SubscriberProfileSnapshot",    "enabled": true,  "scheduledAtRestart": false, "cronEntry": "5 0 * * *" },
