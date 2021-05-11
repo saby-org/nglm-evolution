@@ -54,7 +54,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String DATA_FILTER_STRATUM_PREFIX = "statisticsStratum."; // from journeystatistic index
-  private static final String DATACUBE_FILTER_STRATUM_PREFIX = "stratum."; // pushed in datacube index - same as SubscriberProfileDatacube
+  private static final String DATACUBE_FILTER_STRATUM_PREFIX = "subscriberStratum."; // pushed in datacube index - same as SubscriberProfileDatacube
 
   /*****************************************
   *
@@ -154,7 +154,6 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     //
     TermsAggregationBuilder rootStratumBuilder = null; // first aggregation
     TermsAggregationBuilder termStratumBuilder = null; // last aggregation
-    log.info("rootStratumBuilder"+rootStratumBuilder); // TODO DEBUG TO BE REMOVED
     
     for (String dimensionID : segmentationDimensionList.keySet()) {
       GUIManagedObject segmentationObject = segmentationDimensionList.get(dimensionID);
@@ -235,15 +234,12 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
       log.error("stratum buckets are missing in search response.");
       return Collections.emptyList();
     }
-    log.info("------ TEST -------"); // TODO DEBUG - TO BE REMOVED
     
     List<Pair<Map<String, String>, Long>> result = new LinkedList<Pair<Map<String, String>, Long>>();
     
     String dimensionID = parsedTerms.getName();
     for (Terms.Bucket stratumBucket : parsedTerms.getBuckets()) { // Explore each segment for this dimension.
       String segmentID = stratumBucket.getKeyAsString();
-      
-      log.info("key" + segmentID); // TODO DEBUG - TO BE REMOVED
       
       Map<String, Aggregation> stratumBucketAggregation = stratumBucket.getAggregations().getAsMap();
       if (stratumBucketAggregation == null || stratumBucketAggregation.isEmpty())  {
@@ -354,8 +350,6 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
             for (String dimensionID : stratum.getFirstElement().keySet()) {
               filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
             }
-            
-            log.info("filtersCopy" + filtersCopy); // TODO DEBUG - TO BE REMOVED
             
             //
             // Build row

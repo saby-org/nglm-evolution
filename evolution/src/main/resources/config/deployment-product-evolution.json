@@ -48,7 +48,7 @@
     "LoyaltyPrograms-definitive"     : { "type": "LoyaltyPrograms-definitive",   "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
     "SubscriberProfile-preview"      : { "type": "SubscriberProfile-preview",    "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "SubscriberProfile-definitive"   : { "type": "SubscriberProfile-definitive", "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
-    "Journeys"                       : { "type": "Journeys",                     "enabled": true,  "scheduledAtRestart": false, "cronEntry": "1 * * * *" }
+    "Journeys"                       : { "type": "Journeys",                     "enabled": true,  "scheduledAtRestart": true, "cronEntry": "1 * * * *" }
   },
   "elasticsearchJobsScheduling" : {
     "SubscriberProfileSnapshot"      : { "type": "SubscriberProfileSnapshot",    "enabled": true,  "scheduledAtRestart": false, "cronEntry": "5 0 * * *" },

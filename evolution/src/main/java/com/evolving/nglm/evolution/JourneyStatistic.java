@@ -48,7 +48,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   //
 
   private static Schema schema = null;
-  private static int currentSchemaVersion = 12;
+  private static int currentSchemaVersion = 11;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
@@ -78,7 +78,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     schemaBuilder.field("journeyNodeHistory", SchemaBuilder.array(NodeHistory.schema()).schema());
     schemaBuilder.field("journeyStatusHistory", SchemaBuilder.array(StatusHistory.schema()).schema());
     schemaBuilder.field("journeyRewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
-    schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema());
+    schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("specialExitStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyExitDate", Timestamp.builder().optional().schema());    
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);

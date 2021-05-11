@@ -362,15 +362,12 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       log.error("stratum buckets are missing in search response.");
       return Collections.emptyList();
     }
-    log.info("------ TEST -------"); // TODO DEBUG - TO BE REMOVED
     
     List<Pair<Map<String, String>, Map<String, Long>>> result = new LinkedList<Pair<Map<String, String>, Map<String, Long>>>();
     
     String dimensionID = parsedTerms.getName();
     for (Terms.Bucket stratumBucket : parsedTerms.getBuckets()) { // Explore each segment for this dimension.
       String segmentID = stratumBucket.getKeyAsString();
-      
-      log.info("key" + segmentID); // TODO DEBUG - TO BE REMOVED
       
       //
       // Leaf detection
@@ -535,7 +532,6 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
               for (String dimensionID : stratum.getFirstElement().keySet()) {
                 filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
               }
-              log.info("filtersCopy" + filtersCopy); // TODO DEBUG - TO BE REMOVED
               
               Map<String, Long> metrics = stratum.getSecondElement();
               Long docCount = metrics.remove("count");  // remove special metric
