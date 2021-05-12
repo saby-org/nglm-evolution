@@ -6589,8 +6589,8 @@ public class EvolutionEngine
               //
               
               DeliveryRequest deliveryRes = (DeliveryRequest) event;
-              if (deliveryRes.getEventID() != null) result = deliveryRes.getEventID();
-              else result = engineEvent.getEventName();
+              if (deliveryRes.getEventID() != null) result = deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID());
+              else result = deliveryRes.getEventName();
             }
           else
             {
