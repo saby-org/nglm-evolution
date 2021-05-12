@@ -28520,7 +28520,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     String topic = Deployment.getTokenChangeTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "CC", Module.Customer_Care, userID);
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "event from ".concat(Module.Customer_Care.toString()), tokenCode, action, str, "CC", Module.Customer_Care, userID);
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),

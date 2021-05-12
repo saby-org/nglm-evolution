@@ -53,7 +53,6 @@ public class DNBOUtils
 
   private static TokenChange generateTokenChange(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, String tokenCode, String action, String str)
   {
-    String eventID = "";
    /* String origin = "Journey";
     switch (action)
     {
@@ -79,7 +78,7 @@ public class DNBOUtils
     Date date = evolutionEventContext.now();
     String featureID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
     featureID = ActionManager.extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, featureID);
-    return new TokenChange(subscriberID, date, eventID, tokenCode, action, str, origin, Module.Journey_Manager, featureID);
+    return new TokenChange(subscriberID, date, evolutionEventContext.getEventID(), tokenCode, action, str, origin, Module.Journey_Manager, featureID);
   }
   
   /*****************************************

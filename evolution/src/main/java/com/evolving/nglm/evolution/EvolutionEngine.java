@@ -3360,7 +3360,7 @@ public class EvolutionEngine
               null,
               evolutionEventContext.now, tenantID);
           List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
-          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest);
+          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest, evolutionEventContext.getEventID());
 
           // clean temporary data to avoid next nodes considering this event
           evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
@@ -4128,7 +4128,7 @@ public class EvolutionEngine
             subscriberTokens.add(subscriberStoredToken);
             subscriberStoredToken.setFeatureID(featureID);
             subscriberStoredToken.setModuleID(moduleID);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), context.getEventID(), eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID));
             subscriberStateUpdated = true;
           }
 
@@ -5429,7 +5429,7 @@ public class EvolutionEngine
                           // execute action
                           //
 
-                          handleExecuteOnEntryActions(subscriberState, journeyState, journey, actions, entryActionEvaluationRequest);
+                          handleExecuteOnEntryActions(subscriberState, journeyState, journey, actions, entryActionEvaluationRequest, context.getEventID());
                       }
                     catch (RuntimeException e)
                       {
@@ -5797,7 +5797,7 @@ public class EvolutionEngine
     return res;
   }
 
-  private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions, SubscriberEvaluationRequest subscriberEvaluationRequest)
+  private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions, SubscriberEvaluationRequest subscriberEvaluationRequest, String eventID)
   {
     for (Action action : actions)
       {
@@ -5843,16 +5843,16 @@ public class EvolutionEngine
               switch (token.getTokenStatus())
               {
                 case New:
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), eventID, TokenChange.CREATE, token, featureID, nodeName));
                   break;
                 case Bound: // must record the token creation
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), eventID, TokenChange.CREATE, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), eventID, TokenChange.ALLOCATE, token, featureID, nodeName));
                   break;
                 case Redeemed: // must record the token creation & allocation
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, nodeName));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), eventID, TokenChange.CREATE, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), eventID, TokenChange.ALLOCATE, token, featureID, nodeName));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), eventID, TokenChange.REDEEM, token, featureID, nodeName));
                   break;
                 case Expired :
                   // TODO
@@ -5893,9 +5893,9 @@ public class EvolutionEngine
       }
   }
 
-  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, String journeyID, String origin)
+  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String eventID, String action, Token token, String journeyID, String origin)
   {
-    return new TokenChange(subscriberId, eventDateTime, "", token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID);
+    return new TokenChange(subscriberId, eventDateTime, eventID, token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID);
   }
 
   /****************************************
