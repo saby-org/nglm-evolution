@@ -470,7 +470,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.originatingSubscriberID = null; // consider from GUIManager no delivery request delegation
     this.targetedSubscriberID = null; // consider from GUIManager no delivery request delegation
     //this.eventID = this.deliveryRequestID;
-    this.eventID = "event from " + Module.Customer_Care.toString(); //RAJ K TODO
+    this.eventID = "event from " + Module.Customer_Care.toString();
     this.moduleID = null;
     this.featureID = null;
     this.retries = 0;

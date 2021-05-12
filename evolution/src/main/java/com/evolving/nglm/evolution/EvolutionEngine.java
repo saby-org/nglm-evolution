@@ -6599,7 +6599,7 @@ public class EvolutionEngine
         }
       else
         {
-          result = event.getClass().getSimpleName(); //RAJ K TODO
+          result = event.getClass().getSimpleName();
         }
       return result;
     }
