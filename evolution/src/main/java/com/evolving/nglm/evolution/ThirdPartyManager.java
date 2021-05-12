@@ -5077,7 +5077,7 @@ public class ThirdPartyManager
             subscriberID,
             SystemTime.getCurrentTime(),
             null,
-            zuksVoucherChange.getStringKey(),
+            zuksVoucherChange.getStringKey().concat("-").concat(Module.REST_API.toString()),
             VoucherChange.VoucherChangeAction.Redeem,
             voucherProfileStored.getVoucherCode(),
             voucherProfileStored.getVoucherID(),

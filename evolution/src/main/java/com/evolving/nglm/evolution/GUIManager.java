@@ -16157,7 +16157,7 @@ public class GUIManager
             subscriberID,
             SystemTime.getCurrentTime(),
             newExpiryDate,
-            zuksVoucherChange.getStringKey(),
+            zuksVoucherChange.getStringKey().concat("-").concat(Module.Customer_Care.toString()),
             voucherChangeAction,
             voucherCode,
             voucherID,
