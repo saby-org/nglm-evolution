@@ -195,6 +195,8 @@ public class EvolutionEngine
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   // evolution event count
   private static StatBuilder<CounterStat> statsEventCounter;
+  // voucher change count
+  private static StatBuilder<CounterStat> statsVoucherChangeCounter;
   // evolution REST API stats
   private static StatBuilder<DurationStat> statsApiDuration;
   // evolution state store operation api
@@ -561,6 +563,7 @@ public class EvolutionEngine
 
     evolutionEngineStatistics = new EvolutionEngineStatistics(applicationID);
     statsEventCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("evolutionengine_event","evolutionengine-"+evolutionEngineKey);
+    statsVoucherChangeCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("voucher_change","evolutionengine-"+evolutionEngineKey);
     statsApiDuration = StatsBuilders.getEvolutionDurationStatisticsBuilder("evolutionengine_api","evolutionengine-"+evolutionEngineKey);
     statsStateStoresDuration = StatsBuilders.getEvolutionDurationStatisticsBuilder("evolutionengine_statestore","evolutionengine-"+evolutionEngineKey);
 
@@ -6232,6 +6235,18 @@ public class EvolutionEngine
         result.addAll(subscriberState.getJourneyTriggerEventActions());
         result.addAll(subscriberState.getSubscriberProfileForceUpdates());
       }
+
+    // add stats about voucherChange done
+    if(!subscriberState.getVoucherChanges().isEmpty())
+    {
+      subscriberState.getVoucherChanges().stream().forEach(voucherChange -> statsVoucherChangeCounter
+            .withLabel(StatsBuilders.LABEL.operation.name(),voucherChange.getAction().getExternalRepresentation())
+            .withLabel(StatsBuilders.LABEL.module.name(),Module.fromExternalRepresentation(voucherChange.getModuleID()).name())
+            .withLabel(StatsBuilders.LABEL.status.name(),voucherChange.getReturnStatus().getGenericResponseMessage())
+            .getStats().increment()
+      );
+    }
+
     // enrich with needed output all here
     result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader, subscriberState.getSubscriberProfile().getTenantID()));
     // as well as output wrapped in
