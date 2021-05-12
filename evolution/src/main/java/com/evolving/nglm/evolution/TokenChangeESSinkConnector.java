@@ -54,7 +54,7 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
     @Override
     protected String getDocumentIndexName(TokenChange tokenChange)
     {
-      String timeZone = DeploymentCommon.getDeployment(0).getTimeZone(); // TODO EVPRO-99 ERROR! This should be mapped to tenantID.
+      String timeZone = DeploymentCommon.getDeployment(tokenChange.getTenantID()).getTimeZone();
       return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(tokenChange.getEventDate(), timeZone);
     }
 
@@ -64,7 +64,7 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
       
       documentMap.put(ES_FIELD_TOKEN_CODE, tokenChange.getTokenCode());
       documentMap.put(ES_FIELD_SUBSCRIBER_ID, tokenChange.getSubscriberID());
-      documentMap.put("tenantID", -1); // TODO EVPRO-99 should be mapped to tenantID.
+      documentMap.put("tenantID", tokenChange.getTenantID());
       documentMap.put("action", tokenChange.getAction());
       documentMap.put("eventDatetime", tokenChange.getEventDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(tokenChange.getEventDate()):"");
       documentMap.put("eventID", tokenChange.getEventID());

@@ -45,7 +45,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),9)); // 8->9: EVPRO-99: tenantID
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
@@ -56,6 +56,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -87,6 +88,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   private String origin;
   private String moduleID;
   private String featureID;
+  private int tenantID;
   
   /****************************************
   *
@@ -109,6 +111,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
   public ActionType getActionType() { return ActionType.TokenChange; }
+  public int getTenantID() { return tenantID; }
 
   //
   //  setters
@@ -130,9 +133,9 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   *
   *****************************************/
 
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID)
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID)
   {
-    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID);
+    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, tenantID);
   }
 
   /*****************************************
@@ -141,7 +144,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   *
   *****************************************/
 
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID)
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.eventDateTime = eventDateTime;
@@ -152,6 +155,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.origin = origin;
     this.moduleID = moduleID;
     this.featureID = featureID;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -159,7 +163,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
    * constructor unpack
    *
    *****************************************/
-  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID)
+  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, int tenantID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
@@ -171,6 +175,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.origin = origin;
     this.moduleID = moduleID;
     this.featureID = featureID;
+    this.tenantID = tenantID;
   }
 
   /*****************************************
@@ -193,6 +198,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     struct.put("origin", tokenChange.getOrigin());
     struct.put("moduleID", tokenChange.getModuleID());
     struct.put("featureID", tokenChange.getFeatureID());
+    struct.put("tenantID", (short) tokenChange.getTenantID());
     return struct;
   }
 
@@ -226,7 +232,8 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     String origin = valueStruct.getString("origin");
     String moduleID = (schemaVersion >=2 ) ? valueStruct.getString("moduleID") : "";
     String featureID = (schemaVersion >=3 ) ? valueStruct.getString("featureID") : "";
-
+    int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
+    
     //
     // validate
     //
@@ -235,7 +242,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     // return
     //
 
-    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID);
+    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, tenantID);
   }
   
   

@@ -31,7 +31,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
   static {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("voucher_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),9)); // 8->9: EVPRO-99: tenantID
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.builder().schema());
@@ -45,6 +45,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     schemaBuilder.field("featureID", Schema.STRING_SCHEMA);
     schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("returnStatus", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   }
 
@@ -69,6 +70,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     struct.put("featureID", voucherChange.getFeatureID());
     struct.put("origin", voucherChange.getOrigin());
     struct.put("returnStatus", voucherChange.getReturnStatus().getGenericResponseMessage());
+    struct.put("tenantID", (short) voucherChange.getTenantID());
     return struct;
   }
 
@@ -89,7 +91,8 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     String featureID = valueStruct.getString("featureID");
     String origin = valueStruct.getString("origin");
     RESTAPIGenericReturnCodes returnStatus = RESTAPIGenericReturnCodes.fromGenericResponseMessage(valueStruct.getString("returnStatus"));
-    return new VoucherChange(schemaAndValue,subscriberID,eventDateTime,newVoucherExpiryDate,eventID,action,voucherCode,voucherID,fileID,moduleID,featureID,origin,returnStatus);
+    int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
+    return new VoucherChange(schemaAndValue,subscriberID,eventDateTime,newVoucherExpiryDate,eventID,action,voucherCode,voucherID,fileID,moduleID,featureID,origin,returnStatus, tenantID);
   }
 
   private String subscriberID;
@@ -104,6 +107,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
   private String featureID;
   private String origin;
   private RESTAPIGenericReturnCodes returnStatus;
+  private int tenantID;
 
   @Override
   public String getSubscriberID() { return subscriberID; }
@@ -119,6 +123,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
   public String getFeatureID() { return featureID; }
   public String getOrigin() { return origin; }
   public RESTAPIGenericReturnCodes getReturnStatus() { return returnStatus; }
+  public int getTenantID() { return tenantID; }
 
   @Override
   public Schema subscriberStreamEventSchema()
@@ -138,7 +143,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
 
   public void setReturnStatus(RESTAPIGenericReturnCodes returnStatus) { this.returnStatus = returnStatus; }
 
-  public VoucherChange(String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus) {
+  public VoucherChange(String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID) {
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.newVoucherExpiryDate = newVoucherExpiryDate;
@@ -151,6 +156,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     this.featureID = featureID;
     this.origin = origin;
     this.returnStatus = returnStatus;
+    this.tenantID = tenantID;
   }
   
   public VoucherChange(VoucherChange voucherChange) {
@@ -166,9 +172,10 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     this.featureID = voucherChange.getFeatureID();
     this.origin = voucherChange.getOrigin();
     this.returnStatus = voucherChange.getReturnStatus();
+    this.tenantID = voucherChange.getTenantID();
   }
 
-  public VoucherChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus) {
+  public VoucherChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID) {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
@@ -182,6 +189,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     this.featureID = featureID;
     this.origin = origin;
     this.returnStatus = returnStatus;
+    this.tenantID = tenantID;
   }
 
   @Override
@@ -198,7 +206,8 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
             ", moduleID='" + moduleID + '\'' +
             ", featureID='" + featureID + '\'' +
             ", origin='" + origin + '\'' +
-            ", returnStatus=" + returnStatus.getGenericResponseMessage() +
+            ", returnStatus=" + returnStatus.getGenericResponseMessage() + '\'' +
+            ", tenantID='" + tenantID + 
             '}';
   }
 }

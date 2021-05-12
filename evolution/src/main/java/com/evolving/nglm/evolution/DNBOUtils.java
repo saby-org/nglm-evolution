@@ -76,10 +76,11 @@ public class DNBOUtils
         origin = subscriberEvaluationRequest.getJourneyNode().getNodeName();
       }
     String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
+    int tenantID = evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID();
     Date date = evolutionEventContext.now();
     String featureID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
     featureID = ActionManager.extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, featureID);
-    return new TokenChange(subscriberID, date, eventID, tokenCode, action, str, origin, Module.Journey_Manager, featureID);
+    return new TokenChange(subscriberID, date, eventID, tokenCode, action, str, origin, Module.Journey_Manager, featureID, tenantID);
   }
   
   /*****************************************

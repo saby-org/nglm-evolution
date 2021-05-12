@@ -16161,7 +16161,8 @@ public class GUIManager
             DeliveryRequest.Module.Customer_Care.getExternalRepresentation(),
             (userID != null) ? userID : "1",//for PTT tests, never happens when called by browser
             origin,
-            RESTAPIGenericReturnCodes.UNKNOWN);
+            RESTAPIGenericReturnCodes.UNKNOWN,
+            tenantID);
 
     // put a listener on the reponse topic
     Future<VoucherChange> waitingResponse=voucherChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
@@ -23297,7 +23298,7 @@ public class GUIManager
               String str = "No tokens returned";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23307,7 +23308,7 @@ public class GUIManager
               String str = "Bad token type";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23326,7 +23327,7 @@ public class GUIManager
               String str = "Bad strategy : unknown id : "+presentationStrategyID;
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23351,7 +23352,7 @@ public class GUIManager
 
               if (presentedOffers.isEmpty())
                 {
-                  generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, "no offers presented");
+                  generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, "no offers presented", tenantID);
                   log.error(returnedLog.toString()); // is not expected, trace errors
                 }
               else
@@ -23524,7 +23525,7 @@ public class GUIManager
               String str = "No tokens returned";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23534,7 +23535,7 @@ public class GUIManager
               String str = "Bad token type";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23545,7 +23546,7 @@ public class GUIManager
               String str = "Token already in Redeemed state";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23554,7 +23555,7 @@ public class GUIManager
               String str = "No offers allocated for this token";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23577,7 +23578,7 @@ public class GUIManager
               String str = "Offer has not been presented";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
@@ -28411,12 +28412,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private void generateTokenChange(String subscriberID, Date now, String tokenCode, String userID, String action, String str)
+  private void generateTokenChange(String subscriberID, Date now, String tokenCode, String userID, String action, String str, int tenantID)
   {
     String topic = Deployment.getTokenChangeTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "CC", Module.Customer_Care, userID);
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID);
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),

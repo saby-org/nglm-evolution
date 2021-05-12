@@ -55,7 +55,7 @@ public class VDRSinkConnector extends SimpleESSinkConnector
     @Override
     protected String getDocumentIndexName(VoucherChange voucherChange)
     {
-      String timeZone = DeploymentCommon.getDeployment(0).getTimeZone(); // TODO EVPRO-99 ERROR! This should be mapped to tenantID.
+      String timeZone = DeploymentCommon.getDeployment(voucherChange.getTenantID()).getTimeZone();
       return this.getDefaultIndexName() + RLMDateUtils.formatDateISOWeek(voucherChange.getEventDate(), timeZone);
     }
 
@@ -66,7 +66,7 @@ public class VDRSinkConnector extends SimpleESSinkConnector
       documentMap.put(ES_FIELD_VOUCHER_CODE, voucherChange.getVoucherCode());
       documentMap.put(ES_FIELD_SUBSCRIBER_ID, voucherChange.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(voucherChange.getAlternateIDs(), documentMap);
-      documentMap.put("tenantID", -1); // TODO EVPRO-99 should be mapped to tenantID.
+      documentMap.put("tenantID", voucherChange.getTenantID());
       documentMap.put("voucherID", voucherChange.getVoucherID());
       documentMap.put("action", voucherChange.getAction());
       documentMap.put("eventDatetime", voucherChange.getEventDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(voucherChange.getEventDate()):"");
