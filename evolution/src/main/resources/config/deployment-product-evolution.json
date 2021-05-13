@@ -820,7 +820,7 @@
     {
       "id"           : "getCustomerEDRs",
       "methodName"   : "getCustomerEDRs",
-      "permissions"  : ["API-GET-CUSTOMER-BDRS"]
+      "permissions"  : ["API-GET-CUSTOMER-EDRS"]
     },
     {
       "id"           : "getCustomerODRs",
