@@ -15,8 +15,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 53,
-  "iteration": 1620631670630,
+  "id": 12,
+  "iteration": 1620982873766,
   "links": [],
   "panels": [
     {
@@ -86,9 +86,8 @@
               "id": "2",
               "settings": {
                 "interval": "auto",
-                "min_doc_count": "0",
-                "offset": "-1d",
-                "trimEdges": "1"
+                "min_doc_count": "1",
+                "trimEdges": "0"
               },
               "type": "date_histogram"
             }
@@ -833,7 +832,7 @@
               "field": "filter.offer",
               "id": "3",
               "settings": {
-                "min_doc_count": "0",
+                "min_doc_count": "1",
                 "order": "desc",
                 "orderBy": "_term",
                 "size": "10"
@@ -844,7 +843,8 @@
               "field": "timestamp",
               "id": "2",
               "settings": {
-                "interval": "auto"
+                "interval": "auto",
+                "min_doc_count": "1"
               },
               "type": "date_histogram"
             }
@@ -1266,7 +1266,7 @@
               "field": "filter.supplier",
               "id": "3",
               "settings": {
-                "min_doc_count": "0",
+                "min_doc_count": "1",
                 "order": "desc",
                 "orderBy": "_term",
                 "size": "0"
@@ -1277,7 +1277,8 @@
               "field": "timestamp",
               "id": "2",
               "settings": {
-                "interval": "auto"
+                "interval": "auto",
+                "min_doc_count": "1"
               },
               "type": "date_histogram"
             }
@@ -1421,7 +1422,9 @@
               "field": "timestamp",
               "id": "2",
               "settings": {
-                "interval": "auto"
+                "interval": "auto",
+                "min_doc_count": "1",
+                "trimEdges": "0"
               },
               "type": "date_histogram"
             }
@@ -1496,7 +1499,8 @@
               "field": "timestamp",
               "id": "2",
               "settings": {
-                "interval": "auto"
+                "interval": "auto",
+                "min_doc_count": "1"
               },
               "type": "date_histogram"
             }
@@ -1520,6 +1524,7 @@
       "valueName": "current"
     }
   ],
+  "refresh": false,
   "schemaVersion": 27,
   "style": "dark",
   "tags": [],
@@ -1527,7 +1532,11 @@
     "list": [
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": "VDRdatacube",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.module\"}",
         "description": null,
@@ -1691,7 +1700,11 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": "VDRdatacube",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.action\"}",
         "description": null,
@@ -1715,17 +1728,21 @@
       },
       {
         "auto": true,
-        "auto_count": 30,
-        "auto_min": "10s",
-        "current": {},
+        "auto_count": 1,
+        "auto_min": "",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval"
+        },
         "description": null,
         "error": null,
-        "hide": 0,
-        "label": null,
+        "hide": 2,
+        "label": "interval",
         "name": "interval",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "auto",
             "value": "$__auto_interval_interval"
           },
@@ -1733,54 +1750,10 @@
             "selected": false,
             "text": "1m",
             "value": "1m"
-          },
-          {
-            "selected": false,
-            "text": "10m",
-            "value": "10m"
-          },
-          {
-            "selected": false,
-            "text": "30m",
-            "value": "30m"
-          },
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": false,
-            "text": "6h",
-            "value": "6h"
-          },
-          {
-            "selected": false,
-            "text": "12h",
-            "value": "12h"
-          },
-          {
-            "selected": false,
-            "text": "1d",
-            "value": "1d"
-          },
-          {
-            "selected": true,
-            "text": "7d",
-            "value": "7d"
-          },
-          {
-            "selected": false,
-            "text": "14d",
-            "value": "14d"
-          },
-          {
-            "selected": false,
-            "text": "30d",
-            "value": "30d"
           }
         ],
-        "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "query": "1m",
+        "queryValue": "",
         "refresh": 2,
         "skipUrlSync": false,
         "type": "interval"
@@ -1795,5 +1768,5 @@
   "timezone": "",
   "title": "Bussiness _ Offer and Voucher Dashboard",
   "uid": "2lqroD9Mk",
-  "version": 10
+  "version": 16
 }
