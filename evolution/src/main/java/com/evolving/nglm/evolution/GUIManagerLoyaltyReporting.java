@@ -302,8 +302,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", true);
                 String entryEndDateStr = JSONUtilities.decodeString(jsonRoot, "entryEndDate", true);
-                Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(entryEndDateStr), durationInDays, Deployment.getSystemTimeZone());
-                jsonRoot.put("effectiveEndDate", GUIManagedObject.formatDateField(effectiveEndDate));
+                Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(entryEndDateStr), durationInDays, Deployment.getDefault().getTimeZone());
+                jsonRoot.put("effectiveEndDate", RLMDateUtils.formatDateForREST(effectiveEndDate, Deployment.getDefault().getTimeZone()));
               }
             else
               {
