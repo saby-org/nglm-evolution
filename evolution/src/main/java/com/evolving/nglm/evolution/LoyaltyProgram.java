@@ -41,7 +41,8 @@ public abstract class LoyaltyProgram extends GUIManagedObject
   public enum LoyaltyProgramType
   {
     POINTS("POINTS"),
-//    BADGES("BADGES"),
+    CHALLENGE("CHALLENGE"),
+    MISSION("MISSION"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private LoyaltyProgramType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

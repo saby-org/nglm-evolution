@@ -9,6 +9,8 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
@@ -23,8 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +107,20 @@ public class LoyaltyProgramService extends GUIService
   public boolean isActiveLoyaltyProgram(GUIManagedObject loyaltyProgramUnchecked, Date date) { return isActiveGUIManagedObject(loyaltyProgramUnchecked, date); }
   public LoyaltyProgram getActiveLoyaltyProgram(String loyaltyProgramID, Date date) { return (LoyaltyProgram) getActiveGUIManagedObject(loyaltyProgramID, date); }
   public Collection<LoyaltyProgram> getActiveLoyaltyPrograms(Date date, int tenantID) { return (Collection<LoyaltyProgram>) getActiveGUIManagedObjects(date, tenantID); }
+  public Collection<LoyaltyProgramChallenge> getActiveRecurrentChallenges(Date date, int tenantID)
+  {
+    List<LoyaltyProgramChallenge> result = new ArrayList<LoyaltyProgramChallenge>();
+    Collection<LoyaltyProgram> loyaltyPrograms = getActiveLoyaltyPrograms(date, tenantID);
+    for (LoyaltyProgram program : loyaltyPrograms)
+      {
+        if (program.getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE)
+          {
+            LoyaltyProgramChallenge challenge = (LoyaltyProgramChallenge) program;
+            if (challenge.getRecurrence()) result.add(challenge);
+          }
+      }
+    return result;
+  }
 
   /*****************************************
   *
@@ -153,17 +171,27 @@ public class LoyaltyProgramService extends GUIService
   public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
     JSONObject responseJSON = super.generateResponseJSON(guiManagedObject, fullDetails, date);
-    int tierCount = 0;
+    int levelCount = 0;
     if (guiManagedObject instanceof LoyaltyProgramPoints)
       {
         LoyaltyProgramPoints lp = (LoyaltyProgramPoints) guiManagedObject;
         List<Tier> tiers = lp.getTiers();
-        if (tiers != null)
-          {
-            tierCount = tiers.size();
-          }
+        responseJSON.put("tierCount", tiers == null ? Integer.valueOf(0) : tiers.size());
       }
-    responseJSON.put("tierCount", tierCount);
+    else if (guiManagedObject instanceof LoyaltyProgramChallenge)
+      {
+        LoyaltyProgramChallenge lc = (LoyaltyProgramChallenge) guiManagedObject;
+        List<ChallengeLevel> challengeLevels = lc.getLevels();
+        responseJSON.put("levelCount", challengeLevels == null ? Integer.valueOf(0) : challengeLevels.size());
+      }
+    else if (guiManagedObject instanceof LoyaltyProgramMission)
+      {
+        LoyaltyProgramMission mission = (LoyaltyProgramMission) guiManagedObject;
+        List<MissionStep> steps = mission.getSteps();
+        responseJSON.put("stepCount", steps == null ? Integer.valueOf(0) : steps.size());
+        responseJSON.remove("effectiveStartDate");
+        responseJSON.remove("effectiveEndDate");
+      }
     return responseJSON;
   }
 
