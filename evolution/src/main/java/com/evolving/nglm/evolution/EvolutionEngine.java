@@ -6574,6 +6574,7 @@ public class EvolutionEngine
     private String generateEventID(SubscriberStreamEvent event)
     {
       String result = null;
+      String className = event.getClass().getSimpleName();
       if (event instanceof EvolutionEngineEvent)
         {
           EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) event;
@@ -6589,8 +6590,14 @@ public class EvolutionEngine
               //
               
               DeliveryRequest deliveryRes = (DeliveryRequest) event;
-              if (deliveryRes.getEventID() != null) result = deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID());
-              else result = engineEvent.getEventName();
+              if (deliveryRes.getEventID() != null)
+                {
+                  result = deliveryRes.getEventName() != null ? deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID()) : className.concat("-").concat(deliveryRes.getEventID());
+                } 
+              else
+                {
+                  result = deliveryRes.getEventName() != null ? deliveryRes.getEventName() : className;
+                } 
             }
           else
             {
@@ -6599,7 +6606,7 @@ public class EvolutionEngine
         }
       else
         {
-          result = event.getClass().getSimpleName();
+          result = className;
         }
       return result;
     }
