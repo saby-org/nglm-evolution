@@ -380,7 +380,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 	 * <p>
 	 * Synchronous call (up to the SMPP layer)
 	 */
-	public boolean sendSMS(INotificationRequest deliveryRequest, String text, String desination, String sender, boolean receipt, boolean flashsms){
+	public boolean sendSMS(INotificationRequest deliveryRequest, String text, String desination, String sender, boolean receipt, boolean flashsms, Integer SMSExpiration){
 
 		//DialogManagerMessage sms = expandedsms.getOriginalMsg();
 		if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.sendSMS("+text+")");
@@ -460,11 +460,22 @@ public class SimpleSMSSender extends SMSSenderListener {
 			}
 			
 			Calendar c = SystemTime.getCalendar();
-	        Date expiryDateTimeStamp = null;
-			if(this.expiration_period != 0) {
-			  c.add(Calendar.HOUR_OF_DAY, this.expiration_period);
-			  expiryDateTimeStamp = c.getTime();
-			}
+	    Date expiryDateTimeStamp = null;
+        if (SMSExpiration != 0)
+          {
+            c.add(Calendar.MINUTE, SMSExpiration);
+            expiryDateTimeStamp = c.getTime();
+            if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.G_sms"+"current time"+ c +";;;;"+expiryDateTimeStamp+":::"+SMSExpiration);
+          }
+        else if (this.expiration_period != 0)
+          {
+            c.add(Calendar.HOUR_OF_DAY, this.expiration_period);
+            expiryDateTimeStamp = c.getTime();
+            if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.sms"+expiryDateTimeStamp+":::"+this.expiration_period);
+          }
+        else {
+          if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.sendSMS expiration period is 0 hours");
+        }
 
 			if(logger.isDebugEnabled()) logger.debug("SimpleSMSSender.sendSMS expiration period of "+this.expiration_period+" hours, set the expiration date to "+expiryDateTimeStamp);
 			//sms.setExpiration_timestamp(d[0]); // mostly for SMSC
