@@ -232,8 +232,8 @@
         "outputType"             : "static",
         "outputConnectors"       : 
           [ 
-            { "name" : "event",   "display" : "Event",   "evaluationPriority" : "last",  "evaluateContextVariables" : true,  "transitionCriteria" : [ { "criterionField" : "evaluation.eventname", "criterionOperator" : "==", "argument" : { "expression" : "node.parameter.eventname" } } ], "additionalCriteria" : "node.parameter.additionalcriteria" },
-            { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] } 
+            { "name" : "event",   "display" : "Event",   "evaluationPriority" : "first",  "evaluateContextVariables" : true,  "transitionCriteria" : [ { "criterionField" : "evaluation.eventname", "criterionOperator" : "==", "argument" : { "expression" : "node.parameter.eventname" } } ], "additionalCriteria" : "node.parameter.additionalcriteria" },
+            { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "last", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] } 
           ],
         "parameters"             : 
           [ 
@@ -345,7 +345,7 @@
         "outputType"             : "dynamic",
         "outputConnectors"       : 
           [ 
-            { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] } 
+            { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "last", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] } 
           ],
         "dynamicOutputConnector" : 
           {
@@ -897,7 +897,7 @@
         "outputConnectors":
         [
           { "name": "success", "display": "success", "transitionCriteria": [ ] },
-          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
+          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "last", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
         ],
         "parameters":
         [
@@ -971,7 +971,7 @@
         "outputConnectors":
         [
           { "name": "success", "display": "success", "transitionCriteria": [ ] },
-          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
+          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "last", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
         ],
         "parameters":
         [
@@ -1063,7 +1063,7 @@
         "outputConnectors":
         [
           { "name": "success", "display": "success", "transitionCriteria": [ ] },
-          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
+          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "last", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
         ],
         "parameters":
         [
@@ -1156,7 +1156,7 @@
         [
           { "name" : "purchased", "display" : "Purchased", "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
           { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
+          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "last", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
         ],
         "parameters" :
         [
