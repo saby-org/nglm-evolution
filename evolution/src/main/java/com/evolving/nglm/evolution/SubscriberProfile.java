@@ -929,8 +929,12 @@ public abstract class SubscriberProfile
     	HashMap<String,Object> elementVal=elements.get(instance.getElementID());
     	
     	for (Map.Entry<String,DataModelFieldValue> entry : instance.getFieldValues().entrySet()) {
-    		elementVal.put(entry.getKey(), entry.getValue().getValue());
-    	}       
+    		Object currVal=entry.getValue().getValue();
+    		if(currVal instanceof Date )
+    			currVal=getDateString((Date)currVal);
+    		
+    		elementVal.put(entry.getKey(), currVal);
+    	}      
     	}
     	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
     }
