@@ -1763,6 +1763,7 @@ public class EvolutionEngine
           return null;
           
         case Delete:
+          if(previousSubscriberState==null) return null;
           SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
           return subscriberState;
       }

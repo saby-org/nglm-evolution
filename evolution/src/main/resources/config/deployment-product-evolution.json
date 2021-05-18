@@ -691,12 +691,7 @@
     }
   ],
 
-  "initialSalesChannels" :
-  [
-    {"id":"-1", "name":"CustomerCare",  "display":"Customer Care","active":true, "readOnly":true, "callingChannelIDs" : [ "-1" ] },
-    {"id":"2",  "name":"journey",       "display":"Journey",      "active":true, "readOnly":true, "callingChannelIDs":[]}
-  ],
-  
+  "initialSalesChannels" : [],
   "initialSourceAddresses" : [],
   "initialPartners" : [],
   "initialProducts" : [],
@@ -704,85 +699,13 @@
   "initialContactPolicies" : [],
   "initialJourneyTemplates" : [],
   "initialJourneyObjectives" : [],
-
-  "initialOfferObjectives" :
-  [
-    {
-      "id" : "1",
-      "name" : "default",
-      "display" : "Default",
-      "active" : true,
-      "readOnly" : false,
-      "catalogCharacteristics" : [ ]
-    }
-  ],
-  
+  "initialOfferObjectives" : [],
   "initialProductTypes" : [],
   "initialTokenTypes" : [],
   "initialSegmentationDimensions" : [],
   "initialComplexObjects" : [],
-
-  "initialCallingChannels": [
-    {
-      "id": "-1", 
-      "name": "CustomerCare",
-      "display": "Customer Care",
-      "active": true,
-      "readOnly": true,
-      "offerProperties": [
-        {
-          "offerPropertyID": "1",
-          "offerPropertyName": "offerID",
-          "presentOffers": true,
-          "presentOfferDetails": true,
-          "hidden": true
-        },
-        {
-          "offerPropertyID": "2",
-          "offerPropertyName": "offerName",
-          "presentOffers": true,
-          "presentOfferDetails": true,
-          "hidden": true
-        },
-        {
-          "offerPropertyID": "3",
-          "offerPropertyName": "offerDescription",
-          "presentOffers": true,
-          "presentOfferDetails": true,
-          "hidden": true
-        },
-        {
-          "offerPropertyID": "4",
-          "offerPropertyName": "offerScore",
-          "presentOffers": true,
-          "presentOfferDetails": true,
-          "hidden": false
-        },
-        {
-          "offerPropertyID": "5",
-          "offerPropertyName": "offerRank",
-          "presentOffers": true,
-          "presentOfferDetails": true,
-          "hidden": false
-        },
-        {
-          "offerPropertyID": "6",
-          "offerPropertyName": "imageURL",
-          "presentOffers": true,
-          "presentOfferDetails": true,
-          "hidden": false
-        },
-        {
-          "offerPropertyID": "7",
-          "offerPropertyName": "price",
-          "presentOffers": true,
-          "presentOfferDetails": true,
-          "hidden": false
-        }
-      ],
-      "catalogCharacteristics": []
-    }
-  ],
+  "initialCallingChannels": [],
+  "initialSuppliers" : [],
 
   "offerProperties" :
   [
@@ -1214,12 +1137,6 @@
                         "display": "Balance",
                         "name": "Balance0190624185800"
                 }
-    ],
-    
-  "initialSuppliers" :
-    [
-      { "id" : "supplier_1", "name" : "EvolutionPoints",  "fulfillmentProviderID" : "provider_Point", "display" : "Evolution Points", "description" : "Evolution Points Supplier",         "active" : true, "readOnly" : true, "email" : "", "phone" : "", "website" : "" },
-      { "id" : "supplier_2", "name" : "EvolutionCampaigns","fulfillmentProviderID" : "provider_Journey","display" : "Evolution Campaigns",       "description" : "Evolution Campaigns Supplier", "active" : true, "readOnly" : true, "email" : "", "phone" : "", "website" : "" }
     ],
     
   "supportedCurrencies" : [],

@@ -635,6 +635,18 @@
             "defaultValue" : null
           },
           {
+            "id" : "node.parameter.saleschannel",
+            "display" : "Sales Channel",
+            "dataType" : "string",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : null,
+            "expressionFields" : [ "#saleschannelsDisplayExp#" ],
+            "expressionValuedParameter" : true,
+            "defaultValue" : null,
+            "showContextVariables": true
+          },
+          {
             "id" : "node.parameter.quantity",
             "display" : "Quantity",
             "dataType" : "integer",

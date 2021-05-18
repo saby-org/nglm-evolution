@@ -3008,7 +3008,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *****************************************/
 
     private String moduleID;
-    private String salesChannelID;
+    private String salesChannelID;//TODO: remove after everyone well migrated above 2.0
     
     /*****************************************
     *
@@ -3020,7 +3020,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       super(configuration);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
-      this.salesChannelID = JSONUtilities.decodeString(configuration, "salesChannel", true);
+      this.salesChannelID = JSONUtilities.decodeString(configuration, "salesChannel", false);
     }
 
     /*****************************************
@@ -3038,6 +3038,29 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *****************************************/
 
       String offerID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.offerid");
+      String salesChannelDisplay = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.saleschannel");
+      String salesChannelID=null;
+      if(salesChannelDisplay==null && this.salesChannelID!=null)
+        {
+          salesChannelID = this.salesChannelID;
+          log.error("old purchaseOffer node in journey "+subscriberEvaluationRequest.getJourneyState().getJourneyID()+" node "+subscriberEvaluationRequest.getJourneyState().getJourneyNodeID()+", please update journey to select a salesChannel. Will still use "+salesChannelID+" for now.");
+        }
+      else
+        {
+          for (SalesChannel salesChannel : evolutionEventContext.getSalesChannelService().getActiveSalesChannels(evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID()))
+            {
+              if (salesChannel.getGUIManagedObjectDisplay().equals(salesChannelDisplay))
+                {
+                  salesChannelID = salesChannel.getSalesChannelID();
+                  break;
+                }
+            }
+          if (salesChannelID==null)
+            {
+              log.info("unknown salesChannelID for display "+salesChannelDisplay);
+              return Collections.emptyList();
+            }
+        }
       int quantity = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.quantity");
       String origin = null;
       if (subscriberEvaluationRequest.getJourneyNode() != null)

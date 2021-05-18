@@ -26114,6 +26114,40 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             }
           break;
 
+        case "saleschannels":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject salesChannelUnchecked : salesChannelService.getStoredSalesChannels(tenantID))
+                {
+                  if (salesChannelUnchecked.getAccepted())
+                    {
+                      SalesChannel salesChannel = (SalesChannel) salesChannelUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", salesChannel.getSalesChannelID());
+                      availableValue.put("display", salesChannel.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "saleschannelsDisplayExp":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject salesChannelUnchecked : salesChannelService.getStoredSalesChannels(tenantID))
+                {
+                  if (salesChannelUnchecked.getAccepted())
+                    {
+					  SalesChannel salesChannel = (SalesChannel) salesChannelUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", "'" + salesChannel.getGUIManagedObjectDisplay() + "'");
+                      availableValue.put("display", salesChannel.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
         case "offerObjectives":
           if (includeDynamic)
             {
