@@ -4589,7 +4589,7 @@ public class EvolutionEngine
 
                   String currentStep = ((LoyaltyProgramMissionState) loyaltyProgramState).getStepName();
                   MissionStep subscriberCurrentStepDefinition = loyaltyProgramMission.getStep(currentStep);
-                  if (subscriberCurrentStepDefinition != null)
+                  if (subscriberCurrentStepDefinition != null && !((LoyaltyProgramMissionState) loyaltyProgramState).isMissionCompleted())
                     {
                       boolean exitStep = subscriberCurrentStepDefinition.evaluateStepChangeCriteria(evolutionEvent);
                       if (exitStep)
