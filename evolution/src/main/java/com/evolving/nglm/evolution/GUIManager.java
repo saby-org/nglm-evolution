@@ -23787,6 +23787,14 @@ public class GUIManager
           response.put("responseCode", "ok");
         }
     }
+
+    catch (GUIManagerException e)
+      {
+        response.put("responseMessage", e.getMessage());
+        response.put("responseCode", e.getResponseParameter());
+        return JSONUtilities.encodeObject(response);
+
+      }
     catch (SubscriberProfileServiceException e) 
     {
       throw new GUIManagerException(e);
@@ -23895,6 +23903,14 @@ public class GUIManager
           }
       }
    }
+
+    catch (GUIManagerException e)
+      {
+        response.put("responseMessage", e.getMessage());
+        response.put("responseCode", e.getResponseParameter());
+        return JSONUtilities.encodeObject(response);
+
+      }
    catch (SubscriberProfileServiceException e) 
    {
      String str = "unable to process request purchaseOffer " + e.getLocalizedMessage();
@@ -25357,7 +25373,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         ));
 
     if (sync) {
-      return handleWaitingResponse(waitingResponse);
+      PurchaseFulfillmentRequest result =  handleWaitingResponse(waitingResponse);
+        if (result != null)
+          {
+            if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
+              {
+                return handleWaitingResponse(waitingResponse);
+              }
+            else
+              {
+                String returnCode = (result.getStatus().getReturnCode()).toString();
+                String returnMessage = result.getStatus().name();
+                throw new GUIManagerException(returnMessage, returnCode);
+              }
+          }
     }
     return purchaseRequest;
   }
