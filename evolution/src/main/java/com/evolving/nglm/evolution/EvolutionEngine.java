@@ -4611,7 +4611,7 @@ public class EvolutionEngine
                   if (MissionSchedule.FIXDURATION == MissionSchedule.fromExternalRepresentation(loyaltyProgramMission.getScheduleType()))
                     {
                       String tz = Deployment.getDeployment(loyaltyProgramMission.getTenantID()).getTimeZone();
-                      int duration = -100;//loyaltyProgramMission.getDuration();
+                      int duration = loyaltyProgramMission.getDuration();
                       Date entryDate = ((LoyaltyProgramMissionState) loyaltyProgramState).getLoyaltyProgramEnrollmentDate();
                       Date lastDate = RLMDateUtils.addDays(entryDate, duration, tz);
                       if (now.after(lastDate))
