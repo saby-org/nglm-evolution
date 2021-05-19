@@ -2614,6 +2614,7 @@ public class ThirdPartyManager
                      
                    case MISSION:
                      LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+                     loyaltyProgramPresentation.put("isMissionCompleted", loyaltyProgramMissionState.isMissionCompleted());
                      
                      //
                      // current step

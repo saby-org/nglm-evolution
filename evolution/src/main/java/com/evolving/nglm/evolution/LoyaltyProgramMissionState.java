@@ -297,6 +297,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         MissionStep step = mission.getStep(toStep);
         Integer currentStepID = step.getStepID();
         Integer totalSteps = mission.getTotalNumberOfSteps(true);
+        log.info("RAJ K calculateCurrentProgression currentStepID {}, totalSteps {}, ", currentStepID, totalSteps);
         result = ((double) (currentStepID / totalSteps)) * 100;
       }
     return result;
