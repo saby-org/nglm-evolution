@@ -99,6 +99,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   public Double getCurrentProgression() { return currentProgression; }
   public LoyaltyProgramMissionHistory getLoyaltyProgramMissionHistory() { return loyaltyProgramMissionHistory; }
   public boolean isMissionCompleted() { return isMissionCompleted; }
+  public void setIsMissionCompleted(boolean isMissionCompleted) { this.isMissionCompleted = isMissionCompleted; }
 
   //
   //  setters
@@ -243,7 +244,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
 
         this.previousStepName = fromStep;
         this.stepName = toStep;
-        this.isMissionCompleted = toStep == null;
         this.stepEnrollmentDate = enrollmentDate;
         this.currentProgression = calculateCurrentProgression(toStep, loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now));
 
@@ -286,7 +286,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   private Double calculateCurrentProgression(String toStep, LoyaltyProgram activeLoyaltyProgram)
   {
     Double result = Double.valueOf(0.0);
-    if (toStep == null)
+    if (isMissionCompleted || toStep == null)
       {
         result = Double.valueOf(100.0);
       }
@@ -295,8 +295,8 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         LoyaltyProgramMission mission = (LoyaltyProgramMission) activeLoyaltyProgram;
         MissionStep step = mission.getStep(toStep);
         Integer currentStepID = step.getStepID();
-        Integer totalSteps = mission.getTotalNumberOfSteps(true);
-        log.info("RAJ K calculateCurrentProgression currentStepID {}, totalSteps {}, ", currentStepID, totalSteps);
+        Integer totalSteps = mission.getTotalNumberOfSteps(false);
+        log.info("RAJ K calculateCurrentProgression isMissionCompleted {}, currentStepID {}, totalSteps {}, ", isMissionCompleted, currentStepID, totalSteps);
         result = (Double.valueOf(currentStepID) / Double.valueOf(totalSteps)) * 100;
       }
     return result;

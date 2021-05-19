@@ -188,7 +188,7 @@ public class LoyaltyProgramService extends GUIService
       {
         LoyaltyProgramMission mission = (LoyaltyProgramMission) guiManagedObject;
         List<MissionStep> steps = mission.getSteps();
-        responseJSON.put("stepCount", steps == null ? Integer.valueOf(0) : steps.size());
+        responseJSON.put("stepCount", mission.getTotalNumberOfSteps(true));
         responseJSON.remove("effectiveStartDate");
         responseJSON.remove("effectiveEndDate");
       }
