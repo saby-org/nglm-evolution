@@ -106,6 +106,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramChallen
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramLevelChange;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.LoyaltyProgramMissionEventInfos;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.LoyaltyProgramStepChange;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionSchedule;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
@@ -3701,6 +3702,10 @@ public class EvolutionEngine
         break;
         
       case MISSION:
+        LoyaltyProgramMission loyaltyProgramMission = (LoyaltyProgramMission) loyaltyProgram;
+        
+        MissionStep previousStep = loyaltyProgramMission.getStep(oldTierName);
+        MissionStep currentStep = loyaltyProgramMission.getStep(oldTierName);
         //RAJ K
         break;
         
@@ -4586,6 +4591,24 @@ public class EvolutionEngine
                   //
 
                   LoyaltyProgramMission loyaltyProgramMission = (LoyaltyProgramMission) loyaltyProgram;
+                  
+                  //
+                  //  calculate and check lastDate if FIXDURATION
+                  //
+                  
+                  if (MissionSchedule.FIXDURATION == MissionSchedule.fromExternalRepresentation(loyaltyProgramMission.getScheduleType()))
+                    {
+                      String tz = Deployment.getDeployment(loyaltyProgramMission.getTenantID()).getTimeZone();
+                      int duration = loyaltyProgramMission.getDuration();
+                      Date entryDate = ((LoyaltyProgramMissionState) loyaltyProgramState).getLoyaltyProgramEnrollmentDate();
+                      Date lastDate = RLMDateUtils.addDays(entryDate, duration, tz);
+                      if (now.after(lastDate))
+                        {
+                          if (log.isDebugEnabled()) log.debug("time ended for mission {} entry date was {} and lastDate was {} as duration was {} days", loyaltyProgramMission.getGUIManagedObjectDisplay(), RLMDateUtils.formatDateForREST(entryDate, tz), RLMDateUtils.formatDateForREST(lastDate, tz), duration);
+                          break;
+                        }
+                    }
+                  
                   log.info("RAJ K update {}", loyaltyProgramMission.getGUIManagedObjectDisplay());
 
                   //

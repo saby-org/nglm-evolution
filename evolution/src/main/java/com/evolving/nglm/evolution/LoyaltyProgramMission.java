@@ -37,7 +37,22 @@ public class LoyaltyProgramMission extends LoyaltyProgram
 {
   
   //
-  //  LoyaltyProgramType
+  //  LoyaltyProgramMissionEventInfos
+  //
+
+  public enum MissionSchedule
+  {
+    FIXDURATION("FIXDURATION"),
+    FIXENDDATE("FIXENDDATE"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private MissionSchedule(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static MissionSchedule fromExternalRepresentation(String externalRepresentation) { for (MissionSchedule enumeratedValue : MissionSchedule.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
+  //
+  //  LoyaltyProgramMissionEventInfos
   //
 
   public enum LoyaltyProgramMissionEventInfos
@@ -267,7 +282,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     this.scheduleType = JSONUtilities.decodeString(jsonRoot, "scheduleType", true);
     this.entryStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "entryStartDate", true));
     this.entryEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "entryEndDate", true));
-    this.duration = JSONUtilities.decodeInteger(jsonRoot, "duration", scheduleType.equals("FIXDURATION"));
+    this.duration = JSONUtilities.decodeInteger(jsonRoot, "duration", MissionSchedule.FIXDURATION == MissionSchedule.fromExternalRepresentation(scheduleType));
     this.createContest = JSONUtilities.decodeBoolean(jsonRoot, "createContest", Boolean.FALSE);
     this.steps = decodeLoyaltyProgramSteps(JSONUtilities.decodeJSONArray(jsonRoot, "steps", true), proportionalProgression);
 
