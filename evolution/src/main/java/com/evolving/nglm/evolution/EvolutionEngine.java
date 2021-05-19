@@ -4319,7 +4319,6 @@ public class EvolutionEngine
                     if (oldStep != null)
                       {
                         loyaltyProgramStepChange = ((LoyaltyProgramMissionState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), stepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
-
                       }
                     else
                       {
@@ -4597,7 +4596,7 @@ public class EvolutionEngine
                       //
 
                       EvolutionEngineEventDeclaration completionEventDeclaration = Deployment.getEvolutionEngineEvents().get(subscriberCurrentStepDefinition.getCompletionEventName());
-                      if (subscriberCurrentStepDefinition.getCompletionEventName() == null || (completionEventDeclaration != null && completionEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName())))
+                      if (subscriberCurrentStepDefinition.getCompletionEventName() == null || (completionEventDeclaration != null && subscriberCurrentStepDefinition.getCompletionEventName().equals(completionEventDeclaration.getName())))
                         {
 
                           if (log.isDebugEnabled()) log.debug("update loyalty program step");
