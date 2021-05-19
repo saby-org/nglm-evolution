@@ -199,7 +199,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramStepChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toStep, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, boolean isMissionCompleted)
+  public LoyaltyProgramStepChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toStep, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
   {
     Date now = SystemTime.getCurrentTime();
     StepHistory lastStepEntered = null;
@@ -243,9 +243,9 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
 
         this.previousStepName = fromStep;
         this.stepName = toStep;
+        this.isMissionCompleted = toStep == null;
         this.stepEnrollmentDate = enrollmentDate;
         this.currentProgression = calculateCurrentProgression(toStep, loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now));
-        this.isMissionCompleted = isMissionCompleted;
 
         //
         // update history
@@ -268,7 +268,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.previousStepName = fromStep;
         this.stepName = null;
         this.stepEnrollmentDate = enrollmentDate;
-        this.isMissionCompleted = isMissionCompleted;
+        this.isMissionCompleted = toStep == null;
 
         //
         // update history
@@ -287,16 +287,17 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   private Double calculateCurrentProgression(String toStep, LoyaltyProgram activeLoyaltyProgram)
   {
     Double result = Double.valueOf(0.0);
-    if (toStep != null && activeLoyaltyProgram instanceof LoyaltyProgramMission)
+    if (toStep == null)
+      {
+        result = Double.valueOf(100.0);
+      }
+    else
       {
         LoyaltyProgramMission mission = (LoyaltyProgramMission) activeLoyaltyProgram;
         MissionStep step = mission.getStep(toStep);
-        if (step != null)
-          {
-            Integer currentStepID = step.getStepID();
-            Integer totalSteps = mission.getTotalNumberOfSteps(true);
-            result = ((double) (currentStepID / totalSteps)) * 100;
-          }
+        Integer currentStepID = step.getStepID();
+        Integer totalSteps = mission.getTotalNumberOfSteps(true);
+        result = ((double) (currentStepID / totalSteps)) * 100;
       }
     return result;
   }

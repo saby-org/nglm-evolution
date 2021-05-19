@@ -19679,6 +19679,7 @@ public class GUIManager
                       
                     case MISSION:
                       LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+                      loyaltyProgramPresentation.put("isMissionCompleted", loyaltyProgramMissionState.isMissionCompleted());
                       
                       //
                       // current step
