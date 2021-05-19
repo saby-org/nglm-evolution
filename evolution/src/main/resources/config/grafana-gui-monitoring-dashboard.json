@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 14,
-  "iteration": 1621414767748,
+  "iteration": 1621414767750,
   "links": [],
   "panels": [
     {
@@ -2201,9 +2201,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum by(module ,operation)(com_evolving_nglm_evolution_voucher_change_count_total)",
+          "expr": "sum by(module ,operation, status)(com_evolving_nglm_evolution_voucher_change_count_total)",
           "interval": "",
-          "legendFormat": "{{module }} / {{operation}}",
+          "legendFormat": "{{module }} / {{operation}} / {{status}}",
           "refId": "A"
         }
       ],
@@ -2318,17 +2318,10 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(com_evolving_nglm_evolution_voucher_change_count_total{status=\"SUCCESS\"}[$__interval]))",
-          "interval": "",
-          "legendFormat": "Delivered",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(com_evolving_nglm_evolution_voucher_change_count_total{status!=\"SUCCESS\"}[$__interval]))",
+          "expr": "sum by(module ,operation, status)(rate(com_evolving_nglm_evolution_voucher_change_count_total{}[$__interval]))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Failed",
+          "legendFormat": "{{module }} / {{operation}} / {{status}}",
           "refId": "B"
         }
       ],
@@ -2376,7 +2369,7 @@
       }
     },
     {
-      "collapsed": true,
+      "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
@@ -2385,302 +2378,301 @@
         "y": 35
       },
       "id": 26,
-      "panels": [
-        {
-          "cacheTimeout": null,
-          "datasource": "prometheus-application",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "id": 0,
-                  "op": "=",
-                  "text": "N/A",
-                  "type": 1,
-                  "value": "null"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "rgb(155, 155, 155)",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
+      "panels": [],
+      "title": "ODR - Offer Detail Records",
+      "type": "row"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "prometheus-application",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
           },
-          "gridPos": {
-            "h": 12,
-            "w": 3,
-            "x": 0,
-            "y": 7
-          },
-          "id": 28,
-          "interval": null,
-          "links": [],
-          "maxDataPoints": 100,
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [],
-              "fields": "",
-              "values": false
-            },
-            "text": {},
-            "textMode": "auto"
-          },
-          "pluginVersion": "7.5.2",
-          "targets": [
+          "mappings": [
             {
-              "expr": "sum(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{}[${__range_s}s]))by(status)",
-              "interval": "",
-              "legendFormat": "{{status}}",
-              "refId": "A"
+              "id": 0,
+              "op": "=",
+              "text": "N/A",
+              "type": 1,
+              "value": "null"
             }
           ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Overall Count over $interval",
-          "type": "stat"
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(155, 155, 155)",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 3,
+        "x": 0,
+        "y": 36
+      },
+      "id": 28,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
         {
-          "aliasColors": {},
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-application",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 12,
-            "w": 10,
-            "x": 3,
-            "y": 7
-          },
-          "hiddenSeries": false,
-          "id": 30,
-          "interval": "1d",
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": false,
-          "linewidth": 1,
-          "nullPointMode": "null",
+          "expr": "sum(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{}[${__range_s}s]))by(status)",
+          "interval": "",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Overall Count over $interval",
+      "type": "stat"
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 12,
+        "w": 10,
+        "x": 3,
+        "y": 36
+      },
+      "hiddenSeries": false,
+      "id": 30,
+      "interval": "1d",
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": false,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum by(module,status)(com_evolving_nglm_evolution_purchasefulfillment_count_total)",
+          "interval": "",
+          "legendFormat": "{{module}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Success and Failure (Record / Day)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
           "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum by(module,status)(com_evolving_nglm_evolution_purchasefulfillment_count_total)",
-              "interval": "",
-              "legendFormat": "{{module}} {{status}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Success and Failure (Record / Day)",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "Customer_Care ",
-                "renamePattern": "Customer Care / "
-              }
-            },
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "Journey_Manager",
-                "renamePattern": "Journey Manager /"
-              }
-            }
-          ],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:2906",
-              "format": "short",
-              "label": "Record",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "$$hashKey": "object:2907",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
+            "regex": "Customer_Care ",
+            "renamePattern": "Customer Care / "
           }
         },
         {
-          "aliasColors": {
-            "sum(increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[5m]))": "red"
-          },
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-application",
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 12,
-            "w": 11,
-            "x": 13,
-            "y": 7
-          },
-          "hiddenSeries": false,
-          "id": 31,
-          "interval": "1m",
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null as zero",
+          "id": "renameByRegex",
           "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status=\"delivered\"}[$__interval]))",
-              "interval": "",
-              "legendFormat": "Delivered",
-              "refId": "A"
-            },
-            {
-              "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status!=\"delivered\"}[$__interval]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Failed",
-              "refId": "B"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Success and Failure Rate (Record / Second)",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:2825",
-              "format": "short",
-              "label": "Record",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "$$hashKey": "object:2826",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
+            "regex": "Journey_Manager",
+            "renamePattern": "Journey Manager /"
           }
         }
       ],
-      "title": "ODR - Offer Detail Records",
-      "type": "row"
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2906",
+          "format": "short",
+          "label": "Record",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2907",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {
+        "sum(increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[5m]))": "red"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 12,
+        "w": 11,
+        "x": 13,
+        "y": 36
+      },
+      "hiddenSeries": false,
+      "id": 31,
+      "interval": "1m",
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status=\"delivered\"}[$__interval]))",
+          "interval": "",
+          "legendFormat": "Delivered",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status!=\"delivered\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Failed",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Success and Failure Rate (Record / Second)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2825",
+          "format": "short",
+          "label": "Record",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2826",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "collapsed": true,
@@ -2689,7 +2681,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 48
       },
       "id": 93,
       "panels": [
@@ -2700,7 +2692,6 @@
               "color": {
                 "mode": "thresholds"
               },
-              "custom": {},
               "links": [],
               "mappings": [
                 {
@@ -2727,7 +2718,7 @@
             "h": 17,
             "w": 3,
             "x": 0,
-            "y": 8
+            "y": 37
           },
           "id": 108,
           "interval": "1d",
@@ -2744,7 +2735,7 @@
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "targets": [
             {
               "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total{status = \"SUCCESS\"}[${__range_s}s])) by(process)",
@@ -2789,7 +2780,6 @@
           "datasource": "prometheus-application",
           "fieldConfig": {
             "defaults": {
-              "custom": {},
               "links": []
             },
             "overrides": []
@@ -2800,7 +2790,7 @@
             "h": 17,
             "w": 10,
             "x": 3,
-            "y": 8
+            "y": 37
           },
           "hiddenSeries": false,
           "id": 109,
@@ -2823,7 +2813,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2906,7 +2896,6 @@
           "datasource": "prometheus-application",
           "fieldConfig": {
             "defaults": {
-              "custom": {},
               "links": []
             },
             "overrides": []
@@ -2917,7 +2906,7 @@
             "h": 17,
             "w": 11,
             "x": 13,
-            "y": 8
+            "y": 37
           },
           "hiddenSeries": false,
           "id": 97,
@@ -2939,7 +2928,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -3022,12 +3011,6 @@
           "datasource": "prometheus-application",
           "fieldConfig": {
             "defaults": {
-              "color": {},
-              "custom": {},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": []
-              },
               "unit": "short"
             },
             "overrides": []
@@ -3038,7 +3021,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 25
+            "y": 54
           },
           "hiddenSeries": false,
           "id": 99,
@@ -3061,7 +3044,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -3152,7 +3135,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 49
       },
       "id": 45,
       "panels": [
@@ -3480,7 +3463,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 50
       },
       "id": 75,
       "panels": [
@@ -3838,7 +3821,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 51
       },
       "id": 51,
       "panels": [
@@ -4292,7 +4275,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 52
       },
       "id": 39,
       "panels": [
@@ -4560,5 +4543,5 @@
   "timezone": "",
   "title": "Admin - Monitoring Dashboard",
   "uid": "gMbUkWlWz",
-  "version": 6
+  "version": 10
 }
