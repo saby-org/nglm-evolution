@@ -268,7 +268,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.previousStepName = fromStep;
         this.stepName = null;
         this.stepEnrollmentDate = enrollmentDate;
-        this.isMissionCompleted = toStep == null;
 
         //
         // update history
@@ -298,7 +297,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         Integer currentStepID = step.getStepID();
         Integer totalSteps = mission.getTotalNumberOfSteps(true);
         log.info("RAJ K calculateCurrentProgression currentStepID {}, totalSteps {}, ", currentStepID, totalSteps);
-        result = ((double) (currentStepID / totalSteps)) * 100;
+        result = (Double.valueOf(currentStepID) / Double.valueOf(totalSteps)) * 100;
       }
     return result;
   }
