@@ -4219,10 +4219,12 @@ public class EvolutionEngine
                 switch (loyaltyProgramRequest.getOperation())
                 {
                   case Optin:
+                    log.info("RAJ K Optin {} ", loyaltyProgramMission.getGUIManagedObjectDisplay());
                     LoyaltyProgramState currentLoyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
                     String newStepName = loyaltyProgramMission.getFirstStep().getStepName(); //determineLoyaltyProgramChallengeLevel(currentLoyaltyProgramState, loyaltyProgramMission, now);
                     if (currentLoyaltyProgramState == null)
                       {
+                        log.info("RAJ K Optin {} currentLoyaltyProgramState is null", loyaltyProgramMission.getGUIManagedObjectDisplay());
                         //
                         //  LoyaltyProgramMissionHistory
                         //
@@ -4252,6 +4254,7 @@ public class EvolutionEngine
                       } 
                     else if (currentLoyaltyProgramState instanceof LoyaltyProgramMissionState)
                       {
+                        log.info("RAJ K Optin {} currentLoyaltyProgramState is not null", loyaltyProgramMission.getGUIManagedObjectDisplay());
                         //
                         // get current tier
                         //
@@ -4306,6 +4309,7 @@ public class EvolutionEngine
                     break;
 
                   case Optout:
+                    log.info("RAJ K Optout {}", loyaltyProgramMission.getGUIManagedObjectDisplay());
                     String stepName = null;
                     LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
                     if (loyaltyProgramState == null)
@@ -4582,6 +4586,7 @@ public class EvolutionEngine
                   //
 
                   LoyaltyProgramMission loyaltyProgramMission = (LoyaltyProgramMission) loyaltyProgram;
+                  log.info("RAJ K update {}", loyaltyProgramMission.getGUIManagedObjectDisplay());
 
                   //
                   // get subscriber current step
@@ -4592,6 +4597,7 @@ public class EvolutionEngine
                   if (subscriberCurrentStepDefinition != null && !((LoyaltyProgramMissionState) loyaltyProgramState).isMissionCompleted())
                     {
                       boolean exitStep = subscriberCurrentStepDefinition.evaluateStepChangeCriteria(evolutionEvent);
+                      log.info("RAJ K update {} exitStep {}", loyaltyProgramMission.getGUIManagedObjectDisplay(), exitStep);
                       if (exitStep)
                         {
                           subscriberProfileUpdated = true;
@@ -4602,6 +4608,7 @@ public class EvolutionEngine
                           
                           MissionStep newMissionStep = loyaltyProgramMission.getNextStep(subscriberCurrentStepDefinition.getStepID());
                           String newStep = newMissionStep == null ? null : newMissionStep.getStepName();
+                          log.info("RAJ K update {} currentStep {} newStep {}", loyaltyProgramMission.getGUIManagedObjectDisplay(), currentStep, newStep);
                           if (!currentStep.equals(newStep))
                             {
                               LoyaltyProgramStepChange stepChangeType = ((LoyaltyProgramMissionState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newStep, now, evolutionEvent.getClass().getName(), loyaltyProgramService, newMissionStep == null);
