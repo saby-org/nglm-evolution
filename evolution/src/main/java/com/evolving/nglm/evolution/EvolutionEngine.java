@@ -4228,9 +4228,9 @@ public class EvolutionEngine
                         //
                         
                         LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = new LoyaltyProgramMissionHistory(loyaltyProgram.getLoyaltyProgramID());
-                        currentLoyaltyProgramState = new LoyaltyProgramMissionState(LoyaltyProgramType.MISSION, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newStepName, null, now, Double.valueOf(0.0), loyaltyProgramMissionHistory);
+                        currentLoyaltyProgramState = new LoyaltyProgramMissionState(LoyaltyProgramType.MISSION, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newStepName, null, now, Double.valueOf(0.0), loyaltyProgramMissionHistory, false);
                         if (log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '" + subscriberProfile.getSubscriberID() + "' : loyaltyProgramState.update(" + loyaltyProgram.getEpoch() + ", " + loyaltyProgramRequest.getOperation() + ", " + loyaltyProgram.getLoyaltyProgramName() + ", " + newStepName + ", " + now + ", " + loyaltyProgramRequest.getDeliveryRequestID() + ")");
-                        LoyaltyProgramStepChange stepChangeType = ((LoyaltyProgramMissionState) currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newStepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
+                        LoyaltyProgramStepChange stepChangeType = ((LoyaltyProgramMissionState) currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newStepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService, false);
 
                         //
                         // generate new event (opt-in)
@@ -4268,7 +4268,7 @@ public class EvolutionEngine
                                 // update loyalty program state
                                 //
 
-                                LoyaltyProgramStepChange loyaltyProgramStepChange = loyaltyProgramMissionState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newStepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
+                                LoyaltyProgramStepChange loyaltyProgramStepChange = loyaltyProgramMissionState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newStepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService, false);
 
                                 //
                                 // generate new event (tier changed)
@@ -4311,14 +4311,15 @@ public class EvolutionEngine
                     if (loyaltyProgramState == null)
                       {
                         LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = new LoyaltyProgramMissionHistory(loyaltyProgram.getLoyaltyProgramID());
-                        loyaltyProgramState = new LoyaltyProgramMissionState(LoyaltyProgramType.MISSION, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, stepName, null, now, Double.valueOf(0.0), loyaltyProgramMissionHistory);
+                        loyaltyProgramState = new LoyaltyProgramMissionState(LoyaltyProgramType.MISSION, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, stepName, null, now, Double.valueOf(0.0), loyaltyProgramMissionHistory, false);
                       }
 
                     LoyaltyProgramStepChange loyaltyProgramStepChange = LoyaltyProgramStepChange.NoChange;
+                    boolean isMissionCompleted = ((LoyaltyProgramMissionState) loyaltyProgramState).isMissionCompleted();
                     String oldStep = ((LoyaltyProgramMissionState) loyaltyProgramState).getStepName();
                     if (oldStep != null)
                       {
-                        loyaltyProgramStepChange = ((LoyaltyProgramMissionState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), stepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
+                        loyaltyProgramStepChange = ((LoyaltyProgramMissionState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), stepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService, isMissionCompleted);
                       }
                     else
                       {
@@ -4586,44 +4587,36 @@ public class EvolutionEngine
                   // get subscriber current step
                   //
 
-                  String oldStep = ((LoyaltyProgramMissionState) loyaltyProgramState).getStepName();
-                  MissionStep subscriberCurrentStepDefinition = loyaltyProgramMission.getStep(oldStep);
+                  String currentStep = ((LoyaltyProgramMissionState) loyaltyProgramState).getStepName();
+                  MissionStep subscriberCurrentStepDefinition = loyaltyProgramMission.getStep(currentStep);
                   if (subscriberCurrentStepDefinition != null)
                     {
-
-                      //
-                      // update loyalty program status
-                      //
-
-                      EvolutionEngineEventDeclaration completionEventDeclaration = Deployment.getEvolutionEngineEvents().get(subscriberCurrentStepDefinition.getCompletionEventName());
-                      if (subscriberCurrentStepDefinition.getCompletionEventName() == null || (completionEventDeclaration != null && subscriberCurrentStepDefinition.getCompletionEventName().equals(completionEventDeclaration.getName())))
+                      boolean exitStep = subscriberCurrentStepDefinition.evaluateStepChangeCriteria(evolutionEvent);
+                      if (exitStep)
                         {
-
-                          if (log.isDebugEnabled()) log.debug("update loyalty program step");
-                          //triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentLevelDefinition.getWorkflowScore(), loyaltyProgramID, oldStep); // RAJ K
                           subscriberProfileUpdated = true;
-
+                          
                           //
-                          // update tier
+                          // update loyalty program status
                           //
-
+                          
                           MissionStep newMissionStep = loyaltyProgramMission.getNextStep(subscriberCurrentStepDefinition.getStepID());
                           String newStep = newMissionStep == null ? null : newMissionStep.getStepName();
-                          if (!oldStep.equals(newStep))
+                          if (!currentStep.equals(newStep))
                             {
-                              LoyaltyProgramStepChange stepChangeType = ((LoyaltyProgramMissionState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newStep, now, evolutionEvent.getClass().getName(), loyaltyProgramService);
+                              LoyaltyProgramStepChange stepChangeType = ((LoyaltyProgramMissionState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newStep, now, evolutionEvent.getClass().getName(), loyaltyProgramService, newMissionStep == null);
 
                               //
                               // generate new event (step changed)
                               //
 
                               ParameterMap info = new ParameterMap();
-                              info.put(LoyaltyProgramMissionEventInfos.OLD_STEP.getExternalRepresentation(), oldStep);
+                              info.put(LoyaltyProgramMissionEventInfos.OLD_STEP.getExternalRepresentation(), currentStep);
                               info.put(LoyaltyProgramMissionEventInfos.NEW_STEP.getExternalRepresentation(), newStep);
                               info.put(LoyaltyProgramMissionEventInfos.STEP_UPDATE_TYPE.getExternalRepresentation(), stepChangeType.getExternalRepresentation());
                               ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                               subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
-                              launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramMission, oldStep, newStep, loyaltyProgramState.getLoyaltyProgramID());
+                              launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramMission, currentStep, newStep, loyaltyProgramState.getLoyaltyProgramID());
                             }
                         }
                     }

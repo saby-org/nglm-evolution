@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -687,6 +688,25 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     @Override public int compareTo(MissionStep missionStep)
     {
       return this.stepID - missionStep.getStepID();
+    }
+    
+    /*******************************************
+     * 
+     *  evaluateStepChangeCriteria
+     * 
+     *******************************************/
+    
+    public boolean evaluateStepChangeCriteria(SubscriberStreamEvent evolutionEvent)
+    {
+      boolean result = false;
+      result = getCompletionEventName() == null || getCompletionEventName().isEmpty();
+      if (!result && evolutionEvent instanceof EvolutionEngineEvent)
+        {
+          EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) evolutionEvent;
+          String evolutionEventName = engineEvent.getEventName();
+          result = getCompletionEventName().equals(evolutionEventName);
+        }
+      return result;
     }
   }
   

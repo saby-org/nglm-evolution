@@ -51,6 +51,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     schemaBuilder.field("stepEnrollmentDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("currentProgression", Schema.OPTIONAL_FLOAT64_SCHEMA);
     schemaBuilder.field("loyaltyProgramMissionHistory", LoyaltyProgramMissionHistory.schema());
+    schemaBuilder.field("isMissionCompleted", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
   
@@ -84,6 +85,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   private Date stepEnrollmentDate;
   private Double currentProgression;
   private LoyaltyProgramMissionHistory loyaltyProgramMissionHistory;
+  private boolean isMissionCompleted;
   
   /*****************************************
   *
@@ -96,6 +98,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   public Date getStepEnrollmentDate() { return stepEnrollmentDate; }
   public Double getCurrentProgression() { return currentProgression; }
   public LoyaltyProgramMissionHistory getLoyaltyProgramMissionHistory() { return loyaltyProgramMissionHistory; }
+  public boolean isMissionCompleted() { return isMissionCompleted; }
 
   //
   //  setters
@@ -107,7 +110,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramMissionState(LoyaltyProgramType loyaltyProgramType, long loyaltyProgramEpoch, String loyaltyProgramName, String loyaltyProgramID, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String stepName, String previousStepName, Date stepEnrollmentDate, Double currentProgression, LoyaltyProgramMissionHistory loyaltyProgramMissionHistory)
+  public LoyaltyProgramMissionState(LoyaltyProgramType loyaltyProgramType, long loyaltyProgramEpoch, String loyaltyProgramName, String loyaltyProgramID, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String stepName, String previousStepName, Date stepEnrollmentDate, Double currentProgression, LoyaltyProgramMissionHistory loyaltyProgramMissionHistory, boolean isMissionCompleted)
   {
     super(loyaltyProgramType, loyaltyProgramEpoch, loyaltyProgramName, loyaltyProgramID, loyaltyProgramEnrollmentDate, loyaltyProgramExitDate);
     this.stepName = stepName;
@@ -115,6 +118,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     this.stepEnrollmentDate = stepEnrollmentDate;
     this.currentProgression = currentProgression;
     this.loyaltyProgramMissionHistory = loyaltyProgramMissionHistory;
+    this.isMissionCompleted = isMissionCompleted;
   }
 
   /*****************************************
@@ -123,7 +127,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramMissionState(SchemaAndValue schemaAndValue, String stepName, String previousStepName, Date stepEnrollmentDate, Double currentProgression, LoyaltyProgramMissionHistory loyaltyProgramMissionHistory)
+  public LoyaltyProgramMissionState(SchemaAndValue schemaAndValue, String stepName, String previousStepName, Date stepEnrollmentDate, Double currentProgression, LoyaltyProgramMissionHistory loyaltyProgramMissionHistory, boolean isMissionCompleted)
   {
     super(schemaAndValue);
     this.stepName = stepName;
@@ -131,6 +135,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     this.stepEnrollmentDate = stepEnrollmentDate;
     this.currentProgression = currentProgression;
     this.loyaltyProgramMissionHistory = loyaltyProgramMissionHistory;
+    this.isMissionCompleted = isMissionCompleted;
   }
 
   /*****************************************
@@ -149,6 +154,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     struct.put("stepEnrollmentDate", loyaltyProgramMissionState.getStepEnrollmentDate());
     struct.put("currentProgression", loyaltyProgramMissionState.getCurrentProgression());
     struct.put("loyaltyProgramMissionHistory", LoyaltyProgramMissionHistory.serde().pack(loyaltyProgramMissionState.getLoyaltyProgramMissionHistory()));
+    struct.put("isMissionCompleted", loyaltyProgramMissionState.isMissionCompleted());
     return struct;
   }
 
@@ -178,12 +184,13 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     Date stepEnrollmentDate = (Date) valueStruct.get("stepEnrollmentDate");
     Double currentProgression = valueStruct.getFloat64("currentProgression");
     LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = LoyaltyProgramMissionHistory.serde().unpack(new SchemaAndValue(schema.field("loyaltyProgramMissionHistory").schema(), valueStruct.get("loyaltyProgramMissionHistory")));
+    boolean isMissionCompleted = valueStruct.getBoolean("isMissionCompleted");
     
     //  
     //  return
     //
 
-    return new LoyaltyProgramMissionState(schemaAndValue, stepName, previousStepName, stepEnrollmentDate, currentProgression, loyaltyProgramMissionHistory);
+    return new LoyaltyProgramMissionState(schemaAndValue, stepName, previousStepName, stepEnrollmentDate, currentProgression, loyaltyProgramMissionHistory, isMissionCompleted);
   }
   
   /*****************************************
@@ -192,7 +199,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramStepChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toStep, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
+  public LoyaltyProgramStepChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toStep, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, boolean isMissionCompleted)
   {
     Date now = SystemTime.getCurrentTime();
     StepHistory lastStepEntered = null;
@@ -238,6 +245,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.stepName = toStep;
         this.stepEnrollmentDate = enrollmentDate;
         this.currentProgression = calculateCurrentProgression(toStep, loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now));
+        this.isMissionCompleted = isMissionCompleted;
 
         //
         // update history
@@ -260,6 +268,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.previousStepName = fromStep;
         this.stepName = null;
         this.stepEnrollmentDate = enrollmentDate;
+        this.isMissionCompleted = isMissionCompleted;
 
         //
         // update history
