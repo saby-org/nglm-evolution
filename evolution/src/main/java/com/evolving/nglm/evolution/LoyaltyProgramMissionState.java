@@ -99,7 +99,11 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   public Double getCurrentProgression() { return currentProgression; }
   public LoyaltyProgramMissionHistory getLoyaltyProgramMissionHistory() { return loyaltyProgramMissionHistory; }
   public boolean isMissionCompleted() { return isMissionCompleted; }
-  public void setIsMissionCompleted(boolean isMissionCompleted) { this.isMissionCompleted = isMissionCompleted; }
+  public void markAsCompleted()
+  {
+    this.isMissionCompleted = true;
+    this.currentProgression = Double.valueOf(100.0);
+  }
 
   //
   //  setters

@@ -4617,7 +4617,7 @@ public class EvolutionEngine
                                   //  only mark as complete
                                   //
                                   
-                                  ((LoyaltyProgramMissionState) loyaltyProgramState).setIsMissionCompleted(true);
+                                  ((LoyaltyProgramMissionState) loyaltyProgramState).markAsCompleted();
                                   
                                 }
                               else
