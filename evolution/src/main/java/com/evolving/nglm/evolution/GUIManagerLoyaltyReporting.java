@@ -49,6 +49,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionSchedule;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
@@ -298,7 +299,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           case MISSION:
             jsonRoot.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "entryStartDate", true));
             String scheduleType = JSONUtilities.decodeString(jsonRoot, "scheduleType", true);
-            if (scheduleType == "FIXDURATION")
+            if (MissionSchedule.FIXDURATION == MissionSchedule.fromExternalRepresentation(scheduleType))
               {
                 Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", true);
                 String entryEndDateStr = JSONUtilities.decodeString(jsonRoot, "entryEndDate", true);

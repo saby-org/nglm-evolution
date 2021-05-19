@@ -4224,6 +4224,18 @@ public class EvolutionEngine
                 switch (loyaltyProgramRequest.getOperation())
                 {
                   case Optin:
+                    
+                    if (MissionSchedule.FIXDURATION == MissionSchedule.fromExternalRepresentation(loyaltyProgramMission.getScheduleType()))
+                      {
+                        String tz = Deployment.getDeployment(loyaltyProgramMission.getTenantID()).getTimeZone();
+                        Date entryEndDate = loyaltyProgramMission.getEntryEndDate();
+                        if (now.after(entryEndDate))
+                          {
+                            if (log.isDebugEnabled()) log.debug("entry date over for mission {} last entry date was {}, subscriberID {}", loyaltyProgramMission.getGUIManagedObjectDisplay(), RLMDateUtils.formatDateForREST(entryEndDate, tz), subscriberProfile.getSubscriberID());
+                            break;
+                          }
+                      }
+                    
                     log.info("RAJ K Optin {} ", loyaltyProgramMission.getGUIManagedObjectDisplay());
                     LoyaltyProgramState currentLoyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
                     String newStepName = loyaltyProgramMission.getFirstStep().getStepName(); //determineLoyaltyProgramChallengeLevel(currentLoyaltyProgramState, loyaltyProgramMission, now);
