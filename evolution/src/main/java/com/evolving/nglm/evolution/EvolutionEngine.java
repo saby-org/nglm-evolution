@@ -4604,7 +4604,7 @@ public class EvolutionEngine
                       Date lastDate = RLMDateUtils.addDays(entryDate, duration, tz);
                       if (now.after(lastDate))
                         {
-                          if (log.isDebugEnabled()) log.debug("time ended for mission {} entry date was {} and lastDate was {} as duration was {} days", loyaltyProgramMission.getGUIManagedObjectDisplay(), RLMDateUtils.formatDateForREST(entryDate, tz), RLMDateUtils.formatDateForREST(lastDate, tz), duration);
+                          if (log.isDebugEnabled()) log.debug("time ended for mission {} entry date was {} and lastDate was {} as duration was {} days, subscriberID {}", loyaltyProgramMission.getGUIManagedObjectDisplay(), RLMDateUtils.formatDateForREST(entryDate, tz), RLMDateUtils.formatDateForREST(lastDate, tz), duration, subscriberProfile.getSubscriberID());
                           break;
                         }
                     }
