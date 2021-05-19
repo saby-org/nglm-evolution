@@ -2641,18 +2641,6 @@ public class ThirdPartyManager
                            }
                        }
                      
-                     /*//
-                     //  Recurrence
-                     //
-                     //  RAJ K
-                      
-                     if (loyaltyProgram instanceof LoyaltyProgramChallenge && ((LoyaltyProgramChallenge) loyaltyProgram).getRecurrence())
-                       {
-                         loyaltyProgramPresentation.put("previousPeriodLevel", loyaltyProgramMissionState.getPreviousPeriodLevel());
-                         loyaltyProgramPresentation.put("previousPeriodScore", loyaltyProgramMissionState.getPreviousPeriodScore());
-                         loyaltyProgramPresentation.put("previousPeriodStartDate", getDateString(loyaltyProgramMissionState.getPreviousPeriodStartDate(), tenantID));
-                       }*/
-                     
                      loyaltyProgramPresentation.put("loyaltyProgramMissionHistory", loyaltyProgramMissionHistoryJSON);
                      break;
                      
