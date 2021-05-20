@@ -512,6 +512,8 @@ public class GUIManager
     putLoyaltyProgram("putLoyaltyProgram"),
     putLoyaltyProgramChallenge("putLoyaltyProgramChallenge"),
     putLoyaltyProgramMission("putLoyaltyProgramMission"),
+    updateMission("updateMission"),
+    updateChallenge("updateChallenge"),
     
     removeLoyaltyProgram("removeLoyaltyProgram"),
     setStatusLoyaltyProgram("setStatusLoyaltyProgram"),
@@ -2227,6 +2229,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgramChallenge", new APISimpleHandler(API.putLoyaltyProgramChallenge));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgramMission", new APISimpleHandler(API.putLoyaltyProgramMission));
+        restServer.createContext("/nglm-guimanager/updateMission", new APISimpleHandler(API.updateMission));
+        restServer.createContext("/nglm-guimanager/updateChallenge", new APISimpleHandler(API.updateChallenge));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/setStatusLoyaltyProgram", new APISimpleHandler(API.setStatusLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
@@ -3912,6 +3916,14 @@ public class GUIManager
                   
                 case putLoyaltyProgramMission:
                   jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.MISSION, tenantID);
+                  break;
+                  
+                case updateMission:
+                  jsonResponse = guiManagerLoyaltyReporting.processUpdateLoyalty(userID, jsonRoot, LoyaltyProgramType.MISSION, tenantID);
+                  break;
+                  
+                case updateChallenge:
+                  jsonResponse = guiManagerLoyaltyReporting.processUpdateLoyalty(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, tenantID);
                   break;
 
                 case removeLoyaltyProgram:
