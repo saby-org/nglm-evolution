@@ -1822,7 +1822,7 @@ public abstract class Expression
       *  constant evaluation
       *
       ****************************************/
-      if (arg1.isConstant()) {
+      if (arg1.isConstant() && arg2.isConstant() && arg3.isConstant()) {
         Object res1 = arg1.evaluate(null, TimeUnit.Unknown);
         Object res2 = arg2.evaluate(null, TimeUnit.Unknown);
         Object res3 = arg3.evaluate(null, TimeUnit.Unknown);
