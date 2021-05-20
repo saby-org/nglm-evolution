@@ -22,6 +22,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,8 +53,21 @@ import java.util.stream.Stream;
 
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -2335,11 +2349,140 @@ public class GUIManager
     
     /*****************************************
     *
+    *  Ensure Grafana configuration per tenant
+    *
+    *****************************************/  
+    
+    boolean grefanaNotStarted = true;
+    while(grefanaNotStarted)
+    {
+      try {
+        // je prépare mes curls
+        Set<Integer> tenantIDs = Deployment.getTenantIDs();
+        
+        // get all existing organisations
+        HttpResponse response = sendGrafanaCurl(null, "/api/orgs", "GET");
+        
+        if(response == null)
+          {
+            log.warn("Could not get a non null response of grafana orgs, maybe grafana is not fully started yet" );
+            try
+              {
+                Thread.sleep(10000);
+              }
+            catch (InterruptedException e)
+              {
+                e.printStackTrace();
+              }
+            continue;
+          }
+        if(response.getStatusLine().getStatusCode() != 200)
+          {
+            log.warn("Could not get list of grafana orgs, error code " + response.getStatusLine().getStatusCode() );
+            try
+              {
+                Thread.sleep(10000);
+              }
+            catch (InterruptedException e)
+              {
+                e.printStackTrace();
+              }
+            continue;
+          }
+        
+        // if we are here, then the code is 200
+        // let parse the entity response
+        JSONArray responseJson = (JSONArray) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
+        HashMap<String, Integer> existingOrgs = new HashMap<>();
+        for(int i = 0; i < responseJson.size(); i++)
+          {
+            JSONObject currentOrg = (JSONObject) responseJson.get(i);
+            int orgID = JSONUtilities.decodeInteger(currentOrg, "id");
+            String orgName = JSONUtilities.decodeString(currentOrg, "name");
+            existingOrgs.put(orgName, orgID);
+          }
+        
+        for(Integer tenantID : tenantIDs)
+        {
+          if(tenantID == 0) { continue; }
+            
+          // check if organisation exists
+          if(!existingOrgs.containsKey(tenantID))
+            {
+              // create this org..
+              JSONObject orgDef = new JSONObject();
+              orgDef.put("name", ""+tenantID);
+              response = sendGrafanaCurl(orgDef, "/api/orgs", "POST"); 
+              
+            }           
+        }
+      }
+      catch(Exception e)
+      {
+        log.warn("GUIManager.start Exception " + e.getClass().getName() + " while configuring orgs ", e);
+
+      }
+    }    
+    
+    /*****************************************
+    *
     *  log restServerStarted
     *
     *****************************************/
 
     log.info("main restServerStarted");
+  }
+    
+  private static HttpResponse sendGrafanaCurl(JSONObject body, String uri, String httpMethod)
+  {
+
+    String grafanaHost = System.getenv("GRAFANA_HOST");
+    String grafanaPort = System.getenv("GRAFANA_FOR_GUI_PORT");
+    String grafanaUser = System.getenv("GRAFANA_USER");
+    String grafanaPassword = System.getenv("GRAFANA_PASSWORD");
+
+    CloseableHttpResponse response = null;
+    try
+      {
+        
+        HttpRequestBase request = null;
+        switch (httpMethod)
+          {
+          case "POST":
+            request = new HttpPost("http://" + grafanaHost + ":" + grafanaPort + uri);
+            break;
+            
+          case "GET":
+            request = new HttpGet("http://" + grafanaHost + ":" + grafanaPort + uri);
+            break;
+            
+
+          default:
+            break;
+          }
+        
+        if(request instanceof HttpPost)
+          {
+            ((HttpPost)request).setEntity(new StringEntity(body.toJSONString()));
+          }
+        
+        request.setHeader("Content-type", "application/json");
+        String encoding = Base64.getEncoder().encodeToString(new String(grafanaUser+":"+grafanaPassword).getBytes());
+        request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + encoding);
+
+        int httpTimeout = 10000;
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
+
+        CloseableHttpClient httpClient = HttpClientBuilder.create()
+            .setDefaultRequestConfig(requestConfig).build();
+        response = httpClient.execute(request);
+        return response;
+      }
+    catch (Exception e)
+      {
+        log.warn("Excpetion " + e.getClass().getName() + " while configuring grafana", e);
+        return null;
+      }
   }
 
   /*****************************************
