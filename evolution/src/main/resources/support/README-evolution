@@ -118,6 +118,7 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/l
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram_MISSION.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgramMission; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "ids" : ["1", "2"], "description": "MISSION-001-update", "scheduleType" : "FIXDURATION", "duration": 10}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateMission; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "ids" : ["1", "2"], "description": "Challenge-001-update"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateChallenge; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgram; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallenge; echo

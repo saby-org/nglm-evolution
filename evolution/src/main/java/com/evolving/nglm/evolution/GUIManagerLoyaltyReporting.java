@@ -498,8 +498,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             switch (loyaltyProgramType)
             {
               case POINTS:
-                loyaltyProgram = new LoyaltyProgramPoints(existingLoyaltyJSONToUpdate, epoch, existingLoyaltyToBeUpdated, catalogCharacteristicService, tenantID);
-                break;
+                
+                //
+                //  need to be checked if ok - EVPRO-1060
+                //
+                
+                throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(existingLoyaltyJSONToUpdate, "loyaltyProgramType", false));
+                //loyaltyProgram = new LoyaltyProgramPoints(existingLoyaltyJSONToUpdate, epoch, existingLoyaltyToBeUpdated, catalogCharacteristicService, tenantID);
                 
               case CHALLENGE:
                 loyaltyProgram = new LoyaltyProgramChallenge(existingLoyaltyJSONToUpdate, epoch, existingLoyaltyToBeUpdated, catalogCharacteristicService, tenantID);
