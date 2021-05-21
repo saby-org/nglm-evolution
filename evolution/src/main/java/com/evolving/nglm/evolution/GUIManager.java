@@ -2228,17 +2228,37 @@ public class GUIManager {
           }
 
           // check if organization exists
-          if (!existingOrgs.containsKey(tenantID)) {
+          if (!existingOrgs.containsKey(""+tenantID)) {
             // create this org.
             JSONObject orgDef = new JSONObject();
             orgDef.put("name", "" + tenantID);
             response = sendGrafanaCurl(orgDef, "/api/orgs", "POST");
 
+            if (response == null) {
+              log.warn("Could not get a non null response of grafana orgs creation ");
+              try {
+                Thread.sleep(10000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+              continue;
+            }
+            if (response.getStatusLine().getStatusCode() != 200) {
+              log.warn("Could not get list of grafana orgs creation, error code " + response.getStatusLine().getStatusCode());
+              try {
+                Thread.sleep(10000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+              continue;
+            }
+            
+            
             /**** Switch to the newly created org ****/
             // parse the response and get the orgId of the newly created org
             JSONObject newOrg = (JSONObject) (new JSONParser())
                 .parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
-            int idNewOrg = JSONUtilities.decodeInteger(newOrg, "id");
+            int idNewOrg = JSONUtilities.decodeInteger(newOrg, "orgId");
 
             // switch using the optained orgId
             response = sendGrafanaCurl(null, "/api/user/using/" + idNewOrg, "POST");
@@ -2283,7 +2303,8 @@ public class GUIManager {
               // check if the dashboard exists
               if (existingdashbaords.get(current.getKey()) == null) {
                 // do the curl that allows creating this dashbaord
-                JSONObject dashbaordDef = (JSONObject) DashboardsPerTenant.dashboards.entrySet();
+                JSONObject dashbaordDef = (JSONObject) (new JSONParser())
+                    .parse(current.getValue());
                 response = sendGrafanaCurl(dashbaordDef, "/api/dashboards/db", "POST");
 
                 if (response.getStatusLine().getStatusCode() == 400) {
@@ -2359,7 +2380,7 @@ public class GUIManager {
         break;
       }
 
-      if (request instanceof HttpPost) {
+      if (request instanceof HttpPost && body != null) {
         ((HttpPost) request).setEntity(new StringEntity(body.toJSONString()));
       }
 
