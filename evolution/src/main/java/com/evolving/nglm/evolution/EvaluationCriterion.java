@@ -1494,6 +1494,16 @@ public class EvaluationCriterion
         QueryBuilder query = handleTargetsCriterion(esField);
         return query;
       }
+    
+    //
+    // Handle exclusionInclusionList
+    //
+    
+    if ("internal.exclusionInclusionList".equals(esField))
+      {
+        QueryBuilder query = handleExclusionInclusionCriterion(esField);
+        return query;
+      }
 
     /*****************************************
     *
@@ -1991,6 +2001,53 @@ public class EvaluationCriterion
     Object value =  argument.evaluate(null, null);
     BoolQueryBuilder innerQuery = QueryBuilders.boolQuery();
     String fieldName = "targets";
+    if (argument.getType() == ExpressionDataType.StringExpression)
+      {
+        String val = (String) value;
+        innerQuery = innerQuery.should(QueryBuilders.termQuery(fieldName, val));
+      }
+    else if (argument.getType() == ExpressionDataType.StringSetExpression)
+      {
+        for (Object obj : (Set<Object>) value)
+          {
+            innerQuery = innerQuery.should(QueryBuilders.termQuery(fieldName, (String) obj));
+          }
+      }
+    else
+      {
+        throw new CriterionException(esField+" can only be compared to " + ExpressionDataType.StringExpression + " or " + ExpressionDataType.StringSetExpression + " " + esField + ", "+argument.getType());
+      }
+    QueryBuilder query = QueryBuilders.constantScoreQuery(innerQuery);
+    return query;
+  }
+  
+  /*****************************************
+  *
+  *  handleExclusionInclusionCriterion
+  *
+  * generates POST subscriberprofile/_search
+      {
+        "query": {
+          "constant_score": {
+            "filter": {
+              "bool": {
+                "should": [
+                  { "term": { "exclusionInclusion": "exclusion_107"  }},
+                  { "term": { "exclusionInclusion": "inclusion_108" }}
+                ]
+              }
+            }
+          }
+        }
+      }
+  *****************************************/
+  
+  public QueryBuilder handleExclusionInclusionCriterion(String esField) throws CriterionException
+  {
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("exclusionInclusion criterion can only be compared to constants " + esField + ", " + argument);
+    Object value =  argument.evaluate(null, null);
+    BoolQueryBuilder innerQuery = QueryBuilders.boolQuery();
+    String fieldName = "exclusionInclusionList";
     if (argument.getType() == ExpressionDataType.StringExpression)
       {
         String val = (String) value;
