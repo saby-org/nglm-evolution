@@ -6592,7 +6592,7 @@ public class EvolutionEngine
               DeliveryRequest deliveryRes = (DeliveryRequest) event;
               if (deliveryRes.getEventID() != null)
                 {
-                  result = deliveryRes.getEventName() != null ? deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID()) : className.concat("-").concat(deliveryRes.getEventID());
+                  result = deliveryRes.getEventID(); //deliveryRes.getEventName() != null ? deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID()) : className.concat("-").concat(deliveryRes.getEventID());
                 } 
               else
                 {
