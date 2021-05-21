@@ -3493,6 +3493,23 @@ public class EvolutionEngine
     
     /*****************************************
     *
+    *  process rule based exclusionInclusion lists
+    *
+    *****************************************/
+
+    for(ExclusionInclusionTarget exclusionInclusionTarget : exclusionInclusionTargetService.getActiveExclusionInclusionTargets(now))
+      {
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
+        if (exclusionInclusionTarget.getCriteriaList().size() > 0)
+          {
+            boolean addExclusionInclusionTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, exclusionInclusionTarget.getCriteriaList());
+            subscriberProfile.setExclusionInclusionTarget(exclusionInclusionTarget.getExclusionInclusionTargetID(), subscriberGroupEpochReader.get(exclusionInclusionTarget.getExclusionInclusionTargetID()) != null ? subscriberGroupEpochReader.get(exclusionInclusionTarget.getExclusionInclusionTargetID()).getEpoch() : 0, addExclusionInclusionTarget);
+            subscriberProfileUpdated = true;
+          }          
+      }
+    
+    /*****************************************
+    *
     *  process file-sourced subscriberGroup event
     *
     *****************************************/
