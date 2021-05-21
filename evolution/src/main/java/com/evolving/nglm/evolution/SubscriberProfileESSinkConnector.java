@@ -42,6 +42,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private LoyaltyProgramService loyaltyProgramService;
     private PointService pointService;
+    private ExclusionInclusionTargetService exclusionInclusionTargetService;
 
     /*****************************************
     *
@@ -60,6 +61,9 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       
       pointService = new PointService(Deployment.getBrokerServers(), "sinkconnector-pointservice" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPointTopic(), false);
       pointService.start();
+      
+      exclusionInclusionTargetService = new ExclusionInclusionTargetService(Deployment.getBrokerServers(), "sinkconnector-exclusionInclusionTargetService" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getExclusionInclusionTargetTopic(), false);
+      exclusionInclusionTargetService.start();
       
     }
 
@@ -160,9 +164,11 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("subscriberJourneys", subscriberProfile.getSubscriberJourneysJSON());
       documentMap.put("lastUpdateDate", RLMDateUtils.printTimestamp(now));
       documentMap.put("relationships", subscriberProfile.getSubscriberRelationsJSON());
+      documentMap.put("exclusionInclusionList", subscriberProfile.getExclusionInclusionTargets(subscriberGroupEpochReader));
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //
+      
       //  return
       //
       

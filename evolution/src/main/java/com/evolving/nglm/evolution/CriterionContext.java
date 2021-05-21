@@ -97,6 +97,8 @@ public class CriterionContext
   private static CriterionField subscriberTmpSuccessVouchers;
   private static CriterionField internalFalse;
   private static CriterionField internalTargets;
+  private static CriterionField internalExclusionInclusionList;
+  
   static
   {
     //
@@ -305,7 +307,7 @@ public class CriterionContext
       {
         Map<String,Object> internalTargetsJSON = new LinkedHashMap<String,Object>();
         internalTargetsJSON.put("id", "internal.targets");
-        internalTargetsJSON.put("display", "Subscriber Targets");
+        internalTargetsJSON.put("display", "Customer Targets");
         internalTargetsJSON.put("dataType", "stringSet");
         internalTargetsJSON.put("retriever", "getTargets");
         internalTargetsJSON.put("esField", "internal.targets");
@@ -320,6 +322,31 @@ public class CriterionContext
       {
         throw new ServerRuntimeException(e);
       }
+    
+    //
+    //  internalExclusionInclusionList
+    //
+
+    try
+      {
+        Map<String,Object> internalExclusionInclusionListJSON = new LinkedHashMap<String,Object>();
+        internalExclusionInclusionListJSON.put("id", "internal.exclusionInclusionList");
+        internalExclusionInclusionListJSON.put("display", "Customer Exclusion Inclusion Lists");
+        internalExclusionInclusionListJSON.put("dataType", "stringSet");
+        internalExclusionInclusionListJSON.put("retriever", "getExclusionInclusionTargets");
+        internalExclusionInclusionListJSON.put("esField", "internal.exclusionInclusionList");
+        internalExclusionInclusionListJSON.put("internalOnly", false);
+        ArrayList<String> av = new ArrayList<>();
+        av.add("#exclusionList#");
+        internalExclusionInclusionListJSON.put("availableValues", JSONUtilities.encodeArray(av));
+        
+        internalExclusionInclusionList  = new CriterionField(JSONUtilities.encodeObject(internalExclusionInclusionListJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }      
+    
     
     //
     //  subscriber.tmp.redeem.vouchers
@@ -824,6 +851,7 @@ public class CriterionContext
           result.put(subscriberTmpSuccessVouchers.getID(), subscriberTmpSuccessVouchers);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
+          result.put(internalExclusionInclusionList.getID(), internalExclusionInclusionList);
           result.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
           result.put(evaluationMonth.getID(), evaluationMonth);
           result.putAll(Deployment.getProfileCriterionFields());
