@@ -11,6 +11,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -127,7 +128,7 @@ public class BDRRewardManagerSinkConnector extends SimpleESSinkConnector
       documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
       documentMap.put("eventID", commodityRequest.getEventID());
-      documentMap.put("deliverableExpirationDate", RLMDateUtils.formatDateForElasticsearchDefault(commodityRequest.getBonusDeliveryDeliverableExpirationDate()));
+      documentMap.put("deliverableExpirationDate", commodityRequest.getBonusDeliveryDeliverableExpiration());
       documentMap.put("providerID", commodityRequest.getProviderID());
       documentMap.put("deliverableID", commodityRequest.getDeliverableID());
       documentMap.put("deliverableQty", commodityRequest.getAmount());
