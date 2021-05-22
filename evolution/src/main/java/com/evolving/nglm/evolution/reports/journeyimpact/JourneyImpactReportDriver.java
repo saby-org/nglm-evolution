@@ -1,6 +1,5 @@
 package com.evolving.nglm.evolution.reports.journeyimpact;
 
-import java.util.List;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -90,7 +89,7 @@ public class JourneyImpactReportDriver extends ReportDriver
 
       for (GUIManagedObject guiManagedObject : journeys)
         {
-          if (guiManagedObject != null && guiManagedObject instanceof Journey) {
+          if (guiManagedObject != null && guiManagedObject instanceof Journey && !((Journey) guiManagedObject).isWorkflow()) {
             Journey journey = (Journey) guiManagedObject;
             Map<String, Object> journeyInfo1 = new LinkedHashMap<String, Object>(); // to preserve order
             String journeyID = journey.getJourneyID();
@@ -308,8 +307,7 @@ public class JourneyImpactReportDriver extends ReportDriver
       log.info("Exception", e);
     }
   }
-
-
+  
   @Override
   public List<FilterObject> reportFilters() {
     return null;

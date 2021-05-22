@@ -6581,18 +6581,20 @@ public class ThirdPartyManager
 
   private void generateTokenChange(String subscriberID, Date now, String tokenCode, String action, String str, API api, JSONObject jsonRoot, int tenantID)
   {
-    String topic = Deployment.getTokenChangeTopic();
-    Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-    Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-    String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, origin, Module.REST_API, featureID, tenantID);
-    kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-        topic,
-        keySerializer.serialize(topic, new StringKey(subscriberID)),
-        valueSerializer.serialize(topic, tokenChange)
-        ));
-    keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+    if (tokenCode != null) {
+      String topic = Deployment.getTokenChangeTopic();
+      Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+      Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
+      String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
+      String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+      TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, origin, Module.REST_API, featureID, tenantID);
+      kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+          topic,
+          keySerializer.serialize(topic, new StringKey(subscriberID)),
+          valueSerializer.serialize(topic, tokenChange)
+          ));
+      keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+    }
   }
 
   // helpers for stats

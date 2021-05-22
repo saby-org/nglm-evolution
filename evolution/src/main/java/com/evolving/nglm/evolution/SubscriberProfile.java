@@ -355,46 +355,47 @@ public abstract class SubscriberProfile
 
   public JSONArray getSegmentNames(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
-    Date evaluationDate = SystemTime.getCurrentTime();    
+    Date evaluationDate = SystemTime.getCurrentTime();
     JSONArray result = new JSONArray();
-    for (Pair<String,String> groupID : segments.keySet())
+    for (Pair<String, String> groupID : segments.keySet())
       {
         String dimensionID = groupID.getFirstElement();
         String segmentID = groupID.getSecondElement();
         SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, evaluationDate);
+        if (segmentationDimension != null)
+          {
+            if (segmentationDimension.getIsSimpleProfileDimension() == false)
+              {
 
-        if (segmentationDimension != null) {
-          if (segmentationDimension.getIsSimpleProfileDimension() == false) {
-          
-            if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE))
-              {
-                Map<String, String> segmentMap = new LinkedHashMap<String, String>();
-                // In case of File based segmentation, let consider the file is not to be used anymore until the new file 
-                // has been handled. So apply epoc coherency test.
-                int epoch = segments.get(groupID);
-                if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
+                if (segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE))
                   {
+                    Map<String, String> segmentMap = new LinkedHashMap<String, String>();
+                    // In case of File based segmentation, let consider the file is not to be used
+                    // anymore until the new file
+                    // has been handled. So apply epoc coherency test.
+                    int epoch = segments.get(groupID);
+                    if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
+                      {
+                        Segment segment = segmentationDimensionService.getSegment(segmentID, tenantID);
+                        segmentMap.put("Segment", segment.getName());
+                        segmentMap.put("Dimension", segmentationDimension.getSegmentationDimensionDisplay());
+                        result.add(segmentMap);
+                      }
+                  } 
+                else
+                  {
+                    Map<String, String> segmentMap = new LinkedHashMap<String, String>();
+                    // If not file targeting, let try to retrieve the good segment...
                     Segment segment = segmentationDimensionService.getSegment(segmentID, tenantID);
-                    segmentMap.put("Segment" , segment.getName());
-                    segmentMap.put("Dimension" , segmentationDimension.getSegmentationDimensionDisplay());                                                          
-                    result.add(segmentMap);
-                    
-                }
-              }
-            else
-              {
-                Map<String, String> segmentMap = new LinkedHashMap<String, String>();
-                // If not file targeting, let try to retrieve the good segment...
-                Segment segment = segmentationDimensionService.getSegment(segmentID, tenantID);
-                if(segment != null) {
-                  segmentMap.put("Segment" , segment.getName());
-                  segmentMap.put("Dimension" , segmentationDimension.getSegmentationDimensionDisplay());                  
-                  result.add(segmentMap);
-                }                
+                    if (segment != null)
+                      {
+                        segmentMap.put("Segment", segment.getName());
+                        segmentMap.put("Dimension", segmentationDimension.getSegmentationDimensionDisplay());
+                        result.add(segmentMap);
+                      }
+                  }
               }
           }
-        }
-        
       }
     return result;
   }
@@ -828,7 +829,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -906,7 +907,7 @@ public abstract class SubscriberProfile
     for (String relationshipID : this.relations.keySet())
       {
         SubscriberRelatives relatives = this.relations.get(relationshipID);
-        if (relatives != null)
+        if (relatives != null && !(relatives.getParentSubscriberID() == null && relatives.getChildrenSubscriberIDs().isEmpty()))
           {
             hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID));
           }

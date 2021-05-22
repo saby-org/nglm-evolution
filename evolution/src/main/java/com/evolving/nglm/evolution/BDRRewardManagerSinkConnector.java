@@ -122,14 +122,14 @@ public class BDRRewardManagerSinkConnector extends SimpleESSinkConnector
       documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
       documentMap.put("eventID", commodityRequest.getEventID());
-      documentMap.put("deliverableExpirationDate", null); // always null for RM ?
+      documentMap.put("deliverableExpirationDate", RLMDateUtils.formatDateForElasticsearchDefault(commodityRequest.getBonusDeliveryDeliverableExpirationDate()));
       documentMap.put("providerID", commodityRequest.getProviderID());
       documentMap.put("deliverableID", commodityRequest.getDeliverableID());
       documentMap.put("deliverableQty", commodityRequest.getAmount());
-      documentMap.put("operation", CommodityDeliveryOperation.Credit.toString().toUpperCase()); // Always credit for RW ?
+      documentMap.put("operation", commodityRequest.getBonusDeliveryOperation().toUpperCase());
       documentMap.put("moduleID", commodityRequest.getModuleID());
       documentMap.put("featureID", commodityRequest.getFeatureID());
-      documentMap.put("origin", "");
+      documentMap.put("origin", commodityRequest.getBonusDeliveryOrigin());
       documentMap.put("returnCode", commodityRequest.getReturnCode());
       documentMap.put("deliveryStatus", commodityRequest.getDeliveryStatus());
       documentMap.put("returnCodeDetails", commodityRequest.getReturnCode());

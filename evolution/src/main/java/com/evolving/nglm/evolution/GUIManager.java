@@ -18229,7 +18229,7 @@ public class GUIManager
               }
             else
               {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(loyaltyProgramService, segmentationDimensionService, targetService, pointService, complexObjectTypeService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader);
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberProfileService, loyaltyProgramService, segmentationDimensionService, targetService, pointService, complexObjectTypeService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           }
@@ -23644,6 +23644,14 @@ public class GUIManager
           response.put("responseCode", "ok");
         }
     }
+
+    catch (GUIManagerException e)
+      {
+        response.put("responseMessage", e.getMessage());
+        response.put("responseCode", e.getResponseParameter());
+        return JSONUtilities.encodeObject(response);
+
+      }
     catch (SubscriberProfileServiceException e) 
     {
       throw new GUIManagerException(e);
@@ -23752,6 +23760,14 @@ public class GUIManager
           }
       }
    }
+
+    catch (GUIManagerException e)
+      {
+        response.put("responseMessage", e.getMessage());
+        response.put("responseCode", e.getResponseParameter());
+        return JSONUtilities.encodeObject(response);
+
+      }
    catch (SubscriberProfileServiceException e) 
    {
      String str = "unable to process request purchaseOffer " + e.getLocalizedMessage();
@@ -25215,7 +25231,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         ));
 
     if (sync) {
-      return handleWaitingResponse(waitingResponse);
+      PurchaseFulfillmentRequest result =  handleWaitingResponse(waitingResponse);
+        if (result != null)
+          {
+            if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
+              {
+                return handleWaitingResponse(waitingResponse);
+              }
+            else
+              {
+                String returnCode = (result.getStatus().getReturnCode()).toString();
+                String returnMessage = result.getStatus().name();
+                throw new GUIManagerException(returnMessage, returnCode);
+              }
+          }
     }
     return purchaseRequest;
   }
@@ -28448,15 +28477,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   private void generateTokenChange(String subscriberID, Date now, String tokenCode, String userID, String action, String str, int tenantID)
   {
-    String topic = Deployment.getTokenChangeTopic();
-    Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-    Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID);
-    kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-        topic,
-        keySerializer.serialize(topic, new StringKey(subscriberID)),
-        valueSerializer.serialize(topic, tokenChange)
-        ));
+    if (tokenCode != null) {
+      String topic = Deployment.getTokenChangeTopic();
+      Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+      Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
+      TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID);
+      kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+          topic,
+          keySerializer.serialize(topic, new StringKey(subscriberID)),
+          valueSerializer.serialize(topic, tokenChange)
+          ));
+    }
   } 
   
  /************************************************************************
