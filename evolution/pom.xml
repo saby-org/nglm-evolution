@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.5.2_3-SNAPSHOT</version>
+  <version>1.5.2_4-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -43,14 +43,14 @@
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.5.18</gui-fwk.version>
-    <gui-csr.version>1.5.12</gui-csr.version>
+    <gui-csr.version>1.5.13</gui-csr.version>
     <gui-itm.version>1.5.3</gui-itm.version>
     <gui-jmr.version>1.5.27</gui-jmr.version>
     <gui-opc.version>1.5.20</gui-opc.version>
     <gui-iar.version>1.5.10</gui-iar.version>
     <gui-opr.version>1.5.7</gui-opr.version>
     <gui-stg.version>1.5.24</gui-stg.version>
-    <gui-sbm.version>1.5.20</gui-sbm.version>
+    <gui-sbm.version>1.5.27</gui-sbm.version>
     <gui-lpm.version>1.5.19</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.8</gui-audit.version>

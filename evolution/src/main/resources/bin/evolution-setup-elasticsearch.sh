@@ -76,6 +76,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       "universalControlGroup"               : { "type" : "boolean" },
       "language"                            : { "type" : "keyword" },
       "segments"                            : { "type" : "keyword" },
+      "exclusionInclusionList"              : { "type" : "keyword" },
       "targets"                             : { "type" : "keyword" },
       "lastUpdateDate"                      : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "pointFluctuations"                   : { "type" : "object"  },

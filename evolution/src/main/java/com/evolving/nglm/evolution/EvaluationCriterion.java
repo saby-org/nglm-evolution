@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -35,6 +36,9 @@ import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.json.simple.JSONObject;
@@ -1501,6 +1505,16 @@ public class EvaluationCriterion
         QueryBuilder query = handleTargetsCriterion(esField);
         return query;
       }
+    
+    //
+    // Handle exclusionInclusionList
+    //
+    
+    if ("internal.exclusionInclusionList".equals(esField))
+      {
+        QueryBuilder query = handleExclusionInclusionCriterion(esField);
+        return query;
+      }
 
     /*****************************************
     *
@@ -2020,6 +2034,53 @@ public class EvaluationCriterion
   
   /*****************************************
   *
+  *  handleExclusionInclusionCriterion
+  *
+  * generates POST subscriberprofile/_search
+      {
+        "query": {
+          "constant_score": {
+            "filter": {
+              "bool": {
+                "should": [
+                  { "term": { "exclusionInclusion": "exclusion_107"  }},
+                  { "term": { "exclusionInclusion": "inclusion_108" }}
+                ]
+              }
+            }
+          }
+        }
+      }
+  *****************************************/
+  
+  public QueryBuilder handleExclusionInclusionCriterion(String esField) throws CriterionException
+  {
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("exclusionInclusion criterion can only be compared to constants " + esField + ", " + argument);
+    Object value =  argument.evaluate(null, null);
+    BoolQueryBuilder innerQuery = QueryBuilders.boolQuery();
+    String fieldName = "exclusionInclusionList";
+    if (argument.getType() == ExpressionDataType.StringExpression)
+      {
+        String val = (String) value;
+        innerQuery = innerQuery.should(QueryBuilders.termQuery(fieldName, val));
+      }
+    else if (argument.getType() == ExpressionDataType.StringSetExpression)
+      {
+        for (Object obj : (Set<Object>) value)
+          {
+            innerQuery = innerQuery.should(QueryBuilders.termQuery(fieldName, (String) obj));
+          }
+      }
+    else
+      {
+        throw new CriterionException(esField+" can only be compared to " + ExpressionDataType.StringExpression + " or " + ExpressionDataType.StringSetExpression + " " + esField + ", "+argument.getType());
+      }
+    QueryBuilder query = QueryBuilders.constantScoreQuery(innerQuery);
+    return query;
+  }
+  
+  /*****************************************
+  *
   *  handlePointDynamicCriterion
   *
   *****************************************/
@@ -2342,7 +2403,9 @@ public class EvaluationCriterion
           break;
           
         case DateExpression:
-          value = ((Date) (argument.evaluate(null, null))).getTime();
+          Date valueDate = ((Date) (argument.evaluate(null, null)));
+          SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZZ");
+          value = outputFormat.format(valueDate);
           break;
           
         case BooleanExpression:

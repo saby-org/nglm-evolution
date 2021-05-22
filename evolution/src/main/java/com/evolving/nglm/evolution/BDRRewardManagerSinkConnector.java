@@ -11,6 +11,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -127,14 +128,14 @@ public class BDRRewardManagerSinkConnector extends SimpleESSinkConnector
       documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
       documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
       documentMap.put("eventID", commodityRequest.getEventID());
-      documentMap.put("deliverableExpirationDate", null); // always null for RM ?
+      documentMap.put("deliverableExpirationDate", commodityRequest.getBonusDeliveryDeliverableExpiration());
       documentMap.put("providerID", commodityRequest.getProviderID());
       documentMap.put("deliverableID", commodityRequest.getDeliverableID());
       documentMap.put("deliverableQty", commodityRequest.getAmount());
-      documentMap.put("operation", CommodityDeliveryOperation.Credit.toString().toUpperCase()); // Always credit for RW ?
+      documentMap.put("operation", commodityRequest.getBonusDeliveryOperation().toUpperCase());
       documentMap.put("moduleID", commodityRequest.getModuleID());
       documentMap.put("featureID", commodityRequest.getFeatureID());
-      documentMap.put("origin", "");
+      documentMap.put("origin", commodityRequest.getBonusDeliveryOrigin());
       documentMap.put("returnCode", commodityRequest.getReturnCode());
       documentMap.put("deliveryStatus", commodityRequest.getDeliveryStatus());
       documentMap.put("returnCodeDetails", commodityRequest.getReturnCode());
