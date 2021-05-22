@@ -1,4 +1,5 @@
 {
+"dashboard" :{
   "annotations": {
     "list": [
       {
@@ -15,7 +16,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 44,
+  "id": null,
   "iteration": 1615211963703,
   "links": [],
   "panels": [
@@ -1470,7 +1471,7 @@
               "id": "renameByRegex",
               "options": {
                 "regex": "notificationmanager-00",
-                "renamePattern": "Notification Manager n°"
+                "renamePattern": "Notification Manager nï¿½"
               }
             }
           ],
@@ -1550,7 +1551,7 @@
               "id": "renameByRegex",
               "options": {
                 "regex": "notificationmanager-00",
-                "renamePattern": "Notification Manager n°"
+                "renamePattern": "Notification Manager nï¿½"
               }
             }
           ],
@@ -1789,7 +1790,7 @@
               "id": "renameByRegex",
               "options": {
                 "regex": "commoditydeliverymanager-00",
-                "renamePattern": "Commodity Delivery Mgr n°"
+                "renamePattern": "Commodity Delivery Mgr nï¿½"
               }
             },
             {
@@ -1882,7 +1883,7 @@
               "id": "renameByRegex",
               "options": {
                 "regex": "commoditydeliverymanager-00",
-                "renamePattern": "Commodity Delivery Mgr n°"
+                "renamePattern": "Commodity Delivery Mgr nï¿½"
               }
             }
           ],
@@ -4487,6 +4488,7 @@
   },
   "timezone": "",
   "title": "Admin - Monitoring Dashboard",
-  "uid": "gMbUkWlWz",
+  "uid": null,
   "version": 122
+}
 }

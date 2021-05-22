@@ -1,4 +1,6 @@
 {
+"dashboard" :
+{
   "annotations": {
     "list": [
       {
@@ -15,7 +17,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 2,
-  "id": 41,
+  "id": null,
   "iteration": 1615280023170,
   "links": [],
   "panels": [
@@ -734,6 +736,7 @@
   },
   "timezone": "",
   "title": "Business - Base Management Dashboard",
-  "uid": "qe7KMqXWkkk",
+  "uid": null,
   "version": 23
+}
 }

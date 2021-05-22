@@ -18,6 +18,9 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -97,6 +100,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.reflections.Reflections;
+import org.reflections.scanners.ResourcesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -2184,6 +2189,7 @@ public class GUIManager {
 
     boolean grafanaNotStarted = true;
     while (grafanaNotStarted) {
+      
       try {
         // prepare the curls
         Set<Integer> tenantIDs = Deployment.getTenantIDs();
@@ -2259,7 +2265,6 @@ public class GUIManager {
             JSONObject newOrg = (JSONObject) (new JSONParser())
                 .parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
             int idNewOrg = JSONUtilities.decodeInteger(newOrg, "orgId");
-
             // switch using the optained orgId
             response = sendGrafanaCurl(null, "/api/user/using/" + idNewOrg, "POST");
 
@@ -2299,12 +2304,25 @@ public class GUIManager {
               existingdashbaords.put("title", dashbaordTitle);
             }
 
-            for (Map.Entry<String, String> current : DashboardsPerTenant.dashboards.entrySet()) {
+            // retrieve dashboard json files into the classpath
+            Reflections reflections = new Reflections(null, new ResourcesScanner());
+            Set<String> fileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
+            
+            
+            
+            
+            for (String currentFileName : fileNames) {
               // check if the dashboard exists
-              if (existingdashbaords.get(current.getKey()) == null) {
+              if (existingdashbaords.get(currentFileName) == null) {
                 // do the curl that allows creating this dashbaord
+                String fileBody = "";
+                for(String s :  Files.readAllLines(Paths.get(this.getClass().getResource("/"+currentFileName).toURI()), Charset.defaultCharset()))
+                  {
+                    fileBody = fileBody + s;
+                  };
+                
                 JSONObject dashbaordDef = (JSONObject) (new JSONParser())
-                    .parse(current.getValue());
+                    .parse(fileBody);
                 response = sendGrafanaCurl(dashbaordDef, "/api/dashboards/db", "POST");
 
                 if (response.getStatusLine().getStatusCode() == 400) {
@@ -2342,7 +2360,6 @@ public class GUIManager {
         }
       } catch (Exception e) {
         log.warn("GUIManager.start Exception " + e.getClass().getName() + " while configuring orgs ", e);
-
       }
     }
 
