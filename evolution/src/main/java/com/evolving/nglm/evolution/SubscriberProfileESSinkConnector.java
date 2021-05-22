@@ -160,9 +160,11 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("subscriberJourneys", subscriberProfile.getSubscriberJourneysJSON());
       documentMap.put("lastUpdateDate", RLMDateUtils.printTimestamp(now));
       documentMap.put("relationships", subscriberProfile.getSubscriberRelationsJSON());
+      documentMap.put("exclusionInclusionList", subscriberProfile.getExclusionInclusionTargets(subscriberGroupEpochReader));
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //
+      
       //  return
       //
       
