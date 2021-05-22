@@ -3530,9 +3530,9 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    for(ExclusionInclusionTarget exclusionInclusionTarget : exclusionInclusionTargetService.getActiveExclusionInclusionTargets(now))
+    for(ExclusionInclusionTarget exclusionInclusionTarget : exclusionInclusionTargetService.getActiveExclusionInclusionTargets(now, tenantID))
       {
-        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
         if (exclusionInclusionTarget.getCriteriaList().size() > 0)
           {
             boolean addExclusionInclusionTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, exclusionInclusionTarget.getCriteriaList());

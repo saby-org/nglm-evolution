@@ -378,11 +378,10 @@ public abstract class SubscriberProfile
                     int epoch = segments.get(groupID);
                     if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
                       {
-                        Segment segment = segmentationDimensionService.getSegment(segmentID);
+                        Segment segment = segmentationDimensionService.getSegment(segmentID, tenantID);
                         segmentMap.put("Segment", segment.getName());
                         segmentMap.put("Dimension", segmentationDimension.getSegmentationDimensionDisplay());
                         result.add(segmentMap);
-
                       }
                   } 
                 else
