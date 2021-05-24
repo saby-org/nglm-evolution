@@ -289,7 +289,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   
   private Double calculateCurrentProgression(String toStep, LoyaltyProgram activeLoyaltyProgram)
   {
-    Double result = Double.valueOf(0.0);
+    Double result = null;
     if (isMissionCompleted || toStep == null)
       {
         result = Double.valueOf(100.0);
