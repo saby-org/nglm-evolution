@@ -3684,6 +3684,7 @@ public class EvolutionEngine
 
   public static void launchChangeTierWorkflows(ProfileLoyaltyProgramChangeEvent event, SubscriberState subscriberState, LoyaltyProgram loyaltyProgram, String oldTierName, String newTierName, String featureID)
   {
+    log.info("RAJ K executing Workflow from {} -->> to {}", oldTierName, newTierName);
     switch (loyaltyProgram.getLoyaltyProgramType())
     {
       case POINTS:
@@ -3714,7 +3715,7 @@ public class EvolutionEngine
         LoyaltyProgramMission loyaltyProgramMission = (LoyaltyProgramMission) loyaltyProgram;
         
         MissionStep previousStep = loyaltyProgramMission.getStep(oldTierName);
-        MissionStep currentStep = loyaltyProgramMission.getStep(oldTierName);
+        MissionStep currentStep = loyaltyProgramMission.getStep(newTierName);
         
         if (previousStep != null) 
           {
