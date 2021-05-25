@@ -1,7 +1,7 @@
 {
    "dashboard":{
       "id":null,
-      "title":"ONE",
+      "title":"grafana-gui-testDashboard.json",
       "tags":[
          "templated"
       ],
