@@ -1,0 +1,18 @@
+{
+   "dashboard":{
+      "id":null,
+      "title":"ONE",
+      "tags":[
+         "templated"
+      ],
+      "timezone":"browser",
+      "rows":[
+         {
+            
+         }
+      ],
+      "schemaVersion":6,
+      "version":0
+   },
+   "overwrite":false
+}
