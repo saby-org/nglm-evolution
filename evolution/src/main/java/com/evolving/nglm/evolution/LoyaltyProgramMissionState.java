@@ -245,7 +245,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.loyaltyProgramName = loyaltyProgramName;
         if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
         if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; }
-
         this.previousStepName = fromStep;
         this.stepName = toStep;
         this.stepEnrollmentDate = enrollmentDate;
@@ -268,10 +267,11 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.loyaltyProgramName = loyaltyProgramName;
         if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
         this.loyaltyProgramExitDate = enrollmentDate;
-
         this.previousStepName = fromStep;
         this.stepName = null;
         this.stepEnrollmentDate = enrollmentDate;
+        this.currentProgression = Double.valueOf(0.0);
+        this.isMissionCompleted = false;
 
         //
         // update history
@@ -290,7 +290,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   private Double calculateCurrentProgression(String toStep, LoyaltyProgram activeLoyaltyProgram)
   {
     Double result = null;
-    if (isMissionCompleted || toStep == null)
+    if (isMissionCompleted)
       {
         result = Double.valueOf(100.0);
       }
@@ -301,7 +301,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         Integer currentStepID = step.getStepID();
         currentStepID = currentStepID > 0 ? currentStepID - 1 : 0;
         Integer totalSteps = mission.getTotalNumberOfSteps(true);
-        log.info("RAJ K calculateCurrentProgression isMissionCompleted {}, currentStepID {}, totalSteps {}, ", isMissionCompleted, currentStepID, totalSteps);
         result = (Double.valueOf(currentStepID) / Double.valueOf(totalSteps)) * 100;
       }
     return result;

@@ -461,7 +461,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     for (GUIManagedObject existingLoyaltyToBeUpdated : existingLoyalities)
       {
         JSONObject existingLoyaltyJSONToUpdate = (JSONObject) existingLoyaltyToBeUpdated.getJSONRepresentation().clone();
-        log.info("RAJ K before update JSON {}", existingLoyaltyJSONToUpdate);
         
         //
         //  clean and merge
@@ -472,8 +471,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           {
             existingLoyaltyJSONToUpdate.put(keyToUpdate, jsonRoot.get(keyToUpdate));
           }
-        
-        log.info("RAJ K after update JSON {}", existingLoyaltyJSONToUpdate);
         
         //
         //  save
@@ -947,11 +944,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   {
                     MissionStep lastStep = ((LoyaltyProgramMission) loyaltyProgram).getLastStep();
                     loyaltyPro.put("lastStep", lastStep == null ? null : lastStep.getStepName());
-                    
-                    //
-                    //  RAJ K
-                    //
-                    
                   }
               }
             
