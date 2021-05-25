@@ -2320,9 +2320,9 @@ public class GUIManager {
                   {
                     fileBody = fileBody + s;
                   };
-                  log.info("Test============start");
-                  log.info(fileBody);
-                  log.info("Test============end");
+                  log.debug("Test============start");
+                  log.debug(fileBody);
+                  log.debug("Test============end");
                   
                 JSONObject dashbaordDef = (JSONObject) (new JSONParser())
                     .parse(fileBody);
