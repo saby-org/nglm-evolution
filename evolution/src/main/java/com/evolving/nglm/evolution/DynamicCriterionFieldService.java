@@ -282,6 +282,8 @@ public class DynamicCriterionFieldService extends GUIService
     else if (loyaltyProgram instanceof LoyaltyProgramMission)
       {
         removeDynamicCriterionField(prefix + "step", null, loyaltyProgram.getTenantID());
+        removeDynamicCriterionField(prefix + "currentProgression", null, loyaltyProgram.getTenantID());
+        removeDynamicCriterionField(prefix + "isMissionCompleted", null, loyaltyProgram.getTenantID());
       }
   }
 
