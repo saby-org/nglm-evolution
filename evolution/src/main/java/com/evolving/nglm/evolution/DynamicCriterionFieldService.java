@@ -23,6 +23,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
@@ -127,7 +128,7 @@ public class DynamicCriterionFieldService extends GUIService
   {
     if (loyaltyProgram instanceof LoyaltyProgramPoints)
       {
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tier", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tier", CriterionDataType.StringCriterion, generateAvailableValues(loyaltyProgram));
         LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "rewardpoint.balance", CriterionDataType.IntegerCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "statuspoint.balance", CriterionDataType.IntegerCriterion, null);
@@ -143,7 +144,7 @@ public class DynamicCriterionFieldService extends GUIService
       }
     else if (loyaltyProgram instanceof LoyaltyProgramChallenge)
       {
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "level", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "level", CriterionDataType.StringCriterion, generateAvailableValues(loyaltyProgram));
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "score", CriterionDataType.IntegerCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "lastScoreChangeDate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "levelupdatedate", CriterionDataType.DateCriterion, null);
@@ -152,8 +153,10 @@ public class DynamicCriterionFieldService extends GUIService
       }
     else if (loyaltyProgram instanceof LoyaltyProgramMission)
       {
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "step", CriterionDataType.StringCriterion, generateAvailableValuesForTier(loyaltyProgram));
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "step", CriterionDataType.StringCriterion, generateAvailableValues(loyaltyProgram));
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "stepupdatedate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "currentProgression", CriterionDataType.DoubleCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "isMissionCompleted", CriterionDataType.BooleanCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
       }
@@ -209,11 +212,11 @@ public class DynamicCriterionFieldService extends GUIService
 
   /*****************************************
   *
-  *  generateAvailableValuesForTier
+  *  generateAvailableValues
   *
   *****************************************/
 
-  private JSONArray generateAvailableValuesForTier(LoyaltyProgram loyaltyProgram)
+  private JSONArray generateAvailableValues(LoyaltyProgram loyaltyProgram)
   {
     JSONArray availableValuesField = new JSONArray();
     switch (loyaltyProgram.getLoyaltyProgramType())
@@ -230,6 +233,17 @@ public class DynamicCriterionFieldService extends GUIService
             {
               availableValuesField.add(level.getLevelName());  
             }
+          break;
+          
+        case MISSION:
+          for (MissionStep step : ((LoyaltyProgramMission) loyaltyProgram).getSteps())
+            {
+              availableValuesField.add(step.getStepName());  
+            }
+          break;
+          
+        default:
+          log.error("invalid loyaltyProgram type {}", loyaltyProgram.getLoyaltyProgramType());
           break;
       }
     return availableValuesField;

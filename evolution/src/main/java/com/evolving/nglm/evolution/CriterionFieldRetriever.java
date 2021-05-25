@@ -13,6 +13,8 @@ import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
@@ -638,6 +640,46 @@ public abstract class CriterionFieldRetriever
                   result = levelUpdateType;
                   break;
 
+                default:
+                  throw new CriterionException("Invalid criteria " + criterionFieldBaseName);
+              }
+          }
+        else if (loyaltyProgramState instanceof LoyaltyProgramMissionState)      
+          {
+            //
+            //  retrieve
+            //
+            
+            LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+            StepHistory stepHistory = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getLastStepEntered();
+            String stepUpdateType = stepHistory.getStepUpdateType().getExternalRepresentation();
+
+            switch (criterionFieldBaseName)
+              {
+                case "step":
+                  result = loyaltyProgramMissionState.getStepName();
+                  break;
+
+                case "stepupdatedate":
+                  result = loyaltyProgramMissionState.getStepEnrollmentDate();
+                  break;
+                  
+                case "currentProgression":
+                  result = loyaltyProgramMissionState.getCurrentProgression();
+                  break;
+                  
+                case "isMissionCompleted":
+                  result = loyaltyProgramMissionState.isMissionCompleted();
+                  break;
+
+                case "optindate":
+                  result = optInDate;
+                  break;
+
+                case "optoutdate":
+                  result = optOutDate;
+                  break;
+                  
                 default:
                   throw new CriterionException("Invalid criteria " + criterionFieldBaseName);
               }

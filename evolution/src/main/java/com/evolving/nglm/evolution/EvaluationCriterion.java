@@ -2107,6 +2107,14 @@ public class EvaluationCriterion
       case "tier":
         query = handleLoyaltyProgramField("loyaltyPrograms.tierName", esField, queryLPID, ExpressionDataType.StringExpression);
         break;
+        
+      case "level":
+        query = handleLoyaltyProgramField("loyaltyPrograms.level", esField, queryLPID, ExpressionDataType.StringExpression);
+        break;
+        
+      case "step":
+        query = handleLoyaltyProgramField("loyaltyPrograms.step", esField, queryLPID, ExpressionDataType.StringExpression);
+        break;
 
       case "statuspoint.balance":
         query = handleLoyaltyProgramField("loyaltyPrograms.statusPointBalance", esField, queryLPID, ExpressionDataType.IntegerExpression);
@@ -2118,6 +2126,14 @@ public class EvaluationCriterion
         
       case "tierupdatedate":
         query = handleLoyaltyProgramField("loyaltyPrograms.tierUpdateDate", esField, queryLPID, ExpressionDataType.DateExpression);
+        break;
+        
+      case "levelupdatedate":
+        query = handleLoyaltyProgramField("loyaltyPrograms.levelupdatedate", esField, queryLPID, ExpressionDataType.DateExpression);
+        break;
+        
+      case "stepupdatedate":
+        query = handleLoyaltyProgramField("loyaltyPrograms.stepupdatedate", esField, queryLPID, ExpressionDataType.DateExpression);
         break;
 
       case "optindate":
