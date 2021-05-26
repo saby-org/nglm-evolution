@@ -525,7 +525,7 @@ public abstract class SubscriberProfile
                     LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) program.getValue();
                     
                     if(loyaltyProgramChallengeState.getLevelName() != null){ loyalty.put("levelName", loyaltyProgramChallengeState.getLevelName()); }
-                    if(loyaltyProgramChallengeState.getLevelEnrollmentDate() != null){ loyalty.put("levelUpdateDate", loyaltyProgramChallengeState.getLevelEnrollmentDate()); }
+                    if(loyaltyProgramChallengeState.getLevelEnrollmentDate() != null){ loyalty.put("levelUpdateDate", RLMDateUtils.formatDateForElasticsearchDefault(loyaltyProgramChallengeState.getLevelEnrollmentDate())); }
                     if(loyaltyProgramChallengeState.getPreviousLevelName() != null){ loyalty.put("previousLevelName", loyaltyProgramChallengeState.getPreviousLevelName()); }
                     ChallengeLevel level = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getLevelName());
                     ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getPreviousLevelName());
@@ -541,7 +541,7 @@ public abstract class SubscriberProfile
                     LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) program.getValue();
                     
                     if(loyaltyProgramMissionState.getStepName() != null){ loyalty.put("stepName", loyaltyProgramMissionState.getStepName()); }
-                    if(loyaltyProgramMissionState.getStepEnrollmentDate() != null){ loyalty.put("stepUpdateDate", loyaltyProgramMissionState.getStepEnrollmentDate()); }
+                    if(loyaltyProgramMissionState.getStepEnrollmentDate() != null){ loyalty.put("stepUpdateDate", RLMDateUtils.formatDateForElasticsearchDefault(loyaltyProgramMissionState.getStepEnrollmentDate())); }
                     loyalty.put("currentProgression", loyaltyProgramMissionState.getCurrentProgression());
                     if(loyaltyProgramMissionState.getPreviousStepName() != null){ loyalty.put("previousStepName", loyaltyProgramMissionState.getPreviousStepName()); }
                     MissionStep step = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getStepName());
@@ -552,6 +552,7 @@ public abstract class SubscriberProfile
             array.add(JSONUtilities.encodeObject(loyalty));
           }
       }
+    log.info("RAJ K loyalty array {}", array);
     return array;
   }
   
