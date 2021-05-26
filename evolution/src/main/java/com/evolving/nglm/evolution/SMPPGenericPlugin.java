@@ -199,7 +199,7 @@ public class SMPPGenericPlugin implements NotificationInterface
       }
     else
       {
-        if(sender.sendSMS(deliveryRequest, text, destination, source, receiptExpected != null ? receiptExpected : false, flashSMS != null ? flashSMS : false, SMSExpiration != null ? SMSExpiration : 240))
+        if(sender.sendSMS(deliveryRequest, text, destination, source, receiptExpected != null ? receiptExpected : false, flashSMS != null ? flashSMS : false))
           {
             if(log.isDebugEnabled()) log.debug("SMPP Driver message sent successfully");
           }
