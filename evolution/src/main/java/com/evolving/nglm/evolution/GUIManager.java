@@ -2295,19 +2295,19 @@ public class GUIManager {
 
             // if we are here, then the codestatus is 200
             // parse the entity response and get the dashboard title (= slug)
-//            responseJson = (JSONArray) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
+            responseJson = (JSONArray) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
             HashMap<String, String> existingdashbaords = new HashMap<>();
-//            for (int i = 0; i < responseJson.size(); i++) {
-//              JSONObject currentDashbaord = (JSONObject) responseJson.get(i);
-//              currentDashbaord.get("slug");
-//              String dashbaordTitle = JSONUtilities.decodeString(currentDashbaord, "slug");
-//              existingdashbaords.put("title", dashbaordTitle);
-//            }
+            for (int i = 0; i < responseJson.size(); i++) {
+              JSONObject currentDashbaord = (JSONObject) responseJson.get(i);
+              currentDashbaord.get("slug");
+              String dashbaordTitle = JSONUtilities.decodeString(currentDashbaord, "slug");
+              existingdashbaords.put("title", dashbaordTitle);
+            }
 
             // retrieve dashboard json files into the classpath
             Reflections reflections = new Reflections(null, new ResourcesScanner());
             Set<String> fileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
-            existingdashbaords.put("title", null);
+
             for (String currentFileName : fileNames) {
               // check if the dashboard exists
               if (existingdashbaords.get(currentFileName) == null) {
