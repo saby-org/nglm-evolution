@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
@@ -42,6 +43,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.streams.KafkaStreams;
@@ -1125,6 +1127,7 @@ public class EvolutionEngine
 
         // need to re-run unique key prefix computation
         if(newState==KafkaStreams.State.RUNNING) KStreamsUniqueKeyServer.streamRebalanced();
+        partitionHostMap.clear();// cache of which host have which partition for HTPP API
 
         //
         //  streams state
@@ -1767,9 +1770,9 @@ public class EvolutionEngine
           SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
           return subscriberState;
       }
-    
 
-    
+
+
     /*****************************************
     *
     *  update subscriber hierarchy
@@ -1799,11 +1802,11 @@ public class EvolutionEngine
                 if(sr == null)
                   {
                     sr = new SubscriberRelatives();
-                    subscriberProfile.getRelations().put(relationshipID, sr);        
+                    subscriberProfile.getRelations().put(relationshipID, sr);
                   }
                 sr.setParentSubscriberID(updateParentRelationshipEvent.getNewParent());
               }
-            else 
+            else
               {
                 // delete a parent
                 SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
@@ -1817,14 +1820,14 @@ public class EvolutionEngine
                       }
                     sr.setParentSubscriberID(null);
                   }
-                else 
+                else
                   {
                     // we tried to delete a parent that does not exist, just log a WARN
                     log.warn("Delete parent where no parent is referenced " + updateParentRelationshipEvent.getNewParent() + " for suscriber " + evolutionEvent.getSubscriberID());
                   }
               }
           }
-        else 
+        else
           {
             log.warn("relationshipDisplay is unknown " + relationshipDisplay);
           }
@@ -1852,11 +1855,11 @@ public class EvolutionEngine
                 if(sr == null)
                   {
                     sr = new SubscriberRelatives();
-                    subscriberProfile.getRelations().put(relationshipID, sr);        
+                    subscriberProfile.getRelations().put(relationshipID, sr);
                   }
                 sr.addChildSubscriberID(updateChildrenRelationshipEvent.getChildren());
               }
-            else 
+            else
               {
                 // remove a children
                 SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
@@ -1864,19 +1867,19 @@ public class EvolutionEngine
                   {
                     sr.removeChildSubscriberID(updateChildrenRelationshipEvent.getChildren());
                   }
-                else 
+                else
                   {
                     // we tried to delete a child that does not exist, just log a WARN
                     log.warn("Delete child where no child is referenced " + updateChildrenRelationshipEvent.getChildren() + " for suscriber " + evolutionEvent.getSubscriberID());
-                  }                
+                  }
               }
           }
-        else 
+        else
           {
             log.warn("relationshipDisplay is unknown " + relationshipDisplay );
-          } 
-      }    
-    
+          }
+      }
+
     // now clean unused relations
     ArrayList<String> toRemove = new ArrayList<>();
     for(Map.Entry<String, SubscriberRelatives> sr : subscriberProfile.getRelations().entrySet())
@@ -3023,7 +3026,7 @@ public class EvolutionEngine
           {
             log.info("pointFulfillmentRequest failed (no such point): {}", pointFulfillmentRequest.getPointID());
             pointFulfillmentResponse.setDeliveryStatus(DeliveryStatus.Failed);
-            
+
             //
             //  return delivery response
             //
@@ -3258,9 +3261,9 @@ public class EvolutionEngine
             boolean addExclusionInclusionTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, exclusionInclusionTarget.getCriteriaList());
             subscriberProfile.setExclusionInclusionTarget(exclusionInclusionTarget.getExclusionInclusionTargetID(), subscriberGroupEpochReader.get(exclusionInclusionTarget.getExclusionInclusionTargetID()) != null ? subscriberGroupEpochReader.get(exclusionInclusionTarget.getExclusionInclusionTargetID()).getEpoch() : 0, addExclusionInclusionTarget);
             subscriberProfileUpdated = true;
-          }          
+          }
       }
-    
+
     /*****************************************
     *
     *  process file-sourced subscriberGroup event
@@ -4946,7 +4949,7 @@ public class EvolutionEngine
                 *  enterJourney -- all journeys
                 *
                 *****************************************/
-                
+
                 boundParameters.put(CriterionContext.JOURNEY_DISPLAY_PARAMETER_ID, journey.getGUIManagedObjectDisplay());
 
                 //
@@ -7059,6 +7062,23 @@ public class EvolutionEngine
   *
   *****************************************/
 
+  // this cached mecanism exist only because :
+  // org.apache.kafka.streams.KafkaStreams.metadataForKey(java.lang.String, K, org.apache.kafka.common.serialization.Serializer<K>)
+  // which call : org.apache.kafka.streams.processor.internals.StreamsMetadataState.getMetadataWithKey(java.lang.String, K, org.apache.kafka.common.serialization.Serializer<K>)
+  // is synchronized, and so a real bottleneck on higly threaded HttpServer (we probably should move asyn NIO http server)
+  private static Map<Integer,String> partitionHostMap = new ConcurrentHashMap<>();
+  private static String getHostForKey(String key){
+      // WARN: copy past default from org.apache.kafka.clients.producer.internals.DefaultPartitioner.partition()
+      byte[] byteKey = StringKey.serde().serializer().serialize(null,new StringKey(key));
+      int partition = Utils.toPositive(Utils.murmur2(byteKey)) % Deployment.getTopicSubscriberPartitions();
+      // get from cache if possible
+      if(partitionHostMap.get(partition)!=null) return partitionHostMap.get(partition);
+      // else construct and update cache
+      StreamsMetadata metadata = streams.metadataForKey(Deployment.getSubscriberStateChangeLog(), new StringKey(key), StringKey.serde().serializer());
+      String toRet = metadata.host()+":"+metadata.port();
+      partitionHostMap.put(partition,toRet);
+      return toRet;
+  }
   private byte[] processGetSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean forSupport) throws ServerException
   {
     //
@@ -7074,11 +7094,7 @@ public class EvolutionEngine
 
     waitForStreams(timeout);
 
-    //
-    //  handler for subscriberID
-    //
-
-    StreamsMetadata metadata = streams.metadataForKey(Deployment.getSubscriberStateChangeLog(), new StringKey(subscriberID), StringKey.serde().serializer());
+    String hostPort = getHostForKey(subscriberID);
 
     //
     //  request
@@ -7097,7 +7113,7 @@ public class EvolutionEngine
 
     now = SystemTime.getCurrentTime();
     long waitTime = timeout.getTime() - now.getTime();
-    HttpPost httpPost = new HttpPost("http://" + metadata.host() + ":" + metadata.port() + "/nglm-evolutionengine/retrieveSubscriberProfile");
+    HttpPost httpPost = new HttpPost("http://" + hostPort + "/nglm-evolutionengine/retrieveSubscriberProfile");
     httpPost.setEntity(new StringEntity(requestJSON.toString(), ContentType.create("application/json")));
     httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
 
@@ -7857,14 +7873,14 @@ public class EvolutionEngine
       
       try
       {
-        if(isAutoProvisionSubscriberStreamEvent = AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventDeclaration.getEventClass())) 
+        if(isAutoProvisionSubscriberStreamEvent = AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventDeclaration.getEventClass()))
           {
             eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class, int.class});
           }
-        else 
+        else
           {
             eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
-          }        
+          }
       }
     catch (Exception e)
       {
@@ -7909,7 +7925,7 @@ public class EvolutionEngine
           action.setEventDeclaration(eventDeclaration);
           action.setEventToTrigger(event);
           
-          return Collections.<Action>singletonList(action);         
+          return Collections.<Action>singletonList(action);
 
         }
       catch(Exception e)
