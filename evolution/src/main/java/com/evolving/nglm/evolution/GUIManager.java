@@ -2268,6 +2268,7 @@ public class GUIManager {
             // switch using the optained orgId
             response = sendGrafanaCurl(null, "/api/user/using/" + idNewOrg, "POST");
 
+            log.info("==========org created, org switched==========");
             /**** Add a Dashboard in the newly created org ****/
             // get all the existing dashbaords
             response = sendGrafanaCurl(null, "/api/search", "GET");
@@ -2292,12 +2293,13 @@ public class GUIManager {
               }
               continue;
             }
-
+            log.info("==========existing dashboards list==========");
             // if we are here, then the codestatus is 200
             // parse the entity response and get the dashboard title (= slug)
             responseJson = (JSONArray) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
             HashMap<String, String> existingdashbaords = new HashMap<>();
             for (int i = 0; i < responseJson.size(); i++) {
+              log.info("==========getting existing dashboards list==========");
               JSONObject currentDashbaord = (JSONObject) responseJson.get(i);
               currentDashbaord.get("title");
               String dashbaordTitle = JSONUtilities.decodeString(currentDashbaord, "slug");
@@ -2307,10 +2309,11 @@ public class GUIManager {
             // retrieve dashboard json files into the classpath
             Reflections reflections = new Reflections(null, new ResourcesScanner());
             Set<String> fileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
-
+            log.info("==========retreiving dashboard json files==========");
             for (String currentFileName : fileNames) {
               // check if the dashboard exists
               if (existingdashbaords.get(currentFileName) == null) {
+                log.info("==========check if db exists if not create it==========");
                 // do the curl that allows creating this dashbaord
                 String fileBody = "";
                 for(String s :  Files.readAllLines(Paths.get(this.getClass().getResource("/"+currentFileName).toURI()), Charset.defaultCharset()))
@@ -2351,7 +2354,7 @@ public class GUIManager {
                   }
                   continue;
                 }
-              }
+              }log.info("==========dashboard created==========");
             }
           }
         }
