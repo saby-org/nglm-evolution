@@ -2299,7 +2299,7 @@ public class GUIManager {
             HashMap<String, String> existingdashbaords = new HashMap<>();
             for (int i = 0; i < responseJson.size(); i++) {
               JSONObject currentDashbaord = (JSONObject) responseJson.get(i);
-              currentDashbaord.get("slug");
+              currentDashbaord.get("title");
               String dashbaordTitle = JSONUtilities.decodeString(currentDashbaord, "slug");
               existingdashbaords.put("title", dashbaordTitle);
             }
