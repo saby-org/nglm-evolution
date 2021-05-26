@@ -552,7 +552,6 @@ public abstract class SubscriberProfile
             array.add(JSONUtilities.encodeObject(loyalty));
           }
       }
-    log.info("RAJ K loyalty array {}", array);
     return array;
   }
   
