@@ -908,14 +908,15 @@
   {
     "reportManagerZookeeperDir"   : "${zookeeper.root}/reports",
     "reportManagerOutputPath"     : "/app/reports",
-    "reportManagerDateFormat"     : "yyyy-MM-dd_HH-mm-ss",
+    "reportManagerFileDateFormat" : "yyyy-MM-dd_HH-mm-ss",
     "reportManagerFileExtension"  : "csv",
     "reportManagerCsvSeparator"   : ";",
     "reportManagerFieldSurrounder": "'",
     "reportManagerMaxMessageLength": 200,
     "reportManagerStreamsTempDir" : "/tmp",
     "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000",
-    "journeysReportMaxParallelThreads" : 10
+    "journeysReportMaxParallelThreads" : 10,
+    "reportManagerContentDateFormat" : "yyyy-MM-dd'T'HH:mm:ssZZZZ"
   },
   
   "initialReports" :
@@ -1025,7 +1026,7 @@
       "effectiveScheduling" : [ "monthly" ]
     },
     {
-      "name"                : "offersAllocatedToTokens",
+      "name"                : "tokenOfferReport",
       "display"             : "Token Offer Report",
       "description"         : "Description offer details of the tokens",
       "class"               : "com.evolving.nglm.evolution.reports.tokenOffer.TokenOfferReportDriver",

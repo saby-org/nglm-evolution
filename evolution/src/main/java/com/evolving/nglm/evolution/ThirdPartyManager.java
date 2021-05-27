@@ -1583,19 +1583,7 @@ public class ThirdPartyManager
     String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
-    AuthenticatedResponse authResponse = null;
-    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-    if (!Deployment.getRegressionMode())
-      {
-        authResponse = authCache.get(thirdPartyCredential);
-      }
-    else
-      {
-        authResponse = authenticate(thirdPartyCredential);
-      }
-    int user = (authResponse.getUserId());
-    String userID = Integer.toString(user);
-    String featureID = userID;
+    String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
 
     /*****************************************
     *
@@ -1692,19 +1680,7 @@ public class ThirdPartyManager
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
     
-    AuthenticatedResponse authResponse = null;
-    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-    if (!Deployment.getRegressionMode())
-      {
-        authResponse = authCache.get(thirdPartyCredential);
-      }
-    else
-      {
-        authResponse = authenticate(thirdPartyCredential);
-      }
-    int user = (authResponse.getUserId());
-    String userID = Integer.toString(user);
-    String featureID = userID;
+    String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
 
     /*****************************************
     *

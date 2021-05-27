@@ -565,7 +565,7 @@ public class ReportManager implements Watcher
       {
         String outputPath = ReportService.getReportOutputPath(tenantID);
         log.trace("outputPath = " + outputPath);
-        String dateFormat = Deployment.getDeployment(tenantID).getReportManagerDateFormat();
+        String dateFormat = Deployment.getDeployment(tenantID).getReportManagerFileDateFormat();
         log.trace("dateFormat = " + dateFormat);
         String fileExtension = Deployment.getDeployment(tenantID).getReportManagerFileExtension();
         log.trace("fileExtension = " + fileExtension);

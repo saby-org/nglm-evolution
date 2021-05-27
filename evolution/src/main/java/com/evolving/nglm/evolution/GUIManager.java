@@ -21714,7 +21714,8 @@ public class GUIManager
     String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
-    String featureID = (userID != null) ? userID : "1";
+    String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+    String featureID = (userName != null) ? userName : "administrator";
 
     /*****************************************
     *
@@ -21812,7 +21813,8 @@ public class GUIManager
     String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
-    String featureID = (userID != null) ? userID : "1";
+    String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+    String featureID = (userName != null) ? userName : "administrator";
 
     /*****************************************
     *
@@ -23582,7 +23584,8 @@ public class GUIManager
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
-          String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
+          String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+          String featureID = (userName != null) ? userName : "administrator"; // for PTT tests, never happens when called by browser
           String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
           String resellerID = "";
           Offer offer = offerService.getActiveOffer(offerID, now);
@@ -23746,7 +23749,9 @@ public class GUIManager
             return JSONUtilities.encodeObject(response);
           }
 
-        String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
+        String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+        String featureID = (userName != null) ? userName : "administrator"; // for PTT tests, never happens when called by browser
+        
         String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
         String resellerID = "";
         if(!sync)

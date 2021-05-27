@@ -780,7 +780,7 @@ public class ReportService extends GUIService
     try
       {
         String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getDeployment(tenantID).getReportManagerFileExtension())[0];
-        SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getDeployment(tenantID).getReportManagerDateFormat());   // TODO EVPRO-99
+        SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getDeployment(tenantID).getReportManagerFileDateFormat());   // TODO EVPRO-99
         sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         result = sdf.parse(reportDateString);
         result = RLMDateUtils.truncate(result, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
