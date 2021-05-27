@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
@@ -58,8 +59,8 @@ public class Product extends GUIManagedObject implements StockableItem
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("productTypes", SchemaBuilder.array(ProductTypeInstance.schema()).schema());
     schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
-    schemaBuilder.field("quantity", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("validityPeriod", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("quantity", schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("validityPeriod", schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("validityType", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -88,9 +89,9 @@ public class Product extends GUIManagedObject implements StockableItem
   private Integer stock;
   private Set<ProductTypeInstance> productTypes;
   private boolean simpleOffer;
-  private String quantity;
-  private String validityPeriod;
-  private String validityType;
+  private int quantity;
+  private int validityPeriod;
+  private TimeUnit validityType;
 
   //
   //  derived
@@ -112,9 +113,9 @@ public class Product extends GUIManagedObject implements StockableItem
   public Set<ProductTypeInstance> getProductTypes() { return productTypes;  }
   public String getStockableItemID() { return stockableItemID; }
   public boolean getSimpleOffer() { return simpleOffer; }
-  public String getQuantity() { return quantity; }
-  public String getValidityPeriod() { return validityPeriod; }
-  public String getValidityType() { return validityType; }
+  public int getQuantity() { return quantity; }
+  public int getValidityPeriod() { return validityPeriod; }
+  public TimeUnit getValidityType() { return validityType; }
 
   /*****************************************
   *
@@ -122,7 +123,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, String quantity, String validityPeriod, String validityType)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, int quantity, int validityPeriod, TimeUnit validityType)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
@@ -200,9 +201,9 @@ public class Product extends GUIManagedObject implements StockableItem
     Integer stock = valueStruct.getInt32("stock");
     Set<ProductTypeInstance> productTypes = unpackProductTypes(schema.field("productTypes").schema(), valueStruct.get("productTypes"));
     boolean simpleOffer = (schemaVersion >= 2) ? valueStruct.getBoolean("simpleOffer") : false;
-    String quantity = (schema.field("quantity")!= null) ? valueStruct.getString("quantity") : null;
-    String validityPeriod = (schema.field("validityPeriod")!= null) ? valueStruct.getString("validityPeriod") : null;
-    String validityType = (schema.field("validityPeriod")!= null) ? valueStruct.getString("validityPeriod") : null;
+    int quantity = (schema.field("quantity")!= null) ? valueStruct.getInt32("quantity") : 0;
+    int validityPeriod = (schema.field("validityPeriod")!= null) ? valueStruct.getInt32("validityPeriod") : 0;
+    TimeUnit validityType = (schema.field("validityType")!= null) ? TimeUnit.fromExternalRepresentation(valueStruct.getString("validityType")) : TimeUnit.Minute;
     //
     //  return
     //
@@ -291,9 +292,9 @@ public class Product extends GUIManagedObject implements StockableItem
         if (deliverable == null) JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
         this.deliverableID = deliverable.getDeliverableID();
       }
-    this.quantity = JSONUtilities.decodeString(jsonRoot, "quantity", false);
-    this.validityPeriod = JSONUtilities.decodeString(jsonRoot, "validityPeriod", false);
-    this.validityType = JSONUtilities.decodeString(jsonRoot, "validityType", false);
+    this.quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", false);
+    this.validityPeriod = JSONUtilities.decodeInteger(jsonRoot, "validityPeriod", false);
+    this.validityType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityType", true));
 
     /*****************************************
     *
