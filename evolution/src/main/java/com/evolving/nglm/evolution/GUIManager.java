@@ -2324,7 +2324,7 @@ public class GUIManager {
 //
 //                if (response.getStatusLine().getStatusCode() == 400) {
 //                  log.warn(
-//                      "Error: invalid json, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
+//                      "Error while creating the dashbaord: invalid json, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
 //                  try {
 //                    Thread.sleep(10000);
 //                  } catch (InterruptedException e) {
@@ -2333,7 +2333,7 @@ public class GUIManager {
 //                  continue;
 //                }
 //                if (response.getStatusLine().getStatusCode() == 401) {
-//                  log.warn("Unauthorized" + response.getStatusLine().getStatusCode());
+//                  log.warn("Error while creating the dashbaord: Unauthorized" + response.getStatusLine().getStatusCode());
 //                  try {
 //                    Thread.sleep(10000);
 //                  } catch (InterruptedException e) {
@@ -2342,7 +2342,7 @@ public class GUIManager {
 //                  continue;
 //                }
 //                if (response.getStatusLine().getStatusCode() == 412) {
-//                  log.warn("Precondition failed: version mismatch or name laready exists "
+//                  log.warn("Error while creating the dashbaord, Precondition failed: version mismatch or name laready exists "
 //                      + response.getStatusLine().getStatusCode());
 //                  try {
 //                    Thread.sleep(10000);
@@ -2399,34 +2399,60 @@ public class GUIManager {
               // check if the datasource exists
 //              if (existingdatasources.get(currentFileName) == null) {
                 // do the curl that allows creating this dashbaord
-                String dsFileBody = 
-                    "{\r\n" + 
-                    "  \"id\": null,\r\n" + 
-                    "  \"uid\": null,\r\n" + 
-                    "  \"orgId\": null,\r\n" + 
-                    "  \"name\": \"Messages\",\r\n" + 
-                    "  \"type\": \"elasticsearch\",\r\n" + 
-                    "  \"typeLogoUrl\": \"\",\r\n" + 
-                    "  \"access\": \"proxy\",\r\n" + 
-                    "  \"url\": \"http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>\",\r\n" + 
-                    "  \"password\": \"\",\r\n" + 
-                    "  \"user\": \"\",\r\n" + 
-                    "  \"database\": \"t*_datacube_messages\",\r\n" + 
-                    "  \"basicAuth\": true,\r\n" + 
-                    "  \"basicAuthUser\": \"admin\",\r\n" + 
-                    "  \"basicAuthPassword\": \"<_ELASTICSEARCH_ADMIN_PASSWORD_>\",\r\n" + 
-                    "  \"withCredentials\": true,\r\n" + 
-                    "  \"isDefault\": false,\r\n" + 
-                    "  \"jsonData\": {\r\n" + 
-                    "    \"timeField\" : \"timestamp\",\r\n" + 
-                    "    \"elasticsearchType\": \"default\",\r\n" + 
-                    "    \"elasticsearchVersion\": \"70\"\r\n" + 
-                    "  },\r\n" + 
-                    "  \"secureJsonFields\": {},\r\n" + 
-                    "  \"version\": null,\r\n" + 
-                    "  \"readOnly\": false\r\n" + 
-                    "}";
-                
+           
+            
+
+            String id = null;
+            String uid = null;
+            String orgId = null;
+            String name = "TestDS";
+            String type = "elasticsearch";
+            String typeLogoUrl = null;
+            String access = "proxy";
+            String url = "http://10.100.0.22:3001";
+            String password = "";
+            String user = "";
+            String database = "titi";
+            boolean basicAuth = true;
+            String basicAuthUser = "admin";
+            String basicAuthPassword = "admin";
+            boolean withCredentials = true;
+            boolean isDefault = false;
+//            HashMap<String, String> jsonData = new HashMap<String, String>();
+//            jsonData.put("timeField", "timestamp");
+//            jsonData.put("elasticsearchType", "default");
+//            jsonData.put("elasticsearchVersion", "70");
+           String jsonData ="jsonData";
+           String timeField = "timestamp";
+           String elasticsearchType = "default";
+           String elasticsearchVersion = "70";
+            
+           String dsFileBody = "{\r\n" + 
+               "  \"id\":" +id+ ",\r\n" + 
+               "  \"uid\":" +uid+ ",\r\n" + 
+               "  \"orgId\":" +orgId+ ",\r\n" + 
+               "  \"name\":" +name+ ",\r\n" + 
+               "  \"type\": " +type+ " ,\r\n" + 
+               "  \"typeLogoUrl\": " +typeLogoUrl+ " ,\r\n" + 
+               "  \"access\": " +access+",\r\n" + 
+               "  \"url\": " +url+",\r\n" + 
+               "  \"password\": " +password+ ",\r\n" + 
+               "  \"user\": " +user+",\r\n" + 
+               "  \"database\": "+database+",\r\n" + 
+               "  \"basicAuth\": "+basicAuth+" ,\r\n" + 
+               "  \"basicAuthUser\": "+basicAuthUser+",\r\n" + 
+               "  \"basicAuthPassword\":" +basicAuthPassword + ",\r\n" + 
+               "  \"withCredentials\": "+withCredentials+ " ,\r\n" + 
+               "  \"isDefault\":" +isDefault+ ",\r\n" + 
+               "  \"jsonData\": {\r\n" + 
+               "    \"timeField\" : "+timeField+",\r\n" + 
+               "    \"elasticsearchType\": "+elasticsearchType+",\r\n" + 
+               "    \"elasticsearchVersion\": "+elasticsearchVersion+"\r\n" + 
+               "  }\r\n" + 
+               "}'\r\n" + 
+               "";
+           
+               
 
                 JSONObject datasourceDef = (JSONObject) (new JSONParser())
                     .parse(dsFileBody);
@@ -2434,7 +2460,7 @@ public class GUIManager {
 
                 if (response.getStatusLine().getStatusCode() == 400) {
                   log.warn(
-                      "Error: invalid request, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
+                      "Error while creating the Datasource: invalid request, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
                   try {
                     Thread.sleep(10000);
                   } catch (InterruptedException e) {
@@ -2443,7 +2469,7 @@ public class GUIManager {
                   continue;
                 }
                 if (response.getStatusLine().getStatusCode() == 401) {
-                  log.warn("Unauthorized" + response.getStatusLine().getStatusCode());
+                  log.warn("Error while creating the Datasource: Unauthorized" + response.getStatusLine().getStatusCode());
                   try {
                     Thread.sleep(10000);
                   } catch (InterruptedException e) {
@@ -2452,7 +2478,7 @@ public class GUIManager {
                   continue;
                 }
                 if (response.getStatusLine().getStatusCode() == 403) {
-                  log.warn("Access denied"
+                  log.warn("Error while creating the Datasource: Access denied"
                       + response.getStatusLine().getStatusCode());
                   try {
                     Thread.sleep(10000);
