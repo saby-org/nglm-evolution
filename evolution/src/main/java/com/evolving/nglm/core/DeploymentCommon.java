@@ -1373,7 +1373,7 @@ public class DeploymentCommon
     JSONObject reportManager = jsonReader.decodeJSONObject("reportManager");
     reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir"); // TODO EVPRO-99 JSONUtilities
     reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath");
-    reportManagerFileDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerFileDateFormat");
+    reportManagerFileDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerFileDateFormat","yyyy-MM-dd_HH-mm-ss");
     reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension");
     reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator");
     reportManagerFieldSurrounder = JSONUtilities.decodeString(reportManager, "reportManagerFieldSurrounder");
@@ -1381,7 +1381,7 @@ public class DeploymentCommon
     reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir");
     reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties");
     journeysReportMaxParallelThreads = JSONUtilities.decodeInteger(reportManager, "journeysReportMaxParallelThreads");
-    reportManagerContentDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerContentDateFormat");
+    reportManagerContentDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerContentDateFormat", "yyyy-MM-dd'T'HH:mm:ssZZZZ");
 
     if (reportManagerFieldSurrounder.length() > 1) {
       throw new ServerRuntimeException("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
