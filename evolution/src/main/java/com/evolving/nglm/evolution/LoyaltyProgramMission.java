@@ -261,7 +261,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
      *
      *****************************************/
 
-    super(jsonRoot, epoch, existingLoyaltyProgramUnchecked, catalogCharacteristicService, tenantID);
+    super(jsonRoot, GUIManagedObjectType.LoyaltyProgramMission, epoch, existingLoyaltyProgramUnchecked, catalogCharacteristicService, tenantID);
 
     /*****************************************
      *

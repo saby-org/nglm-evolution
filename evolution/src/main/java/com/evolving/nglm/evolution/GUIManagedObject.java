@@ -60,8 +60,13 @@ public abstract class GUIManagedObject
     Journey("journey"),
     Campaign("campaign"),
     Workflow("workflow"),
-    LoyaltyWorkflow("loyaltyWorkflow"),
     BulkCampaign("bulkCampaign"),
+    
+    LoyaltyWorkflow("loyaltyWorkflow"),
+    LoyaltyProgramPoints("loyaltyProgramPoints"),
+    LoyaltyProgramMission("loyaltyProgramMission"),
+    LoyaltyProgramChallenge("loyaltyProgramChallenge"),
+    
     SMSMessageTemplate("smsMessageTemplate"),
     MailMessageTemplate("mailMessageTemplate"),
     PushMessageTemplate("pushMessageTemplate"),
