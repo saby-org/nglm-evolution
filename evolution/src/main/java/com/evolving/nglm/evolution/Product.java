@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
@@ -59,9 +58,8 @@ public class Product extends GUIManagedObject implements StockableItem
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("productTypes", SchemaBuilder.array(ProductTypeInstance.schema()).schema());
     schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
-    schemaBuilder.field("quantity", schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("validityPeriod", schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("validityType", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("deliverableQuantity", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("deliverableValidity", ProductValidity.schema());
     schema = schemaBuilder.build();
   };
 
@@ -89,9 +87,8 @@ public class Product extends GUIManagedObject implements StockableItem
   private Integer stock;
   private Set<ProductTypeInstance> productTypes;
   private boolean simpleOffer;
-  private int quantity;
-  private int validityPeriod;
-  private TimeUnit validityType;
+  private int deliverableQuantity;
+  private ProductValidity deliverableValidity;
 
   //
   //  derived
@@ -113,9 +110,8 @@ public class Product extends GUIManagedObject implements StockableItem
   public Set<ProductTypeInstance> getProductTypes() { return productTypes;  }
   public String getStockableItemID() { return stockableItemID; }
   public boolean getSimpleOffer() { return simpleOffer; }
-  public int getQuantity() { return quantity; }
-  public int getValidityPeriod() { return validityPeriod; }
-  public TimeUnit getValidityType() { return validityType; }
+  public int getDeliverableQuantity() { return deliverableQuantity; }
+  public ProductValidity getDeliverableValidity(){ return deliverableValidity; }
 
   /*****************************************
   *
@@ -123,7 +119,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, int quantity, int validityPeriod, TimeUnit validityType)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, int deliverableQuantity, ProductValidity deliverableValidity)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
@@ -132,9 +128,8 @@ public class Product extends GUIManagedObject implements StockableItem
     this.productTypes = productTypes;
     this.stockableItemID = "product-" + getProductID();
     this.simpleOffer = simpleOffer;
-    this.quantity = quantity;
-    this.validityPeriod = validityPeriod;
-    this.validityType = validityType;
+    this.deliverableQuantity = deliverableQuantity;
+    this.deliverableValidity = deliverableValidity;
   }
 
   /*****************************************
@@ -153,9 +148,8 @@ public class Product extends GUIManagedObject implements StockableItem
     struct.put("stock", product.getStock());
     struct.put("productTypes", packProductTypes(product.getProductTypes()));
     struct.put("simpleOffer", product.getSimpleOffer());
-    struct.put("quantity", product.getQuantity());
-    struct.put("validityPeriod", product.getValidityPeriod());
-    struct.put("validityType", product.getValidityType());
+    struct.put("deliverableQuantity", product.getDeliverableQuantity());
+    struct.put("deliverableValidity", ProductValidity.pack(product.getDeliverableValidity()));
     return struct;
   }
   
@@ -201,14 +195,14 @@ public class Product extends GUIManagedObject implements StockableItem
     Integer stock = valueStruct.getInt32("stock");
     Set<ProductTypeInstance> productTypes = unpackProductTypes(schema.field("productTypes").schema(), valueStruct.get("productTypes"));
     boolean simpleOffer = (schemaVersion >= 2) ? valueStruct.getBoolean("simpleOffer") : false;
-    int quantity = (schema.field("quantity")!= null) ? valueStruct.getInt32("quantity") : 0;
-    int validityPeriod = (schema.field("validityPeriod")!= null) ? valueStruct.getInt32("validityPeriod") : 0;
-    TimeUnit validityType = (schema.field("validityType")!= null) ? TimeUnit.fromExternalRepresentation(valueStruct.getString("validityType")) : TimeUnit.Minute;
+    int deliverableQuantity = (schema.field("deliverableQuantity")!= null) ? valueStruct.getInt32("deliverableQuantity") : 0;
+    ProductValidity deliverableValidity = (schema.field("deliverableValidity")!= null) ? ProductValidity.unpack(new SchemaAndValue(schema.field("deliverableValidity").schema(), valueStruct.get("deliverableValidity"))) : null;
+    
     //
     //  return
     //
 
-    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, quantity, validityPeriod, validityType);
+    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, deliverableQuantity, deliverableValidity);
   }
   
   /*****************************************
@@ -292,9 +286,9 @@ public class Product extends GUIManagedObject implements StockableItem
         if (deliverable == null) JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
         this.deliverableID = deliverable.getDeliverableID();
       }
-    this.quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", false);
-    this.validityPeriod = JSONUtilities.decodeInteger(jsonRoot, "validityPeriod", false);
-    this.validityType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityType", true));
+    this.deliverableQuantity = JSONUtilities.decodeInteger(jsonRoot, "deliverableQuantity", 1);
+    JSONObject jsonValue = JSONUtilities.decodeJSONObject(jsonRoot, "deliverableValidity", false);
+    this.deliverableValidity = (jsonValue != null) ? new ProductValidity(JSONUtilities.decodeJSONObject(jsonRoot, "deliverableValidity", false)) : null;
 
     /*****************************************
     *
@@ -325,9 +319,8 @@ public class Product extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(stock, existingProduct.getStock());
         epochChanged = epochChanged || ! Objects.equals(productTypes, existingProduct.getProductTypes());
         epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingProduct.getSimpleOffer());
-        epochChanged = epochChanged || ! Objects.equals(quantity, existingProduct.getQuantity());
-        epochChanged = epochChanged || ! Objects.equals(validityPeriod, existingProduct.getValidityPeriod());
-        epochChanged = epochChanged || ! Objects.equals(validityType, existingProduct.getValidityType());
+        epochChanged = epochChanged || ! Objects.equals(deliverableQuantity, existingProduct.getDeliverableQuantity());
+        epochChanged = epochChanged || ! Objects.equals(deliverableValidity, existingProduct.getDeliverableValidity());
         return epochChanged;
       }
     else

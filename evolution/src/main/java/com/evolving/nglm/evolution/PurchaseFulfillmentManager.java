@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -2020,12 +2021,24 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
       if(product != null){
         Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now);
+        int deliverableQuantity = product.getDeliverableQuantity();
+        TimeUnit deliverableValidityType = null;
+        int deliverableValidityPeriod = 0;
+        if (product.getDeliverableValidity() != null  &&  product.getDeliverableValidity().getValidityPeriod() != null)
+          {
+            deliverableValidityPeriod = product.getDeliverableValidity().getValidityPeriod();
+          }
+        if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityType() != null)
+          {
+            deliverableValidityType = product.getDeliverableValidity().getValidityType();
+          }
+        
         if(deliverable != null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
 			try {
-				CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
+				CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity() * deliverableQuantity, deliverableValidityType, deliverableValidityPeriod, "");
 				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
 			} catch (CommodityDeliveryException e) {
 				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
@@ -2076,12 +2089,23 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       Product product = productService.getActiveProduct(offerProductRollback.getProductID(), now);
       if(product != null){
         Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now);
+        int deliverableQuantity = product.getDeliverableQuantity();
+        TimeUnit deliverableValidityType = null;
+        int deliverableValidityPeriod = 0;
+        if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityPeriod() != null)
+          {
+            deliverableValidityPeriod = product.getDeliverableValidity().getValidityPeriod();
+          }
+        if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityType() != null)
+          {
+            deliverableValidityType = product.getDeliverableValidity().getValidityType();
+          }
         if(deliverable != null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
 			try {
-				CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0, "");
+				CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity() * deliverableQuantity , deliverableValidityType, deliverableValidityPeriod, "");
 				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
 			} catch (CommodityDeliveryException e) {
 				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
