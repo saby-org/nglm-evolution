@@ -102,6 +102,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -2270,89 +2272,92 @@ public class GUIManager {
 
             /**** Add a Dashboard in the newly created org ****/
             // get all the existing dashbaords
-//            response = sendGrafanaCurl(null, "/api/search", "GET");
-//
-//            if (response == null) {
-//              log.warn(
-//                  "Could not get a non null response of grafana dashbaords, maybe grafana is not fully started yet");
-//              try {
-//                Thread.sleep(10000);
-//              } catch (InterruptedException e) {
-//                e.printStackTrace();
-//              }
-//              continue;
-//            }
-//            if (response.getStatusLine().getStatusCode() != 200) {
-//              log.warn(
-//                  "Could not get list of grafana dashbaords, error code " + response.getStatusLine().getStatusCode());
-//              try {
-//                Thread.sleep(10000);
-//              } catch (InterruptedException e) {
-//                e.printStackTrace();
-//              }
-//              continue;
-//            }
-//            
-//            // if we are here, then the status code is 200
-//            // parse the entity response and get the dashboard title (= slug)
-//            responseJson = (JSONArray) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
-//            HashMap<String, String> existingdashbaords = new HashMap<>();
-//            for (int i = 0; i < responseJson.size(); i++) {
-//              JSONObject currentDashbaord = (JSONObject) responseJson.get(i);
-//              currentDashbaord.get("title");
-//              String dashbaordTitle = JSONUtilities.decodeString(currentDashbaord, "slug");
-//              existingdashbaords.put("title", dashbaordTitle);
-//            }
-//
-//            // retrieve dashboard json files into the classpath
+            response = sendGrafanaCurl(null, "/api/search", "GET");
+
+            if (response == null) {
+              log.warn(
+                  "Could not get a non null response of grafana dashbaords, maybe grafana is not fully started yet");
+              try {
+                Thread.sleep(10000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+              continue;
+            }
+            if (response.getStatusLine().getStatusCode() != 200) {
+              log.warn(
+                  "Could not get list of grafana dashbaords, error code " + response.getStatusLine().getStatusCode());
+              try {
+                Thread.sleep(10000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+              continue;
+            }
+            
+            // if we are here, then the status code is 200
+            // parse the entity response and get the dashboard title (= slug)
+            responseJson = (JSONArray) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
+            HashMap<String, String> existingdashbaords = new HashMap<>();
+            for (int i = 0; i < responseJson.size(); i++) {
+              JSONObject currentDashbaord = (JSONObject) responseJson.get(i);
+              currentDashbaord.get("title");
+              String dashbaordTitle = JSONUtilities.decodeString(currentDashbaord, "slug");
+              existingdashbaords.put("title", dashbaordTitle);
+            }
+
+            log.info("===Creating a Dashboard====");
+            // retrieve dashboard json files into the classpath
 //            Reflections reflections = new Reflections(null, new ResourcesScanner());
-//            Set<String> fileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
-//            
-//            for (String currentFileName : fileNames) {
-//              // check if the dashboard exists
-//              if (existingdashbaords.get(currentFileName) == null) {
-//                // do the curl that allows creating this dashbaord
-//                String fileBody = "";
-//                for(String s :  Files.readAllLines(Paths.get(this.getClass().getResource("/"+currentFileName).toURI()), Charset.defaultCharset()))
-//                  {
-//                    fileBody = fileBody + s;
-//                  };
-//                  
-//                JSONObject dashbaordDef = (JSONObject) (new JSONParser())
-//                    .parse(fileBody);
-//                response = sendGrafanaCurl(dashbaordDef, "/api/dashboards/db", "POST");
-//
-//                if (response.getStatusLine().getStatusCode() == 400) {
-//                  log.warn(
-//                      "Error while creating the dashbaord: invalid json, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
-//                  try {
-//                    Thread.sleep(10000);
-//                  } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                  }
-//                  continue;
-//                }
-//                if (response.getStatusLine().getStatusCode() == 401) {
-//                  log.warn("Error while creating the dashbaord: Unauthorized" + response.getStatusLine().getStatusCode());
-//                  try {
-//                    Thread.sleep(10000);
-//                  } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                  }
-//                  continue;
-//                }
-//                if (response.getStatusLine().getStatusCode() == 412) {
-//                  log.warn("Error while creating the dashbaord, Precondition failed: version mismatch or name laready exists "
-//                      + response.getStatusLine().getStatusCode());
-//                  try {
-//                    Thread.sleep(10000);
-//                  } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                  }
-//                  continue;
-//                }
-//              }
-//            }
+            Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage("com.evolving.nglm.evolution", ClasspathHelper.contextClassLoader(),
+                ClasspathHelper.staticClassLoader())).setScanners(new ResourcesScanner()));
+            Set<String> fileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
+            
+            for (String currentFileName : fileNames) {
+              // check if the dashboard exists
+              if (existingdashbaords.get(currentFileName) == null) {
+                // do the curl that allows creating this dashbaord
+                String fileBody = "";
+                for(String s :  Files.readAllLines(Paths.get(this.getClass().getResource("/"+currentFileName).toURI()), Charset.defaultCharset()))
+                  {
+                    fileBody = fileBody + s;
+                  };
+                  log.info("===parsing a Dashboard====");
+                JSONObject dashbaordDef = (JSONObject) (new JSONParser())
+                    .parse(fileBody);
+                response = sendGrafanaCurl(dashbaordDef, "/api/dashboards/db", "POST");
+
+                if (response.getStatusLine().getStatusCode() == 400) {
+                  log.warn(
+                      "Error while creating the dashbaord: invalid json, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
+                  try {
+                    Thread.sleep(10000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  continue;
+                }
+                if (response.getStatusLine().getStatusCode() == 401) {
+                  log.warn("Error while creating the dashbaord: Unauthorized" + response.getStatusLine().getStatusCode());
+                  try {
+                    Thread.sleep(10000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  continue;
+                }
+                if (response.getStatusLine().getStatusCode() == 412) {
+                  log.warn("Error while creating the dashbaord, Precondition failed: version mismatch or name laready exists "
+                      + response.getStatusLine().getStatusCode());
+                  try {
+                    Thread.sleep(10000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  continue;
+                }
+              }
+            }
             
             /***************************************************/
             /**** Add a Datasource in the newly created org ****/
@@ -2395,100 +2400,50 @@ public class GUIManager {
             // retrieve datasource yaml files
             // TODO
 
-//            for (String currentFileName : fileNames) {
-              // check if the datasource exists
-//              if (existingdatasources.get(currentFileName) == null) {
-                // do the curl that allows creating this dashbaord
-           
-            
+            //            for (String currentFileName : fileNames) {
+            // check if the datasource exists
+            //              if (existingdatasources.get(currentFileName) == null) {
+            // do the curl that allows creating this dashbaord
 
-//            String id = null;
-//            String uid = null;
-//            String orgId = null;
-//            String name = "TestDS";
-//            String type = "elasticsearch";
-//            String typeLogoUrl = null;
-//            String access = "proxy";
-//            String url = "http://10.100.0.22:3001";
-//            String password = "";
-//            String user = "";
-//            String database = "titi";
-//            boolean basicAuth = true;
-//            String basicAuthUser = "admin";
-//            String basicAuthPassword = "admin";
-//            boolean withCredentials = true;
-//            boolean isDefault = false;
-//           String jsonData ="jsonData";
-//           String timeField = "timestamp";
-//           String elasticsearchType = "default";
-//           String elasticsearchVersion = "70";
-           
-           log.info("===Creating a Datasource====");
-           String dsFileBody = "\n{\n  \"id\": null,\n  \"uid\": null,\n  \"orgId\": null,\n  \"name\": \"NullDnnnnnS\",\n  \"type\": \"elasticsearch\",\n  \"typeLogoUrl\": \"\",\n  \"access\": \"proxy\",\n  \"url\": \"http://10.100.0.22:3001\",\n  \"password\": \"\",\n  \"user\": \"\",\n  \"database\": \"titi\",\n  \"basicAuth\": true,\n  \"basicAuthUser\": \"admin\",\n  \"basicAuthPassword\": \"admin\",\n  \"withCredentials\": true,\n  \"isDefault\": false,\n  \"jsonData\": {\n    \"timeField\" : \"timestamp\",\n    \"elasticsearchType\": \"default\",\n    \"elasticsearchVersion\": \"70\"\n  }\n}";
-                  
-//           String dsFileBody = "{\r\n" + 
-//               "  \"id\":" +id+ ",\r\n" + 
-//               "  \"uid\":" +uid+ ",\r\n" + 
-//               "  \"orgId\":" +orgId+ ",\r\n" + 
-//               "  \"name\":" +name+ ",\r\n" + 
-//               "  \"type\": " +type+ " ,\r\n" + 
-//               "  \"typeLogoUrl\": " +typeLogoUrl+ " ,\r\n" + 
-//               "  \"access\": " +access+",\r\n" + 
-//               "  \"url\": " +url+",\r\n" + 
-//               "  \"password\": " +password+ ",\r\n" + 
-//               "  \"user\": " +user+",\r\n" + 
-//               "  \"database\": "+database+",\r\n" + 
-//               "  \"basicAuth\": "+basicAuth+" ,\r\n" + 
-//               "  \"basicAuthUser\": "+basicAuthUser+",\r\n" + 
-//               "  \"basicAuthPassword\":" +basicAuthPassword + ",\r\n" + 
-//               "  \"withCredentials\": "+withCredentials+ " ,\r\n" + 
-//               "  \"isDefault\":" +isDefault+ ",\r\n" + 
-//               "  \"jsonData\": {\r\n" + 
-//               "    \"timeField\" : "+timeField+",\r\n" + 
-//               "    \"elasticsearchType\": "+elasticsearchType+",\r\n" + 
-//               "    \"elasticsearchVersion\": "+elasticsearchVersion+"\r\n" + 
-//               "  }\r\n" + 
-//               "}'\r\n" + 
-//               "";
-           
-               
+            log.info("===Creating a Datasource====");
+            String dsFileBody = "\n{\n  \"id\": null,\n  \"uid\": null,\n  \"orgId\": null,\n  \"name\": \"NullDnnnnnS\",\n  \"type\": \"elasticsearch\",\n  \"typeLogoUrl\": \"\",\n  \"access\": \"proxy\",\n  \"url\": \"http://10.0.100.22:3001\",\n  \"password\": \"\",\n  \"user\": \"\",\n  \"database\": \"titi\",\n  \"basicAuth\": true,\n  \"basicAuthUser\": \"admin\",\n  \"basicAuthPassword\": \"admin\",\n  \"withCredentials\": true,\n  \"isDefault\": false,\n  \"jsonData\": {\n    \"timeField\" : \"timestamp\",\n    \"elasticsearchType\": \"default\",\n    \"elasticsearchVersion\": \"70\"\n  },\n  \"secureJsonFields\": {},\n  \"version\": null,\n  \"readOnly\": false\n},";
 
-                JSONObject datasourceDef = (JSONObject) (new JSONParser())
-                    .parse(dsFileBody);
-                log.info("===parsing DS response===");
-                response = sendGrafanaCurl(datasourceDef, "/api/datasources", "POST");
+            JSONObject datasourceDef = (JSONObject) (new JSONParser())
+                .parse(dsFileBody);
+            log.info("===parsing DS response===");
+            response = sendGrafanaCurl(datasourceDef, "/api/datasources", "POST");
 
-                if (response.getStatusLine().getStatusCode() == 400) {
-                  log.warn(
-                      "Error while creating the Datasource: invalid request, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
-                  try {
-                    Thread.sleep(10000);
-                  } catch (InterruptedException e) {
-                    e.printStackTrace();
-                  }
-                  continue;
-                }
-                if (response.getStatusLine().getStatusCode() == 401) {
-                  log.warn("Error while creating the Datasource: Unauthorized" + response.getStatusLine().getStatusCode());
-                  try {
-                    Thread.sleep(10000);
-                  } catch (InterruptedException e) {
-                    e.printStackTrace();
-                  }
-                  continue;
-                }
-                if (response.getStatusLine().getStatusCode() == 403) {
-                  log.warn("Error while creating the Datasource: Access denied"
-                      + response.getStatusLine().getStatusCode());
-                  try {
-                    Thread.sleep(10000);
-                  } catch (InterruptedException e) {
-                    e.printStackTrace();
-                  }
-                  continue;
-                }
-//              }
-//            }
+            if (response.getStatusLine().getStatusCode() == 400) {
+              log.warn(
+                  "Error while creating the Datasource: invalid request, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
+              try {
+                Thread.sleep(10000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+              continue;
+            }
+            if (response.getStatusLine().getStatusCode() == 401) {
+              log.warn("Error while creating the Datasource: Unauthorized" + response.getStatusLine().getStatusCode());
+              try {
+                Thread.sleep(10000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+              continue;
+            }
+            if (response.getStatusLine().getStatusCode() == 403) {
+              log.warn("Error while creating the Datasource: Access denied"
+                  + response.getStatusLine().getStatusCode());
+              try {
+                Thread.sleep(10000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+              continue;
+            }
+            //              }
+            //            }
 
           }
         }
