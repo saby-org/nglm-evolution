@@ -2402,60 +2402,60 @@ public class GUIManager {
            
             
 
-            String id = null;
-            String uid = null;
-            String orgId = null;
-            String name = "TestDS";
-            String type = "elasticsearch";
-            String typeLogoUrl = null;
-            String access = "proxy";
-            String url = "http://10.100.0.22:3001";
-            String password = "";
-            String user = "";
-            String database = "titi";
-            boolean basicAuth = true;
-            String basicAuthUser = "admin";
-            String basicAuthPassword = "admin";
-            boolean withCredentials = true;
-            boolean isDefault = false;
-//            HashMap<String, String> jsonData = new HashMap<String, String>();
-//            jsonData.put("timeField", "timestamp");
-//            jsonData.put("elasticsearchType", "default");
-//            jsonData.put("elasticsearchVersion", "70");
-           String jsonData ="jsonData";
-           String timeField = "timestamp";
-           String elasticsearchType = "default";
-           String elasticsearchVersion = "70";
-            
-           String dsFileBody = "{\r\n" + 
-               "  \"id\":" +id+ ",\r\n" + 
-               "  \"uid\":" +uid+ ",\r\n" + 
-               "  \"orgId\":" +orgId+ ",\r\n" + 
-               "  \"name\":" +name+ ",\r\n" + 
-               "  \"type\": " +type+ " ,\r\n" + 
-               "  \"typeLogoUrl\": " +typeLogoUrl+ " ,\r\n" + 
-               "  \"access\": " +access+",\r\n" + 
-               "  \"url\": " +url+",\r\n" + 
-               "  \"password\": " +password+ ",\r\n" + 
-               "  \"user\": " +user+",\r\n" + 
-               "  \"database\": "+database+",\r\n" + 
-               "  \"basicAuth\": "+basicAuth+" ,\r\n" + 
-               "  \"basicAuthUser\": "+basicAuthUser+",\r\n" + 
-               "  \"basicAuthPassword\":" +basicAuthPassword + ",\r\n" + 
-               "  \"withCredentials\": "+withCredentials+ " ,\r\n" + 
-               "  \"isDefault\":" +isDefault+ ",\r\n" + 
-               "  \"jsonData\": {\r\n" + 
-               "    \"timeField\" : "+timeField+",\r\n" + 
-               "    \"elasticsearchType\": "+elasticsearchType+",\r\n" + 
-               "    \"elasticsearchVersion\": "+elasticsearchVersion+"\r\n" + 
-               "  }\r\n" + 
-               "}'\r\n" + 
-               "";
+//            String id = null;
+//            String uid = null;
+//            String orgId = null;
+//            String name = "TestDS";
+//            String type = "elasticsearch";
+//            String typeLogoUrl = null;
+//            String access = "proxy";
+//            String url = "http://10.100.0.22:3001";
+//            String password = "";
+//            String user = "";
+//            String database = "titi";
+//            boolean basicAuth = true;
+//            String basicAuthUser = "admin";
+//            String basicAuthPassword = "admin";
+//            boolean withCredentials = true;
+//            boolean isDefault = false;
+//           String jsonData ="jsonData";
+//           String timeField = "timestamp";
+//           String elasticsearchType = "default";
+//           String elasticsearchVersion = "70";
+           
+           log.info("===Creating a Datasource====");
+           String dsFileBody = "\n{\n  \"id\": null,\n  \"uid\": null,\n  \"orgId\": null,\n  \"name\": \"NullDnnnnnS\",\n  \"type\": \"elasticsearch\",\n  \"typeLogoUrl\": \"\",\n  \"access\": \"proxy\",\n  \"url\": \"http://10.100.0.22:3001\",\n  \"password\": \"\",\n  \"user\": \"\",\n  \"database\": \"titi\",\n  \"basicAuth\": true,\n  \"basicAuthUser\": \"admin\",\n  \"basicAuthPassword\": \"admin\",\n  \"withCredentials\": true,\n  \"isDefault\": false,\n  \"jsonData\": {\n    \"timeField\" : \"timestamp\",\n    \"elasticsearchType\": \"default\",\n    \"elasticsearchVersion\": \"70\"\n  }\n}";
+                  
+//           String dsFileBody = "{\r\n" + 
+//               "  \"id\":" +id+ ",\r\n" + 
+//               "  \"uid\":" +uid+ ",\r\n" + 
+//               "  \"orgId\":" +orgId+ ",\r\n" + 
+//               "  \"name\":" +name+ ",\r\n" + 
+//               "  \"type\": " +type+ " ,\r\n" + 
+//               "  \"typeLogoUrl\": " +typeLogoUrl+ " ,\r\n" + 
+//               "  \"access\": " +access+",\r\n" + 
+//               "  \"url\": " +url+",\r\n" + 
+//               "  \"password\": " +password+ ",\r\n" + 
+//               "  \"user\": " +user+",\r\n" + 
+//               "  \"database\": "+database+",\r\n" + 
+//               "  \"basicAuth\": "+basicAuth+" ,\r\n" + 
+//               "  \"basicAuthUser\": "+basicAuthUser+",\r\n" + 
+//               "  \"basicAuthPassword\":" +basicAuthPassword + ",\r\n" + 
+//               "  \"withCredentials\": "+withCredentials+ " ,\r\n" + 
+//               "  \"isDefault\":" +isDefault+ ",\r\n" + 
+//               "  \"jsonData\": {\r\n" + 
+//               "    \"timeField\" : "+timeField+",\r\n" + 
+//               "    \"elasticsearchType\": "+elasticsearchType+",\r\n" + 
+//               "    \"elasticsearchVersion\": "+elasticsearchVersion+"\r\n" + 
+//               "  }\r\n" + 
+//               "}'\r\n" + 
+//               "";
            
                
 
                 JSONObject datasourceDef = (JSONObject) (new JSONParser())
                     .parse(dsFileBody);
+                log.info("===parsing DS response===");
                 response = sendGrafanaCurl(datasourceDef, "/api/datasources", "POST");
 
                 if (response.getStatusLine().getStatusCode() == 400) {
