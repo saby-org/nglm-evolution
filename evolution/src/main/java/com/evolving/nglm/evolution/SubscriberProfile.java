@@ -909,7 +909,7 @@ public abstract class SubscriberProfile
         SubscriberRelatives relatives = this.relations.get(relationshipID);
         if (relatives != null && !(relatives.getParentSubscriberID() == null && relatives.getChildrenSubscriberIDs().isEmpty()))
           {
-            hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID));
+            hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
           }
       }
     
