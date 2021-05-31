@@ -182,39 +182,8 @@ public class SubscriberRelatives
       //  children
       //
       
-      List<JSONObject> childrenSubscribersJSON = new ArrayList<JSONObject>();
-      for (String childSubscriberID : getChildrenSubscriberIDs())
-        {
-          try
-            {
-              SubscriberProfile childProfile = subscriberProfileService.getSubscriberProfile(childSubscriberID);
-              if (childProfile != null)
-                {
-                  HashMap<String, Object> childJsonMap = new HashMap<String, Object>();
-                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(childProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), childProfile.getTenantID());
-                  childJsonMap.put("subscriberID", childProfile.getSubscriberID());
-                  for (String id : Deployment.getAlternateIDs().keySet())
-                    {
-                      AlternateID alternateID = Deployment.getAlternateIDs().get(id);
-                      CriterionField criterionField = Deployment.getProfileCriterionFields().get(alternateID.getProfileCriterionField());
-                      if (criterionField != null)
-                        {
-                          String alternateIDValue = (String) criterionField.retrieve(evaluationRequest);
-                          childJsonMap.put(alternateID.getID(), alternateIDValue);
-                        }
-                    }
-                  childrenSubscribersJSON.add(JSONUtilities.encodeObject(childJsonMap));
-                }
-            } 
-          catch (SubscriberProfileServiceException e)
-            {
-              e.printStackTrace();
-            }
-        }
-      
       json.put("numberOfChildren", getChildrenSubscriberIDs().size());
       json.put("childrenSubscriberIDs", JSONUtilities.encodeArray(new ArrayList<String>(getChildrenSubscriberIDs())));
-      json.put("childrenSubscribers", JSONUtilities.encodeArray(childrenSubscribersJSON));
       
       //
       //  result
