@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
@@ -715,11 +716,10 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     {
       boolean result = false;
       result = getCompletionEventName() == null || getCompletionEventName().isEmpty();
-      if (!result && evolutionEvent instanceof EvolutionEngineEvent)
+      if (!result)
         {
-          EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) evolutionEvent;
-          String evolutionEventName = engineEvent.getEventName();
-          result = getCompletionEventName().equals(evolutionEventName);
+          EvolutionEngineEventDeclaration completionEvent = Deployment.getEvolutionEngineEvents().get(getCompletionEventName());
+          result = completionEvent.getEventClassName().equals(evolutionEvent.getClass().getName());
         }
       return result;
     }
