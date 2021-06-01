@@ -306,6 +306,11 @@ public class DNBOUtils
       token.setPresentedOfferIDs(presentedOfferIDs);
       // TODO token.setPresentedOffersSalesChannel(salesChannelID);
       token.setBoundDate(now);
+      // add a new presentation in the token
+      Presentation presentation = new Presentation(now, presentedOfferIDs);
+      List<Presentation> currentPresentationHistory = token.getPresentationHistory();
+      currentPresentationHistory.add(presentation);
+      token.setPresentationHistory(currentPresentationHistory);
       
       /*****************************************
       *
