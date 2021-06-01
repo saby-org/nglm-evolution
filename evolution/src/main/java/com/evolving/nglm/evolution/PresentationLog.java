@@ -41,7 +41,7 @@ public class PresentationLog implements SubscriberStreamEvent
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("presentation_log");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(6));
     schemaBuilder.field("msisdn", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
@@ -65,6 +65,7 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).optional().schema());
     schemaBuilder.field("tokenTypeID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("token", DNBOToken.serde().optionalSchema());
+    schemaBuilder.field("presentationHistory", SchemaBuilder.array(Presentation.schema()).defaultValue(new ArrayList<Presentation>()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -111,6 +112,7 @@ public class PresentationLog implements SubscriberStreamEvent
   private List<Date> presentationDates;
   private String tokenTypeID;
   private DNBOToken token;
+  private List<Presentation> presentationHistory; // history of pres of offers, with dates/offerIds
 
   /****************************************
   *
@@ -141,10 +143,12 @@ public class PresentationLog implements SubscriberStreamEvent
   public List<Date> getPresentationDates() { return presentationDates;}
   public String getTokenTypeID() { return tokenTypeID; }
   public DNBOToken getToken() { return token;}
+  public List<Presentation> getPresentationHistory() {return presentationHistory;}
 
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
   
   public void setToken(DNBOToken token) { this.token = token; }
+  public void setPresentationHistory(List<Presentation> presentationHistory) { this.presentationHistory = presentationHistory; }
 
   /*****************************************
   *
@@ -152,7 +156,7 @@ public class PresentationLog implements SubscriberStreamEvent
   *
   *****************************************/
 
-  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance, String moduleID, String featureID, List<Date> presentationDates, String tokenTypeID, DNBOToken token)
+  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance, String moduleID, String featureID, List<Date> presentationDates, String tokenTypeID, DNBOToken token, List<Presentation> presentationHistory)
   {
     this.msisdn = msisdn;
     this.subscriberID = subscriberID;
@@ -177,6 +181,7 @@ public class PresentationLog implements SubscriberStreamEvent
     this.presentationDates = presentationDates;
     this.tokenTypeID = tokenTypeID;
     this.token = token;
+    this.presentationHistory = presentationHistory;
 }
 
   /*****************************************
@@ -214,6 +219,7 @@ public class PresentationLog implements SubscriberStreamEvent
     this.presentationDates = decodePresentationDates(JSONUtilities.decodeJSONArray(jsonRoot, "presentationDates", false));
     this.tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", false);
     this.token = null;
+    this.presentationHistory = new ArrayList<>();
   }
 
   /*****************************************
@@ -351,9 +357,20 @@ public class PresentationLog implements SubscriberStreamEvent
     struct.put("presentationDates", presentationLog.getPresentationDates());
     struct.put("tokenTypeID", presentationLog.getTokenTypeID());
     struct.put("token", DNBOToken.serde().packOptional(presentationLog.getToken()));
+    struct.put("presentationHistory", packPresentationHistory(presentationLog.getPresentationHistory()));
    return struct;
   }
 
+  private static List<Object> packPresentationHistory(List<Presentation> presentationHistory)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (Presentation presentation : presentationHistory)
+      {
+        result.add(Presentation.pack(presentation));
+      }
+    return result;
+  }
+  
   //
   //  subscriberStreamEventPack
   //
@@ -404,11 +421,25 @@ public class PresentationLog implements SubscriberStreamEvent
     List<Date> presentationDates = (schemaVersion >= 3) ? (List<Date>)valueStruct.get("presentationDates") : new ArrayList<Date>();
     String tokenTypeID = (schemaVersion >= 4) ? valueStruct.getString("tokenTypeID") : null;
     DNBOToken token = (schemaVersion >= 5) ? DNBOToken.serde().unpackOptional((new SchemaAndValue(schema.field("token").schema(), valueStruct.get("token")))) : null;
+    List<Presentation> presentationHistory = (schemaVersion >= 6) ? unpackPresentationHistory(schema.field("presentationHistory").schema(), valueStruct.get("presentationHistory")) : new ArrayList<Presentation>();
+    
     //
     //  return
     //
 
-    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance, moduleID, featureID, presentationDates, tokenTypeID, token);
+    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance, moduleID, featureID, presentationDates, tokenTypeID, token, presentationHistory);
   }
   
+  private static List<Presentation> unpackPresentationHistory(Schema schema, Object value)
+  {
+    Schema presentationHistorySchema = schema.valueSchema();
+    List<Presentation> result = new ArrayList<>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object presentation : valueArray)
+      {
+        result.add(Presentation.unpack(new SchemaAndValue(presentationHistorySchema, presentation)));
+      }
+    return result;
+  }
+
 }

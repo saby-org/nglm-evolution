@@ -4305,7 +4305,11 @@ public class EvolutionEngine
             List<Date> presentationDates = presentationLog.getPresentationDates();
             if (presentationDates != null && !presentationDates.isEmpty()) // if empty : bound has failed
               {
+                if (log.isTraceEnabled()) log.trace("setPresentationDates with " + presentationDates.size());
                 subscriberStoredToken.setPresentationDates(presentationDates);
+                List<Presentation> presentationHistory = presentationLog.getPresentationHistory();
+                if (log.isTraceEnabled()) log.trace("set token presentationHistory with " + presentationHistory + " size " + presentationHistory.size());
+                subscriberStoredToken.setPresentationHistory(presentationHistory);
                 subscriberStateUpdated = true;
                 if (subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(eventDate))
                   {
