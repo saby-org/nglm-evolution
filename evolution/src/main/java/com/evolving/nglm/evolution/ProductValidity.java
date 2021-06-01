@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  PointValidity.java
+*  ProductValidity.java
 *
 *****************************************************************************/
 
@@ -90,10 +90,10 @@ public class ProductValidity
   *
   *****************************************/
 
-  private ProductValidity(ProductValidity pointValidity)
+  private ProductValidity(ProductValidity productValidity)
   {
-    this.validityType = pointValidity.getValidityType();
-    this.validityPeriod = pointValidity.getValidityPeriod();
+    this.validityType = productValidity.getValidityType();
+    this.validityPeriod = productValidity.getValidityPeriod();
   }
 
   /*****************************************
