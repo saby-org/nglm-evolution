@@ -15,8 +15,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 12,
-  "iteration": 1620982873766,
+  "id": null,
+  "iteration": 1622532364760,
   "links": [],
   "panels": [
     {
@@ -49,8 +49,8 @@
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
-        "h": 8,
-        "w": 6,
+        "h": 9,
+        "w": 9,
         "x": 0,
         "y": 1
       },
@@ -124,9 +124,9 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 18,
-        "x": 6,
+        "h": 9,
+        "w": 15,
+        "x": 9,
         "y": 1
       },
       "hiddenSeries": false,
@@ -179,9 +179,8 @@
               "id": "2",
               "settings": {
                 "interval": "1d",
-                "min_doc_count": "0",
-                "offset": "-1d",
-                "trimEdges": "1"
+                "min_doc_count": "1",
+                "trimEdges": "0"
               },
               "type": "date_histogram"
             }
@@ -258,9 +257,9 @@
       "format": "short",
       "gridPos": {
         "h": 8,
-        "w": 6,
+        "w": 9,
         "x": 0,
-        "y": 9
+        "y": 10
       },
       "id": 16,
       "interval": null,
@@ -333,9 +332,9 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 18,
-        "x": 6,
-        "y": 9
+        "w": 15,
+        "x": 9,
+        "y": 10
       },
       "hiddenSeries": false,
       "id": 10,
@@ -464,10 +463,10 @@
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
-        "h": 8,
-        "w": 6,
+        "h": 9,
+        "w": 9,
         "x": 0,
-        "y": 17
+        "y": 18
       },
       "id": 14,
       "interval": null,
@@ -538,10 +537,10 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 18,
-        "x": 6,
-        "y": 17
+        "h": 9,
+        "w": 15,
+        "x": 9,
+        "y": 18
       },
       "hiddenSeries": false,
       "id": 8,
@@ -667,9 +666,9 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 24,
         "x": 0,
-        "y": 25
+        "y": 27
       },
       "hiddenSeries": false,
       "id": 18,
@@ -805,9 +804,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 25
+        "w": 24,
+        "x": 0,
+        "y": 35
       },
       "id": 28,
       "options": {
@@ -876,7 +875,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 43
       },
       "id": 2,
       "panels": [],
@@ -900,9 +899,9 @@
       "format": "short",
       "gridPos": {
         "h": 8,
-        "w": 6,
+        "w": 9,
         "x": 0,
-        "y": 34
+        "y": 44
       },
       "id": 20,
       "interval": null,
@@ -974,9 +973,9 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 18,
-        "x": 6,
-        "y": 34
+        "w": 15,
+        "x": 9,
+        "y": 44
       },
       "hiddenSeries": false,
       "id": 24,
@@ -1102,7 +1101,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 42
+        "y": 52
       },
       "hiddenSeries": false,
       "id": 22,
@@ -1228,7 +1227,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 42
+        "y": 52
       },
       "hiddenSeries": false,
       "id": 26,
@@ -1389,7 +1388,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 50
+        "y": 60
       },
       "id": 30,
       "interval": null,
@@ -1466,7 +1465,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 50
+        "y": 60
       },
       "id": 32,
       "interval": null,
@@ -1768,5 +1767,5 @@
   "timezone": "",
   "title": "Bussiness _ Offer and Voucher Dashboard",
   "uid": "2lqroD9Mk",
-  "version": 16
+  "version": 5
 }
