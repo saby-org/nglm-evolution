@@ -1,5 +1,8 @@
 package com.evolving.nglm.evolution.grafana;
 
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -85,89 +88,89 @@ public class GrafanaUtils
                     // Prepare Data sources
                     // check which dashboard already exist in this org
                     HashMap<String, Integer> exisitingDatasources = getExistingGrafanaDatasourceForOrg(orgID);
-                    
-                                      
+
                     // retrieve all datasource configuration that must exist at the end
                     Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage("com.evolving.nglm.evolution", ClasspathHelper.contextClassLoader(), ClasspathHelper.staticClassLoader())).setScanners(new ResourcesScanner()));
                     Set<String> fileNames = reflections.getResources(x -> x.startsWith("grafana-datasource"));
 
                     for (String currentFileName : fileNames)
                       {
-                        if(!currentFileName.endsWith(".json")) continue;
-                        
+                        if (!currentFileName.endsWith(".json")) continue;
                         // check if the datasource exists
-                        String fileBody = "";
-                        for (String s : Files.readAllLines(Paths.get(GrafanaUtils.class.getResource("/" + currentFileName).toURI()), Charset.defaultCharset()))
+                        log.info("Handle datasource file " + currentFileName);
+
+                        InputStream is = GrafanaUtils.class.getResourceAsStream("/" + currentFileName);
+                        java.util.Scanner scanner = new java.util.Scanner(is).useDelimiter("\\A");
+                        String s = scanner.hasNext() ? scanner.next() : "";
+                        scanner.close();
+
+                        // replace variables if needed
+                        int index = 0;
+                        HashMap<String, String> toReplace = new HashMap<>();
+                        while (s.substring(index, s.length()).contains("<_"))
                           {
-                            // replace variables if needed
-                            int index = 0;
-                            HashMap<String, String> toReplace = new HashMap<>();
-                            while(s.substring(index, s.length()).contains("<_")) 
+                            String currentString = s.substring(index, s.length());
+                            // let extract this variable...
+                            String varName = currentString.substring(currentString.indexOf("<_") + 2, currentString.indexOf("_>"));
+                            String varValue = System.getenv().get(varName);
+                            if (varValue == null)
                               {
-                                String currentString = s.substring(index, s.length());
-                                // let extract this variable...
-                                String varName = currentString.substring(currentString.indexOf("<_")+2, currentString.indexOf("_>"));
-                                String varValue = System.getenv().get(varName);
-                                if(varValue == null)
+                                log.warn("Can't retrieve environment variable " + varName + " for datasource in file " + currentFileName);
+                                continue;
+                              }
+                            else
+                              {
+                                toReplace.put(varName, varValue);
+                                index = index + currentString.indexOf("_>") + 2;
+                              }
+                          }
+                        for (Map.Entry<String, String> replace : toReplace.entrySet())
+                          {
+                            s = s.replace("<_" + replace.getKey() + "_>", replace.getValue());
+                          }
+                        System.out.println("OK file " + currentFileName + " " + s);
+
+                        log.info("===parsing a datasource====");
+                        try
+                          {
+                            JSONObject datasourcesDef = (JSONObject) (new JSONParser()).parse(s);
+
+                            JSONArray datasourcesArray = (JSONArray) datasourcesDef.get("datasources");
+                            for (int i = 0; i < datasourcesArray.size(); i++)
+                              {
+                                JSONObject datasourceDef = (JSONObject) datasourcesArray.get(i);
+                                if (datasourceDef.get("database") != null)
                                   {
-                                    log.warn("Can't retrieve environment variable "  +  varName + " for datasource in file " + currentFileName);
-                                    continue;
+                                    String currentdatabase = (String) datasourceDef.get("database");
+                                    currentdatabase = currentdatabase.replace("*", "" + tenantID);
+                                    datasourceDef.put("database", currentdatabase);
+                                  }
+                                String expectedName = (String) datasourceDef.get("name");
+                                if (!exisitingDatasources.containsKey(expectedName))
+                                  {
+                                    // create the datasource
+                                    Pair<String, Integer> db = createGrafanaDatasourceForOrg(orgID, datasourceDef);
+                                    if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
+                                      {
+                                        log.info("Datasource " + db.getFirstElement() + " " + db.getSecondElement() + " well created for org " + orgID);
+                                      }
+                                    else
+                                      {
+                                        log.warn("Problem while creating Datasource " + db + " for orgID " + orgID + " for datasource file name " + currentFileName);
+                                      }
                                   }
                                 else
                                   {
-                                    toReplace.put(varName, varValue);
-                                    index = index + currentString.indexOf("_>") + 2;
+                                    System.out.println("contains...");
                                   }
                               }
-                            for(Map.Entry<String, String> replace : toReplace.entrySet())
-                              {
-                                s = s.replace("<_"+replace.getKey()+"_>", replace.getValue());
-                              }
-                           
-                            fileBody = fileBody + s;
                           }
-                        
-                        log.info("===parsing a datasource====");
-                        try 
-                        {
-                          JSONObject datasourcesDef = (JSONObject) (new JSONParser()).parse(fileBody);
-                                                    
-                          JSONArray datasourcesArray = (JSONArray) datasourcesDef.get("datasources");
-                          for(int i = 0; i<datasourcesArray.size(); i++)
-                            {
-                              JSONObject datasourceDef = (JSONObject) datasourcesArray.get(i);
-                              if(datasourceDef.get("database") != null)
-                                {
-                                  String currentdatabase = (String) datasourceDef.get("database");
-                                  currentdatabase = currentdatabase.replace("*", ""+tenantID);
-                                  datasourceDef.put("database", currentdatabase);
-                                }
-                              String expectedName = (String) datasourceDef.get("name");
-                              if (!exisitingDatasources.containsKey(expectedName))
-                                {
-                                  // create the datasource
-                                  Pair<String, Integer> db = createGrafanaDatasourceForOrg(orgID, datasourceDef);
-                                  if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
-                                    {
-                                      log.info("Datasource " + db.getFirstElement() + " " + db.getSecondElement() + " well created for org " + orgID);
-                                    }
-                                  else
-                                    {
-                                      log.warn("Problem while creating Datasource " + db + " for orgID " + orgID + " for datasource file name " + currentFileName);
-                                    }
-                                }
-                              else 
-                                {
-                                  System.out.println("contains...");
-                                }
-                            }
-                        }
-                        catch(Exception e)
-                        {
-                          log.warn("Excpation " + e.getClass().getName() + " while handling datasource " + currentFileName + " for orgId " + orgID, e);
-                        }
+                        catch (Exception e)
+                          {
+                            log.warn("Excpation " + e.getClass().getName() + " while handling datasource " + currentFileName + " for orgId " + orgID, e);
+                          }
                       }
-                   
+
                     // check which dashboard already exist in this org
                     HashMap<String, Integer> exisitingDashBoards = getExistingGrafanaDashboardForOrg(orgID);
 
@@ -178,15 +181,14 @@ public class GrafanaUtils
                     for (String currentFileName : fileNames)
                       {
                         // check if the dashboard exists
-                        String fileBody = "";
-                        for (String s : Files.readAllLines(Paths.get(GrafanaUtils.class.getResource("/" + currentFileName).toURI()), Charset.defaultCharset()))
-                          {
-                            fileBody = fileBody + s;
-                          }
-                        ;
+                        InputStream is = GrafanaUtils.class.getResourceAsStream("/" + currentFileName);
+                        java.util.Scanner scanner = new java.util.Scanner(is).useDelimiter("\\A");
+                        String s = scanner.hasNext() ? scanner.next() : "";
+                        scanner.close();
+
                         log.info("===parsing a Dashboard====");
-                        JSONObject fullDashbaordDef = (JSONObject) (new JSONParser()).parse(fileBody);
-                        JSONObject dashbaordDef = (JSONObject)fullDashbaordDef.get("dashboard");
+                        JSONObject fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
+                        JSONObject dashbaordDef = (JSONObject) fullDashbaordDef.get("dashboard");
                         String expectedTitle = (String) dashbaordDef.get("title");
                         if (!exisitingDashBoards.containsKey(expectedTitle))
                           {
@@ -217,99 +219,6 @@ public class GrafanaUtils
         e.printStackTrace();
         return false;
       }
-          
-//          /***************************************************/
-//          /**** Add a Datasource in the newly created org ****/
-//          // get all the existing datasources
-//          response = sendGrafanaCurl(null, "/api/datasources", "GET");
-//
-//          if (response == null) {
-//            log.warn(
-//                "Could not get a non null response of grafana datasources, maybe grafana is not fully started yet");
-//            try {
-//              Thread.sleep(10000);
-//            } catch (InterruptedException e) {
-//              e.printStackTrace();
-//            }
-//            continue;
-//          }
-//          if (response.getStatusLine().getStatusCode() != 200) {
-//            log.warn(
-//                "Could not get list of grafana datasources, error code " + response.getStatusLine().getStatusCode());
-//            try {
-//              Thread.sleep(10000);
-//            } catch (InterruptedException e) {
-//              e.printStackTrace();
-//            }
-//            continue;
-//          }
-//
-//          // if we are here, then the status code is 200
-//          // parse the entity response and get the datasource "name"
-//          responseJson = (JSONArray) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
-//          HashMap<String, String> existingdatasources = new HashMap<>();
-//
-//          for (int i = 0; i < responseJson.size(); i++) {
-//            JSONObject currentDatasource = (JSONObject) responseJson.get(i);
-//            currentDatasource.get("name");
-//            String datasourceName = JSONUtilities.decodeString(currentDatasource, "name");
-//            existingdatasources.put("name", datasourceName);
-//          }
-//
-//          // retrieve datasource yaml files
-//          // TODO
-//
-//          //            for (String currentFileName : fileNames) {
-//          // check if the datasource exists
-//          //              if (existingdatasources.get(currentFileName) == null) {
-//          // do the curl that allows creating this dashbaord
-//
-//          log.info("===Creating a Datasource====");
-//          String dsFileBody = "\n{\n  \"id\": null,\n  \"uid\": null,\n  \"orgId\": null,\n  \"name\": \"NullDnnnnnS\",\n  \"type\": \"elasticsearch\",\n  \"typeLogoUrl\": \"\",\n  \"access\": \"proxy\",\n  \"url\": \"http://10.0.100.22:3001\",\n  \"password\": \"\",\n  \"user\": \"\",\n  \"database\": \"titi\",\n  \"basicAuth\": true,\n  \"basicAuthUser\": \"admin\",\n  \"basicAuthPassword\": \"admin\",\n  \"withCredentials\": true,\n  \"isDefault\": false,\n  \"jsonData\": {\n    \"timeField\" : \"timestamp\",\n    \"elasticsearchType\": \"default\",\n    \"elasticsearchVersion\": \"70\"\n  },\n  \"secureJsonFields\": {},\n  \"version\": null,\n  \"readOnly\": false\n},";
-//
-//          JSONObject datasourceDef = (JSONObject) (new JSONParser())
-//              .parse(dsFileBody);
-//          log.info("===parsing DS response===");
-//          response = sendGrafanaCurl(datasourceDef, "/api/datasources", "POST");
-//
-//          if (response.getStatusLine().getStatusCode() == 400) {
-//            log.warn(
-//                "Error while creating the Datasource: invalid request, missing or invalid fields, etc" + response.getStatusLine().getStatusCode());
-//            try {
-//              Thread.sleep(10000);
-//            } catch (InterruptedException e) {
-//              e.printStackTrace();
-//            }
-//            continue;
-//          }
-//          if (response.getStatusLine().getStatusCode() == 401) {
-//            log.warn("Error while creating the Datasource: Unauthorized" + response.getStatusLine().getStatusCode());
-//            try {
-//              Thread.sleep(10000);
-//            } catch (InterruptedException e) {
-//              e.printStackTrace();
-//            }
-//            continue;
-//          }
-//          if (response.getStatusLine().getStatusCode() == 403) {
-//            log.warn("Error while creating the Datasource: Access denied"
-//                + response.getStatusLine().getStatusCode());
-//            try {
-//              Thread.sleep(10000);
-//            } catch (InterruptedException e) {
-//              e.printStackTrace();
-//            }
-//            continue;
-//          }
-//          //              }
-//          //            }
-//
-//        }
-//      }
-//    } catch (Exception e) {
-//      log.warn("GUIManager.start Exception " + e.getClass().getName() + " while configuring orgs ", e);
-//    }
-
   }
   
   private static HttpResponse sendGrafanaCurl(JSONObject body, String uri, String httpMethod) {
