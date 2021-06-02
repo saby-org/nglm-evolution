@@ -428,7 +428,7 @@ public class GrafanaUtils
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not while creating dashboard " + dbDefinition.get("title") + " for organisation orgID, error code " + response.getStatusLine().getStatusCode());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not while creating dashboard " + dbDefinition.get("title") + " for organisation orgID, error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
       return null;
     }
     
