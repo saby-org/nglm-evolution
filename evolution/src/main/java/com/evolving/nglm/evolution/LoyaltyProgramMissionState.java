@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -236,6 +237,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
     switch (operation)
     {
       case Optin:
+        boolean isOptInAfterOptOut = false;
 
         //
         // update current state
@@ -244,11 +246,31 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.loyaltyProgramEpoch = loyaltyProgramEpoch;
         this.loyaltyProgramName = loyaltyProgramName;
         if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
-        if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; }
+        if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; isOptInAfterOptOut = true; }
         this.previousStepName = fromStep;
         this.stepName = toStep;
         this.stepEnrollmentDate = enrollmentDate;
         this.currentProgression = calculateCurrentProgression(toStep, loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now));
+        
+        //
+        // isOptInAfterOptOut
+        //
+        
+        if (isOptInAfterOptOut)
+          {
+            //
+            //  loyaltyProgramEnrollmentDate
+            //
+            
+            this.loyaltyProgramEnrollmentDate = enrollmentDate;
+            
+            //
+            //  loyaltyProgramMissionHistory
+            //
+            
+            if (loyaltyProgramMissionHistory.getStepHistory() != null && !loyaltyProgramMissionHistory.getStepHistory().isEmpty()) loyaltyProgramMissionHistory.setStepHistory(new ArrayList<LoyaltyProgramMissionHistory.StepHistory>());
+            
+          }
 
         //
         // update history

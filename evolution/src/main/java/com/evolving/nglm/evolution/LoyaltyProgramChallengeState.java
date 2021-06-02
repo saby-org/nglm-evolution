@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -255,6 +256,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     switch (operation)
     {
       case Optin:
+        boolean isOptInAfterOptOut = false;
 
         //
         // update current state
@@ -263,12 +265,38 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         this.loyaltyProgramEpoch = loyaltyProgramEpoch;
         this.loyaltyProgramName = loyaltyProgramName;
         if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
-        if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; }
-        this.currentScore = 0;
-
+        if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; isOptInAfterOptOut = true; }
         this.previousLevelName = fromLevel;
         this.levelName = toLevel;
         this.levelEnrollmentDate = enrollmentDate;
+        
+        //
+        // isOptInAfterOptOut
+        //
+        
+        if (isOptInAfterOptOut)
+          {
+            //
+            //  loyaltyProgramEnrollmentDate
+            //
+            
+            this.loyaltyProgramEnrollmentDate = enrollmentDate;
+            
+            //
+            //  loyaltyProgramChallengeHistory
+            //
+            
+            if (loyaltyProgramChallengeHistory.getLevelHistory() != null && !loyaltyProgramChallengeHistory.getLevelHistory().isEmpty()) loyaltyProgramChallengeHistory.setLevelHistory(new ArrayList<LoyaltyProgramChallengeHistory.LevelHistory>());
+            
+            //
+            //   previousPeriod
+            //
+            
+            this.previousPeriodLevel = null;
+            this.previousPeriodScore = null;
+            this.previousPeriodStartDate = null;
+            
+          }
 
         //
         // update history
@@ -317,6 +345,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         this.previousLevelName = fromLevel;
         this.levelName = null;
         this.levelEnrollmentDate = enrollmentDate;
+        this.currentScore = 0;
 
         //
         // update history
