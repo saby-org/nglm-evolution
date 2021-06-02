@@ -589,11 +589,24 @@ public class TokenUtils
       Long maximumPresentationsStr = (Long) offer.getJSONRepresentation().get("maximumPresentations");
       long maximumPresentations = maximumPresentationsStr != null ? maximumPresentationsStr : Long.MAX_VALUE;  // default value
 
-      Long maximumPresentationsPeriodDaysStr = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
-      long maximumPresentationsPeriodDays = maximumPresentationsPeriodDaysStr != null ? maximumPresentationsPeriodDaysStr : 365L;  // default value
+      Long maximumPresentationsPeriodDays = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
+      Long maximumPresentationsPeriodMonths = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriodMonths");
+      Date earliestDateToKeep = now;
+      if (maximumPresentationsPeriodDays != null) {
+        earliestDateToKeep = RLMDateUtils.addDays(now, (int)(-maximumPresentationsPeriodDays), Deployment.getDeployment(tenantID).getBaseTimeZone());
+      } else {
+        if (maximumPresentationsPeriodMonths != null) {
+          if (maximumPresentationsPeriodMonths == 1) { // current month
+            earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+          } else {
+            earliestDateToKeep = RLMDateUtils.addMonths(now, (int)(-maximumPresentationsPeriodMonths), Deployment.getDeployment(tenantID).getBaseTimeZone());
+          }
+        } else {
+          log.info("internal error : maximumPresentationsPeriodDays & maximumPresentationsPeriodMonths are both unset in offer " + offer.getOfferID() + " , using 1 day");
+          earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        }
+      }
       
-      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getDeployment(tenantID).getBaseTimeZone());
-
       for (String catalogObjectiveID : catalogObjectiveIDs)
       {
         log.trace("catalogObjectiveID : "+catalogObjectiveID);
