@@ -75,7 +75,7 @@ public class LoyaltyProgramMissionHistory
   
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public List<StepHistory> getStepHistory() { return stepHistory; }
-  public void setStepHistory(List<StepHistory> stepHistory) { this.stepHistory = stepHistory; }
+  public void clearStepHistory() { stepHistory.clear(); }
   
   /*****************************************
   *

@@ -246,7 +246,13 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.loyaltyProgramEpoch = loyaltyProgramEpoch;
         this.loyaltyProgramName = loyaltyProgramName;
         if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
-        if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; isOptInAfterOptOut = true; }
+        log.info("RAJ K mission loyaltyProgramExitDate {} isOptInAfterOptOut {}", loyaltyProgramExitDate, isOptInAfterOptOut);
+        if (this.loyaltyProgramExitDate != null) 
+          { 
+            this.loyaltyProgramExitDate = null; 
+            isOptInAfterOptOut = true; 
+          }
+        log.info("RAJ K mission loyaltyProgramExitDate is not null ? {} isOptInAfterOptOut {}", loyaltyProgramExitDate != null, isOptInAfterOptOut);
         this.previousStepName = fromStep;
         this.stepName = toStep;
         this.stepEnrollmentDate = enrollmentDate;
@@ -272,7 +278,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
             log.info("RAJ K mission loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
             if (loyaltyProgramMissionHistory.getStepHistory() != null && !loyaltyProgramMissionHistory.getStepHistory().isEmpty())
               {
-                loyaltyProgramMissionHistory.setStepHistory(new ArrayList<LoyaltyProgramMissionHistory.StepHistory>());
+                loyaltyProgramMissionHistory.clearStepHistory();
                 log.info("RAJ K mission after loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
               }
             
