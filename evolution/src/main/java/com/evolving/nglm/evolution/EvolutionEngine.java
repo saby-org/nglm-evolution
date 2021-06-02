@@ -3648,10 +3648,8 @@ public class EvolutionEngine
                 
                 boolean isPeriodChange = true;
                 Integer currentOccurrenceNumber = loyaltyProgramChallenge.getLastCreatedOccurrenceNumber();
-                log.info("RAJ K currentOccurrenceNumber {} ", currentOccurrenceNumber);
                 isPeriodChange = isPeriodChange && loyaltyProgramChallenge.getRecurrence() && 1 != currentOccurrenceNumber;
                 isPeriodChange = isPeriodChange && loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory() != null && (loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory().getAllLevelHistoryForThisPeriod(currentOccurrenceNumber) == null || loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory().getAllLevelHistoryForThisPeriod(currentOccurrenceNumber).isEmpty());
-                log.info("RAJ K isPeriodChange {} ", isPeriodChange);
                 
                 //
                 //  compare to current tier
@@ -3663,7 +3661,6 @@ public class EvolutionEngine
                     //  update loyalty program state
                     //
 
-                    log.info("RAJ K before updating loyaltyProgramChallenge JSON IS {}", loyaltyProgramChallenge.getJSONRepresentation());
                     LoyaltyProgramLevelChange loyaltyProgramLevelChange = loyaltyProgramChallengeState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, deliveryRequestID, loyaltyProgramService, oldScore);
                     
                     //

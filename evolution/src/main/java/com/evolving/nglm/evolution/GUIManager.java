@@ -2354,9 +2354,9 @@ public class GUIManager
     
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
-    String qaCronEntry = "5,10,15,30,45,59 * * * *"; // RAJ K
+    String qaCronEntry = "5,10,15,30,45,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
-    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
+    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
@@ -29279,10 +29279,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             }
           
           //
-          // filter out create dates RAJ K
+          // filter out create dates
           //
           
-          //tmpOccouranceDates = tmpOccouranceDates.stream().filter(date -> RLMDateUtils.truncatedCompareTo(date, challenge.getEffectiveStartDate(), Calendar.DATE, tz) != 0).collect(Collectors.toList());
+          tmpOccouranceDates = tmpOccouranceDates.stream().filter(date -> RLMDateUtils.truncatedCompareTo(date, challenge.getEffectiveStartDate(), Calendar.DATE, tz) != 0).collect(Collectors.toList());
           
           //
           // filter out if not today - no adv task
@@ -29380,25 +29380,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       log.error("SubscriberProfileServiceException {}", e.getMessage());
                     }
                 }
-              
-              try
-                {
-                  log.info("RAJ K sleeping for 5mins");
-                  Thread.sleep(60*1000*5);
-                } catch (InterruptedException e)
-                {
-                  e.printStackTrace();
-                }
-              log.info("RAJ K sleep over");
-              
             } 
           catch (ElasticsearchClientException e)
             {
               e.printStackTrace();
-              log.error("for this exception {} challenge job failed - will retry next if scheduled", e.getMessage());
+              if (log.isErrorEnabled()) log.error("for this exception {} challenge job failed - will retry next if scheduled", e.getMessage());
             }
         }
-      log.info("executed Challenge OccouranceJob for challenge {}, time taken {} milisec", challenge.getLoyaltyProgramDisplay(), SystemTime.getCurrentTime().getTime() - startTimeMili);
+      if(log.isInfoEnabled()) log.info("executed Challenge OccouranceJob for challenge {}, time taken {} milisec", challenge.getLoyaltyProgramDisplay(), SystemTime.getCurrentTime().getTime() - startTimeMili);
     }
 
     //
