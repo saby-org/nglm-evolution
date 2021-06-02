@@ -17,20 +17,23 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 /**
  * This class should be used to extract all json values from Deployment.json
  * 
- * TOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOODDDOOOOOOOOOOOOooTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOODDDOOOOOOOOOOOOooTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOODDDOOOOOOOOOOOOoo
- * EXPLAIN OPTIONAL 
+ * The purpose here is to improve the extraction of system variables when deploying an Evolution by:
+ *   - ensure that all variables are well set (removal of default values in java code)
+ *   - raise an error when there is fields in the json file that does not correspond to any existing 
+ * configuration in Evolution (this one is a huge issue when there is update/rename of variables. Old
+ * system could keep old configuration thinking that there system is well set when it is not. We spent 
+ * a lot of time and energy on situation like that in the past.)
  * 
- * REQUIRED and DEFAULT_VALUE fields have been removed (compared to JSONUtilities) from all
- * retriever functions for the following reason :
+ * This class is inspired by JSONUtilities, but REQUIRED and DEFAULT_VALUE fields have been removed from
+ * all retriever functions for the following reason:
  * - Now that deployment-product-evolution.json act as a "default" deployment that can be override 
  * in the deployment.json of nglm-<project>, it does not make sense anymore to have DEFAULT_VALUE 
  * in the java code. If you want to define a default value for a specific variable, you just have to 
  * define it with its default value in deployment-product-evolution.json 
- * - For REQUIRED, the reason is similar. All variables are REQUIRED, a "not required" variable 
- * would mean that null is the default value if nothing is defined.   TOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOODDDOOOOOOOOOOOOoo
- * if null/empty as no meaning, then it is better to raise an error when the variable cannot be found.
- * if null has a value, then use Optional 
- * For array, it is better to put them, even if empty, to act as a template
+ * - For REQUIRED, by default, all variables are REQUIRED to avoid missing their configuration. Plus,
+ * by having them required, they act as a template when configuring a new system.
+ * There is few cases when null value has a meaning, therefore we can extract it thanks to the optional
+ * version of the retriever function.
  * 
  * The pro of defining everything in deployment-product-evolution.json is that it act as a 
  * template/sample for projects that need to override them. Plus, it is less subject to weird shady
@@ -171,11 +174,6 @@ public class DeploymentJSONReader
       return result;
     }
   }
-/*
-  public Date decodeDate(JSONArray jsonArray) throws JSONUtilitiesException
-  {
-    
-  }*/
   
   public Boolean decodeBoolean(String key) throws JSONUtilitiesException
   {
@@ -189,8 +187,14 @@ public class DeploymentJSONReader
     }
   }
 
-  // TOOOOOOOOOOOOOOOOOODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-  @Deprecated // utiliser .get !!!
+  /**
+   * This function is deprecated and should not be used because it will mark the whole object as "read"
+   * even if there is unused json fields inside it.
+   * It breaks the behavior of DeploymentJSONReader class.
+   *  
+   * A proper approach is to use the .get function and afterwards explore any required fields inside this object.
+   */
+  @Deprecated
   public JSONObject decodeJSONObject(String key) throws JSONUtilitiesException
   {
     JSONObject result = JSONUtilities.decodeJSONObject(jsonRoot, key); // Not required, NULL as default.
@@ -198,13 +202,15 @@ public class DeploymentJSONReader
     if(result == null) {
       throw new JSONUtilitiesException("JSON settings extraction: " + key + " could not be found (or is null).");
     } else {
-      jsonTree.remove(key); // TOOOOOOOOOOOOOOOOOODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+      jsonTree.remove(key); // @rl - break the behavior of this class.
       return result;
     }
-  }  
+  }
   
-
-  // TOOOOOOOOOOOOOOOOOODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+  /**
+   * This function does not mark any field as read, but return a DeploymentJSONReader that must be explored
+   * the same way we explore its parent.
+   */
   public DeploymentJSONReader get(Object key) throws JSONUtilitiesException
   {
     DeploymentJSONReader result = jsonTree.get(key);
@@ -216,9 +222,16 @@ public class DeploymentJSONReader
     } else {
       return result;
     }
-  }  
+  }
   
-  // TOOOOOOOOOOOOOOOOOODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+  /**
+   * This function is deprecated and should not be used because it will mark the whole array as "read"
+   * even if there is unused json fields inside one of the element of this array.
+   * It breaks the behavior of DeploymentJSONReader class.
+   *  
+   * For the moment there is no alternative. This function should be improved to return a list of
+   * DeploymentJSONArray elements that could be explored afterwards.
+   */
   @Deprecated
   public JSONArray decodeJSONArray(String key) throws JSONUtilitiesException
   {
@@ -227,17 +240,11 @@ public class DeploymentJSONReader
     if(result == null) {
       throw new JSONUtilitiesException("JSON settings extraction: " + key + " could not be found (or is null).");
     } else {
-      jsonTree.remove(key);
+      jsonTree.remove(key); // @rl - break the behavior of this class.
       return result;
     }
   }
   
-  /****************************************************************************
-  * 
-  * High-level decode Methods// TOOOOOOOOOOOOOOOOOODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-   * @throws GUIManagerException 
-  * 
-  ****************************************************************************/
   /**
    * Create a Map(ObjectID -> Object) from a JSONArray of JSONObjects.
    * Each JSONObject is representing an instance of @param Tclass
@@ -245,7 +252,7 @@ public class DeploymentJSONReader
   public <T extends DeploymentManagedObject> Map<String, T> decodeMapFromArray(Class<T> Tclass, String key) throws NoSuchMethodException, IllegalAccessException, ClassNotFoundException, GUIManagerException{
     Map<String, T> result = new LinkedHashMap<String, T>();
     
-    JSONArray jsonArray = this.decodeJSONArray(key);
+    JSONArray jsonArray = this.decodeJSONArray(key); // @rl TODO change it for a non-deprecated version.
     for (int i = 0; i < jsonArray.size(); i++) {
       JSONObject jsonObject = (JSONObject) jsonArray.get(i);
       T item = (T) DeploymentManagedObject.create(Tclass, jsonObject);
