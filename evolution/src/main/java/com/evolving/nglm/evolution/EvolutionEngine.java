@@ -3689,9 +3689,10 @@ public class EvolutionEngine
       case POINTS:
         LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
         
-        // Exit tier workflow
+        /* change tier should be executed only in enter EVPRO-922
         Tier oldTier = loyaltyProgramPoints.getTier(oldTierName);
         if (oldTier != null) triggerLoyaltyWorflow(event, subscriberState, oldTier.getWorkflowChange(), featureID, oldTier.getTierName());
+        */
 
         // Enter tier workflow
         Tier newTier = loyaltyProgramPoints.getTier(newTierName);
@@ -3701,9 +3702,10 @@ public class EvolutionEngine
       case CHALLENGE:
         LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
         
-     // Exit tier workflow
+        /* change tier should be executed only in enter EVPRO-922
         ChallengeLevel oldLevel = loyaltyProgramChallenge.getLevel(oldTierName);
         if (oldLevel != null) triggerLoyaltyWorflow(event, subscriberState, oldLevel.getWorkflowChange(), featureID, oldLevel.getLevelName());
+        */
 
         // Enter tier workflow
         ChallengeLevel newLevel = loyaltyProgramChallenge.getLevel(newTierName);
@@ -4200,6 +4202,7 @@ public class EvolutionEngine
                     else
                       {
                         loyaltyProgramState.setLoyaltyProgramExitDate(now);
+                        ((LoyaltyProgramChallengeState) loyaltyProgramState).setCurrentScore(0);
                       }
                     
                     //

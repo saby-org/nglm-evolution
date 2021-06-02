@@ -264,6 +264,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         this.loyaltyProgramName = loyaltyProgramName;
         if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
         if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; }
+        this.currentScore = 0;
 
         this.previousLevelName = fromLevel;
         this.levelName = toLevel;

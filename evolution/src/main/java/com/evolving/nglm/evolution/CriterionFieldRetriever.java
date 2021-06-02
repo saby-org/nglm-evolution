@@ -528,6 +528,12 @@ public abstract class CriterionFieldRetriever
             optInDate = loyaltyProgramChallengeState.getLoyaltyProgramEnrollmentDate();
             optOutDate = loyaltyProgramChallengeState.getLoyaltyProgramExitDate(); 
           }
+        else if (loyaltyProgramState instanceof LoyaltyProgramMissionState)
+          {
+            LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+            optInDate = loyaltyProgramMissionState.getLoyaltyProgramEnrollmentDate();
+            optOutDate = loyaltyProgramMissionState.getLoyaltyProgramExitDate(); 
+          }
       }
     
     //
