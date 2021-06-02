@@ -606,25 +606,22 @@ public class TokenUtils
             if (offer.evaluateProfileCriteria(evaluationRequest))
             {
               // check if we can still present this offer
-              long nbPresentations = -1; // -1 because need to ignore the current presentation (has already been added to dnboToken.getPresentationDates())
+              long nbPresentations = 0;
               for (Token token : tokens)
                 {
-                  if (token instanceof DNBOToken)
-                    {
+                  if (token instanceof DNBOToken)  {
                       DNBOToken dnboToken = (DNBOToken) token;
-                      // Here we forget to count some presentations : the one before the last, because we only memorise the last list
-                      if (dnboToken.getPresentedOfferIDs().contains(offer.getOfferID()))
-                        {
-                          for (Date date : dnboToken.getPresentationDates())
-                            {
-                              if (date.after(earliestDateToKeep))
-                                {
-                                  nbPresentations++;
-                                }
-                            }
+                      List<Presentation> presentationHistory = dnboToken.getPresentationHistory();
+                      log.info("We got " + presentationHistory.size() + " presentations of offer " + offer.getOfferID() + " for " + token.getTokenCode());
+                      for (Presentation presentation : presentationHistory) {
+                        if (presentation.getOfferIDs().contains(offer.getOfferID()) && presentation.getDate().after(earliestDateToKeep)) {
+                          log.info("Got a presentation for offer " + offer.getOfferID() + " in " + token.getTokenCode() + " on " + presentation.getDate());
+                          nbPresentations++;
                         }
+                      }
                     }
                 }
+              log.debug("offer " + offer.getOfferID() + " presented " + nbPresentations + " compared to max " + maximumPresentations);
               if (nbPresentations < maximumPresentations)
                 {
                   log.trace("add offer : "+offer.getOfferID());
@@ -634,7 +631,7 @@ public class TokenUtils
                 }
               else
                 {
-                  log.info("offer " + offer.getOfferID() + " has been presented " + nbPresentations + " times in the past " + maximumPresentationsPeriodDays + " days, skip it (max : " + maximumPresentations + " )");
+                  log.debug("offer " + offer.getOfferID() + " has been presented " + nbPresentations + " times in the past " + maximumPresentationsPeriodDays + " days, skip it (max : " + maximumPresentations + " )");
                 }
             }
           }

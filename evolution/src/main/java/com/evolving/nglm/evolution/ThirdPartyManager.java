@@ -86,6 +86,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
@@ -3025,7 +3026,14 @@ public class ThirdPartyManager
           // filter the offers based on the product supplier parent ID
           //
           
-          offers = offers.stream().filter(offer -> (offerValidation(offer.getOfferID(), tenantID))).collect(Collectors.toList());
+          offers = offers.stream().filter(offer -> (offerValidation(offer.getOfferID(),
+              offerService,
+              segmentationDimensionService,
+              productService,
+              voucherService,
+              scoringStrategyService,
+              productTypeService,
+              supplierService, tenantID))).collect(Collectors.toList());
           
 
           /*****************************************
@@ -3699,96 +3707,24 @@ public class ThirdPartyManager
      // TODO : which sales channel to use ?
      newToken.setPresentedOffersSalesChannel(presentationStrategy.getSalesChannelIDs().iterator().next());
      newToken.setCreationDate(now);
-
-     StringBuffer returnedLog = new StringBuffer();
-     double rangeValue = 0; // Not significant
-     DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
-     SubscriberEvaluationRequest request = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
-
-     // Allocate offers for this subscriber, and associate them in the token
-     // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
-     Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
-         now, newToken, request,
-         subscriberProfile, presentationStrategy,
-         productService, productTypeService, voucherService, voucherTypeService,
-         catalogCharacteristicService,
+     Collection<ProposedOfferDetails> presentedOffers = allocateAndSendPresentationLog(jsonRoot, subscriberID, newToken.getTokenCode(),
+         now, supplierFilter, subscriberProfile, (DNBOToken) newToken, presentationStrategyID, presentationStrategy,
+         kafkaProducer,
+         offerService,
+         segmentationDimensionService,
+         productService,
+         voucherService,
          scoringStrategyService,
-         subscriberGroupEpochReader,
-         segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplierFilter, tenantID
-         );
-     String tokenCode = newToken.getTokenCode();
-     if (presentedOffers.isEmpty())
-       {
-         generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented", API.getCustomerTokenAndNBO, jsonRoot);
-         log.error(returnedLog.toString()); // is not expected, trace errors
-       }
-     else
-       {
-         if (log.isTraceEnabled()) log.trace(returnedLog.toString()); 
-         // Send a PresentationLog to EvolutionEngine
-
-         String channelID = "channelID";
-         String controlGroupState = "controlGroupState";
-         String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
-
-         List<Integer> positions = new ArrayList<Integer>();
-         List<Double> presentedOfferScores = new ArrayList<Double>();
-         List<String> scoringStrategyIDs = new ArrayList<String>();
-         int position = 0;
-         ArrayList<String> presentedOfferIDs = new ArrayList<>();
-         for (ProposedOfferDetails presentedOffer : presentedOffers)
-           {
-             presentedOfferIDs.add(presentedOffer.getOfferId());
-             positions.add(new Integer(position));
-             position++;
-             presentedOfferScores.add(1.0);
-             // scoring strategy not used anymore
-             // scoringStrategyIDs.add(strategyID);
-           }
-         String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
-         int transactionDurationMs = 0; // TODO
-         String callUniqueIdentifier = "";
-         String userID = "0"; //TODO : fixthis
-
-         PresentationLog presentationLog = new PresentationLog(
-             subscriberID, subscriberID, now, 
-             callUniqueIdentifier, channelID, salesChannelID, userID,
-             newToken.getTokenCode(), 
-             presentationStrategyID, transactionDurationMs, 
-             presentedOfferIDs, presentedOfferScores, positions, 
-             controlGroupState, scoringStrategyIDs, null, null, null,
-             moduleID, featureID, newToken.getPresentationDates(), tokenTypeID, newToken
-             );
-         presentationLog.setToken(newToken);
-
-         //
-         //  submit to kafka
-         //
-
-         String topic = Deployment.getPresentationLogTopic();
-         Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-         Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
-         kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-             topic,
-             keySerializer.serialize(topic, new StringKey(subscriberID)),
-             valueSerializer.serialize(topic, presentationLog)
-             ));
-         keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-
-         // Update token locally, so that it is correctly displayed in the response
-         // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
-
-         newToken.setPresentedOfferIDs(presentedOfferIDs);
-         newToken.setPresentedOffersSalesChannel(salesChannelID);
-         newToken.setTokenStatus(TokenStatus.Bound);
-         if (newToken.getCreationDate() == null)
-           {
-             newToken.setCreationDate(now);
-           }
-         newToken.setBoundDate(now);
-         newToken.setBoundCount(newToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
-       }
-
+         productTypeService,
+         voucherTypeService,
+         catalogCharacteristicService,
+         dnboMatrixService,
+         supplierService,
+         subscriberGroupEpochReader, tenantID);
+     if (presentedOffers.isEmpty()) {
+       generateTokenChange(subscriberID, now, newToken.getTokenCode(), TokenChange.ALLOCATE, "no offers presented", API.getCustomerTokenAndNBO, jsonRoot);
+     }
+     
      /*****************************************
       *
       *  decorate and response
@@ -3817,9 +3753,6 @@ public class ThirdPartyManager
 
    return JSONUtilities.encodeObject(response);
  }
-
-
-
 
   /*****************************************
    *
@@ -3936,101 +3869,25 @@ public class ThirdPartyManager
           return JSONUtilities.encodeObject(response);          
         }
       
-      if (!viewOffersOnly)
-        {
-          StringBuffer returnedLog = new StringBuffer();
-          double rangeValue = 0; // Not significant
-          DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
-          SubscriberEvaluationRequest request = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
-
-          // Allocate offers for this subscriber, and associate them in the token
-          // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
-          Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
-              now, subscriberStoredToken, request,
-              subscriberProfile, presentationStrategy,
-              productService, productTypeService,
-              voucherService, voucherTypeService,
-              catalogCharacteristicService,
-              scoringStrategyService,
-              subscriberGroupEpochReader,
-              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplierFilter, tenantID
-              );
-
-          if (presentedOffers.isEmpty())
-            {
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented", API.getCustomerNBOs, jsonRoot);
-              log.error(returnedLog.toString()); // is not expected, trace errors
-            }
-          else
-            {
-              if (log.isTraceEnabled()) log.trace(returnedLog.toString());
-              // Send a PresentationLog to EvolutionEngine
-
-              String channelID = "channelID";
-              String userID = "0"; //TODO : fixthis
-              String callUniqueIdentifier = "";
-              String controlGroupState = "controlGroupState";
-              String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
-              String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
-
-              List<Integer> positions = new ArrayList<Integer>();
-              List<Double> presentedOfferScores = new ArrayList<Double>();
-              List<String> scoringStrategyIDs = new ArrayList<String>();
-              int position = 0;
-              ArrayList<String> presentedOfferIDs = new ArrayList<>();
-              for (ProposedOfferDetails presentedOffer : presentedOffers)
-                {
-                  presentedOfferIDs.add(presentedOffer.getOfferId());
-                  positions.add(new Integer(position));
-                  position++;
-                  presentedOfferScores.add(1.0);
-                  // not used anymore
-                  // scoringStrategyIDs.add(strategyID);
-                }
-               
-              presentedOfferIDs = (ArrayList<String>) presentedOfferIDs.stream().filter(offerID -> (offerValidation(offerID, tenantID))).collect(Collectors.toList());
-              
-              String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
-              String tokenTypeID = subscriberStoredToken.getTokenTypeID();
-
-              int transactionDurationMs = 0; // TODO
-              PresentationLog presentationLog = new PresentationLog(
-                  subscriberID, subscriberID, now, 
-                  callUniqueIdentifier, channelID, salesChannelID, userID,
-                  tokenCode, 
-                  presentationStrategyID, transactionDurationMs, 
-                  presentedOfferIDs, presentedOfferScores, positions, 
-                  controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, subscriberStoredToken.getPresentationDates(), tokenTypeID, null
-                  );
-
-             //
-             //  submit to kafka
-             //
-
-             String topic = Deployment.getPresentationLogTopic();
-             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-             Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
-             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-                 topic,
-                 keySerializer.serialize(topic, new StringKey(subscriberID)),
-                 valueSerializer.serialize(topic, presentationLog)
-                 ));
-             keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-
-             // Update token locally, so that it is correctly displayed in the response
-             // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
-
-             subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
-             subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID);
-             subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
-             if (subscriberStoredToken.getCreationDate() == null)
-               {
-                 subscriberStoredToken.setCreationDate(now);
-               }
-             subscriberStoredToken.setBoundDate(now);
-             subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
-           }
-       }
+      if (!viewOffersOnly) {
+        Collection<ProposedOfferDetails> list = allocateAndSendPresentationLog(jsonRoot, subscriberID, tokenCode,
+            now, supplierFilter, subscriberProfile, subscriberStoredToken, presentationStrategyID, presentationStrategy,
+            kafkaProducer,
+            offerService,
+            segmentationDimensionService,
+            productService,
+            voucherService,
+            scoringStrategyService,
+            productTypeService,
+            voucherTypeService,
+            catalogCharacteristicService,
+            dnboMatrixService,
+            supplierService,
+            subscriberGroupEpochReader, tenantID);
+        if (list.isEmpty()) {
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented", API.getCustomerNBOs, jsonRoot);
+        }
+      }
 
      /*****************************************
       *
@@ -4052,6 +3909,163 @@ public class ThirdPartyManager
      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode()) ;
    }
  }
+
+  public static Collection<ProposedOfferDetails> allocateAndSendPresentationLog(
+      JSONObject jsonRoot, String subscriberID, String tokenCode, Date now, Supplier supplierFilter, SubscriberProfile subscriberProfile,
+      DNBOToken token, String presentationStrategyID, PresentationStrategy presentationStrategy,
+      KafkaProducer<byte[], byte[]> kafkaProducer,
+      OfferService offerService,
+      SegmentationDimensionService segmentationDimensionService,
+      ProductService productService,
+      VoucherService voucherService,
+      ScoringStrategyService scoringStrategyService,
+      ProductTypeService productTypeService,
+      VoucherTypeService voucherTypeService,
+      CatalogCharacteristicService catalogCharacteristicService,
+      DNBOMatrixService dnboMatrixService,
+      SupplierService supplierService,
+      ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader,
+      int tenantID
+               ) throws GetOfferException
+  {
+    StringBuffer returnedLog = new StringBuffer();
+    double rangeValue = 0; // Not significant
+    DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
+    SubscriberEvaluationRequest request = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
+
+    // Allocate offers for this subscriber, and associate them in the token
+    // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
+    Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
+        now, token, request,
+        subscriberProfile, presentationStrategy,
+        productService, productTypeService,
+        voucherService, voucherTypeService,
+        catalogCharacteristicService,
+        scoringStrategyService,
+        subscriberGroupEpochReader,
+        segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplierFilter, tenantID
+        );
+
+    if (presentedOffers.isEmpty())
+      {
+        log.error(returnedLog.toString()); // is not expected, trace errors
+        token.setPresentedOfferIDs(new ArrayList<>());
+      }
+    else
+      {
+        if (log.isTraceEnabled()) log.trace(returnedLog.toString());
+        // Send a PresentationLog to EvolutionEngine
+
+        String channelID = "channelID";
+        String userID = "0"; //TODO : fixthis
+        String callUniqueIdentifier = "";
+        String controlGroupState = "controlGroupState";
+        String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
+        String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
+
+        List<Integer> positions = new ArrayList<Integer>();
+        List<Double> presentedOfferScores = new ArrayList<Double>();
+        List<String> scoringStrategyIDs = new ArrayList<String>();
+        int position = 0;
+        ArrayList<String> presentedOfferIDs = new ArrayList<>();
+        for (ProposedOfferDetails presentedOffer : presentedOffers)
+          {
+            presentedOfferIDs.add(presentedOffer.getOfferId());
+            positions.add(new Integer(position));
+            position++;
+            presentedOfferScores.add(1.0);
+          }
+         
+        presentedOfferIDs = (ArrayList<String>) presentedOfferIDs.stream().filter(offerID -> (offerValidation(offerID,
+            offerService,
+            segmentationDimensionService,
+            productService,
+            voucherService,
+            scoringStrategyService,
+            productTypeService,
+            supplierService, tenantID))).collect(Collectors.toList());
+        
+        String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
+        String tokenTypeID = token.getTokenTypeID();
+        int transactionDurationMs = 0; // TODO
+        
+        // add a new presentation history in the token
+        Presentation presentation = new Presentation(now, presentedOfferIDs);
+        List<Presentation> currentPresentationHistory = token.getPresentationHistory();
+        currentPresentationHistory.add(presentation);
+        log.debug("Added " + presentation + " to presentationHistory " + currentPresentationHistory + " size " + currentPresentationHistory.size());
+        
+        // clean list by removing presentations older than oldest limit of all offers in the lists
+         
+        List<Presentation> cleanPresentationHistory = new ArrayList<>();
+        Set<String> allOfferIDs = new HashSet<>();
+        for (Presentation pres : currentPresentationHistory) {
+          for (String offerID : pres.getOfferIDs()) {
+            allOfferIDs.add(offerID);
+          }
+        }
+        Date earliestDateToKeep = now;
+        for (String offerID : allOfferIDs) {
+          Offer offer = offerService.getActiveOffer(offerID, now);
+          if (offer != null) {
+            Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
+            Date offerEarliest = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getBaseTimeZone());
+            if (offerEarliest.before(earliestDateToKeep)) {
+              earliestDateToKeep = offerEarliest;
+            }
+          }
+        }
+        // now we have earliestDateToKeep, cleanup
+        List<Presentation> newPresentationHistory = new ArrayList<>();
+        for (Presentation pres : currentPresentationHistory) {
+            Date date = pres.getDate();
+            if (date.after(earliestDateToKeep)) {
+              newPresentationHistory.add(pres);
+            } else {
+              log.debug("Removed history because too old : " + pres);
+            }
+          }
+        token.setPresentationHistory(newPresentationHistory);
+        log.info("Cleanup of presentation history moved list from " + currentPresentationHistory.size() + " to " + newPresentationHistory.size() + " elements, earliest date to keep : " + earliestDateToKeep);
+        
+        PresentationLog presentationLog = new PresentationLog(
+            subscriberID, subscriberID, now, 
+            callUniqueIdentifier, channelID, salesChannelID, userID,
+            tokenCode, 
+            presentationStrategyID, transactionDurationMs, 
+            presentedOfferIDs, presentedOfferScores, positions, 
+            controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, token.getPresentationDates(), tokenTypeID, null, newPresentationHistory
+            );
+
+       //
+       //  submit to kafka
+       //
+
+       String topic = Deployment.getPresentationLogTopic();
+       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+       Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
+       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+           topic,
+           keySerializer.serialize(topic, new StringKey(subscriberID)),
+           valueSerializer.serialize(topic, presentationLog)
+           ));
+       keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+
+       // Update token locally, so that it is correctly displayed in the response
+       // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
+
+       token.setPresentedOfferIDs(presentedOfferIDs);
+       token.setPresentedOffersSalesChannel(salesChannelID);
+       token.setTokenStatus(TokenStatus.Bound);
+       if (token.getCreationDate() == null)
+         {
+           token.setCreationDate(now);
+         }
+       token.setBoundDate(now);
+       token.setBoundCount(token.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
+     }
+    return presentedOffers;
+  }
 
   /*****************************************
    *
@@ -4183,7 +4197,14 @@ public class ThirdPartyManager
       Offer offer = offerService.getActiveOffer(offerID, now);
       if (offer != null)
         {
-          Boolean validOffer = offerValidation(offer.getOfferID(), tenantID);
+          Boolean validOffer = offerValidation(offer.getOfferID(),
+              offerService,
+              segmentationDimensionService,
+              productService,
+              voucherService,
+              scoringStrategyService,
+              productTypeService,
+              supplierService, tenantID);
           if (!(validOffer))
             {
               response.put(GENERIC_RESPONSE_CODE,
@@ -4408,7 +4429,14 @@ public class ThirdPartyManager
       
         if (offerID != null)
           {
-            Boolean validOffer = offerValidation(offerID, tenantID);
+            Boolean validOffer = offerValidation(offerID,
+                offerService,
+                segmentationDimensionService,
+                productService,
+                voucherService,
+                scoringStrategyService,
+                productTypeService,
+                supplierService, tenantID);
             if (!(validOffer))
               {
                 response.put(GENERIC_RESPONSE_CODE,
@@ -6151,7 +6179,14 @@ public class ThirdPartyManager
    *
    ******************************************************/
 
-  public Boolean offerValidation(String offerID, int tenantID)
+  public static Boolean offerValidation(String offerID,
+      OfferService offerService,
+      SegmentationDimensionService segmentationDimensionService,
+      ProductService productService,
+      VoucherService voucherService,
+      ScoringStrategyService scoringStrategyService,
+      ProductTypeService productTypeService,
+      SupplierService supplierService, int tenantID)
   {
 
     Date now = SystemTime.getCurrentTime();
