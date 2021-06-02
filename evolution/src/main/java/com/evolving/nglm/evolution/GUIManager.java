@@ -29327,6 +29327,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               //
               
               List<String> alreadyOptInSubscriberIDs = elasticsearch.getAlreadyOptInSubscriberIDs(challenge.getLoyaltyProgramID());
+              
+              //
+              //  update challenge for next occurrence
+              //
+              
+              lastCreatedOccurrenceNumber++;
+              jsonRoot.put("occurrenceNumber", lastCreatedOccurrenceNumber);
+              jsonRoot.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
+              jsonRoot.put("name", challenge.getGUIManagedObjectName() + "_" + lastCreatedOccurrenceNumber);
+              jsonRoot.put("display", challenge.getGUIManagedObjectDisplay() + " - " + lastCreatedOccurrenceNumber);
+              jsonRoot.put("previousPeriodStartDate", RLMDateUtils.formatDateForREST(challenge.getLastOccurrenceCreateDate(), timeZone));
+              jsonRoot.put("lastOccurrenceCreateDate", RLMDateUtils.formatDateForREST(recDate, timeZone));
+              guiManagerLoyaltyReporting.processPutLoyaltyProgram("0", jsonRoot, LoyaltyProgramType.CHALLENGE, challenge.getTenantID());
+              
+              //
+              //  execute change event for all the optin - sub
+              //
+              
               for (String subscriberID : alreadyOptInSubscriberIDs)
                 {
                   try
@@ -29372,18 +29390,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                   e.printStackTrace();
                 }
               log.info("RAJ K sleep over");
-              lastCreatedOccurrenceNumber++;
-              jsonRoot.put("occurrenceNumber", lastCreatedOccurrenceNumber);
-              jsonRoot.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
-              jsonRoot.put("name", challenge.getGUIManagedObjectName() + "_" + lastCreatedOccurrenceNumber);
-              jsonRoot.put("display", challenge.getGUIManagedObjectDisplay() + " - " + lastCreatedOccurrenceNumber);
-              jsonRoot.put("previousPeriodStartDate", RLMDateUtils.formatDateForREST(challenge.getLastOccurrenceCreateDate(), timeZone));
-              jsonRoot.put("lastOccurrenceCreateDate", RLMDateUtils.formatDateForREST(recDate, timeZone));
-              guiManagerLoyaltyReporting.processPutLoyaltyProgram("0", jsonRoot, LoyaltyProgramType.CHALLENGE, challenge.getTenantID());
+              
             } 
           catch (ElasticsearchClientException e)
             {
               e.printStackTrace();
+              log.error("for this exception {} challenge job failed - will retry next if scheduled", e.getMessage());
             }
         }
       log.info("executed Challenge OccouranceJob for challenge {}, time taken {} milisec", challenge.getLoyaltyProgramDisplay(), SystemTime.getCurrentTime().getTime() - startTimeMili);
