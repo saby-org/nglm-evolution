@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
@@ -589,11 +590,23 @@ public class TokenUtils
       Long maximumPresentationsStr = (Long) offer.getJSONRepresentation().get("maximumPresentations");
       long maximumPresentations = maximumPresentationsStr != null ? maximumPresentationsStr : Long.MAX_VALUE;  // default value
 
-      Long maximumPresentationsPeriodDaysStr = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
-      long maximumPresentationsPeriodDays = maximumPresentationsPeriodDaysStr != null ? maximumPresentationsPeriodDaysStr : 365L;  // default value
+      Date earliestDateToKeep = now;
+      Long maximumPresentationsPeriod = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriod");
+      String maximumPresentationsUnitStr = (String) offer.getJSONRepresentation().get("maximumPresentationsUnit");
+      TimeUnit maximumPresentationsUnit = TimeUnit.fromExternalRepresentation(maximumPresentationsUnitStr);
+      if (maximumPresentationsUnit.equals(TimeUnit.Day)) {
+        earliestDateToKeep = RLMDateUtils.addDays(now, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getBaseTimeZone());
+      } else if (maximumPresentationsUnit.equals(TimeUnit.Month)) {
+        if (maximumPresentationsPeriod == 1) { // current month
+          earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getBaseTimeZone());
+        } else {
+          earliestDateToKeep = RLMDateUtils.addMonths(now, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getBaseTimeZone());
+        }
+      } else {
+        log.info("internal error : unknown maximumPresentationsUnit " + maximumPresentationsUnitStr + " in offer " + offer.getOfferID() + " , using 1 day");
+        earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getBaseTimeZone());
+      }
       
-      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getDeployment(tenantID).getBaseTimeZone());
-
       for (String catalogObjectiveID : catalogObjectiveIDs)
       {
         log.trace("catalogObjectiveID : "+catalogObjectiveID);
@@ -631,7 +644,7 @@ public class TokenUtils
                 }
               else
                 {
-                  log.debug("offer " + offer.getOfferID() + " has been presented " + nbPresentations + " times in the past " + maximumPresentationsPeriodDays + " days, skip it (max : " + maximumPresentations + " )");
+                  log.debug("offer " + offer.getOfferID() + " has been presented " + nbPresentations + " times in the past " + maximumPresentationsPeriod + " " + maximumPresentationsUnit + ", skip it (max : " + maximumPresentations + " )");
                 }
             }
           }
