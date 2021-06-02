@@ -181,7 +181,7 @@ public class GrafanaUtils
                         String s = scanner.hasNext() ? scanner.next() : "";
                         scanner.close();
 
-                        log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard====");
+                        log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
                         JSONObject fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
                         JSONObject dashbaordDef = (JSONObject) fullDashbaordDef.get("dashboard");
                         String expectedTitle = (String) dashbaordDef.get("title");
