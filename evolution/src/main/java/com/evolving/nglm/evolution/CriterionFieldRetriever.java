@@ -21,6 +21,7 @@ import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -480,6 +481,26 @@ public abstract class CriterionFieldRetriever
         .filter(lps -> (lps.getLoyaltyProgramExitDate() == null))
         .map(lps -> lps.getLoyaltyProgramName())
         .collect(Collectors.toSet());
+    return res;
+  }
+  
+  //
+  // getLoyaltyChallengesLevels
+  //
+  
+  public static Object getLoyaltyChallengesLevels(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    Set<String> res = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values().stream().filter(lps -> (lps.getLoyaltyProgramExitDate() == null)).filter(lps -> (lps instanceof LoyaltyProgramChallengeState)).map(lps -> (LoyaltyProgramChallengeState) lps).map(lps -> ((LoyaltyProgramChallengeState) lps).getLevelName()).collect(Collectors.toSet());
+    return res;
+  }
+  
+  //
+  // getLoyaltyMissionsSteps
+  //
+  
+  public static Object getLoyaltyMissionsSteps(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    Set<String> res = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values().stream().filter(lps -> (lps.getLoyaltyProgramExitDate() == null)).filter(lps -> (lps instanceof LoyaltyProgramMissionState)).map(lps -> (LoyaltyProgramMissionState) lps).map(lps -> ((LoyaltyProgramMissionState) lps).getStepName()).collect(Collectors.toSet());
     return res;
   }
 
