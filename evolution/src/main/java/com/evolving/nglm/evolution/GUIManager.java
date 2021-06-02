@@ -4919,7 +4919,7 @@ public class GUIManager
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType, targetFileVariables, tenantID), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType, tenantID);
         Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields(tenantID);
-        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups, tenantID);
+        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups, expectedDataType, tenantID);
         
         //
         //  intersect and put only Evaluation week Day and Time (if schedule node)
