@@ -276,7 +276,7 @@ public class GrafanaUtils
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of grafana orgs, error code " + response.getStatusLine().getStatusCode());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of grafana orgs, error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       try {
         Thread.sleep(10000);
       } catch (InterruptedException e) {
@@ -322,7 +322,7 @@ public class GrafanaUtils
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of grafana orgs creation, error code " + response.getStatusLine().getStatusCode());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of grafana orgs creation, error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       try {
         Thread.sleep(10000);
       } catch (InterruptedException e) {
@@ -362,7 +362,7 @@ public class GrafanaUtils
       return false;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not switch to grafana org " + orgID + ", error code " + response.getStatusLine().getStatusCode());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not switch to grafana org " + orgID + ", error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       return false;
     }
     
@@ -394,7 +394,7 @@ public class GrafanaUtils
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of dashboards for org " + orgID + ", error code " + response.getStatusLine().getStatusCode());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of dashboards for org " + orgID + ", error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       return null;
     }
     
@@ -488,7 +488,7 @@ public class GrafanaUtils
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not while creating datasource " + dsDefinition.get("title") + " for organisation orgID, error code " + response.getStatusLine().getStatusCode());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not while creating datasource " + dsDefinition.get("title") + " for organisation orgID, error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       return null;
     }
     
