@@ -258,6 +258,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         
         if (isOptInAfterOptOut)
           {
+            log.info("RAJ K mission isOptInAfterOptOut {} ", isOptInAfterOptOut);
             //
             //  loyaltyProgramEnrollmentDate
             //
@@ -268,7 +269,12 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
             //  loyaltyProgramMissionHistory
             //
             
-            if (loyaltyProgramMissionHistory.getStepHistory() != null && !loyaltyProgramMissionHistory.getStepHistory().isEmpty()) loyaltyProgramMissionHistory.setStepHistory(new ArrayList<LoyaltyProgramMissionHistory.StepHistory>());
+            log.info("RAJ K mission loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
+            if (loyaltyProgramMissionHistory.getStepHistory() != null && !loyaltyProgramMissionHistory.getStepHistory().isEmpty())
+              {
+                loyaltyProgramMissionHistory.setStepHistory(new ArrayList<LoyaltyProgramMissionHistory.StepHistory>());
+                log.info("RAJ K mission after loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
+              }
             
           }
 
@@ -277,6 +283,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         //
 
         loyaltyProgramMissionHistory.addStepHistory(fromStep, toStep, enrollmentDate, deliveryRequestID, loyaltyProgramStepChange);
+        log.info("RAJ K mission after addStepHistory loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
         break;
 
       case Optout:
