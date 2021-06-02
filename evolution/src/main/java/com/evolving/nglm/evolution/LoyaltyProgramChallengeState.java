@@ -304,6 +304,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
+        log.info("RAJ K inside update loyaltyProgramChallenge json is {} ", loyaltyProgramChallenge.getJSONRepresentation());
         if (loyaltyProgramChallenge.getRecurrence() && occouranceNumber != null && occouranceNumber != 1)
           {
             //

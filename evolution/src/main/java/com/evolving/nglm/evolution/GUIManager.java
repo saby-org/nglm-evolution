@@ -166,6 +166,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import kafka.utils.Log4jControllerRegistration;
+
 public class GUIManager
 {
   /*****************************************
@@ -29360,6 +29362,16 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       log.error("SubscriberProfileServiceException {}", e.getMessage());
                     }
                 }
+              
+              try
+                {
+                  log.info("RAJ K sleeping for 5mins");
+                  Thread.sleep(60*1000*5);
+                } catch (InterruptedException e)
+                {
+                  e.printStackTrace();
+                }
+              log.info("RAJ K sleep over");
               lastCreatedOccurrenceNumber++;
               jsonRoot.put("occurrenceNumber", lastCreatedOccurrenceNumber);
               jsonRoot.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
