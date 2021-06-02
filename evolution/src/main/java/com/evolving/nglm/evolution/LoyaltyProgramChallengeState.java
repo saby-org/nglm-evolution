@@ -257,6 +257,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     {
       case Optin:
         boolean isOptInAfterOptOut = false;
+        boolean resetOnReoptin = false;
 
         //
         // update current state
@@ -275,7 +276,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // isOptInAfterOptOut
         //
 
-        if (isOptInAfterOptOut)
+        if (isOptInAfterOptOut && resetOnReoptin)
           {
             //
             //  loyaltyProgramEnrollmentDate

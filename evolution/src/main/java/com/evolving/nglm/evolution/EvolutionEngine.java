@@ -3862,6 +3862,10 @@ public class EvolutionEngine
                 loyaltyProgramChallengeState.setCurrentScore(score);
                 loyaltyProgramChallengeState.setLastScoreChangeDate(now);
               }
+            else
+              {
+                if (log.isErrorEnabled()) log.error("updateScore failed -> score can not be -ve {} in Challenge {}", score, loyaltyProgram.getGUIManagedObjectDisplay());
+              }
           }
         else
           {
