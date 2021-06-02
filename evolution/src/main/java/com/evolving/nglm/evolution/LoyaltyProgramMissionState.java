@@ -246,13 +246,11 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.loyaltyProgramEpoch = loyaltyProgramEpoch;
         this.loyaltyProgramName = loyaltyProgramName;
         if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
-        log.info("RAJ K mission loyaltyProgramExitDate {} isOptInAfterOptOut {}", loyaltyProgramExitDate, isOptInAfterOptOut);
         if (this.loyaltyProgramExitDate != null) 
           { 
             this.loyaltyProgramExitDate = null; 
             isOptInAfterOptOut = true; 
           }
-        log.info("RAJ K mission loyaltyProgramExitDate is not null ? {} isOptInAfterOptOut {}", loyaltyProgramExitDate != null, isOptInAfterOptOut);
         this.previousStepName = fromStep;
         this.stepName = toStep;
         this.stepEnrollmentDate = enrollmentDate;
@@ -264,7 +262,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         
         if (isOptInAfterOptOut)
           {
-            log.info("RAJ K mission isOptInAfterOptOut {} ", isOptInAfterOptOut);
             //
             //  loyaltyProgramEnrollmentDate
             //
@@ -275,10 +272,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
             //  loyaltyProgramMissionHistory
             //
             
-            log.info("RAJ K mission loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
             loyaltyProgramMissionHistory.clearStepHistory();
-            log.info("RAJ K mission after loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
-            
           }
 
         //
@@ -286,7 +280,6 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         //
 
         loyaltyProgramMissionHistory.addStepHistory(fromStep, toStep, enrollmentDate, deliveryRequestID, loyaltyProgramStepChange);
-        log.info("RAJ K mission after addStepHistory loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
         break;
 
       case Optout:
