@@ -276,11 +276,8 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
             //
             
             log.info("RAJ K mission loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
-            if (loyaltyProgramMissionHistory.getStepHistory() != null && !loyaltyProgramMissionHistory.getStepHistory().isEmpty())
-              {
-                loyaltyProgramMissionHistory.clearStepHistory();
-                log.info("RAJ K mission after loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
-              }
+            loyaltyProgramMissionHistory.clearStepHistory();
+            log.info("RAJ K mission after loyaltyProgramMissionHistory.getStepHistory {} ", loyaltyProgramMissionHistory.getStepHistory());
             
           }
 

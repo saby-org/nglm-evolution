@@ -4136,7 +4136,6 @@ public class EvolutionEngine
                         LoyaltyProgramChallengeState loyaltyProgramChallengeState = ((LoyaltyProgramChallengeState) currentLoyaltyProgramState);
                         if (loyaltyProgramChallengeState.getLoyaltyProgramExitDate() != null)
                           {
-                            loyaltyProgramChallengeState.setLoyaltyProgramExitDate(null);
                             String currentLevel = loyaltyProgramChallengeState.getLevelName();
                             if ((currentLevel != null && !currentLevel.equals(newLevelName)) || (currentLevel == null && newLevelName != null))
                               {
@@ -4162,6 +4161,7 @@ public class EvolutionEngine
                               }
                             else
                               {
+                                loyaltyProgramChallengeState.setLoyaltyProgramExitDate(null);
                                 LoyaltyProgramLevelChange loyaltyProgramLevelChange = LoyaltyProgramLevelChange.NoChange;
                                 ParameterMap info = new ParameterMap();
                                 info.put(LoyaltyProgramChallengeEventInfos.ENTERING.getExternalRepresentation(), loyaltyProgramRequest.getLoyaltyProgramID());
@@ -4294,7 +4294,6 @@ public class EvolutionEngine
                         LoyaltyProgramMissionState loyaltyProgramMissionState = ((LoyaltyProgramMissionState) currentLoyaltyProgramState);
                         if (loyaltyProgramMissionState.getLoyaltyProgramExitDate() != null)
                           {
-                            loyaltyProgramMissionState.setLoyaltyProgramExitDate(null);
                             String currentStep = loyaltyProgramMissionState.getStepName();
                             if ((currentStep != null && !currentStep.equals(newStepName)) || (currentStep == null && newStepName != null))
                               {
@@ -4320,6 +4319,7 @@ public class EvolutionEngine
                               }
                             else
                               {
+                                loyaltyProgramMissionState.setLoyaltyProgramExitDate(null);
                                 LoyaltyProgramStepChange loyaltyProgramStepChange = LoyaltyProgramStepChange.NoChange;
                                 ParameterMap info = new ParameterMap();
                                 info.put(LoyaltyProgramMissionEventInfos.ENTERING.getExternalRepresentation(), loyaltyProgramRequest.getLoyaltyProgramID());
@@ -4354,6 +4354,10 @@ public class EvolutionEngine
                     if (oldStep != null)
                       {
                         loyaltyProgramStepChange = ((LoyaltyProgramMissionState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), stepName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
+                      }
+                    else
+                      {
+                        loyaltyProgramState.setLoyaltyProgramExitDate(now);
                       }
                     
                     //

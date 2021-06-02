@@ -79,7 +79,7 @@ public class LoyaltyProgramChallengeHistory
   { 
     return levelHistory.stream().filter(level -> level.getOccurrenceNumber() == occurrenceNumber).collect(Collectors.toList()); 
   }
-  public void setLevelHistory(List<LevelHistory> levelHistory) { this.levelHistory = levelHistory; }
+  public void clearLevelHistory() { if (levelHistory != null) levelHistory.clear(); }
   
   /*****************************************
   *
