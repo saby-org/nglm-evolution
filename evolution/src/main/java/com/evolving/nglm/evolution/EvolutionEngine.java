@@ -3051,9 +3051,7 @@ public class EvolutionEngine
                 subscriberProfileUpdated = updateScore(subscriberProfile, challengeID, score, now);
                 if (subscriberProfileUpdated)
                   {
-                    log.info("RAJ K isPeriodChange {}", isPeriodChange);
                     boolean periodChange = isPeriodChange != null && isPeriodChange;
-                    log.info("RAJ K periodChange {}", periodChange);
                     checkForLoyaltyProgramStateChanges(context.getSubscriberState(), null, now, oldScore, periodChange);
                   }
               }
