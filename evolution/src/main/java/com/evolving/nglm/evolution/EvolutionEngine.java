@@ -3052,7 +3052,7 @@ public class EvolutionEngine
                 if (subscriberProfileUpdated)
                   {
                     log.info("RAJ K isPeriodChange {}", isPeriodChange);
-                    boolean periodChange = Boolean.TRUE == isPeriodChange;
+                    boolean periodChange = isPeriodChange != null && isPeriodChange;
                     log.info("RAJ K periodChange {}", periodChange);
                     checkForLoyaltyProgramStateChanges(context.getSubscriberState(), null, now, oldScore, periodChange);
                   }
