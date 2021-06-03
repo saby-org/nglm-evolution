@@ -4713,6 +4713,10 @@ public class EvolutionEngine
                   {
                     ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService);
                   }
+                else if (loyaltyProgramState instanceof LoyaltyProgramMissionState)
+                  {
+                    ((LoyaltyProgramMissionState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService);
+                  }
               }
           }
         }
