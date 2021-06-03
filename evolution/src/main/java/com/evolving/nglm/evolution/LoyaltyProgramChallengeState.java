@@ -219,8 +219,13 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   *  update
   *
   *****************************************/
+  
+  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
+  {
+    return update(loyaltyProgramEpoch, operation, loyaltyProgramName, toLevel, enrollmentDate, deliveryRequestID, loyaltyProgramService, false, null);
+  }
 
-  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, Integer previousScore)
+  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, boolean isPeriodChange, Integer previousScore)
   {
     Date now = SystemTime.getCurrentTime();
     LevelHistory lastLevelEntered = null;
@@ -304,23 +309,15 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        if (loyaltyProgramChallenge.getRecurrence() && occouranceNumber != null && occouranceNumber != 1)
+        if (isPeriodChange)
           {
             //
-            //  thisPeroidLevels
+            // period change(entry to new period)
             //
             
-            List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
-            if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
-              {
-                //
-                // period change(entry to new period)
-                //
-                
-                this.previousPeriodLevel = fromLevel;
-                this.previousPeriodScore = previousScore;
-                this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
-              }
+            this.previousPeriodLevel = fromLevel;
+            this.previousPeriodScore = previousScore;
+            this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
           }
         
         loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
@@ -346,29 +343,15 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         // update history
         //
 
-        if (loyaltyProgramChallenge.getRecurrence() && occouranceNumber != null && occouranceNumber != 1)
+        if (isPeriodChange)
           {
             //
-            //  first or no occurrences
+            // period change(entry to new period)
             //
             
-            previousPeriodStartDate = loyaltyProgramChallenge.getLastOccurrenceCreateDate();
-            
-            //
-            //  thisPeroidLevels
-            //
-            
-            List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
-            if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
-              {
-                //
-                // period change(entry to new period)
-                //
-                
-                this.previousPeriodLevel = fromLevel;
-                this.previousPeriodScore = previousScore;
-                this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
-              }
+            this.previousPeriodLevel = fromLevel;
+            this.previousPeriodScore = previousScore;
+            this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
           }
 
         loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);

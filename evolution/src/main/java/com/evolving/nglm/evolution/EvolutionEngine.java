@@ -3038,6 +3038,8 @@ public class EvolutionEngine
           {
             String challengeID = (String) subscriberProfileForceUpdate.getParameterMap().get("challengeID");
             Integer score = (Integer) subscriberProfileForceUpdate.getParameterMap().get("score");
+            Boolean isPeriodChange = (Boolean) subscriberProfileForceUpdate.getParameterMap().get("isPeriodChange");
+            
             int oldScore = 0;
             if (subscriberProfile.getLoyaltyPrograms() != null && !subscriberProfile.getLoyaltyPrograms().isEmpty() && subscriberProfile.getLoyaltyPrograms().get(challengeID) != null && subscriberProfile.getLoyaltyPrograms().get(challengeID) instanceof LoyaltyProgramChallengeState)
               {
@@ -3049,7 +3051,10 @@ public class EvolutionEngine
                 subscriberProfileUpdated = updateScore(subscriberProfile, challengeID, score, now);
                 if (subscriberProfileUpdated)
                   {
-                    checkForLoyaltyProgramStateChanges(context.getSubscriberState(), null, now, oldScore);
+                    log.info("RAJ K isPeriodChange {}", isPeriodChange);
+                    boolean periodChange = Boolean.TRUE == isPeriodChange;
+                    log.info("RAJ K periodChange {}", periodChange);
+                    checkForLoyaltyProgramStateChanges(context.getSubscriberState(), null, now, oldScore, periodChange);
                   }
               }
           }
@@ -3125,7 +3130,7 @@ public class EvolutionEngine
                 //  check loyalty program (may need to change tier if credited/debited point is the one used as status point in the program)
                 //
                 
-                checkForLoyaltyProgramStateChanges(context.getSubscriberState(), pointFulfillmentRequest.getDeliveryRequestID(), now, null);
+                checkForLoyaltyProgramStateChanges(context.getSubscriberState(), pointFulfillmentRequest.getDeliveryRequestID(), now, null, false);
                 
               }
             else
@@ -3555,7 +3560,7 @@ public class EvolutionEngine
     return false;
   }
 
-  private static void checkForLoyaltyProgramStateChanges(SubscriberState subscriberState, String deliveryRequestID, Date now, Integer oldScore)
+  private static void checkForLoyaltyProgramStateChanges(SubscriberState subscriberState, String deliveryRequestID, Date now, Integer oldScore, boolean periodChange)
   {
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     for(Entry<String, LoyaltyProgramState> entry : subscriberProfile.getLoyaltyPrograms().entrySet())
@@ -3646,10 +3651,7 @@ public class EvolutionEngine
                 //  periodChange
                 //
                 
-                boolean isPeriodChange = true;
-                Integer currentOccurrenceNumber = loyaltyProgramChallenge.getLastCreatedOccurrenceNumber();
-                isPeriodChange = isPeriodChange && loyaltyProgramChallenge.getRecurrence() && 1 != currentOccurrenceNumber;
-                isPeriodChange = isPeriodChange && loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory() != null && (loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory().getAllLevelHistoryForThisPeriod(currentOccurrenceNumber) == null || loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory().getAllLevelHistoryForThisPeriod(currentOccurrenceNumber).isEmpty());
+                boolean isPeriodChange = periodChange;
                 
                 //
                 //  compare to current tier
@@ -3661,7 +3663,7 @@ public class EvolutionEngine
                     //  update loyalty program state
                     //
 
-                    LoyaltyProgramLevelChange loyaltyProgramLevelChange = loyaltyProgramChallengeState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, deliveryRequestID, loyaltyProgramService, oldScore);
+                    LoyaltyProgramLevelChange loyaltyProgramLevelChange = loyaltyProgramChallengeState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, deliveryRequestID, loyaltyProgramService, isPeriodChange, oldScore);
                     
                     //
                     //  generate new event (tier changed)
@@ -3835,7 +3837,7 @@ public class EvolutionEngine
     
     if (loyaltyProgramState != null && loyaltyProgramState.getLoyaltyProgramExitDate() == null)
       {
-        if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramChallenge && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
+        if (loyaltyProgram instanceof LoyaltyProgramChallenge && loyaltyProgramState instanceof LoyaltyProgramChallengeState)
           {
             LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
             
@@ -3864,7 +3866,7 @@ public class EvolutionEngine
               }
             else
               {
-                if (log.isErrorEnabled()) log.error("updateScore failed -> score can not be -ve {} in Challenge {}", score, loyaltyProgram.getGUIManagedObjectDisplay());
+                if (log.isErrorEnabled()) log.error("updateScore failed -> score can not be -ve {} in Challenge {} for subsciberID {}", score, loyaltyProgram.getGUIManagedObjectDisplay(), subscriberProfile.getSubscriberID());
               }
           }
         else
@@ -4110,8 +4112,7 @@ public class EvolutionEngine
                         LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = new LoyaltyProgramChallengeHistory(loyaltyProgram.getLoyaltyProgramID());
                         currentLoyaltyProgramState = new LoyaltyProgramChallengeState(LoyaltyProgramType.CHALLENGE, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newLevelName, null, now, loyaltyProgramChallengeHistory);
                         if (log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '" + subscriberProfile.getSubscriberID() + "' : loyaltyProgramState.update(" + loyaltyProgram.getEpoch() + ", " + loyaltyProgramRequest.getOperation() + ", " + loyaltyProgram.getLoyaltyProgramName() + ", " + newLevelName + ", " + now + ", " + loyaltyProgramRequest.getDeliveryRequestID() + ")");
-                        Integer currentScore = null;
-                        LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService, currentScore);
+                        LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
 
                         //
                         // generate new event (opt-in)
@@ -4148,7 +4149,7 @@ public class EvolutionEngine
                                 // update loyalty program state
                                 //
 
-                                LoyaltyProgramLevelChange loyaltyProgramLevelChange = loyaltyProgramChallengeState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService, null);
+                                LoyaltyProgramLevelChange loyaltyProgramLevelChange = loyaltyProgramChallengeState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
 
                                 //
                                 // generate new event (tier changed)
@@ -4200,7 +4201,7 @@ public class EvolutionEngine
                     String oldLevel = ((LoyaltyProgramChallengeState) loyaltyProgramState).getLevelName();
                     if (oldLevel != null)
                       {
-                        loyaltyProgramLevelChange = ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), levelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService, null);
+                        loyaltyProgramLevelChange = ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), levelName, now, loyaltyProgramRequest.getDeliveryRequestID(), loyaltyProgramService);
 
                       }
                     else
@@ -4595,7 +4596,7 @@ public class EvolutionEngine
                           String newLevel = determineLoyaltyProgramChallengeLevel(loyaltyProgramState, loyaltyProgramChallenge, now);
                           if (!oldLevel.equals(newLevel))
                             {
-                              LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevel, now, evolutionEvent.getClass().getName(), loyaltyProgramService, null);
+                              LoyaltyProgramLevelChange levelChangeType = ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newLevel, now, evolutionEvent.getClass().getName(), loyaltyProgramService);
 
                               //
                               // generate new event (level changed)
@@ -4710,7 +4711,7 @@ public class EvolutionEngine
                   }
                 else if (loyaltyProgramState instanceof LoyaltyProgramChallengeState)
                   {
-                    ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService, null);
+                    ((LoyaltyProgramChallengeState) loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService);
                   }
               }
           }

@@ -29366,6 +29366,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                               SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap());
                               subscriberProfileForceUpdate.getParameterMap().put("score", scoreToDebit*-1);
                               subscriberProfileForceUpdate.getParameterMap().put("challengeID", challenge.getGUIManagedObjectID());
+                              subscriberProfileForceUpdate.getParameterMap().put("isPeriodChange", Boolean.TRUE);
                               
                               //
                               //  send
