@@ -2475,11 +2475,12 @@ public class ThirdPartyManager
              //  check loyalty program still exist
              //
 
-             LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
-             if (loyaltyProgram != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)))
+             GUIManagedObject loyaltyProgramUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+             if (loyaltyProgramUnchecked != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)) && loyaltyProgramUnchecked.getAccepted())
                {
 
                  HashMap<String, Object> loyaltyProgramPresentation = new HashMap<String,Object>();
+                 LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
 
                  //
                  //  loyalty program informations
