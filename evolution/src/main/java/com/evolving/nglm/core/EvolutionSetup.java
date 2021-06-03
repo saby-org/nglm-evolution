@@ -813,8 +813,11 @@ public class EvolutionSetup
                         if(dmd != null)
                           {
                             for(Topic topic:dmd.getResponseTopics()){
-                              toAdd.add(topic.getName());
-                              System.out.println("Prepare to add topic for old channels notification_es_sink_connector: " + topic.getName());
+                              //skip duplicate topics generation
+                              if(!toAdd.contains(topic.getName())){
+                                toAdd.add(topic.getName());
+                                System.out.println("Prepare to add topic for old channels notification_es_sink_connector: " + topic.getName());
+                              }
                             }
                           }
                         else
