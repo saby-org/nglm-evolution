@@ -276,7 +276,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         this.previousLevelName = fromLevel;
         this.levelName = toLevel;
         this.levelEnrollmentDate = enrollmentDate;
-        
+        if (loyaltyProgramChallenge.getRecurrence() && previousPeriodStartDate == null) previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate(); // can happen if subscriber enters after 1st occur and isPeriodChange is false        
         //
         // isOptInAfterOptOut
         //
