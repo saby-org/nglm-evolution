@@ -244,6 +244,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         jsonRoot.remove("lastCreatedOccurrenceNumber");
         jsonRoot.remove("lastOccurrenceCreateDate");
         jsonRoot.remove("previousPeriodStartDate");
+        if (JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE)) jsonRoot.put("occurrenceNumber", 1);
       }
     
     //
