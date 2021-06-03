@@ -82,7 +82,10 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                 journeyInfo.put("journeyID", journey.getJourneyID());
                 journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                 journeyInfo.put("journeyType", journey.getTargetingType());
-                journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("nodeID")).getNodeName());
+                if ((journeyStats.get("nodeID") != null) && (journey.getJourneyNodes().get(journeyStats.get("nodeID")) != null))
+			journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("nodeID")).getNodeName());
+		else
+			journeyInfo.put("customerState", "");
                 
                 // No need to do all that anymore, "status" is already correct in ES
                 /*
