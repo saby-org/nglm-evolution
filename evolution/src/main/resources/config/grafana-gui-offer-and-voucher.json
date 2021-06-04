@@ -1,5 +1,4 @@
 {
-"dashboard" :{ 
   "annotations": {
     "list": [
       {
@@ -1824,7 +1823,6 @@
   "timepicker": {},
   "timezone": "",
   "title": "Business _ Offer and Voucher Dashboard",
-  "uid": "null",
+  "uid": "2lqroD9Mk",
   "version": 6
-}
 }
