@@ -929,7 +929,7 @@
     "journeysReportMaxParallelThreads" : 10,
     "detailedrecordReportsArrearCount" : 7,
     "journeyReportsArrearCount" : 2,
-    "subscriberprofileReportsArrearCount" : 2
+    "subscriberprofileReportsArrearCount" : 2,
     "reportManagerContentDateFormat" : "yyyy-MM-dd'T'HH:mm:ssZZZZ"
   },
   
