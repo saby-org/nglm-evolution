@@ -3,7 +3,7 @@ opr-web-<_KEY_>:
   environment:
     opr_api_server_path: "http://<_GUI_OPR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPR_API_SERVER_PORT_>/api/"
     opr_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
-    opr_api_server_path_for_upload_files: "http://<_GUI_OPR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPR_API_SERVER_PORT_>/api/file/flowupload"    
+    opr_api_server_path_for_upload_files: "http://<_GUI_OPR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPR_API_SERVER_PORT_>/api/file/flowupload"
     OPR_GRAFANA_MONITORING: "<_OPR_GRAFANA_MONITORING_>"    
     OPR_URL_KIBANA_PATH: 'http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>'
     OPR_URL_GRAFANA_PATH: "<_IAR_URL_GRAFANA_PATH_>"
