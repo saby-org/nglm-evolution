@@ -140,7 +140,9 @@ import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProf
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.ThirdPartyManager.API;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeSubfield;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchManager;
@@ -18281,8 +18283,12 @@ public class GUIManager
 
     List<JSONObject> generalDetailsMetaDataList = Deployment.getDeployment(tenantID).getCustomerMetaData().getGeneralDetailsMetaData().stream().map(generalDetailsMetaData -> generalDetailsMetaData.getJSONRepresentation()).collect(Collectors.toList());
     List<JSONObject> kpisMetaDataList = Deployment.getDeployment(tenantID).getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
+    List<JSONObject> complexObjectMetaDataList = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), tenantID).stream().map(complexMetaData -> complexMetaData.getJSONRepresentation()).collect(Collectors.toList()); 
+    
+    
     response.put("generalDetailsMetaData", JSONUtilities.encodeArray(generalDetailsMetaDataList));
     response.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
+    response.put("complexObjectsMetaData", JSONUtilities.encodeArray(complexObjectMetaDataList));
     
     /*****************************************
     *

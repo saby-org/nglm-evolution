@@ -43,6 +43,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
+import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -948,6 +949,32 @@ public abstract class SubscriberProfile
           }
       }
     
+  //prepare complexObjectInstances
+    
+    ArrayList<JSONObject> complexObjectInstancesjson = new ArrayList<JSONObject>();
+	HashMap<String,HashMap<String,HashMap<String,Object>>> json = new HashMap<String,HashMap<String,HashMap<String,Object>>>();
+    if(getComplexObjectInstances()!=null && getComplexObjectInstances().size()>0) {
+    	for (ComplexObjectInstance instance : getComplexObjectInstances())
+    	{ 	if(!json.containsKey(instance.getComplexObjectTypeID())) {
+    		json.put(instance.getComplexObjectTypeID(), new HashMap<String,HashMap<String,Object>>());
+    	}
+    	HashMap<String,HashMap<String,Object>>  elements=(HashMap<String,HashMap<String,Object>>) json.get(instance.getComplexObjectTypeID());
+    	if(!elements.containsKey(instance.getElementID())) {
+    		elements.put(instance.getElementID(), new HashMap<String,Object>());
+    	} 
+    	HashMap<String,Object> elementVal=elements.get(instance.getElementID());
+    	
+    	for (Map.Entry<String,DataModelFieldValue> entry : instance.getFieldValues().entrySet()) {
+    		Object currVal=entry.getValue().getValue();
+    		if(currVal instanceof Date )
+    			currVal=getDateString((Date)currVal);
+    		
+    		elementVal.put(entry.getKey(), currVal);
+    	}      
+    	}
+    	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
+    }
+    
     //prepare Inclusion/Exclusion list
     
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
@@ -1079,6 +1106,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
+    generalDetailsPresentation.put("complexFields", JSONUtilities.encodeArray(complexObjectInstancesjson));
     // prepare basic kpiPresentation (if any)
     //
 
