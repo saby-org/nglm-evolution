@@ -301,7 +301,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
 
             this.previousPeriodLevel = null;
             this.previousPeriodScore = null;
-            this.previousPeriodStartDate = null;
+            this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();;
           }
 
 
