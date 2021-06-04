@@ -1375,13 +1375,13 @@ public class GUIManager
           for (int i=0; i<initialReportsJSONArray.size(); i++)
             {
               JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-              String name = JSONUtilities.decodeString(reportJSON, "name", false);
+              String name = JSONUtilities.decodeString(reportJSON, "display", false);
               boolean create = true;
               if (name != null)
                 {
                   for (Report report : existingReports)
                     {
-                      if (name.equals(report.getGUIManagedObjectName()))
+                      if (name.equals(report.getGUIManagedObjectDisplay()))
                         {
                           // this report already exists (same name), do not create it
                           create = false;
