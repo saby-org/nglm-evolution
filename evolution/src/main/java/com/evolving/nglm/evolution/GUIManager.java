@@ -52,8 +52,21 @@ import java.util.stream.Stream;
 
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -83,6 +96,10 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.reflections.Reflections;
+import org.reflections.scanners.ResourcesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,6 +168,7 @@ import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeSubfield;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchManager;
+import com.evolving.nglm.evolution.grafana.GrafanaUtils;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
@@ -2387,11 +2405,23 @@ public class GUIManager
     
     /*****************************************
     *
-    *  log restServerStarted
+    *  Ensure Grafana configuration per tenant
     *
-    *****************************************/
+    *****************************************/  
 
-    log.info("main restServerStarted");
+    boolean grafanaStarted = false;
+    while (!grafanaStarted) {
+      grafanaStarted = GrafanaUtils.prepareGrafanaForTenants();
+    }
+
+  /*****************************************
+   *
+   * log restServerStarted
+   *
+   *****************************************/
+
+  log.info("main restServerStarted");
+
   }
 
   /*****************************************

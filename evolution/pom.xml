@@ -27,7 +27,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>2.0.0_BETA-SNAPSHOT</version>
+    <version>2.0.0_BETA-fnb112-SNAPSHOT</version>
   </parent>
 
   <scm>
@@ -39,7 +39,7 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>2.0.0_BETA-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>2.0.0_BETA-fnb112-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.5.18</gui-fwk.version>
@@ -157,6 +157,7 @@
 		<groupId>org.reflections</groupId>
 		<artifactId>reflections</artifactId>
 		<version>0.9.12</version>
+                <scope>compile</scope>
 	</dependency>
   </dependencies>
 

@@ -1,17 +1,16 @@
 apiVersion: 1
-
 datasources:
-- name: Messages
-  org_id: 1
-  type: elasticsearch
-  access: proxy
-  database: "t*_datacube_messages"
-  url: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
-  basicAuth: true
-  withCredentials: true
-  basicAuthUser: admin
-  secureJsonData:
-    basicAuthPassword: "<_ELASTICSEARCH_ADMIN_PASSWORD_>"
-  jsonData:
-    timeField: "timestamp"
-    esVersion: 70
+  - name: Messages
+    org_id: null
+    type: elasticsearch
+    access: proxy
+    database: t*_datacube_messages
+    url: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
+    basicAuth: true
+    withCredentials: true
+    basicAuthUser: admin
+    secureJsonData:
+      basicAuthPassword: <_ELASTICSEARCH_ADMIN_PASSWORD_>
+    jsonData:
+      timeField: timestamp
+      esVersion: 70
