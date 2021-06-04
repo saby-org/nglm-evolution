@@ -97,6 +97,9 @@ import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
+import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
@@ -2541,11 +2544,12 @@ public class ThirdPartyManager
              //  check loyalty program still exist
              //
 
-             LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
-             if (loyaltyProgram != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)))
+             GUIManagedObject loyaltyProgramUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+             if (loyaltyProgramUnchecked != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)) && loyaltyProgramUnchecked.getAccepted())
                {
 
                  HashMap<String, Object> loyaltyProgramPresentation = new HashMap<String,Object>();
+                 LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
 
                  //
                  //  loyalty program informations
@@ -2676,6 +2680,39 @@ public class ThirdPartyManager
                            }
                        }
                      loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
+                     break;
+                     
+                   case MISSION:
+                     LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+                     loyaltyProgramPresentation.put("isMissionCompleted", loyaltyProgramMissionState.isMissionCompleted());
+                     
+                     //
+                     // current step
+                     //
+
+                     loyaltyProgramPresentation.put("stepName", loyaltyProgramMissionState.getStepName());
+                     loyaltyProgramPresentation.put("stepEnrollmentDate", getDateString(loyaltyProgramMissionState.getStepEnrollmentDate(), tenantID));
+                     loyaltyProgramPresentation.put("currentProgression", loyaltyProgramMissionState.getCurrentProgression());
+                     
+                     //
+                     // history
+                     //
+                     
+                     ArrayList<JSONObject> loyaltyProgramMissionHistoryJSON = new ArrayList<JSONObject>();
+                     LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory();
+                     if (loyaltyProgramMissionHistory != null && loyaltyProgramMissionHistory.getStepHistory() != null && !loyaltyProgramMissionHistory.getStepHistory().isEmpty())
+                       {
+                         for (StepHistory step : loyaltyProgramMissionHistory.getStepHistory())
+                           {
+                             HashMap<String, Object> levelHistoryJSON = new HashMap<String, Object>();
+                             levelHistoryJSON.put("fromStep", step.getFromStep());
+                             levelHistoryJSON.put("toStep", step.getToStep());
+                             levelHistoryJSON.put("transitionDate", getDateString(step.getTransitionDate(), tenantID));
+                             loyaltyProgramMissionHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
+                           }
+                       }
+                     
+                     loyaltyProgramPresentation.put("loyaltyProgramMissionHistory", loyaltyProgramMissionHistoryJSON);
                      break;
                      
                    default:

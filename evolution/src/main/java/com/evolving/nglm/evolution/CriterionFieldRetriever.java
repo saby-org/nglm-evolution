@@ -13,12 +13,15 @@ import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -239,6 +242,24 @@ public abstract class CriterionFieldRetriever
       }
   }
   
+  public static Object getProfileMissionLoyaltyProgramChangeStepOldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName)
+  {
+    ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent) (evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if (!fields[2].equals(event.getLoyaltyProgramID()))
+      {
+        return null;
+      }
+    if (event.getInfos().get(LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.ENTERING.getExternalRepresentation()) != null)
+      {
+        return LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.ENTERING.name();
+      } 
+    else
+      {
+        return event.getInfos().get(LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.OLD_STEP.getExternalRepresentation());
+      }
+  }
+  
   public static Object getProfilePointLoyaltyProgramChangeTierNewValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
     {
       // Check if this is for the good loyalty program...
@@ -274,6 +295,24 @@ public abstract class CriterionFieldRetriever
       }
   }
   
+  public static Object getProfileMissionLoyaltyProgramChangeStepNewValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  {
+    ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent) (evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if (!fields[2].equals(event.getLoyaltyProgramID()))
+      {
+        return null;
+      }
+    if (event.getInfos().get(LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.LEAVING.getExternalRepresentation()) != null)
+      {
+        return LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.LEAVING.name();
+      } 
+    else
+      {
+        return event.getInfos().get(LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.NEW_STEP.getExternalRepresentation());
+      }
+  }
+  
   public static Object getProfilePointLoyaltyProgramUpdated(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
     {
       // Check if this is for the good loyalty program...
@@ -289,6 +328,14 @@ public abstract class CriterionFieldRetriever
     String[] fields = fieldName.split("\\.");
     if(! fields[2].equals(event.getLoyaltyProgramID())) { return null; }
     return event.getLoyaltyProgramID().equals(fieldName.substring(LoyaltyProgramChallenge.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX.length()));
+  }
+  
+  public static Object getProfileMissionLoyaltyProgramUpdated(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  {
+    ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent)(evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if(! fields[2].equals(event.getLoyaltyProgramID())) { return null; }
+    return event.getLoyaltyProgramID().equals(fieldName.substring(LoyaltyProgramMission.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX.length()));
   }
   
   public static Object getProfilePointLoyaltyProgramTierUpdateType(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
@@ -311,6 +358,17 @@ public abstract class CriterionFieldRetriever
         return null;
       }
     return event.getInfos().get(LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.LEVEL_UPDATE_TYPE.getExternalRepresentation());
+  }
+  
+  public static Object getProfileMissionLoyaltyProgramStepUpdateType(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  {
+    ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent) (evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if (!fields[1].equals(event.getLoyaltyProgramID()))
+      {
+        return null;
+      }
+    return event.getInfos().get(LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.STEP_UPDATE_TYPE.getExternalRepresentation());
   }
 
   //
@@ -425,6 +483,26 @@ public abstract class CriterionFieldRetriever
         .collect(Collectors.toSet());
     return res;
   }
+  
+  //
+  // getLoyaltyChallengesLevels
+  //
+  
+  public static Object getLoyaltyChallengesLevels(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    Set<String> res = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values().stream().filter(lps -> (lps.getLoyaltyProgramExitDate() == null)).filter(lps -> (lps instanceof LoyaltyProgramChallengeState)).map(lps -> (LoyaltyProgramChallengeState) lps).map(lps -> ((LoyaltyProgramChallengeState) lps).getLevelName()).collect(Collectors.toSet());
+    return res;
+  }
+  
+  //
+  // getLoyaltyMissionsSteps
+  //
+  
+  public static Object getLoyaltyMissionsSteps(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    Set<String> res = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values().stream().filter(lps -> (lps.getLoyaltyProgramExitDate() == null)).filter(lps -> (lps instanceof LoyaltyProgramMissionState)).map(lps -> (LoyaltyProgramMissionState) lps).map(lps -> ((LoyaltyProgramMissionState) lps).getStepName()).collect(Collectors.toSet());
+    return res;
+  }
 
   //
   //  getLoyaltyProgramCriterionField (dynamic)
@@ -470,6 +548,12 @@ public abstract class CriterionFieldRetriever
             LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
             optInDate = loyaltyProgramChallengeState.getLoyaltyProgramEnrollmentDate();
             optOutDate = loyaltyProgramChallengeState.getLoyaltyProgramExitDate(); 
+          }
+        else if (loyaltyProgramState instanceof LoyaltyProgramMissionState)
+          {
+            LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+            optInDate = loyaltyProgramMissionState.getLoyaltyProgramEnrollmentDate();
+            optOutDate = loyaltyProgramMissionState.getLoyaltyProgramExitDate(); 
           }
       }
     
@@ -638,6 +722,46 @@ public abstract class CriterionFieldRetriever
                   result = levelUpdateType;
                   break;
 
+                default:
+                  throw new CriterionException("Invalid criteria " + criterionFieldBaseName);
+              }
+          }
+        else if (loyaltyProgramState instanceof LoyaltyProgramMissionState)      
+          {
+            //
+            //  retrieve
+            //
+            
+            LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+            StepHistory stepHistory = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getLastStepEntered();
+            String stepUpdateType = stepHistory.getStepUpdateType().getExternalRepresentation();
+
+            switch (criterionFieldBaseName)
+              {
+                case "step":
+                  result = loyaltyProgramMissionState.getStepName();
+                  break;
+
+                case "stepupdatedate":
+                  result = loyaltyProgramMissionState.getStepEnrollmentDate();
+                  break;
+                  
+                case "currentProgression":
+                  result = loyaltyProgramMissionState.getCurrentProgression();
+                  break;
+                  
+                case "isMissionCompleted":
+                  result = loyaltyProgramMissionState.isMissionCompleted();
+                  break;
+
+                case "optindate":
+                  result = optInDate;
+                  break;
+
+                case "optoutdate":
+                  result = optOutDate;
+                  break;
+                  
                 default:
                   throw new CriterionException("Invalid criteria " + criterionFieldBaseName);
               }

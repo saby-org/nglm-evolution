@@ -1,6 +1,13 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -1106,9 +1113,50 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     return deliveryRequest;
   }
 
-  //
-  // getESHits
-  //
+  public List<String> getAlreadyOptInSubscriberIDs(String loyaltyProgramID) throws ElasticsearchClientException
+  {
+    List<String> result = new ArrayList<String>();
+    try
+      {
+        QueryBuilder queryLoyaltyProgramID = QueryBuilders.termQuery("loyaltyPrograms.programID", loyaltyProgramID);
+        QueryBuilder queryEmptyExitDate = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramExitDate"));
+        QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(queryLoyaltyProgramID).filter(queryEmptyExitDate), ScoreMode.Total);
+        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(query));
+        List<SearchHit> hits = getESHits(searchRequest);
+        for (SearchHit hit : hits)
+          {
+            result.add(hit.getId());
+          }
+        return result;
+      } 
+    catch (ElasticsearchStatusException e)
+      {
+        if (e.status() == RestStatus.NOT_FOUND)
+          { 
+            // index not found
+            log.debug(e.getMessage());
+            return result;
+          }
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getDetailedMessage());
+      } 
+    catch (ElasticsearchException e)
+      {
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getDetailedMessage());
+      } 
+    catch (Exception e)
+      {
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getMessage());
+      }
+  }
+  
+  /*****************************************
+  *
+  *  getESHits
+  *
+  *****************************************/
   
   public List<SearchHit> getESHits(SearchRequest searchRequest) throws GUIManagerException
   {

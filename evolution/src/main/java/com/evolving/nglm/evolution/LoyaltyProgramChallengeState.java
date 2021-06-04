@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -218,8 +219,13 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   *  update
   *
   *****************************************/
+  
+  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
+  {
+    return update(loyaltyProgramEpoch, operation, loyaltyProgramName, toLevel, enrollmentDate, deliveryRequestID, loyaltyProgramService, false, null);
+  }
 
-  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, Integer previousScore)
+  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, boolean isPeriodChange, Integer previousScore)
   {
     Date now = SystemTime.getCurrentTime();
     LevelHistory lastLevelEntered = null;
@@ -255,6 +261,8 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     switch (operation)
     {
       case Optin:
+        boolean isOptInAfterOptOut = false;
+        boolean resetOnReoptin = false;
 
         //
         // update current state
@@ -263,40 +271,53 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         this.loyaltyProgramEpoch = loyaltyProgramEpoch;
         this.loyaltyProgramName = loyaltyProgramName;
         if (this.loyaltyProgramEnrollmentDate == null) { this.loyaltyProgramEnrollmentDate = enrollmentDate; }
-        if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; }
+        if (this.loyaltyProgramExitDate != null) { this.loyaltyProgramExitDate = null; isOptInAfterOptOut = true; }
 
         this.previousLevelName = fromLevel;
         this.levelName = toLevel;
         this.levelEnrollmentDate = enrollmentDate;
+        if (loyaltyProgramChallenge.getRecurrence() && previousPeriodStartDate == null) previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate(); // can happen if subscriber enters after 1st occur and isPeriodChange is false        
+        //
+        // isOptInAfterOptOut
+        //
+
+        if (isOptInAfterOptOut && resetOnReoptin)
+          {
+            //
+            //  loyaltyProgramEnrollmentDate
+            //
+
+            this.loyaltyProgramEnrollmentDate = enrollmentDate;
+
+            //
+            //  loyaltyProgramChallengeHistory
+            //
+
+            loyaltyProgramChallengeHistory.clearLevelHistory();
+
+            //
+            //   previousPeriod
+            //
+
+            this.previousPeriodLevel = null;
+            this.previousPeriodScore = null;
+            this.previousPeriodStartDate = null;
+          }
+
 
         //
         // update history
         //
 
-        if (loyaltyProgramChallenge.getRecurrence() && occouranceNumber != null && occouranceNumber != 1)
+        if (isPeriodChange)
           {
             //
-            //  first or no occurrences
+            // period change(entry to new period)
             //
             
-            
-            previousPeriodStartDate = loyaltyProgramChallenge.getLastOccurrenceCreateDate();
-            
-            //
-            //  thisPeroidLevels
-            //
-            
-            List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
-            if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
-              {
-                //
-                // period change(entry to new period)
-                //
-                
-                this.previousPeriodLevel = fromLevel;
-                this.previousPeriodScore = previousScore;
-                this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
-              }
+            this.previousPeriodLevel = fromLevel;
+            this.previousPeriodScore = previousScore;
+            this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
           }
         
         loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);
@@ -316,34 +337,21 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         this.previousLevelName = fromLevel;
         this.levelName = null;
         this.levelEnrollmentDate = enrollmentDate;
+        this.currentScore = 0;
 
         //
         // update history
         //
 
-        if (loyaltyProgramChallenge.getRecurrence() && occouranceNumber != null && occouranceNumber != 1)
+        if (isPeriodChange)
           {
             //
-            //  first or no occurrences
+            // period change(entry to new period)
             //
             
-            previousPeriodStartDate = loyaltyProgramChallenge.getLastOccurrenceCreateDate();
-            
-            //
-            //  thisPeroidLevels
-            //
-            
-            List<LevelHistory> thisPeroidLevels = loyaltyProgramChallengeHistory.getAllLevelHistoryForThisPeriod(occouranceNumber);
-            if (thisPeroidLevels == null || thisPeroidLevels.isEmpty())
-              {
-                //
-                // period change(entry to new period)
-                //
-                
-                this.previousPeriodLevel = fromLevel;
-                this.previousPeriodScore = previousScore;
-                this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
-              }
+            this.previousPeriodLevel = fromLevel;
+            this.previousPeriodScore = previousScore;
+            this.previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate();
           }
 
         loyaltyProgramChallengeHistory.addLevelHistory(fromLevel, toLevel, occouranceNumber, enrollmentDate, deliveryRequestID, loyaltyProgramLevelChange);

@@ -39,6 +39,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
@@ -570,6 +571,19 @@ public abstract class SubscriberProfile
                     loyalty.put("previousPeriodScore", loyaltyProgramChallengeState.getPreviousPeriodScore());
                     loyalty.put("previousPeriodLevel", loyaltyProgramChallengeState.getPreviousPeriodLevel());
                     loyalty.put("score", loyaltyProgramChallengeState.getCurrentScore());
+                  }
+                else if(loyaltyProgram instanceof LoyaltyProgramMission) 
+                  {
+                    LoyaltyProgramMission loyaltyProgramMission = (LoyaltyProgramMission) loyaltyProgram;
+                    LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) program.getValue();
+                    
+                    if(loyaltyProgramMissionState.getStepName() != null){ loyalty.put("stepName", loyaltyProgramMissionState.getStepName()); }
+                    if(loyaltyProgramMissionState.getStepEnrollmentDate() != null){ loyalty.put("stepUpdateDate", RLMDateUtils.formatDateForElasticsearchDefault(loyaltyProgramMissionState.getStepEnrollmentDate())); }
+                    loyalty.put("currentProgression", loyaltyProgramMissionState.getCurrentProgression());
+                    if(loyaltyProgramMissionState.getPreviousStepName() != null){ loyalty.put("previousStepName", loyaltyProgramMissionState.getPreviousStepName()); }
+                    MissionStep step = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getStepName());
+                    MissionStep previousStep = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getPreviousStepName());
+                    loyalty.put("stepChangeType", MissionStep.changeFromStepToStep(previousStep, step).getExternalRepresentation());
                   }
               }
             array.add(JSONUtilities.encodeObject(loyalty));
