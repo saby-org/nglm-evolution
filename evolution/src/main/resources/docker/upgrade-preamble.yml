@@ -45,4 +45,5 @@ upgrade:
     __REPLACEMENT__SBM_INSTALL: "${gui.sbm.display}"
     __REPLACEMENT__ITM_INSTALL: "${gui.itm.display}"
     __REPLACEMENT__LPM_INSTALL: "${gui.lpm.display}"
+    __REPLACEMENT__TENANTS_LIST_GENERATE: "<_MYSQL_TENANTS_LIST_GENERATE_>"
 
