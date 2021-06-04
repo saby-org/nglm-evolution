@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -2071,7 +2072,7 @@ public class EvaluationCriterion
     case DateCriterion:
     {
       RangeQueryBuilder rangeQueryBuilder = new RangeQueryBuilder(esField);
-      rangeQueryBuilder.timeZone(Deployment.getDeployment(tenantID).getBaseTimeZone());
+      rangeQueryBuilder.timeZone(Deployment.getDeployment(tenantID).getTimeZone());
       if(argument instanceof Expression.OperatorExpression || argument instanceof Expression.UnaryExpression || argument instanceof Expression.ReferenceExpression)
       {
         return painlessEsQuery(esField);

@@ -3622,19 +3622,18 @@ public class EvolutionEngine
             evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
             evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
 
-        if(actionManager != null) {
-          // build new SubscriberEvaluationRequest
-          SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
-              evolutionEventContext.getSubscriberState().getSubscriberProfile(),
-              (ExtendedSubscriberProfile) null,
-              subscriberGroupEpochReader,
-              originalJourneyState,
-              originalJourneyNode,
-              null,
-              null,
-              evolutionEventContext.now, tenantID);
-          List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
-          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest, evolutionEventContext.getEventID());
+	        // build new SubscriberEvaluationRequest
+	        SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
+	            evolutionEventContext.getSubscriberState().getSubscriberProfile(),
+	            (ExtendedSubscriberProfile) null,
+	            subscriberGroupEpochReader,
+	            originalJourneyState,
+	            originalJourneyNode,
+	            null,
+	            null,
+	            evolutionEventContext.now, tenantID);
+	        List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
+	        handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest, evolutionEventContext.getEventID());
 
             // clean temporary data to avoid next nodes considering this event
             evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
@@ -6777,7 +6776,7 @@ public class EvolutionEngine
       }
   }
 
-  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String eventID, String action, Token token, String journeyID, String origin, tenantID)
+  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String eventID, String action, Token token, String journeyID, String origin, int tenantID)
   {
     return new TokenChange(subscriberId, eventDateTime, eventID, token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID, tenantID);
   }
