@@ -427,6 +427,7 @@ public class CommodityDeliveryManager
         CommodityDeliveryStatus commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode((Integer) esFields.get("returnCode"));
         this.commodityDeliveryStatus = commodityDeliveryStatus;
         this.statusMessage = (String) esFields.get("returnCodeDetails");
+        this.origin = (String) esFields.get("origin");
       }
       catch(java.text.ParseException e) {
         throw new ServerRuntimeException(e);
@@ -561,8 +562,8 @@ public class CommodityDeliveryManager
       guiPresentationMap.put(DELIVERABLEDISPLAY, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getGUIManagedObjectDisplay() : getCommodityID()));
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
-      guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
-      guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
+      guiPresentationMap.put(VALIDITYPERIODTYPE, null);
+      guiPresentationMap.put(VALIDITYPERIODQUANTITY, null);
       guiPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, getModule().toString());
