@@ -65,6 +65,7 @@ public class ReportMonoPhase
   private ReportCsvFactory reportFactory;
   private String csvfile;
   private ElasticsearchClientAPI elasticsearchReaderClient;
+  private boolean stopReadingAndWriting = false;
 
   public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile, boolean onlyKeepAlternateIDs, boolean onlyKeepAlternateIDsExtended)
   {
@@ -87,6 +88,7 @@ public class ReportMonoPhase
     this.csvfile = csvfile;
     this.subscriberFields = subscriberFields;
     ReportsCommonCode.initializeDateFormats();
+    factory.setReportCsvFactoryListener(reportCsvFactoryListener);
   }
 
   public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile)
@@ -125,6 +127,14 @@ public class ReportMonoPhase
       return UNKNOWN;
     }
   }
+
+  ReportCsvFactoryListener reportCsvFactoryListener = new ReportCsvFactoryListener()
+  {
+    @Override public void StopReadingESAndWritingToFile()
+    {
+      stopReadingAndWriting = true;
+    }
+  };
 
   public boolean startOneToOne()
   {
@@ -202,11 +212,13 @@ public class ReportMonoPhase
           SearchHit[] searchHits = searchResponse.getHits().getHits();
           logSearchResponse(indicesToRead, searchResponse, searchHits);
           boolean alreadyTraced = false;
-          while (searchHits != null && searchHits.length > 0)
+          while (searchHits != null && searchHits.length > 0 && !stopReadingAndWriting)
             {
               if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
               for (SearchHit searchHit : searchHits)
                 {
+                  //get out from loop if stop reading/writing event comes
+                  if(stopReadingAndWriting) break;
                   Map<String, Object> sourceMap = searchHit.getSourceAsMap();
                   Map<String, Object> miniSourceMap = sourceMap;
                   if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last

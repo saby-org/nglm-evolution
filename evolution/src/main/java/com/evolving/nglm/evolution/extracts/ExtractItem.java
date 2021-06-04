@@ -25,6 +25,7 @@ public class ExtractItem
   private List<EvaluationCriterion> evaluationCriterionList;
   private Integer returnNoOfRecords;
   private String userID;
+  private int tenantID;
 
   /****************************************
    *
@@ -32,7 +33,7 @@ public class ExtractItem
    *
    ****************************************/
 
-  public ExtractItem(JSONObject jsonRoot, int tenantID) throws GUIManager.GUIManagerException
+  public ExtractItem(JSONObject jsonRoot,int tenantID) throws GUIManager.GUIManagerException
   {
     this.extractName = JSONUtilities.decodeString(jsonRoot, "extractName", true);
     this.returnFields = JSONUtilities.decodeJSONArray(jsonRoot, "returnFields", false);
@@ -41,13 +42,37 @@ public class ExtractItem
     //when is taken by service this have to be in JSON because is used to compose the file. (Multiple users can generate extract with the same name)
     this.userID = JSONUtilities.decodeString(jsonRoot, "userID", false);
     this.returnNoOfRecords = JSONUtilities.decodeInteger(jsonRoot, "returnNoOfRecords", false);
+    this.tenantID = tenantID;
     evaluationCriterionList = new ArrayList<EvaluationCriterion>();
     ArrayList<JSONObject> evaluationCritetionListJSON = JSONUtilities.decodeJSONArray(jsonRoot, "evaluationCriterionList", true);
     if (evaluationCritetionListJSON != null)
     {
       for (int i = 0; i < evaluationCritetionListJSON.size(); i++)
       {
-        evaluationCriterionList.add(new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile(tenantID), tenantID));
+        EvaluationCriterion evaluationCriterion = new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile(tenantID),tenantID);
+        evaluationCriterionList.add(evaluationCriterion);
+      }
+    }
+  }
+
+  public ExtractItem(JSONObject jsonRoot) throws GUIManager.GUIManagerException
+  {
+    this.extractName = JSONUtilities.decodeString(jsonRoot, "extractName", true);
+    this.returnFields = JSONUtilities.decodeJSONArray(jsonRoot, "returnFields", false);
+    //this is used when the information is transfered in json between gui manager and extract manager
+    //when is set from gui manager user id is comming as param at processing
+    //when is taken by service this have to be in JSON because is used to compose the file. (Multiple users can generate extract with the same name)
+    this.userID = JSONUtilities.decodeString(jsonRoot, "userID", false);
+    this.returnNoOfRecords = JSONUtilities.decodeInteger(jsonRoot, "returnNoOfRecords", false);
+    this.tenantID = jsonRoot.containsKey("tenantID") ? JSONUtilities.decodeInteger(jsonRoot,"tenantID",false) : 1;
+    evaluationCriterionList = new ArrayList<EvaluationCriterion>();
+    ArrayList<JSONObject> evaluationCritetionListJSON = JSONUtilities.decodeJSONArray(jsonRoot, "evaluationCriterionList", true);
+    if (evaluationCritetionListJSON != null)
+    {
+      for (int i = 0; i < evaluationCritetionListJSON.size(); i++)
+      {
+        EvaluationCriterion evaluationCriterion = new EvaluationCriterion((JSONObject) evaluationCritetionListJSON.get(i), CriterionContext.DynamicProfile(tenantID),tenantID);
+        evaluationCriterionList.add(evaluationCriterion);
       }
     }
   }
@@ -58,13 +83,14 @@ public class ExtractItem
    *
    ****************************************/
 
-  public ExtractItem(String extractName, List<EvaluationCriterion> evaluationCriterionList, List<String> returnFields, Integer returnNoOfRecords, String userID)
+  public ExtractItem(String extractName, List<EvaluationCriterion> evaluationCriterionList, List<String> returnFields, Integer returnNoOfRecords, String userID,int tenantID)
   {
     this.extractName = extractName;
     this.evaluationCriterionList = evaluationCriterionList;
     this.returnFields = returnFields;
     this.returnNoOfRecords = returnNoOfRecords;
     this.userID = userID;
+    this.tenantID = tenantID;
   }
 
   /****************************************
@@ -98,6 +124,8 @@ public class ExtractItem
     return userID;
   }
 
+  public int getTenantID(){return tenantID;}
+
   /****************************************
    *
    *  getJSONObject
@@ -112,6 +140,7 @@ public class ExtractItem
     extractItemMap.put("returnFields", returnFields);
     extractItemMap.put("userID", userID);
     extractItemMap.put("returnNoOfRecords", returnNoOfRecords);
+    extractItemMap.put("tenantID",tenantID);
     JSONObject returnObject = JSONUtilities.encodeObject(extractItemMap);
     return returnObject.toJSONString();
   }
@@ -134,6 +163,10 @@ public class ExtractItem
     Map criterionMap = new HashMap();
     criterionMap.put("criterionField", criterion.getCriterionField().getID());
     criterionMap.put("criterionOperator", criterion.getCriterionOperator().getExternalRepresentation());
+    if(criterion.getUseESQueryNoPainless() != null)
+    {
+      criterionMap.put("useESQueryNoPainless",criterion.getUseESQueryNoPainless());
+    }
     Map argument = null;
     if(criterion.getArgument() != null)
     {

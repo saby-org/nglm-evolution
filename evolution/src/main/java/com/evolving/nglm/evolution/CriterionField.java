@@ -100,7 +100,7 @@ public class CriterionField extends DeploymentManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion_field");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(6));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("fieldDataType", Schema.STRING_SCHEMA);
     schemaBuilder.field("mandatoryParameter", Schema.BOOLEAN_SCHEMA);
@@ -114,6 +114,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("tagMaxLength", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("variableType", SchemaBuilder.string().defaultValue("local").schema());
     schemaBuilder.field("profileChangeEvent", SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("useESQueryNoPainless",SchemaBuilder.bool().defaultValue(false).schema());
     schema = schemaBuilder.build();
   };
 
@@ -148,6 +149,7 @@ public class CriterionField extends DeploymentManagedObject
   private Integer tagMaxLength;
   private VariableType variableType;
   private boolean profileChangeEvent;
+  private boolean useESQueryNoPainless;
 
   //
   //  calculated
@@ -173,6 +175,7 @@ public class CriterionField extends DeploymentManagedObject
   public Integer getTagMaxLength() { return tagMaxLength; }
   public VariableType getVariableType() { return variableType; }
   public boolean getProfileChangeEvent() { return profileChangeEvent; }
+  public boolean getUseESQueryNoPainless() { return useESQueryNoPainless; }
 
   /*****************************************
   *
@@ -213,6 +216,7 @@ public class CriterionField extends DeploymentManagedObject
     this.tagMaxLength = JSONUtilities.decodeInteger(jsonRoot, "tagMaxLength", false);
     this.variableType = VariableType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "variableType", "local"));
     this.profileChangeEvent = JSONUtilities.decodeBoolean(jsonRoot, "profileChangeEvent", Boolean.FALSE);
+    this.useESQueryNoPainless = JSONUtilities.decodeBoolean(jsonRoot,"useESQueryNoPainless",Boolean.FALSE);
 
     //
     //  expressionValuedParameter
@@ -417,7 +421,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, boolean evaluationVariable, String tagFormat, Integer tagMaxLength, VariableType variableType, boolean profileChangeEvent)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, boolean evaluationVariable, String tagFormat, Integer tagMaxLength, VariableType variableType, boolean profileChangeEvent,boolean useESQueryNoPainless)
   {
     //
     //  super
@@ -442,6 +446,7 @@ public class CriterionField extends DeploymentManagedObject
     this.tagMaxLength = tagMaxLength;
     this.variableType = variableType;
     this.profileChangeEvent = profileChangeEvent;
+    this.useESQueryNoPainless = useESQueryNoPainless;
 
     //
     //  retriever
@@ -485,6 +490,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("tagMaxLength", criterionField.getTagMaxLength());
     struct.put("variableType", criterionField.getVariableType().getExternalRepresentation());
     struct.put("profileChangeEvent", criterionField.getProfileChangeEvent());
+    struct.put("useESQueryNoPainless",criterionField.getUseESQueryNoPainless());
     return struct;
   }
 
@@ -522,12 +528,13 @@ public class CriterionField extends DeploymentManagedObject
     Integer tagMaxLength = valueStruct.getInt32("tagMaxLength");
     VariableType variableType = (schemaVersion >= 5) ? VariableType.fromExternalRepresentation(valueStruct.getString("variableType")) : VariableType.Local;
     boolean profileChangeEvent = (schemaVersion >= 2) ? valueStruct.getBoolean("profileChangeEvent") : false;
+    boolean useESQueryNoPainless = (schemaVersion >= 6) ? valueStruct.getBoolean("useESQueryNoPainless"):false;
 
     //
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, evaluationVariable, tagFormat, tagMaxLength, variableType, profileChangeEvent);
+    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, evaluationVariable, tagFormat, tagMaxLength, variableType, profileChangeEvent,useESQueryNoPainless);
   }
 
   /*****************************************
@@ -886,6 +893,7 @@ public class CriterionField extends DeploymentManagedObject
         result = result && Objects.equals(tagMaxLength, criterionField.getTagMaxLength());
         result = result && Objects.equals(variableType, criterionField.getVariableType());
         result = result && profileChangeEvent == criterionField.getProfileChangeEvent();
+        result =  result && useESQueryNoPainless == criterionField.getUseESQueryNoPainless();
       }
     return result;
   }
@@ -904,7 +912,7 @@ public class CriterionField extends DeploymentManagedObject
   @Override
   public String toString()
   {
-    return "CriterionField [fieldDataType=" + fieldDataType + ", mandatoryParameter=" + mandatoryParameter + ", generateDimension=" + generateDimension + ", esField=" + esField + ", criterionFieldRetriever=" + criterionFieldRetriever + ", expressionValuedParameter=" + expressionValuedParameter + ", internalOnly=" + internalOnly + ", evaluationVariable=" + evaluationVariable + ", tagFormat=" + tagFormat + ", tagMaxLength=" + tagMaxLength + ", variableType=" + variableType + ", profileChangeEvent=" + profileChangeEvent + ", retriever=" + retriever + "]";
+    return "CriterionField [fieldDataType=" + fieldDataType + ", mandatoryParameter=" + mandatoryParameter + ", generateDimension=" + generateDimension + ", esField=" + esField + ", criterionFieldRetriever=" + criterionFieldRetriever + ", expressionValuedParameter=" + expressionValuedParameter + ", internalOnly=" + internalOnly + ", evaluationVariable=" + evaluationVariable + ", tagFormat=" + tagFormat + ", tagMaxLength=" + tagMaxLength + ", variableType=" + variableType + ", profileChangeEvent=" + profileChangeEvent + ", retriever=" + retriever + ", useESQueryNoPainless=" + useESQueryNoPainless + "]";
   }
   
   

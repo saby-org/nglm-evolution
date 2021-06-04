@@ -90,4 +90,5 @@ public interface ReportCsvFactory
         return getEsIndexWeeks(fromDate, toDate);
       }
   }
+  default void setReportCsvFactoryListener(ReportCsvFactoryListener listener){};
 }

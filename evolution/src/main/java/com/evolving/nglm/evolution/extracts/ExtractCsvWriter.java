@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution.extracts;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
+import com.evolving.nglm.evolution.reports.ReportCsvFactoryListener;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public class ExtractCsvWriter implements ReportCsvFactory
   private int noOfRecords;
   private int currentCountOfRecordsWrited;
   private List<String> returnFields;
+  private ReportCsvFactoryListener reportCsvFactoryListener;
 
   public ExtractCsvWriter(int noOfRecords)
   {
@@ -62,7 +64,14 @@ public class ExtractCsvWriter implements ReportCsvFactory
   {
     //this was done here to not perform any change in ReportMonoPhase class
     //when the number of desired records was writen nothing else will be writen in file. The method will do nothing
-    if(currentCountOfRecordsWrited >= noOfRecords) return false;
+    if(currentCountOfRecordsWrited >= noOfRecords)
+    {
+      if(reportCsvFactoryListener != null)
+      {
+        reportCsvFactoryListener.StopReadingESAndWritingToFile();
+      }
+      return false;
+    }
 
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
     Map<String, Object> elasticFields = map;
@@ -159,4 +168,8 @@ public class ExtractCsvWriter implements ReportCsvFactory
     }
   }
 
+  @Override public void setReportCsvFactoryListener(ReportCsvFactoryListener reportCsvFactoryListener)
+  {
+    this.reportCsvFactoryListener = reportCsvFactoryListener;
+  }
 }
