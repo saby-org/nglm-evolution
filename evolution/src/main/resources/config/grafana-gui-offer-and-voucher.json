@@ -1,4 +1,5 @@
 {
+"dashboard" :{ 
   "annotations": {
     "list": [
       {
@@ -16,7 +17,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1622532364760,
+  "iteration": 1622788056192,
   "links": [],
   "panels": [
     {
@@ -41,7 +42,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "ODRdatacube",
+      "datasource": "Odr",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -99,7 +100,7 @@
               "type": "sum"
             }
           ],
-          "query": "",
+          "query": "filter.salesChannel:$salesChannel",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -116,7 +117,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "ODRdatacube",
+      "datasource": "Odr",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -192,7 +193,7 @@
               "type": "sum"
             }
           ],
-          "query": "",
+          "query": "filter.salesChannel:$salesChannel",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -248,7 +249,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "ODRdatacube",
+      "datasource": "Odr",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -305,7 +306,7 @@
               "type": "sum"
             }
           ],
-          "query": "filter.feature:$feature AND filter.module:$module",
+          "query": "filter.feature:$featureODR AND filter.module:$module",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -323,7 +324,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "ODRdatacube",
+      "datasource": "Odr",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -398,7 +399,7 @@
               "type": "sum"
             }
           ],
-          "query": "filter.feature:$feature AND filter.module:$module",
+          "query": "filter.feature:$featureODR AND filter.module:$module",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -455,7 +456,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "ODRdatacube",
+      "datasource": "Odr",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -512,7 +513,7 @@
               "type": "sum"
             }
           ],
-          "query": "",
+          "query": "filter.offerObjectives:$offerObjectives",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -529,7 +530,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "ODRdatacube",
+      "datasource": "Odr",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -604,7 +605,7 @@
               "type": "sum"
             }
           ],
-          "query": "",
+          "query": "filter.offerObjectives:$offerObjectives",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -653,11 +654,158 @@
       }
     },
     {
+      "datasource": "Odr",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 9,
+        "x": 0,
+        "y": 27
+      },
+      "id": 28,
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [
+            {
+              "field": "filter.offer",
+              "id": "7",
+              "settings": {
+                "min_doc_count": "1",
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "0"
+              },
+              "type": "terms"
+            },
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "auto",
+                "min_doc_count": "1",
+                "trimEdges": "0"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": false,
+              "id": "4",
+              "settings": {
+                "script": "long total = 0; if (doc['filter.returnCode'].value == 'SUCCESS') { total = doc['count'].value;} return total;"
+              },
+              "type": "sum"
+            }
+          ],
+          "query": "",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Purchased Offers over $interval",
+      "transformations": [
+        {
+          "id": "seriesToRows",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Metric": "Purchased offer",
+              "Time": "Date",
+              "Value": "Number of purchased offers"
+            }
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Number of purchased offers": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "Purchased offer": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Number of purchased offers (sum)": "Number of purchased offers",
+              "Purchased offer": "Purchased offer"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Number of purchased offers"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
       "aliasColors": {},
       "bars": true,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "ODRdatacube",
+      "datasource": "Odr",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -665,9 +813,9 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
+        "h": 10,
+        "w": 15,
+        "x": 9,
         "y": 27
       },
       "hiddenSeries": false,
@@ -779,103 +927,13 @@
       }
     },
     {
-      "datasource": "ODRdatacube",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 35
-      },
-      "id": 28,
-      "options": {
-        "displayMode": "gradient",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "text": {}
-      },
-      "pluginVersion": "7.5.2",
-      "targets": [
-        {
-          "alias": "$offerName",
-          "bucketAggs": [
-            {
-              "field": "filter.offer",
-              "id": "3",
-              "settings": {
-                "min_doc_count": "1",
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "10"
-              },
-              "type": "terms"
-            },
-            {
-              "field": "timestamp",
-              "id": "2",
-              "settings": {
-                "interval": "auto",
-                "min_doc_count": "1"
-              },
-              "type": "date_histogram"
-            }
-          ],
-          "metrics": [
-            {
-              "field": "count",
-              "id": "1",
-              "settings": {
-                "script": "long total = 0; if (doc['filter.returnCode'].value == 'SUCCESS') { total = doc['count'].value;} return total;"
-              },
-              "type": "sum"
-            }
-          ],
-          "query": "",
-          "refId": "A",
-          "timeField": "timestamp"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "TOP 10 Purchased Offers This Month",
-      "type": "bargauge"
-    },
-    {
       "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 37
       },
       "id": 2,
       "panels": [],
@@ -901,7 +959,7 @@
         "h": 8,
         "w": 9,
         "x": 0,
-        "y": 44
+        "y": 38
       },
       "id": 20,
       "interval": null,
@@ -947,7 +1005,7 @@
               "type": "sum"
             }
           ],
-          "query": "filter.feature:$feature AND filter.module:$module",
+          "query": "filter.feature:$featureVDR AND filter.module:$module",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -975,7 +1033,7 @@
         "h": 8,
         "w": 15,
         "x": 9,
-        "y": 44
+        "y": 38
       },
       "hiddenSeries": false,
       "id": 24,
@@ -1037,7 +1095,7 @@
               "type": "sum"
             }
           ],
-          "query": "filter.feature:$feature AND filter.module:$module",
+          "query": "filter.feature:$featureVDR AND filter.module:$module",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -1101,7 +1159,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 52
+        "y": 46
       },
       "hiddenSeries": false,
       "id": 22,
@@ -1163,7 +1221,7 @@
               "type": "sum"
             }
           ],
-          "query": "",
+          "query": "filter.action:$action",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -1227,7 +1285,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 52
+        "y": 46
       },
       "hiddenSeries": false,
       "id": 26,
@@ -1289,7 +1347,7 @@
               "hide": true,
               "id": "1",
               "settings": {
-                "script": "long total = 0; if (doc['filter.action'].value == 'redeem') { total = doc['count'].value;} return total;"
+                "script": "long total = 0; if (doc['filter.action'].value == 'Redeem') { total = doc['count'].value;} return total;"
               },
               "type": "sum"
             },
@@ -1298,7 +1356,7 @@
               "hide": true,
               "id": "4",
               "settings": {
-                "script": "long total = 0; if (doc['filter.action'].value == 'Deliver' || doc['filter.action'].value =='Delivered ') { total = doc['count'].value;} return total;"
+                "script": "long total = 0; if (doc['filter.action'].value == 'Deliver' ) { total = doc['count'].value;} return total;"
               },
               "type": "sum"
             },
@@ -1388,7 +1446,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 60
+        "y": 54
       },
       "id": 30,
       "interval": null,
@@ -1410,7 +1468,7 @@
               "field": "filter.voucher",
               "id": "3",
               "settings": {
-                "min_doc_count": "0",
+                "min_doc_count": "1",
                 "order": "desc",
                 "orderBy": "_term",
                 "size": "0"
@@ -1435,7 +1493,7 @@
               "type": "sum"
             }
           ],
-          "query": "",
+          "query": "filter.voucher:$voucherName",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -1465,7 +1523,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 60
+        "y": 54
       },
       "id": 32,
       "interval": null,
@@ -1487,7 +1545,7 @@
               "field": "filter.supplier",
               "id": "3",
               "settings": {
-                "min_doc_count": "0",
+                "min_doc_count": "1",
                 "order": "desc",
                 "orderBy": "_term",
                 "size": "0"
@@ -1564,15 +1622,15 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "ODRdatacube",
+        "datasource": "Odr",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.feature\"}",
         "description": null,
         "error": null,
         "hide": 0,
         "includeAll": true,
-        "label": "Feature Name",
+        "label": "ODR Feature",
         "multi": false,
-        "name": "feature",
+        "name": "featureODR",
         "options": [],
         "query": "{\"find\": \"terms\", \"field\": \"filter.feature\"}",
         "refresh": 2,
@@ -1592,7 +1650,35 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "ODRdatacube",
+        "datasource": "VDRdatacube",
+        "definition": "{\"find\": \"terms\", \"field\": \"filter.feature\"}",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "VDR Feature",
+        "multi": false,
+        "name": "featureVDR",
+        "options": [],
+        "query": "{\"find\": \"terms\", \"field\": \"filter.feature\"}",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Odr",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.salesChannel\"}",
         "description": null,
         "error": null,
@@ -1620,35 +1706,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "ODRdatacube",
-        "definition": "{\"find\": \"terms\", \"field\": \"filter.offer\"}",
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "includeAll": true,
-        "label": "Offer Name",
-        "multi": false,
-        "name": "offerName",
-        "options": [],
-        "query": "{\"find\": \"terms\", \"field\": \"filter.offer\"}",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": "ODRdatacube",
+        "datasource": "Odr",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.offerObjectives\"}",
         "description": null,
         "error": null,
@@ -1747,11 +1805,11 @@
           },
           {
             "selected": false,
-            "text": "1m",
-            "value": "1m"
+            "text": "1d",
+            "value": "1d"
           }
         ],
-        "query": "1m",
+        "query": "1d",
         "queryValue": "",
         "refresh": 2,
         "skipUrlSync": false,
@@ -1765,7 +1823,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Bussiness _ Offer and Voucher Dashboard",
-  "uid": "2lqroD9Mk",
-  "version": 5
+  "title": "Business _ Offer and Voucher Dashboard",
+  "uid": "null",
+  "version": 6
+}
 }
