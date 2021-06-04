@@ -1037,19 +1037,6 @@ public class DeploymentCommon
         evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
       }
 
-    //
-    //  communicationChannels
-    //
-    communicationChannels = new LinkedHashMap<>();
-    JSONArray communicationChannelsJSONArray = jsonReader.decodeJSONArray("communicationChannels");
-    for (int i=0; i<communicationChannelsJSONArray.size(); i++)
-      {
-        JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);
-        // TODO EVPRO-99 : why tenantID=1 here ? // TODO EVPRO-99 Replace JSONUtilities
-        CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON, JSONUtilities.decodeInteger(communicationChannelJSON, "tenantID", 1));
-        communicationChannels.put(communicationChannel.getID(), communicationChannel);
-      }
-    
     propensityInitialisationPresentationThreshold = jsonReader.decodeInteger("propensityInitialisationPresentationThreshold");
     propensityInitialisationDurationInDaysThreshold = jsonReader.decodeInteger("propensityInitialisationDurationInDaysThreshold");
     subscriberProfileRegistrySubject = jsonReader.decodeString("subscriberProfileRegistrySubject");
@@ -1148,6 +1135,7 @@ public class DeploymentCommon
     for (int i=0; i<deplCriterionFieldValues.size(); i++)
       {
         JSONObject criterionFieldJSON = (JSONObject) deplCriterionFieldValues.get(i);
+        log.info("Decoding profileCriterionField " + criterionFieldJSON.toString());
         CriterionField criterionField = new CriterionField(criterionFieldJSON);
         profileCriterionFields.put(criterionField.getID(), criterionField);
         baseProfileCriterionFields.put(criterionField.getID(), criterionField);
@@ -1160,6 +1148,19 @@ public class DeploymentCommon
 
           profileChangeGeneratedCriterionFields.putAll(generateProfileChangeCriterionFields(criterionField));
         }
+      }
+
+    //
+    //  communicationChannels (needs to be after "profileCriterionFields" because commChannels need them)
+    //
+    communicationChannels = new LinkedHashMap<>();
+    JSONArray communicationChannelsJSONArray = jsonReader.decodeJSONArray("communicationChannels");
+    for (int i=0; i<communicationChannelsJSONArray.size(); i++)
+      {
+        JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);
+        // TODO EVPRO-99 : why tenantID=1 here ? // TODO EVPRO-99 Replace JSONUtilities
+        CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON, JSONUtilities.decodeInteger(communicationChannelJSON, "tenantID", 1));
+        communicationChannels.put(communicationChannel.getID(), communicationChannel);
       }
 
     //  profileChangeEvent
