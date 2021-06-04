@@ -6,14 +6,29 @@
 
 package com.evolving.nglm.core;
 
-import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
-import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
-import com.evolving.nglm.evolution.kafka.Topic;
-import kafka.zk.AdminZkClient;
-import kafka.zk.KafkaZkClient;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.apache.avro.data.Json;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -44,23 +59,17 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.CommunicationChannel;
+import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
+import com.evolving.nglm.evolution.kafka.Topic;
 import com.google.common.net.HttpHeaders;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import kafka.zk.AdminZkClient;
+import kafka.zk.KafkaZkClient;
 
 public class EvolutionSetup
 {
@@ -797,47 +806,19 @@ public class EvolutionSetup
 
                 // connectors on dynamic topics special case (dirty, no real easy way..., the quickest I found)
                 List<String> toAdd = new ArrayList<>();
-                if(connectorName.equals("notification_es_sink_connector")){
-                  for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
-                    if(cc.getDeliveryManagerDeclaration()!=null){
-                      // this is for generic communication channels in fact...
-                      for(Topic topic:cc.getDeliveryManagerDeclaration().getResponseTopics()){
-                        toAdd.add(topic.getName());
-                        System.out.println("Prepare to add topic for notification_es_sink_connector: " + topic.getName());
-                      }
-                    }
-                    else
-                      {
-                        // for old channels // TODO remove asap // let retrieve the configuration through deliveryType
-                        DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(cc.getDeliveryType());
-                        if(dmd != null)
-                          {
-                            for(Topic topic:dmd.getResponseTopics()){
-                              toAdd.add(topic.getName());
-                              System.out.println("Prepare to add topic for old channels notification_es_sink_connector: " + topic.getName());
-                            }
-                          }
-                        else
-                          {
-                            System.out.println("notification_es_sink_connector Don't retrieve deliveryManager config for " + cc.getDeliveryType());
-                          }
-                      }
+                if (connectorName.equals("notification_es_sink_connector"))
+                  {
+                    toAdd.addAll(getMDRTopicsToSink());
+                  } 
+                else if (connectorName.equals("bdr_es_sink_connector"))
+                  {
+                    toAdd.addAll(getBDRTopicsToSink());
+                  } 
+                else if (connectorName.equals("odr_es_sink_connector"))
+                  {
+                    toAdd.addAll(getODRTopicsToSink());
                   }
-                }else if(connectorName.equals("bdr_es_sink_connector")){
-                  for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
-                    if(!deliveryManagerDeclaration.logBDR()) continue;//not to log BDR
-                    for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
-                      toAdd.add(topic.getName());
-                    }
-                  }
-                }else if(connectorName.equals("odr_es_sink_connector")){
-                  DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PurchaseFulfillmentManager.PURCHASEFULFILLMENT_DELIVERY_TYPE);
-                  if(deliveryManagerDeclaration!=null){
-                    for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
-                      toAdd.add(topic.getName());
-                    }
-                  }
-                }
+                
                 // need to put some dynamic topic ?
                 if(!toAdd.isEmpty()){
                   JSONObject config = (JSONObject)connectorToSetup.get("config");
@@ -1021,6 +1002,69 @@ public class EvolutionSetup
             System.out.println("[DISPLAY] WARNING: Problem while closing the reader " + connectorsFilePath);
           }
       }
+  }
+
+  private static Collection<? extends String> getMDRTopicsToSink()
+  {
+    Set<String> topics = new HashSet<String>();
+    for (CommunicationChannel cc : Deployment.getCommunicationChannels().values())
+      {
+        if (cc.getDeliveryManagerDeclaration() != null)
+          {
+            // this is for generic communication channels in fact...
+            for (Topic topic : cc.getDeliveryManagerDeclaration().getResponseTopics())
+              {
+                topics.add(topic.getName());
+                System.out.println("Prepare to add topic for notification_es_sink_connector: " + topic.getName());
+              }
+          } 
+        else
+          {
+            // for old channels // TODO remove asap // let retrieve the configuration
+            // through deliveryType
+            DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(cc.getDeliveryType());
+            if (dmd != null)
+              {
+                for (Topic topic : dmd.getResponseTopics())
+                  {
+                    topics.add(topic.getName());
+                    System.out.println("Prepare to add topic for old channels notification_es_sink_connector: " + topic.getName());
+                  }
+              } else
+              {
+                System.out.println("notification_es_sink_connector Don't retrieve deliveryManager config for " + cc.getDeliveryType());
+              }
+          }
+      }
+    return topics;
+  }
+
+  private static Collection<? extends String> getBDRTopicsToSink()
+  {
+    Set<String> topics = new HashSet<String>();
+    for (DeliveryManagerDeclaration deliveryManagerDeclaration : Deployment.getDeliveryManagers().values())
+      {
+        if (!deliveryManagerDeclaration.logBDR()) continue;// not to log BDR
+        for (Topic topic : deliveryManagerDeclaration.getResponseTopics())
+          {
+            topics.add(topic.getName());
+          }
+      }
+    return topics;
+  }
+
+  private static Collection<? extends String> getODRTopicsToSink()
+  {
+    Set<String> topics = new HashSet<String>();
+    DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PurchaseFulfillmentManager.PURCHASEFULFILLMENT_DELIVERY_TYPE);
+    if (deliveryManagerDeclaration != null)
+      {
+        for (Topic topic : deliveryManagerDeclaration.getResponseTopics())
+          {
+            topics.add(topic.getName());
+          }
+      }
+    return topics;
   }
 
   /****************************************

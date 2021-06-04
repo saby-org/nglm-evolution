@@ -120,6 +120,7 @@ public class SubscriberState implements StateStore
   private List<PointFulfillmentRequest> pointFulfillmentResponses;
   private List<DeliveryRequest> deliveryRequests;
   private Map<String,JourneyStatistic> journeyStatisticWrappers;
+  private List<EDRDetails> edrDetailsWrappers;
   private List<JourneyMetric> journeyMetrics;
   private List<ProfileChangeEvent> profileChangeEvents;
   private List<ProfileSegmentChangeEvent> profileSegmentChangeEvents;
@@ -168,7 +169,9 @@ public class SubscriberState implements StateStore
   public List<PointFulfillmentRequest> getPointFulfillmentResponses() { return pointFulfillmentResponses; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public Map<String,JourneyStatistic> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
+  public List<EDRDetails> getEdrDetailsWrappers() { return edrDetailsWrappers; }
   public void addJourneyStatistic(JourneyStatistic journeyStatistic) { journeyStatisticWrappers.put(journeyStatistic.getJourneyInstanceID(),journeyStatistic); }
+  public void addEDRDetails(EDRDetails edrDetails) { edrDetailsWrappers.add(edrDetails); }
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
   public List<ProfileChangeEvent> getProfileChangeEvents() { return profileChangeEvents; }
   public List<ProfileSegmentChangeEvent> getProfileSegmentChangeEvents() { return profileSegmentChangeEvents; }
@@ -270,6 +273,7 @@ public class SubscriberState implements StateStore
         this.pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
         this.journeyStatisticWrappers = new HashMap<>();
+        this.edrDetailsWrappers = new ArrayList<EDRDetails>();
         this.journeyMetrics = new ArrayList<JourneyMetric>();
         this.profileChangeEvents = new ArrayList<ProfileChangeEvent>();
         this.profileSegmentChangeEvents = new ArrayList<ProfileSegmentChangeEvent>();
@@ -326,6 +330,7 @@ public class SubscriberState implements StateStore
     this.pointFulfillmentResponses = new ArrayList<>();
     this.deliveryRequests = new ArrayList<>();
     this.journeyStatisticWrappers = new HashMap<>();
+    this.edrDetailsWrappers = new ArrayList<EDRDetails>();
     this.journeyMetrics = new ArrayList<>();
     this.profileChangeEvents = new ArrayList<>();
     this.profileSegmentChangeEvents = new ArrayList<>();

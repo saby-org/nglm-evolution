@@ -256,7 +256,8 @@ public class ThirdPartyManager
     putSimpleOffer(32),
     getSimpleOfferList(33),
     removeSimpleOffer(34),
-    getResellerDetails(35);
+    getResellerDetails(35),
+    getCustomerEDRs(36);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -536,6 +537,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
       restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerEDRs", new APIHandler(API.getCustomerEDRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerPoints", new APIHandler(API.getCustomerPoints));
       restServer.createContext("/nglm-thirdpartymanager/creditBonus", new APIHandler(API.creditBonus));
@@ -827,6 +829,9 @@ public class ThirdPartyManager
               break;
             case getCustomerBDRs:
               jsonResponse = processGetCustomerBDRs(jsonRoot, tenantID);
+              break;
+            case getCustomerEDRs:
+              jsonResponse = processGetCustomerEDRs(jsonRoot, tenantID);
               break;
             case getCustomerODRs:
               jsonResponse = processGetCustomerODRs(jsonRoot, tenantID);
@@ -1310,6 +1315,78 @@ public class ThirdPartyManager
     }
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+   *
+   * processGetCustomerEDRs
+   *
+   *****************************************/
+
+  private JSONObject processGetCustomerEDRs(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  {
+
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+
+    String startDateReq = readString(jsonRoot, "startDate", false);
+    String eventID = JSONUtilities.decodeString(jsonRoot, "eventID", false);
+
+    //
+    // filters
+    //
+
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    if (eventID != null && !eventID.isEmpty()) filters.add(QueryBuilders.matchQuery("eventID", eventID));
+
+    //
+    // process
+    //
+
+    String subscriberID = resolveSubscriberID(jsonRoot);
+    try
+      {
+        SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+        if (baseSubscriberProfile == null)
+          {
+            updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+          } else
+          {
+
+            List<JSONObject> EDRsJson = new ArrayList<JSONObject>();
+
+            //
+            // read history
+            //
+
+            SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerEDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromREST(startDateReq), filters, tenantID);
+            List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+            for (SearchHit hit : hits)
+              {
+                Map<String, Object> esFields = hit.getSourceAsMap();
+                EDRsJson.add(JSONUtilities.encodeObject(esFields));
+              }
+            response.put("EDRs", JSONUtilities.encodeArray(EDRsJson));
+            response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
+            updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+          }
+      } catch (SubscriberProfileServiceException | java.text.ParseException | GUIManagerException e)
+      {
+        log.error("SubscriberProfileServiceException ", e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+      }
+    return JSONUtilities.encodeObject(response);
+  }
 
   /*****************************************
    *
@@ -1617,6 +1694,7 @@ public class ThirdPartyManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
+    String eventID = deliveryRequestID.concat("-").concat(Module.REST_API.toString());
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit validityPeriodType = null;
@@ -1637,7 +1715,7 @@ public class ThirdPartyManager
         validityPeriodType = point.getValidity().getPeriodType();
         validityPeriod = point.getValidity().getPeriodQuantity();
       }
-      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1661,6 +1739,7 @@ public class ThirdPartyManager
   *****************************************/
   
   private JSONObject processDebitBonus(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, IOException, ParseException {
+    
     /****************************************
     *
     *  response
@@ -1726,9 +1805,10 @@ public class ThirdPartyManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
+    String eventID = deliveryRequestID.concat("-").concat(Module.REST_API.toString());
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
-      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -3717,6 +3797,7 @@ public class ThirdPartyManager
    *  processGetCustomerNBOs
    *
    *****************************************/
+ 
  private JSONObject processGetCustomerNBOs(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
  {
    /****************************************
@@ -5012,7 +5093,7 @@ public class ThirdPartyManager
             subscriberID,
             SystemTime.getCurrentTime(),
             null,
-            zuksVoucherChange.getStringKey(),
+            zuksVoucherChange.getStringKey().concat("-").concat(Module.REST_API.toString()),
             VoucherChange.VoucherChangeAction.Redeem,
             voucherProfileStored.getVoucherCode(),
             voucherProfileStored.getVoucherID(),
@@ -6185,7 +6266,7 @@ public class ThirdPartyManager
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", "0"); // No event here
+    request.put("eventID", "event from " + Module.fromExternalRepresentation(moduleID).toString()); // No event here
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
@@ -6608,7 +6689,7 @@ public class ThirdPartyManager
       Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
       String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
       String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
-      TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, origin, Module.REST_API, featureID, tenantID);
+      TokenChange tokenChange = new TokenChange(subscriberID, now, "event from ".concat(Module.REST_API.toString()), tokenCode, action, str, origin, Module.REST_API, featureID, tenantID);
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
           topic,
           keySerializer.serialize(topic, new StringKey(subscriberID)),

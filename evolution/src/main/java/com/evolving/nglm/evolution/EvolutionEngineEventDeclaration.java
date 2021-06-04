@@ -54,7 +54,8 @@ public class EvolutionEngineEventDeclaration
   private String eventTopic;
   private Topic preprocessTopic;
   private EventRule eventRule;
-  private Map<String,CriterionField> eventCriterionFields;
+  private Map<String, CriterionField> eventCriterionFields;
+  private Map<String, CriterionField> edrCriterionFieldsMapping;
 
   //
   //  derived
@@ -81,8 +82,8 @@ public class EvolutionEngineEventDeclaration
   public ConnectSerde<EvolutionEngineEvent> getEventSerde() { return eventSerde; }
   public ConnectSerde<PreprocessorEvent> getPreprocessorSerde() { return preprocessorSerde; }
   public boolean isTriggerEvent() { return isTriggerEvent; }
-
   public void markAsTriggerEvent(){ this.isTriggerEvent=true; }
+  public Map<String, CriterionField> getEdrCriterionFieldsMapping() { return edrCriterionFieldsMapping; }
 
   /*****************************************
   *
@@ -104,6 +105,7 @@ public class EvolutionEngineEventDeclaration
     String preprocessTopicName = JSONUtilities.decodeString(jsonRoot, "preprocessTopic", false);
     if(preprocessTopicName!=null) this.preprocessTopic = new Topic(preprocessTopicName, Topic.TYPE.traffic, true);// preprocessorTopic can be null
     this.eventCriterionFields = decodeEventCriterionFields(JSONUtilities.decodeJSONArray(jsonRoot, "eventCriterionFields", false));
+    this.edrCriterionFieldsMapping = decodeEdrCriterionFieldsMapping(eventCriterionFields, JSONUtilities.decodeJSONArray(jsonRoot, "edrCriterionFieldsMapping", false));
 
     //
     //  validate
@@ -217,5 +219,30 @@ public class EvolutionEngineEventDeclaration
           }
       }
     return eventCriterionFields;
+  }
+  
+  /*****************************************
+  *
+  *  decodeEventCriterionFields
+  *
+  *****************************************/
+  
+  private Map<String, CriterionField> decodeEdrCriterionFieldsMapping(Map<String, CriterionField> eventCriterionFields, JSONArray edrArray)
+  {
+    Map<String, CriterionField> edrCriterionFields = new LinkedHashMap<String, CriterionField>();
+    if (edrArray != null && eventCriterionFields != null)
+      {
+        for (int i=0; i<edrArray.size(); i++)
+          {
+            JSONObject edrCriterionFieldJSON = (JSONObject) edrArray.get(i);
+            String criterionFieldID = JSONUtilities.decodeString(edrCriterionFieldJSON, "id", true);
+            if (eventCriterionFields.get(criterionFieldID) != null)
+              {
+                String edrField = JSONUtilities.decodeString(edrCriterionFieldJSON, "edrField", true);
+                edrCriterionFields.put(edrField, eventCriterionFields.get(criterionFieldID));
+              }
+          }
+      }
+    return edrCriterionFields;
   }
 }

@@ -5,7 +5,7 @@ import org.apache.kafka.connect.data.*;
 
 import java.util.Date;
 
-public class VoucherDelivery {
+public class VoucherDelivery  {
 
   public enum VoucherStatus {
     Available("available"),

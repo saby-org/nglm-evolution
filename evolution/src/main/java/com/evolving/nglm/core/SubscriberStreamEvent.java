@@ -8,7 +8,9 @@ package com.evolving.nglm.core;
 
 import org.apache.kafka.connect.data.Schema;
 
+import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 public interface SubscriberStreamEvent extends SubscriberStreamPriority

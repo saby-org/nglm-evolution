@@ -360,6 +360,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   public static class PurchaseFulfillmentRequest extends DeliveryRequest implements OfferDelivery
   {
+    
+    public static final String SCHEMA_NAME = "service_purchasefulfillment_request";
+    
     /*****************************************
     *
     *  schema
@@ -374,7 +377,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     static
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("service_purchasefulfillment_request");
+      schemaBuilder.name(SCHEMA_NAME);
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),9));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);

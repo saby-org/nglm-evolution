@@ -450,6 +450,7 @@ public class GUIManager
     getCustomer("getCustomer"),
     getCustomerMetaData("getCustomerMetaData"),
     getCustomerBDRs("getCustomerBDRs"),
+    getCustomerEDRs("getCustomerEDRs"),
     getCustomerODRs("getCustomerODRs"),
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),
@@ -2156,6 +2157,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomer", new APISimpleHandler(API.getCustomer));
         restServer.createContext("/nglm-guimanager/getCustomerMetaData", new APISimpleHandler(API.getCustomerMetaData));
         restServer.createContext("/nglm-guimanager/getCustomerBDRs", new APISimpleHandler(API.getCustomerBDRs));
+        restServer.createContext("/nglm-guimanager/getCustomerEDRs", new APISimpleHandler(API.getCustomerEDRs));
         restServer.createContext("/nglm-guimanager/getCustomerODRs", new APISimpleHandler(API.getCustomerODRs));
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
@@ -3687,6 +3689,10 @@ public class GUIManager
 
                 case getCustomerBDRs:
                   jsonResponse = processGetCustomerBDRs(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getCustomerEDRs:
+                  jsonResponse = processGetCustomerEDRs(userID, jsonRoot, tenantID);
                   break;
 
                 case getCustomerODRs:
@@ -16152,7 +16158,7 @@ public class GUIManager
             subscriberID,
             SystemTime.getCurrentTime(),
             newExpiryDate,
-            zuksVoucherChange.getStringKey(),
+            zuksVoucherChange.getStringKey().concat("-").concat(Module.Customer_Care.toString()),
             voucherChangeAction,
             voucherCode,
             voucherID,
@@ -18392,6 +18398,106 @@ public class GUIManager
                 //
 
                 response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processGetCustomerEDRs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerEDRs(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+  {
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String eventID = JSONUtilities.decodeString(jsonRoot, "eventID", false);
+    
+    //
+    //  filters
+    //
+    
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    if (eventID != null && !eventID.isEmpty()) filters.add(QueryBuilders.matchQuery("eventID", eventID));
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> EDRsJson = new ArrayList<JSONObject>();
+                
+                //
+                // read history
+                //
+
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerEDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+                for (SearchHit hit : hits)
+                  {
+                    Map<String, Object> esFields = hit.getSourceAsMap();
+                    EDRsJson.add(JSONUtilities.encodeObject(esFields));
+                  }
+
+                //
+                // prepare response
+                //
+
+                response.put("EDRs", JSONUtilities.encodeArray(EDRsJson));
                 response.put("responseCode", "ok");
               }
           }
@@ -21759,6 +21865,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
+    String eventID = deliveryRequestID.concat("-").concat(Module.Customer_Care.toString());
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       GUIManagedObject pointObject = pointService.getStoredPoint(bonusID);
@@ -21770,7 +21877,7 @@ public class GUIManager
         validityPeriodType = point.getValidity().getPeriodType();
         validityPeriod = point.getValidity().getPeriodQuantity();
       }
-     CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+     CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       throw new GUIManagerException(e);
     }
@@ -21793,6 +21900,7 @@ public class GUIManager
   *****************************************/
   
   private JSONObject processDebitBonus(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException {
+    
     /****************************************
     *
     *  response
@@ -21856,9 +21964,10 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
+    String eventID = deliveryRequestID.concat("-").concat(Module.Customer_Care.toString());
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
-      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       throw new GUIManagerException(e);
     }
@@ -25137,7 +25246,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", "0"); // No event here
+    request.put("eventID", "event from " + Module.fromExternalRepresentation(moduleID).toString()); // No event here
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
@@ -28411,7 +28520,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       String topic = Deployment.getTokenChangeTopic();
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-      TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID);
+      TokenChange tokenChange = new TokenChange(subscriberID, now, "event from ".concat(Module.Customer_Care.toString()), tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID);
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
           topic,
           keySerializer.serialize(topic, new StringKey(subscriberID)),

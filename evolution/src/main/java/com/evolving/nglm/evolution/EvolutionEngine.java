@@ -7,6 +7,9 @@
 package com.evolving.nglm.evolution;
 
 import java.io.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -128,10 +131,9 @@ public class EvolutionEngine
   public static final String DELIMITER = "-X-";
   static final String INTERNAL_VARIABLE_SUPPLIER = "XXEvolSupplier".toLowerCase();
   static final String INTERNAL_VARIABLE_RESELLER = "XXEvolReseller".toLowerCase();
-  
   static final String INTERNAL_ID_SUPPLIER = "InternalIDSupplier";
   static final String INTERNAL_ID_RESELLER = "InternalIDReseller";
-
+  
   /*****************************************
   *
   *  enum
@@ -715,6 +717,7 @@ public class EvolutionEngine
     final ConnectSerde<TokenChange> tokenChangeSerde = TokenChange.serde();
     final ConnectSerde<VoucherChange> voucherChangeSerde = VoucherChange.serde();
     final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
+    final ConnectSerde<EDRDetails> edrDetailsSerde = EDRDetails.serde();
 
     //
     //  special serdes
@@ -971,7 +974,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof ExecuteActionOtherSubscriber),
         (key,value) -> (value instanceof VoucherAction),
         (key,value) -> (value instanceof JourneyTriggerEventAction),
-        (key,value) -> (value instanceof SubscriberProfileForceUpdate)
+        (key,value) -> (value instanceof SubscriberProfileForceUpdate),
+        (key,value) -> (value instanceof EDRDetails)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -990,6 +994,7 @@ public class EvolutionEngine
     KStream<StringKey, VoucherAction> voucherActionStream = (KStream<StringKey, VoucherAction>) branchedEvolutionEngineOutputs[11];
     KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
+    KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
 
     /*****************************************
     *
@@ -1013,6 +1018,7 @@ public class EvolutionEngine
 	executeActionOtherSubscriberStream.map((key,value)->new KeyValue<>(new StringKey(value.getSubscriberID()),value)).to(Deployment.getExecuteActionOtherSubscriberTopic(), Produced.with(stringKeySerde, executeActionOtherSubscriberSerde));
     voucherActionStream.to(Deployment.getVoucherActionTopic(), Produced.with(stringKeySerde, voucherActionSerde));
     subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
+    edrDetailsStream.to(Deployment.getEdrDetailsTopic(), Produced.with(stringKeySerde, edrDetailsSerde));
 
     //
 	//  sink DeliveryRequest
@@ -1910,6 +1916,17 @@ public class EvolutionEngine
     *****************************************/
     
     ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(changeEventEvaluationRequest);
+    
+    /*****************************************
+    *
+    *  generate EDR
+    *
+    *****************************************/
+    
+    if (shoudGenerateEDR(evolutionEvent))
+      {
+        subscriberStateUpdated = updateEDRs(context, evolutionEvent) || subscriberStateUpdated;
+      }
 
     /*****************************************
     *
@@ -3490,18 +3507,19 @@ public class EvolutionEngine
             evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
             evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
 
-            // build new SubscriberEvaluationRequest
-            SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
-                evolutionEventContext.getSubscriberState().getSubscriberProfile(),
-                (ExtendedSubscriberProfile) null,
-                subscriberGroupEpochReader,
-                originalJourneyState,
-                originalJourneyNode,
-                null,
-                null,
-                evolutionEventContext.now, tenantID);
-            List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
-            handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest);
+        if(actionManager != null) {
+          // build new SubscriberEvaluationRequest
+          SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
+              evolutionEventContext.getSubscriberState().getSubscriberProfile(),
+              (ExtendedSubscriberProfile) null,
+              subscriberGroupEpochReader,
+              originalJourneyState,
+              originalJourneyNode,
+              null,
+              null,
+              evolutionEventContext.now, tenantID);
+          List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
+          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest, evolutionEventContext.getEventID());
 
             // clean temporary data to avoid next nodes considering this event
             evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
@@ -4272,7 +4290,7 @@ public class EvolutionEngine
             subscriberTokens.add(subscriberStoredToken);
             subscriberStoredToken.setFeatureID(featureID);
             subscriberStoredToken.setModuleID(moduleID);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID, tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), context.getEventID(), eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID, tenantID));
             subscriberStateUpdated = true;
           }
 
@@ -4295,7 +4313,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, "", eventTokenCode, "Allocate", "OK", "PresentationLog", moduleID, featureID, tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", "OK", "PresentationLog", moduleID, featureID, tenantID));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -4346,7 +4364,7 @@ public class EvolutionEngine
                 subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
                 subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
                 subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), "", eventTokenCode, "Redeem", "OK", "AcceptanceLog", moduleID, featureID, tenantID));
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, "Redeem", "OK", "AcceptanceLog", moduleID, featureID, tenantID));
               }
             subscriberStateUpdated = true;
           }
@@ -4379,6 +4397,31 @@ public class EvolutionEngine
     *****************************************/
 
     return subscriberStateUpdated;
+  }
+  
+  /*****************************************
+  *
+  *  updateEDRs
+  *
+  *****************************************/
+  
+  private static boolean updateEDRs(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+    SubscriberState subscriberState = context.getSubscriberState();
+    int tenantID = subscriberState.getSubscriberProfile().getTenantID();
+    EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) evolutionEvent;
+    EvolutionEngineEventDeclaration declaration = Deployment.getEvolutionEngineEvents().get(engineEvent.getEventName());
+    ParameterMap parameterMap = new ParameterMap();
+    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, SystemTime.getCurrentTime(), subscriberState.getSubscriberProfile().getTenantID());
+    for (String field : declaration.getEdrCriterionFieldsMapping().keySet())
+      {
+        CriterionField criterionField = declaration.getEdrCriterionFieldsMapping().get(field);
+        Object value = criterionField.retrieve(evaluationRequest);
+        parameterMap.put(field, value);
+      }
+    EDRDetails edrDetails = new EDRDetails(context, subscriberState.getSubscriberID(), context.getEventID(), engineEvent.getEventName(), engineEvent.getEventDate(), parameterMap, tenantID);
+    subscriberState.addEDRDetails(edrDetails);
+    return true;
   }
 
   /*****************************************
@@ -5552,7 +5595,7 @@ public class EvolutionEngine
                           // execute action
                           //
 
-                          handleExecuteOnEntryActions(subscriberState, journeyState, journey, actions, entryActionEvaluationRequest);
+                          handleExecuteOnEntryActions(subscriberState, journeyState, journey, actions, entryActionEvaluationRequest, context.getEventID());
                       }
                     catch (RuntimeException e)
                       {
@@ -5920,7 +5963,7 @@ public class EvolutionEngine
     return res;
   }
 
-  private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions, SubscriberEvaluationRequest subscriberEvaluationRequest)
+  private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions, SubscriberEvaluationRequest subscriberEvaluationRequest, String eventID)
   {
     for (Action action : actions)
       {
@@ -5967,16 +6010,16 @@ public class EvolutionEngine
               switch (token.getTokenStatus())
               {
                 case New:
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName, tenantID));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), eventID, TokenChange.CREATE, token, featureID, nodeName, tenantID));
                   break;
                 case Bound: // must record the token creation
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName, tenantID));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, nodeName, tenantID));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), eventID, TokenChange.CREATE, token, featureID, nodeName, tenantID));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), eventID, TokenChange.ALLOCATE, token, featureID, nodeName, tenantID));
                   break;
                 case Redeemed: // must record the token creation & allocation
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, nodeName, tenantID));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, nodeName, tenantID));
-                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID, nodeName, tenantID));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), eventID, TokenChange.CREATE, token, featureID, nodeName, tenantID));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), eventID, TokenChange.ALLOCATE, token, featureID, nodeName, tenantID));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), eventID, TokenChange.REDEEM, token, featureID, nodeName, tenantID));
                   break;
                 case Expired :
                   // TODO
@@ -6017,9 +6060,9 @@ public class EvolutionEngine
       }
   }
 
-  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, String journeyID, String origin, int tenantID)
+  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String eventID, String action, Token token, String journeyID, String origin, tenantID)
   {
-    return new TokenChange(subscriberId, eventDateTime, "", token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID, tenantID);
+    return new TokenChange(subscriberId, eventDateTime, eventID, token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID, tenantID);
   }
 
   /****************************************
@@ -6259,6 +6302,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getVoucherActions());
         result.addAll(subscriberState.getJourneyTriggerEventActions());
         result.addAll(subscriberState.getSubscriberProfileForceUpdates());
+        result.addAll(subscriberState.getEdrDetailsWrappers());
       }
 
     // add stats about voucherChange done
@@ -6666,6 +6710,7 @@ public class EvolutionEngine
     private KStreamsUniqueKeyServer uniqueKeyServer;
     private Date now;
     private List<String> subscriberTraceDetails;
+    private String eventID;
     
     /*****************************************
     *
@@ -6702,6 +6747,47 @@ public class EvolutionEngine
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
+      this.eventID = generateEventID(event);
+    }
+
+    private String generateEventID(SubscriberStreamEvent event)
+    {
+      String result = null;
+      String className = event.getClass().getSimpleName();
+      if (event instanceof EvolutionEngineEvent)
+        {
+          EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) event;
+          EvolutionEngineEventDeclaration declaration = Deployment.getEvolutionEngineEvents().get(engineEvent.getEventName());
+          if (declaration != null && declaration.getEdrCriterionFieldsMapping() != null && !declaration.getEdrCriterionFieldsMapping().isEmpty())
+            {
+              result = getUniqueKey();
+            }
+          else if (event instanceof DeliveryRequest)
+            {
+              //
+              //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
+              //
+              
+              DeliveryRequest deliveryRes = (DeliveryRequest) event;
+              if (deliveryRes.getEventID() != null)
+                {
+                  result = deliveryRes.getEventID(); //deliveryRes.getEventName() != null ? deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID()) : className.concat("-").concat(deliveryRes.getEventID());
+                } 
+              else
+                {
+                  result = deliveryRes.getEventName() != null ? deliveryRes.getEventName() : className;
+                } 
+            }
+          else
+            {
+              result = engineEvent.getEventName();
+            }
+        }
+      else
+        {
+          result = className;
+        }
+      return result;
     }
 
     /*****************************************
@@ -6743,6 +6829,7 @@ public class EvolutionEngine
 
     public void setExecuteActionOtherSubscriberDeliveryRequestID(String requestID) { this.executeActionOtherUserDeliveryRequestID = requestID; }
     public void setExecuteActionOtherUserOriginalSubscriberID(String subscriberID) { this.executeActionOtherUserOriginalSubscriberID = subscriberID; }
+    public String getEventID() { return eventID; }
 
     /*****************************************
     *
@@ -8047,7 +8134,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, tenantID);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, tenantID);
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -8147,5 +8234,20 @@ public class EvolutionEngine
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
       }
     return voucherStored;
+  }
+  
+  private static boolean shoudGenerateEDR(SubscriberStreamEvent event)
+  {
+    boolean result = false;
+    if (event instanceof EvolutionEngineEvent)
+      {
+        EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) event;
+        EvolutionEngineEventDeclaration declaration = Deployment.getEvolutionEngineEvents().get(engineEvent.getEventName());
+        if (declaration != null && declaration.getEdrCriterionFieldsMapping() != null && !declaration.getEdrCriterionFieldsMapping().isEmpty())
+          {
+            result = true;
+          }
+      }
+    return result;
   }
 }

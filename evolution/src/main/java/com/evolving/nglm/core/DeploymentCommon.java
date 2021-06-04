@@ -240,6 +240,7 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysTokens;
   private static int elasticsearchRetentionDaysSnapshots;
   private static int elasticsearchRetentionDaysVDR;
+  private static int elasticsearchRetentionDaysEDR;
   private static int elasticsearchRetentionDaysJourneys;
   private static int elasticsearchRetentionDaysCampaigns;
   private static int elasticsearchRetentionDaysBulkCampaigns;
@@ -346,6 +347,8 @@ public class DeploymentCommon
   private static String sourceAddressTopic;
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
+  private static String edrDetailsTopic;
+  
   //
   // Others
   //
@@ -511,6 +514,7 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysTokens() { return elasticsearchRetentionDaysTokens; }
   public static int getElasticsearchRetentionDaysSnapshots() { return elasticsearchRetentionDaysSnapshots; }
   public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
+  public static int getElasticsearchRetentionDaysEDR() { return elasticsearchRetentionDaysEDR; }
   public static int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
@@ -524,6 +528,7 @@ public class DeploymentCommon
   public static Long getElasticsearchOdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_offers"); }
   public static Long getElasticsearchVdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_vouchers"); }
   public static Long getElasticsearchMdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_messages"); }
+  public static Long getElasticsearchEdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_events"); }
   public static Long getElasticsearcJourneystatisticTemplateVersion() { return elasticsearchTemplatesVersion.get("journeystatistic"); }
   public static Long getElasticsearchDatacubeSubscriberprofileTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_subscriberprofile"); }
   public static Long getElasticsearchDatacubeLoyaltyprogramshistoryTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramshistory"); }
@@ -644,6 +649,8 @@ public class DeploymentCommon
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
+  public static String getEdrDetailsTopic() { return edrDetailsTopic; }
+  
   //
   // Others
   //
@@ -813,6 +820,7 @@ public class DeploymentCommon
     elasticsearchRetentionDaysTokens = jsonReader.decodeInteger("ESRetentionDaysTokens");
     elasticsearchRetentionDaysSnapshots = jsonReader.decodeInteger("ESRetentionDaysSnapshots");
     elasticsearchRetentionDaysVDR = jsonReader.decodeInteger("ESRetentionDaysVDR");
+    elasticsearchRetentionDaysEDR = jsonReader.decodeInteger("ESRetentionDaysEDR");
     elasticsearchRetentionDaysJourneys = jsonReader.decodeInteger("ESRetentionDaysJourneys");
     elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
     elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
@@ -937,6 +945,7 @@ public class DeploymentCommon
     sourceAddressTopic = jsonReader.decodeString("sourceAddressTopic");
     voucherChangeRequestTopic = jsonReader.decodeString("voucherChangeRequestTopic");
     voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
+    edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     
@@ -1389,7 +1398,7 @@ public class DeploymentCommon
     guiConfigurationCleanerThreadPeriodMs = jsonReader.decodeInteger("guiConfigurationCleanerThreadPeriodSeconds") * 1000;
     guiConfigurationInitialConsumerMaxPollRecords  = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxPollRecords");
     guiConfigurationInitialConsumerMaxFetchBytes = jsonReader.decodeInteger("guiConfigurationInitialConsumerMaxFetchBytes");
-
+    
     //
     // configuration for extracts
     //

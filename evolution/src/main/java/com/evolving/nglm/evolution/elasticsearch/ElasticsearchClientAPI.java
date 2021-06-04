@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -74,6 +75,7 @@ import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGen
 import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
+import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
@@ -926,6 +928,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   //
   // getSearchRequest
   //
+  
   public SearchRequest getSearchRequest(API api, String subscriberId, Date startDate, List<QueryBuilder> filters, int tenantID)
   {
     String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
@@ -950,9 +953,9 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = BDRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime());
-                String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexDates);
-                index = this.getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                String indexCSV = BDRReportMonoPhase.getESIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL, esIndexWks);
+                index = getExistingIndices(indexCSV, BDRReportMonoPhase.getESAllIndices(BDRReportDriver.ES_INDEX_BDR_INITIAL));
               }
             else
               {
@@ -966,14 +969,43 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           }
         break;
         
+      case getCustomerEDRs:
+        if (startDate != null)
+          {
+            if (indexFilterDate.before(startDate))
+              {
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                StringBuilder esIndexList = new StringBuilder();
+                boolean firstEntry = true;
+                for (String esIndexWk : esIndexWks)
+                  {
+                    if (!firstEntry) esIndexList.append(",");
+                    String indexName = "detailedrecords_events-" + esIndexWk;
+                    esIndexList.append(indexName);
+                    firstEntry = false;
+                  }
+                index = this.getExistingIndices(esIndexList.toString(), "detailedrecords_events-*");
+              }
+            else
+              {
+                index = "detailedrecords_events-*";
+              }
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
+          }
+        else
+          {
+            index = "detailedrecords_events-*";
+          }
+        break;
+        
       case getCustomerODRs:
         if (startDate != null)
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = ODRReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime());
-                String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexDates);
-                index = this.getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                String indexCSV = ODRReportMonoPhase.getESIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL, esIndexWks);
+                index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL));
               }
             else
               {
@@ -992,9 +1024,9 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           {
             if (indexFilterDate.before(startDate))
               {
-                List<String> esIndexDates = NotificationReportMonoPhase.getEsIndexDates(startDate, SystemTime.getCurrentTime(), true, tenantID);
-                String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexDates);
-                index = this.getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
+                Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                String indexCSV = NotificationReportMonoPhase.getESIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL, esIndexWks);
+                index = getExistingIndices(indexCSV, NotificationReportMonoPhase.getESAllIndices(NotificationReportDriver.ES_INDEX_NOTIFICATION_INITIAL));
               }
             else
               {
@@ -1037,6 +1069,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     {
       case getCustomerBDRs:
         return getSearchRequest(GUIManager.API.getCustomerBDRs, subscriberId, startDate, filters, tenantID);
+      case getCustomerEDRs:
+        return getSearchRequest(GUIManager.API.getCustomerEDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerODRs:
         return getSearchRequest(GUIManager.API.getCustomerODRs, subscriberId, startDate, filters, tenantID);
       case getCustomerMessages:
@@ -1127,13 +1161,13 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   //
   // getExistingIndices
   //
+  
   public String getExistingIndices(String indexCSV, String defaulteValue)
   {
     String result = null;
     StringBuilder existingIndexes = new StringBuilder();
     boolean firstEntry = true;
-    
-    if (indexCSV != null)
+    if (indexCSV != null && !indexCSV.trim().isEmpty())
       {
         for (String index : indexCSV.split(","))
           {

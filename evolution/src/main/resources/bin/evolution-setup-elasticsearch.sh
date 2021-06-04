@@ -205,9 +205,42 @@ echo
 
 # -------------------------------------------------------------------------------
 #
-# odr, bdr, mdr, token
+# edr, odr, bdr, mdr, token
 #
 # -------------------------------------------------------------------------------
+
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/edr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "policy": {
+    "description": "hot delete workflow for edr",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysEDR()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
+      }
+    ]
+  }
+}'
+echo
+
 #
 #  create a cleaning policy for bdr
 #
@@ -966,6 +999,26 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_jo
       "display"       : { "type" : "keyword" },
       "contactPolicy" : { "type" : "keyword" },
       "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
+#
+#  manually create edr template
+#
+
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/edr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["detailedrecords_events-*"],
+  "settings" : {
+    "opendistro.index_state_management.policy_id": "edr_policy"
+  },
+  "mappings" : {
+    "_meta": { "edr" : { "version": Deployment.getElasticsearchEdrTemplateVersion() } },
+    "dynamic_date_formats": ["yyyy-MM-dd HH:mm:ss.SSSZ"],
+    "properties" : {
+      "subscriberID" : { "type" : "keyword" }
     }
   }
 }'

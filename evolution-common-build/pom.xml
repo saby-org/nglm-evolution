@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>2.0.0_BETA-SNAPSHOT</version>
+  <version>EVPRO-1022-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -156,6 +156,7 @@
     <topic.sourceaddress>sourceaddress</topic.sourceaddress>
     <topic.voucherchange.request>voucherchange-request</topic.voucherchange.request>
     <topic.voucherchange.response>voucherchange-response</topic.voucherchange.response>
+    <topic.edrdetails>edrdetails</topic.edrdetails>
 
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>

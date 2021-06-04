@@ -90,6 +90,7 @@
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
   "ESRetentionDaysVDR"              : 45,
+  "ESRetentionDaysEDR"              : 45,
   "ESRetentionWeeksDatacubeJourneys.comment": "WARNING: here it is in week",
   "ESRetentionWeeksDatacubeJourneys": 3,
   
@@ -101,6 +102,7 @@
     "detailedrecords_offers":           2,
     "detailedrecords_vouchers":         2,
     "detailedrecords_messages":         2,
+    "detailedrecords_events":           2,
     "journeystatistic":                 2,
     "datacube_subscriberprofile":       2,
     "datacube_loyaltyprogramshistory":  2,
@@ -234,6 +236,7 @@
   "sourceAddressTopic"                                   : "${topic.sourceaddress}",
   "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
+  "edrDetailsTopic"                           			 : "${topic.edrdetails}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
 
   "supportedDataTypes" :
@@ -741,6 +744,11 @@
       "permissions"  : ["API-GET-CUSTOMER-BDRS"]
     },
     {
+      "id"           : "getCustomerEDRs",
+      "methodName"   : "getCustomerEDRs",
+      "permissions"  : ["API-GET-CUSTOMER-EDRS"]
+    },
+    {
       "id"           : "getCustomerODRs",
       "methodName"   : "getCustomerODRs",
       "permissions"  : ["API-GET-CUSTOMER-ODRS"]
@@ -1186,6 +1194,6 @@
   "externalAPITopics" : [],
   
   "generateSimpleProfileDimensions" : true,
-    
   "recurrentCampaignCreationDaysRange" : 3
+  
 }

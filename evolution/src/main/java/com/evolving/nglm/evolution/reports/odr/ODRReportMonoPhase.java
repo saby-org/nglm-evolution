@@ -669,7 +669,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
    *
    ********************/
   
-  public static String getESIndices(String esIndexOdr, List<String> esIndexWks)
+  public static String getESIndices(String esIndexOdr, Set<String> esIndexWks)
   {
     StringBuilder esIndexOdrList = new StringBuilder();
     boolean firstEntry = true;
