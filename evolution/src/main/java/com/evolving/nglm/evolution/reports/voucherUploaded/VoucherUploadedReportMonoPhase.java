@@ -128,7 +128,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
             if (voucherPersonal.get("expiryDate") != null)
               {
                 Object expiryDateObj = voucherPersonal.get("expiryDate");
-                SimpleDateFormat df = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());    // TODO EVPRO-99
+                SimpleDateFormat df = new SimpleDateFormat(Deployment.getReportManagerContentDateFormat());    // TODO EVPRO-99
                 df.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(voucher.getTenantID()).getTimeZone()));
                 try
                   {

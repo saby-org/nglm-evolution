@@ -99,7 +99,7 @@ public class DeploymentCommon
     try
       {
         //
-        // Init variables 
+        // Init variables
         //
         jsonConfigPerTenant = new HashMap<>();
         deploymentsPerTenant = new HashMap<>();
@@ -356,7 +356,8 @@ public class DeploymentCommon
   private static String externalSubscriberID;
   private static String reportManagerZookeeperDir;
   private static String reportManagerOutputPath;
-  private static String reportManagerDateFormat;
+  private static String reportManagerFileDateFormat;
+  private static String reportManagerContentDateFormat;
   private static String reportManagerFileExtension;
   private static String reportManagerStreamsTempDir;
   private static String reportManagerTopicsCreationProperties;
@@ -731,7 +732,8 @@ public class DeploymentCommon
   public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; } // TODO EVPRO-99 check for tenant and static
   public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
   public static String getReportManagerOutputPath() { return reportManagerOutputPath; } // TODO EVPRO-99 Move in TENANT
-  public static String getReportManagerDateFormat() { return reportManagerDateFormat; }
+  public static String getReportManagerContentDateFormat() { return reportManagerContentDateFormat; }
+  public static String getReportManagerFileDateFormat() { return reportManagerFileDateFormat; }
   public static String getReportManagerFileExtension() { return reportManagerFileExtension; } // TODO EVPRO-99 Move in TENANT
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; } // EVPRO-99 check for tenant and static
   public static String getReportManagerFieldSurrounder() { return reportManagerFieldSurrounder; } // EVPRO-99 check for tenant and static
@@ -1387,7 +1389,7 @@ public class DeploymentCommon
     JSONObject reportManager = jsonReader.decodeJSONObject("reportManager");
     reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir"); // TODO EVPRO-99 JSONUtilities
     reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath");
-    reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat");
+    reportManagerFileDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerFileDateFormat","yyyy-MM-dd_HH-mm-ss");
     reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension");
     reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator");
     reportManagerFieldSurrounder = JSONUtilities.decodeString(reportManager, "reportManagerFieldSurrounder");
@@ -1398,6 +1400,7 @@ public class DeploymentCommon
     detailedrecordReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "detailedrecordReportsArrearCount", 7);
     journeyReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "journeyReportsArrearCount", 2);
     subscriberprofileReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "subscriberprofileReportsArrearCount", 2);
+    reportManagerContentDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerContentDateFormat", "yyyy-MM-dd'T'HH:mm:ssZZZZ");
 
     if (reportManagerFieldSurrounder.length() > 1) {
       throw new ServerRuntimeException("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);

@@ -1598,7 +1598,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     HashMap<String,Object> globalConfig = new HashMap<String,Object>();
     globalConfig.put("reportManagerZookeeperDir",   Deployment.getReportManagerZookeeperDir());
     globalConfig.put("reportManagerOutputPath",     ReportService.getReportOutputPath(tenantID));
-    globalConfig.put("reportManagerDateFormat",     Deployment.getDeployment(tenantID).getReportManagerDateFormat());
+    globalConfig.put("reportManagerFileDateFormat", Deployment.getDeployment(tenantID).getReportManagerFileDateFormat());
     globalConfig.put("reportManagerFileExtension",  Deployment.getDeployment(tenantID).getReportManagerFileExtension());
     globalConfig.put("reportManagerCsvSeparator",   Deployment.getReportManagerCsvSeparator());
     globalConfig.put("reportManagerStreamsTempDir", Deployment.getDeployment(tenantID).getReportManagerStreamsTempDir());
