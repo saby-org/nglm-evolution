@@ -6,6 +6,10 @@
 
 package com.evolving.nglm.evolution.reports;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -104,6 +108,13 @@ public abstract class ReportDriver
   }
   
   
-  abstract public List<String> reportHeader(); 
+  abstract public List<String> reportHeader();
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.TYPE)
+  public @interface ReportTypeDef
+  {
+    public String reportType();
+  }
 
 }

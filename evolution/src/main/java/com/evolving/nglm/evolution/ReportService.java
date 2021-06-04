@@ -59,6 +59,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportGenerationDateComperator;
 import com.evolving.nglm.evolution.reports.ReportManager;
 
 public class ReportService extends GUIService
@@ -230,7 +231,8 @@ public class ReportService extends GUIService
           }
         else
           {
-            launchReport(report, tenantID);
+            launchReport(report, tenantID, false);
+            launchReport(report, tenantID, true);
           }
       }
   }
@@ -241,7 +243,7 @@ public class ReportService extends GUIService
    * 
    ***************************/
   
-  public void launchReport(Report report, int tenantID)
+  public void launchReport(Report report, int tenantID, boolean launchPendingReports)
   {
     //
     //  now
@@ -253,12 +255,42 @@ public class ReportService extends GUIService
     //  getPendingReportsForDates
     //
     
-    Set<Date> pendingReportsForDates = getPendingReportsForDates(report, tenantID);
-    pendingReportsForDates.add(now);
+    Set<Date> pendingReportDates = new HashSet<Date>();
+    if (launchPendingReports && report.getMissingReportArearCount() > 0)
+      {
+        pendingReportDates = getPendingReportsForDates(report, tenantID);
+      }
     
-    StringBuilder dateRAJKString = new StringBuilder();
-    pendingReportsForDates.forEach(dt -> dateRAJKString.append("," + printDate(dt)));
-    if(log.isInfoEnabled()) log.info("generating reoports of {} for dates {}", report.getName(), dateRAJKString);
+    if (!launchPendingReports) pendingReportDates.add(now);
+    
+    
+    //
+    //  set to list
+    //
+    
+    List<Date> pendingReportsForDates = pendingReportDates.stream().collect(Collectors.toList());
+    
+    //
+    //  sort
+    //
+    
+    Collections.sort(pendingReportsForDates, Collections.reverseOrder());
+    if (launchPendingReports) pendingReportsForDates = pendingReportsForDates.stream().limit(Long.valueOf(report.getMissingReportArearCount())).collect(Collectors.toList());
+    
+    //
+    //  log
+    //
+    
+    if(log.isInfoEnabled())
+      {
+        StringBuilder dateRAJKString = new StringBuilder();
+        pendingReportsForDates.forEach(dt -> dateRAJKString.append("," + printDate(dt)));
+        log.info("generating reoports of {} for dates {}", report.getName(), dateRAJKString);
+      }
+    
+    //
+    //  launchReport
+    //
     
     for (Date date : pendingReportsForDates)
       {
@@ -266,12 +298,16 @@ public class ReportService extends GUIService
       }
   }
   
-  public static String buildControlNodename(String reportName, int tenantID) {
+  public static String buildControlNodename(String reportName, int tenantID, Date reportGenerationDate, String timeZone) {
+    return buildControlNodeNameInitial(reportName, tenantID) + "_" + RLMDateUtils.formatDateDay(reportGenerationDate, timeZone) + "_";
+  }
+  
+  public static String buildControlNodeNameInitial(String reportName, int tenantID) {
     return "launchReport-" + reportName + "-" + tenantID;
   }
   
-  public static String buildFullControlNodename(String reportName, int tenantID) {
-    return ReportManager.getControlDir() + File.separator + buildControlNodename(reportName, tenantID) + "-"; // "-" at the end because a random int will be appended (sequential node)
+  public static String buildFullControlNodename(String reportName, int tenantID, Date reportGenerationDate, String timeZone) {
+    return ReportManager.getControlDir() + File.separator + buildControlNodename(reportName, tenantID, reportGenerationDate, timeZone) + "-"; // "-" at the end because a random int will be appended (sequential node)
   }
   
   public static String getReportOutputPath(int tenantID) {
@@ -286,11 +322,13 @@ public class ReportService extends GUIService
   
   public void launchReport(String reportName, final Date reportGenerationDate, int tenantID)
   {
+    String tz = Deployment.getDeployment(tenantID).getTimeZone();
+    
     //
     //  znode
     //
     
-    String znode = buildFullControlNodename(reportName, tenantID);
+    String znode = buildFullControlNodename(reportName, tenantID, reportGenerationDate, tz); // this is decomposed in ReportGenerationDateComperator
     
     //
     //  data
@@ -310,8 +348,7 @@ public class ReportService extends GUIService
             // Create new file in control dir with reportName inside, to trigger report generation
             //
             
-            //zk.create(znode, reportName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
-            zk.create(znode, zkData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
+            zk.create(znode, zkData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL); //zk.create(znode, reportName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
           }
         catch (KeeperException e)
           {
@@ -341,7 +378,7 @@ public class ReportService extends GUIService
             List<String> children = zk.getChildren(ReportManager.getControlDir(), false);
             for(String child : children) 
               {
-                if(child.contains(buildControlNodename(reportName,tenantID))) 
+                if(child.contains(buildControlNodeNameInitial(reportName,tenantID))) 
                   {
                     String znode = ReportManager.getControlDir() + File.separator + child; // child contains sequential unknown part
                     return (zk.exists(znode, false) != null);

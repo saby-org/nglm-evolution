@@ -11,7 +11,9 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
 
+@ReportTypeDef(reportType = "journeys")
 public class JourneyCustomerStatisticsReportDriver extends ReportDriver {
 
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportDriver.class);

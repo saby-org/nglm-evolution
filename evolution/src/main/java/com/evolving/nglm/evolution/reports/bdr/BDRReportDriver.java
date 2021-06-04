@@ -12,8 +12,11 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ColumnType;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+
 import java.util.Date;
 
+@ReportTypeDef(reportType = "detailedrecords")
 public class BDRReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(BDRReportDriver.class);

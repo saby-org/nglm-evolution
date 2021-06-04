@@ -10,6 +10,7 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
 import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
 
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@ReportTypeDef(reportType = "subscriberprofile")
 public class TokenReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(TokenReportDriver.class);
