@@ -128,6 +128,9 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
@@ -502,11 +505,20 @@ public class GUIManager
 
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
+    getLoyaltyProgramChallengeList("getLoyaltyProgramChallengeList"),
+    
     getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
+    getLoyaltyProgramChallengeSummaryList("getLoyaltyProgramChallengeSummaryList"),
+    
     getLoyaltyProgram("getLoyaltyProgram"),
+    getLoyaltyProgramChallenge("getLoyaltyProgramChallenge"),
+    
     putLoyaltyProgram("putLoyaltyProgram"),
+    putLoyaltyProgramChallenge("putLoyaltyProgramChallenge"),
+    
     removeLoyaltyProgram("removeLoyaltyProgram"),
     setStatusLoyaltyProgram("setStatusLoyaltyProgram"),
+    
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
     getReseller("getReseller"),
@@ -2215,9 +2227,13 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeList", new APISimpleHandler(API.getLoyaltyProgramChallengeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramSummaryList", new APISimpleHandler(API.getLoyaltyProgramSummaryList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeSummaryList", new APISimpleHandler(API.getLoyaltyProgramChallengeSummaryList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgram", new APISimpleHandler(API.getLoyaltyProgram));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallenge", new APISimpleHandler(API.getLoyaltyProgramChallenge));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
+        restServer.createContext("/nglm-guimanager/putLoyaltyProgramChallenge", new APISimpleHandler(API.putLoyaltyProgramChallenge));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/setStatusLoyaltyProgram", new APISimpleHandler(API.setStatusLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
@@ -2339,15 +2355,18 @@ public class GUIManager
     
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
+    String qaCronEntry = "5,10,15,30,45,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
-    if(recurrnetCampaignCreationJob.isProperlyConfigured())
+    ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
+    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
+        guiManagerJobScheduler.schedule(challengesOccurrenceJob);
         new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
       }
     else
       {
-        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob cron");
+        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob cron");
       }
     
     /*****************************************
@@ -3883,19 +3902,35 @@ public class GUIManager
                   break;
 
                 case getLoyaltyProgramList:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, true, includeArchived, tenantID);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.POINTS, true, includeArchived, tenantID);
+                  break;
+                  
+                case getLoyaltyProgramChallengeList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, true, includeArchived, tenantID);
                   break;
 
                 case getLoyaltyProgramSummaryList:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, false, includeArchived, tenantID);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.POINTS, false, includeArchived, tenantID);
+                  break;
+                  
+                case getLoyaltyProgramChallengeSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, false, includeArchived, tenantID);
                   break;
 
                 case getLoyaltyProgram:
-                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, includeArchived, tenantID);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.POINTS, includeArchived, tenantID);
+                  break;
+                  
+                case getLoyaltyProgramChallenge:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, includeArchived, tenantID);
                   break;
 
                 case putLoyaltyProgram:
-                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, tenantID);
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.POINTS, tenantID);
+                  break;
+                  
+                case putLoyaltyProgramChallenge:
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, tenantID);
                   break;
 
                 case removeLoyaltyProgram:
@@ -3905,7 +3940,7 @@ public class GUIManager
                 case setStatusLoyaltyProgram:
                   jsonResponse = guiManagerLoyaltyReporting.processSetStatusLoyaltyProgram(userID, jsonRoot, tenantID);
                   break;
-
+                  
                 case getResellerList:
                   jsonResponse = processGetResellerList(userID, jsonRoot, true, includeArchived, tenantID);
                   break;
@@ -19815,7 +19850,6 @@ public class GUIManager
           List<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
           for (String loyaltyProgramID : loyaltyPrograms.keySet())
             {
-
               //
               //  check loyalty program still exist
               //
@@ -19839,22 +19873,22 @@ public class GUIManager
                   loyaltyProgramPresentation.put("active", loyaltyProgram.getActive());
 
 
-                  switch (loyaltyProgramState.getLoyaltyProgramType()) {
+                  switch (loyaltyProgramState.getLoyaltyProgramType())
+                  {
                     case POINTS:
-
                       LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
 
                       //
-                      //  current tier
+                      // current tier
                       //
 
                       if(loyaltyProgramPointsState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName()); }
                       if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate(), tenantID)); }
 
                       //
-                      //  status point
+                      // status point
                       //
-                      
+
                       LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
                       String statusPointID = loyaltyProgramPoints.getStatusPointsID();
                       Point statusPoint = pointService.getActivePoint(statusPointID, now);
@@ -19865,17 +19899,17 @@ public class GUIManager
                           loyaltyProgramPresentation.put("statusPointDisplay", statusPoint.getDisplay());
                         }
                       PointBalance pointBalance = baseSubscriberProfile.getPointBalances().get(statusPointID);
-                      if(pointBalance != null)
+                      if (pointBalance != null)
                         {
                           loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
-                        }
+                        } 
                       else
                         {
                           loyaltyProgramPresentation.put("statusPointsBalance", 0);
                         }
-                      
+
                       //
-                      //  reward point informations
+                      // reward point informations
                       //
 
                       String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
@@ -19887,25 +19921,25 @@ public class GUIManager
                           loyaltyProgramPresentation.put("rewardsPointDisplay", rewardPoint.getDisplay());
                         }
                       PointBalance rewardBalance = baseSubscriberProfile.getPointBalances().get(rewardPointID);
-                      if(rewardBalance != null)
+                      if (rewardBalance != null)
                         {
                           loyaltyProgramPresentation.put("rewardsPointsBalance", rewardBalance.getBalance(now));
                           loyaltyProgramPresentation.put("rewardsPointsEarned", rewardBalance.getEarnedHistory().getAllTimeBucket());
                           loyaltyProgramPresentation.put("rewardsPointsConsumed", rewardBalance.getConsumedHistory().getAllTimeBucket());
                           loyaltyProgramPresentation.put("rewardsPointsExpired", rewardBalance.getExpiredHistory().getAllTimeBucket());
                           Date firstExpirationDate = rewardBalance.getFirstExpirationDate(now);
-                          if(firstExpirationDate != null)
+                          if (firstExpirationDate != null)
                             {
                               int firstExpirationQty = rewardBalance.getBalance(firstExpirationDate);
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(firstExpirationDate, tenantID));
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", firstExpirationQty);
-                            }
+                            } 
                           else
                             {
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now, tenantID));
                               loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
                             }
-                        }
+                        } 
                       else
                         {
                           loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
@@ -19917,8 +19951,9 @@ public class GUIManager
                         }
 
                       //
-                      //  history
+                      // history
                       //
+                      
                       ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
                       LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
                       if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
@@ -19931,13 +19966,63 @@ public class GUIManager
                         }
                       }
                       loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
-
                       break;
+                      
+                    case CHALLENGE:
+                      LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+                      
+                      //
+                      // current level
+                      //
 
-//                    case BADGES:
-//                      // TODO
-//                      break;
+                      if (loyaltyProgramChallengeState.getLevelName() != null)
+                        {
+                          loyaltyProgramPresentation.put("levelName", loyaltyProgramChallengeState.getLevelName());
+                        }
+                      if (loyaltyProgramChallengeState.getLevelEnrollmentDate() != null)
+                        {
+                          loyaltyProgramPresentation.put("levelEnrollmentDate", getDateString(loyaltyProgramChallengeState.getLevelEnrollmentDate(), tenantID));
+                        }
+                      
+                      //
+                      // score
+                      //
 
+                      loyaltyProgramPresentation.put("score", loyaltyProgramChallengeState.getCurrentScore());
+                      
+                      //
+                      // history
+                      //
+                      
+                      ArrayList<JSONObject> loyaltyProgramChallengeHistoryJSON = new ArrayList<JSONObject>();
+                      LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory();
+                      if (loyaltyProgramChallengeHistory != null && loyaltyProgramChallengeHistory.getLevelHistory() != null && !loyaltyProgramChallengeHistory.getLevelHistory().isEmpty())
+                        {
+                          for (LevelHistory level : loyaltyProgramChallengeHistory.getLevelHistory())
+                            {
+                              HashMap<String, Object> levelHistoryJSON = new HashMap<String, Object>();
+                              levelHistoryJSON.put("fromLevel", level.getFromLevel());
+                              levelHistoryJSON.put("toLevel", level.getToLevel());
+                              levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate(), tenantID));
+                              levelHistoryJSON.put("occouranceNumber", level.getOccurrenceNumber());
+                              loyaltyProgramChallengeHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
+                            }
+                        }
+                      
+                      //
+                      //  Recurrence
+                      //
+                      
+                      if (loyaltyProgram instanceof LoyaltyProgramChallenge && ((LoyaltyProgramChallenge) loyaltyProgram).getRecurrence())
+                        {
+                          loyaltyProgramPresentation.put("previousPeriodLevel", loyaltyProgramChallengeState.getPreviousPeriodLevel());
+                          loyaltyProgramPresentation.put("previousPeriodScore", loyaltyProgramChallengeState.getPreviousPeriodScore());
+                          loyaltyProgramPresentation.put("previousPeriodStartDate", getDateString(loyaltyProgramChallengeState.getPreviousPeriodStartDate(), tenantID));
+                        }
+                      
+                      loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
+                      break;
+                      
                     default:
                       break;
                   }
@@ -29393,15 +29478,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         }
     }
   }
-
+  
   /*****************************************
   *
-  *  TargetValidityCheckJob
+  *  ChallengesOccurrenceJob
   *
   *****************************************/
-
-  // TODO EVPRO-99 @rl IS THIS USED SOMEWHERE ??
-  public class TargetValidityCheckJob extends ScheduledJob
+  public class ChallengesOccurrenceJob extends ScheduledJob
   {
     /***********************************
      *
@@ -29409,7 +29492,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      *
      ************************************/
 
-    public TargetValidityCheckJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    public ChallengesOccurrenceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
     {
       super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
     }
@@ -29422,85 +29505,74 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     @Override protected void run()
     {
-      if (log.isDebugEnabled()) log.debug("deleting expired targets");
+      if (log.isDebugEnabled()) log.debug("ChallengesOccurrenceJob executing");
       String tz = Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-      int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
-      Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
-      Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
-      Collection<Journey> recurrentJourneys = journeyService.getAcceptedAndCompletedRecurrentJourneys(SystemTime.getCurrentTime(), 0);
-      if(log.isDebugEnabled()) log.debug("recurrentJourneys {}", recurrentJourneys);
-      for (Journey recurrentJourney : recurrentJourneys)
+      Collection<LoyaltyProgramChallenge> recurrentLoyaltyProgramChallenges = loyaltyProgramService.getActiveRecurrentChallenges(SystemTime.getCurrentTime(), 0); // tenant ID 0 means from all tenants
+      if(log.isDebugEnabled()) log.debug("Challenges with Occurrence {}", recurrentLoyaltyProgramChallenges);
+      for (LoyaltyProgramChallenge challenge : recurrentLoyaltyProgramChallenges)
         {
-          List<Date> journeyCreationDates = new ArrayList<Date>();
-          JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
-          int limitCount = journeyScheduler.getNumberOfOccurrences() - recurrentJourney.getLastCreatedOccurrenceNumber();
-          if (log.isDebugEnabled()) log.debug("executing creation for {}, id {}", recurrentJourney.getGUIManagedObjectDisplay(), recurrentJourney.getGUIManagedObjectID());
-
-          //
-          // limit reached
-          //
-
+          JourneyScheduler journeyScheduler = challenge.getJourneyScheduler();
+          int limitCount = journeyScheduler.getNumberOfOccurrences() - challenge.getLastCreatedOccurrenceNumber();
+          
           if (limitCount <= 0)
             {
-              if (log.isDebugEnabled()) log.debug("limit reached");
+              if (log.isDebugEnabled()) log.debug("limit reached for recurrentLoyaltyProgramChallenge {}", challenge.getGUIManagedObjectDisplay());
               continue;
             }
-
+          
+          //
+          //  already done?
+          //
+          
+          if (challenge.getLastOccurrenceCreateDate() != null &&  RLMDateUtils.truncatedCompareTo(challenge.getLastOccurrenceCreateDate(), SystemTime.getCurrentTime(), Calendar.DATE, tz) == 0)
+            {
+              if (log.isDebugEnabled()) log.debug("ChallengesOccurrenceJob already executed for today for {}", challenge.getGUIManagedObjectDisplay());
+              continue;
+            }
+          
           //
           // scheduling
           //
-
+          
           String scheduling = journeyScheduler.getRunEveryUnit().toLowerCase();
           Integer scheduligInterval = journeyScheduler.getRunEveryDuration();
-          List<Date> tmpJourneyCreationDates = new ArrayList<Date>();
+          List<Date> tmpOccouranceDates = new ArrayList<Date>();
           if ("week".equalsIgnoreCase(scheduling))
             {
-              Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
-              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
-              Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
-              while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
+              Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK, challenge.getTenantID());
+              Date tempStartDate = RLMDateUtils.addWeeks(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK, challenge.getTenantID());
+              Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK, challenge.getTenantID());
+              while(RLMDateUtils.truncatedCompareTo(lastDateOfThisWk, lastDateOfStartDateWk, Calendar.DATE, tz) >= 0)
                 {
-                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay(), recurrentJourney.getTenantID()));
+                  tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay(), challenge.getTenantID()));
                   tempStartDate = RLMDateUtils.addWeeks(tempStartDate, scheduligInterval, tz);
-                  lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
-                  firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK, recurrentJourney.getTenantID());
+                  lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK, challenge.getTenantID());
+                  firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK, challenge.getTenantID());
                 }
-
-              //
-              // handle the edge (if start day of next wk)
-              //
-
-              tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay(), recurrentJourney.getTenantID()));
             }
           else if ("month".equalsIgnoreCase(scheduling))
             {
-              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
-              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
-              Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
-              while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
+              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH,challenge.getTenantID());
+              Date tempStartDate = RLMDateUtils.addMonths(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
+              Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
+              while(RLMDateUtils.truncatedCompareTo(lastDateOfThisMonth, lastDateOfStartDateMonth, Calendar.DATE, tz) >= 0)
                 {
-                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay(), recurrentJourney.getTenantID()));
+                  tmpOccouranceDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay(), challenge.getTenantID()));
                   tempStartDate = RLMDateUtils.addMonths(tempStartDate, scheduligInterval, tz);
-                  firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
-                  lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, recurrentJourney.getTenantID());
+                  firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
+                  lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
                 }
-
-              //
-              // handle the edge (if 1st day of next month)
-              //
-
-              tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay(), recurrentJourney.getTenantID()));
             }
           else if ("day".equalsIgnoreCase(scheduling))
             {
-              Date lastDate = filterEndDate;
-              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
-              while(lastDate.compareTo(tempStartDate) >= 0)
+              Date lastDate = RLMDateUtils.ceiling(now, Calendar.DATE, tz);
+              Date tempStartDate = RLMDateUtils.addDays(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              while(RLMDateUtils.truncatedCompareTo(lastDate, tempStartDate, Calendar.DATE, tz) >= 0)
                 {
-                  tmpJourneyCreationDates.add(new Date(tempStartDate.getTime()));
+                  tmpOccouranceDates.add(new Date(tempStartDate.getTime()));
                   tempStartDate = RLMDateUtils.addDays(tempStartDate, scheduligInterval, tz);
                 }
             }
@@ -29508,137 +29580,115 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             {
               if (log.isErrorEnabled()) log.error("invalid scheduling {}", scheduling);
             }
-
-          //
-          // filter out if before start date and recurrentCampaignCreationDaysRange (before / after)
-          //
-
-		  if(log.isDebugEnabled()) log.debug("before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
-          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(recurrentJourney.getEffectiveStartDate())  && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
-		  if(log.isDebugEnabled()) log.debug("after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
-
-          //
-          //  exists
-          //
-
-          Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID(), true, 0);
-          for (Date expectedDate : tmpJourneyCreationDates)
-            {
-              boolean exists = false;
-              for (Journey subJourney : recurrentSubJourneys)
-                {
-                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getDefault().getTimeZone()) == 0; // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
-                  if (exists) break;
-                }
-              if (!exists && limitCount > 0)
-                {
-                  journeyCreationDates.add(expectedDate);
-                  limitCount--;
-                }
-            }
-
-
-          //
-          // createJourneys
-          //
-
-          if (!journeyCreationDates.isEmpty()) createJourneys(recurrentJourney, journeyCreationDates, recurrentJourney.getLastCreatedOccurrenceNumber());
-        }
-      if (log.isInfoEnabled())log.info("created recurrent campaigns");
-    }
-
-    //
-    //  createJourneys
-    //
-
-    private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer lastCreatedOccurrenceNumber)
-    {
-      log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
-      String timeZone = Deployment.getDeployment(recurrentJourney.getTenantID()).getTimeZone();
-      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getDeployment(recurrentJourney.getTenantID()).getTimeZone());
-      int occurrenceNumber = lastCreatedOccurrenceNumber;
-      for (Date startDate : journeyCreationDates)
-        {
-          //
-          //  prepare start and end date
-          //
-
-          Date endDate = RLMDateUtils.addDays(startDate, daysBetween, timeZone);
-          endDate = RLMDateUtils.setField(endDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.HOUR_OF_DAY, timeZone), timeZone);
-          endDate = RLMDateUtils.setField(endDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.MINUTE, timeZone), timeZone);
-          endDate = RLMDateUtils.setField(endDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.SECOND, timeZone), timeZone);
-
-          startDate = RLMDateUtils.setField(startDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.HOUR_OF_DAY, timeZone), timeZone);
-          startDate = RLMDateUtils.setField(startDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.MINUTE, timeZone), timeZone);
-          startDate = RLMDateUtils.setField(startDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.SECOND, timeZone), timeZone);
-
-          //
-          //  journeyJSON
-          //
-
-          JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
-          journeyJSON.put("apiVersion", 1);
-
-          //
-          //  remove
-          //
-
-          journeyJSON.remove("recurrence");
-          journeyJSON.remove("scheduler");
-          journeyJSON.remove("status");
-
-          //
-          //  add
-          //
-
-          String journeyID = journeyService.generateJourneyID();
-          journeyJSON.put("id", journeyID);
-          journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
-          journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
-          journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
-          journeyJSON.put("effectiveStartDate", RLMDateUtils.formatDateForREST(startDate, timeZone));
-          journeyJSON.put("effectiveEndDate", RLMDateUtils.formatDateForREST(endDate, timeZone));
-
-          //
-          //  create and activate
-          //
-
-          if (GUIManagedObjectType.BulkCampaign == recurrentJourney.getGUIManagedObjectType())
-            {
-              processPutBulkCampaign("0", journeyJSON, recurrentJourney.getTenantID());
-              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true, recurrentJourney.getTenantID());
-
-              //
-              //  lastCreatedOccurrenceNumber
-              //
-
-              JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
-              recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
-              processPutBulkCampaign("0", recJourneyJSON, recurrentJourney.getTenantID());
-            }
-          else
-            {
-              processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), recurrentJourney.getTenantID());
-              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true, recurrentJourney.getTenantID());
-
-              //
-              //  lastCreatedOccurrenceNumber
-              //
-
-              JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
-              recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
-              processPutJourney("0", recJourneyJSON, recurrentJourney.getGUIManagedObjectType(), recurrentJourney.getTenantID());
-            }
           
+          //
+          // filter out create dates
+          //
+          
+          tmpOccouranceDates = tmpOccouranceDates.stream().filter(date -> RLMDateUtils.truncatedCompareTo(date, challenge.getEffectiveStartDate(), Calendar.DATE, tz) != 0).collect(Collectors.toList());
+          
+          //
+          // filter out if not today - no adv task
+          //
+          
+          tmpOccouranceDates = tmpOccouranceDates.stream().filter(date -> RLMDateUtils.truncatedCompareTo(date, SystemTime.getCurrentTime(), Calendar.DATE, tz) == 0).collect(Collectors.toList());
+          
+          //
+          // executeOccouranceJob
+          //
+
+          if (!tmpOccouranceDates.isEmpty()) executeChallengeOccouranceJob(challenge, tmpOccouranceDates, challenge.getLastCreatedOccurrenceNumber());
         }
+      if (log.isDebugEnabled()) log.debug("All ChallengesOccurrenceJob executed");
     }
+   
+    //
+    //  executeChallengeOccouranceJob
+    //
     
+    private void executeChallengeOccouranceJob(LoyaltyProgramChallenge challenge, List<Date> tmpOccouranceDates, Integer lastCreatedOccurrenceNumber)
+    {
+      long startTimeMili = SystemTime.getCurrentTime().getTime();
+      String tz = Deployment.getDeployment(challenge.getTenantID()).getTimeZone();
+      if (log.isInfoEnabled())
+        {
+          StringBuilder dtBuilders = new StringBuilder();
+          tmpOccouranceDates.forEach(dt -> dtBuilders.append(RLMDateUtils.formatDateDay(dt, tz)).append(" "));
+          log.info("execute Challenge OccouranceJob for challenge {}, for date(s) {}", challenge.getLoyaltyProgramDisplay(), dtBuilders.toString());
+        }
+      
+      ChallengeLevel firstLevel = challenge.getFirstLevel();
+      
+      
+      for (Date recDate : tmpOccouranceDates)
+        {
+          JSONObject jsonRoot = (JSONObject) challenge.getJSONRepresentation().clone();
+          try
+            {
+              //
+              //  subscriber present in this prog
+              //
+              
+              List<String> alreadyOptInSubscriberIDs = elasticsearch.getAlreadyOptInSubscriberIDs(challenge.getLoyaltyProgramID());
+              for (String subscriberID : alreadyOptInSubscriberIDs)
+                {
+                  try
+                    {
+                      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+                      if (firstLevel != null)
+                        {
+                          String deliveryRequestID = zuks.getStringKey();
+                          int firstLevelScore = firstLevel.getScoreLevel();
+                          Integer subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
+                          int scoreToDebit = (subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
+                          scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
+                          if (scoreToDebit >= 0)
+                            {
+                              //
+                              // SubscriberProfileForceUpdate
+                              //
+                              
+                              SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap());
+                              subscriberProfileForceUpdate.getParameterMap().put("score", scoreToDebit*-1);
+                              subscriberProfileForceUpdate.getParameterMap().put("challengeID", challenge.getGUIManagedObjectID());
+                              
+                              //
+                              //  send
+                              //
+                              
+                              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+                            }
+                          }
+                    } 
+                  catch (SubscriberProfileServiceException e)
+                    {
+                      log.error("SubscriberProfileServiceException {}", e.getMessage());
+                    }
+                }
+              lastCreatedOccurrenceNumber++;
+              jsonRoot.put("occurrenceNumber", lastCreatedOccurrenceNumber);
+              jsonRoot.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
+              jsonRoot.put("name", challenge.getGUIManagedObjectName() + "_" + lastCreatedOccurrenceNumber);
+              jsonRoot.put("display", challenge.getGUIManagedObjectDisplay() + " - " + lastCreatedOccurrenceNumber);
+              jsonRoot.put("previousPeriodStartDate", RLMDateUtils.formatDateForREST(challenge.getLastOccurrenceCreateDate(), tz));
+              jsonRoot.put("lastOccurrenceCreateDate", RLMDateUtils.formatDateForREST(recDate, tz));
+              guiManagerLoyaltyReporting.processPutLoyaltyProgram("0", jsonRoot, LoyaltyProgramType.CHALLENGE, challenge.getTenantID());
+            } 
+          catch (ElasticsearchClientException e)
+            {
+              e.printStackTrace();
+            }
+        }
+      log.info("executed Challenge OccouranceJob for challenge {}, time taken {} milisec", challenge.getLoyaltyProgramDisplay(), SystemTime.getCurrentTime().getTime() - startTimeMili);
+    }
+
     //
     //  getExpectedCreationDates
     //
     
     private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
     {
+      String tz = Deployment.getDeployment(tenantID).getTimeZone();
       List<Date> result = new ArrayList<Date>();
       while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
         {
@@ -29646,11 +29696,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           switch (scheduling)
             {
               case "week":
-                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, tz);
                 break;
                 
               case "month":
-                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, tz);
                 break;
 
               default:
@@ -29658,7 +29708,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
           String dayOf = String.valueOf(day);
           if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
-          firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getDeployment(tenantID).getTimeZone());
+          firstDate = RLMDateUtils.addDays(firstDate, 1, tz);
         }
       
       //
@@ -29667,7 +29717,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       
       if ("month".equalsIgnoreCase(scheduling))
         {
-          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, tz);
           for (String day : runEveryDay)
             {
               if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
@@ -29675,24 +29725,25 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         }
       return result;
     }
-
+    
     //
     //  getFirstDate
     //
     
     private Date getFirstDate(Date now, int dayOf, int tenantID)
     {
+      String tz = Deployment.getDeployment(tenantID).getTimeZone();
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
-          return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
+          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
+          return RLMDateUtils.addDays(firstDateOfNext, -7, tz);
         }
       else
         {
-          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(tz));
           c.setTime(now);
-          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
-          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, tz);
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, tz);
           return firstDate;
         }
     }
@@ -29703,27 +29754,27 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     
     private Date getLastDate(Date now, int dayOf, int tenantID)
     {
-      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
+      String tz = Deployment.getDeployment(tenantID).getTimeZone();
+      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
       if (Calendar.DAY_OF_WEEK == dayOf)
         {
-          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
-          return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getTimeZone());
+          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, tz);
+          return RLMDateUtils.addDays(firstDateOfthisWk, 6, tz);
         }
       else
         {
-          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(tz));
           c.setTime(now);
           int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
-          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
-          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
-          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getDeployment(tenantID).getTimeZone());
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, tz);
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, tz);
+          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, tz);
           return lastDate;
         }
     }
+    
   }
   
-
-
   /*****************************************
   *
   *  processPutSimpleOffer

@@ -18,12 +18,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramLevelChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.google.gson.JsonObject;
@@ -322,7 +325,89 @@ public class DynamicEventDeclarationsService extends GUIService
             result.put(criterionFieldUpdated.getID(), criterionFieldUpdated);
             result.put(criterionFieldTierUpdateType.getID(),  criterionFieldTierUpdateType);
             break;
-          }
+            
+          case CHALLENGE:
+            LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+            
+            //
+            // OLD Criterion
+            //
+            
+            Map<String, Object> criterionFieldChallengeOLDMap = new HashMap<String, Object>();
+            JSONArray levelAvailableValues = new JSONArray();
+            for (ChallengeLevel level : loyaltyProgramChallenge.getLevels())
+              {
+                JSONObject av = new JSONObject();
+                av.put("id", level.getLevelName());
+                av.put("display", level.getLevelName());
+                levelAvailableValues.add(av);
+              }
+            JSONObject val = new JSONObject();
+            val.put("id", LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.ENTERING.name());
+            val.put("display", LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.ENTERING.name());
+            levelAvailableValues.add(val);
+            
+            criterionFieldChallengeOLDMap.put("id", LoyaltyProgramChallenge.CRITERION_FIELD_NAME_OLD_PREFIX + loyaltyProgramChallenge.getLoyaltyProgramID());
+            criterionFieldChallengeOLDMap.put("display", "Old " + loyaltyProgramChallenge.getGUIManagedObjectDisplay() + " level");
+            criterionFieldChallengeOLDMap.put("dataType", "string");
+            criterionFieldChallengeOLDMap.put("retriever", "getProfileChallengeLoyaltyProgramChangeLevelOldValue");
+            criterionFieldChallengeOLDMap.put("availableValues", levelAvailableValues);
+            CriterionField criterionFieldChallengeOLD = new CriterionField(JSONUtilities.encodeObject(criterionFieldChallengeOLDMap));
+            
+            //
+            // NEW Criterion
+            //           
+            
+            Map<String, Object> criterionFieldChallengeNEWJMap = new HashMap<String, Object>();
+            availableValues = new JSONArray();
+            for (ChallengeLevel level : loyaltyProgramChallenge.getLevels())
+              {
+                JSONObject av = new JSONObject();
+                av.put("id", level.getLevelName());
+                av.put("display", level.getLevelName());
+                availableValues.add(av);
+              }
+            v = new JSONObject();
+            v.put("id", LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.LEAVING.name());
+            v.put("display", LoyaltyProgramChallenge.LoyaltyProgramChallengeEventInfos.LEAVING.name());
+            availableValues.add(v);
+            
+            criterionFieldChallengeNEWJMap.put("id", LoyaltyProgramChallenge.CRITERION_FIELD_NAME_NEW_PREFIX + loyaltyProgramChallenge.getLoyaltyProgramID());
+            criterionFieldChallengeNEWJMap.put("display", "New " + loyaltyProgramChallenge.getGUIManagedObjectDisplay() + " level");
+            criterionFieldChallengeNEWJMap.put("dataType", "string");
+            criterionFieldChallengeNEWJMap.put("retriever", "getProfileChallengeLoyaltyProgramChangeLevelNewValue");
+            criterionFieldChallengeNEWJMap.put("availableValues", availableValues);
+            CriterionField criterionFieldChallengeNEW = new CriterionField(JSONUtilities.encodeObject(criterionFieldChallengeNEWJMap));
+            
+            //
+            // IsUpdated Criterion
+            // 
+            
+            Map<String, Object> criterionChallengeFielUpdatedMap = new HashMap<String, Object>();
+            criterionChallengeFielUpdatedMap.put("id", LoyaltyProgramChallenge.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX + loyaltyProgramChallenge.getLoyaltyProgramID());
+            criterionChallengeFielUpdatedMap.put("display", "Is " + loyaltyProgramChallenge.getGUIManagedObjectDisplay() + " updated");
+            criterionChallengeFielUpdatedMap.put("dataType", "boolean");
+            criterionChallengeFielUpdatedMap.put("retriever", "getProfileChallengeLoyaltyProgramUpdated");
+            CriterionField criterionFieldChallengeUpdated = new CriterionField(JSONUtilities.encodeObject(criterionChallengeFielUpdatedMap));
+            
+            //
+            // level Update Type
+            // 
+            
+            Map<String, Object> criterionFieldLevelUpdateTypeMap = new HashMap<String, Object>();
+            criterionFieldLevelUpdateTypeMap.put("id", "loyaltyprogram" + "." + loyaltyProgram.getLoyaltyProgramID() + ".levelupdatetype");
+            criterionFieldLevelUpdateTypeMap.put("display", "Loyalty Program " + loyaltyProgram.getGUIManagedObjectDisplay() + " level update type");
+            criterionFieldLevelUpdateTypeMap.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
+            criterionFieldLevelUpdateTypeMap.put("retriever", "getProfileChallengeLoyaltyProgramLevelUpdateType");
+            criterionFieldLevelUpdateTypeMap.put("availableValues", generateAvailableValuesForLevelUpdateType());
+            CriterionField criterionFieldLevelUpdateType = new CriterionField(JSONUtilities.encodeObject(criterionFieldLevelUpdateTypeMap));
+            
+            result.put(criterionFieldChallengeOLD.getID(), criterionFieldChallengeOLD);
+            result.put(criterionFieldChallengeNEW.getID(), criterionFieldChallengeNEW);
+            result.put(criterionFieldChallengeUpdated.getID(), criterionFieldChallengeUpdated);
+            result.put(criterionFieldLevelUpdateType.getID(), criterionFieldLevelUpdateType);
+            break;
+          } 
       }
     return result;
   }  
@@ -340,7 +425,22 @@ public class DynamicEventDeclarationsService extends GUIService
     availableValuesField.add(LoyaltyProgramTierChange.Optout.getExternalRepresentation());
     availableValuesField.add(LoyaltyProgramTierChange.Upgrade.getExternalRepresentation());
     availableValuesField.add(LoyaltyProgramTierChange.Downgrade.getExternalRepresentation());
-    
+    return availableValuesField;
+  }
+  
+  /*****************************************
+  *
+  *  generateAvailableValuesForLevelUpdateType
+  *
+  *****************************************/
+
+  private JSONArray generateAvailableValuesForLevelUpdateType()
+  {
+    JSONArray availableValuesField = new JSONArray();
+    availableValuesField.add(LoyaltyProgramLevelChange.Optin.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramLevelChange.Optout.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramLevelChange.Upgrade.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramLevelChange.Downgrade.getExternalRepresentation());
     return availableValuesField;
   }
 
