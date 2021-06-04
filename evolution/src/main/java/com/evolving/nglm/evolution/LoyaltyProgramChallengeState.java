@@ -262,7 +262,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
     {
       case Optin:
         boolean isOptInAfterOptOut = false;
-        boolean resetOnReoptin = false;
+        boolean resetOnReoptin = true;
 
         //
         // update current state
@@ -277,6 +277,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         this.levelName = toLevel;
         this.levelEnrollmentDate = enrollmentDate;
         if (loyaltyProgramChallenge.getRecurrence() && previousPeriodStartDate == null) previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate(); // can happen if subscriber enters after 1st occur and isPeriodChange is false        
+        
         //
         // isOptInAfterOptOut
         //
@@ -301,7 +302,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
 
             this.previousPeriodLevel = null;
             this.previousPeriodScore = null;
-            this.previousPeriodStartDate = null;
+            if (loyaltyProgramChallenge.getRecurrence()) previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate(); // can happen if subscriber enters after 1st occur and isPeriodChange is false
           }
 
 

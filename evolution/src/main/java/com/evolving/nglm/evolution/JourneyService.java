@@ -167,6 +167,10 @@ public class JourneyService extends GUIService
       {
         result.put("areaAvailability", guiManagedObject.getJSONRepresentation().get("areaAvailability"));
       }
+    if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.LoyaltyWorkflow))
+      {
+        result.put("areaAvailability", guiManagedObject.getJSONRepresentation().get("areaAvailability"));
+      }
     return result;
   }
   

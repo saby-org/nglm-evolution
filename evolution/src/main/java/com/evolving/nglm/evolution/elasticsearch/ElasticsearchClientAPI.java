@@ -1113,6 +1113,9 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     return deliveryRequest;
   }
 
+  //
+  // getAlreadyOptInSubscriberIDs
+  //
   public List<String> getAlreadyOptInSubscriberIDs(String loyaltyProgramID) throws ElasticsearchClientException
   {
     List<String> result = new ArrayList<String>();

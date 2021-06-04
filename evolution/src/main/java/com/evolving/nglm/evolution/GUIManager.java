@@ -29614,7 +29614,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     @Override protected void run()
     {
       if (log.isDebugEnabled()) log.debug("ChallengesOccurrenceJob executing");
-      String tz = Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+      String tz = Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct ? 
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
       Collection<LoyaltyProgramChallenge> recurrentLoyaltyProgramChallenges = loyaltyProgramService.getActiveRecurrentChallenges(SystemTime.getCurrentTime(), 0); // tenant ID 0 means from all tenants
       if(log.isDebugEnabled()) log.debug("Challenges with Occurrence {}", recurrentLoyaltyProgramChallenges);
@@ -29764,10 +29764,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       if (firstLevel != null)
                         {
                           String deliveryRequestID = zuks.getStringKey();
-                          int firstLevelScore = firstLevel.getScoreLevel();
+                          //int firstLevelScore = firstLevel.getScoreLevel();
                           Integer subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
-                          int scoreToDebit = (subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
-                          scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
+                          int scoreToDebit = subscriberCurrnetScore != null ?  subscriberCurrnetScore.intValue() : Integer.valueOf(0); //(subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
                           if (scoreToDebit >= 0)
                             {
                               //
