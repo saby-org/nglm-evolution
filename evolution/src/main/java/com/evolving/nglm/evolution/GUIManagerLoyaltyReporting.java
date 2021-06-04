@@ -1058,13 +1058,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived, tenantID).size());
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived, tenantID).size());
-    if (jsonRoot.containsKey("areaAvailablity"))
+    if (jsonRoot.containsKey("areaAvailability"))
       {
         int mailTemplateCount = 0;
         int smsTemplateCount = 0;
         int dialogTemplateCount = 0;
         int pushTemplateCount = 0;
-        String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
+        String areaAvailability = JSONUtilities.decodeString(jsonRoot, "areaAvailability", false);
         Collection<GUIManagedObject> mailTemplates = subscriberMessageTemplateService.getStoredMailTemplates(true,
             includeArchived, tenantID);
         if (mailTemplates.size() != 0 && mailTemplates != null)
@@ -1073,9 +1073,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 if (template instanceof MailTemplate)
                   {
-                    JSONArray templeteAreaAvailablity = (JSONArray) ((MailTemplate) template).getJSONRepresentation()
+                    JSONArray templeteAreaAvailability = (JSONArray) ((MailTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    if (templeteAreaAvailablity != null && templeteAreaAvailablity.contains(areaAvailablity))
+                    if (templeteAreaAvailability != null && templeteAreaAvailability.contains(areaAvailability))
                       {
                         mailTemplateCount += 1;
                       }
@@ -1090,9 +1090,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 if (template instanceof SMSTemplate)
                   {
-                    JSONArray templeteAreaAvailablity = (JSONArray) ((SMSTemplate) template).getJSONRepresentation()
+                    JSONArray templeteAreaAvailability = (JSONArray) ((SMSTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    if (templeteAreaAvailablity != null && templeteAreaAvailablity.contains(areaAvailablity))
+                    if (templeteAreaAvailability != null && templeteAreaAvailability.contains(areaAvailability))
                       {
                         smsTemplateCount += 1;
                       }
@@ -1107,9 +1107,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 if (template instanceof DialogTemplate)
                   {
-                    JSONArray templeteAreaAvailablity = (JSONArray)((DialogTemplate) template).getJSONRepresentation()
+                    JSONArray templeteAreaAvailability = (JSONArray)((DialogTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    if (templeteAreaAvailablity != null && templeteAreaAvailablity.contains(areaAvailablity))
+                    if (templeteAreaAvailability != null && templeteAreaAvailability.contains(areaAvailability))
                       {
                         dialogTemplateCount += 1;
                       }
@@ -1124,9 +1124,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 if (template instanceof PushTemplate)
                   {
-                    JSONArray templeteAreaAvailablity = (JSONArray)((PushTemplate) template).getJSONRepresentation()
+                    JSONArray templeteAreaAvailability = (JSONArray)((PushTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    if (templeteAreaAvailablity != null && templeteAreaAvailablity.contains(areaAvailablity))
+                    if (templeteAreaAvailability != null && templeteAreaAvailability.contains(areaAvailability))
                       {
                         pushTemplateCount += 1;
                       }

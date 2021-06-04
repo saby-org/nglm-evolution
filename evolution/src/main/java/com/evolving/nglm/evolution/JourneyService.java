@@ -163,6 +163,10 @@ public class JourneyService extends GUIService
       {
         result.put("journeyTemplateID", guiManagedObject.getJSONRepresentation().get("journeyTemplateID"));
       }
+    if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.Workflow))
+      {
+        result.put("areaAvailability", guiManagedObject.getJSONRepresentation().get("areaAvailability"));
+      }
     return result;
   }
   
