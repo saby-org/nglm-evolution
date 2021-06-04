@@ -95,6 +95,7 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
@@ -2477,60 +2478,57 @@ public class ThirdPartyManager
                  loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate(), tenantID));
 
 
-                 switch (loyaltyProgramState.getLoyaltyProgramType()) {
+                 switch (loyaltyProgramState.getLoyaltyProgramType())
+                 {
                    case POINTS:
-
                      LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
 
                      //
-                     //  current tier
+                     // current tier
                      //
 
                      if(loyaltyProgramPointsState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName()); }
                      if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate(), tenantID)); }
 
                      //
-                     //  status point
+                     // status point
                      //
-                     
+
                      LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
                      String statusPointID = loyaltyProgramPoints.getStatusPointsID();
                      PointBalance pointBalance = baseSubscriberProfile.getPointBalances().get(statusPointID);
-                     if(pointBalance != null)
+                     if (pointBalance != null)
                        {
                          loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
-                       }
-                     else
+                       } else
                        {
                          loyaltyProgramPresentation.put("statusPointsBalance", 0);
                        }
-                     
+
                      //
-                     //  reward point informations
+                     // reward point informations
                      //
 
                      String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
                      PointBalance rewardBalance = baseSubscriberProfile.getPointBalances().get(rewardPointID);
-                     if(rewardBalance != null)
+                     if (rewardBalance != null)
                        {
                          loyaltyProgramPresentation.put("rewardsPointsBalance", rewardBalance.getBalance(now));
                          loyaltyProgramPresentation.put("rewardsPointsEarned", rewardBalance.getEarnedHistory().getAllTimeBucket());
                          loyaltyProgramPresentation.put("rewardsPointsConsumed", rewardBalance.getConsumedHistory().getAllTimeBucket());
                          loyaltyProgramPresentation.put("rewardsPointsExpired", rewardBalance.getExpiredHistory().getAllTimeBucket());
                          Date firstExpirationDate = rewardBalance.getFirstExpirationDate(now);
-                         if(firstExpirationDate != null)
+                         if (firstExpirationDate != null)
                            {
                              int firstExpirationQty = rewardBalance.getBalance(firstExpirationDate);
                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(firstExpirationDate, tenantID));
                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", firstExpirationQty);
-                           }
-                         else
+                           } else
                            {
                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now, tenantID));
                              loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
                            }
-                       }
-                     else
+                       } else
                        {
                          loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
                          loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
@@ -2541,7 +2539,7 @@ public class ThirdPartyManager
                        }
 
                      //
-                     //  history
+                     // history
                      //
                      ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
                      LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
@@ -2555,13 +2553,51 @@ public class ThirdPartyManager
                        }
                      }
                      loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
-
                      break;
+                     
+                   case CHALLENGE:
+                     LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) loyaltyProgramState;
+                     
+                     //
+                     // current level
+                     //
 
-//                   case BADGES:
-//                     // TODO
-//                     break;
+                     if (loyaltyProgramChallengeState.getLevelName() != null)
+                       {
+                         loyaltyProgramPresentation.put("levelName", loyaltyProgramChallengeState.getLevelName());
+                       }
+                     if (loyaltyProgramChallengeState.getLevelEnrollmentDate() != null)
+                       {
+                         loyaltyProgramPresentation.put("levelEnrollmentDate", getDateString(loyaltyProgramChallengeState.getLevelEnrollmentDate(), tenantID));
+                       }
+                     
+                     //
+                     // score
+                     //
 
+                     loyaltyProgramPresentation.put("score", loyaltyProgramChallengeState.getCurrentScore());
+                     
+                     //
+                     // history
+                     //
+                     
+                     ArrayList<JSONObject> loyaltyProgramChallengeHistoryJSON = new ArrayList<JSONObject>();
+                     LoyaltyProgramChallengeHistory loyaltyProgramChallengeHistory = loyaltyProgramChallengeState.getLoyaltyProgramChallengeHistory();
+                     if (loyaltyProgramChallengeHistory != null && loyaltyProgramChallengeHistory.getLevelHistory() != null && !loyaltyProgramChallengeHistory.getLevelHistory().isEmpty())
+                       {
+                         for (LevelHistory level : loyaltyProgramChallengeHistory.getLevelHistory())
+                           {
+                             HashMap<String, Object> levelHistoryJSON = new HashMap<String, Object>();
+                             levelHistoryJSON.put("fromLevel", level.getFromLevel());
+                             levelHistoryJSON.put("toLevel", level.getToLevel());
+                             levelHistoryJSON.put("transitionDate", getDateString(level.getTransitionDate(), tenantID));
+                             levelHistoryJSON.put("occouranceNumber", level.getOccurrenceNumber());
+                             loyaltyProgramChallengeHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
+                           }
+                       }
+                     loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
+                     break;
+                     
                    default:
                      break;
                  }

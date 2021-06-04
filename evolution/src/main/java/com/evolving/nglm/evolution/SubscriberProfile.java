@@ -46,6 +46,7 @@ import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 
 public abstract class SubscriberProfile
 {
@@ -276,7 +277,20 @@ public abstract class SubscriberProfile
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
   public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
   public int getTenantID() { return tenantID; }
-
+  public Integer getScore(String challengeID)
+  {
+    Integer result = null;
+    if (getLoyaltyPrograms() != null && getLoyaltyPrograms().get(challengeID) != null)
+      {
+        LoyaltyProgramState challengeStUnchecked = getLoyaltyPrograms().get(challengeID);
+        if (challengeStUnchecked instanceof LoyaltyProgramChallengeState)
+          {
+            result = ((LoyaltyProgramChallengeState) challengeStUnchecked).getCurrentScore();
+          }
+      }
+    return result;
+  }
+  
   //
   //  temporary (until we can update nglm-kazakhstan)
   //
@@ -505,8 +519,23 @@ public abstract class SubscriberProfile
                     loyalty.put("rewardTodayRedeemer", todayRedeemer);
                     loyalty.put("rewardYesterdayRedeemer", yesterdayRedeemer);
                   }
+                else if(loyaltyProgram instanceof LoyaltyProgramChallenge) 
+                  {
+                    LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
+                    LoyaltyProgramChallengeState loyaltyProgramChallengeState = (LoyaltyProgramChallengeState) program.getValue();
+                    
+                    if(loyaltyProgramChallengeState.getLevelName() != null){ loyalty.put("levelName", loyaltyProgramChallengeState.getLevelName()); }
+                    if(loyaltyProgramChallengeState.getLevelEnrollmentDate() != null){ loyalty.put("levelUpdateDate", RLMDateUtils.formatDateForElasticsearchDefault(loyaltyProgramChallengeState.getLevelEnrollmentDate())); }
+                    if(loyaltyProgramChallengeState.getPreviousLevelName() != null){ loyalty.put("previousLevelName", loyaltyProgramChallengeState.getPreviousLevelName()); }
+                    ChallengeLevel level = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getLevelName());
+                    ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(loyaltyProgramChallengeState.getPreviousLevelName());
+                    loyalty.put("levelChangeType", ChallengeLevel.changeFromLevelToLevel(previousLevel, level).getExternalRepresentation());
+                    loyalty.put("occurrenceNumber", loyaltyProgramChallenge.getOccurrenceNumber());
+                    loyalty.put("previousPeriodScore", loyaltyProgramChallengeState.getPreviousPeriodScore());
+                    loyalty.put("previousPeriodLevel", loyaltyProgramChallengeState.getPreviousPeriodLevel());
+                    loyalty.put("score", loyaltyProgramChallengeState.getCurrentScore());
+                  }
               }
-            
             array.add(JSONUtilities.encodeObject(loyalty));
           }
       }

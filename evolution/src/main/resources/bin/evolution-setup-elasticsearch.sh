@@ -138,7 +138,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
           "tierUpdateDate"               : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
           "loyaltyProgramEpoch"          : { "type" : "long" },
           "rewardTodayRedeemer"          : { "type" : "boolean" },
-          "rewardYesterdayRedeemer"      : { "type" : "boolean" }
+          "rewardYesterdayRedeemer"      : { "type" : "boolean" },
+          "levelUpdateDate"              : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
         }
       },
       "pointBalances"                       : { "type": "nested",

@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- *  LoyaltyProgram.java
+ *  LoyaltyProgramPoints.java
  *
  *****************************************************************************/
 
@@ -146,9 +146,10 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 
   /*****************************************
    *
-   *  getTier
+   * getTier
    *
    *****************************************/
+  
   public Tier getTier(String tierName)
   {
     if (tierName == null) return null; // optimization
@@ -382,8 +383,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
   
   @Override public boolean validate() throws GUIManagerException 
   {
-    // TODO : any validation needed ?
-    return true;
+    return LoyaltyProgramType.POINTS == getLoyaltyProgramType();
   }
 
   public static class Tier
