@@ -302,7 +302,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
 
             this.previousPeriodLevel = null;
             this.previousPeriodScore = null;
-            if (loyaltyProgramChallenge.getRecurrence() && previousPeriodStartDate == null) previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate(); // can happen if subscriber enters after 1st occur and isPeriodChange is false
+            if (loyaltyProgramChallenge.getRecurrence()) previousPeriodStartDate = loyaltyProgramChallenge.getPreviousPeriodStartDate(); // can happen if subscriber enters after 1st occur and isPeriodChange is false
           }
 
 
