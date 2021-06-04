@@ -60,8 +60,13 @@ public abstract class GUIManagedObject
     Journey("journey"),
     Campaign("campaign"),
     Workflow("workflow"),
-    LoyaltyWorkflow("loyaltyWorkflow"),
     BulkCampaign("bulkCampaign"),
+    
+    LoyaltyWorkflow("loyaltyWorkflow"),
+    LoyaltyProgramPoints("loyaltyProgramPoints"),
+    LoyaltyProgramMission("loyaltyProgramMission"),
+    LoyaltyProgramChallenge("loyaltyProgramChallenge"),
+    
     SMSMessageTemplate("smsMessageTemplate"),
     MailMessageTemplate("mailMessageTemplate"),
     PushMessageTemplate("pushMessageTemplate"),
@@ -171,6 +176,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CommunicationChannelTimeWindow.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramPoints.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramChallenge.serde());
+    guiManagedObjectSerdes.add(LoyaltyProgramMission.serde());
     guiManagedObjectSerdes.add(ExclusionInclusionTarget.serde());
     guiManagedObjectSerdes.add(DNBOMatrix.serde());
     guiManagedObjectSerdes.add(SegmentContactPolicy.serde());

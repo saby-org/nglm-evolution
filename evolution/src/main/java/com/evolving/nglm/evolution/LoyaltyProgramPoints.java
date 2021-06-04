@@ -288,7 +288,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
      *
      *****************************************/
 
-    super(jsonRoot, epoch, existingLoyaltyProgramUnchecked, catalogCharacteristicService, tenantID);
+    super(jsonRoot, GUIManagedObjectType.LoyaltyProgramPoints, epoch, existingLoyaltyProgramUnchecked, catalogCharacteristicService, tenantID);
 
     /*****************************************
      *

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.elasticsearch.action.StepListener;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -27,6 +28,8 @@ import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramLevelChange;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.LoyaltyProgramStepChange;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.google.gson.JsonObject;
@@ -407,6 +410,88 @@ public class DynamicEventDeclarationsService extends GUIService
             result.put(criterionFieldChallengeUpdated.getID(), criterionFieldChallengeUpdated);
             result.put(criterionFieldLevelUpdateType.getID(), criterionFieldLevelUpdateType);
             break;
+            
+          case MISSION:
+            LoyaltyProgramMission loyaltyProgramMission = (LoyaltyProgramMission) loyaltyProgram;
+            
+            //
+            // OLD Criterion
+            //
+            
+            Map<String, Object> criterionFieldMissionOLDMap = new HashMap<String, Object>();
+            JSONArray stepAvailableValues = new JSONArray();
+            for (MissionStep step : loyaltyProgramMission.getSteps())
+              {
+                JSONObject av = new JSONObject();
+                av.put("id", step.getStepName());
+                av.put("display", step.getStepName());
+                stepAvailableValues.add(av);
+              }
+            JSONObject val1 = new JSONObject();
+            val1.put("id", LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.ENTERING.name());
+            val1.put("display", LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.ENTERING.name());
+            stepAvailableValues.add(val1);
+            
+            criterionFieldMissionOLDMap.put("id", LoyaltyProgramMission.CRITERION_FIELD_NAME_OLD_PREFIX + loyaltyProgramMission.getLoyaltyProgramID());
+            criterionFieldMissionOLDMap.put("display", "Old " + loyaltyProgramMission.getGUIManagedObjectDisplay() + " step");
+            criterionFieldMissionOLDMap.put("dataType", "string");
+            criterionFieldMissionOLDMap.put("retriever", "getProfileMissionLoyaltyProgramChangeStepOldValue");
+            criterionFieldMissionOLDMap.put("availableValues", stepAvailableValues);
+            CriterionField criterionFieldMissionOLD = new CriterionField(JSONUtilities.encodeObject(criterionFieldMissionOLDMap));
+            
+            //
+            // NEW Criterion
+            //           
+            
+            Map<String, Object> criterionFieldMissionNEWJMap = new HashMap<String, Object>();
+            availableValues = new JSONArray();
+            for (MissionStep step : loyaltyProgramMission.getSteps())
+              {
+                JSONObject av = new JSONObject();
+                av.put("id", step.getStepName());
+                av.put("display", step.getStepName());
+                availableValues.add(av);
+              }
+            v = new JSONObject();
+            v.put("id", LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.LEAVING.name());
+            v.put("display", LoyaltyProgramMission.LoyaltyProgramMissionEventInfos.LEAVING.name());
+            availableValues.add(v);
+            
+            criterionFieldMissionNEWJMap.put("id", LoyaltyProgramMission.CRITERION_FIELD_NAME_NEW_PREFIX + loyaltyProgramMission.getLoyaltyProgramID());
+            criterionFieldMissionNEWJMap.put("display", "New " + loyaltyProgramMission.getGUIManagedObjectDisplay() + " step");
+            criterionFieldMissionNEWJMap.put("dataType", "string");
+            criterionFieldMissionNEWJMap.put("retriever", "getProfileMissionLoyaltyProgramChangeStepNewValue");
+            criterionFieldMissionNEWJMap.put("availableValues", availableValues);
+            CriterionField criterionFieldMissionNEW = new CriterionField(JSONUtilities.encodeObject(criterionFieldMissionNEWJMap));
+            
+            //
+            // IsUpdated Criterion
+            // 
+            
+            Map<String, Object> criterionMissionFielUpdatedMap = new HashMap<String, Object>();
+            criterionMissionFielUpdatedMap.put("id", LoyaltyProgramMission.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX + loyaltyProgramMission.getLoyaltyProgramID());
+            criterionMissionFielUpdatedMap.put("display", "Is " + loyaltyProgramMission.getGUIManagedObjectDisplay() + " updated");
+            criterionMissionFielUpdatedMap.put("dataType", "boolean");
+            criterionMissionFielUpdatedMap.put("retriever", "getProfileMissionLoyaltyProgramUpdated");
+            CriterionField criterionFieldMissionUpdated = new CriterionField(JSONUtilities.encodeObject(criterionMissionFielUpdatedMap));
+            
+            //
+            // level Update Type
+            // 
+            
+            Map<String, Object> criterionFieldStepUpdateTypeMap = new HashMap<String, Object>();
+            criterionFieldStepUpdateTypeMap.put("id", "loyaltyprogram" + "." + loyaltyProgram.getLoyaltyProgramID() + ".stepupdatetype");
+            criterionFieldStepUpdateTypeMap.put("display", "Loyalty Program " + loyaltyProgram.getGUIManagedObjectDisplay() + " step update type");
+            criterionFieldStepUpdateTypeMap.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
+            criterionFieldStepUpdateTypeMap.put("retriever", "getProfileMissionLoyaltyProgramStepUpdateType");
+            criterionFieldStepUpdateTypeMap.put("availableValues", generateAvailableValuesForStepUpdateType());
+            CriterionField criterionFieldStepUpdateType = new CriterionField(JSONUtilities.encodeObject(criterionFieldStepUpdateTypeMap));
+            
+            result.put(criterionFieldMissionOLD.getID(), criterionFieldMissionOLD);
+            result.put(criterionFieldMissionNEW.getID(), criterionFieldMissionNEW);
+            result.put(criterionFieldMissionUpdated.getID(), criterionFieldMissionUpdated);
+            result.put(criterionFieldStepUpdateType.getID(), criterionFieldStepUpdateType);
+            break;
           } 
       }
     return result;
@@ -425,6 +510,7 @@ public class DynamicEventDeclarationsService extends GUIService
     availableValuesField.add(LoyaltyProgramTierChange.Optout.getExternalRepresentation());
     availableValuesField.add(LoyaltyProgramTierChange.Upgrade.getExternalRepresentation());
     availableValuesField.add(LoyaltyProgramTierChange.Downgrade.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramTierChange.NoChange.getExternalRepresentation());
     return availableValuesField;
   }
   
@@ -441,6 +527,24 @@ public class DynamicEventDeclarationsService extends GUIService
     availableValuesField.add(LoyaltyProgramLevelChange.Optout.getExternalRepresentation());
     availableValuesField.add(LoyaltyProgramLevelChange.Upgrade.getExternalRepresentation());
     availableValuesField.add(LoyaltyProgramLevelChange.Downgrade.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramLevelChange.NoChange.getExternalRepresentation());
+    return availableValuesField;
+  }
+  
+  /*****************************************
+  *
+  *  generateAvailableValuesForStepUpdateType
+  *
+  *****************************************/
+
+  private JSONArray generateAvailableValuesForStepUpdateType()
+  {
+    JSONArray availableValuesField = new JSONArray();
+    availableValuesField.add(LoyaltyProgramStepChange.Optin.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramStepChange.Optout.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramStepChange.Upgrade.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramStepChange.Downgrade.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramStepChange.NoChange.getExternalRepresentation());
     return availableValuesField;
   }
 

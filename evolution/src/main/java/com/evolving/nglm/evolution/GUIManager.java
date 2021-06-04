@@ -132,6 +132,8 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -162,6 +164,8 @@ import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import kafka.utils.Log4jControllerRegistration;
 
 public class GUIManager
 {
@@ -496,15 +500,21 @@ public class GUIManager
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
     getLoyaltyProgramChallengeList("getLoyaltyProgramChallengeList"),
+    getLoyaltyProgramMissionList("getLoyaltyProgramMissionList"),
     
     getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
     getLoyaltyProgramChallengeSummaryList("getLoyaltyProgramChallengeSummaryList"),
+    getLoyaltyProgramMissionSummaryList("getLoyaltyProgramMissionSummaryList"),
     
     getLoyaltyProgram("getLoyaltyProgram"),
     getLoyaltyProgramChallenge("getLoyaltyProgramChallenge"),
+    getLoyaltyProgramMission("getLoyaltyProgramMission"),
     
     putLoyaltyProgram("putLoyaltyProgram"),
     putLoyaltyProgramChallenge("putLoyaltyProgramChallenge"),
+    putLoyaltyProgramMission("putLoyaltyProgramMission"),
+    updateMission("updateMission"),
+    updateChallenge("updateChallenge"),
     
     removeLoyaltyProgram("removeLoyaltyProgram"),
     setStatusLoyaltyProgram("setStatusLoyaltyProgram"),
@@ -2210,12 +2220,18 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeList", new APISimpleHandler(API.getLoyaltyProgramChallengeList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramMissionList", new APISimpleHandler(API.getLoyaltyProgramMissionList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramSummaryList", new APISimpleHandler(API.getLoyaltyProgramSummaryList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallengeSummaryList", new APISimpleHandler(API.getLoyaltyProgramChallengeSummaryList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramMissionSummaryList", new APISimpleHandler(API.getLoyaltyProgramMissionSummaryList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgram", new APISimpleHandler(API.getLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramChallenge", new APISimpleHandler(API.getLoyaltyProgramChallenge));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramMission", new APISimpleHandler(API.getLoyaltyProgramMission));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgramChallenge", new APISimpleHandler(API.putLoyaltyProgramChallenge));
+        restServer.createContext("/nglm-guimanager/putLoyaltyProgramMission", new APISimpleHandler(API.putLoyaltyProgramMission));
+        restServer.createContext("/nglm-guimanager/updateMission", new APISimpleHandler(API.updateMission));
+        restServer.createContext("/nglm-guimanager/updateChallenge", new APISimpleHandler(API.updateChallenge));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/setStatusLoyaltyProgram", new APISimpleHandler(API.setStatusLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
@@ -3862,6 +3878,10 @@ public class GUIManager
                 case getLoyaltyProgramChallengeList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, true, includeArchived, tenantID);
                   break;
+                  
+                case getLoyaltyProgramMissionList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.MISSION, true, includeArchived, tenantID);
+                  break;
 
                 case getLoyaltyProgramSummaryList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.POINTS, false, includeArchived, tenantID);
@@ -3869,6 +3889,10 @@ public class GUIManager
                   
                 case getLoyaltyProgramChallengeSummaryList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, false, includeArchived, tenantID);
+                  break;
+                  
+                case getLoyaltyProgramMissionSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, LoyaltyProgramType.MISSION, false, includeArchived, tenantID);
                   break;
 
                 case getLoyaltyProgram:
@@ -3878,6 +3902,10 @@ public class GUIManager
                 case getLoyaltyProgramChallenge:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, includeArchived, tenantID);
                   break;
+                  
+                case getLoyaltyProgramMission:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.MISSION, includeArchived, tenantID);
+                  break;
 
                 case putLoyaltyProgram:
                   jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.POINTS, tenantID);
@@ -3885,6 +3913,18 @@ public class GUIManager
                   
                 case putLoyaltyProgramChallenge:
                   jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, tenantID);
+                  break;
+                  
+                case putLoyaltyProgramMission:
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot, LoyaltyProgramType.MISSION, tenantID);
+                  break;
+                  
+                case updateMission:
+                  jsonResponse = guiManagerLoyaltyReporting.processUpdateLoyalty(userID, jsonRoot, LoyaltyProgramType.MISSION, tenantID);
+                  break;
+                  
+                case updateChallenge:
+                  jsonResponse = guiManagerLoyaltyReporting.processUpdateLoyalty(userID, jsonRoot, LoyaltyProgramType.CHALLENGE, tenantID);
                   break;
 
                 case removeLoyaltyProgram:
@@ -19481,11 +19521,12 @@ public class GUIManager
               //  check loyalty program still exist
               //
 
-              LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
-              if (loyaltyProgram != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)))
+              GUIManagedObject loyaltyProgramUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+              if (loyaltyProgramUnchecked != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)) && loyaltyProgramUnchecked.getAccepted())
                 {
 
                   HashMap<String, Object> loyaltyProgramPresentation = new HashMap<String,Object>();
+                  LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
 
                   //
                   //  loyalty program informations
@@ -19498,8 +19539,7 @@ public class GUIManager
                   loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate(), tenantID));
                   loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate(), tenantID));
                   loyaltyProgramPresentation.put("active", loyaltyProgram.getActive());
-
-
+                  
                   switch (loyaltyProgramState.getLoyaltyProgramType())
                   {
                     case POINTS:
@@ -19648,6 +19688,39 @@ public class GUIManager
                         }
                       
                       loyaltyProgramPresentation.put("loyaltyProgramChallengeHistory", loyaltyProgramChallengeHistoryJSON);
+                      break;
+                      
+                    case MISSION:
+                      LoyaltyProgramMissionState loyaltyProgramMissionState = (LoyaltyProgramMissionState) loyaltyProgramState;
+                      loyaltyProgramPresentation.put("isMissionCompleted", loyaltyProgramMissionState.isMissionCompleted());
+                      
+                      //
+                      // current step
+                      //
+
+                      loyaltyProgramPresentation.put("stepName", loyaltyProgramMissionState.getStepName());
+                      loyaltyProgramPresentation.put("stepEnrollmentDate", getDateString(loyaltyProgramMissionState.getStepEnrollmentDate(), tenantID));
+                      loyaltyProgramPresentation.put("currentProgression", loyaltyProgramMissionState.getCurrentProgression());
+                      
+                      //
+                      // history
+                      //
+                      
+                      ArrayList<JSONObject> loyaltyProgramMissionHistoryJSON = new ArrayList<JSONObject>();
+                      LoyaltyProgramMissionHistory loyaltyProgramMissionHistory = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory();
+                      if (loyaltyProgramMissionHistory != null && loyaltyProgramMissionHistory.getStepHistory() != null && !loyaltyProgramMissionHistory.getStepHistory().isEmpty())
+                        {
+                          for (StepHistory step : loyaltyProgramMissionHistory.getStepHistory())
+                            {
+                              HashMap<String, Object> levelHistoryJSON = new HashMap<String, Object>();
+                              levelHistoryJSON.put("fromStep", step.getFromStep());
+                              levelHistoryJSON.put("toStep", step.getToStep());
+                              levelHistoryJSON.put("transitionDate", getDateString(step.getTransitionDate(), tenantID));
+                              loyaltyProgramMissionHistoryJSON.add(JSONUtilities.encodeObject(levelHistoryJSON));
+                            }
+                        }
+                      
+                      loyaltyProgramPresentation.put("loyaltyProgramMissionHistory", loyaltyProgramMissionHistoryJSON);
                       break;
                       
                     default:
@@ -29130,7 +29203,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     @Override protected void run()
     {
       if (log.isDebugEnabled()) log.debug("ChallengesOccurrenceJob executing");
-      String tz = Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct
+      String tz = Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct ? 
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
       Collection<LoyaltyProgramChallenge> recurrentLoyaltyProgramChallenges = loyaltyProgramService.getActiveRecurrentChallenges(SystemTime.getCurrentTime(), 0); // tenant ID 0 means from all tenants
       if(log.isDebugEnabled()) log.debug("Challenges with Occurrence {}", recurrentLoyaltyProgramChallenges);
@@ -29178,7 +29251,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             }
           else if ("month".equalsIgnoreCase(scheduling))
             {
-              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH,challenge.getTenantID());
+              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH, challenge.getTenantID());
               Date tempStartDate = RLMDateUtils.addMonths(challenge.getEffectiveStartDate(), scheduligInterval, tz); //challenge.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
               Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH, challenge.getTenantID());
@@ -29233,11 +29306,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private void executeChallengeOccouranceJob(LoyaltyProgramChallenge challenge, List<Date> tmpOccouranceDates, Integer lastCreatedOccurrenceNumber)
     {
       long startTimeMili = SystemTime.getCurrentTime().getTime();
-      String tz = Deployment.getDeployment(challenge.getTenantID()).getTimeZone();
+      String timeZone = Deployment.getDeployment(challenge.getTenantID()).getTimeZone();
       if (log.isInfoEnabled())
         {
           StringBuilder dtBuilders = new StringBuilder();
-          tmpOccouranceDates.forEach(dt -> dtBuilders.append(RLMDateUtils.formatDateDay(dt, tz)).append(" "));
+          tmpOccouranceDates.forEach(dt -> dtBuilders.append(RLMDateUtils.formatDateDay(dt, timeZone)).append(" "));
           log.info("execute Challenge OccouranceJob for challenge {}, for date(s) {}", challenge.getLoyaltyProgramDisplay(), dtBuilders.toString());
         }
       
@@ -29254,6 +29327,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               //
               
               List<String> alreadyOptInSubscriberIDs = elasticsearch.getAlreadyOptInSubscriberIDs(challenge.getLoyaltyProgramID());
+              
+              //
+              //  update challenge for next occurrence
+              //
+              
+              lastCreatedOccurrenceNumber++;
+              jsonRoot.put("occurrenceNumber", lastCreatedOccurrenceNumber);
+              jsonRoot.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
+              jsonRoot.put("name", challenge.getGUIManagedObjectName() + "_" + lastCreatedOccurrenceNumber);
+              jsonRoot.put("display", challenge.getGUIManagedObjectDisplay() + " - " + lastCreatedOccurrenceNumber);
+              jsonRoot.put("previousPeriodStartDate", RLMDateUtils.formatDateForREST(challenge.getLastOccurrenceCreateDate(), timeZone));
+              jsonRoot.put("lastOccurrenceCreateDate", RLMDateUtils.formatDateForREST(recDate, timeZone));
+              guiManagerLoyaltyReporting.processPutLoyaltyProgram("0", jsonRoot, LoyaltyProgramType.CHALLENGE, challenge.getTenantID());
+              
+              //
+              //  execute change event for all the optin - sub
+              //
+              
               for (String subscriberID : alreadyOptInSubscriberIDs)
                 {
                   try
@@ -29262,10 +29353,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       if (firstLevel != null)
                         {
                           String deliveryRequestID = zuks.getStringKey();
-                          int firstLevelScore = firstLevel.getScoreLevel();
+                          //int firstLevelScore = firstLevel.getScoreLevel();
                           Integer subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
-                          int scoreToDebit = (subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
-                          scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
+                          int scoreToDebit = subscriberCurrnetScore != null ?  subscriberCurrnetScore.intValue() : Integer.valueOf(0); //(subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
                           if (scoreToDebit >= 0)
                             {
                               //
@@ -29275,6 +29365,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                               SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap());
                               subscriberProfileForceUpdate.getParameterMap().put("score", scoreToDebit*-1);
                               subscriberProfileForceUpdate.getParameterMap().put("challengeID", challenge.getGUIManagedObjectID());
+                              subscriberProfileForceUpdate.getParameterMap().put("isPeriodChange", Boolean.TRUE);
                               
                               //
                               //  send
@@ -29289,21 +29380,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       log.error("SubscriberProfileServiceException {}", e.getMessage());
                     }
                 }
-              lastCreatedOccurrenceNumber++;
-              jsonRoot.put("occurrenceNumber", lastCreatedOccurrenceNumber);
-              jsonRoot.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
-              jsonRoot.put("name", challenge.getGUIManagedObjectName() + "_" + lastCreatedOccurrenceNumber);
-              jsonRoot.put("display", challenge.getGUIManagedObjectDisplay() + " - " + lastCreatedOccurrenceNumber);
-              jsonRoot.put("previousPeriodStartDate", RLMDateUtils.formatDateForREST(challenge.getLastOccurrenceCreateDate(), tz));
-              jsonRoot.put("lastOccurrenceCreateDate", RLMDateUtils.formatDateForREST(recDate, tz));
-              guiManagerLoyaltyReporting.processPutLoyaltyProgram("0", jsonRoot, LoyaltyProgramType.CHALLENGE, challenge.getTenantID());
             } 
           catch (ElasticsearchClientException e)
             {
               e.printStackTrace();
+              if (log.isErrorEnabled()) log.error("for this exception {} challenge job failed - will retry next if scheduled", e.getMessage());
             }
         }
-      log.info("executed Challenge OccouranceJob for challenge {}, time taken {} milisec", challenge.getLoyaltyProgramDisplay(), SystemTime.getCurrentTime().getTime() - startTimeMili);
+      if(log.isInfoEnabled()) log.info("executed Challenge OccouranceJob for challenge {}, time taken {} milisec", challenge.getLoyaltyProgramDisplay(), SystemTime.getCurrentTime().getTime() - startTimeMili);
     }
 
     //

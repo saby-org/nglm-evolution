@@ -31,7 +31,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "point" })
+@GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic"})
 public class LoyaltyProgramChallenge extends LoyaltyProgram
 {
   
@@ -263,7 +263,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
      *
      *****************************************/
 
-    super(jsonRoot, epoch, existingLoyaltyProgramUnchecked, catalogCharacteristicService, tenantID);
+    super(jsonRoot, GUIManagedObjectType.LoyaltyProgramChallenge, epoch, existingLoyaltyProgramUnchecked, catalogCharacteristicService, tenantID);
 
     /*****************************************
      *

@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -48,6 +50,8 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionSchedule;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -169,6 +173,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramChallengeNotFound");
         if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
         break;
+        
+      case MISSION:
+        response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramMissionNotFound");
+        if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
+        break;
 
       default:
         break;
@@ -235,6 +244,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         jsonRoot.remove("lastCreatedOccurrenceNumber");
         jsonRoot.remove("lastOccurrenceCreateDate");
         jsonRoot.remove("previousPeriodStartDate");
+        if (JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE)) jsonRoot.put("occurrenceNumber", 1);
       }
     
     //
@@ -287,6 +297,23 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           case CHALLENGE:
             loyaltyProgram = new LoyaltyProgramChallenge(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService, tenantID);
             break;
+            
+          case MISSION:
+            jsonRoot.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "entryStartDate", true));
+            String scheduleType = JSONUtilities.decodeString(jsonRoot, "scheduleType", true);
+            if (MissionSchedule.FIXDURATION == MissionSchedule.fromExternalRepresentation(scheduleType))
+              {
+                Integer durationInDays  = JSONUtilities.decodeInteger(jsonRoot, "duration", true);
+                String entryEndDateStr = JSONUtilities.decodeString(jsonRoot, "entryEndDate", true);
+                Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(entryEndDateStr), durationInDays, Deployment.getDefault().getTimeZone());
+                jsonRoot.put("effectiveEndDate", RLMDateUtils.formatDateForREST(effectiveEndDate, Deployment.getDefault().getTimeZone()));
+              }
+            else
+              {
+                jsonRoot.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "entryEndDate", true));
+              }
+            loyaltyProgram = new LoyaltyProgramMission(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService, tenantID);
+            break;
 
           case Unknown:
             throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", false));
@@ -308,8 +335,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
              *
              *****************************************/
 
-            dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram,
-                (existingLoyaltyProgram == null));
+            dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram, (existingLoyaltyProgram == null));
 
             /*****************************************
              *
@@ -369,6 +395,232 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+  }
+  
+  /*****************************************
+  *
+  *  processUpdateLoyalty
+  *
+  *****************************************/
+
+  JSONObject processUpdateLoyalty(String userID, JSONObject jsonRoot, LoyaltyProgramType loyaltyProgramType, int tenantID)
+  {
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray loyaltyIDs = new JSONArray();
+    List<GUIManagedObject> existingLoyalities = new ArrayList<GUIManagedObject>();
+    List<String> updatedIDs = new ArrayList<String>();
+    List<Object> exceptionList = new ArrayList<Object>();
+
+    //
+    // arguments
+    //
+
+    Boolean dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", Boolean.FALSE);
+
+    /*****************************************
+     *
+     * update loyalties
+     *
+     *****************************************/
+
+    if (jsonRoot.containsKey("ids"))
+      {
+        loyaltyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple loyalties
+      } 
+    else
+      {
+        response.put("responseCode", "invalid" + loyaltyProgramType.toString() + "s");
+        response.put("responseMessage", loyaltyProgramType.toString() + " ID is empty");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     * existing loyalty
+     *
+     *****************************************/
+    
+    for (int i = 0; i < loyaltyIDs.size(); i++)
+      {
+        String loyaltyID = (loyaltyIDs.get(i)).toString();
+        GUIManagedObject existingLoyaltyObject = loyaltyProgramService.getStoredGUIManagedObject(loyaltyID);
+        if (existingLoyaltyObject != null && (loyaltyProgramType == LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(existingLoyaltyObject.getJSONRepresentation(), "loyaltyProgramType", true))))
+          {
+            existingLoyalities.add(existingLoyaltyObject); //ignore the wrong loyalties
+          }
+      }
+    
+    if (existingLoyalities.isEmpty())
+      {
+        response.put("responseCode", "invalid" + loyaltyProgramType.toString() + "s");
+        response.put("responseMessage", loyaltyProgramType.toString() + "s does not exist");
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    for (GUIManagedObject existingLoyaltyToBeUpdated : existingLoyalities)
+      {
+        JSONObject existingLoyaltyJSONToUpdate = (JSONObject) existingLoyaltyToBeUpdated.getJSONRepresentation().clone();
+        
+        //
+        //  clean and merge
+        //
+        
+        jsonRoot.remove("ids");
+        for (String keyToUpdate : (Set<String>) jsonRoot.keySet())
+          {
+            existingLoyaltyJSONToUpdate.put(keyToUpdate, jsonRoot.get(keyToUpdate));
+          }
+        
+        //
+        //  save
+        //
+        
+        /*****************************************
+        *
+        *  process LoyaltyProgram
+        *
+        *****************************************/
+
+        long epoch = epochServer.getKey();
+        try
+          {
+            /****************************************
+            *
+            *  instantiate LoyaltyProgram
+            *
+            ****************************************/
+
+            LoyaltyProgram loyaltyProgram = null;
+            switch (loyaltyProgramType)
+            {
+              case POINTS:
+                
+                //
+                //  need to be checked if ok - EVPRO-1060
+                //
+                
+                throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(existingLoyaltyJSONToUpdate, "loyaltyProgramType", false));
+                //loyaltyProgram = new LoyaltyProgramPoints(existingLoyaltyJSONToUpdate, epoch, existingLoyaltyToBeUpdated, catalogCharacteristicService, tenantID);
+                
+              case CHALLENGE:
+                loyaltyProgram = new LoyaltyProgramChallenge(existingLoyaltyJSONToUpdate, epoch, existingLoyaltyToBeUpdated, catalogCharacteristicService, tenantID);
+                break;
+                
+              case MISSION:
+                existingLoyaltyJSONToUpdate.put("effectiveStartDate", JSONUtilities.decodeString(existingLoyaltyJSONToUpdate, "entryStartDate", true));
+                String scheduleType = JSONUtilities.decodeString(existingLoyaltyJSONToUpdate, "scheduleType", true);
+                if (MissionSchedule.FIXDURATION == MissionSchedule.fromExternalRepresentation(scheduleType))
+                  {
+                    Integer durationInDays  = JSONUtilities.decodeInteger(existingLoyaltyJSONToUpdate, "duration", true);
+                    String entryEndDateStr = JSONUtilities.decodeString(existingLoyaltyJSONToUpdate, "entryEndDate", true);
+                    Date effectiveEndDate = RLMDateUtils.addDays(GUIManagedObject.parseDateField(entryEndDateStr), durationInDays, Deployment.getDefault().getTimeZone());
+                    existingLoyaltyJSONToUpdate.put("effectiveEndDate", RLMDateUtils.formatDateForREST(effectiveEndDate, Deployment.getDefault().getTimeZone()));
+                  }
+                else
+                  {
+                    existingLoyaltyJSONToUpdate.put("effectiveEndDate", JSONUtilities.decodeString(existingLoyaltyJSONToUpdate, "entryEndDate", true));
+                    existingLoyaltyJSONToUpdate.remove("duration");
+                  }
+                loyaltyProgram = new LoyaltyProgramMission(existingLoyaltyJSONToUpdate, epoch, existingLoyaltyToBeUpdated, catalogCharacteristicService, tenantID);
+                break;
+
+              case Unknown:
+                throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(existingLoyaltyJSONToUpdate, "loyaltyProgramType", false));
+            }
+
+            /*****************************************
+            *
+            *  store
+            *
+            *****************************************/
+            if (!dryRun)
+              {
+
+                loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyToBeUpdated == null), userID);
+
+                /*****************************************
+                 *
+                 * add dynamic criterion fields)
+                 *
+                 *****************************************/
+
+                dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram, (existingLoyaltyToBeUpdated == null));
+
+                /*****************************************
+                 *
+                 * revalidate
+                 *
+                 *****************************************/
+
+                revalidateSubscriberMessageTemplates(now, tenantID);
+                revalidateOffers(now, tenantID);
+                revalidateTargets(now, tenantID);
+                revalidateJourneys(now, tenantID);
+              }
+
+            /*****************************************
+            *
+            *  add to response
+            *
+            *****************************************/
+            
+            updatedIDs.add(loyaltyProgram.getGUIManagedObjectID());
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            //
+            //  incompleteObject
+            //
+
+            IncompleteObject incompleteObject = new IncompleteObject(existingLoyaltyJSONToUpdate, epoch, tenantID);
+
+            //
+            //  store
+            //
+            
+            if (!dryRun)
+              {
+                loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingLoyaltyToBeUpdated == null), userID);
+              }
+            
+            //
+            //  log
+            //
+
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+            /*****************************************
+            *
+            *  add to response
+            *
+            *****************************************/
+            
+            HashMap<String, String> invalidLoyaltyExceptions = new HashMap<String, String>();
+            invalidLoyaltyExceptions.put("id", incompleteObject.getGUIManagedObjectID());
+            invalidLoyaltyExceptions.put("responseCode", loyaltyProgramType + "NotValid");
+            invalidLoyaltyExceptions.put("responseMessage", e.getMessage());
+            invalidLoyaltyExceptions.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+            
+            updatedIDs.add(incompleteObject.getGUIManagedObjectID());
+            exceptionList.add(invalidLoyaltyExceptions);
+          }
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+    
+    response.put("updatedIds", updatedIDs);
+    response.put("exceptionIds", exceptionList);
+    response.put("responseCode", "ok");
+    
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
@@ -555,6 +807,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   case CHALLENGE:
                     loyaltyProgram = new LoyaltyProgramChallenge(elementRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
                     break;
+                    
+                  case MISSION:
+                    loyaltyProgram = new LoyaltyProgramMission(elementRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
+                    break;
 
                   case Unknown:
                     throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", false));
@@ -682,6 +938,14 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   {
                     ChallengeLevel lastLevel = ((LoyaltyProgramChallenge) loyaltyProgram).getLastLevel();
                     loyaltyPro.put("topScore", lastLevel == null ? Integer.valueOf(0) : lastLevel.getScoreLevel());
+                  }
+              }
+            else if (loyaltyProgramType == LoyaltyProgramType.MISSION)
+              {
+                if (loyaltyProgram instanceof LoyaltyProgramMission)
+                  {
+                    MissionStep lastStep = ((LoyaltyProgramMission) loyaltyProgram).getLastStep();
+                    loyaltyPro.put("lastStep", lastStep == null ? null : lastStep.getStepName());
                   }
               }
             
@@ -1126,6 +1390,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     
     int loyaltyProgramCount = 0;
     int loyaltyProgramChallengeCount = 0;
+    int loyaltyProgramMissionCount = 0;
     for (GUIManagedObject guiManagedObject : loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived, tenantID))
       {
         JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(guiManagedObject, true, SystemTime.getCurrentTime());
@@ -1138,9 +1403,14 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           {
             loyaltyProgramChallengeCount++;
           }
+        else if (type == LoyaltyProgramType.MISSION)
+          {
+            loyaltyProgramMissionCount++;
+          }
       }
     response.put("loyaltyProgramCount", loyaltyProgramCount);
     response.put("loyaltyProgramChallengeCount", loyaltyProgramChallengeCount);
+    response.put("loyaltyProgramMissionCount", loyaltyProgramMissionCount);
     
     //
     //  areaAvailablity

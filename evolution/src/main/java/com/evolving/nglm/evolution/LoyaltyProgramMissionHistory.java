@@ -1,6 +1,6 @@
   /*****************************************
   *
-  *  LoyaltyProgramChallengeHistory.java
+  *  LoyaltyProgramMissionHistory.java
   *
   *****************************************/
 
@@ -21,9 +21,9 @@ import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.LoyaltyProgramChallenge.LoyaltyProgramLevelChange;
+import com.evolving.nglm.evolution.LoyaltyProgramMission.LoyaltyProgramStepChange;
 
-public class LoyaltyProgramChallengeHistory 
+public class LoyaltyProgramMissionHistory 
 {
   /*****************************************
   *
@@ -39,10 +39,10 @@ public class LoyaltyProgramChallengeHistory
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("loyalty_program_challenge_history");
+    schemaBuilder.name("loyalty_program_mission_history");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("loyaltyProgramID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("levelHistory", SchemaBuilder.array(LevelHistory.schema()).schema());
+    schemaBuilder.field("stepHistory", SchemaBuilder.array(StepHistory.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -50,14 +50,14 @@ public class LoyaltyProgramChallengeHistory
   //  serde
   //
 
-  private static ConnectSerde<LoyaltyProgramChallengeHistory> serde = new ConnectSerde<LoyaltyProgramChallengeHistory>(schema, false, LoyaltyProgramChallengeHistory.class, LoyaltyProgramChallengeHistory::pack, LoyaltyProgramChallengeHistory::unpack);
+  private static ConnectSerde<LoyaltyProgramMissionHistory> serde = new ConnectSerde<LoyaltyProgramMissionHistory>(schema, false, LoyaltyProgramMissionHistory.class, LoyaltyProgramMissionHistory::pack, LoyaltyProgramMissionHistory::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<LoyaltyProgramChallengeHistory> serde() { return serde; }
+  public static ConnectSerde<LoyaltyProgramMissionHistory> serde() { return serde; }
 
   /*****************************************
   *
@@ -65,7 +65,7 @@ public class LoyaltyProgramChallengeHistory
   *
   *****************************************/
   private String loyaltyProgramID;
-  private List<LevelHistory> levelHistory;
+  private List<StepHistory> stepHistory;
   
   /*****************************************
   *
@@ -74,12 +74,8 @@ public class LoyaltyProgramChallengeHistory
   *****************************************/
   
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
-  public List<LevelHistory> getLevelHistory() { return levelHistory; }
-  public List<LevelHistory> getAllLevelHistoryForThisPeriod(Integer occurrenceNumber) 
-  { 
-    return levelHistory.stream().filter(level -> level.getOccurrenceNumber() == occurrenceNumber).collect(Collectors.toList()); 
-  }
-  public void clearLevelHistory() { if (levelHistory != null) levelHistory.clear(); }
+  public List<StepHistory> getStepHistory() { return stepHistory; }
+  public void clearStepHistory() { if (stepHistory != null) stepHistory.clear(); }
   
   /*****************************************
   *
@@ -89,25 +85,25 @@ public class LoyaltyProgramChallengeHistory
 
   public static Object pack(Object value)
   {
-    LoyaltyProgramChallengeHistory loyaltyProgramHistory = (LoyaltyProgramChallengeHistory) value;
+    LoyaltyProgramMissionHistory loyaltyProgramHistory = (LoyaltyProgramMissionHistory) value;
     Struct struct = new Struct(schema);
     struct.put("loyaltyProgramID", loyaltyProgramHistory.getLoyaltyProgramID());
-    struct.put("levelHistory", packLevelHistory(loyaltyProgramHistory.getLevelHistory()));
+    struct.put("stepHistory", packStepHistory(loyaltyProgramHistory.getStepHistory()));
     return struct;
   }
   
   /*****************************************
   *
-  *  packLevelHistory
+  *  packStepHistory
   *
   *****************************************/
 
-  private static List<Object> packLevelHistory(List<LevelHistory> levelHistory)
+  private static List<Object> packStepHistory(List<StepHistory> stepHistory)
   {
     List<Object> result = new ArrayList<Object>();
-    for (LevelHistory level : levelHistory)
+    for (StepHistory step : stepHistory)
       {
-        result.add(LevelHistory.pack(level));
+        result.add(StepHistory.pack(step));
       }
     return result;
   }
@@ -118,10 +114,10 @@ public class LoyaltyProgramChallengeHistory
   *
   *****************************************/
 
-  public LoyaltyProgramChallengeHistory(String loyaltyProgramID)
+  public LoyaltyProgramMissionHistory(String loyaltyProgramID)
   {
     this.loyaltyProgramID = loyaltyProgramID;
-    this.levelHistory = new ArrayList<LevelHistory>();
+    this.stepHistory = new ArrayList<StepHistory>();
   }
   
   /*****************************************
@@ -130,13 +126,13 @@ public class LoyaltyProgramChallengeHistory
   *
   *****************************************/
   
-  public LoyaltyProgramChallengeHistory(LoyaltyProgramChallengeHistory loyaltyProgramHistory)
+  public LoyaltyProgramMissionHistory(LoyaltyProgramMissionHistory loyaltyProgramHistory)
   {
     this.loyaltyProgramID = loyaltyProgramHistory.getLoyaltyProgramID();
-    this.levelHistory = new ArrayList<LevelHistory>();
-    for(LevelHistory stat : loyaltyProgramHistory.getLevelHistory())
+    this.stepHistory = new ArrayList<StepHistory>();
+    for(StepHistory stat : loyaltyProgramHistory.getStepHistory())
       {
-        this.levelHistory.add(stat);
+        this.stepHistory.add(stat);
       }
   }
   
@@ -146,10 +142,10 @@ public class LoyaltyProgramChallengeHistory
   *
   *****************************************/
 
-  public LoyaltyProgramChallengeHistory(String loyaltyProgramID, List<LevelHistory> levelHistory)
+  public LoyaltyProgramMissionHistory(String loyaltyProgramID, List<StepHistory> stepHistory)
   {
     this.loyaltyProgramID = loyaltyProgramID;
-    this.levelHistory = levelHistory;
+    this.stepHistory = stepHistory;
   }
   
   /*****************************************
@@ -158,7 +154,7 @@ public class LoyaltyProgramChallengeHistory
   *
   *****************************************/
 
-  public static LoyaltyProgramChallengeHistory unpack(SchemaAndValue schemaAndValue)
+  public static LoyaltyProgramMissionHistory unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -174,38 +170,38 @@ public class LoyaltyProgramChallengeHistory
 
     Struct valueStruct = (Struct) value;
     String loyaltyProgramID = valueStruct.getString("loyaltyProgramID");
-    List<LevelHistory> levelHistory =  unpackLevelHistory(schema.field("levelHistory").schema(), valueStruct.get("levelHistory"));
+    List<StepHistory> stepHistory =  unpackStepHistory(schema.field("stepHistory").schema(), valueStruct.get("stepHistory"));
     
     //
     //  return
     //
 
-    return new LoyaltyProgramChallengeHistory(loyaltyProgramID, levelHistory);
+    return new LoyaltyProgramMissionHistory(loyaltyProgramID, stepHistory);
   }
   
   /*****************************************
   *
-  *  unpackLevelHistory
+  *  unpackStepHistory
   *
   *****************************************/
 
-  private static List<LevelHistory> unpackLevelHistory(Schema schema, Object value)
+  private static List<StepHistory> unpackStepHistory(Schema schema, Object value)
   {
     //
-    //  get schema for LevelHistory
+    //  get schema for stepHistory
     //
 
-    Schema levelHistorySchema = schema.valueSchema();
+    Schema stepHistorySchema = schema.valueSchema();
 
     //
     //  unpack
     //
 
-    List<LevelHistory> result = new ArrayList<LevelHistory>();
+    List<StepHistory> result = new ArrayList<StepHistory>();
     List<Object> valueArray = (List<Object>) value;
-    for (Object level : valueArray)
+    for (Object step : valueArray)
       {
-        result.add(LevelHistory.unpack(new SchemaAndValue(levelHistorySchema, level)));
+        result.add(StepHistory.unpack(new SchemaAndValue(stepHistorySchema, step)));
       }
 
     //
@@ -217,38 +213,38 @@ public class LoyaltyProgramChallengeHistory
   
   /*****************************************
   *
-  *  addLevelInformation
+  *  addStepInformation
   *
   *****************************************/
   
-  public void addLevelHistory(String fromLevel, String toLevel, Integer occurrenceNumber, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramLevelChange levelUpdateType) 
+  public void addStepHistory(String fromStep, String toStep, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramStepChange stepUpdateType) 
   {
-    LevelHistory levelHistory = new LevelHistory(fromLevel, toLevel, occurrenceNumber, enrollmentDate, deliveryRequestID, levelUpdateType);
-    this.levelHistory.add(levelHistory);
+    StepHistory stepHistory = new StepHistory(fromStep, toStep, enrollmentDate, deliveryRequestID, stepUpdateType);
+    this.stepHistory.add(stepHistory);
 
   }
 
   /*****************************************
   *
-  *  getLastLevelEntered
+  *  getLastStepEntered
   *
   *****************************************/
   
-  public LevelHistory getLastLevelEntered()
+  public StepHistory getLastStepEntered()
   {
-    Comparator<LevelHistory> cmp = new Comparator<LevelHistory>() 
+    Comparator<StepHistory> cmp = new Comparator<StepHistory>() 
     {
       @Override
-      public int compare(LevelHistory level1, LevelHistory level2) 
+      public int compare(StepHistory step1, StepHistory step2) 
       {
-        return level1.getTransitionDate().compareTo(level2.getTransitionDate());
+        return step1.getTransitionDate().compareTo(step2.getTransitionDate());
       }
     };
     
-    return (this.levelHistory!=null && !this.levelHistory.isEmpty()) ? Collections.max(this.levelHistory, cmp) : null;
+    return (this.stepHistory!=null && !this.stepHistory.isEmpty()) ? Collections.max(this.stepHistory, cmp) : null;
   }
   
-  public static class LevelHistory
+  public static class StepHistory
   {
    
     /*****************************************
@@ -265,14 +261,13 @@ public class LoyaltyProgramChallengeHistory
     static
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("level_history");
+      schemaBuilder.name("step_history");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
-      schemaBuilder.field("fromLevel", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("toLevel", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
+      schemaBuilder.field("fromStep", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("toStep", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("transitionDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("levelUpdateType", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("stepUpdateType", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -280,14 +275,14 @@ public class LoyaltyProgramChallengeHistory
     //  serde
     //
 
-    private static ConnectSerde<LevelHistory> serde = new ConnectSerde<LevelHistory>(schema, false, LevelHistory.class, LevelHistory::pack, LevelHistory::unpack);
+    private static ConnectSerde<StepHistory> serde = new ConnectSerde<StepHistory>(schema, false, StepHistory.class, StepHistory::pack, StepHistory::unpack);
 
     //
     //  accessor
     //
 
     public static Schema schema() { return schema; }
-    public static ConnectSerde<LevelHistory> serde() { return serde; }
+    public static ConnectSerde<StepHistory> serde() { return serde; }
 
     /*****************************************
     *
@@ -295,12 +290,11 @@ public class LoyaltyProgramChallengeHistory
     *
     *****************************************/
 
-    private String fromLevel;
-    private String toLevel;
+    private String fromStep;
+    private String toStep;
     private Date transitionDate;
     private String deliveryRequestID;
-    private LoyaltyProgramLevelChange levelUpdateType;
-    private Integer occurrenceNumber;
+    private LoyaltyProgramStepChange stepUpdateType;
     
     /*****************************************
     *
@@ -308,12 +302,11 @@ public class LoyaltyProgramChallengeHistory
     *
     *****************************************/
     
-    public String getFromLevel() { return fromLevel; }
-    public String getToLevel() { return toLevel; }
+    public String getFromStep() { return fromStep; }
+    public String getToStep() { return toStep; }
     public Date getTransitionDate() { return transitionDate; }
     public String getDeliveryRequestID() { return deliveryRequestID; }
-    public LoyaltyProgramLevelChange getLevelUpdateType() { return levelUpdateType; }
-    public Integer getOccurrenceNumber() { return occurrenceNumber; }
+    public LoyaltyProgramStepChange getStepUpdateType() { return stepUpdateType; }
     
     /*****************************************
     *
@@ -323,14 +316,13 @@ public class LoyaltyProgramChallengeHistory
 
     public static Object pack(Object value)
     {
-      LevelHistory levelHistory = (LevelHistory) value;
+      StepHistory stepHistory = (StepHistory) value;
       Struct struct = new Struct(schema);
-      struct.put("fromLevel", levelHistory.getFromLevel());
-      struct.put("toLevel", levelHistory.getToLevel());
-      struct.put("occurrenceNumber", levelHistory.getOccurrenceNumber());
-      struct.put("transitionDate", levelHistory.getTransitionDate());
-      struct.put("deliveryRequestID", levelHistory.getDeliveryRequestID());
-      struct.put("levelUpdateType", levelHistory.getLevelUpdateType().getExternalRepresentation());
+      struct.put("fromStep", stepHistory.getFromStep());
+      struct.put("toStep", stepHistory.getToStep());
+      struct.put("transitionDate", stepHistory.getTransitionDate());
+      struct.put("deliveryRequestID", stepHistory.getDeliveryRequestID());
+      struct.put("stepUpdateType", stepHistory.getStepUpdateType().getExternalRepresentation());
       return struct;
     }
     
@@ -340,14 +332,13 @@ public class LoyaltyProgramChallengeHistory
     *
     *****************************************/
 
-    public LevelHistory(String fromLevel, String toLevel, Integer occurrenceNumber, Date transitionDate, String deliveryRequestID, LoyaltyProgramLevelChange levelUpdateType)
+    public StepHistory(String fromStep, String toStep, Date transitionDate, String deliveryRequestID, LoyaltyProgramStepChange stepUpdateType)
     {
-      this.fromLevel = fromLevel;
-      this.toLevel = toLevel;
-      this.occurrenceNumber = occurrenceNumber;
+      this.fromStep = fromStep;
+      this.toStep = toStep;
       this.transitionDate = transitionDate;
       this.deliveryRequestID = deliveryRequestID;
-      this.levelUpdateType = levelUpdateType;
+      this.stepUpdateType = stepUpdateType;
     }
     
     /*****************************************
@@ -356,7 +347,7 @@ public class LoyaltyProgramChallengeHistory
     *
     *****************************************/
 
-    public static LevelHistory unpack(SchemaAndValue schemaAndValue)
+    public static StepHistory unpack(SchemaAndValue schemaAndValue)
     {
       //
       //  data
@@ -371,18 +362,17 @@ public class LoyaltyProgramChallengeHistory
       //
 
       Struct valueStruct = (Struct) value;
-      String fromLevel = valueStruct.getString("fromLevel");
-      String toLevel = valueStruct.getString("toLevel");
-      Integer occurrenceNumber = valueStruct.getInt32("occurrenceNumber");
+      String fromStep = valueStruct.getString("fromStep");
+      String toStep = valueStruct.getString("toStep");
       Date transitionDate = (Date) valueStruct.get("transitionDate");
       String deliveryRequestID = valueStruct.getString("deliveryRequestID");
-      LoyaltyProgramLevelChange loyaltyProgramLevelChange = LoyaltyProgramLevelChange.fromExternalRepresentation(valueStruct.getString("levelUpdateType"));
+      LoyaltyProgramStepChange loyaltyProgramStepChange = LoyaltyProgramStepChange.fromExternalRepresentation(valueStruct.getString("stepUpdateType"));
             
       //
       //  return
       //
 
-      return new LevelHistory(fromLevel, toLevel, occurrenceNumber, transitionDate, deliveryRequestID, loyaltyProgramLevelChange);
+      return new StepHistory(fromStep, toStep, transitionDate, deliveryRequestID, loyaltyProgramStepChange);
     }
     
     /*****************************************
@@ -394,7 +384,7 @@ public class LoyaltyProgramChallengeHistory
     @Override
     public String toString()
     {
-      return fromLevel + ";" + toLevel + ";" + transitionDate.getTime();
+      return fromStep + ";" + toStep + ";" + transitionDate.getTime();
     }
     
   }

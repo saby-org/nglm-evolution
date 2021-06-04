@@ -62,6 +62,7 @@ public class LoyaltyProgramState implements Cleanable
     List<ConnectSerde<? extends LoyaltyProgramState>> loyaltyProgramStateSerdes = new ArrayList<ConnectSerde<? extends LoyaltyProgramState>>();
     loyaltyProgramStateSerdes.add(LoyaltyProgramPointsState.serde());
     loyaltyProgramStateSerdes.add(LoyaltyProgramChallengeState.serde());
+    loyaltyProgramStateSerdes.add(LoyaltyProgramMissionState.serde());
     commonSerde = new ConnectSerde<LoyaltyProgramState>("loyaltyProgramState", false, loyaltyProgramStateSerdes.toArray(new ConnectSerde[0]));
   }
 
