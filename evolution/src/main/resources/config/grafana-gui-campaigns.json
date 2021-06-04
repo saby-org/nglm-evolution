@@ -16,8 +16,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 51,
-  "iteration": 1618387881431,
+  "id": 4,
+  "iteration": 1622792715402,
   "links": [],
   "panels": [
     {
@@ -529,7 +529,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-13 11:59:59.999+0000 Sum count · Time"
+              "options": "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-13 11:59:59.999+0000 Sum count ï¿½ Time"
             },
             "properties": [
               {
@@ -1100,12 +1100,12 @@
           "options": {
             "excludeByName": {
               "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-08 12:59:59.999+0000": true,
-              "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-09 12:59:59.999+0000 (Sum count/Sum count)*100 · Time": true,
+              "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-09 12:59:59.999+0000 (Sum count/Sum count)*100 ï¿½ Time": true,
               "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-09 12:59:59.999+0000 Sum count 1": true,
               "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-09 12:59:59.999+0000 Sum count 2": true,
-              "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-09 12:59:59.999+0000 Sum count · Time": true,
+              "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-09 12:59:59.999+0000 Sum count ï¿½ Time": true,
               "BTL_DataSeeding-5GB-2days_20210226_TEST-2 2021-04-08 12:59:59.999+0000": true,
-              "BTL_DataSeeding-5GB-2days_20210226_TEST-2 2021-04-08 12:59:59.999+0000 · Time": true,
+              "BTL_DataSeeding-5GB-2days_20210226_TEST-2 2021-04-08 12:59:59.999+0000 ï¿½ Time": true,
               "Bucket Script": false,
               "Bucket Script 2": false,
               "Bucket Script 4": false,
@@ -1151,7 +1151,7 @@
               "timestamp 2": 4
             },
             "renameByName": {
-              "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-08 12:59:59.999+0000 · Time": "Date",
+              "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-08 12:59:59.999+0000 ï¿½ Time": "Date",
               "BTL_DataSeeding-5GB-2days_20210226_FL 2021-04-09 12:59:59.999+0000 (Sum count/Sum count)*100": "Rechability Rate",
               "Bucket Script": "TARGET GROUP",
               "Bucket Script 1": "TARGET GROUP",
@@ -1159,7 +1159,7 @@
               "Bucket Script 3": "Conversion Rate",
               "Bucket Script 4": "Windfall Effect",
               "ENTERED": "ENTERED",
-              "ENTERED · Time": "Date",
+              "ENTERED ï¿½ Time": "Date",
               "Max": "",
               "Name": "Name",
               "Name 1": "Name",
@@ -1176,7 +1176,7 @@
               "Sum 9": "Conversion Rate",
               "Sum count": "",
               "Sum count 1": "",
-              "TARGET GROUP · Time": "Date",
+              "TARGET GROUP ï¿½ Time": "Date",
               "timestamp": "Date",
               "timestamp 1": "Date"
             }
@@ -2389,7 +2389,7 @@
       }
     },
     {
-      "collapsed": true,
+      "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
@@ -2398,667 +2398,662 @@
         "y": 37
       },
       "id": 43,
-      "panels": [
-        {
-          "aliasColors": {},
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "Messages",
-          "fieldConfig": {
-            "defaults": {
-              "custom": {},
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 9,
-            "w": 12,
-            "x": 0,
-            "y": 39
-          },
-          "hiddenSeries": false,
-          "id": 39,
-          "legend": {
-            "alignAsTable": true,
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": true,
-            "values": true
-          },
-          "lines": false,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.4.0",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "alias": "SUCCESS",
-              "bucketAggs": [
-                {
-                  "field": "timestamp",
-                  "id": "2",
-                  "settings": {
-                    "interval": "1d",
-                    "min_doc_count": 0,
-                    "offset": "-1d",
-                    "trimEdges": 1
-                  },
-                  "type": "date_histogram"
-                }
-              ],
-              "datasource": "Messages",
-              "metrics": [
-                {
-                  "field": "count",
-                  "hide": true,
-                  "id": "1",
-                  "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'SUCCESS')) { total = doc['count'].value; } return total;",
-                  "meta": {},
-                  "settings": {
-                    "script": {
-                      "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'SUCCESS')) { total = doc['count'].value; } return total;"
-                    }
-                  },
-                  "type": "sum"
-                },
-                {
-                  "field": "1",
-                  "id": "3",
-                  "meta": {},
-                  "pipelineAgg": "1",
-                  "settings": {},
-                  "type": "derivative"
-                }
-              ],
-              "query": "filter.feature:$journey AND filter.module:Journey_Manager",
-              "refId": "A",
-              "timeField": "timestamp"
-            },
-            {
-              "alias": "ERROR",
-              "bucketAggs": [
-                {
-                  "field": "timestamp",
-                  "id": "2",
-                  "settings": {
-                    "interval": "1d",
-                    "min_doc_count": 0,
-                    "offset": "-1d",
-                    "trimEdges": 1
-                  },
-                  "type": "date_histogram"
-                }
-              ],
-              "datasource": "Messages",
-              "metrics": [
-                {
-                  "field": "count",
-                  "hide": true,
-                  "id": "1",
-                  "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'ERROR')){ total = doc['count'].value; } return total;",
-                  "meta": {},
-                  "settings": {
-                    "script": {
-                      "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'ERROR')){ total = doc['count'].value; } return total;"
-                    }
-                  },
-                  "type": "sum"
-                },
-                {
-                  "field": "1",
-                  "id": "3",
-                  "meta": {},
-                  "pipelineAgg": "1",
-                  "settings": {},
-                  "type": "derivative"
-                }
-              ],
-              "query": "filter.feature:$journey AND filter.module:Journey_Manager",
-              "refId": "B",
-              "timeField": "timestamp"
-            },
-            {
-              "alias": "EXPIRED",
-              "bucketAggs": [
-                {
-                  "field": "timestamp",
-                  "id": "2",
-                  "settings": {
-                    "interval": "1d",
-                    "min_doc_count": 0,
-                    "offset": "-1d",
-                    "trimEdges": 1
-                  },
-                  "type": "date_histogram"
-                }
-              ],
-              "datasource": "Messages",
-              "metrics": [
-                {
-                  "field": "count",
-                  "hide": true,
-                  "id": "1",
-                  "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'EXPIRED')) { total = doc['count'].value; } return total;",
-                  "meta": {},
-                  "settings": {
-                    "script": {
-                      "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'EXPIRED')) { total = doc['count'].value; } return total;"
-                    }
-                  },
-                  "type": "sum"
-                },
-                {
-                  "field": "1",
-                  "id": "3",
-                  "meta": {},
-                  "pipelineAgg": "1",
-                  "settings": {},
-                  "type": "derivative"
-                }
-              ],
-              "query": "filter.feature:$journey AND filter.module:Journey_Manager",
-              "refId": "C",
-              "timeField": "timestamp"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Day-Wise Message Evolution",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:6560",
-              "format": "short",
-              "label": "Message",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:6561",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": true,
-          "cacheTimeout": null,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "Messages",
-          "fieldConfig": {
-            "defaults": {
-              "custom": {}
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 9,
-            "w": 12,
-            "x": 12,
-            "y": 39
-          },
-          "hiddenSeries": false,
-          "id": 51,
-          "interval": null,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": false,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.4.0",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "alias": "",
-              "bucketAggs": [
-                {
-                  "fake": true,
-                  "field": "filter.contactType",
-                  "id": "4",
-                  "settings": {
-                    "min_doc_count": 1,
-                    "order": "desc",
-                    "orderBy": "_term",
-                    "size": "10"
-                  },
-                  "type": "terms"
-                },
-                {
-                  "fake": true,
-                  "field": "timestamp",
-                  "id": "5",
-                  "settings": {
-                    "interval": "1s",
-                    "min_doc_count": 1,
-                    "trimEdges": 0
-                  },
-                  "type": "date_histogram"
-                }
-              ],
-              "metrics": [
-                {
-                  "field": "count",
-                  "id": "1",
-                  "inlineScript": null,
-                  "meta": {},
-                  "settings": {},
-                  "type": "sum"
-                }
-              ],
-              "query": "filter.feature:$journey AND filter.module:Journey_Manager",
-              "refId": "A",
-              "timeField": "timestamp"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Message Count per Contact Type",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:6637",
-              "format": "short",
-              "label": "Count",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "$$hashKey": "object:6638",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        }
-      ],
+      "panels": [],
       "title": "Messages",
       "type": "row"
     },
     {
-      "collapsed": true,
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Messages",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "hiddenSeries": false,
+      "id": 39,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": true,
+        "values": true
+      },
+      "lines": false,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "SUCCESS",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "offset": "-1d",
+                "trimEdges": 1
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "Messages",
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'SUCCESS')) { total = doc['count'].value; } return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'SUCCESS')) { total = doc['count'].value; } return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.feature:$journey AND filter.module:Journey_Manager",
+          "refId": "A",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "ERROR",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "offset": "-1d",
+                "trimEdges": 1
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "Messages",
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'ERROR')){ total = doc['count'].value; } return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'ERROR')){ total = doc['count'].value; } return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.feature:$journey AND filter.module:Journey_Manager",
+          "refId": "B",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "EXPIRED",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "offset": "-1d",
+                "trimEdges": 1
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "Messages",
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'EXPIRED')) { total = doc['count'].value; } return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.returnCode'].value == 'EXPIRED')) { total = doc['count'].value; } return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.feature:$journey AND filter.module:Journey_Manager",
+          "refId": "C",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Day-Wise Message Evolution",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:6560",
+          "format": "short",
+          "label": "Message",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:6561",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Messages",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "hiddenSeries": false,
+      "id": 51,
+      "interval": null,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": false,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "filter.contactType",
+              "id": "4",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "10"
+              },
+              "type": "terms"
+            },
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "5",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": null,
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.feature:$journey AND filter.module:Journey_Manager",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Message Count per Contact Type",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:6637",
+          "format": "short",
+          "label": "Count",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:6638",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 47
       },
       "id": 45,
-      "panels": [
-        {
-          "aliasColors": {},
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "AllJourneyRewards",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 10,
-            "w": 12,
-            "x": 0,
-            "y": 30
-          },
-          "hiddenSeries": false,
-          "id": 47,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "max": true,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": true,
-            "values": true
-          },
-          "lines": false,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "alias": "$rewards",
-              "bucketAggs": [
-                {
-                  "field": "timestamp",
-                  "id": "2",
-                  "settings": {
-                    "interval": "1d",
-                    "min_doc_count": 0,
-                    "offset": "-1d",
-                    "trimEdges": 1
-                  },
-                  "type": "date_histogram"
-                }
-              ],
-              "metrics": [
-                {
-                  "field": "metric.reward.$rewards",
-                  "hide": true,
-                  "id": "1",
-                  "inlineScript": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = doc['metric.reward.$rewards'].value;} return total;",
-                  "meta": {},
-                  "settings": {
-                    "script": {
-                      "inline": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = doc['metric.reward.$rewards'].value;} return total;"
-                    }
-                  },
-                  "type": "sum"
-                },
-                {
-                  "field": "1",
-                  "id": "3",
-                  "meta": {},
-                  "pipelineAgg": "1",
-                  "settings": {
-                    "unit": "1d"
-                  },
-                  "type": "derivative"
-                },
-                {
-                  "field": "select field",
-                  "hide": true,
-                  "id": "4",
-                  "meta": {},
-                  "pipelineVariables": [
-                    {
-                      "name": "var1",
-                      "pipelineAgg": "1"
-                    }
-                  ],
-                  "settings": {
-                    "script": "if (params.var1 > 0 ) {return params.var1}"
-                  },
-                  "type": "bucket_script"
-                }
-              ],
-              "query": "filter.journey:$journey",
-              "refId": "A",
-              "timeField": "timestamp"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Day-Wise Reward Evolution",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:7038",
-              "format": "locale",
-              "label": "Reward",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "$$hashKey": "object:7039",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "AllJourneyRewards",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 5,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 10,
-            "w": 12,
-            "x": 12,
-            "y": 30
-          },
-          "hiddenSeries": false,
-          "id": 17,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "max": true,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": true,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 2,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 1,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "alias": "$rewards",
-              "bucketAggs": [
-                {
-                  "fake": true,
-                  "field": "timestamp",
-                  "id": "5",
-                  "settings": {
-                    "interval": "1s",
-                    "min_doc_count": 1,
-                    "trimEdges": 0
-                  },
-                  "type": "date_histogram"
-                }
-              ],
-              "metrics": [
-                {
-                  "field": "metric.reward.$rewards",
-                  "hide": false,
-                  "id": "4",
-                  "inlineScript": null,
-                  "meta": {},
-                  "pipelineVariables": [
-                    {
-                      "name": "",
-                      "pipelineAgg": "select metric"
-                    }
-                  ],
-                  "settings": {},
-                  "type": "sum"
-                }
-              ],
-              "query": "filter.journey:$journey",
-              "refId": "A",
-              "timeField": "timestamp"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Reward Count Progression",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:7131",
-              "format": "locale",
-              "label": "Reward",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "$$hashKey": "object:7132",
-              "format": "short",
-              "label": "",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        }
-      ],
+      "panels": [],
       "title": "Rewards",
       "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "AllJourneyRewards",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "hiddenSeries": false,
+      "id": 47,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": false,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": true,
+        "values": true
+      },
+      "lines": false,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "$rewards",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "offset": "-1d",
+                "trimEdges": 1
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "metric.reward.$rewards",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = doc['metric.reward.$rewards'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = doc['metric.reward.$rewards'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {
+                "unit": "1d"
+              },
+              "type": "derivative"
+            },
+            {
+              "field": "select field",
+              "hide": true,
+              "id": "4",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if (params.var1 > 0 ) {return params.var1}"
+              },
+              "type": "bucket_script"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Day-Wise Reward Evolution",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:7038",
+          "format": "locale",
+          "label": "Reward",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:7039",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "AllJourneyRewards",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 5,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "hiddenSeries": false,
+      "id": 17,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": false,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": true,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 2,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 1,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "$rewards",
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "5",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "metric.reward.$rewards",
+              "hide": false,
+              "id": "4",
+              "inlineScript": null,
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "",
+                  "pipelineAgg": "select metric"
+                }
+              ],
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Reward Count Progression",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:7131",
+          "format": "locale",
+          "label": "Reward",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:7132",
+          "format": "short",
+          "label": "",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
   "refresh": false,
@@ -3069,7 +3064,15 @@
     "list": [
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": "JourneysMapping",
         "definition": "{\"find\": \"terms\", \"field\": \"display\", \"size\": 10000}",
         "description": null,
@@ -3093,7 +3096,15 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": "JourneysMapping",
         "definition": "{\"find\": \"terms\", \"field\": \"objectives\", \"size\": 10000}",
         "description": null,
@@ -3117,7 +3128,15 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": "JourneysMapping",
         "definition": "{\"find\": \"terms\", \"field\": \"type\", \"size\": 10000}",
         "description": null,
@@ -3141,55 +3160,11 @@
       },
       {
         "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyRewards",
-        "definition": "{\"find\" : \"fields\", \"type\": \"integer\", \"query\": \"journeyID:$journeyID\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "All Rewards",
-        "multi": false,
-        "name": "all_rewards",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"integer\", \"query\": \"journeyID:$journeyID\"}",
-        "refresh": 2,
-        "regex": "/metric\\.reward\\.(.*)/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "JourneysMapping",
-        "definition": "{\"find\": \"terms\", \"field\": \"journeyID\", \"size\": 10000, \"query\": \"display:$journey\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "Journey ID",
-        "multi": false,
-        "name": "journeyID",
-        "options": [],
-        "query": "{\"find\": \"terms\", \"field\": \"journeyID\", \"size\": 10000, \"query\": \"display:$journey\"}",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": "JourneyRewardsMapping",
         "definition": "{\"find\": \"terms\", \"field\": \"reward\"}",
         "description": null,
@@ -3203,342 +3178,6 @@
         "query": "{\"find\": \"terms\", \"field\": \"reward\"}",
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\" : \"fields\", \"type\": \"keyword\", \"field\": \"filter.display.$journey\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "First Dimension",
-        "multi": false,
-        "name": "dimension1",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"keyword\", \"field\": \"filter.display.$journey\"}",
-        "refresh": 2,
-        "regex": "/filter.subscriberStratum.(.*)/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension1\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "First Dimension Value",
-        "multi": false,
-        "name": "value1",
-        "options": [],
-        "query": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension1\"}",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "Second Dimension",
-        "multi": false,
-        "name": "dimension2",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
-        "refresh": 2,
-        "regex": "/filter.subscriberStratum.(.*)/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension2\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "Dimension Value",
-        "multi": false,
-        "name": "value2",
-        "options": [],
-        "query": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension2\"}",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "Third Dimension",
-        "multi": false,
-        "name": "dimension3",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
-        "refresh": 2,
-        "regex": "/filter.subscriberStratum.(.*)/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension3\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "Third Dimension Value",
-        "multi": false,
-        "name": "value3",
-        "options": [],
-        "query": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension3\"}",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "auto": true,
-        "auto_count": 1,
-        "auto_min": "",
-        "current": {},
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "label": null,
-        "name": "interval",
-        "options": [
-          {
-            "selected": true,
-            "text": "auto",
-            "value": "$__auto_interval_interval"
-          },
-          {
-            "selected": false,
-            "text": "1m",
-            "value": "1m"
-          },
-          {
-            "selected": false,
-            "text": "10m",
-            "value": "10m"
-          },
-          {
-            "selected": false,
-            "text": "30m",
-            "value": "30m"
-          },
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": false,
-            "text": "6h",
-            "value": "6h"
-          },
-          {
-            "selected": false,
-            "text": "12h",
-            "value": "12h"
-          },
-          {
-            "selected": false,
-            "text": "1d",
-            "value": "1d"
-          },
-          {
-            "selected": false,
-            "text": "7d",
-            "value": "7d"
-          },
-          {
-            "selected": false,
-            "text": "14d",
-            "value": "14d"
-          },
-          {
-            "selected": false,
-            "text": "30d",
-            "value": "30d"
-          }
-        ],
-        "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
-        "refresh": 2,
-        "skipUrlSync": false,
-        "type": "interval"
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "Metric 3",
-        "multi": false,
-        "name": "metric3",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "refresh": 2,
-        "regex": "/^metric\\.custom\\.(.*)/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "FN",
-        "multi": false,
-        "name": "metric2",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "refresh": 2,
-        "regex": "/^metric\\.custom\\.(.*)During/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "Metric 1",
-        "multi": false,
-        "name": "metric1",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "refresh": 2,
-        "regex": "/^metric\\.custom\\.(.*)Amount(.*)/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "bfrDuringAftr",
-        "multi": false,
-        "name": "bfr",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "refresh": 2,
-        "regex": "/^metric\\.custom\\.usageAmount(.*)/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {},
-        "datasource": "AllJourneyTraffic",
-        "definition": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "description": null,
-        "error": null,
-        "hide": 2,
-        "includeAll": false,
-        "label": "Metric 4",
-        "multi": false,
-        "name": "metric4",
-        "options": [],
-        "query": "{\"find\" : \"fields\", \"type\": \"number\"}",
-        "refresh": 2,
-        "regex": "/^metric\\.custom\\.(.*)/",
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
@@ -3582,5 +3221,5 @@
   "timezone": "",
   "title": "Business - Campaigns Dashboard",
   "uid": "-nZMXsQMk",
-  "version": 2
+  "version": 7
 }
