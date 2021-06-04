@@ -963,12 +963,10 @@ public class ThirdPartyManager
       // headers
       //
 
-      exchange.sendResponseHeaders(200, 0);
       exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
       exchange.getResponseHeaders().set("Content-Type", "application/json");
+      exchange.sendResponseHeaders(200, 0);
       
-      log.info("RAJ K header {}", exchange.getResponseHeaders());
-
       BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
       writer.write(jsonResponse.toString());
       writer.close();
@@ -1017,6 +1015,7 @@ public class ThirdPartyManager
       // headers
       //
 
+      exchange.getResponseHeaders().add("Content-Type", "application/json");
       exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
       exchange.sendResponseHeaders(headerValue, 0);
 
@@ -1057,8 +1056,9 @@ public class ThirdPartyManager
         // headers
         //
 
-        exchange.sendResponseHeaders(200, 0);
         exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.sendResponseHeaders(200, 0);
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
         writer.write(jsonResponse.toString());
@@ -1100,8 +1100,9 @@ public class ThirdPartyManager
         // headers
         //
 
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(200, 0);
-        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
         writer.write(jsonResponse.toString());
