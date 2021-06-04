@@ -51,7 +51,7 @@ public class Product extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("product");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliverableID", Schema.STRING_SCHEMA);
@@ -59,6 +59,8 @@ public class Product extends GUIManagedObject implements StockableItem
     schemaBuilder.field("productTypes", SchemaBuilder.array(ProductTypeInstance.schema()).schema());
     schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schemaBuilder.field("workflowID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("deliverableQuantity", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("deliverableValidity", ProductValidity.schema());
     schema = schemaBuilder.build();
   };
 
@@ -87,6 +89,8 @@ public class Product extends GUIManagedObject implements StockableItem
   private Set<ProductTypeInstance> productTypes;
   private boolean simpleOffer;
   private String workflowID;
+  private int deliverableQuantity;
+  private ProductValidity deliverableValidity;
 
   //
   //  derived
@@ -109,6 +113,8 @@ public class Product extends GUIManagedObject implements StockableItem
   public String getStockableItemID() { return stockableItemID; }
   public boolean getSimpleOffer() { return simpleOffer; }
   public String getWorkflowID() { return workflowID; }
+  public int getDeliverableQuantity() { return deliverableQuantity; }
+  public ProductValidity getDeliverableValidity(){ return deliverableValidity; }
 
   /*****************************************
   *
@@ -116,7 +122,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, String workflowID)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, String workflowID, int deliverableQuantity, ProductValidity deliverableValidity)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
@@ -126,6 +132,8 @@ public class Product extends GUIManagedObject implements StockableItem
     this.stockableItemID = "product-" + getProductID();
     this.simpleOffer = simpleOffer;
     this.workflowID = workflowID;
+    this.deliverableQuantity = deliverableQuantity;
+    this.deliverableValidity = deliverableValidity;
   }
 
   /*****************************************
@@ -145,6 +153,8 @@ public class Product extends GUIManagedObject implements StockableItem
     struct.put("productTypes", packProductTypes(product.getProductTypes()));
     struct.put("simpleOffer", product.getSimpleOffer());
     struct.put("workflowID", product.getWorkflowID());
+    struct.put("deliverableQuantity", product.getDeliverableQuantity());
+    struct.put("deliverableValidity", ProductValidity.pack(product.getDeliverableValidity()));
     return struct;
   }
   
@@ -191,11 +201,14 @@ public class Product extends GUIManagedObject implements StockableItem
     Set<ProductTypeInstance> productTypes = unpackProductTypes(schema.field("productTypes").schema(), valueStruct.get("productTypes"));
     boolean simpleOffer = (schemaVersion >= 2) ? valueStruct.getBoolean("simpleOffer") : false;
     String workflowID = (schema.field("workflowID") != null) ? valueStruct.getString("workflowID") : null;
+    int deliverableQuantity = (schema.field("deliverableQuantity")!= null) ? valueStruct.getInt32("deliverableQuantity") : 0;
+    ProductValidity deliverableValidity = (schema.field("deliverableValidity")!= null) ? ProductValidity.unpack(new SchemaAndValue(schema.field("deliverableValidity").schema(), valueStruct.get("deliverableValidity"))) : null;
+    
     //
     //  return
     //
 
-    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, workflowID);
+    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, workflowID, deliverableQuantity, deliverableValidity);
   }
   
   /*****************************************
@@ -280,6 +293,9 @@ public class Product extends GUIManagedObject implements StockableItem
         if (deliverable == null) JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
         this.deliverableID = deliverable.getDeliverableID();
       }
+    this.deliverableQuantity = JSONUtilities.decodeInteger(jsonRoot, "deliverableQuantity", 1);
+    JSONObject jsonValue = JSONUtilities.decodeJSONObject(jsonRoot, "deliverableValidity", false);
+    this.deliverableValidity = (jsonValue != null) ? new ProductValidity(JSONUtilities.decodeJSONObject(jsonRoot, "deliverableValidity", false)) : null;
 
     /*****************************************
     *
@@ -311,6 +327,8 @@ public class Product extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(productTypes, existingProduct.getProductTypes());
         epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingProduct.getSimpleOffer());
         epochChanged = epochChanged || ! Objects.equals(workflowID, existingProduct.getWorkflowID());
+        epochChanged = epochChanged || ! Objects.equals(deliverableQuantity, existingProduct.getDeliverableQuantity());
+        epochChanged = epochChanged || ! Objects.equals(deliverableValidity, existingProduct.getDeliverableValidity());
         return epochChanged;
       }
     else
