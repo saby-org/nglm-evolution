@@ -7087,12 +7087,12 @@ public class GUIManager
   {
     /*****************************************
     *
-    *  retrieve loyaltyWorkflowToolboxSections
+    *  retrieve catalogWorkflowToolbox
     *
     *****************************************/
 
     List<JSONObject> catalogWorkflowToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection catalogWorkflowToolboxSection :Deployment.getDeployment(tenantID).getLoyaltyWorkflowToolbox().values())
+    for (ToolboxSection catalogWorkflowToolboxSection :Deployment.getDeployment(tenantID).getCatalogWorkflowToolbox().values())
       {
         JSONObject workflowToolboxSectionJSON = catalogWorkflowToolboxSection.getJSONRepresentation();
         catalogWorkflowToolboxSections.add(workflowToolboxSectionJSON);
