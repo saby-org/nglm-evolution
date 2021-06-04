@@ -304,13 +304,14 @@ public class SMPPGenericPlugin implements NotificationInterface
     }
     Boolean receiptExpected = (Boolean) deliveryRequest.getNotificationParameters().get("node.parameter.confirmationexpected");
     Boolean flashSMS = (Boolean) deliveryRequest.getNotificationParameters().get("node.parameter.flashsms");
+    Integer SMSExpirationMinutes = (Integer) deliveryRequest.getNotificationParameters().get("node.parameter.SMSexpiration");
     if(sender == null)
       {
         throw new RuntimeException("SMPPPlugin.send("+deliveryRequest+") sender is null, no smsc");
       }
     else
       {
-        if(sender.sendSMS(deliveryRequest, text, destination, source, receiptExpected != null ? receiptExpected : false, flashSMS != null ? flashSMS : false))
+        if(sender.sendSMS(deliveryRequest, text, destination, source, receiptExpected != null ? receiptExpected : false, flashSMS != null ? flashSMS : false, SMSExpirationMinutes != null ? SMSExpirationMinutes : null))
           {
             if(log.isDebugEnabled()) log.debug("SMPP Driver message sent successfully");
           }

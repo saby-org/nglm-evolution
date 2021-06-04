@@ -183,7 +183,7 @@ public class SMPPPlugin implements SMSNotificationInterface
       }
     else
       {
-        if(sender.sendSMS(deliveryRequest, text, destination, source, true, flashSMS))
+        if(sender.sendSMS(deliveryRequest, text, destination, source, true, flashSMS, null))
           {
             if(log.isDebugEnabled()) log.debug("SMPP Driver message sent successfully");
           }
