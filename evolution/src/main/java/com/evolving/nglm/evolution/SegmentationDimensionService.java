@@ -246,6 +246,7 @@ public class SegmentationDimensionService extends GUIService
       {
         result.put("noOfSegments",((SegmentationDimension)guiManagedObject).getNumberOfSegments());
       }
+    result.put("statistics",guiManagedObject.getJSONRepresentation().get("statistics"));
     return result;
   }
 

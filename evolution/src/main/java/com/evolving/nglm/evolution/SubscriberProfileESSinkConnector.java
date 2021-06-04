@@ -43,6 +43,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private LoyaltyProgramService loyaltyProgramService;
     private PointService pointService;
+    private SegmentationDimensionService segmentationDimensionService;
 
     /*****************************************
     *
@@ -61,6 +62,9 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       
       pointService = new PointService(Deployment.getBrokerServers(), "sinkconnector-pointservice" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPointTopic(), false);
       pointService.start();
+      
+      segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "sinkconnector-segmentationDimensionService" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getSegmentationDimensionTopic(), false);
+      segmentationDimensionService.start();
       
     }
 
@@ -153,6 +157,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("language", subscriberProfile.getLanguage());
       documentMap.put("segments", subscriberProfile.getSegments(subscriberGroupEpochReader));
       documentMap.put("stratum", subscriberProfile.getSegmentsMap(subscriberGroupEpochReader));
+      documentMap.put("statisticsStratum", subscriberProfile.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
       documentMap.put("targets", subscriberProfile.getTargets(subscriberGroupEpochReader));
       documentMap.put("loyaltyPrograms", subscriberProfile.getLoyaltyProgramsJSON(loyaltyProgramService, pointService));
       documentMap.put("pointFluctuations", subscriberProfile.getPointFluctuationsJSON());
