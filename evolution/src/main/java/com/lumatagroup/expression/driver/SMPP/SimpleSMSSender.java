@@ -467,8 +467,9 @@ public class SimpleSMSSender extends SMSSenderListener {
 			}
 			
 			if(SMSExpirationMinutes != null) {
-        c.add(Calendar.MINUTE, SMSExpirationMinutes);
-        expiryDateTimeStamp = c.getTime();
+			  Calendar currentTime = SystemTime.getCalendar();
+			  currentTime.add(Calendar.MINUTE, SMSExpirationMinutes);
+        expiryDateTimeStamp = currentTime.getTime();
       }
 
         if (SMSExpirationMinutes != null)
