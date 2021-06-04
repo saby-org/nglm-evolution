@@ -13,6 +13,9 @@ import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
 import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -26,6 +29,14 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
@@ -157,7 +168,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private StatBuilder<CounterStat> statsCounter;
   private ZookeeperUniqueKeyServer zookeeperUniqueKeyServer;
   private String application_ID;
-  
+  private KafkaProducer<byte[], byte[]> kafkaProducer;
   /*****************************************
   *
   *  constructor
@@ -226,6 +237,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("PurchaseMgr-subscribergroupepoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
+    //
+    //  kafka producer
+    //
+    
+    Properties producerProperties = new Properties();
+    producerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+    producerProperties.put("acks", "all");
+    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+    
     //
     // define as commodityDelivery response consumer
     //
@@ -1392,6 +1414,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
           continue mainLoop;
         }
+        
 
         //
         // check offer purchase limit for this subscriber
@@ -1419,7 +1442,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         *****************************************/
 
         log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : proceedPurchase(...)");
-        proceedPurchase(purchaseRequest,purchaseStatus, deliveryRequest.getTenantID());
+        proceedPurchase(purchaseRequest,purchaseStatus, deliveryRequest.getTenantID(), subscriberID);
         
       }
   }
@@ -1490,6 +1513,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     log.info("PurchaseFulfillmentManager: shutdown called");
     if (stockService != null) stockService.close();
     if (zookeeperUniqueKeyServer != null) zookeeperUniqueKeyServer.close();
+    if (kafkaProducer != null) kafkaProducer.close();
     log.info("PurchaseFulfillmentManager: shutdown DONE");
   }
   
@@ -1545,12 +1569,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  private void proceedPurchase(DeliveryRequest originatingDeliveryRequest, PurchaseRequestStatus purchaseStatus, int tenantID){
+  private void proceedPurchase(DeliveryRequest originatingDeliveryRequest, PurchaseRequestStatus purchaseStatus, int tenantID, String subscriberID){
+
     //Change to return PurchaseManagerStatus? 
     
     //
     // reserve all products (manage stock)
     //
+    
+    Date now = SystemTime.getCurrentTime();
     
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
       boolean debitOK = debitProductStock(purchaseStatus, tenantID);
@@ -1625,10 +1652,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     // confirm products, shared voucher and offers reservations
     //
-    
+
+    Voucher purchasedVoucher = null;
+    Product purchasedProduct = null;
+    Offer purchasedOffer = null;
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
       for(OfferProduct offerProduct : purchaseStatus.getProductStockDebited()){
         Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        purchasedProduct = product;
         if(product == null){
           log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of product "+offerProduct.getProductID());
         }else{
@@ -1642,6 +1673,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         VoucherShared voucher = null;
         try{
           voucher = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+          purchasedVoucher = voucher;
         }catch(ClassCastException ex){
           log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of bad voucher type "+offerVoucher.getVoucherID());
         }
@@ -1656,6 +1688,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
       for(String offerID : purchaseStatus.getOfferStockDebited()){
         Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        purchasedOffer = offer;
         if(offer == null){
           log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of offer "+offerID);
         }else{
@@ -1665,15 +1698,44 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       }
     }
     
+    
+    
     //TODO : still to be done :
     //    - subscriber stats and/or limits (?) 
 
     //
     // everything is OK => update and return response (succeed)
     //
+   if (purchasedProduct != null && subscriberID != null && purchasedProduct.getWorkflowID() != null && purchasedOffer.getOfferID() != null)
+      {
+        generateWorkflowEvent(subscriberID, now, purchasedProduct.getWorkflowID(), "" , purchasedOffer.getOfferID());
+      }
+    if (purchasedVoucher != null && subscriberID != null && purchasedVoucher.getWorkflowID() != null && purchasedOffer.getOfferID() != null)
+      {
+        generateWorkflowEvent(subscriberID, now, purchasedVoucher.getWorkflowID(), "" , purchasedOffer.getOfferID());
+      }
     
     submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PURCHASED, "Success");
     
+  }
+  
+  /*****************************************
+  *
+  *  generateWorkflowEvent
+  *
+  *****************************************/
+
+  private void generateWorkflowEvent(String subscriberID, Date now, String workflowID, String module, String feature)
+  {
+    String topic = Deployment.getWorkflowEventTopic();
+    Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+    Serializer<WorkflowEvent> valueSerializer = WorkflowEvent.serde().serializer();
+    WorkflowEvent workflowEvent = new WorkflowEvent(subscriberID, now, "eventID", workflowID, Module.Offer_Catalog.getExternalRepresentation() , feature); 
+    kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+        topic,
+        keySerializer.serialize(topic, new StringKey(subscriberID)),
+        valueSerializer.serialize(topic, workflowEvent)
+        ));
   }
 
   /*****************************************
@@ -2237,8 +2299,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       // continue purchase process
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : continue purchase process ...");
-      proceedPurchase(response,purchaseStatus, response.getTenantID());
-      
+      proceedPurchase(response,purchaseStatus, response.getTenantID(), response.getSubscriberID());
+     
     }
 
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) DONE");
@@ -3093,6 +3155,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             {
               origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
             }
+        }
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
+        {
+          newModuleID = Module.Offer_Catalog.getExternalRepresentation();
         }
       
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);

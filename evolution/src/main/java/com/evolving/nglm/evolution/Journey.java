@@ -389,6 +389,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
       {
         case Workflow:
         case LoyaltyWorkflow:
+        case CatalogWorkflow:
           result = true;
           break;
         default:
@@ -551,6 +552,8 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           return "workflow.result." + contextVariable.getID();
         case LoyaltyWorkflow:
           return "loyaltyworkflow.result." + contextVariable.getID();
+        case CatalogWorkflow:
+          return "catalogworkflow.result." + contextVariable.getID();
         default:
           return "journey.result." + contextVariable.getID();
       }

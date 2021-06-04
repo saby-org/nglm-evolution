@@ -61,6 +61,7 @@ public abstract class GUIManagedObject
     Campaign("campaign"),
     Workflow("workflow"),
     LoyaltyWorkflow("loyaltyWorkflow"),
+    CatalogWorkflow("catalogWorkflow"),
     BulkCampaign("bulkCampaign"),
     SMSMessageTemplate("smsMessageTemplate"),
     MailMessageTemplate("mailMessageTemplate"),

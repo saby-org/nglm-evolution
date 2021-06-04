@@ -238,6 +238,7 @@
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
   "edrDetailsTopic"                           			 : "${topic.edrdetails}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
+  "workflowEventTopic"                                   : "${topic.workflowEvent}",
 
   "supportedDataTypes" :
     [

@@ -834,6 +834,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
           featureName = journey == null ? null : journey.getGUIManagedObjectName();
           break;
@@ -883,6 +884,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow ||
+                  journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow ||
               journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
           featureDisplay = journey == null ? null : journey.getGUIManagedObjectDisplay();
           break;
