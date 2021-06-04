@@ -29353,10 +29353,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       if (firstLevel != null)
                         {
                           String deliveryRequestID = zuks.getStringKey();
-                          int firstLevelScore = firstLevel.getScoreLevel();
+                          //int firstLevelScore = firstLevel.getScoreLevel();
                           Integer subscriberCurrnetScore = baseSubscriberProfile.getScore(challenge.getGUIManagedObjectID());
-                          int scoreToDebit = (subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
-                          scoreToDebit = scoreToDebit <= 0 ? 0 : scoreToDebit;
+                          int scoreToDebit = subscriberCurrnetScore != null ?  subscriberCurrnetScore.intValue() : Integer.valueOf(0); //(subscriberCurrnetScore == null ? Integer.valueOf(0) :  subscriberCurrnetScore) - firstLevelScore;
                           if (scoreToDebit >= 0)
                             {
                               //

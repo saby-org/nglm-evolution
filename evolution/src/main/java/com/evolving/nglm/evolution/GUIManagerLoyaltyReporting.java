@@ -521,6 +521,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 else
                   {
                     existingLoyaltyJSONToUpdate.put("effectiveEndDate", JSONUtilities.decodeString(existingLoyaltyJSONToUpdate, "entryEndDate", true));
+                    existingLoyaltyJSONToUpdate.remove("duration");
                   }
                 loyaltyProgram = new LoyaltyProgramMission(existingLoyaltyJSONToUpdate, epoch, existingLoyaltyToBeUpdated, catalogCharacteristicService, tenantID);
                 break;
