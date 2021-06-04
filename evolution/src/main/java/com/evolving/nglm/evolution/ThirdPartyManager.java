@@ -973,7 +973,10 @@ public class ThirdPartyManager
       //
 
       exchange.sendResponseHeaders(200, 0);
-      exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+      exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+      exchange.getResponseHeaders().set("Content-Type", "application/json");
+      
+      log.info("RAJ K header {}", exchange.getResponseHeaders());
 
       BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
       writer.write(jsonResponse.toString());
