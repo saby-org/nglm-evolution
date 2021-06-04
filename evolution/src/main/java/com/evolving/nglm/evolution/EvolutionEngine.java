@@ -3441,24 +3441,22 @@ public class EvolutionEngine
           }
         else
           {
+            // EVPRO-1061 : For day unit, limit should be 0h on (today - number of days + 1)
+            // for month unit, the limit should be on 0h on (1st day of this month - number of months + 1)
             Date earliestDateToKeep = null;
             Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
+            Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
             if (maximumAcceptancesPeriodDays != Offer.UNSET) {
-              earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+              earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays+1, Deployment.getDeployment(tenantID).getTimeZone());
+              earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
+            } else if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
+              earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths+1, Deployment.getDeployment(tenantID).getTimeZone());
+              earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
             } else {
-              Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
-              if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
-                if (maximumAcceptancesPeriodMonths == 1) { // current month
-                  earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
-                } else {
-                  earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getDeployment(tenantID).getTimeZone());
-                }
-              } else {
-                log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
-                earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
-              }
+              log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
+              earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
             }
-
+            log.debug("earliestDateToKeep for " + offerID + " : " + earliestDateToKeep + " maximumAcceptancesPeriodDays: " + maximumAcceptancesPeriodDays + " maximumAcceptancesPeriodMonths: " + maximumAcceptancesPeriodMonths);
             List<Date> cleanPurchaseHistory = new ArrayList<Date>();
             Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
             List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
