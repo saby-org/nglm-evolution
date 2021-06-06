@@ -40,6 +40,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 
 public class SegmentationDimensionService extends GUIService
 {
@@ -96,8 +97,9 @@ public class SegmentationDimensionService extends GUIService
     //  (re-initialize lastGeneratedSegmentID) for all tenant
     //
 
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions(true, tenantID))
           {
             SegmentationDimension segmentationDimension = (guiManagedObject != null && guiManagedObject.getAccepted()) ? (SegmentationDimension) guiManagedObject : null;
@@ -162,8 +164,9 @@ public class SegmentationDimensionService extends GUIService
     //
 
     Date now = SystemTime.getCurrentTime();
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         for (SegmentationDimension segmentationDimension : getActiveSegmentationDimensions(now, tenantID))
           {
             for (Segment segment : segmentationDimension.getSegments())

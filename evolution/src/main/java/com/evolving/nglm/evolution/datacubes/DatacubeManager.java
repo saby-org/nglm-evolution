@@ -36,6 +36,7 @@ import com.evolving.nglm.evolution.datacubes.generator.SubscriberProfileDatacube
 import com.evolving.nglm.evolution.datacubes.generator.VDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -210,7 +211,8 @@ public class DatacubeManager
     //
     // Set all jobs from configuration
     //
-    for(Integer tenantID: Deployment.getTenantIDs()) {
+    for(Tenant tenant: Deployment.getTenants()) {
+      int tenantID = tenant.getTenantID();
       Map<String, ScheduledJobConfiguration> jobConfigs = Deployment.getDeployment(tenantID).getDatacubeJobsScheduling();
       if(jobConfigs == null) {
         continue;

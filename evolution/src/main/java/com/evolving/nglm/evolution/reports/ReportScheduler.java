@@ -22,6 +22,7 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.ReportService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
 import com.evolving.nglm.evolution.ScheduledJob;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 
 /*****************************************
 *
@@ -62,12 +63,14 @@ public class ReportScheduler {
     
     // create a ReportScheduler per tenant
     reportScheduler = new HashMap<>();
-    for (int tenantID : Deployment.getTenantIDs()) {
+    for (Tenant tenant : Deployment.getTenants()) {
+      int tenantID = tenant.getTenantID();
       reportScheduler.put(tenantID, new JobScheduler("report-"+tenantID));
     }
     
     // EVPRO-266 process all existing reports
-    for (int tenantID : Deployment.getTenantIDs()) {
+    for (Tenant tenant : Deployment.getTenants()) {
+      int tenantID = tenant.getTenantID();
       for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime(), tenantID)) {
         scheduleReport(report, tenantID);
       }
@@ -91,7 +94,8 @@ public class ReportScheduler {
   private void run()
   {
     log.info("Starting scheduler");
-    for (int tenantID : Deployment.getTenantIDs()) {
+    for (Tenant tenant : Deployment.getTenants()) {
+      int tenantID = tenant.getTenantID();
       reportScheduler.get(tenantID).runScheduler();
     }
   }

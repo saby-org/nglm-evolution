@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 
 
 public class GrafanaUtils
@@ -48,12 +49,13 @@ public class GrafanaUtils
     try
       {
         // prepare the curls
-        Set<Integer> tenantIDs = Deployment.getTenantIDs();
+        Set<Tenant> tenants = Deployment.getTenants();
 
         HashMap<String, Integer> existingOrgs = getExistingGrafanaOrgs();
 
-        for (Integer tenantID : tenantIDs)
+        for (Tenant tenant : tenants)
           {
+            int tenantID = tenant.getTenantID();
             if (tenantID == 0)
               {
                 continue;

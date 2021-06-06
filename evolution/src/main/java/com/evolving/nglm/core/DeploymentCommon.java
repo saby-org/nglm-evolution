@@ -69,6 +69,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings;
 import com.evolving.nglm.evolution.kafka.Topic;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 
 /**
  * This class does only contains static variable because all those settings are shared between
@@ -78,11 +79,11 @@ public class DeploymentCommon
 {
   protected static final Logger log = LoggerFactory.getLogger(DeploymentCommon.class);
   
-  private static Map<Integer, JSONObject> jsonConfigPerTenant;
+  private static Map<Tenant, JSONObject> jsonConfigPerTenant;
   private static Map<Integer, Deployment> deploymentsPerTenant; // Will contains instance of Deployment class from nglm-project.
 
   public static void initialize() { /* Just to be sure the static bloc is read. */ }
-  public static Set<Integer> getTenantIDs() { return jsonConfigPerTenant.keySet(); }
+  public static Set<Tenant> getTenants() { return jsonConfigPerTenant.keySet(); }
   public static Deployment getDeployment(int tenantID) { return deploymentsPerTenant.get(tenantID); }
   public static Deployment getDefault() { return getDeployment(0); }
   
@@ -154,39 +155,39 @@ public class DeploymentCommon
         //
         // Check that at least one tenant is defined
         //
-        if(getTenantIDs().size() <= 1) {
+        if(getTenants().size() <= 1) {
           throw new ServerRuntimeException("You need to define at least one tenant in your deployment JSON settings");
         }
         
         //
         // Load all tenant Deployment instance 
         //
-        for(Integer tenantID : getTenantIDs()) {
+        for(Tenant tenant : getTenants()) {
           Deployment deployment = projectDeploymentClass.newInstance();
           
           //
           // Retrieve jsonRoot
           //
-          JSONObject jsonRoot = jsonConfigPerTenant.get(tenantID);
+          JSONObject jsonRoot = jsonConfigPerTenant.get(tenant);
           DeploymentJSONReader jsonReader = new DeploymentJSONReader(jsonRoot);
           
           //
           // Load variables (nglm-product and nglm-project)
           //
-          deployment.loadProductTenantSettings(jsonReader, tenantID);
-          deployment.loadProjectTenantSettings(jsonReader, tenantID);
+          deployment.loadProductTenantSettings(jsonReader, tenant);
+          deployment.loadProjectTenantSettings(jsonReader, tenant);
           
           //
           // Display warnings (unused fields, forbidden overrides)
           //
-          if(tenantID != 0) { // Do not display for default, some tenant variables have no "default" meaning
-            jsonReader.checkUnusedFields("jsonRoot(tenant "+tenantID+")");
+          if(tenant.getTenantID() != 0) { // Do not display for default, some tenant variables have no "default" meaning
+            jsonReader.checkUnusedFields("jsonRoot(tenant "+tenant.getTenantID()+")");
           }
           
           //
           // Save it
           //
-          deploymentsPerTenant.put(tenantID, deployment);
+          deploymentsPerTenant.put(tenant.getTenantID(), deployment);
         }
       } 
     catch (Exception e)
@@ -2078,6 +2079,11 @@ public class DeploymentCommon
     // also add fake tenant 0 (for static configurations of Deployment)
     JSONObject tenant0Configuration = new JSONObject();
     tenant0Configuration.put("tenantID", 0);
+    tenant0Configuration.put("name", "global");
+    tenant0Configuration.put("description", "Global");
+    tenant0Configuration.put("display", "Global");
+    tenant0Configuration.put("languageID", "1");
+    tenant0Configuration.put("isDefault", false);
     tenantSpecificConfigurations.add(tenant0Configuration);
     
     //
@@ -2099,13 +2105,26 @@ public class DeploymentCommon
         //
         
         int tenantID = JSONUtilities.decodeInteger(tenantJSON, "tenantID", true);
+        String tenantName = JSONUtilities.decodeString(tenantJSON, "name", true);
+        String tenantDescription = JSONUtilities.decodeString(tenantJSON, "description", true);
+        String tenantDisplay = JSONUtilities.decodeString(tenantJSON, "display", true);
+        String tenantLanguageID = JSONUtilities.decodeString(tenantJSON, "languageID", true);
+        boolean tenantIsDefault = JSONUtilities.decodeBoolean(tenantJSON, "isDefault");
+        
         tenantJSON.remove("tenantID");
+        tenantJSON.remove("name");
+        tenantJSON.remove("description");
+        tenantJSON.remove("display");
+        tenantJSON.remove("languageID");
+        tenantJSON.remove("isDefault");
+        
+        Tenant tenant = new Tenant(tenantID, tenantName, tenantDescription, tenantDisplay, tenantLanguageID, tenantIsDefault);
         
         //
         // let reference the tenantJSONObject configuration available for all subclasses of Deployment
         //
         
-        jsonConfigPerTenant.put(tenantID, tenantJSON);
+        jsonConfigPerTenant.put(tenant, tenantJSON);
       }
   }
   

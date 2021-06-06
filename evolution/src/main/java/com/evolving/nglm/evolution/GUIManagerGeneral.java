@@ -72,6 +72,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.RLMDateUtils;
@@ -89,6 +90,7 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerGeneral extends GUIManager
@@ -5482,33 +5484,20 @@ public class GUIManagerGeneral extends GUIManager
     *****************************************/
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> tenantList = new ArrayList<JSONObject>();
-
-    // TODO move this to be a regular GUIManagedObject
-    {
-      JSONObject result = new JSONObject();
-      result.put("id", "0");
-      result.put("name", "global");
-      result.put("description", "Global");
-      result.put("display", "Global");
-      result.put("isDefault", false);
-      result.put("language", "1");
-      result.put("active", true);
-      result.put("readOnly", true);
-      tenantList.add(result);
-    }
-    {
-      JSONObject result = new JSONObject();
-      result.put("id", "1");
-      result.put("name", "default");
-      result.put("description", "Default");
-      result.put("display", "Default");
-      result.put("isDefault", true);
-      result.put("language", "1");
-      result.put("active", true);
-      result.put("readOnly", true);
-      tenantList.add(result);
-    }
-    
+    for(Tenant t : DeploymentCommon.getTenants())
+      {
+        JSONObject result = new JSONObject();
+        result.put("id", t.getTenantID());
+        result.put("name", t.getName());
+        result.put("description", t.getDescription());
+        result.put("display", t.getDisplay());
+        result.put("isDefault", t.isDefault());
+        result.put("language", t.getLanguageID());
+        result.put("active", true);
+        result.put("readOnly", true);
+        tenantList.add(result);
+      }
+   
     /*****************************************
     *
     *  response

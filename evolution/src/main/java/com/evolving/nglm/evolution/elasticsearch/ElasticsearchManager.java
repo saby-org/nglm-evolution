@@ -8,6 +8,7 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.VoucherService;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 
 public class ElasticsearchManager
 {
@@ -41,7 +42,8 @@ public class ElasticsearchManager
     //
     // Set all jobs from configuration
     //
-    for(Integer tenantID: Deployment.getTenantIDs()) {
+    for(Tenant tenant: Deployment.getTenants()) {
+      int tenantID = tenant.getTenantID();
       Map<String, ScheduledJobConfiguration> jobConfigs = Deployment.getDeployment(tenantID).getElasticsearchJobsScheduling();
       if(jobConfigs == null) {
         continue;

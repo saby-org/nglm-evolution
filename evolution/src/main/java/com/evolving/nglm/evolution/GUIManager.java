@@ -181,6 +181,7 @@ import com.evolving.nglm.evolution.reports.notification.NotificationReportDriver
 import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -1151,7 +1152,8 @@ public class GUIManager
     *****************************************/
 
     long providerEpoch = epochServer.getKey();
-    for(int tenantID : Deployment.getTenantIDs()) {
+    for(Tenant tenant : Deployment.getTenants()) {
+      int tenantID = tenant.getTenantID();
       for (DeliveryManagerAccount deliveryManagerAccount : Deployment.getDeployment(tenantID).getDeliveryManagerAccounts().values())
         {
           /*****************************************
@@ -1342,8 +1344,9 @@ public class GUIManager
     //  catalogCharacteristics
     //
 
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (catalogCharacteristicService.getStoredCatalogCharacteristics(tenantID).size() == 0)
           {
             try
@@ -1366,8 +1369,9 @@ public class GUIManager
     //  tokenTypes
     //
     
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (tokenTypeService.getStoredTokenTypes(tenantID).size() == 0)
           {
             try
@@ -1389,8 +1393,9 @@ public class GUIManager
     //
     //  productTypes
     //
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (productTypeService.getStoredProductTypes(tenantID).size() == 0)
           {
             try
@@ -1414,8 +1419,9 @@ public class GUIManager
     //
 
     // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
-    for(int tenantID : Deployment.getTenantIDs())
-      {   
+    for(Tenant tenant : Deployment.getTenants())
+      { 
+        int tenantID = tenant.getTenantID();
         try
         {
           Date now = SystemTime.getCurrentTime();
@@ -1455,8 +1461,9 @@ public class GUIManager
     //
     //  calling channels
     //
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (callingChannelService.getStoredCallingChannels(tenantID).size() == 0)
           {
             try
@@ -1479,8 +1486,9 @@ public class GUIManager
     //  sales channels
     //
 
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (salesChannelService.getStoredSalesChannels(tenantID).size() == 0)
           {
             try
@@ -1503,8 +1511,9 @@ public class GUIManager
     //  suppliers
     //
     
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (supplierService.getStoredSuppliers(tenantID).size() == 0)
           {
             try
@@ -1526,8 +1535,9 @@ public class GUIManager
     //
     //  products
     //
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (productService.getStoredProducts(tenantID).size() == 0)
           {
             try
@@ -1550,8 +1560,9 @@ public class GUIManager
     //  Source Addresses not before communicationChannels
     //
     
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (sourceAddressService.getStoredSourceAddresss(tenantID).size() == 0)
           {
             try
@@ -1573,8 +1584,9 @@ public class GUIManager
     //
     //  contactPolicies
     //
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (contactPolicyService.getStoredContactPolicies(tenantID).size() == 0)
           {
             try
@@ -1597,8 +1609,9 @@ public class GUIManager
     //  journeyTemplates
     //
     
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (journeyTemplateService.getStoredJourneyTemplates(tenantID).size() == 0)
           {
             try
@@ -1622,8 +1635,9 @@ public class GUIManager
     //  journeyObjectives
     //
 
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (journeyObjectiveService.getStoredJourneyObjectives(tenantID).size() == 0)
           {
             try
@@ -1646,8 +1660,9 @@ public class GUIManager
     //  offerObjectives
     //
 
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (offerObjectiveService.getStoredOfferObjectives(tenantID).size() == 0)
           {
             try
@@ -1670,8 +1685,9 @@ public class GUIManager
     //
     //  segmentationDimensions
     //
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (segmentationDimensionService.getStoredSegmentationDimensions(tenantID).size() == 0)
           {
             try
@@ -1693,8 +1709,9 @@ public class GUIManager
     //
     //  complexObject
     //
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         if (complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), tenantID).size() == 0)
           {
             try
@@ -1722,8 +1739,9 @@ public class GUIManager
     //
     // remove all existing simple profile dimensions
     //
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions(tenantID))
           {
             if (dimensionObject instanceof SegmentationDimension)
@@ -1743,8 +1761,9 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile(tenantID).getCriterionFields(tenantID);
         for (CriterionField criterion : profileCriterionFields.values())
           {
@@ -1912,10 +1931,10 @@ public class GUIManager
     resellerService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     segmentContactPolicyService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     dynamicEventDeclarationsService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
-        dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService, tenantID);
-        dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService, tenantID);
+        dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService, tenant.getTenantID());
+        dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService, tenant.getTenantID());
       }
 
     criterionFieldAvailableValuesService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);

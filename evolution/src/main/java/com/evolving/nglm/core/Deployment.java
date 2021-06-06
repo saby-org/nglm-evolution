@@ -20,6 +20,7 @@ import com.evolving.nglm.evolution.SupportedTimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
 
 import org.json.simple.JSONArray;
@@ -135,11 +136,11 @@ public class Deployment extends DeploymentCommon
   *
   *****************************************/
   // This method needs to be overriden in nglm-project
-  protected void loadProjectTenantSettings(DeploymentJSONReader jsonReader, int tenantID) throws Exception {
+  protected void loadProjectTenantSettings(DeploymentJSONReader jsonReader, Tenant tenant) throws Exception {
     throw new ServerRuntimeException("loadProjectTenantSettings methods needs to be overriden in your project Deployment class.");
   }
   
-  protected void loadProductTenantSettings(DeploymentJSONReader jsonReader, int tenantID) throws Exception
+  protected void loadProductTenantSettings(DeploymentJSONReader jsonReader, Tenant tenant) throws Exception
   {
     //
     // Local information
@@ -160,28 +161,28 @@ public class Deployment extends DeploymentCommon
     elasticsearchRetentionDaysExpiredVouchers = jsonReader.decodeInteger("ESRetentionDaysExpiredVouchers");
     
     // Datacubes jobs
-    if(tenantID == 0) {
+    if(tenant.getTenantID() == 0) {
       datacubeJobsScheduling = null; // because datacube jobs make no sense for "tenant 0".
     } else {
       datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
       DeploymentJSONReader datacubeJobsSchedulingJSON = jsonReader.get("datacubeJobsScheduling");
       for (Object key : datacubeJobsSchedulingJSON.keySet()) {
         // Change jobID (add tenantID) otherwise they will override themselves in DatacubeManager.
-        String newKey = "T" + tenantID + "_" + ((String) key);
-        datacubeJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, datacubeJobsSchedulingJSON.get(key), tenantID, timeZone));
+        String newKey = "T" + tenant.getTenantID() + "_" + ((String) key);
+        datacubeJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, datacubeJobsSchedulingJSON.get(key), tenant.getTenantID(), timeZone));
       }
     }
     
     // Elasticsearch jobs
-    if(tenantID == 0) {
+    if(tenant.getTenantID() == 0) {
       // Only for tenantID == 0
       // TODO EVPRO-99 for the moment most ES jobs are global (for tenant 0)
       elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
       DeploymentJSONReader elasticsearchJobsSchedulingJSON = jsonReader.get("elasticsearchJobsScheduling");
       for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
         if(!key.equals("ExpiredVoucherCleanUp")) { // @rl UGLY, to be improved later 
-          String newKey = "T" + tenantID + "_" + ((String) key);
-          elasticsearchJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone));
+          String newKey = "T" + tenant.getTenantID() + "_" + ((String) key);
+          elasticsearchJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, elasticsearchJobsSchedulingJSON.get(key), tenant.getTenantID(), timeZone));
         }
       }
     } else {
@@ -189,12 +190,12 @@ public class Deployment extends DeploymentCommon
       DeploymentJSONReader elasticsearchJobsSchedulingJSON = jsonReader.get("elasticsearchJobsScheduling");
       for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
         if(key.equals("ExpiredVoucherCleanUp")) { // @rl UGLY, to be improved later 
-          String newKey = "T" + tenantID + "_" + ((String) key);
-          elasticsearchJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone));
+          String newKey = "T" + tenant.getTenantID() + "_" + ((String) key);
+          elasticsearchJobsScheduling.put(newKey, new ScheduledJobConfiguration(newKey, elasticsearchJobsSchedulingJSON.get(key), tenant.getTenantID(), timeZone));
         }
         else {
           // @rl UGLY, to be improved later 
-          new ScheduledJobConfiguration("X", elasticsearchJobsSchedulingJSON.get(key), tenantID, timeZone); // for warnings -- (meaning that overriding it will not raise error... dangerous)
+          new ScheduledJobConfiguration("X", elasticsearchJobsSchedulingJSON.get(key), tenant.getTenantID(), timeZone); // for warnings -- (meaning that overriding it will not raise error... dangerous)
         }
       }
     }
@@ -210,7 +211,7 @@ public class Deployment extends DeploymentCommon
     defaultTimeWindowJSON.put("display", "default");
     defaultTimeWindowJSON.put("active", true);
     defaultTimeWindowJSON.put("communicationChannelID", "default");
-    defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null, tenantID);
+    defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null, tenant.getTenantID());
     
     propensityRule = new PropensityRule(jsonReader.decodeJSONObject("propensityRule"));
     
@@ -220,7 +221,7 @@ public class Deployment extends DeploymentCommon
     for (int i=0; i<evaluationCriterionValues.size(); i++)
       {
         JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-        EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile(tenantID), tenantID);
+        EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile(tenant.getTenantID()), tenant.getTenantID());
         getJourneyUniversalEligibilityCriteria().add(evaluationCriterion);                  
       }
     

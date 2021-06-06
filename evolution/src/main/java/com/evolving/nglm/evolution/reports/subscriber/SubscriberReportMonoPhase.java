@@ -35,6 +35,7 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 
 public class SubscriberReportMonoPhase implements ReportCsvFactory {
 
@@ -299,8 +300,9 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
 
       synchronized (allDimensionsMapPerTenant)
       {
-        for(int tenantID : Deployment.getTenantIDs())
+        for(Tenant tenant : Deployment.getTenants())
           {
+            int tenantID = tenant.getTenantID();
             if(allDimensionsMapPerTenant.get(tenantID) == null) {  allDimensionsMapPerTenant.put(tenantID, new HashMap<>()); }
             allDimensionsMapPerTenant.get(tenantID).clear();
             

@@ -61,6 +61,7 @@ import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportGenerationDateComperator;
 import com.evolving.nglm.evolution.reports.ReportManager;
+import com.evolving.nglm.evolution.tenancy.Tenant;
 
 public class ReportService extends GUIService
 {
@@ -93,7 +94,8 @@ public class ReportService extends GUIService
   public ReportService(String bootstrapServers, String groupID, String reportTopic, boolean masterService, ReportListener reportListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "ReportService", groupID, reportTopic, masterService, getSuperListener(reportListener), "putReport", "removeReport", notifyOnSignificantChange);
-    for (int tenantID : Deployment.getTenantIDs()) {
+    for (Tenant tenant : Deployment.getTenants()) {
+      int tenantID = tenant.getTenantID();
       String fullPath = getReportOutputPath(tenantID);
       Path path = Paths.get(fullPath);
       try
@@ -106,8 +108,9 @@ public class ReportService extends GUIService
         }
     }
 
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         File f = validateAndgetReportDirectory(tenantID);
         reportDirectoryPerTenant.put(tenantID, f);
       }

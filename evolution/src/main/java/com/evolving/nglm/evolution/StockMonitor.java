@@ -11,7 +11,7 @@ import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
-
+import com.evolving.nglm.evolution.tenancy.Tenant;
 import com.evolving.nglm.evolution.zookeeper.Configuration;
 import com.evolving.nglm.evolution.zookeeper.ZookeeperEvolution;
 import com.evolving.nglm.evolution.zookeeper.ZookeeperJSONObject;
@@ -133,8 +133,9 @@ public class StockMonitor implements Runnable
     //
 
     Date now = SystemTime.getCurrentTime();
-    for(int tenantID : Deployment.getTenantIDs())
+    for(Tenant tenant : Deployment.getTenants())
       {
+        int tenantID = tenant.getTenantID();
         for (GUIService guiService : this.stockItemServices)
           {
             for (GUIManagedObject guiManagedObject : guiService.getActiveGUIManagedObjects(now, tenantID))
