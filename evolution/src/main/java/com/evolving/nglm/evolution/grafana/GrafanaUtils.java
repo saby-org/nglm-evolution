@@ -62,7 +62,7 @@ public class GrafanaUtils
               }
 
             // check if organization exists
-            String orgName = "" + tenantID;
+            String orgName = tenant.getDisplay();
             if (!existingOrgs.containsKey(orgName))
               {
                 // create this org.
@@ -158,7 +158,7 @@ public class GrafanaUtils
                                   }
                                 else
                                   {
-                                    System.out.println("contains...");
+                                    log.info("contains...");
                                   }
                               }
                           }
