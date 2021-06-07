@@ -3133,7 +3133,7 @@ public class ThirdPartyManager
            *
            *****************************************/
 
-          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService)).collect(Collectors.toList());
+          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService)).collect(Collectors.toList());
           response.put("offers", JSONUtilities.encodeArray(offersJson));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -5117,7 +5117,7 @@ public class ThirdPartyManager
     GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService);
     }
     response.put("offerDetails",offerJSON);
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,response);
@@ -5136,7 +5136,7 @@ public class ThirdPartyManager
     GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService);
     }
     Map<String,Object> offerResponse = new HashMap<>();
     offerResponse.put("offerDetails", offerJSON);
