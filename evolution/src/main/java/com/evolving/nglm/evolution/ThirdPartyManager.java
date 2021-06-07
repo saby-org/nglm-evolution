@@ -2395,7 +2395,6 @@ public class ThirdPartyManager
               if (!subscriberJourneyStatuses.isEmpty())
                 {
                   boolean criteriaSatisfied = subscriberJourneyStatuses.contains(customerStatusInJourney);
-                  log.info("RAJ K subscriberJourneyStatuses {} and customerStatusInJourney {}", subscriberJourneyStatuses, customerStatusInJourney);
                   if (!criteriaSatisfied)
                     continue;
                 }
