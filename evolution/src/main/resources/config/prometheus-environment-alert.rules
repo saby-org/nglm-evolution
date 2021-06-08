@@ -1,0 +1,53 @@
+#
+#  prometheus-environment-alert.rules
+#
+
+groups:
+- name: enviroment-alerts
+  rules:
+
+  - alert: exporter_down
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Exporter alert"
+      description: "Exporter {{$labels.job}} on {{ $labels.instance }} has been down for more than 60 seconds."
+
+  - alert: server_memory_usage
+    expr: (((node_memory_MemTotal-node_memory_MemFree-node_memory_Cached)/(node_memory_MemTotal)*100)) > 75
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Server memory alert"
+      description: "{{ $labels.instance }} memory consumption is at {{ $value }}%"
+
+  - alert: server_load
+    expr: ((node_load5 / count without (cpu, mode) (node_cpu{mode="system"})) > 1)
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Server load alert"
+      description: "{{ $labels.instance }} load5 is at {{ $value }}"
+
+  - alert: server_cpu_usage
+    expr: (100 - (avg by (instance) (irate(node_cpu{mode="idle"}[5m])) * 100)) > 75
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Server CPU alert"
+      description: "{{ $labels.instance }} CPU consumption is at {{ $value }}%"
+
+  - alert: server_disk_usage
+    expr: ((node_filesystem_size{fstype!="rootfs",mountpoint="/"} - node_filesystem_free{mountpoint="/"} ) / node_filesystem_size{mountpoint="/"} * 100) > 75
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Server disk alert"
+      description: "{{ $labels.instance }} disk consumption is at {{ $value }}%"
+
