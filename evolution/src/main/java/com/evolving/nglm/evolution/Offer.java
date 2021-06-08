@@ -19,6 +19,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -982,12 +983,32 @@ public class Offer extends GUIManagedObject implements StockableItem
           {
             String catalogCharacteristicName = offerCharacteristicsLanguageProperty.getProperties().iterator().next().getCatalogCharacteristicName();
             Object catalogCharacteristicValue = offerCharacteristicsLanguageProperty.getProperties().iterator().next().getValue();
-            result = characteristicsLanguageProperty.getProperties().stream().anyMatch(charProperty -> charProperty.getCatalogCharacteristicName().equals(catalogCharacteristicName) && Objects.equals(catalogCharacteristicValue, charProperty.getValue()));
+            result = characteristicsLanguageProperty.getProperties().stream().anyMatch(charProperty -> charProperty.getCatalogCharacteristicName().equals(catalogCharacteristicName) && checkComplexEquality(catalogCharacteristicValue, charProperty.getValue()));
           }
       }
     return result;
   }
   
+  private boolean checkComplexEquality(Object catalogCharacteristicValueInReq, Object catalogCharacteristicValueInOffer)
+  {
+    boolean result = false;
+    if (catalogCharacteristicValueInOffer instanceof Collection)
+      {
+        result = Objects.equals(catalogCharacteristicValueInReq, catalogCharacteristicValueInOffer);
+      }
+    else
+      {
+        if (catalogCharacteristicValueInReq instanceof Collection)
+          {
+            result = ((Collection) catalogCharacteristicValueInReq).contains(catalogCharacteristicValueInOffer);
+          }
+        else
+          {
+            result = Objects.equals(catalogCharacteristicValueInReq, catalogCharacteristicValueInOffer);
+          }
+      }
+    return result;
+  }
   /*****************************************
   *
   *  hasThisOfferCharacteristics
