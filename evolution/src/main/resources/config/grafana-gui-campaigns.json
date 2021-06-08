@@ -1,4 +1,5 @@
 {
+"dashboard" : {
   "annotations": {
     "list": [
       {
@@ -16,7 +17,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 4,
+  "id": null,
   "iteration": 1622792715402,
   "links": [],
   "panels": [
@@ -3220,6 +3221,7 @@
   },
   "timezone": "",
   "title": "Business - Campaigns Dashboard",
-  "uid": "-nZMXsQMk",
+  "uid": null,
   "version": 7
+  }
 }
