@@ -142,57 +142,61 @@ public class ThirdPartyJSONGenerator
   private static JSONArray  getOfferObjectivesJson(Offer offer, OfferObjectiveService offerObjectiveService, CatalogCharacteristicService catalogCharacteristicService)
   {
     List<JSONObject> offerObjectives = new ArrayList<JSONObject>();
-    if (offer != null && offer.getOfferObjectives() != null)
+    if (offer != null && offer.getJSONRepresentation().get("offerObjectives") != null)
       {
-        for (OfferObjectiveInstance instance : offer.getOfferObjectives())
+        JSONArray offerObjectiveArray = (JSONArray) offer.getJSONRepresentation().get("offerObjectives"); //To get the offerObjective Characteristics value and display
+        if (offerObjectiveArray != null && !(offerObjectiveArray.isEmpty()))
           {
-            GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(instance.getOfferObjectiveID());
-            if (offerObjective != null)
+            for (int j = 0; j < offerObjectiveArray.size(); j++)
               {
-                JSONObject offerObjectiveJSON = offerObjective.getJSONRepresentation();
-                JSONArray offerObjectiveArray = offer.getJSONRepresentation().get("offerObjectives") != null
-                    ? (JSONArray) (offer.getJSONRepresentation().get("offerObjectives")) : new JSONArray();   
-                    if (offerObjectiveArray != null && !(offerObjectiveArray.isEmpty())) {
-                      for (int j = 0; j < offerObjectiveArray.size() ; j++) {
-                        JSONObject offerObj = (JSONObject) offerObjectiveArray.get(j);
-                        JSONArray catalogCharateristics = new JSONArray();
-                        if (offerObj != null && offerObj.get("catalogCharacteristics") != null) {
-                         catalogCharateristics = (JSONArray) offerObj.get("catalogCharacteristics");
+                JSONObject offerObj = (JSONObject) offerObjectiveArray.get(j);
+                String objectiveID = offerObj.get("offerObjectiveID").toString();
+                GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(objectiveID);
+                if (offerObjective != null)
+                  {
+                    JSONObject offerObjectiveJSON = (JSONObject) offerObjective.getJSONRepresentation().clone();
+                    JSONArray catalogCharateristics = new JSONArray();
+                    if (offerObj != null && offerObj.get("catalogCharacteristics") != null)
+                      {
+                        catalogCharateristics = (JSONArray) offerObj.get("catalogCharacteristics");   // To get the catalogCharacteristics display
                         JSONArray newCatalogCharateristics = new JSONArray();
                         if (catalogCharateristics != null && !(catalogCharateristics.isEmpty()))
                           {
-                            for (int i = 0; i < catalogCharateristics.size(); i++) {
-                              JSONObject catalogCharacteristicObject = (JSONObject) catalogCharateristics.get(i);
-                              String catalogCharacteristicDisplay = null ;
-                                if (catalogCharacteristicObject != null && catalogCharacteristicObject.get("catalogCharacteristicID") != null)
+                            for (int i = 0; i < catalogCharateristics.size(); i++)
+                              {
+                                JSONObject catalogCharacteristicObject = (JSONObject) ((JSONObject) (catalogCharateristics
+                                    .get(i))).clone();
+                                String catalogCharacteristicDisplay = null;
+                                if (catalogCharacteristicObject != null
+                                    && catalogCharacteristicObject.get("catalogCharacteristicID") != null)
                                   {
-                                    String catalogCharacteristicID = catalogCharacteristicObject.get("catalogCharacteristicID")
-                                        .toString();
-                                        if (catalogCharacteristicID != null)
+                                    String catalogCharacteristicID = catalogCharacteristicObject
+                                        .get("catalogCharacteristicID").toString();
+                                    if (catalogCharacteristicID != null)
+                                      {
+                                        GUIManagedObject catalogCharaObject = catalogCharacteristicService
+                                            .getStoredCatalogCharacteristic(catalogCharacteristicID);
+                                        if (catalogCharaObject != null)
                                           {
-                                            GUIManagedObject catalogCharaObject = catalogCharacteristicService
-                                                .getStoredCatalogCharacteristic(catalogCharacteristicID);
-                                            if (catalogCharaObject != null)
-                                              {
-                                                catalogCharacteristicDisplay = catalogCharaObject
-                                                    .getGUIManagedObjectDisplay();
-                                              }
+                                            catalogCharacteristicDisplay = catalogCharaObject
+                                                .getGUIManagedObjectDisplay();
                                           }
+                                      }
                                   }
                                 catalogCharacteristicObject.put("catalogCharacteristicDisplay", catalogCharacteristicDisplay);
                                 catalogCharacteristicObject.put("catalogCharacteristicsValue", catalogCharacteristicObject.remove("value"));
                                 newCatalogCharateristics.add(catalogCharacteristicObject);
-                              
-                            }
-                            offerObjectiveJSON.put("catalogCharacteristics", newCatalogCharateristics);
-                          }
-                        }
-                      }
-                    }               
 
-                offerObjectives.add(offerObjectiveJSON);
+                              }
+                            offerObjectiveJSON.put("catalogCharacteristics", newCatalogCharateristics);
+
+                            offerObjectives.add(offerObjectiveJSON);
+                          }
+                      }
+                  }
               }
           }
+
       }
     return JSONUtilities.encodeArray(offerObjectives);
   }
@@ -208,22 +212,22 @@ public class ThirdPartyJSONGenerator
     JSONObject offerCharacteristics = new JSONObject();
     if (offer != null && offer.getJSONRepresentation().get("offerCharacteristics") != null)
       {
-        offerCharacteristics = (JSONObject) offer.getJSONRepresentation().get("offerCharacteristics");
-        JSONArray languageProperties = (JSONArray) offerCharacteristics.get("languageProperties");
+        offerCharacteristics = (JSONObject) ((JSONObject) offer.getJSONRepresentation().get("offerCharacteristics")).clone();
+        JSONArray languageProperties = (JSONArray) offerCharacteristics.get("languageProperties"); // To get the catalogCharacteristic display and catalogCharacteristics value
         JSONArray newProperties = new JSONArray();
         JSONArray newlanguageProperties = new JSONArray();
         if (offerCharacteristics != null && languageProperties != null && !languageProperties.isEmpty())
           {
             for (int i = 0; i < languageProperties.size(); i++)
               {
-                JSONObject langProperty = (JSONObject) languageProperties.get(i);
+                JSONObject langProperty = (JSONObject) ((JSONObject) languageProperties.get(i)).clone();
                 if (langProperty != null && langProperty.get("properties") != null)
                   {
                     JSONArray properties = (JSONArray) langProperty.get("properties");
                     for (int j = 0; j < properties.size(); j++)
                       {
                         String catalogCharacteristicDisplay = null;
-                        JSONObject property = (JSONObject) properties.get(j);
+                        JSONObject property = (JSONObject) ((JSONObject) properties.get(j)).clone();
                         if (property != null && property.get("catalogCharacteristicID") != null)
                           {
                             String catalogCharacteristicID = property.get("catalogCharacteristicID").toString();
