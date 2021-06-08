@@ -113,7 +113,7 @@ public class GrafanaUtils
                             if (varValue == null)
                               {
                                 log.warn("GrafanaUtils.prepareGrafanaForTenants Can't retrieve environment variable " + varName + " for datasource in file " + currentFileName);
-                                continue;
+                                break;
                               }
                             else
                               {

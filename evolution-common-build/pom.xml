@@ -341,6 +341,26 @@
               </resources>     
             </configuration>     
           </execution>
+      
+         <execution>
+            <id>generate-assembled-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-resources</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/assembly/resources</directory>
+                  <includes>
+                    <include>config/grafana-*.json</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
 
           <execution>
             <id>generate-prometheus-application-docker-stack</id>
