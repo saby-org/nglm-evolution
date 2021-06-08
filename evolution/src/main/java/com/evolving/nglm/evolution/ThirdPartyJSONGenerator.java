@@ -184,7 +184,7 @@ public class ThirdPartyJSONGenerator
                                       }
                                   }
                                 catalogCharacteristicObject.put("catalogCharacteristicDisplay", catalogCharacteristicDisplay);
-                                catalogCharacteristicObject.put("catalogCharacteristicsValue", catalogCharacteristicObject.remove("value"));
+                                catalogCharacteristicObject.put("catalogCharacteristicValue", catalogCharacteristicObject.remove("value"));
                                 newCatalogCharateristics.add(catalogCharacteristicObject);
 
                               }
@@ -239,7 +239,7 @@ public class ThirdPartyJSONGenerator
                                   {
                                     catalogCharacteristicDisplay = catalogCharaObject.getGUIManagedObjectDisplay();
                                     property.put("catalogCharacteristicDisplay", catalogCharacteristicDisplay);
-                                    property.put("catalogCharacteristicsValue", property.remove("value"));
+                                    property.put("catalogCharacteristicValue", property.remove("value"));
                                   }
                               }
 
