@@ -10,6 +10,8 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -961,6 +963,40 @@ public class Offer extends GUIManagedObject implements StockableItem
    // result.put("CatalogCharacteristic", getCatalogCharacteristics());
     
     
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  hasThisOfferCharacteristics
+  *
+  *****************************************/
+  
+  public boolean hasThisOfferCharacteristics(OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty)
+  {
+    boolean result = false;
+    if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
+      {
+        OfferCharacteristicsLanguageProperty characteristicsLanguageProperty = getOfferCharacteristics().getOfferCharacteristicProperties().stream().filter(charLang -> charLang.getLanguageID().equalsIgnoreCase(offerCharacteristicsLanguageProperty.getLanguageID())).findFirst().orElse(null);
+        if (characteristicsLanguageProperty != null)
+          {
+            String catalogCharacteristicName = offerCharacteristicsLanguageProperty.getProperties().iterator().next().getCatalogCharacteristicName();
+            Object catalogCharacteristicValue = offerCharacteristicsLanguageProperty.getProperties().iterator().next().getValue();
+            result = characteristicsLanguageProperty.getProperties().stream().anyMatch(charProperty -> charProperty.getCatalogCharacteristicName().equals(catalogCharacteristicName) && Objects.equals(catalogCharacteristicValue, charProperty.getValue()));
+          }
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  hasThisOfferCharacteristics
+  *
+  *****************************************/
+  
+  public boolean hasThisOfferObjectives(OfferObjectiveInstance offerObjectiveInstance)
+  {
+    boolean result = false;
     return result;
   }
 }
