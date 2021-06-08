@@ -617,12 +617,14 @@ public abstract class SubscriberProfile
             todayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getToday(evaluationDate));
             todayFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getToday(evaluationDate));
             todayFluctuations.put("expired", point.getValue().getExpiredHistory().getToday(evaluationDate));
+            todayFluctuations.put("balance", point.getValue().getBalance(evaluationDate));
             fluctuations.put("today", todayFluctuations);
             
             yesterdayFluctuations.put("earned", point.getValue().getEarnedHistory().getYesterday(evaluationDate));
             yesterdayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getYesterday(evaluationDate));
             yesterdayFluctuations.put("redemptions", point.getValue().getRedemptionHistory().getYesterday(evaluationDate));
             yesterdayFluctuations.put("expired", point.getValue().getExpiredHistory().getYesterday(evaluationDate));
+            yesterdayFluctuations.put("balance", point.getValue().getYesterdayBalance(evaluationDate));
             fluctuations.put("yesterday", yesterdayFluctuations);
             
             last7daysFluctuations.put("earned", point.getValue().getEarnedHistory().getPrevious7Days(evaluationDate));

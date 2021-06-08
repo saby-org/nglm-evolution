@@ -189,6 +189,23 @@ public class PointBalance
       }
     return result;
   }
+  
+  /**
+   * Retrieve balance at the end of yesterday.
+   */
+  public long getYesterdayBalance(Date evaluationDate)
+  {
+    // Because we do not store start date in balance map, there is no way to filter out the addition done today in this map
+    // The only way to retrieve this value is to:
+    // - subtract what has been earned today (it has been added to the map) 
+    // - add what has been consumed (it has been removed from the map)
+    // - add what has expired (it has been removed from the map)
+    int todayBalance = getBalance(evaluationDate);
+    
+    return todayBalance - this.earnedHistory.getToday(evaluationDate)
+        + this.consumedHistory.getToday(evaluationDate)
+        + this.expiredHistory.getToday(evaluationDate);
+  }
 
   /*****************************************
   *
