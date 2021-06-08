@@ -5883,6 +5883,41 @@ public class EvolutionEngine
           inactiveJourneyStates.add(journeyState);
           continue;
         }
+        
+        
+        /******************************************************
+        *
+        * ignore workflow execution in case source is stopped/finished/removed
+        * 
+        *******************************************************/
+        if (journey != null && journey.isWorkflow()) {
+          String featureID = journeyState.getsourceFeatureID();
+          DeliveryRequest.Module moduleID = DeliveryRequest.Module.fromExternalRepresentation(journeyState.getSourceModuleID());
+          GUIManagedObject caller = null;
+          boolean mustCheck = true;
+          switch (moduleID) {
+            case Journey_Manager:
+              caller = journeyService.getStoredJourney(featureID);
+              break;
+            case Loyalty_Program:
+              caller = loyaltyProgramService.getStoredLoyaltyProgram(featureID);
+              break;
+            case Unknown:
+              log.debug("Unknown moduleID : " + moduleID.getExternalRepresentation());
+              mustCheck = false;
+              break;
+          }
+          if (mustCheck) {
+            if (caller == null) {
+              // if source was removed, just stop workflow
+              inactiveJourneyStates.add(journeyState);
+              continue;
+            } else if (!caller.getActive()) {
+              // if source stopped, just ignore workflow
+              continue;
+            } 
+          }
+        }
 
         if (journey == null || journeyNode == null) {
           // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
