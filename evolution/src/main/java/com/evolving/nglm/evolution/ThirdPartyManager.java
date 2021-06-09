@@ -785,11 +785,7 @@ public class ThirdPartyManager
        *
        *****************************************/
 
-      int tenantID = 1; // by default... TODO EVPRO-99 do we need to remove this check ? Deployment.getRegressionMode
-      if (! Deployment.getRegressionMode())
-        {
-          tenantID = authenticateAndCheckAccess(jsonRoot, api.name());
-        }
+      int tenantID = authenticateAndCheckAccess(jsonRoot, api.name());
 
       /*****************************************
        *
@@ -874,7 +870,7 @@ public class ThirdPartyManager
               jsonResponse = processGetCustomerAvailableCampaigns(jsonRoot, tenantID);
               break;
             case updateCustomer:
-              jsonResponse = processUpdateCustomer(jsonRoot);
+              jsonResponse = processUpdateCustomer(jsonRoot, tenantID);
               break;
             case updateCustomerParent:
               jsonResponse = processUpdateCustomerParent(jsonRoot, tenantID);
@@ -898,7 +894,7 @@ public class ThirdPartyManager
               jsonResponse = processPurchaseOffer(jsonRoot,sync, tenantID);
               break;
             case triggerEvent:
-              jsonResponse = processTriggerEvent(jsonRoot);
+              jsonResponse = processTriggerEvent(jsonRoot, tenantID);
               break;
             case enterCampaign:
               jsonResponse = processEnterCampaign(jsonRoot, tenantID);
@@ -1208,7 +1204,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     //
     // process
@@ -1285,7 +1281,7 @@ public class ThirdPartyManager
     // process
     //
     
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     try
     {
       SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
@@ -1361,7 +1357,7 @@ public class ThirdPartyManager
     // process
     //
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     try
       {
         SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
@@ -1425,7 +1421,7 @@ public class ThirdPartyManager
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
     String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", false);
     String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", false);
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
     if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
@@ -1567,7 +1563,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     /*****************************************
      *
@@ -1663,7 +1659,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     
     /*****************************************
     *
@@ -1762,7 +1758,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     
     /*****************************************
     *
@@ -1848,7 +1844,7 @@ public class ThirdPartyManager
     // process
     //
     
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     try
     {
       SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
@@ -1926,7 +1922,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     String journeyObjectiveName = readString(jsonRoot, "objective", false);
     String journeyState = readString(jsonRoot, "journeyState", false);
@@ -2206,7 +2202,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     String campaignObjectiveName = readString(jsonRoot, "objective", false);
     String campaignState = readString(jsonRoot, "campaignState", false);
@@ -2493,7 +2489,7 @@ public class ThirdPartyManager
     *
     ****************************************/
 
-   String subscriberID = resolveSubscriberID(jsonRoot);
+   String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
    String searchedLoyaltyProgramID = readString(jsonRoot, "loyaltyProgramID", false);
    if(searchedLoyaltyProgramID != null && searchedLoyaltyProgramID.isEmpty()){ searchedLoyaltyProgramID = null; }
@@ -2886,7 +2882,7 @@ public class ThirdPartyManager
       }
     if (subscriberParameter)
       {
-        subscriberID = resolveSubscriberID(jsonRoot);
+        subscriberID = resolveSubscriberID(jsonRoot, tenantID);
       }
 
     String offerState = readString(jsonRoot, "state", false);
@@ -3163,7 +3159,7 @@ public class ThirdPartyManager
      * argument
      *
      ****************************************/
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     
     /*****************************************
      *
@@ -3286,7 +3282,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processUpdateCustomer(JSONObject jsonRoot) throws ThirdPartyManagerException
+  private JSONObject processUpdateCustomer(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
   {
     Map<String, Object> response = new HashMap<String, Object>();
 
@@ -3296,7 +3292,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     
     SubscriberProfile baseSubscriberProfile = null;
     try
@@ -3360,7 +3356,7 @@ public class ThirdPartyManager
     *
     ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
     String newParentSubscriberID = resolveParentSubscriberID(jsonRoot);
@@ -3512,7 +3508,7 @@ public class ThirdPartyManager
     *
     ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
 
@@ -3606,7 +3602,7 @@ public class ThirdPartyManager
     *
     ****************************************/
 
-   String subscriberID = resolveSubscriberID(jsonRoot);
+   String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
    
    // one of the two must be there
    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", false);
@@ -3867,7 +3863,7 @@ public class ThirdPartyManager
     *
     ****************************************/
 
-   String subscriberID = resolveSubscriberID(jsonRoot);
+   String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
    
    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
    Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
@@ -4183,7 +4179,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
@@ -4422,7 +4418,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
     String offerDisplay = JSONUtilities.decodeString(jsonRoot, "offer", false);
@@ -4647,7 +4643,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     
     String loyaltyProgramName = JSONUtilities.decodeString(jsonRoot, "loyaltyProgram", false);
     if (loyaltyProgramName == null) // this is mandatory, but we want to control the return code
@@ -4781,7 +4777,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     String tokenStatus = JSONUtilities.decodeString(jsonRoot, "tokenStatus", false);
 
@@ -4869,7 +4865,7 @@ public class ThirdPartyManager
   *
   *****************************************/
 
-  private JSONObject processTriggerEvent(JSONObject jsonRoot) throws ThirdPartyManagerException
+  private JSONObject processTriggerEvent(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
   {
     Map<String, Object> response = new HashMap<String, Object>();
 
@@ -4916,7 +4912,7 @@ public class ThirdPartyManager
     String subscriberID = null;
     try
     {
-      subscriberID = resolveSubscriberID(jsonRoot);
+      subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     }
     catch(ThirdPartyManagerException e)
     {
@@ -5025,7 +5021,7 @@ public class ThirdPartyManager
     *
     ****************************************/
 
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     
     /*****************************************
     *
@@ -5264,7 +5260,7 @@ public class ThirdPartyManager
     String subscriberID=null;
     try
       {
-        subscriberID = resolveSubscriberID(jsonRoot);
+        subscriberID = resolveSubscriberID(jsonRoot, tenantID);
       }
     catch (ThirdPartyManagerException e)
       {
@@ -5917,7 +5913,7 @@ public class ThirdPartyManager
   *
   *****************************************/
 
-  private String resolveSubscriberID(JSONObject jsonRoot) throws ThirdPartyManagerException
+  private String resolveSubscriberID(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
   {
     // "customerID" parameter is mapped internally to subscriberID 
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
@@ -5931,11 +5927,13 @@ public class ThirdPartyManager
           {
             try
             {
-              alternateSubscriberID = subscriberIDService.getSubscriberID(id, param);
-              if (alternateSubscriberID == null)
+              Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
+              
+              if (s == null || s.getSecondElement().intValue() != tenantID)
                 {
                   throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
                 }
+              alternateSubscriberID = s.getFirstElement();
               break;
             } catch (SubscriberIDServiceException e)
             {
@@ -6568,7 +6566,7 @@ public class ThirdPartyManager
       this.workgroupHierarchy = new WorkgroupHierarchy(JSONUtilities.decodeJSONObject(jsonRoot, "WorkgroupHierarchy", true));
       this.tokenCreationDate = JSONUtilities.decodeString(jsonRoot, "TokenCreationDate", true);
       this.additionalInfo = JSONUtilities.decodeString(jsonRoot, "AdditionalInfo", false);
-      this.tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", 1); // TODO EVPRO-99 later on, move this to mandatory instead of default 1 
+      this.tenantID = JSONUtilities.decodeInteger(jsonRoot, "TenantID");
     }
 
     /*****************************************

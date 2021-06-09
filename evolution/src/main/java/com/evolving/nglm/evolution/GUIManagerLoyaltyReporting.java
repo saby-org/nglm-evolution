@@ -1910,7 +1910,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
      *
      *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
 
     String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgram", false); 
     String loyaltyProgramRequestID = "";
