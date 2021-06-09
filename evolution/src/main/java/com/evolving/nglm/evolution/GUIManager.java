@@ -2653,6 +2653,7 @@ public class GUIManager
         reader.close();
         log.debug("API (raw request): {} {}",api,requestBodyStringBuilder.toString());
         JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(requestBodyStringBuilder.toString());
+        log.info("RAJ K jsonRoot for api {} is {}", api, jsonRoot);
         
         /*****************************************
         *
