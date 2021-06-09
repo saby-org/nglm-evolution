@@ -2660,7 +2660,9 @@ public class GUIManager
         *
         *****************************************/
         
-        int tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", 1);
+        Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
+        if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenatID", true); }
+        
         
 
         /*****************************************

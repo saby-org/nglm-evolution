@@ -4849,7 +4849,7 @@ public class GUIManagerGeneral extends GUIManager
                     String jsonAsString = Streams.asString(streams, "UTF-8");
                     jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
                     
-                    tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
+                    tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
                     if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID ", true); } // because of a typo coming from the GUI // TODO remove this when corrected
                     
                     userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
@@ -5103,7 +5103,7 @@ public class GUIManagerGeneral extends GUIManager
                     String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
                     if (!UploadedFileService.FILE_WITH_VARIABLES_APPLICATION_ID.equals(applicationID)) throw new GUIManagerException("invalid applicationID", applicationID);
                     userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
-                    tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
+                    tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
                     if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID ", true); } // because of a typo coming from the GUI // TODO remove this when corrected
 
                     if(!jsonRoot.containsKey("id"))
