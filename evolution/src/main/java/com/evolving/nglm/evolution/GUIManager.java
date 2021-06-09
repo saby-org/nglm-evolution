@@ -4536,23 +4536,23 @@ public class GUIManager
             switch (api)
               {
                 case putUploadedFile:
-                  guiManagerGeneral.processPutFile(jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerGeneral.processPutFile(jsonResponse, exchange);
                   break;
 
                 case putUploadedFileWithVariables:
-                  guiManagerGeneral.processPutUploadedFileWithVariables(jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerGeneral.processPutUploadedFileWithVariables(jsonResponse, exchange);
                   break;
 
                 case downloadReport:
-                  guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
                   
                 case downloadExtractFile:
-                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange); 
                   break;
                   
                 case launchAndDownloadExtract:
-                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange);
                   break;
 
               }
