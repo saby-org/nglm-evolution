@@ -97,13 +97,13 @@ public class SubscriberTraceControlFileSourceConnector extends FileSourceConnect
       //  parse
       //
 
-      String[] tokens = record.split("[,]", 3);
+      String[] tokens = record.split(",");
 
       //
       //  verify number of fields (version 1)
       //
 
-      if (tokens.length >= 3)
+      if (tokens.length < 3)
         {
           log.error("processRecord unknown record format: {}", record);
           return Collections.<KeyValue>emptyList();
