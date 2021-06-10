@@ -6929,65 +6929,73 @@ public class ThirdPartyManager
   private Object validateAndGetRequestCharacteristicValue(JSONObject jsonRoot, CriterionDataType dataType) throws GUIManagerException
   {
     Object value = null;
-    switch (dataType)
+    try
       {
-        case DateCriterion:
-          JSONArray jsonArrayDateString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
-          Set<Object> dateSetValue = new HashSet<Object>();
-          for (int i=0; i<jsonArrayDateString.size(); i++)
-            {
-              dateSetValue.add(GUIManagedObject.parseDateField((String) jsonArrayDateString.get(i)));
-            }
-          value = dateSetValue;
-          break;
-
-        case BooleanCriterion:
-          JSONArray jsonArrayBooleanString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
-          Set<Boolean> booleanSetValue = new HashSet<Boolean>();
-          for (int i=0; i<jsonArrayBooleanString.size(); i++)
-            {
-              booleanSetValue.add((Boolean) jsonArrayBooleanString.get(i));
-            }
-          break;
-
-        case StringCriterion:
-        case StringSetCriterion:
-          JSONArray jsonArrayString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
-          Set<Object> stringSetValue = new HashSet<Object>();
-          for (int i=0; i<jsonArrayString.size(); i++)
-            {
-              stringSetValue.add(jsonArrayString.get(i));
-            }
-          value = stringSetValue;
-          break;
-
-        case IntegerCriterion:
-        case IntegerSetCriterion:
-          JSONArray jsonArrayInteger = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
-          Set<Object> integerSetValue = new HashSet<Object>();
-          for (int i=0; i<jsonArrayInteger.size(); i++)
-            {
-              integerSetValue.add(new Integer(((Number) jsonArrayInteger.get(i)).intValue()));
-            }
-          value = integerSetValue;
-          break;
-          
-        case DoubleCriterion:
-        case DoubleSetCriterion:
-            JSONArray jsonArrayDouble = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
-            Set<Object> doubleSetValue = new HashSet<Object>();
-            for (int i=0; i<jsonArrayDouble.size(); i++)
+        switch (dataType)
+        {
+          case DateCriterion:
+            JSONArray jsonArrayDateString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> dateSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayDateString.size(); i++)
               {
-                doubleSetValue.add(new Integer(((Number) jsonArrayDouble.get(i)).intValue()));
+                dateSetValue.add(GUIManagedObject.parseDateField((String) jsonArrayDateString.get(i)));
               }
-            value = doubleSetValue;
+            value = dateSetValue;
             break;
 
-        case TimeCriterion:
-        case AniversaryCriterion:
-        default:
-          throw new GUIManagerException("unsupported catalogCharacteristic data type", dataType.toString());
+          case BooleanCriterion:
+            JSONArray jsonArrayBoolean = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Boolean> booleanSetValue = new HashSet<Boolean>();
+            for (int i=0; i<jsonArrayBoolean.size(); i++)
+              {
+                booleanSetValue.add((Boolean) jsonArrayBoolean.get(i));
+              }
+            break;
+
+          case StringCriterion:
+          case StringSetCriterion:
+            JSONArray jsonArrayString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> stringSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayString.size(); i++)
+              {
+                stringSetValue.add(jsonArrayString.get(i));
+              }
+            value = stringSetValue;
+            break;
+
+          case IntegerCriterion:
+          case IntegerSetCriterion:
+            JSONArray jsonArrayInteger = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> integerSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayInteger.size(); i++)
+              {
+                integerSetValue.add(new Integer(((Number) jsonArrayInteger.get(i)).intValue()));
+              }
+            value = integerSetValue;
+            break;
+            
+          case DoubleCriterion:
+          case DoubleSetCriterion:
+              JSONArray jsonArrayDouble = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+              Set<Object> doubleSetValue = new HashSet<Object>();
+              for (int i=0; i<jsonArrayDouble.size(); i++)
+                {
+                  doubleSetValue.add(new Integer(((Number) jsonArrayDouble.get(i)).intValue()));
+                }
+              value = doubleSetValue;
+              break;
+
+          case TimeCriterion:
+          case AniversaryCriterion:
+          default:
+            throw new GUIManagerException("unsupported catalogCharacteristic data type", dataType.toString());
+        }
       }
+    catch (Exception e)
+      {
+        log.error("error in validateAndGetRequestCharacteristicValue {}", e.getMessage());
+      }
+    
     return value;
   }
   
