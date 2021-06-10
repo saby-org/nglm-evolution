@@ -55,7 +55,7 @@ public abstract class DatacubeGenerator
   * Logger
   *
   *****************************************/
-  public class DatacubeLogger 
+  public static class DatacubeLogger 
   {
     DatacubeGenerator dg;
     

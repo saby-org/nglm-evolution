@@ -8,13 +8,11 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-
 import com.evolving.nglm.core.Pair;
 
 import org.apache.kafka.connect.data.Schema;
@@ -110,30 +108,85 @@ public class MetricHistory
   *  constants
   *
   ****************************************/
-
-  //
-  //  epoch
-  //
-  
-  public static Date EPOCH;
-  static
-  {
-    GregorianCalendar epochCalendar = new GregorianCalendar(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct 
-    epochCalendar.set(2010,0,1);
-    epochCalendar.set(Calendar.HOUR_OF_DAY,0);
-    epochCalendar.set(Calendar.MINUTE,0);
-    epochCalendar.set(Calendar.SECOND,0);
-    epochCalendar.set(Calendar.MILLISECOND,0);
-    EPOCH = epochCalendar.getTime();
-  }
-
-  //
-  //  buckets
-  //
-  
   public static final int MINIMUM_DAY_BUCKETS = 35;
   public static final int MINIMUM_MONTH_BUCKETS = 3;
   
+  /****************************************
+  *
+  *  date-based caches
+  *
+  ****************************************/
+  
+  public static class TenantEpochCache 
+  {
+    private final String timeZone;
+    private final Date EPOCH;
+    private Map<Date, Integer> daysSinceEpochIntegers; 
+    private Map<Integer, Date> daysSinceEpochDates;
+    
+    public TenantEpochCache(int tenantID) {
+      this.timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+      GregorianCalendar epochCalendar = new GregorianCalendar(TimeZone.getTimeZone(timeZone));
+      epochCalendar.set(2010,0,1);
+      epochCalendar.set(Calendar.HOUR_OF_DAY,0);
+      epochCalendar.set(Calendar.MINUTE,0);
+      epochCalendar.set(Calendar.SECOND,0);
+      epochCalendar.set(Calendar.MILLISECOND,0);
+      this.EPOCH = epochCalendar.getTime();
+      this.daysSinceEpochIntegers = new ConcurrentHashMap<Date, Integer>();
+      this.daysSinceEpochDates = new ConcurrentHashMap<Integer, Date>();
+    }
+
+    //
+    // getters
+    //
+    public Date getEpoch() 
+    { 
+      return this.EPOCH; 
+    }
+    
+    public Integer getDaysSinceEpoch(Date baseDay)
+    {
+      Integer result = this.daysSinceEpochIntegers.get(baseDay);
+      if (result == null)
+        {
+          result = RLMDateUtils.daysBetween(this.EPOCH, baseDay, this.timeZone);
+          this.daysSinceEpochIntegers.put(baseDay, result);
+        }
+      return result;
+    }
+    
+    public Date getDateFromEpoch(Integer daysSinceEpoch)
+    {
+      Date result = this.daysSinceEpochDates.get(daysSinceEpoch);
+      if (result == null)
+        {
+          result = RLMDateUtils.addDays(this.EPOCH, daysSinceEpoch, this.timeZone);
+          this.daysSinceEpochDates.put(daysSinceEpoch, result);
+        }
+      return result;
+    }
+  }
+  
+  private static Map<Integer, TenantEpochCache> caches = new ConcurrentHashMap<Integer, TenantEpochCache>();
+  private static TenantEpochCache getTenantEpochCache(int tenantID) {
+    TenantEpochCache result = caches.get(tenantID);
+    if(result == null) {
+      result = new TenantEpochCache(tenantID);
+      caches.put(tenantID, result);
+    }
+    return result;
+  }
+
+  private static Integer getDaysSinceEpoch(Date baseDay, int tenantID)
+  {
+    return getTenantEpochCache(tenantID).getDaysSinceEpoch(baseDay);
+  }
+
+  private static Date getDateFromEpoch(Integer daysSinceEpoch, int tenantID)
+  {
+    return getTenantEpochCache(tenantID).getDateFromEpoch(daysSinceEpoch);
+  }
   /*****************************************
   *
   *  schema
@@ -232,7 +285,7 @@ public class MetricHistory
     this.dailyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfDailyBuckets, MINIMUM_DAY_BUCKETS));
     this.monthlyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfMonthlyBuckets, MINIMUM_MONTH_BUCKETS));
     this.allTimeBucket = (metricHistoryMode == MetricHistoryMode.Standard) ? 0L : -1L;
-    this.baseDay = EPOCH;
+    this.baseDay = getTenantEpochCache(tenantID).getEpoch();
     this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
     this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getDeployment(tenantID).getTimeZone());
     this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getDeployment(tenantID).getTimeZone());
@@ -331,7 +384,7 @@ public class MetricHistory
     //
     
     Struct struct = new Struct(schema);
-    struct.put("daysSinceEpoch", getDaysSinceEpoch(metricHistory.getBaseDay()));
+    struct.put("daysSinceEpoch", getDaysSinceEpoch(metricHistory.getBaseDay(), metricHistory.getTenantID()));
     struct.put("dailyRepresentation", daily.getFirstElement().getExternalRepresentation());
     struct.put("dailyBuckets", daily.getSecondElement());
     struct.put("monthlyRepresentation", monthly.getFirstElement().getExternalRepresentation());
@@ -487,7 +540,7 @@ public class MetricHistory
     //  return
     //
 
-    return new MetricHistory(initialized, getDateFromEpoch(daysSinceEpoch), dailyBuckets, monthlyBuckets, allTimeBucket, metricHistoryMode, tenantID);
+    return new MetricHistory(initialized, getDateFromEpoch(daysSinceEpoch, tenantID), dailyBuckets, monthlyBuckets, allTimeBucket, metricHistoryMode, tenantID);
   }
   
   /*****************************************
@@ -610,45 +663,6 @@ public class MetricHistory
     int numberOfBuckets = packedBuckets[0];
     long[] buckets = allocateBuckets(metricHistoryMode, numberOfBuckets);
     return buckets;
-  }
-
-  /****************************************
-  *
-  *  date-based caches
-  *
-  ****************************************/
-
-  private static Map<Date, Integer> daysSinceEpochIntegers = new ConcurrentHashMap<Date, Integer>();
-  private static Map<Integer, Date> daysSinceEpochDates = new ConcurrentHashMap<Integer, Date>();
-
-  //
-  //  getDaysSinceEpoch
-  //
-  
-  private static Integer getDaysSinceEpoch(Date baseDay)
-  {
-    Integer result = daysSinceEpochIntegers.get(baseDay);
-    if (result == null)
-      {
-        result = RLMDateUtils.daysBetween(EPOCH, baseDay, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
-        daysSinceEpochIntegers.put(baseDay, result);
-      }
-    return result;
-  }
-  
-  //
-  //  getDateFromEpoch
-  //
-
-  private static Date getDateFromEpoch(Integer daysSinceEpoch)
-  {
-    Date result = daysSinceEpochDates.get(daysSinceEpoch);
-    if (result == null)
-      {
-        result = RLMDateUtils.addDays(EPOCH, daysSinceEpoch, Deployment.getDefault().getTimeZone());  // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
-        daysSinceEpochDates.put(daysSinceEpoch, result);
-      }
-    return result;
   }
   
   /****************************************
