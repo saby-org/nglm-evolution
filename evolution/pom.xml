@@ -39,7 +39,7 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>2.0.0_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>2.0.0_0-EVPRO-558-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.5.20</gui-fwk.version>
