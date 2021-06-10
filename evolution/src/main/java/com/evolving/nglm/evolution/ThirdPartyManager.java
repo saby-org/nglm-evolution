@@ -6800,6 +6800,11 @@ public class ThirdPartyManager
       {
         String offerObjectiveName = JSONUtilities.decodeString(offerObjectivesCharacteristicsJSON, "offerObjectiveName", true);
         JSONArray offerObjectivecatalogCharacteristics = JSONUtilities.decodeJSONArray(offerObjectivesCharacteristicsJSON, "catalogCharacteristics", new JSONArray());
+        
+        //
+        //  catalogCharacteristics
+        //
+        
         for (int i=0; i<offerObjectivecatalogCharacteristics.size(); i++)
           {
             String charName = JSONUtilities.decodeString((JSONObject) offerObjectivecatalogCharacteristics.get(i), "catalogCharacteristicName", true);
@@ -6815,23 +6820,18 @@ public class ThirdPartyManager
               {
                 throw new Exception("invalid catalogCharacteristicName " + charName);
               }
-            
           }
+        
+        //
+        //  offerObjective
+        //
         
         OfferObjective offerObjective = offerObjectiveService.getActiveOfferObjectives(now, tenantID).stream().filter(objective -> objective.getDisplay().equals(offerObjectiveName)).findFirst().orElse(null);
         if (offerObjective != null)
           {
             offerObjectiveJSON.put("offerObjectiveID", offerObjective.getGUIManagedObjectID());
             offerObjectiveJSON.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristicsJSON));
-            try
-              {
-                result = new OfferObjectiveInstance(JSONUtilities.encodeObject(offerObjectiveJSON), catalogCharacteristicService);
-              } 
-            catch (GUIManagerException e)
-              {
-                e.printStackTrace();
-                throw e;
-              }
+            result = new OfferObjectiveInstance(JSONUtilities.encodeObject(offerObjectiveJSON), catalogCharacteristicService);
           }
         else
           {
@@ -6840,7 +6840,6 @@ public class ThirdPartyManager
       }
     catch (Exception e)
       {
-        e.printStackTrace();
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage().concat("-").concat(e.getMessage()), RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
       }
     
