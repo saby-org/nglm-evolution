@@ -1015,9 +1015,21 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
   
-  public boolean hasThisOfferObjectives(OfferObjectiveInstance offerObjectiveInstance)
+  public boolean hasThisOfferObjectiveAndCharacteristics(final OfferObjectiveInstance offerObjectiveInstance)
   {
     boolean result = false;
+    if (getOfferObjectives() != null && !getOfferObjectives().isEmpty())
+      {
+        OfferObjectiveInstance offerObjective = getOfferObjectives().stream().filter(offerObj -> offerObj.getOfferObjectiveID().equals(offerObjectiveInstance.getOfferObjectiveID())).findFirst().orElse(null);
+        if (offerObjective != null)
+          {
+            for (CatalogCharacteristicInstance catalogCharacteristicInstance : offerObjectiveInstance.getCatalogCharacteristics())
+              {
+                result = offerObjective.getCatalogCharacteristics().stream().anyMatch(catalogChara -> catalogChara.equalsNonRobustly(catalogCharacteristicInstance));
+                if (!result)break;
+              }
+          }
+      }
     return result;
   }
 }

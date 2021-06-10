@@ -2,6 +2,7 @@ package com.evolving.nglm.evolution;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -254,6 +255,36 @@ public class CatalogCharacteristicInstance
         result = true;
         result = result && Objects.equals(catalogCharacteristicID, offerCatalogCharacteristic.getCatalogCharacteristicID());
         result = result && Objects.equals(value, offerCatalogCharacteristic.getParameterMap());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  equalsNonRobustly
+  *
+  *****************************************/
+
+  public boolean equalsNonRobustly(Object obj)
+  {
+    boolean result = false;
+    if (obj instanceof CatalogCharacteristicInstance)
+      {
+        CatalogCharacteristicInstance offerCatalogCharacteristic = (CatalogCharacteristicInstance) obj;
+        result = true;
+        result = result && Objects.equals(catalogCharacteristicID, offerCatalogCharacteristic.getCatalogCharacteristicID());
+        if (result && getValue() instanceof Set)
+          {
+            
+            Set<Object> thisValue = (Set<Object>) getValue();
+            Set<Object> reqValue = (Set<Object>) offerCatalogCharacteristic.getValue();
+            result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
+            
+          }
+        else if (result)
+          {
+            result = result && Objects.equals(value, offerCatalogCharacteristic.getParameterMap());
+          }
       }
     return result;
   }

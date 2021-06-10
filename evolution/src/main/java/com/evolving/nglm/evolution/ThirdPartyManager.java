@@ -2894,6 +2894,8 @@ public class ThirdPartyManager
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
     String supplier = readString(jsonRoot, "supplier", false);
+    JSONObject offerObjectivesCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerObjectivesCharacteristics", false);
+    final OfferObjectiveInstance objectiveInstanceReq = offerObjectivesCharacteristicsJSON != null ? decodeOfferObjectiveInstance(offerObjectivesCharacteristicsJSON, offerObjectiveService, catalogCharacteristicService, tenantID) : null;
     //String userID = readString(jsonRoot, "loginName", true);
     String parentResellerID = "";
     Date now = SystemTime.getCurrentTime();
@@ -3019,6 +3021,15 @@ public class ThirdPartyManager
               else
                 offers = offers.stream().filter(offer -> (offer.getOfferObjectives() != null && (offer.getOfferObjectives().stream().filter(obj -> obj.getOfferObjectiveID().equals(exactOfferObjectives.getOfferObjectiveID())).count() > 0L))).collect(Collectors.toList());
 
+            }
+          
+          if (objectiveInstanceReq != null)
+            {
+              //
+              //  filter on offerObjectivesCharacteristics
+              //
+              
+              offers = offers.stream().filter(offer -> offer.hasThisOfferObjectiveAndCharacteristics(objectiveInstanceReq)).collect(Collectors.toList());
             }
           
           //
@@ -6772,4 +6783,51 @@ public class ThirdPartyManager
          .withLabel(StatsBuilders.LABEL.status.name(),status.name())
          .getStats().add(startTime);
   }
+  
+  /*****************************************
+  *
+  *  decodeOfferObjectiveInstance
+  *
+  *****************************************/
+  
+  private OfferObjectiveInstance decodeOfferObjectiveInstance(JSONObject offerObjectivesCharacteristicsJSON, OfferObjectiveService offerObjectiveService, CatalogCharacteristicService catalogCharacteristicService, int tenantID)
+  {
+    OfferObjectiveInstance result = null;
+    Date now = SystemTime.getCurrentTime();
+    Map<String, Object> offerObjectiveJSON = new HashMap<String, Object>();
+    List<JSONObject> catalogCharacteristicsJSON = new ArrayList<JSONObject>();
+    
+    String offerObjectiveName = JSONUtilities.decodeString(offerObjectivesCharacteristicsJSON, "offerObjectiveName", true);
+    JSONArray offerObjectivecatalogCharacteristics = JSONUtilities.decodeJSONArray(offerObjectivesCharacteristicsJSON, "catalogCharacteristics", new JSONArray());
+    for (int i=0; i<offerObjectivecatalogCharacteristics.size(); i++)
+      {
+        String charName = JSONUtilities.decodeString((JSONObject) offerObjectivecatalogCharacteristics.get(i), "catalogCharacteristicName", true);
+        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristics(now, tenantID).stream().filter(characteristic -> characteristic.getGUIManagedObjectDisplay().equals(charName)).findFirst().orElse(null);
+        if (catalogCharacteristic != null)
+          {
+            Map<String, Object> catalogCharacteristics = new HashMap<String, Object>();
+            catalogCharacteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
+            catalogCharacteristics.put("value", ((JSONObject) offerObjectivecatalogCharacteristics.get(i)).get("value"));
+            catalogCharacteristicsJSON.add(JSONUtilities.encodeObject(catalogCharacteristics));
+          }
+        
+      }
+    
+    OfferObjective offerObjective = offerObjectiveService.getActiveOfferObjectives(now, tenantID).stream().filter(objective -> objective.getDisplay().equals(offerObjectiveName)).findFirst().orElse(null);
+    if (offerObjective != null)
+      {
+        offerObjectiveJSON.put("offerObjectiveID", offerObjective.getGUIManagedObjectID());
+        offerObjectiveJSON.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristicsJSON));
+        try
+          {
+            result = new OfferObjectiveInstance(JSONUtilities.encodeObject(offerObjectiveJSON), catalogCharacteristicService);
+          } 
+        catch (GUIManagerException e)
+          {
+            e.printStackTrace();
+          }
+      }
+    return result;
+  }
+  
 }
