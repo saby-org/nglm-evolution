@@ -82,7 +82,7 @@ public class CatalogCharacteristicInstance
   *
   *****************************************/
 
-  private CatalogCharacteristicInstance(String catalogCharacteristicID, ParameterMap value)
+  public CatalogCharacteristicInstance(String catalogCharacteristicID, ParameterMap value)
   {
     this.catalogCharacteristicID = catalogCharacteristicID;
     this.value = value;
@@ -283,12 +283,14 @@ public class CatalogCharacteristicInstance
             
             Set<Object> thisValue = (Set<Object>) getValue();
             Set<Object> reqValue = (Set<Object>) offerCatalogCharacteristic.getValue();
-            result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
+            //result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
+            result = result && thisValue.containsAll(reqValue);
             log.info("RAJ K equalsNonRobustly instanceof Set result is {}", result);
           }
         else if (result)
           {
-            result = result && Objects.equals(value, offerCatalogCharacteristic.getParameterMap());
+            Set<Object> reqValue = (Set<Object>) offerCatalogCharacteristic.getValue();
+            result = result && reqValue.contains(getValue());
             log.info("RAJ K equalsNonRobustly normal result is {}", result);
           }
       }

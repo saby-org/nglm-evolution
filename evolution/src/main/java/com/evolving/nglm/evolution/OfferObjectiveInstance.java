@@ -109,7 +109,7 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  private OfferObjectiveInstance(String offerObjectiveID, Set<CatalogCharacteristicInstance> catalogCharacteristics)
+  public OfferObjectiveInstance(String offerObjectiveID, Set<CatalogCharacteristicInstance> catalogCharacteristics)
   {
     this.offerObjectiveID = offerObjectiveID;
     this.catalogCharacteristics = catalogCharacteristics;
