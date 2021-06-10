@@ -6790,43 +6790,52 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private OfferObjectiveInstance decodeOfferObjectiveInstance(JSONObject offerObjectivesCharacteristicsJSON, OfferObjectiveService offerObjectiveService, CatalogCharacteristicService catalogCharacteristicService, int tenantID)
+  private OfferObjectiveInstance decodeOfferObjectiveInstance(JSONObject offerObjectivesCharacteristicsJSON, OfferObjectiveService offerObjectiveService, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws ThirdPartyManagerException
   {
     OfferObjectiveInstance result = null;
     Date now = SystemTime.getCurrentTime();
     Map<String, Object> offerObjectiveJSON = new HashMap<String, Object>();
     List<JSONObject> catalogCharacteristicsJSON = new ArrayList<JSONObject>();
-    
-    String offerObjectiveName = JSONUtilities.decodeString(offerObjectivesCharacteristicsJSON, "offerObjectiveName", true);
-    JSONArray offerObjectivecatalogCharacteristics = JSONUtilities.decodeJSONArray(offerObjectivesCharacteristicsJSON, "catalogCharacteristics", new JSONArray());
-    for (int i=0; i<offerObjectivecatalogCharacteristics.size(); i++)
+    try
       {
-        String charName = JSONUtilities.decodeString((JSONObject) offerObjectivecatalogCharacteristics.get(i), "catalogCharacteristicName", true);
-        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristics(now, tenantID).stream().filter(characteristic -> characteristic.getGUIManagedObjectDisplay().equals(charName)).findFirst().orElse(null);
-        if (catalogCharacteristic != null)
+        String offerObjectiveName = JSONUtilities.decodeString(offerObjectivesCharacteristicsJSON, "offerObjectiveName", true);
+        JSONArray offerObjectivecatalogCharacteristics = JSONUtilities.decodeJSONArray(offerObjectivesCharacteristicsJSON, "catalogCharacteristics", new JSONArray());
+        for (int i=0; i<offerObjectivecatalogCharacteristics.size(); i++)
           {
-            Map<String, Object> catalogCharacteristics = new HashMap<String, Object>();
-            catalogCharacteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
-            catalogCharacteristics.put("value", ((JSONObject) offerObjectivecatalogCharacteristics.get(i)).get("value"));
-            catalogCharacteristicsJSON.add(JSONUtilities.encodeObject(catalogCharacteristics));
+            String charName = JSONUtilities.decodeString((JSONObject) offerObjectivecatalogCharacteristics.get(i), "catalogCharacteristicName", true);
+            CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristics(now, tenantID).stream().filter(characteristic -> characteristic.getGUIManagedObjectDisplay().equals(charName)).findFirst().orElse(null);
+            if (catalogCharacteristic != null)
+              {
+                Map<String, Object> catalogCharacteristics = new HashMap<String, Object>();
+                catalogCharacteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
+                catalogCharacteristics.put("value", ((JSONObject) offerObjectivecatalogCharacteristics.get(i)).get("value"));
+                catalogCharacteristicsJSON.add(JSONUtilities.encodeObject(catalogCharacteristics));
+              }
+            
           }
         
-      }
-    
-    OfferObjective offerObjective = offerObjectiveService.getActiveOfferObjectives(now, tenantID).stream().filter(objective -> objective.getDisplay().equals(offerObjectiveName)).findFirst().orElse(null);
-    if (offerObjective != null)
-      {
-        offerObjectiveJSON.put("offerObjectiveID", offerObjective.getGUIManagedObjectID());
-        offerObjectiveJSON.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristicsJSON));
-        try
+        OfferObjective offerObjective = offerObjectiveService.getActiveOfferObjectives(now, tenantID).stream().filter(objective -> objective.getDisplay().equals(offerObjectiveName)).findFirst().orElse(null);
+        if (offerObjective != null)
           {
-            result = new OfferObjectiveInstance(JSONUtilities.encodeObject(offerObjectiveJSON), catalogCharacteristicService);
-          } 
-        catch (GUIManagerException e)
-          {
-            e.printStackTrace();
+            offerObjectiveJSON.put("offerObjectiveID", offerObjective.getGUIManagedObjectID());
+            offerObjectiveJSON.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristicsJSON));
+            try
+              {
+                result = new OfferObjectiveInstance(JSONUtilities.encodeObject(offerObjectiveJSON), catalogCharacteristicService);
+              } 
+            catch (GUIManagerException e)
+              {
+                e.printStackTrace();
+                throw e;
+              }
           }
       }
+    catch (Exception e)
+      {
+        e.printStackTrace();
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE);
+      }
+    
     return result;
   }
   
