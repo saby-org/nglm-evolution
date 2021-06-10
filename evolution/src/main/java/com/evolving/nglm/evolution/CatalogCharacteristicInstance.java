@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -278,13 +279,11 @@ public class CatalogCharacteristicInstance
         result = true;
         result = result && Objects.equals(catalogCharacteristicID, offerCatalogCharacteristic.getCatalogCharacteristicID());
         log.info("RAJ K equalsNonRobustly catalogCharacteristicID match result is {}", result);
-        if (result && getValue() instanceof Set)
+        if (getValue() instanceof Set)
           {
-            
             Set<Object> thisValue = (Set<Object>) getValue();
             Set<Object> reqValue = (Set<Object>) offerCatalogCharacteristic.getValue();
-            //result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
-            result = result && thisValue.containsAll(reqValue);
+            result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
             log.info("RAJ K equalsNonRobustly instanceof Set result is {}", result);
           }
         else if (result)

@@ -8,7 +8,7 @@
     "catalogCharacteristics":[
       {
         "catalogCharacteristicName":"STR",
-        "value":"RK1"
+        "value":["RK1", "RK2"]
       },
       {
         "catalogCharacteristicName":"STR_LIST",
