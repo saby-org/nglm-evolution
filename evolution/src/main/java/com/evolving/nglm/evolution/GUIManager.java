@@ -2661,7 +2661,7 @@ public class GUIManager
         *****************************************/
         
         Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
-        if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenatID", true); }
+        if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true); }
         
         
 
