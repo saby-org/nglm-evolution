@@ -1038,13 +1038,14 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   *
   *****************************************/
 
-  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID) throws IOException
+  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange) throws IOException
   {
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
     JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
     Integer percentage = JSONUtilities.decodeInteger(jsonRoot, "percentage", false);
     Integer topRows = JSONUtilities.decodeInteger(jsonRoot, "topRows", false);
     JSONArray header = JSONUtilities.decodeJSONArray(jsonRoot, "header", false);
+    Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
 
     GUIManagedObject report1 = reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report1);
@@ -1910,7 +1911,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
      *
      *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
 
     String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgram", false); 
     String loyaltyProgramRequestID = "";

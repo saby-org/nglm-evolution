@@ -2382,7 +2382,7 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  void processDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID)
+  void processDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
   {
     ExtractDownloader extractDownloader = new ExtractDownloader(jsonRoot,jsonResponse,exchange);
     extractDownloader.start();
@@ -2427,8 +2427,9 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  void processLaunchAndDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, int tenantID)
+  void processLaunchAndDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
   {
+    Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
     JSONObject launchResponse = this.processLaunchExtract(jsonRoot, tenantID);
     String responseCode = JSONUtilities.decodeString(launchResponse, "responseCode", true);
     if (responseCode != "ok")
@@ -2452,7 +2453,7 @@ public class GUIManagerBaseManagement extends GUIManager
     }
     else
     {
-      processDownloadExtract(jsonRoot, jsonResponse, exchange, tenantID);
+      processDownloadExtract(jsonRoot, jsonResponse, exchange);
     }
   }
 

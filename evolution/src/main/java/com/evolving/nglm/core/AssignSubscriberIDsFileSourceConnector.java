@@ -106,6 +106,7 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
           boolean useInternalSubscriberID = Objects.equals(JSONUtilities.decodeString(jsonRoot, "alternateID", true), "internal");
           boolean useExternalSubscriberID = (alternateID != null) && alternateID.getExternalSubscriberID();
           String alternateSubscriberID = JSONUtilities.decodeString(jsonRoot, "alternateSubscriberID", true);
+          int tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", 1);
           SubscriberAction subscriberAction = SubscriberAction.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "subscriberAction", "standard"));
 
           /****************************************
@@ -202,7 +203,7 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
           *
           ****************************************/
           
-          AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), subscriberAction, assignAlternateIDs, 1); // TODO EVPRO-99 for the moment harcoded to 1 FRED
+          AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), subscriberAction, assignAlternateIDs, tenantID);
           result = Collections.<KeyValue>singletonList(new KeyValue((autoProvision ? "assignexternalsubscriberids" : "assignsubscriberids"), Schema.STRING_SCHEMA, effectiveSubscriberID, AssignSubscriberIDs.schema(), AssignSubscriberIDs.pack(assignSubscriberIDs)));
         }
       catch (org.json.simple.parser.ParseException|JSONUtilitiesException e)

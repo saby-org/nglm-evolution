@@ -4756,7 +4756,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  void processPutFile(JSONObject jsonResponse, HttpExchange exchange, int tenantID) throws IOException
+  void processPutFile(JSONObject jsonResponse, HttpExchange exchange) throws IOException
   {
     /****************************************
     *
@@ -4839,6 +4839,7 @@ public class GUIManagerGeneral extends GUIManager
         if (responseText == null)
           {
             boolean uploadFile = false;
+            Integer tenantID = null;
             while (fileItemIterator.hasNext())
               {
                 FileItemStream fis = fileItemIterator.next();
@@ -4847,6 +4848,9 @@ public class GUIManagerGeneral extends GUIManager
                     InputStream streams = fis.openStream();
                     String jsonAsString = Streams.asString(streams, "UTF-8");
                     jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
+                    
+                    tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
+                    if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID ", true); } // because of a typo coming from the GUI // TODO remove this when corrected
                     
                     userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
                     if(!jsonRoot.containsKey("id"))
@@ -5000,7 +5004,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  void processPutUploadedFileWithVariables(JSONObject jsonResponse, HttpExchange exchange, int tenantID) throws IOException
+  void processPutUploadedFileWithVariables(JSONObject jsonResponse, HttpExchange exchange) throws IOException
   {
     
     /****************************************
@@ -5085,6 +5089,7 @@ public class GUIManagerGeneral extends GUIManager
         if (responseText == null)
           {
             boolean uploadFile = false;
+            Integer tenantID = null;
             while (fileItemIterator.hasNext())
               {
                 FileItemStream fis = fileItemIterator.next();
@@ -5098,6 +5103,9 @@ public class GUIManagerGeneral extends GUIManager
                     String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
                     if (!UploadedFileService.FILE_WITH_VARIABLES_APPLICATION_ID.equals(applicationID)) throw new GUIManagerException("invalid applicationID", applicationID);
                     userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
+                    tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
+                    if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID ", true); } // because of a typo coming from the GUI // TODO remove this when corrected
+
                     if(!jsonRoot.containsKey("id"))
                       {
                         fileID = uploadedFileService.generateFileID();

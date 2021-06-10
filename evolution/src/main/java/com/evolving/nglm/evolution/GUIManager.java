@@ -2660,7 +2660,9 @@ public class GUIManager
         *
         *****************************************/
         
-        int tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", 1);
+        Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
+        if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenatID", true); }
+        
         
 
         /*****************************************
@@ -4536,23 +4538,23 @@ public class GUIManager
             switch (api)
               {
                 case putUploadedFile:
-                  guiManagerGeneral.processPutFile(jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerGeneral.processPutFile(jsonResponse, exchange);
                   break;
 
                 case putUploadedFileWithVariables:
-                  guiManagerGeneral.processPutUploadedFileWithVariables(jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerGeneral.processPutUploadedFileWithVariables(jsonResponse, exchange);
                   break;
 
                 case downloadReport:
-                  guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
                   
                 case downloadExtractFile:
-                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange); 
                   break;
                   
                 case launchAndDownloadExtract:
-                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange, 1); // EVPRO-99 retrieve the tenantID, from userName ??
+                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange);
                   break;
 
               }
@@ -16393,7 +16395,7 @@ public class GUIManager
      *
      *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
     {
       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -18597,7 +18599,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
@@ -18745,7 +18747,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -18847,7 +18849,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -18950,7 +18952,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -19090,7 +19092,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -19215,7 +19217,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -19510,7 +19512,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -19808,7 +19810,7 @@ public class GUIManager
      *
      *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -19912,7 +19914,7 @@ public class GUIManager
     *
     *****************************************/
 
-   String subscriberID = resolveSubscriberID(customerID);
+   String subscriberID = resolveSubscriberID(customerID, tenantID);
    if (subscriberID == null)
      {
        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -20236,7 +20238,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         response.put("responseCode", "CustomerNotFound");
@@ -20408,8 +20410,8 @@ public class GUIManager
     *
     *****************************************/
     
-    String subscriberID = resolveSubscriberID(customerID);
-    String newParentSubscriberID = resolveSubscriberID(newParentCustomerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
+    String newParentSubscriberID = resolveSubscriberID(newParentCustomerID, tenantID);
     if (subscriberID == null)
       {
         response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage() + "-{specified customerID do not relate to any customer}");
@@ -20537,7 +20539,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage() + "-{specified customerID do not relate to any customer}");
@@ -20628,7 +20630,7 @@ public class GUIManager
     *
     *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         response.put("responseCode", "CustomerNotFound");
@@ -22145,7 +22147,7 @@ public class GUIManager
     *****************************************/
     String responseCode = null;
     
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
@@ -22302,7 +22304,7 @@ public class GUIManager
     *
     *****************************************/
     
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
@@ -22403,7 +22405,7 @@ public class GUIManager
     *
     *****************************************/
     
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
@@ -23707,7 +23709,7 @@ public class GUIManager
      *
      *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -23840,7 +23842,7 @@ public class GUIManager
      *
      *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -23999,7 +24001,7 @@ public class GUIManager
      *
      *****************************************/
 
-    String subscriberID = resolveSubscriberID(customerID);
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
       {
         log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -24209,7 +24211,7 @@ public class GUIManager
     *
     *****************************************/
 
-   String subscriberID = resolveSubscriberID(customerID);
+   String subscriberID = resolveSubscriberID(customerID, tenantID);
    if (subscriberID == null)
      {
        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -24341,7 +24343,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
    *
    *****************************************/
 
-  String subscriberID = resolveSubscriberID(customerID);
+  String subscriberID = resolveSubscriberID(customerID, tenantID);
   if (subscriberID == null)
     {
       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
@@ -28283,18 +28285,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   ****************************************/
 
-  protected String resolveSubscriberID(String customerID)
+  protected String resolveSubscriberID(String customerID, int tenantID)
   {
-    String result = null;
     try
       {
-        result = subscriberIDService.getSubscriberID(getCustomerAlternateID, customerID);
+        Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(getCustomerAlternateID, customerID);
+        if(s != null && s.getSecondElement().intValue() == tenantID)
+          {            
+            return s.getFirstElement();
+          }
       }
     catch (SubscriberIDServiceException e)
       {
         log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());
       }
-    return result;
+    return null; // in case the subscriber does not exist or the tenantID is not coherent
   }
 
   /****************************************
