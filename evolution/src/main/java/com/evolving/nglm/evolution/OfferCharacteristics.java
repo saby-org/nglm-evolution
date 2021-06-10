@@ -520,7 +520,7 @@ public class OfferCharacteristics
         }
       return result;
     }
-
+    
     /*****************************************
     *
     *  hashCode
@@ -771,6 +771,35 @@ public class OfferCharacteristics
       return new OfferCharacteristicsProperty(catalogCharacteristicID, catalogCharacteristicName, parameterMap);
     }
 
+    /*****************************************
+    *
+    *  equalsNonRobustly
+    *
+    *****************************************/
+
+    public boolean equalsNonRobustly(Object obj)
+    {
+      boolean result = false;
+      if (obj instanceof OfferCharacteristicsProperty)
+        {
+          OfferCharacteristicsProperty offerCharacteristicsProperty = (OfferCharacteristicsProperty) obj;
+          result = true;
+          result = result && Objects.equals(catalogCharacteristicID, offerCharacteristicsProperty.getCatalogCharacteristicID());
+          if (result && getValue() instanceof Set)
+            {
+              
+              Set<Object> thisValue = (Set<Object>) getValue();
+              Set<Object> reqValue = (Set<Object>) offerCharacteristicsProperty.getValue();
+              result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
+            }
+          else if (result)
+            {
+              result = result && Objects.equals(value, offerCharacteristicsProperty.getParameterMap());
+            }
+        }
+      return result;
+    }
+    
     /*****************************************
     *
     *  equals

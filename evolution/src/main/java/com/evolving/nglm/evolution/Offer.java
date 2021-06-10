@@ -973,42 +973,32 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
   
-  public boolean hasThisOfferCharacteristics(OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty)
+  public boolean hasThisOfferCharacteristics(OfferCharacteristics offerCharacteristics)
   {
     boolean result = false;
     if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
       {
-        OfferCharacteristicsLanguageProperty characteristicsLanguageProperty = getOfferCharacteristics().getOfferCharacteristicProperties().stream().filter(charLang -> charLang.getLanguageID().equalsIgnoreCase(offerCharacteristicsLanguageProperty.getLanguageID())).findFirst().orElse(null);
-        if (characteristicsLanguageProperty != null)
+        for (OfferCharacteristicsLanguageProperty characteristicsLanguageProperty : offerCharacteristics.getOfferCharacteristicProperties())
           {
-            String catalogCharacteristicName = offerCharacteristicsLanguageProperty.getProperties().iterator().next().getCatalogCharacteristicName();
-            Object catalogCharacteristicValue = offerCharacteristicsLanguageProperty.getProperties().iterator().next().getValue();
-            result = characteristicsLanguageProperty.getProperties().stream().anyMatch(charProperty -> charProperty.getCatalogCharacteristicName().equals(catalogCharacteristicName) && checkComplexEquality(catalogCharacteristicValue, charProperty.getValue()));
+            OfferCharacteristicsLanguageProperty languageProperty = getOfferCharacteristics().getOfferCharacteristicProperties().stream().filter(offerLanChar -> offerLanChar.getLanguageID().equals(characteristicsLanguageProperty.getLanguageID())).findFirst().orElse(null);
+            if (languageProperty != null)
+              {
+                for (OfferCharacteristicsProperty offerCharacteristicsProperty : characteristicsLanguageProperty.getProperties())
+                  {
+                    result = languageProperty.getProperties().stream().anyMatch(property -> property.equalsNonRobustly(offerCharacteristicsProperty));
+                    if (!result) break;
+                  }
+              }
+            else
+              {
+                result = false;
+              }
+            if (!result)break;
           }
       }
     return result;
   }
   
-  private boolean checkComplexEquality(Object catalogCharacteristicValueInReq, Object catalogCharacteristicValueInOffer)
-  {
-    boolean result = false;
-    if (catalogCharacteristicValueInOffer instanceof Collection)
-      {
-        result = Objects.equals(catalogCharacteristicValueInReq, catalogCharacteristicValueInOffer);
-      }
-    else
-      {
-        if (catalogCharacteristicValueInReq instanceof Collection)
-          {
-            result = ((Collection) catalogCharacteristicValueInReq).contains(catalogCharacteristicValueInOffer);
-          }
-        else
-          {
-            result = Objects.equals(catalogCharacteristicValueInReq, catalogCharacteristicValueInOffer);
-          }
-      }
-    return result;
-  }
   /*****************************************
   *
   *  hasThisOfferCharacteristics

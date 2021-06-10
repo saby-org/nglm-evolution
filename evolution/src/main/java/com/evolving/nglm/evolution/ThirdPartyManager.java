@@ -2895,7 +2895,10 @@ public class ThirdPartyManager
     String offerObjective = readString(jsonRoot, "objective", false);
     String supplier = readString(jsonRoot, "supplier", false);
     JSONObject offerObjectivesCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerObjectivesCharacteristics", false);
+    JSONObject offerCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false);
     final OfferObjectiveInstance objectiveInstanceReq = offerObjectivesCharacteristicsJSON != null ? decodeOfferObjectiveInstance(offerObjectivesCharacteristicsJSON, offerObjectiveService, catalogCharacteristicService, tenantID) : null;
+    final OfferCharacteristics offerCharacteristicsReq = offerCharacteristicsJSON != null ? decodeOfferCharacteristics(offerCharacteristicsJSON, catalogCharacteristicService, tenantID) : null;
+    
     //String userID = readString(jsonRoot, "loginName", true);
     String parentResellerID = "";
     Date now = SystemTime.getCurrentTime();
@@ -3030,6 +3033,15 @@ public class ThirdPartyManager
               //
               
               offers = offers.stream().filter(offer -> offer.hasThisOfferObjectiveAndCharacteristics(objectiveInstanceReq)).collect(Collectors.toList());
+            }
+          
+          if (offerCharacteristicsReq != null)
+            {
+              //
+              //  filter on offerCharacteristics
+              //
+              
+              offers = offers.stream().filter(offer -> offer.hasThisOfferCharacteristics(offerCharacteristicsReq)).collect(Collectors.toList());
             }
           
           //
@@ -6840,10 +6852,73 @@ public class ThirdPartyManager
       }
     catch (Exception e)
       {
+        if (log.isErrorEnabled()) log.error("error {}", e.getMessage());
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage().concat("-").concat(e.getMessage()), RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
       }
     
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  decodeOfferCharacteristics
+  *
+  *****************************************/
+  
+  private OfferCharacteristics decodeOfferCharacteristics(JSONObject offerCharacteristicsJSON, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws ThirdPartyManagerException
+  {
+    OfferCharacteristics offerCharacteristics = null;
+    Map<String, Object> languageProperties = new HashMap<String, Object>();
+    List<JSONObject> languagePropertyList = new ArrayList<JSONObject>();
+    Map<String, Object> languageProperty = new HashMap<String, Object>();
+    List<JSONObject> innerPropertyJSON = new ArrayList<JSONObject>();
+    Date now = SystemTime.getCurrentTime();
+    try
+      {
+        String languageReq = JSONUtilities.decodeString(offerCharacteristicsJSON, "language", true);
+        JSONArray propertiesJSONArray = JSONUtilities.decodeJSONArray(offerCharacteristicsJSON, "properties", new JSONArray());
+        
+        String languageID = Deployment.getDeployment(tenantID).getSupportedLanguages().values().stream().filter(supportedLang -> supportedLang.getDisplay().equalsIgnoreCase(languageReq)).map(SupportedLanguage::getID).findFirst().orElse(null);
+        if (languageID != null)
+          {
+            languageProperty.put("language", languageID);
+          }
+        else
+          {
+            throw new Exception("invalid language "+ languageReq);
+          }
+        
+        //
+        //  catalogCharacteristics
+        //
+        
+        for (int i=0; i<propertiesJSONArray.size(); i++)
+          {
+            String charName = JSONUtilities.decodeString((JSONObject) propertiesJSONArray.get(i), "catalogCharacteristicName", true);
+            CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristics(now, tenantID).stream().filter(characteristic -> characteristic.getGUIManagedObjectDisplay().equals(charName)).findFirst().orElse(null);
+            if (catalogCharacteristic != null)
+              {
+                Map<String, Object> catalogCharacteristics = new HashMap<String, Object>();
+                catalogCharacteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
+                catalogCharacteristics.put("value", ((JSONObject) propertiesJSONArray.get(i)).get("value"));
+                innerPropertyJSON.add(JSONUtilities.encodeObject(catalogCharacteristics));
+              }
+            else
+              {
+                throw new Exception("invalid catalogCharacteristicName " + charName);
+              }
+          }
+        languageProperty.put("properties", JSONUtilities.encodeArray(innerPropertyJSON));
+        languagePropertyList.add(JSONUtilities.encodeObject(languageProperty));
+        languageProperties.put("languageProperties", JSONUtilities.encodeArray(languagePropertyList));
+        offerCharacteristics = new OfferCharacteristics(JSONUtilities.encodeObject(languageProperties), catalogCharacteristicService);
+      }
+    catch (Exception e)
+      {
+        if (log.isErrorEnabled()) log.error("error {}", e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage().concat("-").concat(e.getMessage()), RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return offerCharacteristics;
   }
   
 }
