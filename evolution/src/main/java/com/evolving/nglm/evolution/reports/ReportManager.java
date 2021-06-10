@@ -413,7 +413,7 @@ public class ReportManager implements Watcher
                           reportManagerStatistics.incrementReportCount();
                           if (!allOK)
                             {
-                              if (safeguardCount > 3)
+                              if (safeguardCount >= 2)
                                 {
                                   log.info("There was an issue producing " + reportName + ", stop retrying");
                                   allOK = true; // after a while, stop, this should stay exceptional
