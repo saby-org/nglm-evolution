@@ -1,0 +1,19 @@
+{
+  "apiVersion":1,
+  "loginName":"Administrator",
+  "password":"password",
+  "offerObjectivesCharacteristics":
+  {
+    "offerObjectiveName":"RK_OFR_OB",
+    "catalogCharacteristics":[
+      {
+        "catalogCharacteristicName":"STR",
+        "value":"RK1"
+      },
+      {
+        "catalogCharacteristicName":"STR_LIST",
+        "value":["A", "D"]
+      }
+    ]
+  }
+}

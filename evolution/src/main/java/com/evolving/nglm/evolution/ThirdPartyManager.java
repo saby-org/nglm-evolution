@@ -6811,6 +6811,10 @@ public class ThirdPartyManager
                 catalogCharacteristics.put("value", ((JSONObject) offerObjectivecatalogCharacteristics.get(i)).get("value"));
                 catalogCharacteristicsJSON.add(JSONUtilities.encodeObject(catalogCharacteristics));
               }
+            else
+              {
+                throw new Exception("invalid catalogCharacteristicName " + charName);
+              }
             
           }
         
@@ -6829,11 +6833,15 @@ public class ThirdPartyManager
                 throw e;
               }
           }
+        else
+          {
+            throw new Exception("invalid offerObjectiveName " + offerObjectiveName);
+          }
       }
     catch (Exception e)
       {
         e.printStackTrace();
-        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE);
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage().concat("-").concat(e.getMessage()), RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
       }
     
     return result;

@@ -269,6 +269,7 @@ public class CatalogCharacteristicInstance
 
   public boolean equalsNonRobustly(Object obj)
   {
+    log.info("");
     log.info("RAJ K equalsNonRobustly between this {} and obj {}", this, obj);
     boolean result = false;
     if (obj instanceof CatalogCharacteristicInstance)
@@ -292,6 +293,7 @@ public class CatalogCharacteristicInstance
           }
       }
     log.info("RAJ K equalsNonRobustly result is {}", result);
+    log.info("");
     return result;
   }
 
