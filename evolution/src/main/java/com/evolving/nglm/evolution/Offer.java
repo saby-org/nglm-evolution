@@ -1017,10 +1017,12 @@ public class Offer extends GUIManagedObject implements StockableItem
   
   public boolean hasThisOfferObjectiveAndCharacteristics(final OfferObjectiveInstance offerObjectiveInstance)
   {
+    log.info("RAJ K hasThisOfferObjectiveAndCharacteristics looking for OfferObjectiveInstance {}", offerObjectiveInstance);
     boolean result = false;
     if (getOfferObjectives() != null && !getOfferObjectives().isEmpty())
       {
         OfferObjectiveInstance offerObjective = getOfferObjectives().stream().filter(offerObj -> offerObj.getOfferObjectiveID().equals(offerObjectiveInstance.getOfferObjectiveID())).findFirst().orElse(null);
+        log.info("RAJ K hasThisOfferObjectiveAndCharacteristics after filter on ID found offerObjective {}", offerObjective);
         if (offerObjective != null)
           {
             for (CatalogCharacteristicInstance catalogCharacteristicInstance : offerObjectiveInstance.getCatalogCharacteristics())
@@ -1030,6 +1032,7 @@ public class Offer extends GUIManagedObject implements StockableItem
               }
           }
       }
+    log.info("RAJ K hasThisOfferObjectiveAndCharacteristics result {}", result);
     return result;
   }
 }

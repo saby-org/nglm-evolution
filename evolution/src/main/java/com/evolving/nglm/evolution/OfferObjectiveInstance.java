@@ -50,6 +50,7 @@ import java.util.Set;
 
 public class OfferObjectiveInstance
 {
+
   /*****************************************
   *
   *  configuration
@@ -287,6 +288,12 @@ public class OfferObjectiveInstance
   public int hashCode()
   {
     return offerObjectiveID.hashCode();
+  }
+  
+  @Override
+  public String toString()
+  {
+    return "OfferObjectiveInstance [offerObjectiveID=" + offerObjectiveID + ", catalogCharacteristics=" + catalogCharacteristics + "]";
   }
 
 }
