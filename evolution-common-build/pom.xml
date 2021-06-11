@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>2.0.0_0-SNAPSHOT</version>
+  <version>release_2.0.0_0-919-1-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -159,6 +159,7 @@
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>
     <topic.workflowEvent>workflowEvent</topic.workflowEvent>
+    <topic.customcriteria>customcriteria</topic.customcriteria>
 
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>
