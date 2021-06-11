@@ -1125,7 +1125,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         QueryBuilder queryEmptyExitDate = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramExitDate"));
         QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(queryLoyaltyProgramID).filter(queryEmptyExitDate), ScoreMode.Total);
         SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(query));
-        List<SearchHit> hits = getESHits(searchRequest);
+        List<SearchHit> hits = getESHitsByScrolling(searchRequest);
         for (SearchHit hit : hits)
           {
             result.add(hit.getId());
@@ -1157,16 +1157,16 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   
   /*****************************************
   *
-  *  getESHits
+  *  getESHitsByScrolling
   *
   *****************************************/
   
-  public List<SearchHit> getESHits(SearchRequest searchRequest) throws GUIManagerException
+  public List<SearchHit> getESHitsByScrolling(SearchRequest searchRequest) throws GUIManagerException
   {
     List<SearchHit> hits = new ArrayList<SearchHit>();
     Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
     searchRequest.scroll(scroll);
-    searchRequest.source().size(1000);
+    searchRequest.source().size(9000);
     try
       {
         SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
@@ -1203,6 +1203,43 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     
     return hits;
   }
+  
+  /*****************************************
+  *
+  *  getESHits
+  *
+  *****************************************/
+  
+  public List<SearchHit> getESHits(SearchRequest searchRequest) throws GUIManagerException
+  {
+    List<SearchHit> hits = new ArrayList<SearchHit>();
+    searchRequest.source().size(10000);
+    try
+      {
+        SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+        SearchHit[] searchHits = searchResponse.getHits().getHits();
+        if (searchHits != null && searchHits.length > 0)
+          {
+            //
+            //  add
+            //
+            
+            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
+          }
+      } 
+    catch (IOException e)
+      {
+        log.error("IOException in ES qurery {}", e.getMessage());
+        throw new GUIManagerException(e);
+      }
+    
+    //
+    //  return
+    //
+    
+    return hits;
+  }
+  
 
   //
   // getExistingIndices
