@@ -296,7 +296,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
     log.info("Reading data from ES in "+esIndexSubscriber+" index and writing to "+csvfile);
     
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("tenantID", tenantID)));
     
     List<String> subscriberFields = new ArrayList<>();
     subscriberFields.add("subscriberID");
