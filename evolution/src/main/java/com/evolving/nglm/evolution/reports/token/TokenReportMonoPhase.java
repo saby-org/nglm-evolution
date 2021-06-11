@@ -287,6 +287,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
       if (!reportMonoPhase.startOneToOne())
         {
           log.warn("An error occured, the report might be corrupted");
+          throw new RuntimeException("An error occurred, report must be restarted");
         }
     } finally {
       offerService.stop();

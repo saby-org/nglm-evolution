@@ -515,7 +515,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       if (!reportMonoPhase.startOneToOne(isMultiDates))
         {
           log.warn("An error occured, the report " + csvfile + "  might be corrupted");
-          return;
+          throw new RuntimeException("An error occurred, report must be restarted");
         }
 
     } finally {
