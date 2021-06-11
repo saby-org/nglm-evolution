@@ -53,6 +53,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
   private Map<Integer, Map<String, String>> dimNameDisplayMappingPerTenant = new HashMap<>();
+  private int tenantID = 0;
 
   private static final String customerID = "customerID";
   private static final String activationDate = "activationDate";
@@ -288,6 +289,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
 	  String esNode          = args[1];
 	  String esIndexCustomer = args[2];
     String csvfile         = args[3];
+    if (args.length > 4) tenantID = Integer.parseInt(args[4]);
 
 	  log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");	
 

@@ -57,6 +57,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   private SupplierService supplierService;
   private VoucherTypeService voucherTypeService;
   private VoucherService voucherService;
+  private int tenantID = 0;
 
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
@@ -395,6 +396,8 @@ public class VDRReportMonoPhase implements ReportCsvFactory
         reportPeriodQuantity = Integer.parseInt(args[3]);
         reportPeriodUnit = args[4];
       }
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
+
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
 

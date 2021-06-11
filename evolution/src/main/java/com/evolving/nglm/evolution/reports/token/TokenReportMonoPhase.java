@@ -95,6 +95,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
   private ScoringStrategyService scoringStrategyService = null;
   private JourneyService journeyService = null;
   private LoyaltyProgramService loyaltyProgramService = null;
+  private int tenantID = 0;
 
   /****************************************
    *
@@ -298,6 +299,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
     String esNode          = args[0];
     String esIndexCustomer = args[1];
     String csvfile         = args[2];
+    if (args.length > 3) tenantID = Integer.parseInt(args[3]);
 
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
 

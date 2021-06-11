@@ -74,6 +74,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
 
   private SalesChannelService salesChannelService;
   private OfferService offerService = null;
+  private int tenantID = 0;
 
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
@@ -308,6 +309,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
     String esNode          = args[0];
     String esIndexCustomer = args[1];
     String csvfile         = args[2];
+    if (args.length > 3) tenantID = Integer.parseInt(args[3]);
 
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
 
