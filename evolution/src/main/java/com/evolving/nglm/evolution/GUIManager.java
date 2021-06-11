@@ -2661,9 +2661,6 @@ public class GUIManager
         *****************************************/
         
         Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
-        if(tenantID == null) { tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true); }
-        
-        
 
         /*****************************************
         *
@@ -4285,7 +4282,7 @@ public class GUIManager
                   break;
 
                 case getTenantList:
-                  jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived, tenantID);
+                  jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived);
                   break;
                   
                 case putSimpleOfferThirdParty:
@@ -4334,7 +4331,7 @@ public class GUIManager
 
 
                 case getSoftwareVersions:
-                jsonResponse = processSoftwareVersions(userID, jsonRoot, tenantID);
+                jsonResponse = processSoftwareVersions(userID, jsonRoot, 1); // for the moment, will see later
                 break;
 
               }
@@ -5638,7 +5635,7 @@ public class GUIManager
           {
             String journeyID = journeyIDs.get(i).toString();
             GUIManagedObject journey = journeyService.getStoredJourney(journeyID, includeArchived);
-            if (journey != null)
+            if (journey != null && journey.getTenantID() == tenantID)
               {
                 journeyObjects.add(journey);
               }
@@ -8076,7 +8073,7 @@ public class GUIManager
           {
             String journeyTemplateID = journeyTemplateIDs.get(i).toString();
             GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, includeArchived);                
-            if (journeyTemplate != null)
+            if (journeyTemplate != null && journeyTemplate.getTenantID() == tenantID)
               {
                 journeyTemplateObjects.add(journeyTemplate);
               }            
@@ -8629,7 +8626,7 @@ public class GUIManager
           {
             String offerID = offerIDs.get(i).toString();
             GUIManagedObject offer = offerService.getStoredOfferWithCurrentStocks(offerID, includeArchived);
-            if (offer != null)
+            if (offer != null && offer.getTenantID() == tenantID)
               {
                 offerObjects.add(offer);
               }
@@ -9434,7 +9431,7 @@ public class GUIManager
           {
             String presentationStrategieID = presentationStrategieIDs.get(i).toString();
             GUIManagedObject presentationStrategie = presentationStrategyService.getStoredPresentationStrategy(presentationStrategieID, includeArchived);
-            if (presentationStrategie != null)
+            if (presentationStrategie != null && presentationStrategie.getTenantID() == tenantID)
               {
                 presentationStrategieObjects.add(presentationStrategie);
               }
@@ -9866,7 +9863,7 @@ public class GUIManager
           {
             String dnboMatrixeID = dnboMatrixeIDs.get(i).toString();
             GUIManagedObject dnboMatrixe = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixeID, includeArchived);
-            if (dnboMatrixe != null)
+            if (dnboMatrixe != null && dnboMatrixe.getTenantID() == tenantID)
               {
                 dnboMatrixeObjects.add(dnboMatrixe);
               }
@@ -10284,7 +10281,7 @@ public class GUIManager
           {
             String scoringStrategyID = scoringStrategyIDs.get(i).toString();
             GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, includeArchived);
-            if (scoringStrategy != null)
+            if (scoringStrategy != null && scoringStrategy.getTenantID() == tenantID)
               {
                 scoringStrategyObjects.add(scoringStrategy);
               }
@@ -10747,7 +10744,7 @@ public class GUIManager
           {
             String callingChannelID = callingChannelIDs.get(i).toString();
             GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, includeArchived);
-            if (callingChannel != null)
+            if (callingChannel != null && callingChannel.getTenantID() == tenantID)
               {
                 callingChannelObjects.add(callingChannel);
               }
@@ -11220,7 +11217,7 @@ public class GUIManager
             String criterionFieldAvailableValueID = criterionFieldAvailableValueIDs.get(i).toString();
             GUIManagedObject criterionFieldAvailableValue = criterionFieldAvailableValuesService
                 .getStoredCriterionFieldAvailableValues(criterionFieldAvailableValueID, includeArchived);
-            if (criterionFieldAvailableValue != null)
+            if (criterionFieldAvailableValue != null && criterionFieldAvailableValue.getTenantID() == tenantID)
               {
                 criterionFieldAvailableValueObjects.add(criterionFieldAvailableValue);
 
@@ -11655,7 +11652,7 @@ public class GUIManager
           {
             String salesChannelID = salesChannelIDs.get(i).toString();
             GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, includeArchived);
-            if (salesChannel != null)
+            if (salesChannel != null && salesChannel.getTenantID() == tenantID)
               {
                 salesChannelObjects.add(salesChannel);
               }
@@ -12148,7 +12145,7 @@ public class GUIManager
           {
             String supplierID = supplierIDs.get(i).toString();
             GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, includeArchived);
-            if (supplier != null)
+            if (supplier != null && supplier.getTenantID() == tenantID)
               {
                 supplierObjects.add(supplier);
               }
@@ -12683,7 +12680,7 @@ public class GUIManager
           {
             String productID = productIDs.get(i).toString();
             GUIManagedObject product = productService.getStoredProductWithCurrentStocks(productID, includeArchived);
-            if (product != null)
+            if (product != null && product.getTenantID() == tenantID)
               {
                 productsObjects.add(product);
               }
@@ -13455,7 +13452,7 @@ public class GUIManager
           {
             String contactPolicyID = contactPolicyIDs.get(i).toString();
             GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, includeArchived);
-            if (contactPolicy != null)
+            if (contactPolicy != null && contactPolicy.getTenantID() == tenantID)
               {
                 contactPolicyObjects.add(contactPolicy);
               }
@@ -13918,7 +13915,7 @@ public class GUIManager
           {
             String journeyObjectiveID = journeyObjectiveIDs.get(i).toString();
             GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, includeArchived);
-            if (journeyObjective != null)
+            if (journeyObjective != null && journeyObjective.getTenantID() == tenantID)
               {
                 journeyObjectiveObjects.add(journeyObjective);
               }
@@ -14399,7 +14396,7 @@ public class GUIManager
           {
             String offerObjectiveID = offerObjectiveIDs.get(i).toString();
             GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, includeArchived);
-            if (offerObjective != null)
+            if (offerObjective != null && offerObjective.getTenantID() == tenantID)
               {
                 offerObjectiveObjects.add(offerObjective);
               }
@@ -14871,7 +14868,7 @@ public class GUIManager
           {
             String productTypeID = productTypeIDs.get(i).toString();
             GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, includeArchived);
-            if (productType != null)
+            if (productType != null && productType.getTenantID() == tenantID)
               {
                 productTypeObjects.add(productType);
               }
@@ -15339,7 +15336,7 @@ public class GUIManager
           {
             String deliverableID = deliverableIDs.get(i).toString();
             GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived);
-            if (deliverable != null)
+            if (deliverable != null && deliverable.getTenantID() == tenantID)
               {
                 deliverableObjects.add(deliverable);
               }
@@ -15391,7 +15388,7 @@ public class GUIManager
           {
             String voucherTypeID = voucherTypeIDs.get(i).toString();
             GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, includeArchived);
-            if (voucherType != null)
+            if (voucherType != null && voucherType.getTenantID() == tenantID)
               {
                 voucherTypeObjects.add(voucherType);
               }
@@ -15869,7 +15866,7 @@ public class GUIManager
           {
             String voucherID = voucherIDs.get(i).toString();
             GUIManagedObject voucher = voucherService.getStoredVoucherWithCurrentStocks(voucherID, includeArchived);
-            if (voucher != null)
+            if (voucher != null && voucher.getTenantID() == tenantID)
               {
                 voucherObjects.add(voucher);
               }
@@ -16458,7 +16455,7 @@ public class GUIManager
           {
             String templateID = templateIDs.get(i).toString();
             GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
-            if (template != null)
+            if (template != null && template.getTenantID() == tenantID)
               {
                 templateObjects.add(template);
               }
@@ -16963,7 +16960,7 @@ public class GUIManager
           {
             String templateID = templateIDs.get(i).toString();
             GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
-            if (template != null)
+            if (template != null && template.getTenantID() == tenantID)
               {
                 templateObjects.add(template);
               }
@@ -17477,7 +17474,7 @@ public class GUIManager
           {
             String templateID = templateIDs.get(i).toString();
             GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
-            if (template != null)
+            if (template != null && template.getTenantID() == tenantID)
               {
                 templateObjects.add(template);
               }
@@ -17994,7 +17991,7 @@ public class GUIManager
           {
             String templateID = templateIDs.get(i).toString();
             GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
-            if (template != null)
+            if (template != null && template.getTenantID() == tenantID)
               {
                 templateObjects.add(template);
               }
@@ -18546,7 +18543,7 @@ public class GUIManager
           {
             String paymentMeanID = paymentMeanIDs.get(i).toString();
             GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, includeArchived);
-            if (paymentMean != null)
+            if (paymentMean != null && paymentMean.getTenantID() == tenantID)
               {
                 paymentMeanObjects.add(paymentMean);
               }
@@ -20683,7 +20680,7 @@ public class GUIManager
           {
             String communicationChannelID = communicationChannelIDs.get(i).toString();
             CommunicationChannel communicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
-            if (communicationChannel != null)
+            if (communicationChannel != null && communicationChannel.getTenantID() == tenantID)
               {
                 communicationChannelObjects.add(communicationChannel);
               }
@@ -20925,7 +20922,7 @@ public class GUIManager
           {
             String communicationChannelBlackoutID = communicationChannelBlackoutIDs.get(i).toString();
             GUIManagedObject communicationChannelBlackout = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutID, includeArchived);
-            if (communicationChannelBlackout != null)
+            if (communicationChannelBlackout != null && communicationChannelBlackout.getTenantID() == tenantID)
               {
                 communicationChannelBlackoutObjects.add(communicationChannelBlackout);
               }            
@@ -21362,7 +21359,7 @@ public class GUIManager
           {
             String resellerID = resellerIDs.get(i).toString();
             GUIManagedObject reseller = resellerService.getStoredReseller(resellerID, includeArchived);
-            if (reseller != null)
+            if (reseller != null && reseller.getTenantID() == tenantID)
               {
                 resellerObjects.add(reseller);
               }
@@ -21706,7 +21703,7 @@ public class GUIManager
           {
             String segmentContactPolicyID = segmentContactPolicyIDs.get(i).toString();
             GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID, includeArchived);
-            if (segmentContactPolicy != null)
+            if (segmentContactPolicy != null && segmentContactPolicy.getTenantID() == tenantID)
               {
                 segmentContactPolicyObjects.add(segmentContactPolicy);
               }
@@ -24571,7 +24568,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             String sourceAddressID = sourceAddressIDs.get(i).toString();
             GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, includeArchived);
-            if (sourceAddress != null)
+            if (sourceAddress != null && sourceAddress.getTenantID() == tenantID)
               {
                 sourceAddressObjects.add(sourceAddress);
               }

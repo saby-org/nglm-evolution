@@ -894,7 +894,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           {
             String loyaltyProgramID = loyaltyProgramIDs.get(i).toString();
             GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived);
-            if (loyaltyProgram != null)
+            if (loyaltyProgram != null && loyaltyProgram.getTenantID() == tenantID)
               {
                 loyaltyProgramObjects.add(loyaltyProgram);
               }
@@ -1632,7 +1632,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     {
       String reportID = reportIDs.get(i).toString();
       GUIManagedObject report = reportService.getStoredReport(reportID, includeArchived);
-      if (report != null)
+      if (report != null && report.getTenantID() == tenantID)
         {
           reportObjects.add(report);
         }

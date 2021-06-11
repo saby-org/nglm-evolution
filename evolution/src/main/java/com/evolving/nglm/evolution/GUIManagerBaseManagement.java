@@ -350,7 +350,7 @@ public class GUIManagerBaseManagement extends GUIManager
           {
             String exclusionInclusionTargetID = exclusionInclusionTargetIDs.get(i).toString();
             GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID, includeArchived);
-            if (exclusionInclusionTarget != null)
+            if (exclusionInclusionTarget != null && exclusionInclusionTarget.getTenantID() == tenantID)
               {
                 exclusionInclusionTargetObjects.add(exclusionInclusionTarget);
               }
@@ -1543,7 +1543,7 @@ public class GUIManagerBaseManagement extends GUIManager
             String segmentationDimensionID = segmentationDimensionIDs.get(i).toString();
             GUIManagedObject segmentationDimension = segmentationDimensionService
                 .getStoredSegmentationDimension(segmentationDimensionID, includeArchived);
-            if (segmentationDimension != null)
+            if (segmentationDimension != null && segmentationDimension.getTenantID() == tenantID)
               {
                 segmentationDimensionObjects.add(segmentationDimension);
               }

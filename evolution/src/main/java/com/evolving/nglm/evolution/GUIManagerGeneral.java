@@ -1043,7 +1043,7 @@ public class GUIManagerGeneral extends GUIManager
           {
             String pointID = pointIDs.get(i).toString();
             GUIManagedObject point = pointService.getStoredPoint(pointID, includeArchived);
-            if (point != null)
+            if (point != null && point.getTenantID() == tenantID)
               {
                 pointObjects.add(point);
               }
@@ -1639,7 +1639,7 @@ public class GUIManagerGeneral extends GUIManager
           {
             String complexObjectTypeID = complexObjectTypeIDs.get(i).toString();
             GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID, includeArchived);
-            if (complexObjectType != null)
+            if (complexObjectType != null && complexObjectType.getTenantID() == tenantID)
               {
                 complexObjectTypeObjects.add(complexObjectType);
               }
@@ -3693,7 +3693,7 @@ public class GUIManagerGeneral extends GUIManager
           {
             String tokenTypeID = tokenTypeIDs.get(i).toString();
             GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, includeArchived);
-            if (tokenType != null)
+            if (tokenType != null && tokenType.getTenantID() == tenantID)
               {
                 tokenTypeObjects.add(tokenType);
               }
@@ -5281,7 +5281,7 @@ public class GUIManagerGeneral extends GUIManager
           {
             String uploadedFileID = uploadedFileIDs.get(i).toString();
             GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(uploadedFileID, includeArchived);
-            if (uploadedFile != null)
+            if (uploadedFile != null && uploadedFile.getTenantID() == tenantID)
               {
                 uploadedFileObjects.add(uploadedFile);
               }
@@ -5483,7 +5483,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *********************************************/
 
-  JSONObject processGetTenantList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
+  JSONObject processGetTenantList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
