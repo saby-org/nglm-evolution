@@ -6920,7 +6920,6 @@ public class ThirdPartyManager
   
   private Object validateAndGetRequestCharacteristicValue(JSONObject jsonRoot, CriterionDataType dataType) throws Exception
   {
-    log.info("RAJ K validateAndGetRequestCharacteristicValue jsonRoot {} and dataType is {}",jsonRoot, dataType.toString());
     Object value = null;
     try
       {
@@ -6943,6 +6942,7 @@ public class ThirdPartyManager
               {
                 booleanSetValue.add((Boolean) jsonArrayBoolean.get(i));
               }
+            value = booleanSetValue;
             break;
 
           case StringCriterion:

@@ -16,6 +16,10 @@
       {
         "catalogCharacteristicName":"RK_STR_LST_CHAR",
         "value":["ABC", "RK", "str1"]
+      },
+      {
+        "catalogCharacteristicName":"RK_BOOL_CHAR",
+        "value":[true]
       }
     ]
   }

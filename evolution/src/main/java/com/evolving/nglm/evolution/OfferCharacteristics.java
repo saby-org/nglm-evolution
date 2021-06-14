@@ -783,22 +783,18 @@ public class OfferCharacteristics
       if (obj instanceof OfferCharacteristicsProperty)
         {
           OfferCharacteristicsProperty offerCharacteristicsProperty = (OfferCharacteristicsProperty) obj;
-          log.info("RAJ K equalsNonRobustly matching {} with param val {}", this.toJSONObject(), offerCharacteristicsProperty.toJSONObject());
           result = true;
           result = result && Objects.equals(catalogCharacteristicID, offerCharacteristicsProperty.getCatalogCharacteristicID());
-          log.info("RAJ K equalsNonRobustly ID matched {}", result);
           if (result && getValue() instanceof Set)
             {
               Set<Object> thisValue = (Set<Object>) getValue();
               Set<Object> reqValue = (Set<Object>) offerCharacteristicsProperty.getValue();
               result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
-              log.info("RAJ K equalsNonRobustly SET matched {}", result);
             }
           else if (result)
             {
               Set<Object> reqValue = (Set<Object>) offerCharacteristicsProperty.getValue();
               result = result && reqValue.contains(getValue());
-              log.info("RAJ K equalsNonRobustly normal result is {}", result);
             
             }
         }
