@@ -2427,11 +2427,19 @@ public class GUIManager
     *  Ensure Grafana configuration per tenant
     *
     *****************************************/  
+    Thread grafanaThread = new Thread(new Runnable()
+    {      
+      @Override
+      public void run()
+      {
+        boolean grafanaStarted = false;
+        while (!grafanaStarted) {
+          grafanaStarted = GrafanaUtils.prepareGrafanaForTenants();
+        }        
+      }
+    });
+    grafanaThread.start();
 
-    boolean grafanaStarted = false;
-    while (!grafanaStarted) {
-      grafanaStarted = GrafanaUtils.prepareGrafanaForTenants();
-    }
 
   /*****************************************
    *
