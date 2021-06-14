@@ -240,7 +240,7 @@ public class EvaluationCriterion
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("criterionContext", CriterionContext.schema());
     schemaBuilder.field("criterionField", Schema.STRING_SCHEMA);
     schemaBuilder.field("criterionOperator", Schema.STRING_SCHEMA);
@@ -723,7 +723,7 @@ public class EvaluationCriterion
     String storyReference = valueStruct.getString("storyReference");
     boolean criterionDefault = valueStruct.getBoolean("criterionDefault");
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
-    Boolean useESQueryNoPainless = schemaVersion >=2 ? valueStruct.getBoolean("useESQueryNoPainless"):null;
+    Boolean useESQueryNoPainless = schemaVersion >= 3 ? valueStruct.getBoolean("useESQueryNoPainless"):null;
 
     //
     //  validate

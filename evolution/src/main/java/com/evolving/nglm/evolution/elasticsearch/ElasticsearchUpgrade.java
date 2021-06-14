@@ -41,7 +41,7 @@ import com.evolving.nglm.core.Deployment;
  * The goal of this variable is to "fast forward" any specified template that is in an older version than the defined one 
  * to the defined one. The meaning of "fast forward" here is to assume a "new version" of it without performing any upgrade.
  * 
- * Let take the following example of deployment.json configuration:
+ * Let's take the following example of deployment.json configuration:
  * "elasticsearchTemplatesVersion"   : { "datacube_odr": 8 }
  * "elasticsearchIndexByPassVersion" : { "datacube_odr": 6 }
  * 
