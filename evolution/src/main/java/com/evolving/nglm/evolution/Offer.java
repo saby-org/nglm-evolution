@@ -975,14 +975,17 @@ public class Offer extends GUIManagedObject implements StockableItem
   
   public boolean hasThisOfferCharacteristics(OfferCharacteristics offerCharacteristics)
   {
+    log.info("RAJ K hasThisOfferObjectiveAndCharacteristics looking for offerCharacteristics {}", offerCharacteristics.toJSONObject().toJSONString());
     boolean result = false;
     if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
       {
+        log.info("RAJ K hasThisOfferObjectiveAndCharacteristics this offer offerCharacteristics is non empty");
         for (OfferCharacteristicsLanguageProperty characteristicsLanguageProperty : offerCharacteristics.getOfferCharacteristicProperties())
           {
             OfferCharacteristicsLanguageProperty languageProperty = getOfferCharacteristics().getOfferCharacteristicProperties().stream().filter(offerLanChar -> offerLanChar.getLanguageID().equals(characteristicsLanguageProperty.getLanguageID())).findFirst().orElse(null);
             if (languageProperty != null)
               {
+                log.info("RAJ K hasThisOfferObjectiveAndCharacteristics found languageProperty {}", languageProperty.toJSONObject().toJSONString());
                 for (OfferCharacteristicsProperty offerCharacteristicsProperty : characteristicsLanguageProperty.getProperties())
                   {
                     result = languageProperty.getProperties().stream().anyMatch(property -> property.equalsNonRobustly(offerCharacteristicsProperty));

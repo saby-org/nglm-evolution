@@ -270,31 +270,24 @@ public class CatalogCharacteristicInstance
 
   public boolean equalsNonRobustly(Object obj)
   {
-    log.info("");
-    log.info("RAJ K equalsNonRobustly between this {} and obj {}", this, obj);
     boolean result = false;
     if (obj instanceof CatalogCharacteristicInstance)
       {
         CatalogCharacteristicInstance offerCatalogCharacteristic = (CatalogCharacteristicInstance) obj;
         result = true;
         result = result && Objects.equals(catalogCharacteristicID, offerCatalogCharacteristic.getCatalogCharacteristicID());
-        log.info("RAJ K equalsNonRobustly catalogCharacteristicID match result is {}", result);
         if (getValue() instanceof Set)
           {
             Set<Object> thisValue = (Set<Object>) getValue();
             Set<Object> reqValue = (Set<Object>) offerCatalogCharacteristic.getValue();
             result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
-            log.info("RAJ K equalsNonRobustly instanceof Set result is {}", result);
           }
         else if (result)
           {
             Set<Object> reqValue = (Set<Object>) offerCatalogCharacteristic.getValue();
             result = result && reqValue.contains(getValue());
-            log.info("RAJ K equalsNonRobustly normal result is {}", result);
           }
       }
-    log.info("RAJ K equalsNonRobustly result is {}", result);
-    log.info("");
     return result;
   }
 

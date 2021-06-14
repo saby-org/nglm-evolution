@@ -6918,8 +6918,9 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private Object validateAndGetRequestCharacteristicValue(JSONObject jsonRoot, CriterionDataType dataType) throws GUIManagerException
+  private Object validateAndGetRequestCharacteristicValue(JSONObject jsonRoot, CriterionDataType dataType) throws Exception
   {
+    log.info("RAJ K validateAndGetRequestCharacteristicValue jsonRoot {} and dataType is {}",jsonRoot, dataType.toString());
     Object value = null;
     try
       {
@@ -6986,6 +6987,7 @@ public class ThirdPartyManager
     catch (Exception e)
       {
         log.error("error in validateAndGetRequestCharacteristicValue {}", e.getMessage());
+        throw new Exception("invalid json " + e.getMessage());
       }
     
     return value;
