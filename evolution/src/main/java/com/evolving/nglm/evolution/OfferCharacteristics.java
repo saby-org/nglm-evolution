@@ -87,7 +87,7 @@ public class OfferCharacteristics
   *
   *****************************************/
 
-  private OfferCharacteristics(Set<OfferCharacteristicsLanguageProperty> properties)
+  public OfferCharacteristics(Set<OfferCharacteristicsLanguageProperty> properties)
   {
     this.properties = properties;
   }
@@ -338,7 +338,7 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    private OfferCharacteristicsLanguageProperty(String languageID, Set<OfferCharacteristicsProperty> properties)
+    public OfferCharacteristicsLanguageProperty(String languageID, Set<OfferCharacteristicsProperty> properties)
     {
       this.languageID = languageID;
       this.properties = properties;
@@ -612,7 +612,7 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    private OfferCharacteristicsProperty(String catalogCharacteristicID, String catalogCharacteristicName, ParameterMap value)
+    public OfferCharacteristicsProperty(String catalogCharacteristicID, String catalogCharacteristicName, ParameterMap value)
     {
       this.catalogCharacteristicID = catalogCharacteristicID;
       this.catalogCharacteristicName = catalogCharacteristicName;

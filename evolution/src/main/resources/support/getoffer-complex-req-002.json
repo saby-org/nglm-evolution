@@ -7,14 +7,11 @@
     "properties":[
       {
         "catalogCharacteristicName":"STR",
-        "value":"RK1"
+        "value":["RK1"]
       },
       {
         "catalogCharacteristicName":"STR_LIST",
-        "value":[
-          "A",
-          "D"
-        ]
+        "value":[ "A", "D" ]
       }
     ]
   }

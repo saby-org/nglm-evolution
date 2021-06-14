@@ -101,6 +101,8 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
@@ -6867,25 +6869,14 @@ public class ThirdPartyManager
   private OfferCharacteristics decodeOfferCharacteristics(JSONObject offerCharacteristicsJSON, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws ThirdPartyManagerException
   {
     OfferCharacteristics offerCharacteristics = null;
-    Map<String, Object> languageProperties = new HashMap<String, Object>();
-    List<JSONObject> languagePropertyList = new ArrayList<JSONObject>();
-    Map<String, Object> languageProperty = new HashMap<String, Object>();
-    List<JSONObject> innerPropertyJSON = new ArrayList<JSONObject>();
+    Set<OfferCharacteristicsProperty> offerCharacteristicsPropertyList = new HashSet<OfferCharacteristicsProperty>();
     Date now = SystemTime.getCurrentTime();
     try
       {
         String languageReq = JSONUtilities.decodeString(offerCharacteristicsJSON, "language", true);
         JSONArray propertiesJSONArray = JSONUtilities.decodeJSONArray(offerCharacteristicsJSON, "properties", new JSONArray());
-        
         String languageID = Deployment.getDeployment(tenantID).getSupportedLanguages().values().stream().filter(supportedLang -> supportedLang.getDisplay().equalsIgnoreCase(languageReq)).map(SupportedLanguage::getID).findFirst().orElse(null);
-        if (languageID != null)
-          {
-            languageProperty.put("language", languageID);
-          }
-        else
-          {
-            throw new Exception("invalid language "+ languageReq);
-          }
+        if (languageID == null) throw new Exception("invalid language "+ languageReq);
         
         //
         //  catalogCharacteristics
@@ -6897,20 +6888,21 @@ public class ThirdPartyManager
             CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristics(now, tenantID).stream().filter(characteristic -> characteristic.getGUIManagedObjectDisplay().equals(charName)).findFirst().orElse(null);
             if (catalogCharacteristic != null)
               {
-                Map<String, Object> catalogCharacteristics = new HashMap<String, Object>();
-                catalogCharacteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
-                catalogCharacteristics.put("value", ((JSONObject) propertiesJSONArray.get(i)).get("value"));
-                innerPropertyJSON.add(JSONUtilities.encodeObject(catalogCharacteristics));
+                ParameterMap parameterMap = new ParameterMap();
+                Object value = validateAndGetRequestCharacteristicValue((JSONObject) propertiesJSONArray.get(i), catalogCharacteristic.getDataType());
+                parameterMap.put("value", value);
+                OfferCharacteristicsProperty offerCharacteristicsProperty = new OfferCharacteristicsProperty(catalogCharacteristic.getCatalogCharacteristicID(), catalogCharacteristic.getGUIManagedObjectDisplay(), parameterMap);
+                offerCharacteristicsPropertyList.add(offerCharacteristicsProperty);
               }
             else
               {
                 throw new Exception("invalid catalogCharacteristicName " + charName);
               }
           }
-        languageProperty.put("properties", JSONUtilities.encodeArray(innerPropertyJSON));
-        languagePropertyList.add(JSONUtilities.encodeObject(languageProperty));
-        languageProperties.put("languageProperties", JSONUtilities.encodeArray(languagePropertyList));
-        offerCharacteristics = new OfferCharacteristics(JSONUtilities.encodeObject(languageProperties), catalogCharacteristicService);
+        OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty = new OfferCharacteristicsLanguageProperty(languageID, offerCharacteristicsPropertyList);
+        Set<OfferCharacteristicsLanguageProperty> properties = new HashSet<OfferCharacteristics.OfferCharacteristicsLanguageProperty>();
+        properties.add(offerCharacteristicsLanguageProperty);
+        offerCharacteristics = new OfferCharacteristics(properties);
       }
     catch (Exception e)
       {
