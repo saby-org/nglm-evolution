@@ -968,6 +968,25 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_de
 }'
 echo
 
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_partners -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["mapping_partners"],
+  "mappings" : {
+    "properties" : {
+      "createdDate" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "display" : 		{ "type" : "keyword" },
+      "active" : 		{ "type" : "boolean" },
+      "partnerType" : 	{ "type" : "keyword" },
+	  "id" : 			{ "type" : "keyword" },
+	  "email" : 		{ "type" : "keyword" },
+	  "parentId" : 		{ "type" : "keyword" },
+	  "provider" : 		{ "type" : "keyword" },
+	  "timestamp" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_basemanagement*"],
