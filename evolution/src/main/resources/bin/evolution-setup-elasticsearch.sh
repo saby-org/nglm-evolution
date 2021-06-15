@@ -970,9 +970,9 @@ echo
 
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_partners -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "index_patterns": ["mapping_partners"],
+  "index_patterns": ["mapping_partners*"],
   "mappings" : {
-  "_meta": { "mapping_deliverables" : { "version": Deployment.getElasticsearchMappingPartnersTemplateVersion() } },
+  "_meta": { "mapping_partners" : { "version": Deployment.getElasticsearchMappingPartnersTemplateVersion() } },
     "properties" : {
       "createdDate" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "display" : 		{ "type" : "keyword" },

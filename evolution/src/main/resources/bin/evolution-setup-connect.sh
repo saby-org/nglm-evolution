@@ -353,10 +353,6 @@ prepare-curl -XPOST $CONNECT_URL_PARTNER_ES/connectors -H "Content-Type: applica
       "connector.class" : "com.evolving.nglm.evolution.PartnersESSinkConnector",
       "tasks.max" : '$CONNECT_ES_PARTNER_SINK_TASKS',
       "topics" : "${topic.supplier},${topic.reseller}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
-      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "mapping_partners",
       "batchRecordCount" : "'$CONNECT_ES_PARTNER_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_PARTNER_BATCHSIZEMB'"
