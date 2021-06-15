@@ -25,7 +25,6 @@ import com.lumatagroup.expression.driver.SMPP.SimpleSMSSender;
 import com.lumatagroup.expression.driver.SMPP.configuration.SMSC;
 import com.lumatagroup.expression.driver.SMPP.Util.SMPPUtil.SMPP_CONFIGS;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SystemTime;
 
 public class SMPPGenericPlugin implements NotificationInterface
 {
@@ -35,7 +34,7 @@ public class SMPPGenericPlugin implements NotificationInterface
   *
   *****************************************/
 
-  private static final Logger log = LoggerFactory.getLogger(SMPPPlugin.class);
+  private static final Logger log = LoggerFactory.getLogger(SMPPGenericPlugin.class);
 
   /*****************************************
   *
@@ -43,7 +42,7 @@ public class SMPPGenericPlugin implements NotificationInterface
   *
   *****************************************/
 
-  private DeliveryManagerForNotifications smsNotificationManager = null;
+  private NotificationManager notificationManager = null;
   private SimpleSMSSender[] senderArray;
   private EvaluationCriterion[] criterionArray;
   private boolean useCriteriaMode;
@@ -62,13 +61,13 @@ public class SMPPGenericPlugin implements NotificationInterface
   *
   *****************************************/
 
-  public void init(DeliveryManagerForNotifications smsNotificationManager, JSONObject notificationPluginConfigurationGlobal)
+  public void init(DeliveryManagerForNotifications notificationManager, JSONObject notificationPluginConfigurationGlobal)
   {
     //
     //  smsNotificationManager
     //
 
-    this.smsNotificationManager = smsNotificationManager;
+    this.notificationManager = (NotificationManager) notificationManager;
     this.connectionFailover = JSONUtilities.decodeBoolean(notificationPluginConfigurationGlobal, "connection_failover", Boolean.FALSE);
     JSONArray connections = JSONUtilities.decodeJSONArray(notificationPluginConfigurationGlobal, "connections", true);
     senderArray = new SimpleSMSSender[connections.size()];
@@ -83,7 +82,7 @@ public class SMPPGenericPlugin implements NotificationInterface
     
         //
         //  attributes
-        //  
+        // 
 
         String connection_name = JSONUtilities.decodeString(notificationPluginConfiguration, "smsc_connection_name", true);
         String smscHost = JSONUtilities.decodeString(notificationPluginConfiguration, "smsc_connection", true);
@@ -120,7 +119,7 @@ public class SMPPGenericPlugin implements NotificationInterface
         //  log
         //
 
-        log.info("SMPP Plugin init; smscHost="+smscHost+ ", username="+username+ ", password="+password + ", connectionType="+connection_type);
+        log.info("SMPPGenericPlugin init; smscHost="+smscHost+ ", username="+username+ ", password="+password + ", connectionType="+connection_type);
 
         //
         //  validate
@@ -185,7 +184,7 @@ public class SMPPGenericPlugin implements NotificationInterface
         if (sms_MO_event_name != null)  config.addProperty(SMPP_CONFIGS.sms_MO_event_name.toString(), sms_MO_event_name);  
         if (sms_MO_channel_name != null)  config.addProperty(SMPP_CONFIGS.sms_MO_channel_name.toString(), sms_MO_event_name);  
         smsSenderFactory = new SMSSenderFactory(config);
-        smsSenderFactory.init(smsNotificationManager,this);
+        smsSenderFactory.init(this.notificationManager,this);
         if(smsSenderFactory.getSMSSenders() == null || (smsSenderFactory.getSMSSenders() != null && smsSenderFactory.getSMSSenders().length == 0))
           {
             log.info("SMPP Driver Load NOT Successfully: no sender created");
@@ -233,7 +232,7 @@ public class SMPPGenericPlugin implements NotificationInterface
   {
     
     NotificationManagerRequest deliveryRequest = (NotificationManagerRequest)deliveryNotificationRequest;
-    Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(smsNotificationManager.getSubscriberMessageTemplateService());
+    Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(this.notificationManager.getSubscriberMessageTemplateService());
     String text = resolvedParameters.get("sms.body");
     String destination = deliveryRequest.getDestination();
     String source = deliveryRequest.getSourceAddressParam();
@@ -307,13 +306,22 @@ public class SMPPGenericPlugin implements NotificationInterface
     Integer SMSExpirationMinutes = (Integer) deliveryRequest.getNotificationParameters().get("node.parameter.SMSexpiration");
     if(sender == null)
       {
-        throw new RuntimeException("SMPPPlugin.send("+deliveryRequest+") sender is null, no smsc");
+        throw new RuntimeException("SMPPGenericPlugin.send("+deliveryRequest+") sender is null, no smsc");
       }
     else
       {
         if(sender.sendSMS(deliveryRequest, text, destination, source, receiptExpected != null ? receiptExpected : false, flashSMS != null ? flashSMS : false, SMSExpirationMinutes != null ? SMSExpirationMinutes : null))
           {
-            if(log.isDebugEnabled()) log.debug("SMPP Driver message sent successfully");
+            if(log.isDebugEnabled()) log.debug("SMPPGenericPlugin.send : deliveryRequest "+deliveryRequest.getDeliveryRequestID()+" sent to "+destination);
+          }
+        else
+          {
+            log.info("SMPPGenericPlugin.send : issue when sending deliveryRequest "+deliveryRequest.getDeliveryRequestID()+" to "+destination);
+            deliveryNotificationRequest.setDeliveryStatus(DeliveryManager.DeliveryStatus.Failed);
+            deliveryNotificationRequest.setReturnCode(DeliveryManagerForNotifications.MessageStatus.UNKNOWN.getReturnCode());
+            deliveryNotificationRequest.setMessageStatus(DeliveryManagerForNotifications.MessageStatus.UNKNOWN);
+            deliveryNotificationRequest.setReturnCodeDetails("issue while sending");
+            this.notificationManager.completeDeliveryRequest(deliveryNotificationRequest);
           }
       }
   }

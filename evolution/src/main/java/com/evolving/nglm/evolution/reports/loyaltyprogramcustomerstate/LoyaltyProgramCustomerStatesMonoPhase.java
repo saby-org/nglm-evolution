@@ -275,7 +275,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
       if (!reportMonoPhase.startOneToOne())
         {
           log.warn("An error occured, the report might be corrupted");
-          return;
+          throw new RuntimeException("An error occurred, report must be restarted");
         }
     } finally {
       loyaltyProgramService.stop();

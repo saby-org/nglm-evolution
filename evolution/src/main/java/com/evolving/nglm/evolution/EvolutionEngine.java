@@ -2036,14 +2036,6 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = detectReScheduledDeliveryRequests(context, evolutionEvent) || subscriberStateUpdated;
-
-    /*****************************************
-    *
-    *  handleReScheduledDeliveryRequest : trig again a Delivery Request
-    *
-    *****************************************/
-
-    subscriberStateUpdated = handleReScheduledDeliveryRequest(context, evolutionEvent) || subscriberStateUpdated;
     
     /*****************************************
     *
@@ -2660,40 +2652,21 @@ public class EvolutionEngine
         log.info("Rescheduled Request for " + deliveryRequest.getRescheduledDate());
         ReScheduledDeliveryRequest reScheduledDeliveryRequest = new ReScheduledDeliveryRequest(subscriberProfile.getSubscriberID(), deliveryRequest.getRescheduledDate(), deliveryRequest);
         subscriberState.getReScheduledDeliveryRequests().add(reScheduledDeliveryRequest);
-        
-        TimedEvaluation timedEvaluation = new TimedEvaluation(subscriberProfile.getSubscriberID(), deliveryRequest.getRescheduledDate());
-        subscriberState.getScheduledEvaluations().add(timedEvaluation);
-        subscriberProfileUpdated = true;
+
       }
-    
-    return subscriberProfileUpdated;
-  }
 
-  /*****************************************
-  *
-  *  handleReScheduledDeliveryRequest
-  *
-  *****************************************/
-
-  private static boolean handleReScheduledDeliveryRequest(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
-  {
-    /*****************************************
-    *
-    *  On any event, check if ReScheduledDeliveryRequest's time has been reached, if yes trig the DeliveryRequest again
-    *
-    *****************************************/
-
-    SubscriberState subscriberState = context.getSubscriberState();
-    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
-    boolean subscriberProfileUpdated = false;
-    Date now = context.now();
-    
-    
+    // On any event, check if ReScheduledDeliveryRequest's time has been reached, if yes trig the DeliveryRequest again
     List<ReScheduledDeliveryRequest> toTrig = new ArrayList<>();
-    for(ReScheduledDeliveryRequest reScheduledDeliveryRequest : subscriberState.getReScheduledDeliveryRequests()) 
+    for(ReScheduledDeliveryRequest reScheduledDeliveryRequest : subscriberState.getReScheduledDeliveryRequests())
       {
         if(reScheduledDeliveryRequest.getEvaluationDate().before(now)) {
-          toTrig.add(reScheduledDeliveryRequest);          
+          // the one we have to trig
+          toTrig.add(reScheduledDeliveryRequest);
+        }else{
+          // or the future one we need to schedule again ( we always clean up entirely scheduled requests on any event )
+          TimedEvaluation timedEvaluation = new TimedEvaluation(subscriberProfile.getSubscriberID(), reScheduledDeliveryRequest.getDeliveryRequest().getRescheduledDate());
+          subscriberState.getScheduledEvaluations().add(timedEvaluation);
+          subscriberProfileUpdated = true;
         }
       }
     for(ReScheduledDeliveryRequest toHandle : toTrig) {
@@ -2703,12 +2676,11 @@ public class EvolutionEngine
       deliveryRequest.setDeliveryStatus(DeliveryStatus.Pending);
       deliveryRequest.resetDeliveryRequestAfterReSchedule();
       subscriberState.getDeliveryRequests().add(deliveryRequest);
-      subscriberProfileUpdated = true;      
+      subscriberProfileUpdated = true;
     }
+    
     return subscriberProfileUpdated;
   }
-
-  
   
   /*****************************************
   * 

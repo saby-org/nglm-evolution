@@ -97,7 +97,7 @@ public class SubscriberTraceControlFileSourceConnector extends FileSourceConnect
       //  parse
       //
 
-      String[] tokens = record.split("[,]", 3);
+      String[] tokens = record.split(",");
 
       //
       //  verify number of fields (version 1)

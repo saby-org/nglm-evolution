@@ -209,6 +209,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
       if (!reportMonoPhase.startOneToOneMultiThread(journeyService, activeJourneys))
         {
           log.warn("An error occured, the report might be corrupted");
+          throw new RuntimeException("An error occurred, report must be restarted");
         }
     } finally {
 

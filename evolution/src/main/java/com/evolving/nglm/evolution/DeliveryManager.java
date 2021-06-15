@@ -104,6 +104,8 @@ public abstract class DeliveryManager
   public static final String TARGETED = "targeted-";
   public static final String ORIGIN = "origin-";
 
+  private static final long logBlockingOnQueueFullMs = 60_000L;
+
   //
   //  configuration
   //
@@ -584,14 +586,21 @@ public abstract class DeliveryManager
         //  maxOutstandingRequests
         //
 
+        long beforeMaybeBlocked = System.currentTimeMillis();
         while (waitingForAcknowledgement.size() >= maxOutstandingRequests)
           {
             try
               {
-                this.wait();
+                this.wait(logBlockingOnQueueFullMs);
               }
             catch (InterruptedException e)
               {
+              }
+            long blockedMs = System.currentTimeMillis() - beforeMaybeBlocked;
+            if(blockedMs>=logBlockingOnQueueFullMs)
+              {
+                log.warn("submitDeliveryRequest : blocked on queue full ("+waitingForAcknowledgement.size()+") since "+blockedMs+" ms");
+                if(log.isInfoEnabled()) waitingForAcknowledgement.values().stream().forEach(req->log.info("blocked deliveryRequest: " + req));
               }
           }
 
