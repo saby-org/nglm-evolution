@@ -6,24 +6,33 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.Objects;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.json.simple.JSONObject;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class CustomCriteria extends GUIManagedObject
 {
-  
   /*****************************************
   *
   *  schema
@@ -64,8 +73,8 @@ public class CustomCriteria extends GUIManagedObject
   *
   ****************************************/
   
-   private String formula;
-
+  private String formula; 
+  
   /****************************************
   *
   *  accessors
@@ -73,7 +82,8 @@ public class CustomCriteria extends GUIManagedObject
   ****************************************/
 
   public String getCustomCriteriaID() { return getGUIManagedObjectID(); }
-  public String getFormula() { return formula; }
+  public String getCustomCriteriaName() { return getGUIManagedObjectName(); }
+  public String getFormula(){ return formula; }
 
   /*****************************************
   *
@@ -97,11 +107,11 @@ public class CustomCriteria extends GUIManagedObject
   {
     CustomCriteria customCriteria = (CustomCriteria) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, customCriteria);;
+    packCommon(struct, customCriteria);
     struct.put("formula", customCriteria.getFormula());
     return struct;
   }
-  
+
   /*****************************************
   *
   *  unpack
@@ -124,13 +134,15 @@ public class CustomCriteria extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     String formula = valueStruct.getString("formula");
+    
+    
     //
     //  return
     //
 
     return new CustomCriteria(schemaAndValue, formula);
   }
-
+  
   /*****************************************
   *
   *  constructor -- JSON
@@ -160,8 +172,9 @@ public class CustomCriteria extends GUIManagedObject
     *  attributes
     *
     *****************************************/
+    
     this.formula = JSONUtilities.decodeString(jsonRoot, "formula", false);
-
+    
 
     /*****************************************
     *
@@ -174,7 +187,6 @@ public class CustomCriteria extends GUIManagedObject
         this.setEpoch(epoch);
       }
   }
- 
 
   /*****************************************
   *
@@ -196,5 +208,6 @@ public class CustomCriteria extends GUIManagedObject
         return true;
       }
   }
-
+  
+  
 }

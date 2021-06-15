@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  CustomeCriteriaService.java
+*  CustomCriteriaService.java
 *
 ****************************************************************************/
 
@@ -78,9 +78,9 @@ public class CustomCriteriaService extends GUIService
   //  constructor
   //
 
-  public CustomCriteriaService(String bootstrapServers, String groupID, String customCriteriaTopic, boolean masterService, CustomCriteriaListener customCriteriaListener)
+  public CustomCriteriaService(String bootstrapServers, String groupID, String customerCriteriaTopic, boolean masterService, CustomCriteriaListener customCriteriaListener)
   {
-    this(bootstrapServers, groupID, customCriteriaTopic, masterService, customCriteriaListener, true);
+    this(bootstrapServers, groupID, customerCriteriaTopic, masterService, customCriteriaListener, true);
   }
 
   //
@@ -93,7 +93,7 @@ public class CustomCriteriaService extends GUIService
   }
 
   //
-  //  getCustomCriteriarListener
+  //  getSuperListener
   //
 
   private static GUIManagedObjectListener getSuperListener(CustomCriteriaListener customCriteriaListener)
@@ -131,18 +131,12 @@ public class CustomCriteriaService extends GUIService
   *
   *****************************************/
 
-  public void putCustomCriteria(GUIManagedObject customCriteria, boolean newObject, String userID, CustomCriteriaService customCriteriaService) throws GUIManagerException{ 
+  public void putCustomCriteria(GUIManagedObject customCriteria, boolean newObject, String userID, CustomCriteriaService customCriteriaService) throws GUIManagerException { 
     
-    //
-    //  now
-    //
-
-    Date now = SystemTime.getCurrentTime();
-
- 
     //
     //  put
     //
+
     putGUIManagedObject(customCriteria, SystemTime.getCurrentTime(), newObject, userID); 
     
   }
@@ -199,7 +193,7 @@ public class CustomCriteriaService extends GUIService
 
     CustomCriteriaListener customCriteriaListener = new CustomCriteriaListener()
     {
-      @Override public void customCriteriaActivated(CustomCriteria customCriteria) { System.out.println("customeCriteria activated: " + customCriteria.getCustomCriteriaID()); }
+      @Override public void customCriteriaActivated(CustomCriteria customCriteria) { System.out.println("customCriteria activated: " + customCriteria.getCustomCriteriaID()); }
       @Override public void customCriteriaDeactivated(String guiManagedObjectID) { System.out.println("customCriteria deactivated: " + guiManagedObjectID); }
     };
 
@@ -207,7 +201,7 @@ public class CustomCriteriaService extends GUIService
     //  customCriteriaService
     //
 
-    CustomCriteriaService customCriteriaService = new CustomCriteriaService(Deployment.getBrokerServers(), "example-customCriteriaservice-001", Deployment.getCustomCriteriaTopic(), false, customCriteriaListener);
+    CustomCriteriaService customCriteriaService = new CustomCriteriaService(Deployment.getBrokerServers(), "example-customCriteria-001", Deployment.getCustomCriteriaTopic(), false, customCriteriaListener);
     customCriteriaService.start();
 
     //
