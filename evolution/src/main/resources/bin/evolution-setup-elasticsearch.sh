@@ -972,6 +972,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_pa
 {
   "index_patterns": ["mapping_partners"],
   "mappings" : {
+  "_meta": { "mapping_deliverables" : { "version": Deployment.getElasticsearchMappingPartnersTemplateVersion() } },
     "properties" : {
       "createdDate" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "display" : 		{ "type" : "keyword" },
