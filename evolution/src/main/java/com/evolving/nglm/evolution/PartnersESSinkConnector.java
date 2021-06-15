@@ -8,8 +8,10 @@ import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SimpleESSinkConnector;
@@ -44,11 +46,11 @@ public class PartnersESSinkConnector extends SimpleESSinkConnector
     {
       if (item instanceof Supplier)
         {
-          return "_".concat(PartnerType.Supplier.name()).concat("_").concat(item.getGUIManagedObjectID());
+          return "_" + PartnerType.Supplier.name().concat("-").concat(item.getGUIManagedObjectID()).hashCode();
         }
       else if (item instanceof Reseller)
         {
-          return "_".concat(PartnerType.Reseller.name()).concat("_").concat(item.getGUIManagedObjectID());
+          return "_" + PartnerType.Reseller.name().concat("-").concat(item.getGUIManagedObjectID()).hashCode();
         }
       else
         {
@@ -61,6 +63,7 @@ public class PartnersESSinkConnector extends SimpleESSinkConnector
     {
       Date now = SystemTime.getCurrentTime();
       Map<String,Object> documentMap = new HashMap<String,Object>();
+      JSONObject itemJson = item.getJSONRepresentation();
       if (item instanceof Supplier)
         {
           Supplier supplier = (Supplier) item;
@@ -69,8 +72,10 @@ public class PartnersESSinkConnector extends SimpleESSinkConnector
           documentMap.put("active", supplier.getActive());
           documentMap.put("partnerType", PartnerType.Supplier.name());
           documentMap.put("id", supplier.getGUIManagedObjectID());
+          documentMap.put("email", JSONUtilities.decodeString(itemJson, "email", false));
           documentMap.put("parentId", supplier.getParentSupplierID());
           documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
+          documentMap.put("provider", JSONUtilities.decodeString(itemJson, "fulfillmentProviderID", ""));
         }
       else if (item instanceof Reseller)
         {
@@ -83,7 +88,7 @@ public class PartnersESSinkConnector extends SimpleESSinkConnector
           documentMap.put("email", reseller.getEmail());
           documentMap.put("parentId", reseller.getParentResellerID());
           documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
-          //documentMap.put("provider", reseller.get); RAJ K
+          documentMap.put("provider", "");
         }
       else
         {
