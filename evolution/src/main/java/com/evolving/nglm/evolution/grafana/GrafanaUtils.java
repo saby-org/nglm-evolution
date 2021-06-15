@@ -139,7 +139,7 @@ public class GrafanaUtils
                                 if (datasourceDef.get("database") != null)
                                   {
                                     String currentdatabase = (String) datasourceDef.get("database");
-                                    currentdatabase = currentdatabase.replace("*", "" + tenantID);
+                                    currentdatabase = currentdatabase.replace("t*", "t" + tenantID);
                                     datasourceDef.put("database", currentdatabase);
                                   }
                                 String expectedName = (String) datasourceDef.get("name");
