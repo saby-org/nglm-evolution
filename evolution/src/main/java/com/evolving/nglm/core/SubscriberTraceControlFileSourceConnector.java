@@ -103,7 +103,7 @@ public class SubscriberTraceControlFileSourceConnector extends FileSourceConnect
       //  verify number of fields (version 1)
       //
 
-      if (tokens.length >= 3)
+      if (tokens.length < 3)
         {
           log.error("processRecord unknown record format: {}", record);
           return Collections.<KeyValue>emptyList();
