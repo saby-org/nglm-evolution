@@ -26,354 +26,354 @@ java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.a
 --  guiManager
 -- 
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getStaticConfiguration; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedLanguages; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedCurrencies; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTimeUnits; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedRelationships; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getServiceTypes; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTouchPoints; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannelProperties; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogCharacteristicUnits; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedDataTypes; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedEvents; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTargetingTypes; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFields; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFieldIDs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "subscriber.status"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionField; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionFields; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionFieldIDs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "xxx"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionField; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFields; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFieldIDs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates", "id" : "subscriber.status"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionField; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getStaticConfiguration; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedLanguages; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedCurrencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTimeUnits; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedRelationships; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getServiceTypes; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTouchPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannelProperties; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogCharacteristicUnits; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedDataTypes; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedEvents; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTargetingTypes; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFields; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFieldIDs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "subscriber.status"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionField; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionFields; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionFieldIDs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "xxx"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionField; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "nodeTypeID" : "121", "eventName" : "externalAggregates" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFields; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "nodeTypeID" : "121", "eventName" : "externalAggregates" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFieldIDs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "nodeTypeID" : "121", "eventName" : "externalAggregates", "id" : "subscriber.status"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionField; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "138", "includeComparableFields" : false, "nodeTypeParameterID" : "node.parameter.amount", "selectedJourneyID" : "1102" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFields; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "nodeTypeID" : "138", "includeComparableFields" : false, "nodeTypeParameterID" : "node.parameter.amount", "selectedJourneyID" : "1102" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFields; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferCategories; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferProperties; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringEngines; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferOptimizationAlgorithms; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getNodeTypes; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyToolbox; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignToolbox; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getWorkflowToolbox; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getFulfillmentProviders; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferCategories; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferProperties; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringEngines; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferOptimizationAlgorithms; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getNodeTypes; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyToolbox; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignToolbox; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getWorkflowToolbox; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getFulfillmentProviders; echo
 
 -- getPaymentMeans is deprecated : use getPaymentMeanList instead
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPaymentMeans; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPaymentMeans; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/paymentMean.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putPaymentMean; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPaymentMeanList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPaymentMeanSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPaymentMean; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "43" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePaymentMean; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPaymentMeanList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPaymentMeanSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPaymentMean; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "43" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePaymentMean; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneySummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneySummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/journey.011.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putJourney; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/journey.012.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putJourney; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourney; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeJourney; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/startJourney; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/stopJourney; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourney; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeJourney; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/startJourney; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/stopJourney; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplateList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplateSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplateList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplateSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/journey.template.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putJourneyTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeJourneyTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeJourneyTemplate; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBulkCampaignList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBulkCampaignSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBulkCampaignList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBulkCampaignSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/bulk.sms.campaign.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putBulkCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBulkCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeBulkCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/startBulkCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/stopBulkCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBulkCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeBulkCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/startBulkCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/stopBulkCampaign; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/campaign.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/startCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/stopCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/startCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/stopCampaign; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getWorkflowList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getWorkflowSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getWorkflowList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getWorkflowSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/workflow.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putWorkflow; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getWorkflow; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeWorkflow; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getWorkflow; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeWorkflow; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramPointsEvents; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramPointsEvents; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallengeList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramMissionList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallengeSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramMissionSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallengeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramMissionList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallengeSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramMissionSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram_POINT.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgram; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram_CHALLENGE.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgramChallenge; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram_MISSION.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgramMission; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "ids" : ["1", "2"], "description": "MISSION-001-update", "scheduleType" : "FIXDURATION", "duration": 10}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateMission; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "ids" : ["1", "2"], "description": "Challenge-001-update"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateChallenge; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "ids" : ["1", "2"], "description": "MISSION-001-update", "scheduleType" : "FIXDURATION", "duration": 10}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateMission; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "ids" : ["1", "2"], "description": "Challenge-001-update"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateChallenge; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgram; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallenge; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramMission; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyProgram; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgram; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramChallenge; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramMission; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyProgram; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyWorkflowList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyWorkflowSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id":"1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyWorkflow; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyWorkflow; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyWorkflowList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyWorkflowSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyWorkflow; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyWorkflow; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflowList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflowSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id":"1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflow; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCatalogWorkflow; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflowList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflowSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogWorkflow; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCatalogWorkflow; echo
 
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_ELIGIBILITY.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_FILE.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_RANGES.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentationDimensionList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentationDimensionSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentationDimension; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSegmentationDimension; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentationDimensionList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentationDimensionSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentationDimension; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSegmentationDimension; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/offer.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putOffer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOffer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeOffer; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringStrategyList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringStrategySummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringStrategyList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringStrategySummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/scoring-strategy.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putScoringStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeScoringStrategy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringStrategy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeScoringStrategy; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationStrategyList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationStrategySummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationStrategyList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationStrategySummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/presentation-strategy.002.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putPresentationStrategy; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/presentation-strategy.003.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putPresentationStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePresentationStrategy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationStrategy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePresentationStrategy; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannelList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannelSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannelList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannelSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/calling-channel.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCallingChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCallingChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCallingChannel; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannelList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannelSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannelList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannelSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/sales-channel.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSalesChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSalesChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSalesChannel; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupplierList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupplierSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupplierList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupplierSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/supplier.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSupplier; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupplier; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSupplier; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupplier; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSupplier; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getResellerList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getResellerSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getResellerList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getResellerSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/reseller.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putReseller; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReseller; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeReseller; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReseller; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeReseller; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPointList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPointSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPointList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPointSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/point.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putPoint; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPoint; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePoint; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPoint; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePoint; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/product.1001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putProduct; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "101" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProduct; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "101" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeProduct; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "101" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProduct; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "101" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeProduct; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogCharacteristicList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogCharacteristicSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogCharacteristicList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogCharacteristicSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/catalog-characteristic.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCatalogCharacteristic; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogCharacteristic; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCatalogCharacteristic; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogCharacteristic; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCatalogCharacteristic; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getContactPolicyList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getContactPolicySummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getContactPolicyList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getContactPolicySummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/contact-policy.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putContactPolicy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getContactPolicy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeContactPolicy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getContactPolicy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeContactPolicy; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyObjectiveList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyObjectiveSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyObjectiveList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyObjectiveSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/journey-objective.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putJourneyObjective; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyObjective; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeJourneyObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeJourneyObjective; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferObjectiveList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferObjectiveSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferObjectiveList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferObjectiveSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/offer-objective.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putOfferObjective; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferObjective; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeOfferObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeOfferObjective; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductTypeList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductTypeSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductTypeSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/product-type.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putProductType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeProductType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeProductType; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUCGRuleList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUCGRuleSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUCGRuleList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUCGRuleSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/ucgrule.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUCGRule; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUCGRule; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeUCGRule; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/refreshUCG; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUCGRule; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeUCGRule; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/refreshUCG; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDeliverableList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDeliverableSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDeliverable; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDeliverableList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDeliverableSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDeliverable; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenTypeList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenTypeSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenTypeSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/token-type.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putTokenType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeTokenType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeTokenType; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherTypeList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherTypeSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherTypeSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/voucher-type-shared.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putVoucherType; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/voucher-type.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putVoucherType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeVoucherType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeVoucherType; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucherSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/voucher-shared.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putVoucher; echo
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"id" : "voucher001", "sourceFilename": "vouchers.csv", "applicationID":"vouchers_supplier_1","userID": "1","fileType": ".csv"}' -F 'file=@vouchers.csv' http://evo1:7081/nglm-guimanager/putUploadedFile; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/voucher-personal.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putVoucher; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucher; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeVoucher; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucher; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeVoucher; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"pattern":"[0123456789abcdef]{6}","supplierID":"1","quantity":10,"expirationDate":"2028-01-01T00:00:00:000+02:00" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/generateVouchers; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getMailTemplateList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getMailTemplateSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getMailTemplateList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getMailTemplateSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/mailTemplate.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putMailTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getMailTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeMailTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getMailTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeMailTemplate; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSMSTemplateList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSMSTemplateSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSMSTemplateList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSMSTemplateSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/smsTemplate.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSMSTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSMSTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSMSTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSMSTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSMSTemplate; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplateList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "communicationChannelID" : "USSD" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplateList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplateSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "communicationChannelID" : "USSD" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplateSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplateList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "communicationChannelID" : "USSD" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplateList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplateSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "communicationChannelID" : "USSD" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplateSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/pushTemplate.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putPushTemplate; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/pushTemplate.002.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putPushTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePushTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPushTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePushTemplate; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDashboardCounts; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDashboardCounts; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_RANGES.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCountBySegmentationRanges; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_ELIGIBILITY.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCountBySegmentationEligibility; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerAvailableCampaigns; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "mainAccountBalance" : 9, "vendorName": "name"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateCustomer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "score" : 21, "challengeID": "1"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateCustomer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "fromDate" : "2018-10-12", "toDate" : "2018-12-12"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerActivityByDateRange; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerBDRs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerEDRs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerODRs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerMessages; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerMetaData; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "campaignStartDate":"2018-10-12", "campaignEndDate":"2019-10-12", "campaignState":"active" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerCampaigns; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "journeyStartDate":"2018-10-12", "journeyEndDate":"2019-10-12", "journeyState":"active" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerJourneys; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerCampaigns; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerJourneys; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerAvailableCampaigns; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "mainAccountBalance" : 9, "vendorName": "name"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "score" : 21, "challengeID": "1"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/updateCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" , "fromDate" : "2018-10-12", "toDate" : "2018-12-12"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerActivityByDateRange; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerBDRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerEDRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerODRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerMessages; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerMetaData; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "campaignStartDate":"2018-10-12", "campaignEndDate":"2019-10-12", "campaignState":"active" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerCampaigns; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "journeyStartDate":"2018-10-12", "journeyEndDate":"2019-10-12", "journeyState":"active" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerJourneys; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerCampaigns; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerJourneys; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerPoints; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusName" : "BluePoints"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerPoints; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusID" : "BluePoints001", "quantity" : 9, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/creditBonus; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/debitBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "bonusName" : "BluePoints"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "bonusID" : "BluePoints001", "quantity" : 9, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/creditBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/debitBonus; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerLoyaltyPrograms; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "loyaltyProgramID" : "1"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerLoyaltyPrograms; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerLoyaltyPrograms; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "loyaltyProgramID" : "1"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerLoyaltyPrograms; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "applicationID":"application-1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUploadedFileList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "applicationID":"application-1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUploadedFileSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "applicationID":"application-1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUploadedFileList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "applicationID":"application-1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUploadedFileSummaryList; echo
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"id" : "001", "sourceFilename": "target.data.001.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"application-1","customerAlternateID" : "msisdn"}' -F 'file=@target.data.001.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFile; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id":"001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeUploadedFile; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeUploadedFile; echo
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"sourceFilename": "target-with-variables.001.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"201" }' -F 'file=@target-with-variables.001.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFileWithVariables; echo
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"sourceFilename": "target-with-variables.nok-1.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"201" }' -F 'file=@target-with-variables.nok-1.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFileWithVariables; echo
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"sourceFilename": "target-with-variables.nok-2.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"201" }' -F 'file=@target-with-variables.nok-2.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFileWithVariables; echo
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"sourceFilename": "target-with-variables.nok-3.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"201" }' -F 'file=@target-with-variables.nok-3.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFileWithVariables; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTargetList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTargetSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001", "targetName":"Target-001", "targetFileID" :"001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putTarget; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTarget; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeTarget; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTargetList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTargetSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001", "targetName":"Target-001", "targetFileID" :"001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putTarget; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTarget; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeTarget; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCommunicationChannelList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCommunicationChannelSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCommunicationChannelList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCommunicationChannelSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/communicationChannel.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCommunicationChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCommunicationChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCommunicationChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCommunicationChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCommunicationChannel; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBlackoutPeriodsList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBlackoutPeriodsSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBlackoutPeriodsList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBlackoutPeriodsSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/blackoutPeriod.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putBlackoutPeriods; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBlackoutPeriods; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeBlackoutPeriods; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBlackoutPeriods; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeBlackoutPeriods; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramTypeList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgram; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgram; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyProgram; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgram; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyProgram; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getResellerList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getResellerSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getResellerList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getResellerSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/reseller.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putReseller; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReseller; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeReseller; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReseller; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeReseller; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getExclusionInclusionTargetList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getExclusionInclusionTargetSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getExclusionInclusionTargetList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getExclusionInclusionTargetSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/exclusionInclusionTarget.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putExclusionInclusionTarget; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getExclusionInclusionTarget; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeExclusionInclusionTarget; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getExclusionInclusionTarget; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeExclusionInclusionTarget; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentContactPolicyList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentContactPolicySummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentContactPolicyList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentContactPolicySummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/segmentContactPolicy.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentContactPolicy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "base" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentContactPolicy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "base" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSegmentContactPolicy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "base" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentContactPolicy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "base" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSegmentContactPolicy; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectTypeList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectTypeSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "id" : "ComplexObjectExample", "name" : "ComplexObjectExample", "display" : "Complex Object Example", "active" : true, "availableElements" : ["Example1", "Example2"], "subfields" : [{ "subfieldName" : "stringExample", "subfieldDataType" : "string"}, { "subfieldName" : "stringSetExample", "subfieldDataType" : "stringSet", "availableValues" : ["S1", "S2", "S3"]}, { "subfieldName" : "booleanExample", "subfieldDataType" : "boolean"}, { "subfieldName" : "integerExample", "subfieldDataType" : "integer"}, {"subfieldName" : "dateExample", "subfieldDataType" : "date"}] , "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putComplexObjectType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "ComplexObjectExample" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "ComplexObjectExample" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectTypeSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "id" : "ComplexObjectExample", "name" : "ComplexObjectExample", "display" : "Complex Object Example", "active" : true, "availableElements" : ["Example1", "Example2"], "subfields" : [{ "subfieldName" : "stringExample", "subfieldDataType" : "string"}, { "subfieldName" : "stringSetExample", "subfieldDataType" : "stringSet", "availableValues" : ["S1", "S2", "S3"]}, { "subfieldName" : "booleanExample", "subfieldDataType" : "boolean"}, { "subfieldName" : "integerExample", "subfieldDataType" : "integer"}, {"subfieldName" : "dateExample", "subfieldDataType" : "date"}] , "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "ComplexObjectExample" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "ComplexObjectExample" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeComplexObjectType; echo
 
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
 --
 -- this one is for support only ! to get statestores value
 --
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true, "forSupport" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true, "forSupport" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ "active", "inactive" ], "expression" : "[ '\''active'\'', '\''inactive'\'' ]" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
@@ -385,8 +385,8 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCr
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : "<", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.yesterdayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"106"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenEventDetails; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"106", "tokenCode" : "YCWXT"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenEventDetails; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"106"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenEventDetails; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"106", "tokenCode" : "YCWXT"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenEventDetails; echo
 
 --
 -- EVPRO-78 Method to count the number of customers fitting with eligibility criteria
@@ -396,55 +396,55 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/e
 
 
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dnboMatrix.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putDNBOMatrix; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrix; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeDNBOMatrix; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrix; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeDNBOMatrix; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringTypesList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixVariablesList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringTypesList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixVariablesList; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121", "tokenStatus":"Bound" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokensCodesList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerNBOs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ", "offerID":"200102","origin":"whatever"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/acceptOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "customerID" : "121", "tokenStatus":"Bound" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokensCodesList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "customerID" : "121","tokenCode" : "JM3MJ"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerNBOs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "customerID" : "121","tokenCode" : "JM3MJ", "offerID":"200102","origin":"whatever"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/acceptOffer; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddressList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddressSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddressList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddressSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/source-address.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSourceAddress; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddress; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSourceAddress; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTenantList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddress; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSourceAddress; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTenantList; echo
 #getDependencies fiddle link - https://jsfiddle.net/awolf2904/bf43jws1/
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "campaign", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "journey", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "offer", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "product", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "saleschannel", "id" : "-1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "supplier", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "campaign", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "journey", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "offer", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "product", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "saleschannel", "id" : "-1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "supplier", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
 
 --
 --  configAdaptor
 -- 
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSupportedLanguages; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSubscriberMessageTemplate; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getOffer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getProduct; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getPresentationStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getScoringStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getCallingChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSalesChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getCommunicationChannel; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getBlackoutPerids; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getContactPolicy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSegmentationDimension; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getCampaign; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getProductType; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getJourneyObjective; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getOfferObjective; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getScoringEngines; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getPresentationCriterionFields; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getDefaultNoftificationDailyWindows; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSupportedLanguages; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSubscriberMessageTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getProduct; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getPresentationStrategy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getScoringStrategy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getCallingChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSalesChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getCommunicationChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getBlackoutPerids; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getContactPolicy; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSegmentationDimension; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getProductType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getJourneyObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getOfferObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getScoringEngines; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getPresentationCriterionFields; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getDefaultNoftificationDailyWindows; echo
 
 --
 -- recurrent-campaign
@@ -458,63 +458,63 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/b
 --  thirdpartymanager
 --
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/ping; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerAvailableCampaigns; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000" , "mainAccountBalance" : 9, "vendorName": "name" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/updateCustomer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerBDRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/ping; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerAvailableCampaigns; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000" , "mainAccountBalance" : 9, "vendorName": "name" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/updateCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerBDRs; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" , "startDate" : "2021-05-03" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerEDRs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerEDRs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "eventID":"eventID" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerEDRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" , "startDate" : "2021-05-03" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerEDRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerEDRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "eventID":"eventID" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerEDRs; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerBDRs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerODRs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerMessages; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "campaignStartDate":"2018-10-12", "campaignEndDate":"2019-10-12", "campaignState":"active" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "journeyStartDate":"2018-10-12", "journeyEndDate":"2019-10-12", "journeyState":"active" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "state" : "ACTIVE", "objective":"objective1", "startDate" : "2018-10-12", "endDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerBDRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerODRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerMessages; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "campaignStartDate":"2018-10-12", "campaignEndDate":"2019-10-12", "campaignState":"active" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "journeyStartDate":"2018-10-12", "journeyEndDate":"2019-10-12", "journeyState":"active" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns/; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys/; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "state" : "ACTIVE", "objective":"objective1", "startDate" : "2018-10-12", "endDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "offerID":"id1","salesChannel":"sc1","quantity":1,"origin":"origin" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/purchaseOffer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "offer":"MyOffer","salesChannel":"sc1","quantity":1,"origin":"origin" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/purchaseOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "offerID":"id1","salesChannel":"sc1","quantity":1,"origin":"origin" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/purchaseOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "offer":"MyOffer","salesChannel":"sc1","quantity":1,"origin":"origin" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/purchaseOffer; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"loginName":"Administrator","password":"password","customerID":"19195551000","objective":"objectiveName","campaignState":"Started","customerStatus":"unnotified_converted", "campaignStartDate" : "2018-10-12", "campaignEndDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"loginName":"Administrator","password":"password","customerID":"19195551000","objective":"objectiveName","journeyState":"Started","customerStatus":"unnotified_converted", "journeyStartDate" : "2018-10-12", "journeyEndDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgram; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "POINTS" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "BADGES" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgram; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "POINTS" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "BADGES" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "bonusName" : "BluePoints"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "bonusName" : "BluePoints", "quantity" : 9, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/creditBonus; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/debitBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "bonusName" : "BluePoints"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "bonusName" : "BluePoints", "quantity" : 9, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/creditBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/debitBonus; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "121", "tokenStatus":"Bound" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getTokensCodesList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "121", "tokenCode" : "JM3MJ"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerNBOs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "121", "presentationStrategy":"PS1","tokenType":"external", "allowMultipleToken":false,"inboundChannel":"Customer Care"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerTokenAndNBO; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "121", "tokenCode" : "JM3MJ", "offerID":"200102"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/acceptOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "121", "tokenStatus":"Bound" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getTokensCodesList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "121", "tokenCode" : "JM3MJ"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerNBOs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "121", "presentationStrategy":"PS1","tokenType":"external", "allowMultipleToken":false,"inboundChannel":"Customer Care"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerTokenAndNBO; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "121", "tokenCode" : "JM3MJ", "offerID":"200102"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/acceptOffer; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptIn; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptOut; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptIn; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptOut; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "voucherCode" : "voucher1", "supplier" : "supplier_1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/validateVoucher; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "voucherCode" : "voucher1", "supplier" : "supplier_1", "origin" : "test" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/redeemVoucher; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "newParent<_THIRDPARTYAPI_CUSTOMER_ID_>" : "123", "relationship" : "Quadruple play",  }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/updateCustomerParent; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "relationship" : "Quadruple play",  }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/removeCustomerParent; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "voucherCode" : "voucher1", "supplier" : "supplier_1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/validateVoucher; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "voucherCode" : "voucher1", "supplier" : "supplier_1", "origin" : "test" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/redeemVoucher; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "newParent<_THIRDPARTYAPI_CUSTOMER_ID_>" : "123", "relationship" : "Quadruple play",  }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/updateCustomerParent; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "relationship" : "Quadruple play",  }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/removeCustomerParent; echo
  
 --
 --  dnbo proxy
 --
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "subscriberID" : "101", "scoringStrategyID" : "1", "salesChannelID" : "1" }' http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/getSubscriberOffers; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "subscriberID" : "101", "scoringStrategyID" : "1", "salesChannelID" : "1" }' http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/getSubscriberOffers; echo
 curl -X GET http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/getSubscriberOffers?strategy=1\&msisdn=101\&salesChannel=1; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "subscriberID" : "101", "alternateIDs" : [ ["msisdn", "19195551000" ] ] }' http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/provisionSubscriber; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "subscriberID" : "101", "alternateIDs" : [ ["msisdn", "19195551000" ] ] }' http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/provisionSubscriber; echo
 curl -X GET http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/provisionSubscriber?subscriberID=101\&alternateIDName=msisdn\&alternateID=19195551000; echo
 
 --
