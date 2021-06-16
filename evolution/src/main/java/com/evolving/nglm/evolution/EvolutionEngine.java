@@ -4918,7 +4918,7 @@ public class EvolutionEngine
         //
         // Subscriber token list cleaning.
         // We will delete all already expired tokens before doing anything.
-        //
+        //TODO: do this cleaning using com.evolving.nglm.evolution.retention.RetentionService, as other objects
 
         List<Token> cleanedList = new ArrayList<Token>();
         boolean changed = false;
@@ -4927,10 +4927,13 @@ public class EvolutionEngine
           {
             if (token.getTokenExpirationDate().before(now))
               {
-                changed = true;
-                break;
+                if(log.isTraceEnabled()) log.trace("removing token "+token.getTokenCode()+" expired on "+token.getTokenExpirationDate()+" for "+subscriberProfile.getSubscriberID());
+                changed=true;
               }
-            cleanedList.add(token);
+            else
+              {
+                cleanedList.add(token);
+              }
           }
 
         if (changed)
