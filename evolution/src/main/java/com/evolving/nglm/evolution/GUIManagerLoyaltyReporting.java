@@ -921,9 +921,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               } 
             catch (ElasticsearchClientException e)
               {
-                StringWriter stackTraceWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                log.warn("Exception processing REST api: {}", e);
               }
             loyaltyPro.put("programsMembersCount", membersCount);
             

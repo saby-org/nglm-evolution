@@ -5738,9 +5738,7 @@ public class GUIManager
               } 
             catch (ElasticsearchClientException e)
               {
-                StringWriter stackTraceWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                log.warn("Exception processing REST api: {}", e);
               }
              
             journeyInfo.put("subscriberCount", subscriberCount);
@@ -8581,9 +8579,7 @@ public class GUIManager
         }
         catch (ElasticsearchClientException e) {
           // Log
-          StringWriter stackTraceWriter = new StringWriter();
-          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-          log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+          log.warn("Exception processing REST api: {}", e);
           
           // Response
           response.put("responseCode", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
