@@ -2062,7 +2062,11 @@ public class EvolutionEngine
 
     if (subscriberProfile.getSubscriberTraceEnabled())
       {
-        subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, subscriberState, context.getSubscriberTraceDetails())));
+        try{
+          subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, subscriberState, context.getSubscriberTraceDetails())));
+        }catch(Exception e){
+          log.warn("subscriber trace exception",e);
+        }
         subscriberStateUpdated = true;
       }
 
@@ -6862,7 +6866,11 @@ public class EvolutionEngine
 
     if (extendedSubscriberProfile.getSubscriberTraceEnabled())
       {
-        extendedSubscriberProfile.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentExtendedSubscriberProfile, extendedSubscriberProfile, context.getSubscriberTraceDetails())));
+        try{
+          extendedSubscriberProfile.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentExtendedSubscriberProfile, extendedSubscriberProfile, context.getSubscriberTraceDetails())));
+        }catch(Exception e){
+          log.warn("subscriber trace exception",e);
+        }
         extendedSubscriberProfileUpdated = true;
       }
 
@@ -7055,7 +7063,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState, List<String> subscriberTraceDetails)
+  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState, List<String> subscriberTraceDetails) throws Exception
   {
     /*****************************************
     *
@@ -7177,7 +7185,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, ExtendedSubscriberProfile currentExtendedSubscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, List<String> subscriberTraceDetails)
+  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, ExtendedSubscriberProfile currentExtendedSubscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, List<String> subscriberTraceDetails) throws Exception
   {
     /*****************************************
     *
