@@ -733,8 +733,24 @@ public class EvaluationCriterion
     struct.put("criterionDefault", criterion.getCriterionDefault());
     struct.put("tenantID", (short)criterion.getTenantID());
     struct.put("useESQueryNoPainless",criterion.getUseESQueryNoPainless());
-    struct.put("subcriteriaArguments",criterion.getSubcriteriaArgumentMap());
+    struct.put("subcriteriaArguments", packSubcriteriaArguments(criterion.getSubcriteriaArgumentMap()));
     return struct;
+  }
+  
+  /****************************************
+  *
+  *  packRelations
+  *
+  ****************************************/
+
+  private static Object packSubcriteriaArguments(Map<String, SubcriteriaArgument> arguments)
+  {
+    Map<String, Object> result = new HashMap<String, Object>();
+    for (String field : arguments.keySet())
+      {
+        result.put(field, SubcriteriaArgument.pack(arguments.get(field)));
+      }
+    return result;
   }
 
   /*****************************************
