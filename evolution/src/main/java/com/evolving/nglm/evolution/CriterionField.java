@@ -6,49 +6,44 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.DeploymentManagedObject;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
-
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.common.errors.SerializationException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentManagedObject;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 /* IF COPY/PASTE FROM ANOTHER DeploymentManagedObject OBJECT
  * DO NOT FORGET TO ADD IT TO THE DeploymentManagedObject FACTORY
@@ -100,7 +95,7 @@ public class CriterionField extends DeploymentManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion_field");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(6));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(7));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("fieldDataType", Schema.STRING_SCHEMA);
     schemaBuilder.field("mandatoryParameter", Schema.BOOLEAN_SCHEMA);
@@ -115,6 +110,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("variableType", SchemaBuilder.string().defaultValue("local").schema());
     schemaBuilder.field("profileChangeEvent", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("useESQueryNoPainless",SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("subcriterias", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(Collections.<String>emptyList()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -150,6 +146,7 @@ public class CriterionField extends DeploymentManagedObject
   private VariableType variableType;
   private boolean profileChangeEvent;
   private boolean useESQueryNoPainless;
+  private Set<String> subcriterias;
 
   //
   //  calculated
@@ -176,6 +173,7 @@ public class CriterionField extends DeploymentManagedObject
   public VariableType getVariableType() { return variableType; }
   public boolean getProfileChangeEvent() { return profileChangeEvent; }
   public boolean getUseESQueryNoPainless() { return useESQueryNoPainless; }
+  public Set<String> getSubcriterias() { return subcriterias; }
 
   /*****************************************
   *
@@ -217,6 +215,12 @@ public class CriterionField extends DeploymentManagedObject
     this.variableType = VariableType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "variableType", "local"));
     this.profileChangeEvent = JSONUtilities.decodeBoolean(jsonRoot, "profileChangeEvent", Boolean.FALSE);
     this.useESQueryNoPainless = JSONUtilities.decodeBoolean(jsonRoot,"useESQueryNoPainless",Boolean.FALSE);
+    this.subcriterias = new LinkedHashSet<String>();
+    JSONArray subcriteriaArray = JSONUtilities.decodeJSONArray(jsonRoot, "subcriterias", new JSONArray());
+    for (int i = 0; i < subcriteriaArray.size(); i++)
+      {
+        subcriterias.add((String) subcriteriaArray.get(i));
+      }
 
     //
     //  expressionValuedParameter
@@ -256,9 +260,18 @@ public class CriterionField extends DeploymentManagedObject
       {
         try
           {
-            MethodType methodType = MethodType.methodType(Object.class, SubscriberEvaluationRequest.class, String.class);
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            this.retriever = lookup.findStatic(Deployment.getCriterionFieldRetrieverClass(), criterionFieldRetriever, methodType);
+            if (getSubcriterias() != null && !getSubcriterias().isEmpty())
+              {
+                MethodType methodType = MethodType.methodType(Object.class, SubscriberEvaluationRequest.class, String.class, LinkedHashSet.class);
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                this.retriever = lookup.findStatic(Deployment.getCriterionFieldRetrieverClass(), criterionFieldRetriever, methodType);
+              }
+            else
+              {
+                MethodType methodType = MethodType.methodType(Object.class, SubscriberEvaluationRequest.class, String.class);
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                this.retriever = lookup.findStatic(Deployment.getCriterionFieldRetrieverClass(), criterionFieldRetriever, methodType);
+              }
           }
         catch (NoSuchMethodException | IllegalAccessException e)
           {
@@ -421,7 +434,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, boolean evaluationVariable, String tagFormat, Integer tagMaxLength, VariableType variableType, boolean profileChangeEvent,boolean useESQueryNoPainless)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, boolean evaluationVariable, String tagFormat, Integer tagMaxLength, VariableType variableType, boolean profileChangeEvent,boolean useESQueryNoPainless, Set<String> subcriterias)
   {
     //
     //  super
@@ -447,6 +460,7 @@ public class CriterionField extends DeploymentManagedObject
     this.variableType = variableType;
     this.profileChangeEvent = profileChangeEvent;
     this.useESQueryNoPainless = useESQueryNoPainless;
+    this.subcriterias = subcriterias;
 
     //
     //  retriever
@@ -491,6 +505,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("variableType", criterionField.getVariableType().getExternalRepresentation());
     struct.put("profileChangeEvent", criterionField.getProfileChangeEvent());
     struct.put("useESQueryNoPainless",criterionField.getUseESQueryNoPainless());
+    struct.put("subcriterias",criterionField.getSubcriterias());
     return struct;
   }
 
@@ -529,14 +544,32 @@ public class CriterionField extends DeploymentManagedObject
     VariableType variableType = (schemaVersion >= 5) ? VariableType.fromExternalRepresentation(valueStruct.getString("variableType")) : VariableType.Local;
     boolean profileChangeEvent = (schemaVersion >= 2) ? valueStruct.getBoolean("profileChangeEvent") : false;
     boolean useESQueryNoPainless = (schemaVersion >= 6) ? valueStruct.getBoolean("useESQueryNoPainless"):false;
+    Set<String> subcriterias = (schemaVersion >= 7) ? unpackSubcrierias(valueStruct.get("subcriterias")) : new LinkedHashSet<String>();
 
     //
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, evaluationVariable, tagFormat, tagMaxLength, variableType, profileChangeEvent,useESQueryNoPainless);
+    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, evaluationVariable, tagFormat, tagMaxLength, variableType, profileChangeEvent,useESQueryNoPainless, subcriterias);
   }
 
+  /*****************************************
+  *
+  *  unpackSubcrierias
+  *
+  *****************************************/
+  
+  private static LinkedHashSet<String> unpackSubcrierias(Object objectValue)
+  {
+    LinkedHashSet<String> result = new LinkedHashSet<String>();
+    List<String> valueArray = (List<String>) objectValue;
+    for (String value : valueArray)
+      {
+        result.add(value);
+      }
+    return result;
+  }
+  
   /*****************************************
   *
   *  parseRepresentation
@@ -569,7 +602,19 @@ public class CriterionField extends DeploymentManagedObject
       {
         try
           {
-            return retriever.invokeExact(evaluationRequest, this.getID());
+            if (getSubcriterias() != null && !getSubcriterias().isEmpty())
+              {
+                LinkedHashSet<Object> subcriteriaVals = new LinkedHashSet<Object>(getSubcriterias().size());
+                for (String subc : getSubcriterias())
+                  {
+                    subcriteriaVals.add(subc);
+                  }
+                return retriever.invokeExact(evaluationRequest, this.getID(), subcriteriaVals);
+              }
+            else
+              {
+                return retriever.invokeExact(evaluationRequest, this.getID());
+              }
           }
         catch (CriterionException | RuntimeException | Error e)
           {
@@ -894,6 +939,7 @@ public class CriterionField extends DeploymentManagedObject
         result = result && Objects.equals(variableType, criterionField.getVariableType());
         result = result && profileChangeEvent == criterionField.getProfileChangeEvent();
         result =  result && useESQueryNoPainless == criterionField.getUseESQueryNoPainless();
+        result = result && Objects.equals(subcriterias, criterionField.getSubcriterias());
       }
     return result;
   }
