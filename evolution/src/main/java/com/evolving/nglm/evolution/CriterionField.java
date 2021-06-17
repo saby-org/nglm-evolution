@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -596,7 +597,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private Object retrieveStored(SubscriberEvaluationRequest evaluationRequest) throws CriterionException
+  private Object retrieveStored(SubscriberEvaluationRequest evaluationRequest, LinkedHashMap<String, Object> subcriteriaArgumentValues) throws CriterionException
   {
     if (retriever != null)
       {
@@ -607,7 +608,7 @@ public class CriterionField extends DeploymentManagedObject
                 LinkedHashSet<Object> subcriteriaVals = new LinkedHashSet<Object>(getSubcriterias().size());
                 for (String subc : getSubcriterias())
                   {
-                    subcriteriaVals.add(subc);
+                    subcriteriaVals.add(subcriteriaArgumentValues.get(subc));
                   }
                 return retriever.invokeExact(evaluationRequest, this.getID(), subcriteriaVals);
               }
@@ -636,8 +637,13 @@ public class CriterionField extends DeploymentManagedObject
   *  retrieve
   *
   *****************************************/
-
+  
   public Object retrieve(SubscriberEvaluationRequest evaluationRequest)
+  {
+    return retrieve(evaluationRequest, new LinkedHashMap<String, Object>());
+  }
+
+  public Object retrieve(SubscriberEvaluationRequest evaluationRequest, LinkedHashMap<String, Object> subcriteriaArgumentValues)
   {
     /****************************************
     *
@@ -648,7 +654,7 @@ public class CriterionField extends DeploymentManagedObject
     Object criterionFieldValue;
     try
       {
-        criterionFieldValue = this.retrieveStored(evaluationRequest);
+        criterionFieldValue = this.retrieveStored(evaluationRequest, subcriteriaArgumentValues);
       }
     catch (CriterionException e)
       {
@@ -673,8 +679,13 @@ public class CriterionField extends DeploymentManagedObject
   *  retrieveNormalized
   *
   *****************************************/
-
+  
   public Object retrieveNormalized(SubscriberEvaluationRequest evaluationRequest)
+  {
+    return retrieveNormalized(evaluationRequest, new LinkedHashMap<String, Object>());
+  }
+
+  public Object retrieveNormalized(SubscriberEvaluationRequest evaluationRequest, LinkedHashMap<String, Object> subcriteriaArgumentValues)
   {
     /****************************************
     *
@@ -691,7 +702,7 @@ public class CriterionField extends DeploymentManagedObject
         *
         *****************************************/
 
-        criterionFieldValue = this.retrieveStored(evaluationRequest);
+        criterionFieldValue = this.retrieveStored(evaluationRequest, subcriteriaArgumentValues);
         
         /*****************************************
         *
