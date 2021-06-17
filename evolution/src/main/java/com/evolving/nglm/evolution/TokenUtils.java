@@ -586,6 +586,10 @@ public class TokenUtils
     }
     for (Offer offer : filteredOffers)
     {
+      if (StockMonitor.getRemainingStock(offer) <= 0) { // EVPRO-1105 do not present offers not in stock
+        if (log.isTraceEnabled()) log.trace("No stock for offer " + offer.getOfferID());
+        continue;
+      }
       boolean nextOffer = false;
       
       Long maximumPresentationsStr = (Long) offer.getJSONRepresentation().get("maximumPresentations");
