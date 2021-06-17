@@ -767,7 +767,7 @@ public class EvaluationCriterion
     boolean criterionDefault = valueStruct.getBoolean("criterionDefault");
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
     Boolean useESQueryNoPainless = schemaVersion >= 3 ? valueStruct.getBoolean("useESQueryNoPainless"):null;
-    Map<String, SubcriteriaArgument> subcriteriaArgumentMap = (schemaVersion >= 3) ? unpackSubcriteriaArgument(schema.field("subcriteriaArguments").schema(), valueStruct.get("subcriteriaArguments")) : new HashMap<String, SubcriteriaArgument>();
+    Map<String, SubcriteriaArgument> subcriteriaArgumentMap = (schemaVersion >= 4) ? unpackSubcriteriaArgument(schema.field("subcriteriaArguments").schema(), valueStruct.get("subcriteriaArguments")) : new HashMap<String, SubcriteriaArgument>();
 
     //
     //  validate
