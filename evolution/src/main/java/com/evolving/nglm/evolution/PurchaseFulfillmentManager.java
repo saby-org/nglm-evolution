@@ -29,6 +29,7 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ReferenceDataReader;
@@ -3171,13 +3172,37 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow && journey.getJSONRepresentation().get("areaAvailability") != null )
         {
-          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
-          if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+          JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");
+          if (areaAvailability != null && !(areaAvailability.isEmpty())) {
+          for (int i = 0; i < areaAvailability.size(); i++)
             {
-              origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+              if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
+                {
+                  newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+                    {
+                      origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+                    }
+                  break;
+                }
             }
+          }
+        }
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
+        {
+          JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");
+          if (areaAvailability != null && !(areaAvailability.isEmpty())) {
+          for (int i = 0; i < areaAvailability.size(); i++)
+            {
+              if (areaAvailability.get(i).equals("realtime"))
+                {
+                  newModuleID = Module.Offer_Catalog.getExternalRepresentation();
+                  break;
+                }
+            }
+          }
         }
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
         {
@@ -3185,8 +3210,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
       
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
-      String nodeName = subscriberEvaluationRequest.getJourneyNode().getNodeName();
-
+ 
       /*****************************************
       *
       *  request

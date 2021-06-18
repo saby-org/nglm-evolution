@@ -432,7 +432,6 @@ public class DeploymentCommon
   private static Map<String,ToolboxSection> campaignToolbox;
   private static Map<String,ToolboxSection> workflowToolbox;
   private static Map<String,ToolboxSection> loyaltyWorkflowToolbox;
-  private static Map<String,ToolboxSection> catalogWorkflowToolbox;
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap;
   private static Integer authResponseCacheLifetimeInMinutes;
   private static Integer reportManagerMaxMessageLength;
@@ -730,7 +729,6 @@ public class DeploymentCommon
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
   public static Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
   public static Map<String,ToolboxSection> getLoyaltyWorkflowToolbox() { return loyaltyWorkflowToolbox; }
-  public static Map<String,ToolboxSection> getCatalogWorkflowToolbox() { return catalogWorkflowToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; } // TODO EVPRO-99 check for tenant and static
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
   public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; } // TODO EVPRO-99 check for tenant and static
@@ -1260,7 +1258,6 @@ public class DeploymentCommon
     campaignToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "campaignToolbox");
     workflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "workflowToolbox");
     loyaltyWorkflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "loyaltyWorkflowToolbox");
-    catalogWorkflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "catalogWorkflowToolbox");
     
     // Iterate over the communication channels and, for generic ones, let enrich, if needed the journey toolbox
     for(CommunicationChannel cc : getCommunicationChannels().values())

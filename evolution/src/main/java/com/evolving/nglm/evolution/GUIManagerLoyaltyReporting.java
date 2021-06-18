@@ -45,6 +45,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -1351,8 +1352,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("responseCode", "ok");
     response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey, tenantID));
     response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign, tenantID));
-    response.put("workflowCount", journeyCount(GUIManagedObjectType.Workflow, tenantID));
-    response.put("loyaltyWorkflowCount", journeyCount(GUIManagedObjectType.LoyaltyWorkflow, tenantID));
+    //response.put("workflowCount", journeyCount(GUIManagedObjectType.Workflow, tenantID));
+   //response.put("loyaltyWorkflowCount", journeyCount(GUIManagedObjectType.LoyaltyWorkflow, tenantID));
     response.put("bulkCampaignCount", journeyCount(GUIManagedObjectType.BulkCampaign, tenantID));
     response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions(includeArchived, tenantID).size());
     response.put("pointCount", pointService.getStoredPoints(includeArchived, tenantID).size());
@@ -1415,7 +1416,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     //  areaAvailablity
     //
     
-    if (jsonRoot.containsKey("areaAvailablity"))
+    if (jsonRoot.containsKey("areaAvailability"))
       {
         int mailTemplateCount = 0;
         int smsTemplateCount = 0;
@@ -1561,6 +1562,45 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived, tenantID).size());
       response.put("dialogTemplateCount", subscriberMessageTemplateService.getStoredDialogTemplates(true, includeArchived, tenantID).size());
       
+    }
+    
+    if (jsonRoot.containsKey("areaAvailability"))
+      {
+        int workflowCount = 0;
+        JSONArray areaAvailability = JSONUtilities.decodeJSONArray(jsonRoot, "areaAvailability", false);
+        Collection<GUIManagedObject> journeys = journeyService.getStoredJourneys(includeArchived, tenantID);
+        if (journeys.size() != 0 && journeys != null)
+          {
+            for (GUIManagedObject journey : journeys)
+              {
+                if (journey instanceof Journey && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && ((Journey) journey).getJSONRepresentation()
+                    .get("areaAvailability") != null)
+                  {
+                    JSONArray journeyAreaAvailability = (JSONArray) ((Journey) journey).getJSONRepresentation()
+                        .get("areaAvailability");
+                    if (journeyAreaAvailability == null || journeyAreaAvailability.isEmpty())
+                      {
+                        workflowCount += 1;
+                      }
+                    else
+                      {
+                        for (int i = 0; i < areaAvailability.size(); i++)
+                          {
+                            if (journeyAreaAvailability.contains(areaAvailability.get(i)))
+                              {
+                                workflowCount += 1;
+                                break;
+                              }
+                            }
+
+                      }
+                  }
+              }
+          }
+        response.put("workflowCount", workflowCount);
+      }
+    else {
+      response.put("workflowCount", journeyCount(GUIManagedObjectType.Workflow, tenantID));
     }
     return JSONUtilities.encodeObject(response);
   }
