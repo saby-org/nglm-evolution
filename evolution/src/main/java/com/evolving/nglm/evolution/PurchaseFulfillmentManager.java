@@ -1422,18 +1422,27 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
         Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
         List<Date> purchaseHistory = offerPurchaseHistory.get(offerID);
-        int alreadyPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
-        // "Allow no more than 0 purchases" OR "within 0 days/months" <==> unlimited (no limit check)
-        boolean unlimited = (
-               (offer.getMaximumAcceptances() == 0)
-            || ((offer.getMaximumAcceptancesPeriodDays() != null) && (offer.getMaximumAcceptancesPeriodDays() == 0))
-            || ((offer.getMaximumAcceptancesPeriodMonths() != null) && (offer.getMaximumAcceptancesPeriodMonths() == 0)));
-        if (!unlimited && (alreadyPurchased+purchaseRequest.getQuantity() > offer.getMaximumAcceptances()))
-          {
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-            continue mainLoop;
-          }
+        int totalPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+        if (offerPurchaseHistory.get("TBR_"+purchaseRequest.getDeliveryRequestID()) == null) { // EvolEngine has not processed this one yet
+          if (purchaseHistory != null)
+            {
+              // only keep recent purchase dates (discard dates that are too old)
+              Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(now, offer, deliveryRequest.getTenantID());
+              totalPurchased = purchaseRequest.getQuantity();
+              for (Date purchaseDate : purchaseHistory)
+                {
+                  if (purchaseDate.after(earliestDateToKeep))
+                    {
+                      totalPurchased++;
+                    }
+                }
+            }
+        }
+        if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased)) {
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer():maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased+" (date = "+now+")");
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
+          continue mainLoop;
+        }
         
         /*****************************************
         *
@@ -1446,7 +1455,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
       }
   }
-
+  
   /*****************************************
   *
   *  CorrelatorUpdate
