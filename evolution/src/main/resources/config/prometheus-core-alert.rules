@@ -1,0 +1,35 @@
+#
+#  prometheus-core-alert.rules
+#
+
+groups:
+- name: core-alerts
+  rules:
+
+  - alert: exporter_down
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Exporter alert"
+      description: "Exporter {{$labels.job}} on {{ $labels.instance }} has been down for more than 60 seconds."
+
+  - alert: kafka_broker_count
+    expr: sum(up{job="kafka_brokers"}) != <_BROKER_COUNT_>
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Kafka broker(s) down"
+      description: "At least one Kafka broker has been down for more than 60 seconds."
+
+  - alert: zookeeper_broker_count
+    expr: sum(up{job="zookeepers"}) != <_ZOOKEEPER_COUNT_>
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Zookeeper(s) down"
+      description: "At least one Zookeeper instance has been down for more than 60 seconds."
+
