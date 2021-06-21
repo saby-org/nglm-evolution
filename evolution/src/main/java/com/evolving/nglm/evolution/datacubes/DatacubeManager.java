@@ -22,31 +22,14 @@ import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.SupplierService;
 import com.evolving.nglm.evolution.VoucherService;
-import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.ODRDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.ProgramsChangesDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.ProgramsHistoryDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.SubscriberProfileDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.generator.VDRDatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.tenancy.Tenant;
 
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Map;
 
-import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +51,9 @@ public class DatacubeManager
   /*****************************************
   *
   * Static data (for the singleton instance)
+  * 
+  * All those services must be THREAD SAFE because they will be called at the same time by 
+  * all scheduling job (in different threads)
   *
   *****************************************/
   //
@@ -95,11 +81,6 @@ public class DatacubeManager
   // Datacube writer
   //
   private static DatacubeWriter datacubeWriter;
-  
-  //
-  // Maps
-  //
-  private static JourneysMap journeysMap;
   
   /*****************************************
   *
@@ -166,11 +147,6 @@ public class DatacubeManager
     // Datacube writer
     //
     datacubeWriter = new DatacubeWriter(elasticsearchRestClient);
-    
-    //
-    // Maps 
-    //
-    journeysMap = new JourneysMap(journeyService);
   }
 
   /*****************************************
@@ -196,8 +172,6 @@ public class DatacubeManager
   public ElasticsearchClientAPI getElasticsearchClientAPI() { return elasticsearchRestClient; }
   
   public DatacubeWriter getDatacubeWriter() { return datacubeWriter; }
-  
-  public JourneysMap getJourneysMap() { return journeysMap; }
   
   /*****************************************
   *
