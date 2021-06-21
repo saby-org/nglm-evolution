@@ -15,6 +15,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -678,19 +679,38 @@ public class CommodityDeliveryManager
         }
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
         {
-          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
-          if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+          JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");
+          if (areaAvailability != null && !(areaAvailability.isEmpty())) {
+          for (int i = 0; i < areaAvailability.size(); i++)
             {
-              origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+              if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
+                {
+                  newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
+                    {
+                      origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+                    }
+                  break;
+                }
             }
+          }
         }
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
         {
-          newModuleID = Module.Offer_Catalog.getExternalRepresentation();
+          JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");
+          if (areaAvailability != null && !(areaAvailability.isEmpty())) {
+          for (int i = 0; i < areaAvailability.size(); i++)
+            {
+              if (areaAvailability.get(i).equals("realtime"))
+                {
+                  newModuleID = Module.Offer_Catalog.getExternalRepresentation();
+                  break;
+                }
+            }
+          }
         }
-      
       // retrieve the featureID that is the origin of this delivery request:
       // - If the Journey related to JourneyState is not a Workflow, then featureID = JourneyState.getID
       // - if the Journey related to JourneyState is a Workflown then we must extract the original featureID from the original delivery Request that created the workflow instance
