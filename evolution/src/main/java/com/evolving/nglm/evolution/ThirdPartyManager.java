@@ -1926,9 +1926,19 @@ public class ThirdPartyManager
 
     String journeyObjectiveName = readString(jsonRoot, "objective", false);
     String journeyState = readString(jsonRoot, "journeyState", false);
-    String customerStatus = readString(jsonRoot, "customerStatus", false);
+    JSONArray customerStatusesJSONAry = JSONUtilities.decodeJSONArray(jsonRoot, "customerStatus", new JSONArray());
     String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", false);
     String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", false);
+    List<SubscriberJourneyStatus> subscriberJourneyStatuses = new ArrayList<Journey.SubscriberJourneyStatus>();
+    if (!customerStatusesJSONAry.isEmpty())
+      {
+        for (int i = 0; i < customerStatusesJSONAry.size(); i++)
+          {
+            String status = (String) customerStatusesJSONAry.get(i);
+            SubscriberJourneyStatus journeyStatus = SubscriberJourneyStatus.fromExternalRepresentation(status);
+            subscriberJourneyStatuses.add(journeyStatus);
+          }
+      }
 
     Date journeyStartDate;
     Date journeyEndDate;
@@ -2082,10 +2092,9 @@ public class ThirdPartyManager
               if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
                 customerStatusInJourney = profilejourneyStatus;
 
-              if (customerStatus != null)
+              if (!subscriberJourneyStatuses.isEmpty())
                 {
-                  SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                  boolean criteriaSatisfied = customerStatusInReq == customerStatusInJourney;
+                  boolean criteriaSatisfied = subscriberJourneyStatuses.contains(customerStatusInJourney);
                   if (!criteriaSatisfied)
                     continue;
                 }
@@ -2206,9 +2215,19 @@ public class ThirdPartyManager
 
     String campaignObjectiveName = readString(jsonRoot, "objective", false);
     String campaignState = readString(jsonRoot, "campaignState", false);
-    String customerStatus = readString(jsonRoot, "customerStatus", false);
+    JSONArray customerStatusesJSONAry = JSONUtilities.decodeJSONArray(jsonRoot, "customerStatus", new JSONArray());      //readString(jsonRoot, "customerStatus", false);
     String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", false);
     String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", false);
+    List<SubscriberJourneyStatus> subscriberJourneyStatuses = new ArrayList<Journey.SubscriberJourneyStatus>();
+    if (!customerStatusesJSONAry.isEmpty())
+      {
+        for (int i = 0; i < customerStatusesJSONAry.size(); i++)
+          {
+            String status = (String) customerStatusesJSONAry.get(i);
+            SubscriberJourneyStatus journeyStatus = SubscriberJourneyStatus.fromExternalRepresentation(status);
+            subscriberJourneyStatuses.add(journeyStatus);
+          }
+      }
     
     Date campaignStartDate;
     Date campaignEndDate;
@@ -2369,10 +2388,9 @@ public class ThirdPartyManager
               if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
                 customerStatusInJourney = profilejourneyStatus;
 
-              if (customerStatus != null)
+              if (!subscriberJourneyStatuses.isEmpty())
                 {
-                  SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                  boolean criteriaSatisfied = customerStatusInReq == customerStatusInJourney;
+                  boolean criteriaSatisfied = subscriberJourneyStatuses.contains(customerStatusInJourney);
                   if (!criteriaSatisfied)
                     continue;
                 }
