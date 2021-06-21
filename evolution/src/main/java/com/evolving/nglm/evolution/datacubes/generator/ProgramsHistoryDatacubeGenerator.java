@@ -329,7 +329,6 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       ParsedSum rewardBalance = metricAggregations.get(metricPrefix + rewardID + DATA_POINT_BALANCE);
       if (rewardBalance == null) {
         log.error("Unable to extract rewards.balance metric for reward: " + rewardID + ", aggregation is missing.");
-        continue;
       } else {
         metrics.put("rewards.balance", new Long((int) rewardBalance.getValue()));
       }
