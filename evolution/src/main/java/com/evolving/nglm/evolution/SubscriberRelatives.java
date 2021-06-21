@@ -16,9 +16,14 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 
 public class SubscriberRelatives
 {
@@ -128,12 +133,62 @@ public class SubscriberRelatives
   *
   *****************************************/
     
-  public JSONObject getJSONRepresentation(String relationshipID)
+  public JSONObject getJSONRepresentation(String relationshipID, SubscriberProfileService subscriberProfileService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
-      HashMap<String,Object> json = new HashMap<String,Object>();
+      HashMap<String, Object> json = new HashMap<String, Object>();
+      
+      //
+      //  obj
+      //
+      
       json.put("relationshipID", relationshipID);
-      json.put("parentSubscriberID", getParentSubscriberID());
+      json.put("relationshipName", Deployment.getSupportedRelationships().get(relationshipID) != null ? Deployment.getSupportedRelationships().get(relationshipID).getName() : null);
+      json.put("relationshipDisplay", Deployment.getSupportedRelationships().get(relationshipID) != null ? Deployment.getSupportedRelationships().get(relationshipID).getDisplay() : null);
+      
+      //
+      //  parent
+      //
+      
+      HashMap<String, Object> parentJsonMap = new HashMap<String, Object>();
+      try
+        {
+          if (getParentSubscriberID() != null && !getParentSubscriberID().isEmpty())
+            {
+              SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(getParentSubscriberID());
+              if (parentProfile != null)
+                {
+                  parentJsonMap.put("subscriberID", getParentSubscriberID());
+                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(parentProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), parentProfile.getTenantID());
+                  for (String id : Deployment.getAlternateIDs().keySet())
+                    {
+                      AlternateID alternateID = Deployment.getAlternateIDs().get(id);
+                      CriterionField criterionField = Deployment.getProfileCriterionFields().get(alternateID.getProfileCriterionField());
+                      if (criterionField != null)
+                        {
+                          String alternateIDValue = (String) criterionField.retrieve(evaluationRequest);
+                          parentJsonMap.put(alternateID.getID(), alternateIDValue);
+                        }
+                    }
+                }
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          e.printStackTrace();
+        }
+      json.put("parentDetails", parentJsonMap.isEmpty() ? null : JSONUtilities.encodeObject(parentJsonMap));
+      
+      //
+      //  children
+      //
+      
+      json.put("numberOfChildren", getChildrenSubscriberIDs().size());
       json.put("childrenSubscriberIDs", JSONUtilities.encodeArray(new ArrayList<String>(getChildrenSubscriberIDs())));
+      
+      //
+      //  result
+      //
+      
       return JSONUtilities.encodeObject(json);
     }
   
