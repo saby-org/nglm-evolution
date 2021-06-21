@@ -1,10 +1,7 @@
 package com.evolving.nglm.evolution;
 
-import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -14,11 +11,11 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
@@ -32,6 +29,13 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class CatalogCharacteristicInstance
 {
+  
+  //
+  //  logger
+  //
+  
+  private static final Logger log = LoggerFactory.getLogger(CatalogCharacteristicInstance.class);
+
   /*****************************************
   *
   *  schema
@@ -79,7 +83,7 @@ public class CatalogCharacteristicInstance
   *
   *****************************************/
 
-  private CatalogCharacteristicInstance(String catalogCharacteristicID, ParameterMap value)
+  public CatalogCharacteristicInstance(String catalogCharacteristicID, ParameterMap value)
   {
     this.catalogCharacteristicID = catalogCharacteristicID;
     this.value = value;
@@ -257,6 +261,35 @@ public class CatalogCharacteristicInstance
       }
     return result;
   }
+  
+  /*****************************************
+  *
+  *  equalsNonRobustly
+  *
+  *****************************************/
+
+  public boolean equalsNonRobustly(Object obj)
+  {
+    boolean result = false;
+    if (obj instanceof CatalogCharacteristicInstance)
+      {
+        CatalogCharacteristicInstance offerCatalogCharacteristic = (CatalogCharacteristicInstance) obj;
+        result = true;
+        result = result && Objects.equals(catalogCharacteristicID, offerCatalogCharacteristic.getCatalogCharacteristicID());
+        if (getValue() instanceof Set)
+          {
+            Set<Object> thisValue = (Set<Object>) getValue();
+            Set<Object> reqValue = (Set<Object>) offerCatalogCharacteristic.getValue();
+            result = result && thisValue.stream().filter(reqValue::contains).count() > 0L;
+          }
+        else if (result)
+          {
+            Set<Object> reqValue = (Set<Object>) offerCatalogCharacteristic.getValue();
+            result = result && reqValue.contains(getValue());
+          }
+      }
+    return result;
+  }
 
   /*****************************************
   *
@@ -267,5 +300,11 @@ public class CatalogCharacteristicInstance
   public int hashCode()
   {
     return catalogCharacteristicID.hashCode();
+  }
+  
+  @Override
+  public String toString()
+  {
+    return "CatalogCharacteristicInstance [catalogCharacteristicID=" + catalogCharacteristicID + ", value=" + value.get("value") + "]";
   }
 }

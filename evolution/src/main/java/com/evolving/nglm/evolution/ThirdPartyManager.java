@@ -89,6 +89,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -100,6 +101,8 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
@@ -2908,6 +2911,11 @@ public class ThirdPartyManager
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
     String supplier = readString(jsonRoot, "supplier", false);
+    JSONObject offerObjectivesCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerObjectivesCharacteristics", false);
+    JSONObject offerCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false);
+    final OfferObjectiveInstance objectiveInstanceReq = offerObjectivesCharacteristicsJSON != null ? decodeOfferObjectiveInstance(offerObjectivesCharacteristicsJSON, offerObjectiveService, catalogCharacteristicService, tenantID) : null;
+    final OfferCharacteristics offerCharacteristicsReq = offerCharacteristicsJSON != null ? decodeOfferCharacteristics(offerCharacteristicsJSON, catalogCharacteristicService, tenantID) : null;
+    
     //String userID = readString(jsonRoot, "loginName", true);
     String parentResellerID = "";
     Date now = SystemTime.getCurrentTime();
@@ -3033,6 +3041,24 @@ public class ThirdPartyManager
               else
                 offers = offers.stream().filter(offer -> (offer.getOfferObjectives() != null && (offer.getOfferObjectives().stream().filter(obj -> obj.getOfferObjectiveID().equals(exactOfferObjectives.getOfferObjectiveID())).count() > 0L))).collect(Collectors.toList());
 
+            }
+          
+          if (objectiveInstanceReq != null)
+            {
+              //
+              //  filter on offerObjectivesCharacteristics
+              //
+              
+              offers = offers.stream().filter(offer -> offer.hasThisOfferObjectiveAndCharacteristics(objectiveInstanceReq)).collect(Collectors.toList());
+            }
+          
+          if (offerCharacteristicsReq != null)
+            {
+              //
+              //  filter on offerCharacteristics
+              //
+              
+              offers = offers.stream().filter(offer -> offer.hasThisOfferCharacteristics(offerCharacteristicsReq)).collect(Collectors.toList());
             }
           
           //
@@ -6788,4 +6814,199 @@ public class ThirdPartyManager
          .withLabel(StatsBuilders.LABEL.status.name(),status.name())
          .getStats().add(startTime);
   }
+  
+  /*****************************************
+  *
+  *  decodeOfferObjectiveInstance
+  *
+  *****************************************/
+  
+  private OfferObjectiveInstance decodeOfferObjectiveInstance(JSONObject offerObjectivesCharacteristicsJSON, OfferObjectiveService offerObjectiveService, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws ThirdPartyManagerException
+  {
+    OfferObjectiveInstance result = null;
+    Date now = SystemTime.getCurrentTime();
+    Set<CatalogCharacteristicInstance> catalogCharacteristics = new HashSet<CatalogCharacteristicInstance>();
+    try
+      {
+        String offerObjectiveName = JSONUtilities.decodeString(offerObjectivesCharacteristicsJSON, "offerObjectiveName", true);
+        JSONArray offerObjectivecatalogCharacteristics = JSONUtilities.decodeJSONArray(offerObjectivesCharacteristicsJSON, "catalogCharacteristics", new JSONArray());
+        
+        //
+        //  catalogCharacteristics
+        //
+        
+        for (int i=0; i<offerObjectivecatalogCharacteristics.size(); i++)
+          {
+            String charName = JSONUtilities.decodeString((JSONObject) offerObjectivecatalogCharacteristics.get(i), "catalogCharacteristicName", true);
+            CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristics(now, tenantID).stream().filter(characteristic -> characteristic.getGUIManagedObjectDisplay().equals(charName)).findFirst().orElse(null);
+            if (catalogCharacteristic != null)
+              {
+                ParameterMap parameterMap = new ParameterMap();
+                Object value = validateAndGetRequestCharacteristicValue((JSONObject) offerObjectivecatalogCharacteristics.get(i), catalogCharacteristic.getDataType());
+                parameterMap.put("value", value);
+                CatalogCharacteristicInstance characteristic = new CatalogCharacteristicInstance(catalogCharacteristic.getCatalogCharacteristicID(), parameterMap);
+                catalogCharacteristics.add(characteristic);
+              }
+            else
+              {
+                throw new Exception("invalid catalogCharacteristicName " + charName);
+              }
+          }
+        
+        //
+        //  offerObjective
+        //
+        
+        OfferObjective offerObjective = offerObjectiveService.getActiveOfferObjectives(now, tenantID).stream().filter(objective -> objective.getDisplay().equals(offerObjectiveName)).findFirst().orElse(null);
+        if (offerObjective != null)
+          {
+            result = new OfferObjectiveInstance(offerObjective.getGUIManagedObjectID(), catalogCharacteristics);
+          }
+        else
+          {
+            throw new Exception("invalid offerObjectiveName " + offerObjectiveName);
+          }
+      }
+    catch (Exception e)
+      {
+        if (log.isErrorEnabled()) log.error("error {}", e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage().concat("-").concat(e.getMessage()), RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  decodeOfferCharacteristics
+  *
+  *****************************************/
+  
+  private OfferCharacteristics decodeOfferCharacteristics(JSONObject offerCharacteristicsJSON, CatalogCharacteristicService catalogCharacteristicService, int tenantID) throws ThirdPartyManagerException
+  {
+    OfferCharacteristics offerCharacteristics = null;
+    Set<OfferCharacteristicsProperty> offerCharacteristicsPropertyList = new HashSet<OfferCharacteristicsProperty>();
+    Date now = SystemTime.getCurrentTime();
+    try
+      {
+        String languageReq = JSONUtilities.decodeString(offerCharacteristicsJSON, "language", true);
+        JSONArray propertiesJSONArray = JSONUtilities.decodeJSONArray(offerCharacteristicsJSON, "properties", new JSONArray());
+        String languageID = Deployment.getDeployment(tenantID).getSupportedLanguages().values().stream().filter(supportedLang -> supportedLang.getDisplay().equalsIgnoreCase(languageReq)).map(SupportedLanguage::getID).findFirst().orElse(null);
+        if (languageID == null) throw new Exception("invalid language "+ languageReq);
+        
+        //
+        //  catalogCharacteristics
+        //
+        
+        for (int i=0; i<propertiesJSONArray.size(); i++)
+          {
+            String charName = JSONUtilities.decodeString((JSONObject) propertiesJSONArray.get(i), "catalogCharacteristicName", true);
+            CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristics(now, tenantID).stream().filter(characteristic -> characteristic.getGUIManagedObjectDisplay().equals(charName)).findFirst().orElse(null);
+            if (catalogCharacteristic != null)
+              {
+                ParameterMap parameterMap = new ParameterMap();
+                Object value = validateAndGetRequestCharacteristicValue((JSONObject) propertiesJSONArray.get(i), catalogCharacteristic.getDataType());
+                parameterMap.put("value", value);
+                OfferCharacteristicsProperty offerCharacteristicsProperty = new OfferCharacteristicsProperty(catalogCharacteristic.getCatalogCharacteristicID(), catalogCharacteristic.getGUIManagedObjectDisplay(), parameterMap);
+                offerCharacteristicsPropertyList.add(offerCharacteristicsProperty);
+              }
+            else
+              {
+                throw new Exception("invalid catalogCharacteristicName " + charName);
+              }
+          }
+        OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty = new OfferCharacteristicsLanguageProperty(languageID, offerCharacteristicsPropertyList);
+        Set<OfferCharacteristicsLanguageProperty> properties = new HashSet<OfferCharacteristics.OfferCharacteristicsLanguageProperty>();
+        properties.add(offerCharacteristicsLanguageProperty);
+        offerCharacteristics = new OfferCharacteristics(properties);
+      }
+    catch (Exception e)
+      {
+        if (log.isErrorEnabled()) log.error("error {}", e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage().concat("-").concat(e.getMessage()), RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return offerCharacteristics;
+  }
+  
+  /*****************************************
+  *
+  *  validateAndGetRequestCharacteristicValue
+  *
+  *****************************************/
+  
+  private Object validateAndGetRequestCharacteristicValue(JSONObject jsonRoot, CriterionDataType dataType) throws Exception
+  {
+    Object value = null;
+    try
+      {
+        switch (dataType)
+        {
+          case DateCriterion:
+            JSONArray jsonArrayDateString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> dateSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayDateString.size(); i++)
+              {
+                dateSetValue.add(GUIManagedObject.parseDateField((String) jsonArrayDateString.get(i)));
+              }
+            value = dateSetValue;
+            break;
+
+          case BooleanCriterion:
+            JSONArray jsonArrayBoolean = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Boolean> booleanSetValue = new HashSet<Boolean>();
+            for (int i=0; i<jsonArrayBoolean.size(); i++)
+              {
+                booleanSetValue.add((Boolean) jsonArrayBoolean.get(i));
+              }
+            value = booleanSetValue;
+            break;
+
+          case StringCriterion:
+          case StringSetCriterion:
+            JSONArray jsonArrayString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> stringSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayString.size(); i++)
+              {
+                stringSetValue.add(jsonArrayString.get(i));
+              }
+            value = stringSetValue;
+            break;
+
+          case IntegerCriterion:
+          case IntegerSetCriterion:
+            JSONArray jsonArrayInteger = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> integerSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayInteger.size(); i++)
+              {
+                integerSetValue.add(new Integer(((Number) jsonArrayInteger.get(i)).intValue()));
+              }
+            value = integerSetValue;
+            break;
+            
+          case DoubleCriterion:
+          case DoubleSetCriterion:
+              JSONArray jsonArrayDouble = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+              Set<Object> doubleSetValue = new HashSet<Object>();
+              for (int i=0; i<jsonArrayDouble.size(); i++)
+                {
+                  doubleSetValue.add(new Integer(((Number) jsonArrayDouble.get(i)).intValue()));
+                }
+              value = doubleSetValue;
+              break;
+
+          case TimeCriterion:
+          case AniversaryCriterion:
+          default:
+            throw new GUIManagerException("unsupported catalogCharacteristic data type", dataType.toString());
+        }
+      }
+    catch (Exception e)
+      {
+        log.error("error in validateAndGetRequestCharacteristicValue {}", e.getMessage());
+        throw new Exception("invalid json " + e.getMessage());
+      }
+    
+    return value;
+  }
+  
 }
