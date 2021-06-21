@@ -1134,7 +1134,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  offer
       //
 
-      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
+      Offer offer = null;
+      GUIManagedObject offerObject = offerService.getStoredOffer(getOfferID(), true);
+      if (offerObject != null && offerObject instanceof Offer)
+        {
+          offer = (Offer) offerObject;
+        }
 
       //
       //  presentation
