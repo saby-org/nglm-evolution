@@ -2062,7 +2062,11 @@ public class EvolutionEngine
 
     if (subscriberProfile.getSubscriberTraceEnabled())
       {
-        subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, subscriberState, context.getSubscriberTraceDetails())));
+        try{
+          subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, subscriberState, context.getSubscriberTraceDetails())));
+        }catch(Exception e){
+          log.warn("subscriber trace exception",e);
+        }
         subscriberStateUpdated = true;
       }
 
@@ -4918,7 +4922,7 @@ public class EvolutionEngine
         //
         // Subscriber token list cleaning.
         // We will delete all already expired tokens before doing anything.
-        //
+        //TODO: do this cleaning using com.evolving.nglm.evolution.retention.RetentionService, as other objects
 
         List<Token> cleanedList = new ArrayList<Token>();
         boolean changed = false;
@@ -4927,10 +4931,13 @@ public class EvolutionEngine
           {
             if (token.getTokenExpirationDate().before(now))
               {
-                changed = true;
-                break;
+                if(log.isTraceEnabled()) log.trace("removing token "+token.getTokenCode()+" expired on "+token.getTokenExpirationDate()+" for "+subscriberProfile.getSubscriberID());
+                changed=true;
               }
-            cleanedList.add(token);
+            else
+              {
+                cleanedList.add(token);
+              }
           }
 
         if (changed)
@@ -6859,7 +6866,11 @@ public class EvolutionEngine
 
     if (extendedSubscriberProfile.getSubscriberTraceEnabled())
       {
-        extendedSubscriberProfile.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentExtendedSubscriberProfile, extendedSubscriberProfile, context.getSubscriberTraceDetails())));
+        try{
+          extendedSubscriberProfile.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentExtendedSubscriberProfile, extendedSubscriberProfile, context.getSubscriberTraceDetails())));
+        }catch(Exception e){
+          log.warn("subscriber trace exception",e);
+        }
         extendedSubscriberProfileUpdated = true;
       }
 
@@ -7052,7 +7063,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState, List<String> subscriberTraceDetails)
+  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState, List<String> subscriberTraceDetails) throws Exception
   {
     /*****************************************
     *
@@ -7174,7 +7185,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, ExtendedSubscriberProfile currentExtendedSubscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, List<String> subscriberTraceDetails)
+  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, ExtendedSubscriberProfile currentExtendedSubscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, List<String> subscriberTraceDetails) throws Exception
   {
     /*****************************************
     *
