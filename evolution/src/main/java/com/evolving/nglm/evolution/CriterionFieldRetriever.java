@@ -68,7 +68,7 @@ public abstract class CriterionFieldRetriever
   public static Object getNumberOfOfferPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
     log.info("RAJ K calling getNumberOfOfferPurchasedForPeriod with subcriteriaVal {}", subcriteriaVal);
-    long result = 0;
+    long result = 10; //RAJ K
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     String offerID = (String) subcriteriaVal.get(0);
     String period = (String) subcriteriaVal.get(1);
