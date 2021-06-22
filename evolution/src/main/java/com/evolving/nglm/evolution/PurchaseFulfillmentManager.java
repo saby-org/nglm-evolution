@@ -3177,7 +3177,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow && journey.getJSONRepresentation().get("areaAvailability") != null )
+      if (journey != null && journey.getJSONRepresentation().get("areaAvailability") != null )
         {
           JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");
           if (areaAvailability != null && !(areaAvailability.isEmpty())) {
@@ -3208,10 +3208,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 }
             }
           }
-        }
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
-        {
-          newModuleID = Module.Offer_Catalog.getExternalRepresentation();
         }
       
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);

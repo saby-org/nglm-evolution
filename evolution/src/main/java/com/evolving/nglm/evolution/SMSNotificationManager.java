@@ -623,11 +623,6 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
             }
 
         }
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
-        {
-          newModuleID = Module.Offer_Catalog.getExternalRepresentation();
-        }
-      
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       
       String msisdn = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getMSISDN();
