@@ -52,28 +52,28 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   private OfferService offerService;
   private LoyaltyProgramService loyaltyProgramService;
 
-  private static final String moduleId = "moduleID";
-  private static final String featureId = "featureID";
-  private static final String deliverableID = "deliverableID";
-  private static final String deliverableQty = "deliverableQty";
-  private static final String deliveryStatus = "deliveryStatus";
+  static final String moduleId = "moduleID";
+  static final String featureId = "featureID";
+  static final String deliverableID = "deliverableID";
+  static final String deliverableQty = "deliverableQty";
+  static final String deliveryStatus = "deliveryStatus";
   static final String moduleName = "moduleName";
-  private static final String featureDisplay = "featureName";
+  static final String featureDisplay = "featureName";
   static final String deliverableDisplay = "deliverableName";
-  private static final String subscriberID = "subscriberID";
-  private static final String customerID = "customerID";
-  private static final String deliverableExpirationDate = "deliverableExpirationDate";
-  private static final String eventDatetime = "eventDatetime";
-  private static final String operation = "operation";
-  private static final String orgin = "origin";
-  private static final String providerId = "providerID";
-  private static final String providerName = "providerName";
-  private static final String returnCode = "returnCode";
-  private static final String returnCodeDetails = "returnCodeDetails";
-  private static final String returnCodeDescription = "returnCodeDescription";
-  private static final String deliveryRequestID = "deliveryRequestID";
-  private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
-  private static final String eventID = "eventID";
+  static final String subscriberID = "subscriberID";
+  static final String customerID = "customerID";
+  static final String deliverableExpirationDate = "deliverableExpirationDate";
+  static final String eventDatetime = "eventDatetime";
+  static final String operation = "operation";
+  static final String orgin = "origin";
+  static final String providerId = "providerID";
+  static final String providerName = "providerName";
+  static final String returnCode = "returnCode";
+  static final String returnCodeDetails = "returnCodeDetails";
+  static final String returnCodeDescription = "returnCodeDescription";
+  static final String deliveryRequestID = "deliveryRequestID";
+  static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
+  static final String eventID = "eventID";
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
 
