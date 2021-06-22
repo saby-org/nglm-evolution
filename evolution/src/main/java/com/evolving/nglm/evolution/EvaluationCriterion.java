@@ -689,7 +689,7 @@ public class EvaluationCriterion
     
     if (getCriterionField().hasSubcriterias())
       {
-        boolean validSubcriteriaAndExpresion = getCriterionField().getSubcriterias().size() != getSubcriteriaExpressions().size();
+        boolean validSubcriteriaAndExpresion = getCriterionField().getSubcriterias().size() == getSubcriteriaExpressions().size();
         if (!validSubcriteriaAndExpresion) throw new CriterionException("bad sub Expresion, " + criterionField.getDisplay() + " does not have same no. of sub criteria and expressions");
       }
     

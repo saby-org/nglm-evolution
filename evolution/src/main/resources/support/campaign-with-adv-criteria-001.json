@@ -18,13 +18,13 @@
     {
       "argument":{
         "valueType":"simpleEnter.string",
-        "value":"RAJ",
+        "value":10,
         "valueMultiply":null,
         "valueAdd":null,
         "timeUnit":null,
-        "expression":"'RAJ'"
+        "expression":"10"
       },
-      "criterionField":"evolution.adv.criteria.RAJ K",
+      "criterionField":"offer.offername.purchased.period",
       "criterionOperator":"==",
       "subcriteria":[
         {
