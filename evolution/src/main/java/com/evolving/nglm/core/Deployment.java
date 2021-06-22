@@ -93,7 +93,6 @@ public class Deployment extends DeploymentCommon
   private Map<String,ToolboxSection> campaignToolbox;
   private Map<String,ToolboxSection> workflowToolbox;
   private Map<String,ToolboxSection> loyaltyWorkflowToolbox;
-  private Map<String,ToolboxSection> catalogWorkflowToolbox;
   
   
   /*****************************************
@@ -132,7 +131,6 @@ public class Deployment extends DeploymentCommon
   public Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
   public Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
   public Map<String,ToolboxSection> getLoyaltyWorkflowToolbox() { return loyaltyWorkflowToolbox; }
-  public Map<String,ToolboxSection> getCatalogWorkflowToolbox() { return catalogWorkflowToolbox; }
   
   /*****************************************
   *
@@ -257,7 +255,6 @@ public class Deployment extends DeploymentCommon
     campaignToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "campaignToolbox");
     workflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "workflowToolbox");
     loyaltyWorkflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "loyaltyWorkflowToolbox");
-    catalogWorkflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "catalogWorkflowToolbox");
     
     // Iterate over the communication channels and, for generic ones, let enrich, if needed the journey toolbox
     for(CommunicationChannel cc : getCommunicationChannels().values())
