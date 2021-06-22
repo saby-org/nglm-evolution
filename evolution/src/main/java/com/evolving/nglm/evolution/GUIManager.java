@@ -25993,11 +25993,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             //  subcriteria
             //
             
-            JSONObject subcriteriaJSON = (JSONObject) criterionFieldJSON.remove("subcriteria");
+            JSONObject subcriteriaJSON = (JSONObject) criterionFieldJSON.remove("subcriterias");
             if (subcriteriaJSON != null)
               {
                 subcriteriaJSON.put("availableValues", evaluateAvailableValues(JSONUtilities.decodeJSONArray(subcriteriaJSON, "availableValues", false), now, tenantID));
-                criterionFieldJSON.put("subcriteria", JSONUtilities.encodeObject(subcriteriaJSON));
+                criterionFieldJSON.put("subcriterias", JSONUtilities.encodeObject(subcriteriaJSON));
               }
             
             //
