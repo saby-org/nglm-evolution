@@ -11,7 +11,7 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
-
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
@@ -65,20 +65,87 @@ public abstract class CriterionFieldRetriever
   *
   *****************************************/
   
-  public static Object getOffersPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
-  { 
+  public static Object getNumberOfOfferPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    log.info("RAJ K calling getNumberOfOfferPurchasedForPeriod with subcriteriaVal {}", subcriteriaVal);
+    long result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     String offerID = (String) subcriteriaVal.get(0);
     String period = (String) subcriteriaVal.get(1);
-    List<Date> dates = subscriberProfile.getOfferPurchaseHistory().get(offerID);
+    List<Date> purchaseDates = new ArrayList<Date>();
     
+    //
+    //  offerID
+    //
     
+    if (offerID != null)
+      {
+        if (subscriberProfile.getOfferPurchaseHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseHistory().get(offerID));
+      }
+    else
+      {
+        purchaseDates = subscriberProfile.getOfferPurchaseHistory().values().stream().flatMap(vl -> vl.stream()).collect(Collectors.toList());
+      }
     
+    //
+    //  period
+    //
     
-    log.info("calling getEvolutionAdvCrtRAJK with subcriteriaVal {}", subcriteriaVal);
-    return "RAJ K";
+    if (period != null)
+      {
+        String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+        Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+        Date startDate = startEndDatePair.getFirstElement();
+        Date endDate = startEndDatePair.getSecondElement();
+        result = purchaseDates.stream().filter(purchaseDate -> purchaseDate.after(startDate) && purchaseDate.before(endDate)).count();
+      }
+    else
+      {
+        result = purchaseDates.size();
+      }
+    log.info("RAJ K calling getNumberOfOfferPurchasedForPeriod result {}", result);
+    return result;
   }
   
+  protected static Pair<Date, Date> getStartAndEndDate(String period, String timeZone)
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date startDate = now, endDate = now;
+    switch (period)
+    {
+      case "today":
+        startDate = RLMDateUtils.truncate(now, Calendar.DATE, timeZone);
+        break;
+        
+      case "yesterday":
+        startDate = RLMDateUtils.addDays(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.DATE, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone);
+        break;
+        
+      case "this.month":
+        startDate = RLMDateUtils.truncate(now, Calendar.MONTH, timeZone);
+        break;
+        
+      case "last.1.month":
+        startDate = RLMDateUtils.addMonths(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.MONTH, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.MONTH, timeZone);
+        break;
+        
+      case "last.3.month":
+        startDate = RLMDateUtils.addMonths(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.MONTH, timeZone);
+        startDate = RLMDateUtils.addMonths(startDate, -2, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.MONTH, timeZone);
+        break;
+
+      default:
+        break;
+    }
+    return new Pair<Date, Date>(startDate, endDate);
+  }
+
   /*****************************************
   *
   *  simple
