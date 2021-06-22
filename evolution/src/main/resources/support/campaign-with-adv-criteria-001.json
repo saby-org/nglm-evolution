@@ -31,11 +31,11 @@
           "field":"crt.1",
           "argument":{
             "valueType":"simpleEnter.string",
-            "value":"RAJ",
+            "value":"RAJ1",
             "valueMultiply":null,
             "valueAdd":null,
             "timeUnit":null,
-            "expression":"'RAJ'"
+            "expression":"'RAJ1'"
           }
         },
         {
