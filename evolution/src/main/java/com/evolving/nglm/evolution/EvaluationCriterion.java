@@ -345,7 +345,7 @@ public class EvaluationCriterion
     //  adv criteria
     //
     this.subcriteriaArgumentMap = new LinkedHashMap<String, SubcriteriaArgument>();
-    if (criterionField.getSubcriterias() != null && !criterionField.getSubcriterias().isEmpty())
+    if (criterionField.hasSubcriterias())
       {
         JSONArray subcriteriaJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "subcriteria", new JSONArray());
         for (int i = 0; i < subcriteriaJSONArray.size(); i++)
@@ -682,6 +682,17 @@ public class EvaluationCriterion
           break;
       }
     if (!validCombination) throw new CriterionException("bad operator/dataType/argument combination " + this.criterionOperator + "/" + criterionField.getFieldDataType() + "/" + argumentExpression);
+    
+    //
+    //  validSubcriteriaAndExpresion
+    //
+    
+    if (getCriterionField().hasSubcriterias())
+      {
+        boolean validSubcriteriaAndExpresion = getCriterionField().getSubcriterias().size() != getSubcriteriaExpressions().size();
+        if (!validSubcriteriaAndExpresion) throw new CriterionException("bad sub Expresion, " + criterionField.getDisplay() + " does not have same no. of sub criteria and expressions");
+      }
+    
   }
 
   /*****************************************
@@ -1297,7 +1308,7 @@ public class EvaluationCriterion
   private LinkedHashMap<String, Object> getSubcriteriaArgumentValues(CriterionField criterionField, SubscriberEvaluationRequest evaluationRequest)
   {
     LinkedHashMap<String, Object> result = new LinkedHashMap<String, Object>();
-    if (criterionField.getSubcriterias() != null && !criterionField.getSubcriterias().isEmpty())
+    if (criterionField.hasSubcriterias())
       {
         for (String field : getSubcriteriaExpressions().keySet())
           {
@@ -1306,6 +1317,7 @@ public class EvaluationCriterion
             Object evaluatedArgument = (subArgument != null) ? subArgument.evaluateExpression(evaluationRequest, subArgumentBaseTimeUnit) : null;
             result.put(field, evaluatedArgument);
           }
+        if (criterionField.getSubcriterias().size() != result.size()) throw new RuntimeException(criterionField.getDisplay() + " has " + criterionField.getSubcriterias().size() + " sub criterias but found " + result.size() + " evaluation expressions");
       }
     return result;
   }

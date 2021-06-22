@@ -65,7 +65,7 @@ public abstract class CriterionFieldRetriever
   *
   *****************************************/
   
-  public static Object getEvolutionAdvCrtRAJK(SubscriberEvaluationRequest evaluationRequest, String fieldName, LinkedHashSet<Object> subcriteriaVal) 
+  public static Object getEvolutionAdvCrtRAJK(SubscriberEvaluationRequest evaluationRequest, String fieldName, ArrayList<Object> subcriteriaVal) 
   { 
     log.info("calling getEvolutionAdvCrtRAJK with subcriteriaVal {}", subcriteriaVal);
     return "RAJ K";

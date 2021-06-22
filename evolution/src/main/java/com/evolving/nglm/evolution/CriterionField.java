@@ -11,6 +11,7 @@ import java.io.StringWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -175,6 +176,7 @@ public class CriterionField extends DeploymentManagedObject
   public boolean getProfileChangeEvent() { return profileChangeEvent; }
   public boolean getUseESQueryNoPainless() { return useESQueryNoPainless; }
   public Set<String> getSubcriterias() { return subcriterias; }
+  public boolean hasSubcriterias() { return getSubcriterias() != null && !getSubcriterias().isEmpty(); }
 
   /*****************************************
   *
@@ -261,9 +263,9 @@ public class CriterionField extends DeploymentManagedObject
       {
         try
           {
-            if (getSubcriterias() != null && !getSubcriterias().isEmpty())
+            if (hasSubcriterias())
               {
-                MethodType methodType = MethodType.methodType(Object.class, SubscriberEvaluationRequest.class, String.class, LinkedHashSet.class);
+                MethodType methodType = MethodType.methodType(Object.class, SubscriberEvaluationRequest.class, String.class, List.class);
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
                 this.retriever = lookup.findStatic(Deployment.getCriterionFieldRetrieverClass(), criterionFieldRetriever, methodType);
               }
@@ -603,9 +605,9 @@ public class CriterionField extends DeploymentManagedObject
       {
         try
           {
-            if (getSubcriterias() != null && !getSubcriterias().isEmpty())
+            if (hasSubcriterias())
               {
-                LinkedHashSet<Object> subcriteriaVals = new LinkedHashSet<Object>(getSubcriterias().size());
+                List<Object> subcriteriaVals = new ArrayList<Object>(getSubcriterias().size());
                 for (String subc : getSubcriterias())
                   {
                     subcriteriaVals.add(subcriteriaArgumentValues.get(subc));
