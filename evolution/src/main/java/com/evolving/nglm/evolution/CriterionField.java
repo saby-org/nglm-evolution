@@ -222,7 +222,7 @@ public class CriterionField extends DeploymentManagedObject
     JSONArray subcriteriaArray = JSONUtilities.decodeJSONArray(jsonRoot, "subcriterias", new JSONArray());
     for (int i = 0; i < subcriteriaArray.size(); i++)
       {
-        subcriterias.add((String) subcriteriaArray.get(i));
+        subcriterias.add(JSONUtilities.decodeString((JSONObject)subcriteriaArray.get(i), "id", true));
       }
 
     //

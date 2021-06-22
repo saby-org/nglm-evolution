@@ -25990,6 +25990,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               }
             
             //
+            //  subcriteria
+            //
+            
+            JSONObject subcriteriaJSON = (JSONObject) criterionFieldJSON.remove("subcriteria");
+            if (subcriteriaJSON != null)
+              {
+                subcriteriaJSON.put("availableValues", evaluateAvailableValues(JSONUtilities.decodeJSONArray(subcriteriaJSON, "availableValues", false), now, tenantID));
+                criterionFieldJSON.put("subcriteria", JSONUtilities.encodeObject(subcriteriaJSON));
+              }
+            
+            //
             //  add
             //
 
@@ -26355,7 +26366,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
       {
-        
         case "suppliersDisplayExp":
           if (includeDynamic)
             {

@@ -28,25 +28,25 @@
       "criterionOperator":"==",
       "subcriteria":[
         {
-          "field":"crt.1",
+          "field":"offer.id",
           "argument":{
             "valueType":"simpleEnter.string",
-            "value":"RAJ1",
+            "value":"offerIDwith1",
             "valueMultiply":null,
             "valueAdd":null,
             "timeUnit":null,
-            "expression":"'RAJ1'"
+            "expression":"'offerIDwith1'"
           }
         },
         {
-          "field":"crt.2",
+          "field":"period",
           "argument":{
             "valueType":"simpleEnter.string",
-            "value":"RAJ",
+            "value":"this.month",
             "valueMultiply":null,
             "valueAdd":null,
             "timeUnit":null,
-            "expression":"'RAJ'"
+            "expression":"'this.month'"
           }
         }
       ]

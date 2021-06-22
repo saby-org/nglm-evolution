@@ -65,8 +65,16 @@ public abstract class CriterionFieldRetriever
   *
   *****************************************/
   
-  public static Object getEvolutionAdvCrtRAJK(SubscriberEvaluationRequest evaluationRequest, String fieldName, ArrayList<Object> subcriteriaVal) 
+  public static Object getOffersPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   { 
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String offerID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    List<Date> dates = subscriberProfile.getOfferPurchaseHistory().get(offerID);
+    
+    
+    
+    
     log.info("calling getEvolutionAdvCrtRAJK with subcriteriaVal {}", subcriteriaVal);
     return "RAJ K";
   }
