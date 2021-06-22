@@ -471,11 +471,6 @@ public class RewardManagerRequest extends BonusDelivery
             }
           }
         }
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
-        {
-          newModuleID = Module.Offer_Catalog.getExternalRepresentation();
-        }
-
       // retrieve the featureID that is the origin of this delivery request:
       // - If the Journey related to JourneyState is not a Workflow, then featureID = JourneyState.getID
       // - if the Journey related to JourneyState is a Workflown then we must extract the original featureID from the origial delivery Request that created the workflow instance

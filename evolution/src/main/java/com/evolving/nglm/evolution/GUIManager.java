@@ -264,11 +264,6 @@ public class GUIManager
     updateWorkflow("updateWorkflow"),
     setStatusWorkflow("setStatusWorkflow"),
     
-    getLoyaltyWorkflowList("getLoyaltyWorkflowList"),
-    getLoyaltyWorkflowSummaryList("getLoyaltyWorkflowSummaryList"),
-    getLoyaltyWorkflow("getLoyaltyWorkflow"),
-    putLoyaltyWorkflow("putLoyaltyWorkflow"),
-    removeLoyaltyWorkflow("removeLoyaltyWorkflow"),
     getLoyaltyWorkflowToolbox("getLoyaltyWorkflowToolbox"),
     
         
@@ -2000,13 +1995,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
         restServer.createContext("/nglm-guimanager/removeWorkflow", new APISimpleHandler(API.removeWorkflow));
         restServer.createContext("/nglm-guimanager/updateWorkflow", new APISimpleHandler(API.updateWorkflow));
-        restServer.createContext("/nglm-guimanager/setStatusWorkflow", new APISimpleHandler(API.setStatusWorkflow));
-        
-        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowList", new APISimpleHandler(API.getLoyaltyWorkflowList));
-        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowSummaryList", new APISimpleHandler(API.getLoyaltyWorkflowSummaryList));
-        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflow", new APISimpleHandler(API.getLoyaltyWorkflow));
-        restServer.createContext("/nglm-guimanager/putLoyaltyWorkflow", new APISimpleHandler(API.putLoyaltyWorkflow));
-        restServer.createContext("/nglm-guimanager/removeLoyaltyWorkflow", new APISimpleHandler(API.removeLoyaltyWorkflow));
+        restServer.createContext("/nglm-guimanager/setStatusWorkflow", new APISimpleHandler(API.setStatusWorkflow));        
+       
         restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowToolbox", new APISimpleHandler(API.getLoyaltyWorkflowToolbox));
         
         restServer.createContext("/nglm-guimanager/getBulkCampaignList", new APISimpleHandler(API.getBulkCampaignList));
@@ -2951,27 +2941,8 @@ public class GUIManager
 
                 case setStatusWorkflow:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Workflow, tenantID);
-                  break;
-                  
-                case getLoyaltyWorkflowList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, true, true, includeArchived, tenantID);
-                  break;
-
-                case getLoyaltyWorkflowSummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, false, true, includeArchived, tenantID);
-                  break;
-                  
-                case getLoyaltyWorkflow:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, true, includeArchived, tenantID);
-                  break;
-
-                case putLoyaltyWorkflow:
-                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, tenantID);
-                  break;
-
-                case removeLoyaltyWorkflow:
-                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, tenantID);
-                  break;
+                  break;                  
+               
                   
                 case getLoyaltyWorkflowToolbox:
                   jsonResponse = processGetLoyaltyWorkflowToolbox(userID, jsonRoot, tenantID);
@@ -5957,7 +5928,7 @@ public class GUIManager
         ****************************************/
 
         Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, approval, tenantID);
-        if(GUIManagedObjectType.Workflow.equals(objectType) || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType)) {
+        if(GUIManagedObjectType.Workflow.equals(objectType)) {
           
              journey.setApproval(JourneyStatus.StartedApproved);
         }
@@ -6094,11 +6065,7 @@ public class GUIManager
             case Workflow:
               response.put("responseCode", "workflowNotValid");
               break;
-
-            case LoyaltyWorkflow:
-              response.put("responseCode", "loyaltyWorkflowNotValid");
-              break;
-            
+              
             case BulkCampaign:
               response.put("responseCode", "bulkCampaignNotValid");
               break;
@@ -6437,8 +6404,7 @@ public class GUIManager
                 journeyService, catalogCharacteristicService, subscriberMessageTemplateService,
                 dynamicEventDeclarationsService, journeyTemplateService, approval, tenantID);
 
-            if (GUIManagedObjectType.Workflow.equals(objectType)
-                || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType))
+            if (GUIManagedObjectType.Workflow.equals(objectType))
               {
                 journey.setApproval(JourneyStatus.StartedApproved);
               }

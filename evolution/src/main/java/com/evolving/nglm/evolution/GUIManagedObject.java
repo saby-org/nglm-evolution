@@ -61,9 +61,6 @@ public abstract class GUIManagedObject
     Campaign("campaign"),
     Workflow("workflow"),
     BulkCampaign("bulkCampaign"),
-    
-    LoyaltyWorkflow("loyaltyWorkflow"),
-    CatalogWorkflow("catalogWorkflow"),
     LoyaltyProgramPoints("loyaltyProgramPoints"),
     LoyaltyProgramMission("loyaltyProgramMission"),
     LoyaltyProgramChallenge("loyaltyProgramChallenge"),
