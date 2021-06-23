@@ -55,7 +55,6 @@ public class Deployment extends DeploymentCommon
   * Static data
   *
   *****************************************/
-  protected static final Logger log = LoggerFactory.getLogger(Deployment.class);
   
   /*****************************************
   *
