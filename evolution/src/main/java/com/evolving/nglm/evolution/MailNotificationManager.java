@@ -659,11 +659,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
             }
           }
         }
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
-        {
-          newModuleID = Module.Offer_Catalog.getExternalRepresentation();
-        }
-      
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();

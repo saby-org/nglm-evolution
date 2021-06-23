@@ -43,6 +43,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private LoyaltyProgramService loyaltyProgramService;
     private PointService pointService;
+    private DynamicCriterionFieldService dynamicCriterionFieldService; // For criterion init purpose only
     private SegmentationDimensionService segmentationDimensionService;
 
     /*****************************************
@@ -56,6 +57,10 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       super.start(taskConfig);
       this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
       SubscriberState.forceClassLoad();
+
+      dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getDynamicCriterionFieldTopic(), false);
+      dynamicCriterionFieldService.start();
+      CriterionContext.initialize(dynamicCriterionFieldService); // Workaround: CriterionContext must be initialized before creating the JourneyService. (explain ?)
       
       loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "sinkconnector-loyaltyprogramservice" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getLoyaltyProgramTopic(), false);
       loyaltyProgramService.start();
