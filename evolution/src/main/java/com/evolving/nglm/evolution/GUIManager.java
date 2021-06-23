@@ -1290,11 +1290,12 @@ public class GUIManager
                 }
             }
   
-          /*****************************************
-          *
-          *  remove unused deliverables
-          *
-          *****************************************/
+          if (tenantID != 0) {
+            /*****************************************
+             *
+             *  remove unused deliverables
+             *
+             *****************************************/
           
             for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime(), tenantID))
               {
@@ -1304,13 +1305,12 @@ public class GUIManager
                     log.info("provider deliverable {} {}", deliverable.getDeliverableID(), "remove");
                   }
               }
-            
           
             /*****************************************
-            *
-            *  remove unused paymentMeans
-            *
-            *****************************************/
+             *
+             *  remove unused paymentMeans
+             *
+             *****************************************/
   
             for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime(), tenantID))
               {
@@ -1320,6 +1320,7 @@ public class GUIManager
                     log.info("provider paymentMean {} {}", paymentMean.getPaymentMeanID(), "remove");
                   }
               }
+          }
         }
       }
 
