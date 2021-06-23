@@ -17,7 +17,7 @@
   "eligibilityCriteria":[
     {
       "argument":{
-        "valueType":"simpleEnter.string",
+        "valueType":"simple",
         "value":10,
         "valueMultiply":null,
         "valueAdd":null,
