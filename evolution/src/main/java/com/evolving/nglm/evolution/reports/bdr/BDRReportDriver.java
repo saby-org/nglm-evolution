@@ -44,26 +44,7 @@ public class BDRReportDriver extends ReportDriver
   public List<String> reportHeader()
   {
     List<String> result = new ArrayList<>();
-    result.add(BDRReportMonoPhase.moduleId);
-    result.add(BDRReportMonoPhase.featureId);
-    result.add(BDRReportMonoPhase.deliverableID);
-    result.add(BDRReportMonoPhase.deliverableQty);
-    result.add(BDRReportMonoPhase.moduleName);
-    result.add(BDRReportMonoPhase.featureDisplay);
-    result.add(BDRReportMonoPhase.deliverableDisplay);
-    result.add(BDRReportMonoPhase.customerID);
-    result.add(BDRReportMonoPhase.deliverableExpirationDate);
-    result.add(BDRReportMonoPhase.eventDatetime);
-    result.add(BDRReportMonoPhase.operation);
-    result.add(BDRReportMonoPhase.orgin);
-    result.add(BDRReportMonoPhase.providerName);
-    result.add(BDRReportMonoPhase.returnCode);
-    result.add(BDRReportMonoPhase.returnCodeDescription);
-    result.add(BDRReportMonoPhase.returnCodeDetails);
-    result.add(BDRReportMonoPhase.deliveryRequestID);
-    result.add(BDRReportMonoPhase.originatingDeliveryRequestID);
-    result.add(BDRReportMonoPhase.eventID);
-    result.add(BDRReportMonoPhase.deliveryStatus);
+    result = BDRReportMonoPhase.headerFieldsOrder;
     return result;
   }
 
