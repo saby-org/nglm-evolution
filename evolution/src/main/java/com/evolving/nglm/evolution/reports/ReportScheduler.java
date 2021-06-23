@@ -96,7 +96,9 @@ public class ReportScheduler {
     log.info("Starting scheduler");
     for (Tenant tenant : Deployment.getTenants()) {
       int tenantID = tenant.getTenantID();
+      log.info("RAJ K starting scheduler for tenant {}", tenantID);
       reportScheduler.get(tenantID).runScheduler();
+      log.info("RAJ K started scheduler for tenant {}", tenantID);
     }
   }
   
