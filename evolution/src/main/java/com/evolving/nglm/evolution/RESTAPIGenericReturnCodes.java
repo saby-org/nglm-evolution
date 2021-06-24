@@ -107,6 +107,9 @@ public enum RESTAPIGenericReturnCodes
   RESCHEDULE(709, "RESCHEDULE", "Reschedule"),
   BLOCKED_BY_CONTACT_POLICY(710,"BLOCKED_BY_CONTACT_POLICY","Message is blocked by contact policy rules"),
   CONTACT_POLICY_EVALUATION_ERROR(711,"CONTACT_POLICY_EVALUATION_ERROR","Contact policy rules validation failed"),
+  BLOCKED_BY_EXCLUSION_LIST(712, "BLOCKED_BY_EXCLUSION_LIST", "Message is blocked due to exclusion list"),
+  BLOCKED_BY_CUSTOMER_STATUS(713, "BLOCKED_BY_CUSTOMER_STATUS", "Message is blocked due to customer status"),
+  BLOCKED_BY_CHANNEL_QUOTA(714, "BLOCKED_BY_CHANNEL_QUOTA", "Message is blocked due to channel quota"),
   UNKNOWN(-1, "UNKNOWN", "UNKNOWN");
   
   private int genericResponseCode;

@@ -23,7 +23,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
     DELIVERED(0, DeliveryStatus.Delivered),
     THROTTLING(23, DeliveryStatus.Failed),
     ERROR(24, DeliveryStatus.Failed),
-    CUSTOMER_NOT_ELIGIBLE(51, DeliveryStatus.Failed),//returned  by message gateway where eligibility evaluation happened there as well, outside evolution
+    CUSTOMER_NOT_ELIGIBLE(51, DeliveryStatus.Failed),//not used; marked as deprecated
     NO_CUSTOMER_LANGUAGE(701, DeliveryStatus.Failed),
     NO_CUSTOMER_CHANNEL(702, DeliveryStatus.Failed),
     UNDELIVERABLE(703, DeliveryStatus.Failed),
@@ -34,6 +34,9 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
     RESCHEDULE(709, DeliveryStatus.Reschedule),
     BLOCKED_BY_CONTACT_POLICY(710, DeliveryStatus.Failed),
     CONTACT_POLICY_EVALUATION_ERROR(711, DeliveryStatus.Failed),
+    BLOCKED_BY_EXCLUSION_LIST(712, DeliveryStatus.Failed), //returned  by message gateway where eligibility evaluation happened there as well, outside evolution
+    BLOCKED_BY_CUSTOMER_STATUS(713, DeliveryStatus.Failed), //returned  by message gateway where eligibility evaluation happened there as well, outside evolution
+    BLOCKED_BY_CHANNEL_QUOTA(714, DeliveryStatus.Failed), //returned  by message gateway where eligibility evaluation happened there as well, outside evolution
     UNKNOWN(-1, DeliveryStatus.Unknown);
    
     private Integer returncode;
