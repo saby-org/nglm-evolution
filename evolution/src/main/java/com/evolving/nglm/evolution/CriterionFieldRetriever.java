@@ -108,6 +108,70 @@ public abstract class CriterionFieldRetriever
     //return result;
   }
   
+  public static Object getNumberOfOfferPurchasedFromSalesChnlForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    log.info("RAJ K calling getNumberOfOfferPurchasedFromSalesChnlForPeriod with subcriteriaVal {}", subcriteriaVal);
+    long result = 0; //RAJ K
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String offerID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    List<Date> purchaseDates = new ArrayList<Date>();
+    
+    //
+    //  offerID
+    //
+    
+    if (offerID != null)
+      {
+        if (subscriberProfile.getOfferPurchaseHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseHistory().get(offerID));
+      }
+    else
+      {
+        purchaseDates = subscriberProfile.getOfferPurchaseHistory().values().stream().flatMap(vl -> vl.stream()).collect(Collectors.toList());
+      }
+    
+    //
+    //  period
+    //
+    
+    if (period != null)
+      {
+        String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+        Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+        Date startDate = startEndDatePair.getFirstElement();
+        Date endDate = startEndDatePair.getSecondElement();
+        result = purchaseDates.stream().filter(purchaseDate -> purchaseDate.after(startDate) && purchaseDate.before(endDate)).count();
+      }
+    else
+      {
+        result = purchaseDates.size();
+      }
+    log.info("RAJ K calling getNumberOfOfferPurchasedFromSalesChnlForPeriod result {}", result);
+    return 10; //RAJ K
+    //return result;
+  }
+  
+  public static Object getNumberOfVoucherDeliveredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = -1;
+    log.info("RAJ K calling getNumberOfVoucherDeliveredForPeriod result {}", result);
+    return result;
+  }
+  
+  public static Object getNumberOfVoucherRedeemedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = -1;
+    log.info("RAJ K calling getNumberOfVoucherRedeemedForPeriod result {}", result);
+    return result;
+  }
+  
+  public static Object getNumberOfVoucherExpiredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = -1;
+    log.info("RAJ K calling getNumberOfVoucherExpiredForPeriod result {}", result);
+    return result;
+  }
+  
   protected static Pair<Date, Date> getStartAndEndDate(String period, String timeZone)
   {
     Date now = SystemTime.getCurrentTime();
