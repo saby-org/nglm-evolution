@@ -243,7 +243,7 @@ public abstract class SubscriberProfile
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private Map<String,Integer> exclusionInclusionTargets; 
   private List<ComplexObjectInstance> complexObjectInstances; 
-  @Deprecated(since = "evolution 2.0.0_1 use getOfferPurchaseSalesChannelHistory along with till removal", forRemoval = true)
+  @Deprecated
   private Map<String, List<Date>> offerPurchaseHistory;
   private Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory; //RAJ K
   private int tenantID;
@@ -279,7 +279,7 @@ public abstract class SubscriberProfile
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
   public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
-  @Deprecated(since = "evolution 2.0.0_1 use getOfferPurchaseSalesChannelHistory along with this to read till removal", forRemoval = true)
+  @Deprecated
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
   public Map<String, List<Pair<String, Date>>> getOfferPurchaseSalesChannelHistory() { return offerPurchaseSalesChannelHistory; }
   public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }

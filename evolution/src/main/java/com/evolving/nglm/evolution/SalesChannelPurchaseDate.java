@@ -119,5 +119,4 @@ public class SalesChannelPurchaseDate
 
     return new SalesChannelPurchaseDate(salesChannelID, purchaseDate);
   }
-
 }
