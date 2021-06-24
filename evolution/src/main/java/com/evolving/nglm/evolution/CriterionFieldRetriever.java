@@ -502,6 +502,17 @@ public abstract class CriterionFieldRetriever
   {
     Set<String> res = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values().stream().filter(lps -> (lps.getLoyaltyProgramExitDate() == null)).filter(lps -> (lps instanceof LoyaltyProgramMissionState)).map(lps -> (LoyaltyProgramMissionState) lps).map(lps -> ((LoyaltyProgramMissionState) lps).getStepName()).collect(Collectors.toSet());
     return res;
+  // getVoucherCodes
+  //
+  
+  public static Object getVoucherCodes(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException {
+   
+   List <VoucherProfileStored> vouchers = evaluationRequest.getSubscriberProfile().getVouchers();
+   Set<String> res = new HashSet<>();
+   for (VoucherProfileStored voucher : vouchers) {
+     res.add(voucher.getVoucherCode());
+   }
+   return res;
   }
 
   //

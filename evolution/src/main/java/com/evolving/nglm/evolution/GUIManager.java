@@ -107,6 +107,7 @@ import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
@@ -30581,5 +30582,77 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     response.put("customerVersion", com.evolving.nglm.core.Deployment.getDeployment(tenantID).getCustomerVersion());
     return JSONUtilities.encodeObject(response);
   }
-}
+  
+  public JSONObject processSendMessage(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
 
+    Date now = SystemTime.getCurrentTime();
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String areaAvailability = JSONUtilities.decodeString(jsonRoot, "areaAvailability", true);
+    JSONObject tags = JSONUtilities.decodeJSONObject(jsonRoot, "tags", true);
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+   String subscriberID = resolveSubscriberID(customerID, tenantID);
+   if (subscriberID == null)
+   {
+     log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+     response.put("responseCode", "CustomerNotFound");
+     return JSONUtilities.encodeObject(response);
+   }
+    
+    Collection <SubscriberMessageTemplate> templates = subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now, tenantID);
+    for (SubscriberMessageTemplate template : templates) {
+      if (template instanceof SMSTemplate) {
+        JSONArray templateAreaAvailablity = (JSONArray) ((SMSTemplate) template).getJSONRepresentation()
+            .get("areaAvailability");
+        if (templateAreaAvailablity != null && templateAreaAvailablity.equals(areaAvailability))
+          {
+            String topic = Deployment.getNotificationEventTopic();
+            Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+            Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", workflowID, Module.Offer_Catalog.getExternalRepresentation() , feature); 
+            kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+                topic,
+                keySerializer.serialize(topic, new StringKey(subscriberID)),
+                valueSerializer.serialize(topic, notificationEvent)
+                ));
+          }
+      }
+      if (template instanceof MailTemplate) {
+        JSONArray templateAreaAvailablity = (JSONArray) ((MailTemplate) template).getJSONRepresentation()
+            .get("areaAvailability");
+        if (templateAreaAvailablity != null && templateAreaAvailablity.equals(areaAvailability))
+          {
+            
+          }
+      }
+      
+      if (template instanceof DialogTemplate) {
+        JSONArray templateAreaAvailablity = (JSONArray) ((DialogTemplate) template).getJSONRepresentation()
+            .get("areaAvailability");
+        if (templateAreaAvailablity != null && templateAreaAvailablity.equals(areaAvailability))
+          {
+            
+          }
+      }
+      
+      if (template instanceof PushTemplate) {
+        JSONArray templateAreaAvailablity = (JSONArray) ((PushTemplate) template).getJSONRepresentation()
+            .get("areaAvailability");
+        if (templateAreaAvailablity != null && templateAreaAvailablity.equals(areaAvailability))
+          {
+            
+          }
+      }
+    }
+    
+    return JSONUtilities.encodeObject(response);
+  }
+}

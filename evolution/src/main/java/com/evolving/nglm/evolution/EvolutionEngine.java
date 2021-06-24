@@ -322,7 +322,7 @@ public class EvolutionEngine
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
     String workflowEventTopic = Deployment.getWorkflowEventTopic();
-
+    String notificationEventTopic = Deployment.getNotificationEventTopic();
     //
     //  changelogs
     //
@@ -727,6 +727,7 @@ public class EvolutionEngine
     final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
     final ConnectSerde<EDRDetails> edrDetailsSerde = EDRDetails.serde();
     final ConnectSerde<WorkflowEvent> workflowEventSerde = WorkflowEvent.serde();
+    final ConnectSerde<NotificationEvent> notificationEventSerde = NotificationEvent.serde();
 
     //
     //  special serdes
@@ -791,6 +792,7 @@ public class EvolutionEngine
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
     KStream<StringKey, WorkflowEvent> workflowEventStream = builder.stream(workflowEventTopic, Consumed.with(stringKeySerde, workflowEventSerde));
+    KStream<StringKey, NotificationEvent> notificationEventStream = builder.stream(notificationEventTopic, Consumed.with(stringKeySerde, notificationEventSerde));
     
     //
     //  timedEvaluationStreams
@@ -936,6 +938,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) workflowEventStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) notificationEventStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     evolutionEventStreams.addAll(deliveryManagerRequestToProcessStreams);
@@ -987,7 +990,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyTriggerEventAction),
         (key,value) -> (value instanceof SubscriberProfileForceUpdate),
         (key,value) -> (value instanceof EDRDetails),
-        (key,value) -> (value instanceof WorkflowEvent)
+        (key,value) -> (value instanceof WorkflowEvent),
+        (key,value) -> (value instanceof NotificationEvent)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1008,6 +1012,7 @@ public class EvolutionEngine
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
     KStream<StringKey, WorkflowEvent> workflowEventsStream = (KStream<StringKey, WorkflowEvent>) branchedEvolutionEngineOutputs[15];
+    KStream<StringKey, NotificationEvent> notificationEventsStream = (KStream<StringKey, NotificationEvent>) branchedEvolutionEngineOutputs[16];
     /*****************************************
     *
     *  sink
@@ -1963,6 +1968,14 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateWorkflows(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
+    *  update notificationEvent
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateNotifications(context, evolutionEvent) || subscriberStateUpdated;
 
 
     /*****************************************
@@ -2472,6 +2485,27 @@ public class EvolutionEngine
       }
     return subscriberUpdated;
   }
+ 
+ 
+ /*****************************************
+ *
+ *  updateWorkflows
+ *
+ *****************************************/
+
+private static boolean updateNotifications(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+ {
+
+   SubscriberState subscriberState = context.getSubscriberState();
+   boolean subscriberUpdated = false;
+
+   
+   if (evolutionEvent instanceof NotificationEvent)
+     {
+       
+     }
+   return subscriberUpdated;
+ }
 
   private static void checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
   {
