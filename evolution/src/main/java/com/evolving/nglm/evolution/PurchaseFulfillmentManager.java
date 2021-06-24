@@ -1420,9 +1420,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // check offer purchase limit for this subscriber
         //
         
+        //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
+        // so it is important to migrate data, but once all customer run over this version, this should be removed
+        // ------ START DATA MIGRATION COULD BE REMOVED
         Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
         List<Date> purchaseHistory = offerPurchaseHistory.get(offerID);
         int alreadyPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+       // ------ END DATA MIGRATION COULD BE REMOVED
+        
+        int alreadyPurchasedNew = subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null ? subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).size() : 0;
+        alreadyPurchased = alreadyPurchased + alreadyPurchasedNew;
+        
         // "Allow no more than 0 purchases" OR "within 0 days/months" <==> unlimited (no limit check)
         boolean unlimited = (
                (offer.getMaximumAcceptances() == 0)
