@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.odr;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +13,7 @@ import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
 @ReportTypeDef(reportType = "detailedrecords")
 public class ODRReportDriver extends ReportDriver
@@ -35,7 +37,8 @@ public class ODRReportDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-	  // TODO Auto-generated method stub
-	  return null;
+    List<String> result = new ArrayList<>();
+    result = ODRReportMonoPhase.headerFieldsOrder;
+    return result;
   }
 }

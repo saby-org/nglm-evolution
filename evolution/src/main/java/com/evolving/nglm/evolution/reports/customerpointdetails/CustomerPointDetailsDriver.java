@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.customerpointdetails;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
 @ReportTypeDef(reportType = "subscriberprofile")
 public class CustomerPointDetailsDriver extends ReportDriver
@@ -37,8 +39,9 @@ public class CustomerPointDetailsDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = new ArrayList<>();
+    result = CustomerPointDetailsMonoPhase.headerFieldsOrder;
+    return result;
   }
 
 }

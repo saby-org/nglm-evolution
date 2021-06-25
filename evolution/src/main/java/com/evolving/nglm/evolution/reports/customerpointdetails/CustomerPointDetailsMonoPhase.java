@@ -34,7 +34,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
 
   private static final Logger log = LoggerFactory.getLogger(CustomerPointDetailsMonoPhase.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  static List<String> headerFieldsOrder = new ArrayList<String>();
   private PointService pointService;
 
   @Override

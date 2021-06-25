@@ -34,7 +34,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
   private static final Logger log = LoggerFactory.getLogger(LoyaltyProgramCustomerStatesMonoPhase.class);
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  static List<String> headerFieldsOrder = new ArrayList<String>();
   private LoyaltyProgramService loyaltyProgramService;
   private final static String customerID = "customerID";
 

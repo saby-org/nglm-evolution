@@ -55,7 +55,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
   private VoucherService voucherService;
   private SupplierService supplierService;
   private VoucherTypeService voucherTypeService;
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  static List<String> headerFieldsOrder = new ArrayList<String>();
 
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {

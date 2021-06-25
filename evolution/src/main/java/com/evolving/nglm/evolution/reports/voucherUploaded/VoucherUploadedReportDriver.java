@@ -7,7 +7,9 @@ import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -40,7 +42,8 @@ public class VoucherUploadedReportDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = new ArrayList<>();
+    result = VoucherUploadedReportMonoPhase.headerFieldsOrder;
+    return result;
   }
 }

@@ -33,7 +33,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportMonoPhase.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private JourneyService journeyService;
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  static List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
   private final String customerID = "customerID";
   

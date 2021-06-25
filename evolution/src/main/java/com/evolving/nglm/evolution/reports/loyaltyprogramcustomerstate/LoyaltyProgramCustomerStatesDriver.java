@@ -9,7 +9,9 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 @ReportTypeDef(reportType = "subscriberprofile")
@@ -35,7 +37,8 @@ public class LoyaltyProgramCustomerStatesDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-	  // TODO Auto-generated method stub
-	  return null;
+    List<String> result = new ArrayList<>();
+    result = LoyaltyProgramCustomerStatesMonoPhase.headerFieldsOrder;
+    return result;
   }
 }
