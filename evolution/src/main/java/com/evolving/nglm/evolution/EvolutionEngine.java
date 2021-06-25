@@ -3412,6 +3412,7 @@ public class EvolutionEngine
         String offerID = purchaseFulfillmentRequest.getOfferID();
         Offer offer = offerService.getActiveOffer(offerID, now);
         String salesChannelID = purchaseFulfillmentRequest.getSalesChannelID();
+        log.info("RAJ K PurchaseFulfillmentRequest salesChannelID {}", salesChannelID);
         if (offer == null)
           {
             log.info("Got a purchase for inexistent offer " + offerID);
@@ -3420,6 +3421,7 @@ public class EvolutionEngine
           {
             // EVPRO-1061 : For day unit, limit should be 0h on (today - number of days + 1)
             // for month unit, the limit should be on 0h on (1st day of this month - number of months + 1)
+            Date last4MonthDate = RLMDateUtils.addMonths(now, -4, Deployment.getDeployment(tenantID).getTimeZone()); // we need last 3month data for criterion
             Date earliestDateToKeep = null;
             Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
             Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
@@ -3433,6 +3435,8 @@ public class EvolutionEngine
               log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
               earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
             }
+            earliestDateToKeep = earliestDateToKeep.after(last4MonthDate) ? last4MonthDate : earliestDateToKeep;
+            log.info("RAJ K PurchaseFulfillmentRequest earliestDateToKeep {}", earliestDateToKeep);
             log.debug("earliestDateToKeep for " + offerID + " : " + earliestDateToKeep + " maximumAcceptancesPeriodDays: " + maximumAcceptancesPeriodDays + " maximumAcceptancesPeriodMonths: " + maximumAcceptancesPeriodMonths);
             List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
             
@@ -3447,16 +3451,17 @@ public class EvolutionEngine
             
             if (oldPurchaseHistory != null)
               {
+                String salesChannelIDMigration = "migrating-ActualWasntAvlbl";
                 // clean list : only keep relevant purchase dates
                 for (Date purchaseDate : oldPurchaseHistory)
                   {
                     if (purchaseDate.after(earliestDateToKeep))
                       {
-                        cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelID, purchaseDate));
+                        cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelIDMigration, purchaseDate));
                       }
                   }
+                oldFullPurchaseHistory.put(offerID, new ArrayList<Date>()); // old will be blank - will be removed future
               }
-            oldFullPurchaseHistory.put(offerID, new ArrayList<Date>()); // old will be blank - will be removed future
             // ------ END DATA MIGRATION COULD BE REMOVED
             
             //
@@ -3470,17 +3475,20 @@ public class EvolutionEngine
                 // clean list : only keep relevant purchase dates
                 for (Pair<String, Date> purchaseDatePair : newPurchaseHistory)
                   {
+                    log.info("RAJ K PurchaseFulfillmentRequest newPurchaseHistory purchaseDatePair {}", purchaseDatePair);
                     Date purchaseDate = purchaseDatePair.getSecondElement();
                     if (purchaseDate.after(earliestDateToKeep))
                       {
-                        cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelID, purchaseDate));
+                        cleanPurchaseHistory.add(new Pair<String, Date>(purchaseDatePair.getFirstElement(), purchaseDatePair.getSecondElement()));
                       }
                   }
               }
             
             // TODO : this could be size-optimized by storing date/quantity in a new object
+            // this purchase - actual value
             for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
               {
+                log.info("RAJ K PurchaseFulfillmentRequest this purchaseDatePair {}", "<" + salesChannelID + "," + now + ">");
                 cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelID, now)); // add new purchase
               }
             
