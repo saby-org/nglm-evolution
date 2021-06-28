@@ -45,8 +45,6 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
-import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.LoyaltyProgramChallenge.ChallengeLevel;
 
@@ -82,6 +80,7 @@ public abstract class SubscriberProfile
   {
     Active("active"),
     Inactive("inactive"),
+    Terminated("terminated"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private EvolutionSubscriberStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

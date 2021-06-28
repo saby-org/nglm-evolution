@@ -1779,11 +1779,18 @@ public class EvolutionEngine
 
     switch (evolutionEvent.getSubscriberAction())
       {
+        
         case Cleanup:
-          updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
-          return null;
+          // move the user to terminated state and reference the date of termination, so that is it cleaned later on
+          break;
+      
+        case CleanupImmediate:
+        // cleanup the subscriber now... just return null...
+        updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
+        return null; 
           
-        case Delete:
+        case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
+        case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution Engine
           if(previousSubscriberState==null) return null;
           SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
           return subscriberState;
@@ -6814,10 +6821,17 @@ public class EvolutionEngine
 
     switch (evolutionEvent.getSubscriberAction())
       {
+        
         case Cleanup:
-          return null;
+          // move the user to terminated state and reference the date of termination, so that is it cleaned later on
+          break;
+        
+        case CleanupImmediate:
+          // cleanup the subscriber now... just return null...
+          return null;          
           
-        case Delete:
+        case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
+        case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution Engine
           cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
           ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
           return currentExtendedSubscriberProfile;

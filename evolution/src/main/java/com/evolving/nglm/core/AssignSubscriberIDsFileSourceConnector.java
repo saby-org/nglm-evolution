@@ -149,6 +149,7 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
                 break;
 
               case Delete:
+              case DeleteImmediate:  
                 if (assignAlternateIDs.size() > 0)
                   {
                     log.error("cannot specify alternateIDs when deleting subscriber");

@@ -118,6 +118,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
     switch (subscriberAction)
       {
         case Delete:
+        case DeleteImmediate:
           this.subscriberAction = subscriberAction;
           this.alternateIDs = new HashMap<String,String>();
           for (String configuredAlternateID : Deployment.getAlternateIDs().keySet())

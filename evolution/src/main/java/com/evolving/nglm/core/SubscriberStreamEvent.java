@@ -24,8 +24,10 @@ public interface SubscriberStreamEvent extends SubscriberStreamPriority
   public enum SubscriberAction
   {
     Standard("standard"),
-    Delete("delete"),
-    Cleanup("cleanup"),
+    Delete("delete"), // this is for subscriber manager, evolution engine ignores it
+    DeleteImmediate("deleteImediate"), // this is for subscriber manager, evolution engine ignores it
+    Cleanup("cleanup"), // this is for evolution engine, subscriber manager ignores it and only generates a CleanupSubscriber event 
+    CleanupImmediate("cleanupImmediate"), // this is for evolution engine, subscriber manager ignores it and only generates a CleanupSubscriber event
     Unknown("(unknown)");
     private String externalRepresentation;
     private SubscriberAction(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
