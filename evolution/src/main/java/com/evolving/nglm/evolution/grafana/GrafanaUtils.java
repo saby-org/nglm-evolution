@@ -182,7 +182,7 @@ public class GrafanaUtils
                           InputStream is = GrafanaUtils.class.getResourceAsStream("/" + currentFileName);
                           java.util.Scanner scanner = new java.util.Scanner(is).useDelimiter("\\A");
                           String s = scanner.hasNext() ? scanner.next() : "";
-                          s.replace("tenantID:camptenantID", "tenantID:" + tenantID);
+                          s = s.replace("tenantID:camptenantID", "tenantID:" + tenantID);
                           scanner.close();
   
                           log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
