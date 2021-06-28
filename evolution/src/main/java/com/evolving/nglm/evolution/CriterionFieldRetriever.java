@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -162,21 +163,84 @@ public abstract class CriterionFieldRetriever
   
   public static Object getNumberOfVoucherDeliveredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    int result = -1;
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherDeliveryDate() != null && voucher.getVoucherDeliveryDate().after(startDate) && voucher.getVoucherDeliveryDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
     log.info("RAJ K calling getNumberOfVoucherDeliveredForPeriod result {}", result);
     return result;
   }
   
   public static Object getNumberOfVoucherRedeemedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    int result = -1;
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherRedeemDate() != null && voucher.getVoucherRedeemDate().after(startDate) && voucher.getVoucherRedeemDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
     log.info("RAJ K calling getNumberOfVoucherRedeemedForPeriod result {}", result);
     return result;
   }
   
   public static Object getNumberOfVoucherExpiredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    int result = -1;
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherExpiryDate() != null && voucher.getVoucherExpiryDate().after(startDate) && voucher.getVoucherExpiryDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
     log.info("RAJ K calling getNumberOfVoucherExpiredForPeriod result {}", result);
     return result;
   }
