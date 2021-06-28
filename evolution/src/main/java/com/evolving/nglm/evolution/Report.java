@@ -32,6 +32,7 @@ public class Report extends GUIManagedObject
 {
   public static final String AVAILABLE_SCHEDULING = "availableScheduling";
   public static final String EFFECTIVE_SCHEDULING = "effectiveScheduling";
+  public static final String EXTRACT_SCHEDULING = "extractScheduling";
   public static final String REPORT_CLASS = "class";
   public static final String DEFAULT_REPORT_PERIOD_QUANTITY = "defaultReportPeriodQuantity";
   public static final String DEFAULT_REPORT_PERIOD_UNIT = "defaultReportPeriodUnit";

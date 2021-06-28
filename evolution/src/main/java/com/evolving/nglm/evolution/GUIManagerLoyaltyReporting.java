@@ -19,10 +19,15 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1029,21 +1034,30 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("loyaltyProgramTypes", JSONUtilities.encodeArray(programTypeList));
     return JSONUtilities.encodeObject(response);
   }
-
+  
+  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  {
+    processDownloadReportInternal(userID, jsonRoot, jsonResponse, exchange, reportService);
+  }
+  
   /*****************************************
   *
-  *  processDownloadReport
- * @throws IOException 
+  * processDownloadReport
+  * @throws IOException 
   *
   *****************************************/
 
-  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  public static String  processDownloadReportInternal(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, ReportService reportService) throws IOException
   {
+    String res = null;
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
     JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
     Integer percentage = JSONUtilities.decodeInteger(jsonRoot, "percentage", false);
     Integer topRows = JSONUtilities.decodeInteger(jsonRoot, "topRows", false);
     JSONArray header = JSONUtilities.decodeJSONArray(jsonRoot, "header", false);
+    if (header != null && header.isEmpty()) header = null; // if empty, same as if not specified
+    JSONArray columnRemoval = JSONUtilities.decodeJSONArray(jsonRoot, "columnRemoval", false);
+    if (columnRemoval != null && columnRemoval.isEmpty()) columnRemoval = null; // if empty, same as if not specified
     Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
 
     GUIManagedObject report1 = reportService.getStoredReport(reportID);
@@ -1095,6 +1109,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           File percentageOutTmpFile = reportFile;
           File topRowsOutTmpFile = reportFile;
           File headerOutTmpFile = reportFile;
+          File columnRemovalOutTmpFile = reportFile;
           File finalZipFile = null;
           File internalFile = null;
           
@@ -1102,17 +1117,19 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           boolean isPercentage = false;
           boolean isTop = false;
           boolean isHeader = false;
+          boolean isColumnRemoval = false;
 
           if(reportFile != null) {
             if(reportFile.length() > 0) {
               try {
                 String unzippedFile = null;
 
-                if (filters != null || percentage != null || topRows != null || header != null) {
+                if (filters != null || percentage != null || topRows != null || header != null || columnRemoval != null) {
                   filterOutTmpFile = File.createTempFile("tempReportFilter.", ".csv");
                   percentageOutTmpFile = File.createTempFile("tempReportPercentage.", ".csv");
                   topRowsOutTmpFile = File.createTempFile("tempReportTopRows.", ".csv");
                   headerOutTmpFile = File.createTempFile("tempReportHeader.", ".csv");
+                  columnRemovalOutTmpFile = File.createTempFile("tempReportColumnRemoval.", ".csv");
                   unzippedFile = ReportUtils.unzip(reportFile.getAbsolutePath());
 
                   if (filters != null && !filters.isEmpty())
@@ -1219,7 +1236,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     {
                       topRowsOutTmpFile = percentageOutTmpFile;
                     }
-
+                  
+                  /// HEADER
+                  
                   if (header != null)
                     {
                       List<String> columnNames = new ArrayList<>();
@@ -1234,6 +1253,24 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   else
                     {
                       headerOutTmpFile = topRowsOutTmpFile;
+                    }
+
+                  /// COLUMN REMOVAL
+                  
+                  if (columnRemoval != null)
+                    {
+                      List<String> columnNames = new ArrayList<>();
+                      for (int i=0; i<columnRemoval.size(); i++)
+                        {
+                          String nameOfColumn = (String) columnRemoval.get(i);
+                          columnNames.add(nameOfColumn);
+                        }
+                      ReportUtils.removeCols(headerOutTmpFile.getAbsolutePath(), columnRemovalOutTmpFile.getAbsolutePath(), columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                      isColumnRemoval = true;
+                    }
+                  else
+                    {
+                      columnRemovalOutTmpFile = headerOutTmpFile;
                     }
 
                   finalFileName = finalFileName.substring(0, finalFileName.length()-8);
@@ -1253,14 +1290,17 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   if(isHeader) {
                     finalFileName = finalFileName+"_Column";
                   }
-                  
+
+                  if(isColumnRemoval) {
+                    finalFileName = finalFileName+"_Removal";
+                  }
                   
                   internalFile = File.createTempFile(finalFileName + ".", ".csv");
                                  
                   try
                   {
                       String strLine;
-                      BufferedReader br = new BufferedReader(new FileReader(headerOutTmpFile));
+                      BufferedReader br = new BufferedReader(new FileReader(columnRemovalOutTmpFile));
                       BufferedWriter bw = new BufferedWriter(new FileWriter(internalFile));
                       while ((strLine = br.readLine()) != null) 
                       {
@@ -1282,31 +1322,42 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   reportFile = new File(finalZipFileName);
                 }
 
-                FileInputStream fis = new FileInputStream(reportFile);
-                exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
-                exchange.sendResponseHeaders(200, reportFile.length());
-                OutputStream os = exchange.getResponseBody();
-                byte data[] = new byte[10_000]; // allow some bufferization
-                int length;
-                while ((length = fis.read(data)) != -1) {
-                  os.write(data, 0, length);
+                if (exchange != null) {
+                  FileInputStream fis = new FileInputStream(reportFile);
+                  exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                  exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+                  exchange.sendResponseHeaders(200, reportFile.length());
+                  OutputStream os = exchange.getResponseBody();
+                  byte data[] = new byte[10_000]; // allow some bufferization
+                  int length;
+                  while ((length = fis.read(data)) != -1) {
+                    os.write(data, 0, length);
+                  }
+                  fis.close();
+                  os.flush();
+                  os.close();
+                } else {
+                  // we were called from ReportScheduler (report extract). Need to move file to reports directory
+                  log.info("Move " + reportFile.getAbsolutePath() + " to " + ReportService.getReportOutputPath(tenantID));
+                  res = reportFile.getName();
+                  Files.move(
+                      FileSystems.getDefault().getPath(reportFile.getAbsolutePath()),
+                      FileSystems.getDefault().getPath(ReportService.getReportOutputPath(tenantID)+res),
+                      StandardCopyOption.REPLACE_EXISTING);
                 }
-                fis.close();
-                os.flush();
-                os.close();
               } catch (Exception excp) {
                 StringWriter stackTraceWriter = new StringWriter();
                 excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
                 log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
 
-              if (filters != null || percentage != null || topRows != null || header != null)
+              if (filters != null || percentage != null || topRows != null || header != null || columnRemoval != null)
               {
                 if (filterOutTmpFile != null) filterOutTmpFile.delete();
                 if (percentageOutTmpFile != null) percentageOutTmpFile.delete();
                 if (topRowsOutTmpFile != null) topRowsOutTmpFile.delete();
                 if (headerOutTmpFile != null) headerOutTmpFile.delete();
+                if (columnRemovalOutTmpFile != null) columnRemovalOutTmpFile.delete();
                 if (finalZipFile != null) finalZipFile.delete();
                 if (internalFile != null) internalFile.delete();
               }
@@ -1327,17 +1378,20 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     if(responseCode != null) {
       try {
         jsonResponse.put("responseCode", responseCode);
-        exchange.sendResponseHeaders(200, 0);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-        writer.write(jsonResponse.toString());
-        writer.close();
-        exchange.close();
+        if (exchange != null) {
+          exchange.sendResponseHeaders(200, 0);
+          BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+          writer.write(jsonResponse.toString());
+          writer.close();
+          exchange.close();
+        }
       }catch(Exception e) {
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
       }
     }
+    return res;
   }
 
   /*****************************************
@@ -1749,7 +1803,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", false);
     Boolean dryRun = false;
     
-
     /*****************************************
     *
     *  dryRun
@@ -1761,6 +1814,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     if (reportID == null)
       {
         reportID = reportService.generateReportID();
+        log.info("generating " + reportID + " in tenant " + tenantID + " for " + JSONUtilities.decodeString(jsonRoot, "display", false));
         jsonRoot.put("id", reportID);
       }
     log.trace("ID : "+reportID);
@@ -1791,7 +1845,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
                   log.trace("Checking that "+eSchedule+" is allowed");
                   if (! availableScheduling.contains(eSchedule)) {
-                	 
                     response.put("id", jsonRoot.get("id"));
                     response.put("responseCode", "reportNotValid");
                     response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
@@ -1803,25 +1856,54 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     response.put("responseParameter", respMsg.toString());
                     return JSONUtilities.encodeObject(response);
                   }
-                 
-
                 }
               }
             }
           }
       }
-    JSONArray effectiveScheduling = new JSONArray();
+    
+    Set<String> effectiveSchedulingSet = new HashSet<>();
     JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
     if (effectiveSchedulingJSONArray != null) { 
         for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
         	 String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
         	 SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
-              if(eSchedule.equals(SchedulingInterval.NONE))
-           		continue;
-            effectiveScheduling.add(schedulingIntervalStr);
+        	 if (!eSchedule.equals(SchedulingInterval.NONE) &&
+               !effectiveSchedulingSet.contains(eSchedule.getExternalRepresentation())) { // do not add it multiple times)
+                 effectiveSchedulingSet.add(schedulingIntervalStr);
+        	 }
         }
+    }
+    /*
+     EVPRO-1121 Scheduling of reports extractions
+     
+     Add scheduling indicated in extractScheduling, if not already there
+     
+       "extractScheduling" : [{
+          "scheduling" : ["daily"],
+          "filtering" : {...}
+        }]
+     */
+    JSONArray extractSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EXTRACT_SCHEDULING, false);
+    if (extractSchedulingJSONArray != null) { 
+      for (int i=0; i<extractSchedulingJSONArray.size(); i++) {
+        JSONObject extractSchedulingJSON = (JSONObject) extractSchedulingJSONArray.get(i);
+        JSONArray schedulingJSONArray = JSONUtilities.decodeJSONArray(extractSchedulingJSON, "scheduling");
+        for (int j=0; j<schedulingJSONArray.size(); j++) {
+          String schedulingIntervalStr = (String) schedulingJSONArray.get(j);
+          log.info("Extracting " + schedulingIntervalStr + " from extractScheduling for " + JSONUtilities.decodeString(jsonRoot, "id", false) + " " + JSONUtilities.decodeString(jsonRoot, "display", false));
+          SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
+          if (!eSchedule.equals(SchedulingInterval.NONE) &&
+              !effectiveSchedulingSet.contains(schedulingIntervalStr)) { // do not add it multiple times
+                effectiveSchedulingSet.add(schedulingIntervalStr); // add this scheduling
+          }
         }
-        
+      }
+    }
+
+    JSONArray effectiveScheduling = new JSONArray();
+    for (String schedule : effectiveSchedulingSet)
+      effectiveScheduling.add(schedule);
     jsonRoot.remove(Report.EFFECTIVE_SCHEDULING);
     jsonRoot.put(Report.EFFECTIVE_SCHEDULING, effectiveScheduling);  
     long epoch = epochServer.getKey();
@@ -1831,9 +1913,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         log.trace("new report : "+report);
         if (!dryRun)
           {
-        	            reportService.putReport(report, (existingReport == null), userID);
+            reportService.putReport(report, (existingReport == null), userID);
           }
-      
         response.put("id", report.getReportID());
         response.put("accepted", report.getAccepted());
         response.put("valid", report.getAccepted());

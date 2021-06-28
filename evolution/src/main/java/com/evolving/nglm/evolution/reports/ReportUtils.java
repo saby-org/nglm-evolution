@@ -624,17 +624,20 @@ public class ReportUtils {
   		int i = 0;
   		BufferedReader br = new BufferedReader(new FileReader(inputFile));
   		BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
-  		bw.write(br.readLine());
-  		while ((strLine = br.readLine()) != null) 
-  		{
-  			if (i++ < topRows) 
-  			{
-  			  bw.write("\n");
-  			  bw.write(strLine);
-  			}
-  			else
-  				break;
-  
+  		String header = br.readLine();
+  		if (header != null) {
+  		  bw.write(header);
+  		  while ((strLine = br.readLine()) != null) 
+  		    {
+  		      if (i++ < topRows) 
+  		        {
+  		          bw.write("\n");
+  		          bw.write(strLine);
+  		        }
+  		      else
+  		        break;
+
+  		    }
   		}
   		br.close();
   		bw.close();
@@ -723,94 +726,99 @@ public class ReportUtils {
   
           if (columnNames.size() != 0) 
             {
-              String[] wordsOfHeader = br.readLine().split(fieldSeparator, -1);
-              List<String> colNamesInHeader = new ArrayList<>();
-  
-              for (int i = 0; i < wordsOfHeader.length; i++) 
-                {
-                  headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header if exist
-                }
-  
-              boolean colsFound = false;
-              int i = 0;
-              for (String col : columnNames) 
-                {
-                  int headerIndex = 0;
-                  for (String word : headerList) 
-                    {
-                      if (word.equals(col)) 
-                        {
-                          colNamesInHeader.add(word);
-                          colsFound = true;
-  
-                          indexOfColsToExtract[i++] = headerIndex;
-                          break;
-                        } 
-                      else 
-                        {
-                          indexOfColsToExtract[i] = -1;
-                        }
-                      headerIndex++;
-                      if (headerIndex == headerList.size()) 
-                        {
-                          indexOfColsToExtract[i] = -1;
-                          i++;
-                          break;
-                        }
-                    }
-                }
-              if (colsFound) 
-                {
-                  Arrays.sort(indexOfColsToExtract);
-                  List<String> sortedColsNamesInHeader = new ArrayList<>();
-                  for (int j = 0; j < indexOfColsToExtract.length; j++) 
-                    {
-                      if (indexOfColsToExtract[j] != -1) 
-                        {
-                          sortedColsNamesInHeader.add(headerList.get(indexOfColsToExtract[j]));
-                        }
-                    }
-  
-                  // keep the same format of the header in the output file
-                  for (int j = 0; j < sortedColsNamesInHeader.size() - 1; j++) 
-                    {
-                      bw.write(sortedColsNamesInHeader.get(j).concat(fieldSeparator));
-                    }
-                  bw.write(sortedColsNamesInHeader.get(sortedColsNamesInHeader.size() - 1));
-                  bw.write("\n");
-  
-                  String colsToExtract = "";
-                  String line;
-                  while ((line = br.readLine()) != null) {
-                    if (line.length() != 0) 
+              String header = br.readLine();
+              if (header != null) {
+                String[] wordsOfHeader = header.split(fieldSeparator, -1);
+                List<String> colNamesInHeader = new ArrayList<>();
+
+                for (int i = 0; i < wordsOfHeader.length; i++) 
+                  {
+                    headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header if exist
+                  }
+
+                boolean colsFound = false;
+                int i = 0;
+                for (String col : columnNames) 
+                  {
+                    int headerIndex = 0;
+                    for (String word : headerList) 
                       {
-                        String regex = fieldSeparator + "(?=(?:[^\\" + fieldSurrounder + "]*\\" + fieldSurrounder + "[^\\"
-                            + fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
-                        String[] cols = line.split(regex, -1);
-  
-                        for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
+                        if (word.equals(col)) 
                           {
-                            if (indexOfColsToExtract[cpt] != -1) 
-                              {
-                                colsToExtract = colsToExtract + cols[indexOfColsToExtract[cpt]] + fieldSeparator;
-                              }
+                            colNamesInHeader.add(word);
+                            colsFound = true;
+
+                            indexOfColsToExtract[i++] = headerIndex;
+                            break;
+                          } 
+                        else 
+                          {
+                            indexOfColsToExtract[i] = -1;
                           }
-                        bw.write(colsToExtract);
-                        bw.write(cols[indexOfColsToExtract[indexOfColsToExtract.length-1]]); // to avoid having the fieldSeparator at the end of each written line
-                        bw.write("\n");
-                        colsToExtract = "";
-  
+                        headerIndex++;
+                        if (headerIndex == headerList.size()) 
+                          {
+                            indexOfColsToExtract[i] = -1;
+                            i++;
+                            break;
+                          }
                       }
                   }
-                } 
-              else 
-                {
-                  log.error("The columns: " + columnNames + " don't exist in  " + inputFileName);
-                }
+                if (colsFound) 
+                  {
+                    Arrays.sort(indexOfColsToExtract);
+                    List<String> sortedColsNamesInHeader = new ArrayList<>();
+                    for (int j = 0; j < indexOfColsToExtract.length; j++) 
+                      {
+                        if (indexOfColsToExtract[j] != -1) 
+                          {
+                            sortedColsNamesInHeader.add(headerList.get(indexOfColsToExtract[j]));
+                          }
+                      }
+
+                    // keep the same format of the header in the output file
+                    for (int j = 0; j < sortedColsNamesInHeader.size() - 1; j++) 
+                      {
+                        bw.write(sortedColsNamesInHeader.get(j).concat(fieldSeparator));
+                      }
+                    bw.write(sortedColsNamesInHeader.get(sortedColsNamesInHeader.size() - 1));
+                    bw.write("\n");
+
+                    String colsToExtract = "";
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                      if (line.length() != 0) 
+                        {
+                          String regex = fieldSeparator + "(?=(?:[^\\" + fieldSurrounder + "]*\\" + fieldSurrounder + "[^\\"
+                              + fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
+                          String[] cols = line.split(regex, -1);
+
+                          for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
+                            {
+                              if (indexOfColsToExtract[cpt] != -1) 
+                                {
+                                  colsToExtract = colsToExtract + cols[indexOfColsToExtract[cpt]] + fieldSeparator;
+                                }
+                            }
+                          bw.write(colsToExtract);
+                          bw.write(cols[indexOfColsToExtract[indexOfColsToExtract.length-1]]); // to avoid having the fieldSeparator at the end of each written line
+                          bw.write("\n");
+                          colsToExtract = "";
+
+                        }
+                    }
+                  } 
+                else 
+                  {
+                    log.debug("The columns: " + columnNames + " don't exist in  " + inputFileName);
+                  }
+              } else {
+                log.debug("Input file is empty " + inputFileName);
+              }
             } 
           else 
             {
-              log.error("No column names were specified!");
+              log.debug("No column names were specified!");
             }
           br.close();
           bw.close();
@@ -960,5 +968,42 @@ public class ReportUtils {
     c.set(Calendar.SECOND, 1);
     Date yesterdayAtZeroHour = c.getTime();
     return yesterdayAtZeroHour;
+  }
+
+  public static void removeCols(String inputFileName, String outputFileName, List<String> columnsToRemove, String fieldSeparator, String fieldSurrounder) {
+    try {
+      
+      // Find full header list from first line of report
+      List<String> headerList = new ArrayList<>();
+      BufferedReader br = new BufferedReader(new FileReader(inputFileName));
+      if (columnsToRemove.size() != 0) {
+        String header = br.readLine();
+        if (header != null) {
+          String[] wordsOfHeader = header.split(fieldSeparator, -1);
+          for (int i = 0; i < wordsOfHeader.length; i++) {
+            headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header if exist
+          }
+
+          // Remove some columns
+          for (String col : columnsToRemove) {
+            if (!headerList.remove(col)) {
+              log.debug("warning : column " + col + " does not exist in report " + inputFileName);
+            }
+          }
+
+          // Call legacy method
+          subsetOfCols(inputFileName, outputFileName, headerList, fieldSeparator, fieldSurrounder);
+
+        } else {
+          log.debug("Input file is empty " + inputFileName);
+        }
+      }
+      br.close();
+      
+    } catch (FileNotFoundException e) {
+      log.error("The file " + inputFileName + " doesn't exist", e);
+    } catch (IOException e) {
+      log.error("Error processing " + inputFileName + " or " + outputFileName, e);
+    }
   }
 }
