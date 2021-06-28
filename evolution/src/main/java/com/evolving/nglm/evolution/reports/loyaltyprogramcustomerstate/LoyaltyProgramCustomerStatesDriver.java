@@ -37,8 +37,7 @@ public class LoyaltyProgramCustomerStatesDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    List<String> result = new ArrayList<>();
-    result = LoyaltyProgramCustomerStatesMonoPhase.headerFieldsOrder;
+    List<String> result = LoyaltyProgramCustomerStatesMonoPhase.headerFieldsOrder;
     return result;
   }
 }

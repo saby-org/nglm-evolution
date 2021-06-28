@@ -42,8 +42,7 @@ public class VoucherUploadedReportDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    List<String> result = new ArrayList<>();
-    result = VoucherUploadedReportMonoPhase.headerFieldsOrder;
+    List<String> result = VoucherUploadedReportMonoPhase.headerFieldsOrder;
     return result;
   }
 }

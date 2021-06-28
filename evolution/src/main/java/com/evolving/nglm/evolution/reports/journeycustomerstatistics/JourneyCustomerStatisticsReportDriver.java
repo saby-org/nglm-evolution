@@ -57,8 +57,7 @@ public class JourneyCustomerStatisticsReportDriver extends ReportDriver {
 
   @Override
   public List<String> reportHeader() {
-    List<String> result = new ArrayList<>();
-    result = JourneyCustomerStatisticsReportMonoPhase.headerFieldsOrder;
+    List<String> result = JourneyCustomerStatisticsReportMonoPhase.headerFieldsOrder;
     return result;
   }
 }

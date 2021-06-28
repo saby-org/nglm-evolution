@@ -39,8 +39,7 @@ public class CustomerPointDetailsDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    List<String> result = new ArrayList<>();
-    result = CustomerPointDetailsMonoPhase.headerFieldsOrder;
+    List<String> result = CustomerPointDetailsMonoPhase.headerFieldsOrder;
     return result;
   }
 

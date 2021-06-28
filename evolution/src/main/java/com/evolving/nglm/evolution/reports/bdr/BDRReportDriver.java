@@ -43,8 +43,7 @@ public class BDRReportDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    List<String> result = new ArrayList<>();
-    result = BDRReportMonoPhase.headerFieldsOrder;
+    List<String> result = BDRReportMonoPhase.headerFieldsOrder;
     return result;
   }
 

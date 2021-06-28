@@ -40,8 +40,7 @@ public class VDRReportDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    List<String> result = new ArrayList<>();
-    result = VDRReportMonoPhase.headerFieldsOrder;
+    List<String> result = VDRReportMonoPhase.headerFieldsOrder;
     return result;
   }
 }

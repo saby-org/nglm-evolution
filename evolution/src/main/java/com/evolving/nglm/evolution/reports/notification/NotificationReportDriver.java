@@ -37,8 +37,7 @@ public class NotificationReportDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    List<String> result = new ArrayList<>();
-    result = NotificationReportMonoPhase.headerFieldsOrder;
+    List<String> result = NotificationReportMonoPhase.headerFieldsOrder;
     return result;
   }
 }
