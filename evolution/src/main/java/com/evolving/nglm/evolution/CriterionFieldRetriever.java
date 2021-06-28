@@ -68,7 +68,7 @@ public abstract class CriterionFieldRetriever
   public static Object getNumberOfOfferPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
     log.info("RAJ K calling getNumberOfOfferPurchasedForPeriod with subcriteriaVal {}", subcriteriaVal);
-    long result = 0; //RAJ K
+    long result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     String offerID = (String) subcriteriaVal.get(0);
     String period = (String) subcriteriaVal.get(1);
@@ -81,10 +81,15 @@ public abstract class CriterionFieldRetriever
     if (offerID != null)
       {
         if (subscriberProfile.getOfferPurchaseHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseHistory().get(offerID));
+        if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
       }
     else
       {
         purchaseDates = subscriberProfile.getOfferPurchaseHistory().values().stream().flatMap(vl -> vl.stream()).collect(Collectors.toList());
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
       }
     
     //
@@ -104,30 +109,35 @@ public abstract class CriterionFieldRetriever
         result = purchaseDates.size();
       }
     log.info("RAJ K calling getNumberOfOfferPurchasedForPeriod result {}", result);
-    return 10; //RAJ K
-    //return result;
+    return result;
   }
   
   public static Object getNumberOfOfferPurchasedFromSalesChnlForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
     log.info("RAJ K calling getNumberOfOfferPurchasedFromSalesChnlForPeriod with subcriteriaVal {}", subcriteriaVal);
-    long result = 0; //RAJ K
+    long result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
-    String offerID = (String) subcriteriaVal.get(0);
+    String salesChannelID = (String) subcriteriaVal.get(0);
     String period = (String) subcriteriaVal.get(1);
     List<Date> purchaseDates = new ArrayList<Date>();
     
     //
-    //  offerID
+    //  salesChannelID
     //
     
-    if (offerID != null)
+    if (salesChannelID != null)
       {
-        if (subscriberProfile.getOfferPurchaseHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseHistory().get(offerID));
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().filter(element -> element.getFirstElement().equals(salesChannelID)).map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
       }
     else
       {
-        purchaseDates = subscriberProfile.getOfferPurchaseHistory().values().stream().flatMap(vl -> vl.stream()).collect(Collectors.toList());
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
       }
     
     //
@@ -147,8 +157,7 @@ public abstract class CriterionFieldRetriever
         result = purchaseDates.size();
       }
     log.info("RAJ K calling getNumberOfOfferPurchasedFromSalesChnlForPeriod result {}", result);
-    return 10; //RAJ K
-    //return result;
+    return result;
   }
   
   public static Object getNumberOfVoucherDeliveredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
