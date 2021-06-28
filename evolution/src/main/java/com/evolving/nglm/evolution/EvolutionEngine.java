@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
+import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -90,6 +91,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -100,6 +102,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
@@ -2495,14 +2498,141 @@ public class EvolutionEngine
 
 private static boolean updateNotifications(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
  {
-
-   SubscriberState subscriberState = context.getSubscriberState();
+   
    boolean subscriberUpdated = false;
+   SubscriberState subscriberState = context.getSubscriberState();
 
    
    if (evolutionEvent instanceof NotificationEvent)
      {
+
+
+       /*****************************************
+        *
+        * now
+        *
+        *****************************************/
+
+       Date now = SystemTime.getCurrentTime();
+       NotificationEvent notificationEvent = (NotificationEvent) evolutionEvent;
+       int tenantID = context.getSubscriberState().getSubscriberProfile().getTenantID();
        
+       SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
+           context.getSubscriberState().getSubscriberProfile(),
+           (ExtendedSubscriberProfile) null,
+           subscriberGroupEpochReader,
+           null,
+           null,
+           null,
+           null,
+           now, tenantID);
+      
+       
+       /*****************************************
+        *
+        * get DialogTemplate
+        *
+        *****************************************/
+       if (notificationEvent != null) {
+       String templateID = null;
+       String channelID = null;       
+       
+        if (notificationEvent.getTemplateID() != null)
+          {
+             templateID = notificationEvent.getTemplateID();
+          }
+        
+        if (notificationEvent.getChannelID() != null)
+          {
+            channelID = notificationEvent.getChannelID();
+          }
+       
+       SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
+       DialogTemplate template = null;
+       DialogTemplate baseTemplate = null;
+       
+       if(templateID != null) {
+       baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
+       template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(context)) : null;
+       }
+     
+         
+       String language = subscriberEvaluationRequest.getLanguage();
+      
+       if (template != null)
+         {
+           //
+           // get communicationChannel
+           //
+
+           CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
+
+           //
+           // get dest address
+           //
+
+           CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
+           String destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+
+
+           Map<String, List<String>> tags = new HashMap<String, List<String>>();
+                     
+           for (String messageField : template.getDialogMessageFields().keySet())
+             {
+               DialogMessage dialogMessage = template.getDialogMessage(messageField);
+               List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
+               tags.put(messageField, dialogMessageTags);
+
+             }
+         
+           //
+           // Parameters specific to the channel toolbox but NOT related to template
+           //          
+           ParameterMap notificationParameters = new ParameterMap();
+           for(CriterionField field : communicationChannel.getToolboxParameters().values()) {
+             //notificationParameters.put(field.getID(), value);            
+           }
+           
+           
+           Object contactTypeString = notificationEvent.getContactType();
+           ContactType contactType = ContactType.fromExternalRepresentation((String) contactTypeString);
+                     
+           // add also the mandatory parameters for all channels
+           notificationParameters.put("node.parameter.contacttype", contactTypeString);
+           Object sourceAddress = null;
+           if (notificationEvent.getSource() != null && ! notificationEvent.getSource().isEmpty()) {
+             for (String key : notificationEvent.getSource().keySet()) {
+               sourceAddress = notificationEvent.getSource().get(key);
+               break;
+             }
+           }
+           notificationParameters.put("node.parameter.fromaddress", sourceAddress);
+           
+           
+           /*****************************************
+           *
+           * request
+           *
+           *****************************************/
+
+          NotificationManagerRequest request = null;
+          if (destAddress != null)
+            {
+              request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), null, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+
+              request.forceDeliveryPriority(contactType.getDeliveryPriority());
+              request.setRestricted(contactType.getRestricted());
+              subscriberState.getDeliveryRequests().add(request);
+            }
+          else
+            {
+              log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+            }
+
+         }      
+              
+     }
+       subscriberUpdated = true;
      }
    return subscriberUpdated;
  }

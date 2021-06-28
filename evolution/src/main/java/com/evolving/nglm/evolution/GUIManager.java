@@ -636,6 +636,8 @@ public class GUIManager
     getDependencies("getDependencies"),
     
     getSoftwareVersions("getSoftwareVersions"),
+    
+    sendMessage("sendMessage"),
 
     
     //
@@ -2353,6 +2355,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSimpleOfferList", new APISimpleHandler(API.getSimpleOfferList));
         restServer.createContext("/nglm-guimanager/getSimpleOfferSummaryList", new APISimpleHandler(API.getSimpleOfferSummaryList));
         restServer.createContext("/nglm-guimanager/removeSimpleOffer", new APISimpleHandler(API.removeSimpleOffer));
+        
+        restServer.createContext("/nglm-guimanager/sendMessage", new APISimpleHandler(API.sendMessage));
 
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -4277,6 +4281,10 @@ public class GUIManager
                 case getSoftwareVersions:
                 jsonResponse = processSoftwareVersions(userID, jsonRoot, 1); // for the moment, will see later
                 break;
+                
+                case sendMessage:
+                  jsonResponse = processSendMessage(userID, jsonRoot, tenantID);
+                  break;
 
               }
           }
@@ -30583,6 +30591,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     return JSONUtilities.encodeObject(response);
   }
   
+  
   public JSONObject processSendMessage(String userID, JSONObject jsonRoot, int tenantID)
   {
     Map<String, Object> response = new LinkedHashMap<String, Object>();
@@ -30592,6 +30601,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String areaAvailability = JSONUtilities.decodeString(jsonRoot, "areaAvailability", true);
     JSONObject tags = JSONUtilities.decodeJSONObject(jsonRoot, "tags", true);
+    Map<String, List<String>> tagsMap = null;
+    List<String> dialogMessageTags = new ArrayList<>();
+    String contactType = "actionNotification"; //harcoded for the moment
+    Map<String, String> source = new HashMap<String, String>();
+    Map<String, String> tagValue = new HashMap<String, String>();
     
     /*****************************************
     *
@@ -30607,48 +30621,47 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
      return JSONUtilities.encodeObject(response);
    }
     
-    Collection <SubscriberMessageTemplate> templates = subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now, tenantID);
+    Collection <SubscriberMessageTemplate> templates = subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now, tenantID);  
+    
     for (SubscriberMessageTemplate template : templates) {
-      if (template instanceof SMSTemplate) {
-        JSONArray templateAreaAvailablity = (JSONArray) ((SMSTemplate) template).getJSONRepresentation()
+           
+      if (template instanceof DialogTemplate) {
+
+        
+        String communicationChannelID = ((DialogTemplate) template).getCommunicationChannelID();
+        Collection <SourceAddress> sourceAddresses = sourceAddressService.getActiveSourceAddresses(now, tenantID);
+        for (SourceAddress sourceAddress : sourceAddresses) {
+          if (sourceAddress != null && sourceAddress.getCommunicationChannelId().equals(communicationChannelID)) {
+            source.put(sourceAddress.getGUIManagedObjectID(), sourceAddress.getGUIManagedObjectDisplay());
+            break;
+          }
+        }
+        
+        JSONArray templateAreaAvailablity = (JSONArray) ((DialogTemplate) template).getJSONRepresentation()
             .get("areaAvailability");
-        if (templateAreaAvailablity != null && templateAreaAvailablity.equals(areaAvailability))
+        if (templateAreaAvailablity != null && templateAreaAvailablity.contains(areaAvailability))
           {
+            tagsMap = new HashMap<String, List<String>>();            
+            Set<String> keys = tags.keySet();
+            for (String key : keys)
+              {
+                 String keyValue = key;
+                 String value = tags.get(key).toString();
+                 tagValue.put(keyValue, value);
+              } 
+            
+            String templateID = ((DialogTemplate) template).getDialogTemplateID();
+            
             String topic = Deployment.getNotificationEventTopic();
             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
             Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
-            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", workflowID, Module.Offer_Catalog.getExternalRepresentation() , feature); 
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, source); 
+            
             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
                 topic,
                 keySerializer.serialize(topic, new StringKey(subscriberID)),
                 valueSerializer.serialize(topic, notificationEvent)
                 ));
-          }
-      }
-      if (template instanceof MailTemplate) {
-        JSONArray templateAreaAvailablity = (JSONArray) ((MailTemplate) template).getJSONRepresentation()
-            .get("areaAvailability");
-        if (templateAreaAvailablity != null && templateAreaAvailablity.equals(areaAvailability))
-          {
-            
-          }
-      }
-      
-      if (template instanceof DialogTemplate) {
-        JSONArray templateAreaAvailablity = (JSONArray) ((DialogTemplate) template).getJSONRepresentation()
-            .get("areaAvailability");
-        if (templateAreaAvailablity != null && templateAreaAvailablity.equals(areaAvailability))
-          {
-            
-          }
-      }
-      
-      if (template instanceof PushTemplate) {
-        JSONArray templateAreaAvailablity = (JSONArray) ((PushTemplate) template).getJSONRepresentation()
-            .get("areaAvailability");
-        if (templateAreaAvailablity != null && templateAreaAvailablity.equals(areaAvailability))
-          {
-            
           }
       }
     }

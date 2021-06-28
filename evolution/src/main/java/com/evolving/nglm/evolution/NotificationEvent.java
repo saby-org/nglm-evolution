@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.connect.data.*;
+import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -25,7 +26,7 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
 {
   
   /*****************************************
-  *
+  *me
   * schema
   *
   *****************************************/
@@ -44,16 +45,12 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     schemaBuilder.field("subscriberID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
     schemaBuilder.field("eventID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("destination", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("templateID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("tags", SchemaBuilder.map(Schema.OPTIONAL_STRING_SCHEMA, SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA)).name("notification_tags").schema());
-    schemaBuilder.field("restricted", Schema.OPTIONAL_BOOLEAN_SCHEMA);
-    schemaBuilder.field("returnCode", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("tags", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional());
     schemaBuilder.field("channelID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("notificationParameters", ParameterMap.serde().optionalSchema());
-    schemaBuilder.field("contactType", SchemaBuilder.string().defaultValue("unknown").schema());
+    schemaBuilder.field("contactType", SchemaBuilder.string().optional().defaultValue("unknown").schema());
+    schemaBuilder.field("source", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional());
+    
     schema = schemaBuilder.build();
   };
 
@@ -79,18 +76,12 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   private String subscriberID;
   private Date eventDateTime;
   private String eventID;
-  private String destination;
-  private String language;
   private String templateID;
-  private Map<String, List<String>> tags;
-  private boolean restricted;
-  private MessageStatus status;
-  private int returnCode;
-  private String returnCodeDetails;
+  private Map<String, String> tags;
   private String channelID;
-  private ParameterMap notificationParameters;
   private String contactType;
-  
+  private Map<String, String> source;
+    
   /****************************************
   *
   * accessors - basic
@@ -105,56 +96,25 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   public String getSubscriberID() { return subscriberID; }
   public Date geteventDateTime() { return eventDateTime; }
   public String getEventID() { return eventID; }
-  public String getDestination()
-  {
-    return destination;
-  }
-
-  public String getLanguage()
-  {
-    return language;
-  }
-
+ 
   public String getTemplateID()
   {
     return templateID;
   }
 
-  public Map<String, List<String>> getTags()
+  public Map<String, String> getTags()
   {
     return tags;
   }
 
-  public boolean getRestricted()
-  {
-    return restricted;
-  }
-
-  public MessageStatus getMessageStatus()
-  {
-    return status;
-  }
-
-  public int getReturnCode()
-  {
-    return returnCode;
-  }
-
-  public String getReturnCodeDetails()
-  {
-    return returnCodeDetails;
-  }
-
+  
   public String getChannelID()
   {
     return channelID;
   }
-  
-  public ParameterMap getNotificationParameters()
-  {
-    return notificationParameters;
-  }
   public String getContactType() { return contactType; }
+  public Map<String, String> getSource() { return source; }
+  
 
   //
   //  setters
@@ -163,50 +123,30 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   public void setSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
   public void seteventDateTime(Date eventDateTime) { this.eventDateTime = eventDateTime; }
   public void setEventID(String eventID) { this.eventID = eventID; }
-  public void setdestination(String destination) { this.destination = destination; }
-  public void setLanguage(String language) { this.language = language; }
   public void setTemplateID(String templateID) { this.templateID = templateID; }
-  public void setTags(Map<String, List<String>> tags) { this.tags = tags; }
-  public void setRestricted(boolean restricted) { this.restricted = restricted; }
-  public void setMessageStatus(MessageStatus status) { this.status = status; }
-  public void setReturnCode(int returnCode) { this.returnCode = returnCode; }
-  public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
+  public void setTags(Map<String, String> tags) { this.tags = tags; }
   public void setChannelID(String channelID) { this.channelID = channelID; }
-  public void setNotificationParameters(ParameterMap notificationParameters) { this.notificationParameters = notificationParameters; }
   public void setContactType(String contactType) { this.contactType = contactType; }
+  public void setSource(Map<String, String> source) { this.source = source; }
 
+  
+ 
   /*****************************************
   *
   * constructor (simple)
   *
   *****************************************/
 
-  public NotificationEvent(String subscriberID, Date eventDateTime, String eventID, String destination, String language, String templateID, Map<String, List<String>> tags, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters, String contactType)
-  {
-    this(subscriberID, eventDateTime, eventID, destination, language, templateID, tags, channelID, notificationParameters, contactType);
-  }
-
-  /*****************************************
-  *
-  * constructor (simple)
-  *
-  *****************************************/
-
-  public NotificationEvent(String subscriberID, Date eventDateTime, String eventID, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID, ParameterMap notificationParameters, String contactType)
+  public NotificationEvent(String subscriberID, Date eventDateTime, String eventID, String templateID, Map<String, String> tags, String channelID, String contactType, Map<String, String> source)
   {
     this.subscriberID = subscriberID;
     this.eventDateTime = eventDateTime;
     this.eventID = eventID;
-    this.destination = destination;
-    this.language = language;
     this.templateID = templateID;
     this.tags = tags;
-    this.status = MessageStatus.PENDING;
-    this.returnCode = status.getReturnCode();
-    this.returnCodeDetails = null;
     this.channelID = channelID;
-    this.notificationParameters = notificationParameters;
     this.contactType = contactType;
+    this.source = source;
   }
 
   /*****************************************
@@ -214,22 +154,17 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
    * constructor unpack
    *
    *****************************************/
-  public NotificationEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String destination, String language, String templateID, Map<String, List<String>> tags, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters, String contactType)
+  public NotificationEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String templateID, Map<String, String> tags, String channelID, String contactType, Map<String, String> source)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.eventDateTime = eventDateTime;
     this.eventID = eventID;
-    this.destination = destination;
-    this.language = language;
     this.templateID = templateID;
     this.tags = tags;
-    this.status = status;
-    this.returnCode = status.getReturnCode();
-    this.returnCodeDetails = null;
     this.channelID = channelID;
-    this.notificationParameters = notificationParameters;
     this.contactType = contactType;
+    this.source = source;
   }
   
 
@@ -247,16 +182,11 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     struct.put("subscriberID",notificationEvent.getSubscriberID());
     struct.put("eventDateTime",notificationEvent.geteventDateTime());
     struct.put("eventID", notificationEvent.getEventID());
-    struct.put("destination", notificationEvent.getDestination());
-    struct.put("language", notificationEvent.getLanguage());
     struct.put("templateID", notificationEvent.getTemplateID());
     struct.put("tags", notificationEvent.getTags());
-    struct.put("restricted", notificationEvent.getRestricted());
-    struct.put("returnCode", notificationEvent.getReturnCode());
-    struct.put("returnCodeDetails", notificationEvent.getReturnCodeDetails());
     struct.put("channelID", notificationEvent.getChannelID());
-    struct.put("notificationParameters", ParameterMap.serde().packOptional(notificationEvent.getNotificationParameters()));
     struct.put("contactType", notificationEvent.getContactType());
+    struct.put("source", notificationEvent.getSource());
     return struct;
   }
 
@@ -284,17 +214,11 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     String subscriberID = valueStruct.getString("subscriberID");
     Date eventDateTime = (Date) valueStruct.get("eventDateTime");
     String eventID = valueStruct.getString("eventID");
-    String destination = valueStruct.getString("destination");
-    String language = valueStruct.getString("language");
     String templateID = valueStruct.getString("templateID");
-    Map<String, List<String>> tags = (Map<String, List<String>>) valueStruct.get("tags");
-    boolean restricted = valueStruct.getBoolean("restricted");
-    Integer returnCode = valueStruct.getInt32("returnCode");
-    String returnCodeDetails = valueStruct.getString("returnCodeDetails");
+    Map<String, String> tags = (Map<String, String>) valueStruct.get("tags");
     String channelID = valueStruct.getString("channelID");
-    ParameterMap notificationParameters =ParameterMap.unpack(new SchemaAndValue(schema.field("notificationParameters").schema(), valueStruct.get("notificationParameters")));     
-    MessageStatus status = MessageStatus.fromReturnCode(returnCode);
-    String contactType = valueStruct.getString("contactType"); 
+    String contactType = valueStruct.getString("contactType");
+    Map<String, String> source = (Map<String, String>) valueStruct.get("source");
     
     //
     // validate
@@ -304,7 +228,7 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     // return
     //
 
-    return new NotificationEvent(schemaAndValue, subscriberID, eventDateTime, eventID, destination, language, templateID, tags, restricted, status, returnCodeDetails, channelID, notificationParameters, contactType);
+    return new NotificationEvent(schemaAndValue, subscriberID, eventDateTime, eventID,templateID, tags, channelID, contactType, source);
   }
   
   
@@ -329,6 +253,6 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   @Override
   public String getEventName()
   {
-    return "token change";
+    return "Notification Event";
   }
 }
