@@ -3412,7 +3412,7 @@ public class EvolutionEngine
         String offerID = purchaseFulfillmentRequest.getOfferID();
         Offer offer = offerService.getActiveOffer(offerID, now);
         String salesChannelID = purchaseFulfillmentRequest.getSalesChannelID();
-        log.info("RAJ K PurchaseFulfillmentRequest salesChannelID {}", salesChannelID);
+        log.info("RAJ K PurchaseFulfillmentRequest for offerID {} salesChannelID {}", offerID, salesChannelID);
         if (offer == null)
           {
             log.info("Got a purchase for inexistent offer " + offerID);
@@ -3475,7 +3475,6 @@ public class EvolutionEngine
                 // clean list : only keep relevant purchase dates
                 for (Pair<String, Date> purchaseDatePair : newPurchaseHistory)
                   {
-                    log.info("RAJ K PurchaseFulfillmentRequest newPurchaseHistory purchaseDatePair {}", purchaseDatePair);
                     Date purchaseDate = purchaseDatePair.getSecondElement();
                     if (purchaseDate.after(earliestDateToKeep))
                       {
@@ -3488,10 +3487,10 @@ public class EvolutionEngine
             // this purchase - actual value
             for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
               {
-                log.info("RAJ K PurchaseFulfillmentRequest this purchaseDatePair {}", "<" + salesChannelID + "," + now + ">");
                 cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelID, now)); // add new purchase
               }
             
+            log.info("RAJ K PurchaseFulfillmentRequest final history to keep for offerID {} is {}", offerID, cleanPurchaseHistory);
             newFullPurchaseHistory.put(offerID, cleanPurchaseHistory);
             subscriberProfileUpdated = true;
           }

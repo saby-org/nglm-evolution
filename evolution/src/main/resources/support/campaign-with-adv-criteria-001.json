@@ -18,11 +18,11 @@
     {
       "argument":{
         "valueType":"simple",
-        "value":10,
+        "value":5,
         "valueMultiply":null,
         "valueAdd":null,
         "timeUnit":null,
-        "expression":"10"
+        "expression":"5"
       },
       "criterionField":"offer.offername.purchased.period",
       "criterionOperator":"==",
@@ -31,11 +31,11 @@
           "field":"offer.id",
           "argument":{
             "valueType":"simpleEnter.string",
-            "value":"offerIDwith1",
+            "value":"1",
             "valueMultiply":null,
             "valueAdd":null,
             "timeUnit":null,
-            "expression":"'offerIDwith1'"
+            "expression":"'1'"
           }
         },
         {
