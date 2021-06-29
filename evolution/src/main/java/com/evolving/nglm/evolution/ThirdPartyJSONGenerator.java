@@ -363,6 +363,7 @@ public class ThirdPartyJSONGenerator
     voucherJSON.remove("userName");
     voucherJSON.remove("name");
     voucherJSON.remove("processing");
+    voucherJSON.remove("deleted");
     
     //
     //  return

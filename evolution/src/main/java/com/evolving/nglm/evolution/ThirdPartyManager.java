@@ -6442,7 +6442,7 @@ public class ThirdPartyManager
      }
    
    //
-   //  storedVouchers
+   //  getStoredVouchersWithCurrentStocks
    //
    
    Collection<GUIManagedObject> storedVouchers = voucherService.getStoredVouchersWithCurrentStocks(false, tenantID);
@@ -6457,7 +6457,7 @@ public class ThirdPartyManager
    // prepareJSON
    //
    
-   vouchers = storedVouchers.stream().map(voucher ->  ThirdPartyJSONGenerator.generateVoucherJSON(voucherService, voucher, now) /*voucherService.generateResponseJSON(voucher, true, now)*/).collect(Collectors.toList());
+   vouchers = storedVouchers.stream().map(voucher ->  ThirdPartyJSONGenerator.generateVoucherJSON(voucherService, voucher, now)).collect(Collectors.toList());
    
    //
    //  response
