@@ -914,7 +914,7 @@
     {
       "id"           : "getVoucherList",
       "methodName"   : "getVoucherList",
-      "permissions"  : ["API-GET-OFFERS-LIST"]
+      "permissions"  : ["API-GET-VOUCHER-LIST"]
     }
   ],
 
