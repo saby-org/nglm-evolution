@@ -554,7 +554,6 @@ public class ReportService extends GUIService
     //  filter by name
     //
     
-    //FileFilter filter = new FileFilter() { public boolean accept(File file) { return file.getName().startsWith(report.getName()); } };
     DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() { @Override public boolean accept(Path entry) throws IOException { return entry.getFileName().toString().startsWith(report.getName()); } };
     
     //
@@ -577,36 +576,6 @@ public class ReportService extends GUIService
         dirStream.close();
       } 
     catch (IOException e) { e.printStackTrace(); }
-    
-    
-    
-    
-    /*   listFiles is not believable
-    int doLs = 0;
-    while(doLs < 3)
-      {
-        File[] generatedReports = this.reportDirectory.listFiles(filter);
-        if (generatedReports == null)
-          {
-            log.warn("unable to listFiles in {} - may be an I/O error - will retry", Deployment.getReportManagerOutputPath());
-            
-            //
-            //  re validate
-            //
-            
-            this.reportDirectory = validateAndgetReportDirectory();
-          }
-        else
-          {
-            for (File generatedReportFile : generatedReports)
-              {
-                String fileName = generatedReportFile.getName();
-                Date reportDate = getReportDate(fileName, report.getName());
-                if (reportDate != null) generatedDates.add(reportDate);
-              }
-          }
-        doLs ++;
-      }*/
     
     //
     //  pendingDates
@@ -819,7 +788,9 @@ public class ReportService extends GUIService
     Date result = null;
     try
       {
-        String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getDeployment(tenantID).getReportManagerFileExtension())[0];
+        String fileNameInitialWithTenant = fileNameInitial.concat("_").concat(String.valueOf(tenantID));
+        String reportDateString = reportFileName.split(fileNameInitialWithTenant + "_")[1].split("." + Deployment.getDeployment(tenantID).getReportManagerFileExtension())[0];
+        
         SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getDeployment(tenantID).getReportManagerFileDateFormat());   // TODO EVPRO-99
         sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         result = sdf.parse(reportDateString);
