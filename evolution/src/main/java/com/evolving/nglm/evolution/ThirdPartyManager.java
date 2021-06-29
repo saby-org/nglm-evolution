@@ -264,7 +264,8 @@ public class ThirdPartyManager
     getSimpleOfferList(33),
     removeSimpleOffer(34),
     getResellerDetails(35),
-    getCustomerEDRs(36);
+    getCustomerEDRs(36),
+    getVoucherList(37);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -575,6 +576,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getSimpleOfferList", new APIHandler(API.getSimpleOfferList));
       restServer.createContext("/nglm-thirdpartymanager/removeSimpleOffer", new APIHandler(API.removeSimpleOffer));
       restServer.createContext("/nglm-thirdpartymanager/getResellerDetails", new APIHandler(API.getResellerDetails));
+      restServer.createContext("/nglm-thirdpartymanager/getVoucherList", new APIHandler(API.getVoucherList));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -925,6 +927,9 @@ public class ThirdPartyManager
               break;
             case removeSimpleOffer:
               jsonResponse = processRemoveSimpleOffer(jsonRoot);
+              break;
+            case getVoucherList:
+              jsonResponse = processGetVoucherList(jsonRoot, tenantID);
               break;
           }
         }
@@ -5598,7 +5603,6 @@ public class ThirdPartyManager
   *****************************************/
   
   private JSONObject processRemoveSimpleOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
-
   {
     try 
       {
@@ -6404,6 +6408,70 @@ public class ThirdPartyManager
     }
     return purchaseRequest;
   }
+  
+  /*****************************************
+  *
+  *  processGetVoucherList
+  *
+  *****************************************/
+
+ private JSONObject processGetVoucherList(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+ {
+   
+   /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+   
+   Map<String,Object> response = new HashMap<String,Object>();
+   
+   /*****************************************
+   *
+   *  retrieve and convert vouchers
+   *
+   *****************************************/
+
+   Date now = SystemTime.getCurrentTime();
+   List<JSONObject> vouchers = new ArrayList<JSONObject>();
+   List<String> requestedIds = new ArrayList<String>();
+   JSONArray idsJSON = JSONUtilities.decodeJSONArray(jsonRoot, "ids", new JSONArray());
+   for (int i=0; i<idsJSON.size(); i++)
+     {
+       requestedIds.add((String) idsJSON.get(i));
+     }
+   
+   //
+   //  storedVouchers
+   //
+   
+   Collection<GUIManagedObject> storedVouchers = voucherService.getStoredVouchers(tenantID);
+   
+   //
+   //  filter on requestedIds
+   //
+   
+   if (!requestedIds.isEmpty()) storedVouchers = storedVouchers.stream().filter(voucher -> requestedIds.contains(voucher.getGUIManagedObjectID())).collect(Collectors.toList());
+   
+   //
+   // prepareJSON
+   //
+   
+   vouchers = storedVouchers.stream().map(voucher -> voucherService.generateResponseJSON(voucher, true, now)).collect(Collectors.toList());
+   
+   //
+   //  response
+   //
+   
+   response.put("vouchers", JSONUtilities.encodeArray(vouchers));
+   updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+   
+   //
+   //  return
+   //
+   
+   return JSONUtilities.encodeObject(response);
+ }
 
   private <T> T handleWaitingResponse(Future<T> waitingResponse) throws ThirdPartyManagerException {
     try {
@@ -6735,6 +6803,7 @@ public class ThirdPartyManager
   *  readString
   *
   *****************************************/
+  
   @Deprecated
   private static String readString(JSONObject jsonRoot, String key) throws ThirdPartyManagerException
   {

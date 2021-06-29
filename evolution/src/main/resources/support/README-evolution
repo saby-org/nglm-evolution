@@ -500,6 +500,8 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "voucherCode" : "voucher1", "supplier" : "supplier_1", "origin" : "test" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/redeemVoucher; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "newParent<_THIRDPARTYAPI_CUSTOMER_ID_>" : "123", "relationship" : "Quadruple play",  }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/updateCustomerParent; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "relationship" : "Quadruple play",  }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/removeCustomerParent; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "ids" : ["1", "2", "3", "4"] }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getVoucherList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getVoucherList; echo
  
 --
 --  dnbo proxy

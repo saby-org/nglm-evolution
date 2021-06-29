@@ -910,8 +910,12 @@
       "id"           : "getResellerDetails",
       "methodName"   : "getResellerDetails",
       "permissions"  : ["API-GET-RESELLER-DETAILS"]
+    },
+    {
+      "id"           : "getVoucherList",
+      "methodName"   : "getVoucherList",
+      "permissions"  : ["API-GET-OFFERS-LIST"]
     }
-    
   ],
 
   "uploadedFileSeparator" : ";",
