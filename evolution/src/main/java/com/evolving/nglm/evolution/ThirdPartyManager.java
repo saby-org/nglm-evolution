@@ -3353,7 +3353,7 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
     String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
-    jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID); //unique id added for listener to check if the request and response are same
+    jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID); 
     
     SubscriberProfile baseSubscriberProfile = null;
     try
