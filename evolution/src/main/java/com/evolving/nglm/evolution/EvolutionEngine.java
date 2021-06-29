@@ -2936,6 +2936,7 @@ public class EvolutionEngine
 
         SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) evolutionEvent;
         String SubscriberProfileForceUpdateRequestID = null;
+        String returnCode = null;
         
         if (subscriberProfileForceUpdate != null && subscriberProfileForceUpdate.getSubscriberProfileForceUpdateRequestID() != null)
           {
@@ -3119,7 +3120,7 @@ public class EvolutionEngine
                   }
               }
           }
-        String returnCode = "success";
+        returnCode = "success";
         
         SubscriberProfileForceUpdateResponse subscriberProfileForceUpdateResponse = new SubscriberProfileForceUpdateResponse(returnCode , SubscriberProfileForceUpdateRequestID);
         context.getSubscriberState().getSubscriberProfileForceUpdatesResponse().add(subscriberProfileForceUpdateResponse);
