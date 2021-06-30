@@ -17,6 +17,7 @@ import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -32,7 +33,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -90,6 +90,8 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOpe
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -4129,7 +4131,6 @@ public class ThirdPartyManager
         
         // clean list by removing presentations older than oldest limit of all offers in the lists
          
-        List<Presentation> cleanPresentationHistory = new ArrayList<>();
         Set<String> allOfferIDs = new HashSet<>();
         for (Presentation pres : currentPresentationHistory) {
           for (String offerID : pres.getOfferIDs()) {
@@ -4140,8 +4141,22 @@ public class ThirdPartyManager
         for (String offerID : allOfferIDs) {
           Offer offer = offerService.getActiveOffer(offerID, now);
           if (offer != null) {
-            Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            Date offerEarliest = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+            Date offerEarliest = now;
+            Long maximumPresentationsPeriod = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriod");
+            String maximumPresentationsUnitStr = (String) offer.getJSONRepresentation().get("maximumPresentationsUnit");
+            TimeUnit maximumPresentationsUnit = TimeUnit.fromExternalRepresentation(maximumPresentationsUnitStr);
+            if (maximumPresentationsUnit.equals(TimeUnit.Day)) {
+              offerEarliest = RLMDateUtils.addDays(now, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
+            } else if (maximumPresentationsUnit.equals(TimeUnit.Month)) {
+              if (maximumPresentationsPeriod == 1) { // current month
+                offerEarliest = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+              } else {
+                offerEarliest = RLMDateUtils.addMonths(now, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
+              }
+            } else {
+              log.info("internal error : unknown maximumPresentationsUnit " + maximumPresentationsUnitStr + " in offer " + offer.getOfferID() + " , using 1 day");
+              offerEarliest = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+            }
             if (offerEarliest.before(earliestDateToKeep)) {
               earliestDateToKeep = offerEarliest;
             }
@@ -6407,7 +6422,7 @@ public class ThirdPartyManager
 
   private <T> T handleWaitingResponse(Future<T> waitingResponse) throws ThirdPartyManagerException {
     try {
-      T response = waitingResponse.get(httpTimeout, TimeUnit.MILLISECONDS);
+      T response = waitingResponse.get(httpTimeout, java.util.concurrent.TimeUnit.MILLISECONDS);
       if(log.isDebugEnabled()) log.debug("response processed : "+response);
       return response;
     } catch (InterruptedException|ExecutionException e) {
