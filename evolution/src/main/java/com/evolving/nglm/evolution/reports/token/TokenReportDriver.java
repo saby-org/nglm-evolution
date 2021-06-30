@@ -48,7 +48,7 @@ public class TokenReportDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = TokenReportMonoPhase.headerFieldsOrder;
+    return result;
   }
 }

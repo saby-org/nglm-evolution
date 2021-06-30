@@ -42,8 +42,31 @@ public class JourneyImpactReportDriver extends ReportDriver
   private static final Logger log = LoggerFactory.getLogger(JourneyImpactReportDriver.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private static JourneyService journeyService;
+  
+  private static final String journeyID = "journeyID";
+  private static final String journeyName = "journeyName";
+  private static final String journeyType = "journeyType";
+  private static final String customerStatus = "customerStatus";
+  private static final String qty_customers = "qty_customers";
+  private static final String dateTime = "dateTime";
+  private static final String startDate = "startDate";
+  private static final String endDate = "endDate";
+  private static final String rewards = "rewards";
+  
   static List<String> headerFieldsOrder = new ArrayList<String>();
-
+  static
+  {
+    headerFieldsOrder.add(journeyID);
+    headerFieldsOrder.add(journeyName);
+    headerFieldsOrder.add(journeyType);
+    headerFieldsOrder.add(customerStatus);
+    headerFieldsOrder.add(qty_customers);
+    headerFieldsOrder.add(dateTime);
+    headerFieldsOrder.add(startDate);
+    headerFieldsOrder.add(endDate);
+    headerFieldsOrder.add(rewards);
+  }
+  
   /****************************************
    *
    *  produceReport
@@ -95,14 +118,14 @@ public class JourneyImpactReportDriver extends ReportDriver
             Map<String, Object> journeyInfo1 = new LinkedHashMap<String, Object>(); // to preserve order
             String journeyID = journey.getJourneyID();
             journeyInfo1.put("journeyID", journeyID);
-            journeyInfo1.put("journeyName", journey.getGUIManagedObjectDisplay());
-            journeyInfo1.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation());
+            journeyInfo1.put(journeyName, journey.getGUIManagedObjectDisplay());
+            journeyInfo1.put(journeyType, journey.getGUIManagedObjectType().getExternalRepresentation());
             
             Map<String, Object> journeyInfo2 = new LinkedHashMap<String, Object>(); // to preserve order
             
-            journeyInfo2.put("dateTime", ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
-            journeyInfo2.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-            journeyInfo2.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+            journeyInfo2.put(dateTime, ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+            journeyInfo2.put(startDate, ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+            journeyInfo2.put(endDate, ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
             String journeyRewards = "";
             String displayForDatacubes = journey.getGUIManagedObjectDisplay() != null ? journey.getGUIManagedObjectDisplay() : journeyID;
@@ -123,7 +146,7 @@ public class JourneyImpactReportDriver extends ReportDriver
             {
               log.info("Exception processing "+journey.getGUIManagedObjectDisplay(), e);
             }
-            journeyInfo2.put("rewards", journeyRewards); // added each time for order
+            journeyInfo2.put(rewards, journeyRewards); // added each time for order
 
             try
             {
@@ -160,8 +183,8 @@ public class JourneyImpactReportDriver extends ReportDriver
                   {
                     Map<String, Object> mapPerStatus = new LinkedHashMap<>();
                     mapPerStatus.putAll(journeyInfo1);
-                    mapPerStatus.put("customerStatus", status);
-                    mapPerStatus.put("qty_customers", journeyStatusCount.get(status));
+                    mapPerStatus.put(customerStatus, status);
+                    mapPerStatus.put(qty_customers, journeyStatusCount.get(status));
                     mapPerStatus.putAll(journeyInfo2);
                     // add metrics
                     for (Entry<String, Long> entry : metricsPerStatus.get(status).entrySet()) {

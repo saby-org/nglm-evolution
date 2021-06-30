@@ -43,9 +43,46 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportMonoPhase.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
   private JourneyService journeyService;
-  static List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
-  private final String customerID = "customerID";
+  
+  private static final String customerID = "customerID";
+  private static final String journeyID = "journeyID";
+  private static final String journeyName = "journeyName";
+  private static final String journeyType = "journeyType";
+  private static final String sample = "sample";
+  private static final String customerStatus = "customerStatus";
+  private static final String customerStates = "customerStates";
+  private static final String customerStatuses = "customerStatuses";
+  private static final String dateTime = "dateTime";
+  private static final String startDate = "startDate";
+  private static final String endDate = "endDate";
+  private static final String rewards = "rewards";
+  private static final String journeyExitDate = "journeyExitDate";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(journeyID);
+    headerFieldsOrder.add(journeyName);
+    headerFieldsOrder.add(journeyType);
+    headerFieldsOrder.add(sample);
+    headerFieldsOrder.add(customerStatus);
+    headerFieldsOrder.add(customerStates);
+    headerFieldsOrder.add(customerStatuses);
+    headerFieldsOrder.add(dateTime);
+    headerFieldsOrder.add(startDate);
+    headerFieldsOrder.add(endDate);
+    headerFieldsOrder.add(rewards);
+    headerFieldsOrder.add(journeyExitDate);
+  }
+  
 
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
@@ -92,13 +129,13 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
                     journeyInfo.put(alternateID.getName(), "");
                   }
               }
-            journeyInfo.put("journeyID", journey.getJourneyID());
-            journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-            journeyInfo.put("journeyType", journey.getTargetingType());
+            journeyInfo.put(journeyID, journey.getJourneyID());
+            journeyInfo.put(journeyName, journey.getGUIManagedObjectDisplay());
+            journeyInfo.put(journeyType, journey.getTargetingType());
 
-            if (journeyStats.get("sample") != null)
+            if (journeyStats.get(sample) != null)
               {
-                journeyInfo.put("sample", journeyStats.get("sample"));
+                journeyInfo.put(sample, journeyStats.get("sample"));
               }
             boolean statusNotified = false;
             boolean journeyComplete =false;
@@ -123,7 +160,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
 //            if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty())
 //            journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
 //            else   
-            journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
+            journeyInfo.put(customerStatus, getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
 
             List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");
             StringBuilder sbStatus = new StringBuilder();
@@ -172,11 +209,11 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
                 statuses = sbStatuses.toString().substring(0, sbStatuses.toString().length() - 1);
               }
 
-            journeyInfo.put("customerStates",   states);
-            journeyInfo.put("customerStatuses", statuses);
-            journeyInfo.put("dateTime",         ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
-            journeyInfo.put("startDate",        ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-            journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));  
+            journeyInfo.put(customerStates,   states);
+            journeyInfo.put(customerStatuses, statuses);
+            journeyInfo.put(dateTime,         ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+            journeyInfo.put(startDate,        ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+            journeyInfo.put(endDate,          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));  
                     
 
             List<String> rewardHistory = (List<String>) journeyStats.get("rewardHistory");
@@ -203,7 +240,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
                     outputJSON.add(historyJSON);
                   }
               }
-            journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
+            journeyInfo.put(rewards, ReportUtils.formatJSON(outputJSON));
             
             if (journeyStats.containsKey("journeyExitDate") && journeyStats.get("journeyExitDate") != null)
               {
@@ -211,7 +248,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
                 Object journeyExitDateObj = journeyStats.get("journeyExitDate");
                 if (journeyExitDateObj instanceof String)
                   {
-                    journeyInfo.put("journeyExitDate", ReportsCommonCode.parseDate((String) journeyExitDateObj));
+                    journeyInfo.put(journeyExitDate, ReportsCommonCode.parseDate((String) journeyExitDateObj));
 
                   }
                 else
@@ -222,7 +259,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
               }
             else
               {
-                journeyInfo.put("journeyExitDate", null);
+                journeyInfo.put(journeyExitDate, null);
               }
 
             //

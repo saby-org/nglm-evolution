@@ -37,8 +37,7 @@ public class ODRReportDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    List<String> result = new ArrayList<>();
-    result = ODRReportMonoPhase.headerFieldsOrder;
+    List<String> result = ODRReportMonoPhase.headerFieldsOrder;
     return result;
   }
 }

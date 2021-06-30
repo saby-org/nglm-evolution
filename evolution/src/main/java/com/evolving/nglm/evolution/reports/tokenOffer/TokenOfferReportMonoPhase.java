@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution.reports.tokenOffer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +41,35 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
 
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
+  
+  private static final String tokenCode = "tokenCode";
+  private static final String salesChannel = "salesChannel";
+  private static final String voucherCode = "voucherCode";
+  private static final String offerName = "offerName";
+  private static final String offerStatus = "offerStatus";
+  private static final String offerRank = "offerRank";
+  private static final String allocationDate = "allocationDate";
+  private static final String redeemedDate = "redeemedDate";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(tokenCode);
+    headerFieldsOrder.add(salesChannel);
+    headerFieldsOrder.add(voucherCode);
+    headerFieldsOrder.add(offerName);
+    headerFieldsOrder.add(offerStatus);
+    headerFieldsOrder.add(offerRank);
+    headerFieldsOrder.add(allocationDate);
+    headerFieldsOrder.add(redeemedDate);
+  }
 
   private SalesChannelService salesChannelService;
   private OfferService offerService = null;
@@ -74,7 +104,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                     result.putAll(commonFields);
                     Map<String, Object> token = (Map<String, Object>) tokensArray.get(i);
                     String tokenStatus = (String) token.get("tokenStatus");
-                    result.put("tokenCode", token.get("tokenCode"));
+                    result.put(tokenCode, token.get("tokenCode"));
                     String salesChannel = (String) token.get("presentedOffersSalesChannel");
                     if (salesChannel != null && salesChannelService.getStoredSalesChannel(salesChannel) != null)
                       {
@@ -86,12 +116,12 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                       }
                     if (TokenStatus.New.getExternalRepresentation().equals(tokenStatus))
                       {
-                        result.put("voucherCode", "");
-                        result.put("offerName", "");
-                        result.put("offerStatus", "");                            
-                        result.put("offerRank", "");
-                        result.put("allocationDate", "");
-                        result.put("redeemedDate", "");  
+                        result.put(voucherCode, "");
+                        result.put(offerName, "");
+                        result.put(offerStatus, "");                            
+                        result.put(offerRank, "");
+                        result.put(allocationDate, "");
+                        result.put(redeemedDate, "");  
                         result.put("salesChannel", "");
                       }
                     else if (TokenStatus.Bound.getExternalRepresentation().equals(tokenStatus))
@@ -99,22 +129,22 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                         String qtyAllocatedOffers = (String) token.get("tokenStatus");
                         if ("0".equals(qtyAllocatedOffers))
                           {
-                            result.put("voucherCode", "");
-                            result.put("offerName", "");
-                            result.put("offerStatus", "");                                
-                            result.put("offerRank", "");
-                            result.put("allocationDate", "");
-                            result.put("redeemedDate", "");
+                            result.put(voucherCode, "");
+                            result.put(offerName, "");
+                            result.put(offerStatus, "");                                
+                            result.put(offerRank, "");
+                            result.put(allocationDate, "");
+                            result.put(redeemedDate, "");
                             result.put("salesChannel", "");
                           }
                         else
                           {
-                            result.put("voucherCode", "");
-                            result.put("offerName", "");
-                            result.put("offerStatus", "allocated");
-                            result.put("offerRank", "");
+                            result.put(voucherCode, "");
+                            result.put(offerName, "");
+                            result.put(offerStatus, "allocated");
+                            result.put(offerRank, "");
                             longDateToReport("lastAllocationDate", "allocationDate", result, token);
-                            result.put("redeemedDate", "");
+                            result.put(redeemedDate, "");
                             result.put("salesChannel", "");
 
                             /*
@@ -144,15 +174,15 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                       }
                     else if (TokenStatus.Redeemed.getExternalRepresentation().equals(tokenStatus))
                       {
-                        result.put("voucherCode", "");
+                        result.put(voucherCode, "");
                         String acceptedOfferId = (String) token.get("acceptedOfferID");
                         if (acceptedOfferId == null)
                           {
-                            result.put("offerName", "");
-                            result.put("offerStatus", "");                               
-                            result.put("offerRank", "");
-                            result.put("allocationDate", "");
-                            result.put("redeemedDate", "");
+                            result.put(offerName, "");
+                            result.put(offerStatus, "");                               
+                            result.put(offerRank, "");
+                            result.put(allocationDate, "");
+                            result.put(redeemedDate, "");
                             result.put("salesChannel", "");
                           }
                         else
@@ -160,13 +190,13 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                             GUIManagedObject acceptedOffer = offerService.getStoredOffer(acceptedOfferId);
                             if (acceptedOffer != null)
                               {
-                                result.put("offerName", acceptedOffer.getGUIManagedObjectDisplay());
+                                result.put(offerName, acceptedOffer.getGUIManagedObjectDisplay());
                               }
                             else
                               {
-                                result.put("offerName", "");
+                                result.put(offerName, "");
                               }
-                            result.put("offerStatus", "accepted");
+                            result.put(offerStatus, "accepted");
                             int offerRank = 0;
                             List<String> presentedOfferIDsArray = (List<String>) token.get("presentedOfferIDs");
                             if (presentedOfferIDsArray != null && !presentedOfferIDsArray.isEmpty())
@@ -188,12 +218,12 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                       }
                     else if (TokenStatus.Expired.getExternalRepresentation().equals(tokenStatus))
                       {
-                        result.put("vocherCode", "");
-                        result.put("offerName", "");
-                        result.put("offerStatus", "expired");                           
-                        result.put("offerRank", "");
-                        result.put("allocationDate", "");
-                        result.put("redeemedDate", "");
+                        result.put(voucherCode, "");
+                        result.put(offerName, "");
+                        result.put(offerStatus, "expired");                           
+                        result.put(offerRank, "");
+                        result.put(allocationDate, "");
+                        result.put(redeemedDate, "");
                         result.put("salesChannel", "");
                       }
                     if (addHeaders)

@@ -43,14 +43,14 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
   private static SegmentationDimensionService segmentationDimensionService = null;
   private boolean addHeaders=true;
   
-  static final String policyId = "policyId";
-  static final String policyName = "policyName";
-  static final String description = "description";
-  static final String active = "active";
-  static final String segments = "segments";
-  static final String journeyObjectives = "journeyObjectives";
-  static final String communicationChannelName = "communicationChannelName";
-  static final String limits = "limits";
+  private static final String policyId = "policyId";
+  private static final String policyName = "policyName";
+  private static final String description = "description";
+  private static final String active = "active";
+  private static final String segments = "segments";
+  private static final String journeyObjectives = "journeyObjectives";
+  private static final String communicationChannelName = "communicationChannelName";
+  private static final String limits = "limits";
   
   static List<String> headerFieldsOrder = new ArrayList<String>();
   static
