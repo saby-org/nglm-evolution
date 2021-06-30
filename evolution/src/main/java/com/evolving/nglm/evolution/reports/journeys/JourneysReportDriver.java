@@ -45,6 +45,8 @@ import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver;
+
 import java.util.Date;
 
 public class JourneysReportDriver extends ReportDriver
@@ -54,7 +56,7 @@ public class JourneysReportDriver extends ReportDriver
   private static JourneyService journeyService;
   private static PointService pointService;
   private static JourneyObjectiveService journeyObjectiveService;
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  static List<String> headerFieldsOrder = new ArrayList<String>();
 
   /****************************************
   *
@@ -278,11 +280,7 @@ public class JourneysReportDriver extends ReportDriver
 	  
   @Override
   public List<String> reportHeader() {
-	  List<String> result = new ArrayList<>();
-	    
-	    result.add("journeyType");
-	    result.add("customerStatuses");
-	    
-	    return result;
+    List<String> result = JourneysReportDriver.headerFieldsOrder;
+    return result;
   }
 }

@@ -35,13 +35,14 @@ import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
 public class JourneyImpactReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyImpactReportDriver.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private static JourneyService journeyService;
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  static List<String> headerFieldsOrder = new ArrayList<String>();
 
   /****************************************
    *
@@ -315,7 +316,7 @@ public class JourneyImpactReportDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = JourneyImpactReportDriver.headerFieldsOrder;
+    return result;
   }
 }

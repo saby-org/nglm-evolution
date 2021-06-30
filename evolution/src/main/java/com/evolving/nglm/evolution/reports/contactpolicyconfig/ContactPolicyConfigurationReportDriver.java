@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution.reports.contactpolicyconfig;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
@@ -14,6 +15,8 @@ import com.evolving.nglm.evolution.*;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -39,6 +42,28 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
   private JourneyObjectiveService journeyObjectiveService;
   private static SegmentationDimensionService segmentationDimensionService = null;
   private boolean addHeaders=true;
+  
+  static final String policyId = "policyId";
+  static final String policyName = "policyName";
+  static final String description = "description";
+  static final String active = "active";
+  static final String segments = "segments";
+  static final String journeyObjectives = "journeyObjectives";
+  static final String communicationChannelName = "communicationChannelName";
+  static final String limits = "limits";
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(policyId);
+    headerFieldsOrder.add(policyName);
+    headerFieldsOrder.add(description);
+    headerFieldsOrder.add(active);
+    headerFieldsOrder.add(segments);
+    headerFieldsOrder.add(journeyObjectives);
+    headerFieldsOrder.add(communicationChannelName);
+    headerFieldsOrder.add(limits);
+  }
 
   /****************************************
    * 
@@ -104,7 +129,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
                   Map<String, Object> formattedFields = formatSimpleFields(contactPolicyJSON);
                   if(contactPolicy.getContactPolicyCommunicationChannels() != null) {
                     for(ContactPolicyCommunicationChannels channel : contactPolicy.getContactPolicyCommunicationChannels()) {
-                      formattedFields.put("communicationChannelName", channel.getCommunicationChannelName());
+                      formattedFields.put(communicationChannelName, channel.getCommunicationChannelName());
                       
                       StringBuilder sbLimits = new StringBuilder();
                       String limits = null;
@@ -191,18 +216,18 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
   private Map<String, Object> formatSimpleFields(JSONObject jsonObject)
   {
     Map<String, Object> result = new LinkedHashMap<>();
-    result.put("policyId", jsonObject.get("id").toString());
-    result.put("policyName", jsonObject.get("display").toString());
-    if (jsonObject.get("description") != null)
+    result.put(policyId, jsonObject.get("id").toString());
+    result.put(policyName, jsonObject.get("display").toString());
+    if (jsonObject.get(description) != null)
       {
-        result.put("description", jsonObject.get("description").toString());
+        result.put(description, jsonObject.get(description).toString());
       }
     else
       {
-        result.put("description", "");
+        result.put(description, "");
       }
 
-    result.put("active", jsonObject.get("active").toString());
+    result.put(active, jsonObject.get(active).toString());
   
     
     StringBuilder sbSegments = new StringBuilder();
@@ -243,7 +268,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = ContactPolicyConfigurationReportDriver.headerFieldsOrder;
+    return result;
   }
 }
