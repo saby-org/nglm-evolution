@@ -2248,6 +2248,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTimeWindowsSummaryList", new APISimpleHandler(API.getTimeWindowsSummaryList));
         restServer.createContext("/nglm-guimanager/getTimeWindows", new APISimpleHandler(API.getTimeWindows));
         restServer.createContext("/nglm-guimanager/putTimeWindows", new APISimpleHandler(API.putTimeWindows));
+        restServer.createContext("/nglm-guimanager/removeTimeWindows", new APISimpleHandler(API.removeTimeWindows));
 
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
@@ -20643,14 +20644,14 @@ public class GUIManager
     if(timeWindow == null)
       {
         // use the default timeWindow
-        timeWindow = Deployment.getDeployment(tenantID).getDefaultNotificationDailyWindows();        
+        timeWindow = Deployment.getDeployment(tenantID).getDefaultNotificationDailyWindows();
       }
     
     if(timeWindow != null) 
       {
-        JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
+        JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation();
         timeWindowJsonRepresentation.remove("communicationChannelID");
-        communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation); 
+        communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation);
       }
 
     /*****************************************
