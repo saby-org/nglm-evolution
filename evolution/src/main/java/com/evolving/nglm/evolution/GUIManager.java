@@ -30365,7 +30365,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             String offerID = offerIDs.get(i).toString();
             GUIManagedObject offerObject = offerService.getStoredOffer(offerID, includeArchived);
-            offerObjects.add(offerObject);
+            if (offerObject != null && offerObject.getTenantID() == tenantID)
+              {
+
+                offerObjects.add(offerObject);
+              }
           }
       }
     else
