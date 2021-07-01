@@ -206,55 +206,6 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   *
   *****************************************/
   
-  @Deprecated // use getJourneySubscriberCountMap
-  public long getJourneySubscriberCount(String journeyID) throws ElasticsearchClientException {
-    try {
-      //
-      // Build Elasticsearch query
-      // 
-      String index = getJourneyIndex(journeyID);
-      CountRequest countRequest = new CountRequest(index).query(QueryBuilders.matchAllQuery());
-      
-      //
-      // Send request & retrieve response synchronously (blocking call)
-      // 
-      CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
-      
-      //
-      // Check search response
-      //
-      // @rl TODO checking status seems useless because it raises exception
-      if (countResponse.getFailedShards() > 0) {
-        throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
-      }
-
-      //
-      // Send result
-      //
-      return countResponse.getCount();
-    }
-    catch (ElasticsearchClientException e) { // forward
-      throw e;
-    }
-    catch (ElasticsearchStatusException e)
-    {
-      if(e.status() == RestStatus.NOT_FOUND) { // index not found
-        log.debug(e.getMessage());
-        return 0;
-      }
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getDetailedMessage());
-    }
-    catch (ElasticsearchException e) {
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getDetailedMessage());
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getMessage());
-    }
-  }
-
   public Map<String, Long> getJourneyNodeCount(String journeyID) throws ElasticsearchClientException {
     try {
       Map<String, Long> result = new HashMap<String, Long>();
@@ -1313,10 +1264,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         //
         
         BoolQueryBuilder query=QueryBuilders.boolQuery();
-        for(String reason : specialExit)
-          {
-            query=query.mustNot(QueryBuilders.termQuery("status", reason)); 
-          }
+        query=query.mustNot(QueryBuilders.termsQuery("status", Arrays.asList(specialExit)));
         query.should(QueryBuilders.termsQuery("journeyID", journeyIds));
         
         //

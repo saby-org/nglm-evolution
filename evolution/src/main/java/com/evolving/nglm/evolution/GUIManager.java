@@ -5614,16 +5614,22 @@ public class GUIManager
       showDeliveriesCount = true; // Only for Bulk Campaigns for the moment
     }
     
+    //
+    //  subscriberCount
+    //
+    
     List<String> journeyIds = journeyObjects.stream().map(journeyObj -> journeyObj.getGUIManagedObjectID()).collect(Collectors.toList());
     Map<String, Long> journeySubscriberCountMap = new HashMap<String, Long>();
     try
       {
-        journeySubscriberCountMap = this.elasticsearch.getJourneySubscriberCountMap(journeyIds);
+        if (journeyIds != null && !journeyIds.isEmpty()) journeySubscriberCountMap = this.elasticsearch.getJourneySubscriberCountMap(journeyIds);
       } 
     catch (ElasticsearchClientException e1)
       {
         log.warn("Exception processing REST api: {}", e1);
       }
+    
+    
     for (GUIManagedObject journey : journeyObjects)
       {
         if (journey.getGUIManagedObjectType().equals(objectType) && (!externalOnly || !journey.getInternalOnly()))
