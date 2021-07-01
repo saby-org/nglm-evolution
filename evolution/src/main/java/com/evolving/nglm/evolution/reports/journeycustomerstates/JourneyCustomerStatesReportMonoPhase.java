@@ -49,7 +49,6 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
   private static final String journeyID = "journeyID";
   private static final String journeyName = "journeyName";
   private static final String journeyType = "journeyType";
-  private static final String sample = "sample";
   private static final String customerStatus = "customerStatus";
   private static final String customerStates = "customerStates";
   private static final String customerStatuses = "customerStatuses";
@@ -72,7 +71,6 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(journeyID);
     headerFieldsOrder.add(journeyName);
     headerFieldsOrder.add(journeyType);
-    headerFieldsOrder.add(sample);
     headerFieldsOrder.add(customerStatus);
     headerFieldsOrder.add(customerStates);
     headerFieldsOrder.add(customerStatuses);
@@ -133,9 +131,9 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
             journeyInfo.put(journeyName, journey.getGUIManagedObjectDisplay());
             journeyInfo.put(journeyType, journey.getTargetingType());
 
-            if (journeyStats.get(sample) != null)
+            if (journeyStats.get("sample") != null)
               {
-                journeyInfo.put(sample, journeyStats.get("sample"));
+                journeyInfo.put("sample", journeyStats.get("sample"));
               }
             boolean statusNotified = false;
             boolean journeyComplete =false;
