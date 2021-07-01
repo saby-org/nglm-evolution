@@ -5617,7 +5617,7 @@ public class GUIManager
     }
     
     //
-    //  subscriberCount
+    //  subscriberCount (Elasticsearch)
     //
     
     List<String> journeyIds = journeyObjects.stream().map(journeyObj -> journeyObj.getGUIManagedObjectID()).collect(Collectors.toList());
@@ -5643,57 +5643,61 @@ public class GUIManager
             String journeyDisplay = journey.getGUIManagedObjectDisplay();
 
             //
-            // retrieve from Elasticsearch 
+            // DeliveriesCount (Elasticsearch)
             //
-            
-            try
-              {
-                
-                // DeliveriesCount 
-                if(showDeliveriesCount) {
-                  Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay, journey.getTenantID());
-                  Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay, journey.getTenantID());
-                  
-                  long messagesSuccess = 0;
-                  long messagesFailure = 0;
-                  for(String key: messages.keySet()) {
-                    if(key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage())) {
-                      messagesSuccess += messages.get(key);
-                    } else {
-                      messagesFailure += messages.get(key);
-                    }
-                  }
-                  JSONObject messagesCount = new JSONObject();
-                  messagesCount.put("success", messagesSuccess);
-                  messagesCount.put("failure", messagesFailure);
-                  
-                  long bonusesSuccess = 0;
-                  long bonusesFailure = 0;
-                  for(String key: bonuses.keySet()) {
-                    if(key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage())) {
-                      bonusesSuccess += bonuses.get(key);
-                    } else {
-                      bonusesFailure += bonuses.get(key);
-                    }
-                  }
-                  JSONObject bonusesCount = new JSONObject();
-                  bonusesCount.put("success", bonusesSuccess);
-                  bonusesCount.put("failure", bonusesFailure);
 
-                  deliveriesCount.put("messages", messagesCount);
-                  deliveriesCount.put("bonuses", bonusesCount);
-                  
-                }
-              } 
-            catch (ElasticsearchClientException e)
+            if (showDeliveriesCount)
               {
-                log.warn("Exception processing REST api: {}", e);
+                try
+                  {
+                    Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay, journey.getTenantID());
+                    Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay, journey.getTenantID());
+
+                    long messagesSuccess = 0;
+                    long messagesFailure = 0;
+                    for (String key : messages.keySet())
+                      {
+                        if (key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage()))
+                          {
+                            messagesSuccess += messages.get(key);
+                          } 
+                        else
+                          {
+                            messagesFailure += messages.get(key);
+                          }
+                      }
+                    JSONObject messagesCount = new JSONObject();
+                    messagesCount.put("success", messagesSuccess);
+                    messagesCount.put("failure", messagesFailure);
+
+                    long bonusesSuccess = 0;
+                    long bonusesFailure = 0;
+                    for (String key : bonuses.keySet())
+                      {
+                        if (key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage()))
+                          {
+                            bonusesSuccess += bonuses.get(key);
+                          } 
+                        else
+                          {
+                            bonusesFailure += bonuses.get(key);
+                          }
+                      }
+                    JSONObject bonusesCount = new JSONObject();
+                    bonusesCount.put("success", bonusesSuccess);
+                    bonusesCount.put("failure", bonusesFailure);
+
+                    deliveriesCount.put("messages", messagesCount);
+                    deliveriesCount.put("bonuses", bonusesCount);
+                    journeyInfo.put("deliveriesCount", deliveriesCount);
+
+                  } 
+                catch (ElasticsearchClientException e)
+                  {
+                    log.warn("Exception processing REST api: {}", e);
+                  }
               }
-             
             journeyInfo.put("subscriberCount", journeySubscriberCountMap.get(journey.getGUIManagedObjectID()) == null ? Long.valueOf(0L) : journeySubscriberCountMap.get(journey.getGUIManagedObjectID()));
-            if(showDeliveriesCount) {
-              journeyInfo.put("deliveriesCount", deliveriesCount);
-            }
             journeys.add(journeyInfo);
           }
       }

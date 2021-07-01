@@ -1285,8 +1285,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         Aggregations aggregations = response.getAggregations();
         if (aggregations != null)
           {
-            Terms fileAggregationTerms = aggregations.get(termAggName);
-            for (Bucket bucket : fileAggregationTerms.getBuckets())
+            Terms journeySubscriberCountAggregationTerms = aggregations.get(termAggName);
+            for (Bucket bucket : journeySubscriberCountAggregationTerms.getBuckets())
               {
                 result.put(bucket.getKeyAsString(), bucket.getDocCount());
               }
