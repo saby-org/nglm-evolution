@@ -30118,7 +30118,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 voucherService.putVoucher(voucher, (existingVoucher == null), userID);
               }
 
-
+            voucherCreated = true;
             Offer voucherOffer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService, tenantID);
 
             /*****************************************
@@ -30132,8 +30132,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 offerService.putOffer(voucherOffer, callingChannelService, salesChannelService, productService,
                     voucherService, (existingOffer == null), userID);
               }
-            voucherCreated = true;
-
+            
             /*****************************************
              *
              * response
