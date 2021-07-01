@@ -5626,7 +5626,7 @@ public class GUIManager
       } 
     catch (ElasticsearchClientException e1)
       {
-        log.warn("Exception processing REST api: {}", e1);
+        log.warn("Exception processing REST api: {}", e1.getMessage());
       }
     
     

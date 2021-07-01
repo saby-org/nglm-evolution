@@ -1296,7 +1296,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         return result;
       } 
     catch (ElasticsearchClientException e)
-      { // forward
+      { 
+        if (log.isWarnEnabled()) log.warn("ElasticsearchClientException {}", e.getMessage());
         throw e;
       } 
     catch (ElasticsearchStatusException e)
@@ -1306,17 +1307,17 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             log.debug(e.getMessage());
             return result;
           }
-        e.printStackTrace();
+        if (log.isWarnEnabled()) log.warn("ElasticsearchStatusException {}", e.getMessage());
         throw new ElasticsearchClientException(e.getDetailedMessage());
       } 
     catch (ElasticsearchException e)
       {
-        e.printStackTrace();
+        if (log.isWarnEnabled()) log.warn("ElasticsearchException {}", e.getMessage());
         throw new ElasticsearchClientException(e.getDetailedMessage());
       } 
     catch (Exception e)
       {
-        e.printStackTrace();
+        if (log.isWarnEnabled()) log.warn("Exception {}", e.getMessage());
         throw new ElasticsearchClientException(e.getMessage());
       }
   }
