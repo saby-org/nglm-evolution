@@ -1263,9 +1263,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         // Build Elasticsearch query
         //
         
-        BoolQueryBuilder query=QueryBuilders.boolQuery();
-        query=query.mustNot(QueryBuilders.termsQuery("status", Arrays.asList(specialExit)));
-        query.should(QueryBuilders.termsQuery("journeyID", journeyIds));
+        BoolQueryBuilder query = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("status", Arrays.asList(specialExit))).should(QueryBuilders.termsQuery("journeyID", journeyIds));
         
         //
         //  request
