@@ -5614,12 +5614,21 @@ public class GUIManager
       showDeliveriesCount = true; // Only for Bulk Campaigns for the moment
     }
     
+    List<String> journeyIds = journeyObjects.stream().map(journeyObj -> journeyObj.getGUIManagedObjectID()).collect(Collectors.toList());
+    Map<String, Long> journeySubscriberCountMap = new HashMap<String, Long>();
+    try
+      {
+        journeySubscriberCountMap = this.elasticsearch.getJourneySubscriberCountMap(journeyIds);
+      } 
+    catch (ElasticsearchClientException e1)
+      {
+        log.warn("Exception processing REST api: {}", e1);
+      }
     for (GUIManagedObject journey : journeyObjects)
       {
         if (journey.getGUIManagedObjectType().equals(objectType) && (!externalOnly || !journey.getInternalOnly()))
           {
             JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
-            long subscriberCount = 0;
             JSONObject deliveriesCount = new JSONObject();
             String journeyID = journey.getGUIManagedObjectID();
             String journeyDisplay = journey.getGUIManagedObjectDisplay();
@@ -5627,13 +5636,9 @@ public class GUIManager
             //
             // retrieve from Elasticsearch 
             //
+            
             try
               {
-                // SubscriberCount
-                Long count = this.elasticsearch.getJourneySubscriberCount(journeyID);
-                count = (count != null) ? count : 0;
-                count = count-this.elasticsearch.getSpecialExitCount(journeyID);
-                subscriberCount = (count != null) ? count : 0;
                 
                 // DeliveriesCount 
                 if(showDeliveriesCount) {
@@ -5676,7 +5681,7 @@ public class GUIManager
                 log.warn("Exception processing REST api: {}", e);
               }
              
-            journeyInfo.put("subscriberCount", subscriberCount);
+            journeyInfo.put("subscriberCount", journeySubscriberCountMap.get(journey.getGUIManagedObjectID()) == null ? Long.valueOf(0L) : journeySubscriberCountMap.get(journey.getGUIManagedObjectID()));
             if(showDeliveriesCount) {
               journeyInfo.put("deliveriesCount", deliveriesCount);
             }

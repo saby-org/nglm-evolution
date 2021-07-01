@@ -55,6 +55,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -204,6 +205,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   * API
   *
   *****************************************/
+  
+  @Deprecated // use getJourneySubscriberCountMap
   public long getJourneySubscriberCount(String journeyID) throws ElasticsearchClientException {
     try {
       //
@@ -1288,6 +1291,88 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     result = result == null || result.trim().isEmpty() ? defaulteValue : result;
     if (log.isDebugEnabled()) log.debug("reading data from index {}", result);
     return result;
+  }
+
+  /*****************************************************
+   * 
+   * getJourneySubscriberCountMap
+   * 
+   ****************************************************/
+  
+  public Map<String, Long> getJourneySubscriberCountMap(List<String> journeyIds) throws ElasticsearchClientException
+  {
+    Map<String, Long> result = new HashMap<String, Long>();
+    try
+      {
+        String index = "journeystatistic-*";
+        String termAggName = "JourneySubscriberCount";
+        String aggFieldName = "journeyID";
+        
+        //
+        // Build Elasticsearch query
+        //
+        
+        BoolQueryBuilder query=QueryBuilders.boolQuery();
+        for(String reason : specialExit)
+          {
+            query=query.mustNot(QueryBuilders.termQuery("status", reason)); 
+          }
+        query.should(QueryBuilders.termsQuery("journeyID", journeyIds));
+        
+        //
+        //  request
+        //
+
+        SearchRequest request = new SearchRequest(index).source(new SearchSourceBuilder().query(query).size(0).aggregation(AggregationBuilders.terms(termAggName).size(journeyIds.size()).field(aggFieldName)));
+
+        //
+        // Send request & retrieve response synchronously (blocking call)
+        //
+        
+        SearchResponse response = this.search(request, RequestOptions.DEFAULT);
+
+        //
+        // Check search response
+        //
+        
+        if (response.getFailedShards() > 0) throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+        
+        Terms fileAggregationTerms = response.getAggregations().get(termAggName);
+        for (Bucket bucket : fileAggregationTerms.getBuckets())
+          {
+            result.put(bucket.getKeyAsString(), bucket.getDocCount());
+          }
+
+        //
+        // Send result
+        //
+        
+        return result;
+      } 
+    catch (ElasticsearchClientException e)
+      { // forward
+        throw e;
+      } 
+    catch (ElasticsearchStatusException e)
+      {
+        if (e.status() == RestStatus.NOT_FOUND)
+          {
+            log.debug(e.getMessage());
+            return result;
+          }
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getDetailedMessage());
+      } 
+    catch (ElasticsearchException e)
+      {
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getDetailedMessage());
+      } 
+    catch (Exception e)
+      {
+        e.printStackTrace();
+        throw new ElasticsearchClientException(e.getMessage());
+      }
   }
  
 }
