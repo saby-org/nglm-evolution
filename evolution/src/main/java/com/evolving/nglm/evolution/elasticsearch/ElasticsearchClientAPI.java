@@ -1282,11 +1282,14 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         //
         
         if (response.getFailedShards() > 0) throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
-        
-        Terms fileAggregationTerms = response.getAggregations().get(termAggName);
-        for (Bucket bucket : fileAggregationTerms.getBuckets())
+        Aggregations aggregations = response.getAggregations();
+        if (aggregations != null)
           {
-            result.put(bucket.getKeyAsString(), bucket.getDocCount());
+            Terms fileAggregationTerms = aggregations.get(termAggName);
+            for (Bucket bucket : fileAggregationTerms.getBuckets())
+              {
+                result.put(bucket.getKeyAsString(), bucket.getDocCount());
+              }
           }
 
         //
