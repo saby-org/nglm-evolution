@@ -5561,7 +5561,6 @@ public class GUIManager
 
   private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails, boolean externalOnly, boolean includeArchived, int tenantID)
   {
-    log.warn("RAJ K calling processGetJourneyList");
     
     /*****************************************
      *
@@ -5624,7 +5623,6 @@ public class GUIManager
     Map<String, Long> journeySubscriberCountMap = new HashMap<String, Long>();
     try
       {
-        log.warn("RAJ K calling getJourneySubscriberCountMap");
         if (journeyIds != null && !journeyIds.isEmpty()) journeySubscriberCountMap = this.elasticsearch.getJourneySubscriberCountMap(journeyIds);
       } 
     catch (ElasticsearchClientException e1)
