@@ -30923,6 +30923,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         if (!dryRun)
           {
             customCriteriaService.putCustomCriteria(customCriteria, (existingCustomCriteria == null), userID, customCriteriaService);
+            
+            /*****************************************
+            *
+            * add dynamic criterion fields)
+            *
+            *****************************************/
+
+           dynamicCriterionFieldService.addCustomCriterionField(customCriteria, (existingCustomCriteria == null));
 
           }
 
