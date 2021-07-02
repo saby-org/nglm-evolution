@@ -249,7 +249,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
           {
             journeyInfo.put(journeyExitDate, null);
           }
-        String journeyID = journeyInfo.get(journeyID).toString();
+        String journeyID = journeyInfo.get("journeyID").toString();
         if (result.containsKey(journeyID))
           {
             result.get(journeyID).add(journeyInfo);
