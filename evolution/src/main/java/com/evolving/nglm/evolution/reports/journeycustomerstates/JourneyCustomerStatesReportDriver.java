@@ -41,7 +41,6 @@ public class JourneyCustomerStatesReportDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    List<String> result = JourneyCustomerStatesReportMultithread.headerFieldsOrder;
-    return result;
+    return null;
   }
 }
