@@ -1044,13 +1044,11 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   private void incrementStats(NotificationManagerRequest notificationManagerRequest)
   {
-    String tenantID = SystemTime.getCurrentTime().getTime() % 2 == 0 ? "1" : "2";
-    log.info("RAJ K Notification statsCounter incrementing stat for tenant {}", tenantID);
     statsCounter.withLabel(StatsBuilders.LABEL.status.name(),notificationManagerRequest.getDeliveryStatus().getExternalRepresentation())
             .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
             .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
             .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
-            .withLabel(StatsBuilders.LABEL.tenant.name(), tenantID)
+            .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
             .getStats().increment();
   }
 
