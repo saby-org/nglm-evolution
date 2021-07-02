@@ -265,7 +265,7 @@ public class ReportMonoPhase
               nbBatch++;
               startBatch = System.currentTimeMillis();
               // EVPRO-1080 : retry search (with same scrollId) to catch spurious "ConnectionClosedException: Connection is closed"
-              int retryCountSearchScroll = 3;  
+              int retryCountSearchScroll = 5;  
               while (true) {
                 try {
                   SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId).scroll(scroll);
@@ -276,7 +276,7 @@ public class ReportMonoPhase
                     throw ex; // stop retrying, rethrow original exception
                   }
                   log.info("Got exception while doing searchScroll - wait a bit and retry " + retryCountSearchScroll + " more times : " + ex.getLocalizedMessage());
-                  try { Thread.sleep(30000L); } catch (InterruptedException ie) {} // wait 30 secs, retry
+                  try { Thread.sleep(60000L); } catch (InterruptedException ie) {} // wait a bit before retry
                 }
               }
               scrollId = searchResponse.getScrollId();
@@ -481,7 +481,7 @@ public class ReportMonoPhase
                     nbBatch++;
                     startBatch = System.currentTimeMillis();
                     // EVPRO-1080 : retry search (with same scrollId) to catch spurious "ConnectionClosedException: Connection is closed"
-                    int retryCountSearchScroll = 3;  
+                    int retryCountSearchScroll = 5;  
                     while (true) {
                       try {
                         SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId).scroll(scroll);
@@ -492,7 +492,7 @@ public class ReportMonoPhase
                           throw ex; // stop retrying, rethrow original exception
                         }
                         log.info("Got exception while doing searchScroll - wait a bit and retry " + retryCountSearchScroll + " more times : " + ex.getLocalizedMessage());
-                        try { Thread.sleep(30000L); } catch (InterruptedException ie) {} // wait 30 secs, retry
+                        try { Thread.sleep(60000L); } catch (InterruptedException ie) {} // wait a bit before retry
                       }
                     }
                     scrollId = searchResponse.getScrollId();
