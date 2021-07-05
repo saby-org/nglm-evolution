@@ -330,6 +330,7 @@ public class DeploymentCommon
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
+  private static String otpInstanceChangeEventTopic;
   private static String voucherActionTopic;
   private static String fileWithVariableEventTopic;
   private static String tokenRedeemedTopic;
@@ -637,6 +638,7 @@ public class DeploymentCommon
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
+  public static String getOTPInstranceChangeEventTopic() { return otpInstanceChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
   public static String getVoucherActionTopic() { return voucherActionTopic; }
   public static String getFileWithVariableEventTopic() { return fileWithVariableEventTopic; }
@@ -947,6 +949,7 @@ public class DeploymentCommon
     segmentContactPolicyTopic = jsonReader.decodeString("segmentContactPolicyTopic");
     profileChangeEventTopic = jsonReader.decodeString("profileChangeEventTopic");
     profileSegmentChangeEventTopic = jsonReader.decodeString("profileSegmentChangeEventTopic");
+    otpInstanceChangeEventTopic = jsonReader.decodeString("otpInstanceChangeEventTopic");
     profileLoyaltyProgramChangeEventTopic = jsonReader.decodeString("profileLoyaltyProgramChangeEventTopic");
     voucherActionTopic = jsonReader.decodeString("voucherActionTopic");
     fileWithVariableEventTopic = jsonReader.decodeString("fileWithVariableEventTopic");
