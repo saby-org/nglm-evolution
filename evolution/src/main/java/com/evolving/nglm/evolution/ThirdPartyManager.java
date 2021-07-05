@@ -117,6 +117,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.otp.OTPUtils;
 import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
@@ -266,7 +267,10 @@ public class ThirdPartyManager
     getSimpleOfferList(33),
     removeSimpleOffer(34),
     getResellerDetails(35),
-    getCustomerEDRs(36);
+    getCustomerEDRs(36),
+    generateOTP(37),
+    checkOTP(38);
+	 
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -546,7 +550,6 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
       restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerEDRs", new APIHandler(API.getCustomerEDRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerPoints", new APIHandler(API.getCustomerPoints));
       restServer.createContext("/nglm-thirdpartymanager/creditBonus", new APIHandler(API.creditBonus));
@@ -577,6 +580,10 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getSimpleOfferList", new APIHandler(API.getSimpleOfferList));
       restServer.createContext("/nglm-thirdpartymanager/removeSimpleOffer", new APIHandler(API.removeSimpleOffer));
       restServer.createContext("/nglm-thirdpartymanager/getResellerDetails", new APIHandler(API.getResellerDetails));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerEDRs", new APIHandler(API.getCustomerEDRs));
+      restServer.createContext("/nglm-thirdpartymanager/generateOTP", new APIHandler(API.generateOTP));
+      restServer.createContext("/nglm-thirdpartymanager/checkOTP", new APIHandler(API.checkOTP));
+      
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -636,7 +643,7 @@ public class ThirdPartyManager
     private DeliverableService deliverableService;
     private DynamicCriterionFieldService dynamicCriterionFieldService;
     private CallingChannelService callingChannelService;
-    private ExclusionInclusionTargetService exclusionInclusionTargetService;    
+    private ExclusionInclusionTargetService exclusionInclusionTargetService;
 
     //
     //  constructor
@@ -928,6 +935,13 @@ public class ThirdPartyManager
             case removeSimpleOffer:
               jsonResponse = processRemoveSimpleOffer(jsonRoot);
               break;
+            case generateOTP:
+            	jsonResponse = processGenerateOTP(jsonRoot);
+            	break;
+            case checkOTP:
+            	jsonResponse = processCheckOTP(jsonRoot);
+            	break;
+            	
           }
         }
       else
@@ -5705,6 +5719,137 @@ public class ThirdPartyManager
         throw e;
       }
   }
+  
+  private JSONObject processDummyResponse(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+
+  {
+	  Map<String, Object> response = new HashMap<String, Object>();
+      response.put("warning", "NOT IMPLEMENTED METHOD");
+      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+
+  return JSONUtilities.encodeObject(response);
+
+  }
+
+  
+  private JSONObject processCheckOTP(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+
+  {// GFE TODO implem
+	  
+	  AuthenticatedResponse authResponse = null;
+      ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+      if (!Deployment.getRegressionMode())
+        {
+          authResponse = authCache.get(thirdPartyCredential);
+        }
+      else
+        {
+          authResponse = authenticate(thirdPartyCredential);
+        }
+      int user = (authResponse.getUserId());
+      String userID = Integer.toString(user);
+//      jsonRoot.put("loginID", userID);
+
+      
+	  return processDummyResponse(jsonRoot);
+  }
+
+	  
+  private JSONObject processGenerateOTP(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+
+  {// GFE TODO implem
+//    try 
+//      {
+//        //
+//        // create request
+//        //
+//        /*****************************************
+//         *
+//         * request
+//         *
+//         *****************************************/
+//
+//        HashMap<String, Object> request = new HashMap<String, Object>();
+//        jsonRoot.put("apiVersion", 1);
+//        AuthenticatedResponse authResponse = null;
+//        ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+//        if (!Deployment.getRegressionMode())
+//          {
+//            authResponse = authCache.get(thirdPartyCredential);
+//          }
+//        else
+//          {
+//            authResponse = authenticate(thirdPartyCredential);
+//          }
+//        int user = (authResponse.getUserId());
+//        String userID = Integer.toString(user);
+//        jsonRoot.put("loginID", userID);
+//        JSONObject result;
+//
+//        StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
+//        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSimpleOfferThirdParty");
+//        httpPost.setEntity(stringEntity);
+//
+//        //
+//        // submit request
+//        //
+//
+//        HttpResponse httpResponse = httpClient.execute(httpPost);
+//
+//        //
+//        // process response
+//        //
+//
+//        if (httpResponse != null && httpResponse.getStatusLine() != null
+//            && httpResponse.getStatusLine().getStatusCode() == 200)
+//          {
+//            String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+//            log.info("GUImanager response : {}", jsonResponse);
+//
+//            //
+//            // parse JSON response from GUI
+//            //
+//
+//            result = (JSONObject) (new JSONParser()).parse(jsonResponse);
+//
+//          }
+//        else if (httpResponse != null && httpResponse.getStatusLine() != null
+//            && httpResponse.getStatusLine().getStatusCode() == 401)
+//          {
+//            log.error("GUI server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(),
+//                EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
+//            throw new ThirdPartyManagerException(
+//                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
+//                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
+//          }
+//        else if (httpResponse != null && httpResponse.getStatusLine() != null)
+//          {
+//            log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
+//            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
+//                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
+//          }
+//        else
+//          {
+//            log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse,
+//                httpResponse.getStatusLine());
+//            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
+//                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
+//          }
+//        return result;
+//      }
+//    catch (ParseException pe)
+//      {
+//        log.error("failed to Parse ParseException {} ", pe.getMessage());
+//        throw pe;
+//      }
+//    catch (IOException e)
+//      {
+//        log.error("IOException: {}", e.getMessage());
+//        throw e;
+//      }
+	  
+	  return processDummyResponse(jsonRoot);
+  }
 
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
     if(response==null) response=new HashMap<>();
@@ -6200,7 +6345,6 @@ public class ThirdPartyManager
 
             if (storedReseller.getUserIDs() != null && !((storedReseller.getUserIDs()).isEmpty()))
               {
-
                 if ((storedReseller.getUserIDs()).contains(userID))
                   {
                     if (resellerService.isActiveReseller(storedReseller, now))
@@ -6210,7 +6354,6 @@ public class ThirdPartyManager
                         parentResellerID.add(storedReseller.getParentResellerID());
                         response.put("parentResellerID", parentResellerID);
                         break;
-
                       }
                     else
                       {

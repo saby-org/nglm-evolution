@@ -330,7 +330,7 @@ public class DeploymentCommon
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
-  private static String otpInstanceChangeEventTopic;
+
   private static String voucherActionTopic;
   private static String fileWithVariableEventTopic;
   private static String tokenRedeemedTopic;
@@ -350,6 +350,8 @@ public class DeploymentCommon
   private static String sourceAddressTopic;
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
+  private static String otpInstanceChangeRequestTopic;
+  private static String otpInstanceChangeResponseTopic;
   private static String edrDetailsTopic;
   private static String workflowEventTopic;
     
@@ -638,7 +640,6 @@ public class DeploymentCommon
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
-  public static String getOTPInstranceChangeEventTopic() { return otpInstanceChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
   public static String getVoucherActionTopic() { return voucherActionTopic; }
   public static String getFileWithVariableEventTopic() { return fileWithVariableEventTopic; }
@@ -659,6 +660,8 @@ public class DeploymentCommon
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
+  public static String getOTPInstranceChangeRequestTopic() { return otpInstanceChangeRequestTopic;}
+  public static String getOTPInstranceChangeResponseTopic() { return otpInstanceChangeResponseTopic;}
   public static String getEdrDetailsTopic() { return edrDetailsTopic; }
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
   
@@ -949,7 +952,6 @@ public class DeploymentCommon
     segmentContactPolicyTopic = jsonReader.decodeString("segmentContactPolicyTopic");
     profileChangeEventTopic = jsonReader.decodeString("profileChangeEventTopic");
     profileSegmentChangeEventTopic = jsonReader.decodeString("profileSegmentChangeEventTopic");
-    otpInstanceChangeEventTopic = jsonReader.decodeString("otpInstanceChangeEventTopic");
     profileLoyaltyProgramChangeEventTopic = jsonReader.decodeString("profileLoyaltyProgramChangeEventTopic");
     voucherActionTopic = jsonReader.decodeString("voucherActionTopic");
     fileWithVariableEventTopic = jsonReader.decodeString("fileWithVariableEventTopic");
@@ -958,6 +960,8 @@ public class DeploymentCommon
     sourceAddressTopic = jsonReader.decodeString("sourceAddressTopic");
     voucherChangeRequestTopic = jsonReader.decodeString("voucherChangeRequestTopic");
     voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
+    otpInstanceChangeRequestTopic = jsonReader.decodeString("otpInstanceChangeRequestTopic");
+    otpInstanceChangeResponseTopic = jsonReader.decodeString("otpInstanceChangeResponseTopic");
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
     
