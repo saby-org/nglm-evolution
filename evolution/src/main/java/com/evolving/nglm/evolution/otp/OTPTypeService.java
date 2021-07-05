@@ -131,7 +131,7 @@ public class OTPTypeService extends GUIService
   *
   *****************************************/
 
-  public void putOTPType(GUIManagedObject otpType, boolean newObject, String userID, int tenantID) throws GUIManagerException{
+  public void putOTPType(GUIManagedObject otpType, boolean newObject, String userID, int tenantID) {
      putGUIManagedObject(otpType, SystemTime.getCurrentTime(), newObject, userID);
   }
   

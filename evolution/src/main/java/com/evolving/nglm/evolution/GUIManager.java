@@ -172,6 +172,8 @@ import com.evolving.nglm.evolution.grafana.GrafanaUtils;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.otp.GUIManagerOTP;
+import com.evolving.nglm.evolution.otp.OTPTypeService;
 import com.google.gson.JsonArray;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
@@ -583,6 +585,12 @@ public class GUIManager
     getComplexObjectType("getComplexObjectType"),
     putComplexObjectType("putComplexObjectType"),
     removeComplexObjectType("removeComplexObjectType"),
+    
+    getOTPTypeList("getOTPTypeList"),
+    getOTPTypeSummaryList("getOTPTypeSummaryList"),
+    getOTPType("getOTPType"),
+    putOTPType("putOTPType"),
+    removeOTPType("removeOTPType"),
 
     //
     //  configAdaptor APIs
@@ -733,6 +741,7 @@ public class GUIManager
   protected SharedIDService subscriberGroupSharedIDService;
   protected DynamicEventDeclarationsService dynamicEventDeclarationsService;
   protected CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
+  protected OTPTypeService otpTypeService;
   protected ElasticsearchManager elasticsearchManager;
   protected static Method externalAPIMethodJourneyActivated;
   protected static Method externalAPIMethodJourneyDeactivated;
@@ -860,6 +869,7 @@ public class GUIManager
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
+    String otpTypeTopic = Deployment.getOTPTypeTopic();
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
@@ -1085,6 +1095,7 @@ public class GUIManager
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
+    otpTypeService = new OTPTypeService(bootstrapServers, "guimanager-otptypeservice-"+apiProcessKey, otpTypeTopic, true);
     elasticsearchManager = new ElasticsearchManager(elasticsearch, voucherService, journeyService);
     
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
@@ -2352,6 +2363,12 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSimpleOfferList", new APISimpleHandler(API.getSimpleOfferList));
         restServer.createContext("/nglm-guimanager/getSimpleOfferSummaryList", new APISimpleHandler(API.getSimpleOfferSummaryList));
         restServer.createContext("/nglm-guimanager/removeSimpleOffer", new APISimpleHandler(API.removeSimpleOffer));
+        
+        restServer.createContext("/nglm-guimanager/putOTPType", new APISimpleHandler(API.putOTPType));
+        restServer.createContext("/nglm-guimanager/getOTPType", new APISimpleHandler(API.getOTPType));
+        restServer.createContext("/nglm-guimanager/getOTPTypeList", new APISimpleHandler(API.getOTPTypeList));
+        restServer.createContext("/nglm-guimanager/getOTPTypeSummaryList", new APISimpleHandler(API.getOTPTypeSummaryList));
+        restServer.createContext("/nglm-guimanager/removeOTPType", new APISimpleHandler(API.removeOTPType));
 
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -4270,8 +4287,27 @@ public class GUIManager
                   
                 case removeSimpleOffer:
                   jsonResponse = processRemoveSimpleOffer(userID, jsonRoot, tenantID);
-                  break;   
-
+                  break;  
+                  
+                case putOTPType:
+                  jsonResponse = GUIManagerOTP.processPutOTPType(userID, jsonRoot, epochServer, otpTypeService, tenantID);
+                  break;
+                  
+                case getOTPType:
+                  jsonResponse = GUIManagerOTP.processGetOTPType(userID, jsonRoot, includeArchived, otpTypeService, tenantID);
+                  break;
+                  
+                case getOTPTypeList:
+                  jsonResponse = GUIManagerOTP.processGetOTPTypeList(userID, jsonRoot, true, includeArchived, otpTypeService, tenantID);
+                  break;
+                  
+                case getOTPTypeSummaryList:
+                  jsonResponse = GUIManagerOTP.processGetOTPTypeList(userID, jsonRoot, false, includeArchived, otpTypeService, tenantID);
+                  break;
+                  
+                case removeOTPType:
+                  jsonResponse = GUIManagerOTP.processRemoveOTPType(userID, jsonRoot, guiManagerGeneral, otpTypeService, tenantID);
+                  break; 
 
                 case getSoftwareVersions:
                 jsonResponse = processSoftwareVersions(userID, jsonRoot, 1); // for the moment, will see later
