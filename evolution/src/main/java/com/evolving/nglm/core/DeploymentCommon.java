@@ -660,8 +660,8 @@ public class DeploymentCommon
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
-  public static String getOTPInstranceChangeRequestTopic() { return otpInstanceChangeRequestTopic;}
-  public static String getOTPInstranceChangeResponseTopic() { return otpInstanceChangeResponseTopic;}
+  public static String getOTPInstanceChangeRequestTopic() { return otpInstanceChangeRequestTopic;}
+  public static String getOTPInstanceChangeResponseTopic() { return otpInstanceChangeResponseTopic;}
   public static String getEdrDetailsTopic() { return edrDetailsTopic; }
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
   
