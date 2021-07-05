@@ -114,6 +114,7 @@
     <topic.guiaudit>guiaudit</topic.guiaudit>
     <topic.deliverable>deliverable</topic.deliverable>
     <topic.tokentype>tokentype</topic.tokentype>
+    <topic.otptype>otptype</topic.otptype>
     <topic.vouchertype>vouchertype</topic.vouchertype>
     <topic.voucher>voucher</topic.voucher>
     <topic.template.subscribermessage>template-subscribermessage</topic.template.subscribermessage>
