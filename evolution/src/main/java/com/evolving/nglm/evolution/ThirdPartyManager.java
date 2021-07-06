@@ -117,7 +117,9 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
 import com.evolving.nglm.evolution.otp.OTPUtils;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent.OTPChangeAction;
 import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
@@ -188,6 +190,7 @@ public class ThirdPartyManager
   private ElasticsearchClientAPI elasticsearch;
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
   private KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
+  private KafkaResponseListenerService<StringKey,OTPInstanceChangeEvent> otpChangeResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String, Constructor<? extends SubscriberStreamOutput>> JSON3rdPartyEventsConstructor = new HashMap<>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -536,6 +539,10 @@ public class ThirdPartyManager
 
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
+    
+    otpChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getOTPInstanceChangeResponseTopic(),StringKey.serde(),OTPInstanceChangeEvent.serde());
+    otpChangeResponseListenerService.start();
+    
 
     /*****************************************
      *
@@ -936,10 +943,10 @@ public class ThirdPartyManager
               jsonResponse = processRemoveSimpleOffer(jsonRoot);
               break;
             case generateOTP:
-            	jsonResponse = processGenerateOTP(jsonRoot);
+            	jsonResponse = processGenerateOTP(jsonRoot, tenantID);
             	break;
             case checkOTP:
-            	jsonResponse = processCheckOTP(jsonRoot);
+            	jsonResponse = processCheckOTP(jsonRoot, tenantID);
             	break;
             	
           }
@@ -5732,124 +5739,82 @@ public class ThirdPartyManager
   }
 
   
-  private JSONObject processCheckOTP(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+  private JSONObject processCheckOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
 
-  {// GFE TODO implem
+  {// GFE TODO check implem
+	  String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 	  
-	  AuthenticatedResponse authResponse = null;
-      ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-      if (!Deployment.getRegressionMode())
-        {
-          authResponse = authCache.get(thirdPartyCredential);
-        }
-      else
-        {
-          authResponse = authenticate(thirdPartyCredential);
-        }
-      int user = (authResponse.getUserId());
-      String userID = Integer.toString(user);
-//      jsonRoot.put("loginID", userID);
+	  Map<String,Object> otpResponse = new HashMap<>();
+	  	    
+	    //build the request to send
+	  
+	  OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
+	            SystemTime.getCurrentTime(),
+	            subscriberID,
+	            // TODO GFE EVENT ID HERE => other way to get the generator ????
+	            zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
+	            
+	            OTPInstanceChangeEvent.OTPChangeAction.Check,
+	            JSONUtilities.decodeString(jsonRoot, "otpTypeName", true),
+	            JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
+	            (String) null, //remainingAttempts
+	            (String) null, //currentTypeErrors
+	            (String) null, // globalErrorCounts
+	            RESTAPIGenericReturnCodes.UNKNOWN,
+	            tenantID);
 
-      
-	  return processDummyResponse(jsonRoot);
+	    Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+
+	    String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();
+	    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+	            requestTopic,
+	            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+	            OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
+	    ));
+
+	    
+	    OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
+	    return constructThirdPartyResponse(response.getReturnStatus(),otpResponse);
   }
 
 	  
-  private JSONObject processGenerateOTP(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+  private JSONObject processGenerateOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
+	  {// GFE TODO check implem
+	  // maybe include sync flag here since there might be no need to wait for confirmation ?
+		  String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+		  
+		  Map<String,Object> otpResponse = new HashMap<>();
+		  	    
+		    //build the request to send
+		  
+		  OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
+		            SystemTime.getCurrentTime(),
+		            subscriberID,
+		            // TODO GFE EVENT ID HERE => other way to get the generator ????
+		            zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
+		            
+		            OTPInstanceChangeEvent.OTPChangeAction.Generate,
+		            JSONUtilities.decodeString(jsonRoot, "otpTypeName", true),
+		            (String) null, //otpCheckValue
+		            (String) null, //remainingAttempts
+		            (String) null, //currentTypeErrors
+		            (String) null, // globalErrorCounts
+		            RESTAPIGenericReturnCodes.UNKNOWN,
+		            tenantID);
 
-  {// GFE TODO implem
-//    try 
-//      {
-//        //
-//        // create request
-//        //
-//        /*****************************************
-//         *
-//         * request
-//         *
-//         *****************************************/
-//
-//        HashMap<String, Object> request = new HashMap<String, Object>();
-//        jsonRoot.put("apiVersion", 1);
-//        AuthenticatedResponse authResponse = null;
-//        ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-//        if (!Deployment.getRegressionMode())
-//          {
-//            authResponse = authCache.get(thirdPartyCredential);
-//          }
-//        else
-//          {
-//            authResponse = authenticate(thirdPartyCredential);
-//          }
-//        int user = (authResponse.getUserId());
-//        String userID = Integer.toString(user);
-//        jsonRoot.put("loginID", userID);
-//        JSONObject result;
-//
-//        StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-//        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSimpleOfferThirdParty");
-//        httpPost.setEntity(stringEntity);
-//
-//        //
-//        // submit request
-//        //
-//
-//        HttpResponse httpResponse = httpClient.execute(httpPost);
-//
-//        //
-//        // process response
-//        //
-//
-//        if (httpResponse != null && httpResponse.getStatusLine() != null
-//            && httpResponse.getStatusLine().getStatusCode() == 200)
-//          {
-//            String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-//            log.info("GUImanager response : {}", jsonResponse);
-//
-//            //
-//            // parse JSON response from GUI
-//            //
-//
-//            result = (JSONObject) (new JSONParser()).parse(jsonResponse);
-//
-//          }
-//        else if (httpResponse != null && httpResponse.getStatusLine() != null
-//            && httpResponse.getStatusLine().getStatusCode() == 401)
-//          {
-//            log.error("GUI server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(),
-//                EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
-//            throw new ThirdPartyManagerException(
-//                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
-//                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
-//          }
-//        else if (httpResponse != null && httpResponse.getStatusLine() != null)
-//          {
-//            log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-//            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
-//                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
-//          }
-//        else
-//          {
-//            log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse,
-//                httpResponse.getStatusLine());
-//            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
-//                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
-//          }
-//        return result;
-//      }
-//    catch (ParseException pe)
-//      {
-//        log.error("failed to Parse ParseException {} ", pe.getMessage());
-//        throw pe;
-//      }
-//    catch (IOException e)
-//      {
-//        log.error("IOException: {}", e.getMessage());
-//        throw e;
-//      }
-	  
-	  return processDummyResponse(jsonRoot);
-  }
+		    Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+
+		    String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();
+		    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+		            requestTopic,
+		            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+		            OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
+		    ));
+
+		    OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
+		    return constructThirdPartyResponse(response.getReturnStatus(),otpResponse);
+	  }
+
 
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
     if(response==null) response=new HashMap<>();

@@ -50,7 +50,8 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	    schemaBuilder.field("remainingAttempts", Schema.OPTIONAL_STRING_SCHEMA);
 	    schemaBuilder.field("currentTypeErrors", Schema.OPTIONAL_STRING_SCHEMA);
 	    schemaBuilder.field("globalErrorCounts", Schema.OPTIONAL_STRING_SCHEMA);
-	    // not needed yet // schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
+	    // global
+	    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
 	    schema = schemaBuilder.build();
 	  };
 
@@ -107,7 +108,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	  private String currentTypeErrors;
 	  private String globalErrorCounts;
 	  private RESTAPIGenericReturnCodes returnStatus;
-//	  private int tenantID;
+	  private int tenantID;
 
 	  
 	  
@@ -130,6 +131,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	  public String getCurrentTypeErrors() { return currentTypeErrors; }
 	  public String getGlobalErrorCounts() { return globalErrorCounts; }
 	  public RESTAPIGenericReturnCodes getReturnStatus() { return returnStatus; }
+	  public int getTenantID() { return tenantID; }
 	  
 	  /*****************************************
 	  *
@@ -139,7 +141,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 
 	  public OTPInstanceChangeEvent(Date eventDate, String subscriberID, String eventID, OTPChangeAction action,
 			String otpTypeName, String otpCheckValue, String remainingAttempts, String currentTypeErrors,
-			String globalErrorCounts, RESTAPIGenericReturnCodes returnStatus//, int tenantID
+			String globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, int tenantID
 			) {
 		//super();
 		this.eventDate = eventDate;
@@ -152,7 +154,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 		this.currentTypeErrors = currentTypeErrors;
 		this.globalErrorCounts = globalErrorCounts;
 		this.returnStatus = returnStatus;
-		//this.tenantID = tenantID;
+		this.tenantID = tenantID;
 	}
 
 
@@ -168,7 +170,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 		this.currentTypeErrors = eventToClone.getCurrentTypeErrors();
 		this.globalErrorCounts = eventToClone.getGlobalErrorCounts();
 		this.returnStatus = eventToClone.getReturnStatus();
-		//this.tenantID = eventToClone.getTenantID();
+		this.tenantID = eventToClone.getTenantID();
 	}
 
 	  /*****************************************
@@ -180,7 +182,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	  public OTPInstanceChangeEvent(SchemaAndValue schemaAndValue, 
 			  Date eventDate, String subscriberID, String eventID, OTPChangeAction action,
 				String otpTypeName, String otpCheckValue, String remainingAttempts, String currentTypeErrors,
-				String globalErrorCounts, RESTAPIGenericReturnCodes returnStatus//, int tenantID
+				String globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, int tenantID
 				) {
 	    super(schemaAndValue);
 		this.eventDate = eventDate;
@@ -193,7 +195,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 		this.currentTypeErrors = currentTypeErrors;
 		this.globalErrorCounts = globalErrorCounts;
 		this.returnStatus = returnStatus;
-		//this.tenantID = tenantID;
+		this.tenantID = tenantID;
 	  }
 
 	  @Override
@@ -209,7 +211,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	            ", currentTypeErrors='" + currentTypeErrors + '\'' +
 	            ", globalErrorCounts='" + globalErrorCounts + '\'' +
 	            ", returnStatus=" + returnStatus.getGenericResponseMessage() +
-	            //'\'' +", tenantID='" + tenantID + 
+	            '\'' +", tenantID='" + tenantID + 
 	            '}';
 	  }
 
@@ -236,7 +238,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 		struct.put("currentTypeErrors", otpInstanceChangeEvent.getCurrentTypeErrors());
 		struct.put("globalErrorCounts", otpInstanceChangeEvent.getGlobalErrorCounts());
 		struct.put("returnStatus", otpInstanceChangeEvent.getReturnStatus().getGenericResponseMessage());
-		//struct.put("tenantID", (short) otpInstanceChangeEvent.getTenantID());
+		struct.put("tenantID", (short) otpInstanceChangeEvent.getTenantID());
 	    return struct;
 	  }
 
@@ -277,7 +279,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	      String currentTypeErrors = valueStruct.getString("currentTypeErrors");
 	      String globalErrorCounts = valueStruct.getString("globalErrorCounts");
 	      RESTAPIGenericReturnCodes returnStatus = RESTAPIGenericReturnCodes.fromGenericResponseMessage(valueStruct.getString("returnStatus"));
-//	      int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
+	      int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
 
 	      //
 		  // return
@@ -286,7 +288,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	      return new OTPInstanceChangeEvent( schemaAndValue, 
 				   eventDate,  subscriberID,  eventID,  action,
 					 otpTypeName,  otpCheckValue,  remainingAttempts,  currentTypeErrors,
-					 globalErrorCounts,  returnStatus//, int tenantID
+					 globalErrorCounts,  returnStatus, tenantID
 					);
 	  }
 
