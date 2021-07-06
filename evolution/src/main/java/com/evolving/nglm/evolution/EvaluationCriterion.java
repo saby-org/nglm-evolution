@@ -1558,6 +1558,11 @@ public class EvaluationCriterion
 
     if (esField == null)
     {
+      if (criterionField.hasSubcriterias())
+        {
+          if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
+          return alwaysTrueESQuery();
+        }
       throw new CriterionException("invalid criterionField " + criterionField);
     }
 
@@ -2310,6 +2315,17 @@ public class EvaluationCriterion
 
     return queryBuilder;
   }
+  
+  /*****************************************
+  *
+  *  alwaysTrueESQuery
+  *
+  *****************************************/
+
+ private QueryBuilder alwaysTrueESQuery() throws CriterionException
+ {
+   return QueryBuilders.existsQuery("_id"); // TO DO : this is a hack to return true always - must be handled in future as said in "EVPRO-1066"
+ }
 
   static String journeyName = "";
   static String campaignName = "";

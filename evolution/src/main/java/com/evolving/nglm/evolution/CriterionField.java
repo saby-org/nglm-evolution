@@ -112,7 +112,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("variableType", SchemaBuilder.string().defaultValue("local").schema());
     schemaBuilder.field("profileChangeEvent", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("useESQueryNoPainless",SchemaBuilder.bool().defaultValue(false).schema());
-    schemaBuilder.field("subcriterias", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(Collections.<String>emptyList()).schema());
+    schemaBuilder.field("subcriteria", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(Collections.<String>emptyList()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -219,7 +219,7 @@ public class CriterionField extends DeploymentManagedObject
     this.profileChangeEvent = JSONUtilities.decodeBoolean(jsonRoot, "profileChangeEvent", Boolean.FALSE);
     this.useESQueryNoPainless = JSONUtilities.decodeBoolean(jsonRoot,"useESQueryNoPainless",Boolean.FALSE);
     this.subcriterias = new LinkedHashSet<String>();
-    JSONArray subcriteriaArray = JSONUtilities.decodeJSONArray(jsonRoot, "subcriterias", new JSONArray());
+    JSONArray subcriteriaArray = JSONUtilities.decodeJSONArray(jsonRoot, "subcriteria", new JSONArray());
     for (int i = 0; i < subcriteriaArray.size(); i++)
       {
         subcriterias.add(JSONUtilities.decodeString((JSONObject)subcriteriaArray.get(i), "id", true));
@@ -508,7 +508,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("variableType", criterionField.getVariableType().getExternalRepresentation());
     struct.put("profileChangeEvent", criterionField.getProfileChangeEvent());
     struct.put("useESQueryNoPainless",criterionField.getUseESQueryNoPainless());
-    struct.put("subcriterias",criterionField.getSubcriterias());
+    struct.put("subcriteria",criterionField.getSubcriterias());
     return struct;
   }
 
@@ -547,7 +547,7 @@ public class CriterionField extends DeploymentManagedObject
     VariableType variableType = (schemaVersion >= 5) ? VariableType.fromExternalRepresentation(valueStruct.getString("variableType")) : VariableType.Local;
     boolean profileChangeEvent = (schemaVersion >= 2) ? valueStruct.getBoolean("profileChangeEvent") : false;
     boolean useESQueryNoPainless = (schemaVersion >= 6) ? valueStruct.getBoolean("useESQueryNoPainless"):false;
-    Set<String> subcriterias = (schemaVersion >= 7) ? unpackSubcrierias(valueStruct.get("subcriterias")) : new LinkedHashSet<String>();
+    Set<String> subcriterias = (schemaVersion >= 7) ? unpackSubcrierias(valueStruct.get("subcriteria")) : new LinkedHashSet<String>();
 
     //
     //  return

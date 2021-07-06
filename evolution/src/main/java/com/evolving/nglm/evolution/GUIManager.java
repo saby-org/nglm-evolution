@@ -25993,7 +25993,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             //  subcriteria
             //
             
-            JSONArray subcriteriaJSONArray = JSONUtilities.decodeJSONArray(criterionFieldJSON, "subcriterias", null);
+            JSONArray subcriteriaJSONArray = JSONUtilities.decodeJSONArray(criterionFieldJSON, "subcriteria", null);
             if (subcriteriaJSONArray != null && !subcriteriaJSONArray.isEmpty())
               {
                 List<JSONObject> subcriterias = new ArrayList<JSONObject>();
@@ -26004,10 +26004,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                     subcriteriaMap.put("id", JSONUtilities.decodeString(subcriteriaJSON, "id", true));
                     subcriteriaMap.put("display", JSONUtilities.decodeString(subcriteriaJSON, "display", false));
                     subcriteriaMap.put("dataType", JSONUtilities.decodeString(subcriteriaJSON, "dataType", true));
+                    subcriteriaMap.put("mandatory", JSONUtilities.decodeBoolean(subcriteriaJSON, "mandatory", Boolean.FALSE));
                     subcriteriaMap.put("availableValues", JSONUtilities.encodeArray(evaluateAvailableValues(JSONUtilities.decodeJSONArray(subcriteriaJSON, "availableValues", false), now, tenantID)));
                     subcriterias.add(JSONUtilities.encodeObject(subcriteriaMap));
                   }
-                criterionFieldJSON.put("subcriterias", JSONUtilities.encodeArray(subcriterias));
+                criterionFieldJSON.put("subcriteria", JSONUtilities.encodeArray(subcriterias));
               }
             
             //
