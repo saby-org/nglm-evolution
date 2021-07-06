@@ -914,6 +914,16 @@
       "id"           : "getResellerDetails",
       "methodName"   : "getResellerDetails",
       "permissions"  : ["API-GET-RESELLER-DETAILS"]
+    },
+    {
+      "id"           : "generateOTP",
+      "methodName"   : "generateOTP",
+      "permissions"  : ["API-VALIDATE-VOUCHER"]
+    },
+    {
+      "id"           : "checkOTP",
+      "methodName"   : "checkOTP",
+      "permissions"  : ["API-VALIDATE-VOUCHER"]
     }
     
   ],
