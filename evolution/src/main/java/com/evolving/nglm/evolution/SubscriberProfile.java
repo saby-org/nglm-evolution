@@ -45,6 +45,7 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
+import com.evolving.nglm.evolution.otp.OTPInstance;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -144,7 +145,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(10));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(11)); //10>11 : adding OneTimePassword list
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -166,6 +167,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
+    schemaBuilder.field("otps",   SchemaBuilder.array(OTPInstance.serde().schema()).defaultValue(Collections.<OTPInstance>emptyList()).schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -244,6 +246,7 @@ public abstract class SubscriberProfile
   private List<ComplexObjectInstance> complexObjectInstances; 
   private Map<String, List<Date>> offerPurchaseHistory;
   private int tenantID;
+  private List<OTPInstance> otpInstances;
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
@@ -278,6 +281,7 @@ public abstract class SubscriberProfile
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
   public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
+  public List<OTPInstance> getOTPInstances() { return otpInstances; }
   public int getTenantID() { return tenantID; }
   public Integer getScore(String challengeID)
   {
@@ -730,6 +734,24 @@ public abstract class SubscriberProfile
     return result;
   }
   
+  // GFE CHECK IF NEEDED a getOTPInstancesJSON()
+//  public JSONObject getOTPInstancesJSON()
+//  {
+//    JSONObject result = new JSONObject();
+//    if(this.otpInstances != null)
+//    {
+//      JSONArray array = new JSONArray();
+//      for(ITPInstance otp : otpInstances)
+//      {
+//        JSONObject obj = new JSONObject();
+//        obj.put("<fieldHere>",otp.get<FieldGetter>());
+//        array.add(obj);
+//      }
+//      result.put("otp", array);
+//    }
+//    return result;
+//  }
+
   
   /****************************************
   *
@@ -1439,6 +1461,7 @@ public abstract class SubscriberProfile
   public void setLanguageID(String languageID) { this.languageID = languageID; }
   public void setExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile) { this.extendedSubscriberProfile = extendedSubscriberProfile; }
   public void setTenantID(int tenantID) { this.tenantID = tenantID; }
+  public void setOTPInstances(List<OTPInstance> otpInstances){ this.otpInstances = otpInstances; }
   
   //
   //  setEvolutionSubscriberStatus
@@ -1600,6 +1623,7 @@ public abstract class SubscriberProfile
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
+    List<OTPInstance> otpInstances = (schemaVersion >= 11) ? unpackOTPs(schema.field("otps").schema(), valueStruct.get("otps")) : Collections.<OTPInstance>emptyList();
     //
     //  return
     //
@@ -1625,6 +1649,7 @@ public abstract class SubscriberProfile
     this.complexObjectInstances = complexObjectInstances;
     this.offerPurchaseHistory = offerPurchaseHistory;
     this.tenantID = tenantID;
+    this.otpInstances = otpInstances;
   }
 
   /*****************************************
@@ -1880,6 +1905,38 @@ public abstract class SubscriberProfile
     return result;
   }
   
+  /*****************************************
+  *
+  *  unpackVouchers
+  *
+  *****************************************/
+
+ private static List<OTPInstance> unpackOTPs(Schema schema, Object value)
+ {
+   //
+   //  get schema for voucher
+   //
+
+   Schema otpSchema = schema.valueSchema();
+
+   //
+   //  unpack
+   //
+
+   List<OTPInstance> result = new LinkedList<>();
+   List<Object> valueArray = (List<Object>) value;
+   for (Object otpInst : valueArray)
+   {
+     result.add(OTPInstance.unpack(new SchemaAndValue(otpSchema, otpInst)));
+   }
+
+   //
+   //  return
+   //
+
+   return result;
+ }
+
   /*****************************************
   *
   *  unpackComplexObjectInstances
