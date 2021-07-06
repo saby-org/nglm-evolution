@@ -227,11 +227,11 @@ public class DynamicCriterionFieldService extends GUIService
     criterionFieldJSON.put("id", id);
     criterionFieldJSON.put("display", customCriteria.getGUIManagedObjectDisplay());
     criterionFieldJSON.put("epoch", customCriteria.getEpoch());
-    criterionFieldJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
+    criterionFieldJSON.put("dataType", customCriteria.getDataType());
     criterionFieldJSON.put("tagFormat", null);
     criterionFieldJSON.put("tagMaxLength", null);
     criterionFieldJSON.put("esField", id);
-    criterionFieldJSON.put("retriever", "getLoyaltyProgramCriterionField");
+    criterionFieldJSON.put("retriever", "getCustomCriterionField");
     criterionFieldJSON.put("minValue", null);
     criterionFieldJSON.put("maxValue", null);
     criterionFieldJSON.put("availableValues", null);

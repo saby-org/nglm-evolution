@@ -7,6 +7,9 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.Expression.ExpressionContext;
+import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.core.ConnectSerde;
@@ -52,6 +55,7 @@ public class CustomCriteria extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("formula", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("dataType", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -74,7 +78,9 @@ public class CustomCriteria extends GUIManagedObject
   *
   ****************************************/
   
-  private String formula; 
+  private String formula;
+  private String dataType;
+  private Expression expression;
   
   /****************************************
   *
@@ -85,6 +91,8 @@ public class CustomCriteria extends GUIManagedObject
   public String getCustomCriteriaID() { return getGUIManagedObjectID(); }
   public String getCustomCriteriaName() { return getGUIManagedObjectName(); }
   public String getFormula(){ return formula; }
+  public String getDataType() { return dataType; }
+  public Expression getExpression() { return expression; }
 
   /*****************************************
   *
@@ -92,10 +100,11 @@ public class CustomCriteria extends GUIManagedObject
   *
   *****************************************/
 
-  public CustomCriteria(SchemaAndValue schemaAndValue, String formula)
+  public CustomCriteria(SchemaAndValue schemaAndValue, String formula, String dataType)
   {
     super(schemaAndValue);
     this.formula = formula;
+    this.dataType = dataType;
   }
 
   /*****************************************
@@ -110,6 +119,7 @@ public class CustomCriteria extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, customCriteria);
     struct.put("formula", customCriteria.getFormula());
+    struct.put("dataType", customCriteria.getDataType());
     return struct;
   }
 
@@ -135,13 +145,14 @@ public class CustomCriteria extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     String formula = valueStruct.getString("formula");
+    String dataType = valueStruct.getString("dataType");
     
     
     //
     //  return
     //
 
-    return new CustomCriteria(schemaAndValue, formula);
+    return new CustomCriteria(schemaAndValue, formula, dataType);
   }
   
   /*****************************************
@@ -175,7 +186,23 @@ public class CustomCriteria extends GUIManagedObject
     *****************************************/
     
     this.formula = JSONUtilities.decodeString(jsonRoot, "formula", false);
-    
+    log.info("MK decode formula : " + formula);
+    // TODO Need to compute dataType from formula
+    ExpressionReader expressionReader = new ExpressionReader(CriterionContext.FullDynamicProfile(tenantID), formula, null, tenantID);
+    log.info("MK decode expressionReader : " + expressionReader);
+    expression = expressionReader.parse(ExpressionContext.Criterion, tenantID);
+    log.info("MK decode expression : " + expression);
+    log.info("MK decode type : " + ((expression==null)?"null":expression.getType()));
+    switch (expression.getType()) {
+      case IntegerExpression:
+        this.dataType = CriterionDataType.IntegerCriterion.getExternalRepresentation();
+        break;
+      case DoubleExpression:
+        this.dataType = CriterionDataType.DoubleCriterion.getExternalRepresentation();
+        break;
+      default:
+        throw new GUIManagerException("Type of " + formula + " must be numeric, not " + expression.getType(), formula);
+    }
 
     /*****************************************
     *
@@ -202,6 +229,7 @@ public class CustomCriteria extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingCustomCriteria.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(getFormula(), existingCustomCriteria.getFormula());
+        epochChanged = epochChanged || ! Objects.equals(getDataType(), existingCustomCriteria.getDataType());
         return epochChanged;
       }
     else
