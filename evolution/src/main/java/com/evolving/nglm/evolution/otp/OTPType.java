@@ -59,7 +59,7 @@ public class OTPType extends GUIManagedObject
     schemaBuilder.field("banPeriod", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("instanceExpirationDelay", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("valueGenerationDigits", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("valueGenerationRegex", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("valueGenerationRegex", Schema.OPTIONAL_STRING_SCHEMA);
     
     schema = schemaBuilder.build();
   };
