@@ -350,6 +350,7 @@ public class DeploymentCommon
   private static String voucherChangeResponseTopic;
   private static String edrDetailsTopic;
   private static String workflowEventTopic;
+  private static String customCriteriaTopic;
     
   //
   // Others
@@ -656,6 +657,7 @@ public class DeploymentCommon
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
   public static String getEdrDetailsTopic() { return edrDetailsTopic; }
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
+  public static String getCustomCriteriaTopic() { return customCriteriaTopic; }
   
   
   
@@ -952,6 +954,7 @@ public class DeploymentCommon
     voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
+    customCriteriaTopic = jsonReader.decodeString("customCriteriaTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     
