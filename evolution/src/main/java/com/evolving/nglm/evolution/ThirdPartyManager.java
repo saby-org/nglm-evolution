@@ -6951,7 +6951,7 @@ public class ThirdPartyManager
             Set<Object> stringSetValue = new HashSet<Object>();
             for (int i=0; i<jsonArrayString.size(); i++)
               {
-                stringSetValue.add(jsonArrayString.get(i));
+                stringSetValue.add((String) jsonArrayString.get(i));
               }
             value = stringSetValue;
             break;
@@ -6973,7 +6973,7 @@ public class ThirdPartyManager
               Set<Object> doubleSetValue = new HashSet<Object>();
               for (int i=0; i<jsonArrayDouble.size(); i++)
                 {
-                  doubleSetValue.add(new Integer(((Number) jsonArrayDouble.get(i)).intValue()));
+                  doubleSetValue.add(new Double(((Number) jsonArrayDouble.get(i)).doubleValue()));
                 }
               value = doubleSetValue;
               break;
