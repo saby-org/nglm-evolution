@@ -72,6 +72,7 @@ import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -132,6 +133,8 @@ public class ThirdPartyManager
   private static final String DEFAULT_FEATURE_ID = "<anonymous>";
   private static final String CUSTOMER_ID = "customerID";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
+  
+  private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
 
   /*****************************************
    *
@@ -5779,42 +5782,66 @@ public class ThirdPartyManager
 
 	  
   private JSONObject processGenerateOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
-	  {// GFE TODO check implem
-	  // maybe include sync flag here since there might be no need to wait for confirmation ?
-		  String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
-		  
-		  Map<String,Object> otpResponse = new HashMap<>();
-		  	    
-		    //build the request to send
-		  
-		  OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
-		            SystemTime.getCurrentTime(),
-		            subscriberID,
-		            // TODO GFE EVENT ID HERE => other way to get the generator ????
-		            zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
-		            
-		            OTPInstanceChangeEvent.OTPChangeAction.Generate,
-		            JSONUtilities.decodeString(jsonRoot, "otpTypeName", true),
-		            (String) null, //otpCheckValue
-		            (String) null, //remainingAttempts
-		            (String) null, //currentTypeErrors
-		            (String) null, // globalErrorCounts
-		            RESTAPIGenericReturnCodes.UNKNOWN,
-		            tenantID);
+  {
 
-		    Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+    //
+    //  eventName
+    //
 
-		    String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();
-		    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
-		            requestTopic,
-		            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
-		            OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
-		    ));
+    String optTypeDisplay = JSONUtilities.decodeString(jsonRoot, "otpType", false);
+    if (optTypeDisplay == null || optTypeDisplay.isEmpty())
+      {
+        Map<String, Object> response = new HashMap<String, Object>();
+        updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS, "-{optType is missing}");
+        return JSONUtilities.encodeObject(response);
+      }
 
-		    OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
-		    return constructThirdPartyResponse(response.getReturnStatus(),otpResponse);
-	  }
+    //
+    //  subscriberID
+    //
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
+    OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
+        SystemTime.getCurrentTime(),
+        subscriberID,
+        "" + (int)(Math.random()*1000000),
+        OTPInstanceChangeEvent.OTPChangeAction.Generate,
+        optTypeDisplay,
+        (String) null, //otpCheckValue
+        (String) null, //remainingAttempts
+        (String) null, //currentTypeErrors
+        (String) null, // globalErrorCounts
+        RESTAPIGenericReturnCodes.UNKNOWN,
+        tenantID);
+
+     String topic = Deployment.getOTPInstanceChangeRequestTopic();
+     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID)), OTPInstanceChangeEvent.serde().serializer().serialize(topic, request)));
+     Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+
+     String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();
+     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+             requestTopic,
+             StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+             OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
+     ));
+
+     OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
+     
+     Map<String,Object> otpResponse = new HashMap<>();
+     
+     /*****************************************
+     *
+     * return
+     *
+     *****************************************/
+     
+     return constructThirdPartyResponse(response.getReturnStatus(),otpResponse); 
+  }
 
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
     if(response==null) response=new HashMap<>();

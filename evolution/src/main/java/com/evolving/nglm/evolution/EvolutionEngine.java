@@ -25,6 +25,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
+import com.evolving.nglm.evolution.otp.OTPInstance;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
+import com.evolving.nglm.evolution.otp.OTPType;
+import com.evolving.nglm.evolution.otp.OTPTypeService;
+import com.evolving.nglm.evolution.otp.OTPUtils;
 import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -202,6 +207,7 @@ public class EvolutionEngine
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
   private static DeliverableService deliverableService;
   private static SegmentContactPolicyService segmentContactPolicyService;
+  private static OTPTypeService otpTypeService;
   // can not remove yet all of it, keep it for state store log stats, but not jmx exported anymore
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   // evolution event count
@@ -322,6 +328,7 @@ public class EvolutionEngine
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
     String workflowEventTopic = Deployment.getWorkflowEventTopic();
+    String otpInstanceChangeEventRequestTopic = Deployment.getOTPInstanceChangeRequestTopic();
 
     //
     //  changelogs
@@ -495,6 +502,13 @@ public class EvolutionEngine
 
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "evolutionengine-segmentcontactpolicyservice-" + evolutionEngineKey, Deployment.getSegmentContactPolicyTopic(), false);
     segmentContactPolicyService.start();
+    
+    //
+    //  otpTypeService
+    //
+
+    otpTypeService = new OTPTypeService(bootstrapServers, "evolutionengine-otptypeservice-" + evolutionEngineKey, Deployment.getOTPTypeTopic(), false);
+    otpTypeService.start();
     
     //
     // pointService
@@ -727,6 +741,7 @@ public class EvolutionEngine
     final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
     final ConnectSerde<EDRDetails> edrDetailsSerde = EDRDetails.serde();
     final ConnectSerde<WorkflowEvent> workflowEventSerde = WorkflowEvent.serde();
+    final ConnectSerde<OTPInstanceChangeEvent> otpInstanceChangeEventSerde = OTPInstanceChangeEvent.serde();
 
     //
     //  special serdes
@@ -754,6 +769,7 @@ public class EvolutionEngine
     evolutionEventSerdes.add(loyaltyProgramRequestSerde);
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
+    evolutionEventSerdes.add(otpInstanceChangeEventSerde);
     evolutionEventSerdes.addAll(evolutionEngineEventSerdes.values());
     for(DeliveryManagerDeclaration dmd:Deployment.getDeliveryManagers().values()) evolutionEventSerdes.add(dmd.getRequestSerde());
     final ConnectSerde<SubscriberStreamEvent> evolutionEventSerde = new ConnectSerde<SubscriberStreamEvent>("evolution_event", false, evolutionEventSerdes.toArray(new ConnectSerde[0]));
@@ -791,6 +807,7 @@ public class EvolutionEngine
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
     KStream<StringKey, WorkflowEvent> workflowEventStream = builder.stream(workflowEventTopic, Consumed.with(stringKeySerde, workflowEventSerde));
+    KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventRequestStream = builder.stream(otpInstanceChangeEventRequestTopic, Consumed.with(stringKeySerde, otpInstanceChangeEventSerde));
     
     //
     //  timedEvaluationStreams
@@ -936,6 +953,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) workflowEventStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) otpInstanceChangeEventRequestStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     evolutionEventStreams.addAll(deliveryManagerRequestToProcessStreams);
@@ -987,7 +1005,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyTriggerEventAction),
         (key,value) -> (value instanceof SubscriberProfileForceUpdate),
         (key,value) -> (value instanceof EDRDetails),
-        (key,value) -> (value instanceof WorkflowEvent)
+        (key,value) -> (value instanceof WorkflowEvent),
+        (key,value) -> (value instanceof OTPInstanceChangeEvent)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1008,6 +1027,7 @@ public class EvolutionEngine
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
     KStream<StringKey, WorkflowEvent> workflowEventsStream = (KStream<StringKey, WorkflowEvent>) branchedEvolutionEngineOutputs[15];
+    KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventsStream = (KStream<StringKey, OTPInstanceChangeEvent>) branchedEvolutionEngineOutputs[16];
     /*****************************************
     *
     *  sink
@@ -1031,41 +1051,44 @@ public class EvolutionEngine
     voucherActionStream.to(Deployment.getVoucherActionTopic(), Produced.with(stringKeySerde, voucherActionSerde));
     subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
     edrDetailsStream.to(Deployment.getEdrDetailsTopic(), Produced.with(stringKeySerde, edrDetailsSerde));
+    workflowEventsStream.to(Deployment.getWorkflowEventTopic(), Produced.with(stringKeySerde, workflowEventSerde));
+    otpInstanceChangeEventsStream.to(Deployment.getOTPInstanceChangeResponseTopic(), Produced.with(stringKeySerde, OTPInstanceChangeEvent.serde()));
+    
 
     //
-	//  sink DeliveryRequest
-	//
+    //  sink DeliveryRequest
+    //
 
-	// rekeyed as needed
-	KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
-	// topics/predicates/serdes for branching by request or response and priority
-	// important to keep those 2 lists coherent one with the other!
-	LinkedList<String> topics = new LinkedList<>();
-	LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
-	Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
-	// populate
-	for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
-	  for(DeliveryPriority priority:DeliveryPriority.values()){
-	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine() || deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)/*or special case the "hacky loyalty point update BDR only" (sounds to me that is actually not the hacky at all, sending point request to commodity delivery manager to send back to engine to send back to commodity delivery manager to send back to engine feels a bit more shitty)*/){
-	  	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
-		  topics.add(topic);
-	  	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
-	  	  deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
-		}
-		String topic = deliveryManagerDeclaration.getRequestTopic(priority);// a request we are doing
-		topics.add(topic);
-		deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
-		deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
-	  }
-	}
-	//branch and sink
-	Iterator<String> topicIterator = topics.iterator();
-	for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.toArray(new Predicate[deliveryRequestPredicates.size()]))){
-	  String topic = topicIterator.next();
-	  stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
-	}
+    // rekeyed as needed
+    KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
+    // topics/predicates/serdes for branching by request or response and priority
+    // important to keep those 2 lists coherent one with the other!
+    LinkedList<String> topics = new LinkedList<>();
+    LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
+    Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
+    // populate
+    for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
+      for(DeliveryPriority priority:DeliveryPriority.values()){
+      	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine() || deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)/*or special case the "hacky loyalty point update BDR only" (sounds to me that is actually not the hacky at all, sending point request to commodity delivery manager to send back to engine to send back to commodity delivery manager to send back to engine feels a bit more shitty)*/){
+      	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
+      topics.add(topic);
+      	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
+      	  deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
+    	}
+    	String topic = deliveryManagerDeclaration.getRequestTopic(priority);// a request we are doing
+    	topics.add(topic);
+    	deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
+    	deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
+      }
+    }
+    //branch and sink
+    Iterator<String> topicIterator = topics.iterator();
+    for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.toArray(new Predicate[deliveryRequestPredicates.size()]))){
+      String topic = topicIterator.next();
+      stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
+    }
 
-	//
+    //
     // sink TriggerEvent
     //
 
@@ -1752,14 +1775,14 @@ public class EvolutionEngine
       }
 
     // NO MORE DEEP COPY !!!!
-	// previous one or new empty
+    // previous one or new empty
     SubscriberState subscriberState = (previousSubscriberState != null) ? previousSubscriberState : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
     // keep the previous stored byte[]
     byte[] storedBefore = (previousSubscriberState != null) ? previousSubscriberState.getKafkaRepresentation() : new byte[0];// this empty means as well subscriber was not existing before
     // need to save the previous scheduled evaluation
-	Set<TimedEvaluation> scheduledEvaluationsBefore = new TreeSet<>(subscriberState.getScheduledEvaluations());
-	// and clean it
-	subscriberState.getScheduledEvaluations().clear();
+    Set<TimedEvaluation> scheduledEvaluationsBefore = new TreeSet<>(subscriberState.getScheduledEvaluations());
+    // and clean it
+    subscriberState.getScheduledEvaluations().clear();
 
     boolean subscriberStateUpdated = previousSubscriberState == null;
 
@@ -1788,8 +1811,27 @@ public class EvolutionEngine
           SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
           return subscriberState;
       }
-
-
+    
+    /*****************************************
+    *
+    *  handle One Time Password (OTP)
+    *
+    *****************************************/
+    if(evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation()) 
+      {
+        // TODO Good place to cleanup the profile from old useless OTP 
+      }
+    if(evolutionEvent instanceof OTPInstanceChangeEvent)
+      {
+        // TODO implement here the semantic of OTP using OTP utility class
+        // here for an example, just update the event and put it into the response topic for ThirdPartyManager Response
+        OTPInstanceChangeEvent otpEvent = (OTPInstanceChangeEvent)evolutionEvent;
+        
+        OTPUtils utils = new OTPUtils();
+        OTPInstanceChangeEvent otpResponse = utils.generateOTP(otpEvent, subscriberProfile, otpTypeService, tenantID);
+        
+        subscriberState.getOTPInstanceChangeEvent().add(otpResponse);
+      }
 
     /*****************************************
     *
@@ -7037,6 +7079,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getJourneyTriggerEventActions());
         result.addAll(subscriberState.getSubscriberProfileForceUpdates());
         result.addAll(subscriberState.getEdrDetailsWrappers());
+        result.addAll(subscriberState.getOTPInstanceChangeEvent());
       }
 
     // add stats about voucherChange done

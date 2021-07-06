@@ -18,7 +18,7 @@ import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
 //import com.evolving.nglm.evolution.ActionManager.Action;
 
 
-public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements EvolutionEngineEvent //, Action
+public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements EvolutionEngineEvent
 	{
 	  /*****************************************
 	  *

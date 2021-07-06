@@ -339,14 +339,9 @@ public class OTPUtils
 
   
   
-  // OTP without customer attachement (hence probably some bypassed checks)
-  public OTPInstance generateOTP(String OTPTypeName, int tenantID) {
-	  return generateOTP((SubscriberProfile)null, OTPTypeName, tenantID);
-  }
-  
   // OTP Creation
-  public OTPInstance generateOTP(SubscriberProfile profile, String otpType, int tenantID) {
-	  OTPType baseOtpType = otpTypeService.getActiveOTPTypeByName(otpType,tenantID);
+  public OTPInstanceChangeEvent generateOTP(OTPInstanceChangeEvent otpRequest, SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID) {
+	  OTPType baseOtpType = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(),tenantID);
 	  if (baseOtpType == null) return null; // TODO raise error
 	  
 	  
@@ -373,7 +368,12 @@ public class OTPUtils
 		  return null;
   	  }
 	  Date now = new Date();			 
-	  return new OTPInstance(otpType,OTPStatus.New,otpValue,0,0,now,now,null, null,DateUtils.addSeconds(now,baseOtpType.getInstanceExpirationDelay()));
+	  OTPInstance otpInstance = new OTPInstance(otpRequest.getOTPTypeName(),OTPStatus.New,otpValue,0,0,now,now,null, null,DateUtils.addSeconds(now,baseOtpType.getInstanceExpirationDelay()));
+	  
+	  // TODO subscrbiber Profile to be updated
+	  otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+	  return otpRequest;
+	  
   }
 
 
