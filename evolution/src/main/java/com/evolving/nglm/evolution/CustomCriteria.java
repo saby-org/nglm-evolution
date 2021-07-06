@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@GUIDependencyDef(objectType = "customCriteria", serviceClass = CustomCriteriaService.class, dependencies = {})
 public class CustomCriteria extends GUIManagedObject
 {
   /*****************************************
