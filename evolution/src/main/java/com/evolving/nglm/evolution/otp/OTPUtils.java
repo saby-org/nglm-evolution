@@ -341,8 +341,8 @@ public class OTPUtils
   
   // OTP Creation
   public OTPInstanceChangeEvent generateOTP(OTPInstanceChangeEvent otpRequest, SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID) {
-	  OTPType baseOtpType = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(),tenantID);
-	  if (baseOtpType == null) return null; // TODO raise error
+	  //OTPType baseOtpType = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(),tenantID);
+	  //if (baseOtpType == null) return null; // TODO raise error
 	  
 	  
 	  // TODO check not banned not possible if not attached to customer hence attached profile
@@ -355,20 +355,20 @@ public class OTPUtils
 		  
 	  }
 	  
-	  String regex = baseOtpType.getValueGenerationRegex();
-	  int nbdigits = baseOtpType.getValueGenerationDigits();
+	  //String regex = baseOtpType.getValueGenerationRegex();
+	  //int nbdigits = baseOtpType.getValueGenerationDigits();
 	  
-	  String otpValue = null;
-	  if (regex != null) {
-	  	  otpValue = generateFromRegex(regex);
-	  } else if (nbdigits>0) {
-		  otpValue = generateNonZeroLeadingOTPValue(nbdigits);
-	  } else {
-		  // TODO raise error
-		  return null;
-  	  }
+//	  String otpValue = null;
+//	  if (regex != null) {
+//	  	  otpValue = generateFromRegex(regex);
+//	  } else if (nbdigits>0) {
+//		  otpValue = generateNonZeroLeadingOTPValue(nbdigits);
+//	  } else {
+//		  // TODO raise error
+//		  return null;
+//  	  }
 	  Date now = new Date();			 
-	  OTPInstance otpInstance = new OTPInstance(otpRequest.getOTPTypeName(),OTPStatus.New,otpValue,0,0,now,now,null, null,DateUtils.addSeconds(now,baseOtpType.getInstanceExpirationDelay()));
+//	  OTPInstance otpInstance = new OTPInstance(otpRequest.getOTPTypeName(),OTPStatus.New,otpValue,0,0,now,now,null, null,DateUtils.addSeconds(now,baseOtpType.getInstanceExpirationDelay()));
 	  
 	  // TODO subscrbiber Profile to be updated
 	  otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
