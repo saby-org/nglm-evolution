@@ -295,6 +295,26 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 
 
 		  public void setReturnStatus(RESTAPIGenericReturnCodes returnStatus) { this.returnStatus = returnStatus; }
-		  
+		  public void setEventDate(Date eventDate) {
+				this.eventDate = eventDate;
+			}
+			public void setEventID(String eventID) {
+				this.eventID = eventID;
+			}
+			public void setAction(OTPChangeAction action) {
+				this.action = action;
+			}
+			public void setOTPCheckValue(String otpCheckValue) {
+				this.otpCheckValue = otpCheckValue;
+			}
+			public void setRemainingAttempts(String remainingAttempts) {
+				this.remainingAttempts = remainingAttempts;
+			}
+			public void setCurrentTypeErrors(String currentTypeErrors) {
+				this.currentTypeErrors = currentTypeErrors;
+			}
+			public void setGlobalErrorCounts(String globalErrorCounts) {
+				this.globalErrorCounts = globalErrorCounts;
+			}		  
 		  
 }

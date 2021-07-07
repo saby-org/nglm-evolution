@@ -5754,11 +5754,9 @@ public class ThirdPartyManager
 	  OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
 	            SystemTime.getCurrentTime(),
 	            subscriberID,
-	            // TODO GFE EVENT ID HERE => other way to get the generator ????
 	            zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
-	            
 	            OTPInstanceChangeEvent.OTPChangeAction.Check,
-	            JSONUtilities.decodeString(jsonRoot, "otpTypeName", true),
+	            JSONUtilities.decodeString(jsonRoot, "otpType", true),
 	            JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
 	            (String) null, //remainingAttempts
 	            (String) null, //currentTypeErrors
@@ -5793,7 +5791,7 @@ public class ThirdPartyManager
     //  eventName
     //
 
-    String optTypeDisplay = JSONUtilities.decodeString(jsonRoot, "otpType", false);
+    String optTypeDisplay = JSONUtilities.decodeString(jsonRoot, "otpType", true);
     if (optTypeDisplay == null || optTypeDisplay.isEmpty())
       {
         Map<String, Object> response = new HashMap<String, Object>();
@@ -5809,7 +5807,7 @@ public class ThirdPartyManager
     OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
         SystemTime.getCurrentTime(),
         subscriberID,
-        "" + (int)(Math.random()*1000000),
+        zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
         OTPInstanceChangeEvent.OTPChangeAction.Generate,
         optTypeDisplay,
         (String) null, //otpCheckValue

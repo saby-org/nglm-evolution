@@ -1819,18 +1819,13 @@ public class EvolutionEngine
     *****************************************/
     if(evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation()) 
       {
-        // TODO Good place to cleanup the profile from old useless OTP 
+        OTPUtils.clearOldOTPs(subscriberProfile, otpTypeService, tenantID);
       }
     if(evolutionEvent instanceof OTPInstanceChangeEvent)
       {
-        // TODO implement here the semantic of OTP using OTP utility class
-        // here for an example, just update the event and put it into the response topic for ThirdPartyManager Response
-        OTPInstanceChangeEvent otpEvent = (OTPInstanceChangeEvent)evolutionEvent;
-        
-        OTPUtils utils = new OTPUtils();
-        OTPInstanceChangeEvent otpResponse = utils.generateOTP(otpEvent, subscriberProfile, otpTypeService, tenantID);
-        
-        subscriberState.getOTPInstanceChangeEvent().add(otpResponse);
+    	subscriberState.getOTPInstanceChangeEvent().add(
+        		OTPUtils.handleOTPEvent((OTPInstanceChangeEvent)evolutionEvent, subscriberProfile, otpTypeService, tenantID)
+        		);
       }
 
     /*****************************************
