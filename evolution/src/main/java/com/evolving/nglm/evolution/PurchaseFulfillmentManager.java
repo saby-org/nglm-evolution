@@ -1502,6 +1502,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     statsCounter.withLabel(StatsBuilders.LABEL.status.name(),purchaseFulfillmentRequest.getDeliveryStatus().getExternalRepresentation())
                 .withLabel(StatsBuilders.LABEL.module.name(), purchaseFulfillmentRequest.getModule().name())
+                .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(purchaseFulfillmentRequest.getTenantID()))
                 .getStats().increment();
 
     if (log.isDebugEnabled()) log.debug("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");

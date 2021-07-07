@@ -7046,6 +7046,7 @@ public class EvolutionEngine
             .withLabel(StatsBuilders.LABEL.operation.name(),voucherChange.getAction().getExternalRepresentation())
             .withLabel(StatsBuilders.LABEL.module.name(),Module.fromExternalRepresentation(voucherChange.getModuleID()).name())
             .withLabel(StatsBuilders.LABEL.status.name(),voucherChange.getReturnStatus().getGenericResponseMessage())
+            .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(voucherChange.getTenantID()))
             .getStats().increment()
       );
     }
