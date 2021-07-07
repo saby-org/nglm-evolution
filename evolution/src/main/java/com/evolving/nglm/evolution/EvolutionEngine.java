@@ -6035,7 +6035,7 @@ public class EvolutionEngine
                 //  evaluationRequest (including link)
                 //
 
-                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, journeyLink, evolutionEvent, now, tenantID);
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(context, subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, journeyLink, evolutionEvent, now, tenantID);
 
                 //
                 //  evaluate
@@ -6267,7 +6267,7 @@ public class EvolutionEngine
                       {
 
                         List<Action> actions = new ArrayList<>();
-                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now, tenantID);
+                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(context, subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now, tenantID);
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
                         if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_SUPPLIER))
                           {

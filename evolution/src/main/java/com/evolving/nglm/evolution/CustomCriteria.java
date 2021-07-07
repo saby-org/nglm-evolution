@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@GUIDependencyDef(objectType = "customCriteria", serviceClass = CustomCriteriaService.class, dependencies = {})
+@GUIDependencyDef(objectType = "customcriteria", serviceClass = CustomCriteriaService.class, dependencies = {})
 public class CustomCriteria extends GUIManagedObject
 {
   /*****************************************
@@ -100,11 +100,12 @@ public class CustomCriteria extends GUIManagedObject
   *
   *****************************************/
 
-  public CustomCriteria(SchemaAndValue schemaAndValue, String formula, String dataType)
+  public CustomCriteria(SchemaAndValue schemaAndValue, String formula, String dataType, Expression expression)
   {
     super(schemaAndValue);
     this.formula = formula;
     this.dataType = dataType;
+    this.expression = expression;
   }
 
   /*****************************************
@@ -147,12 +148,14 @@ public class CustomCriteria extends GUIManagedObject
     String formula = valueStruct.getString("formula");
     String dataType = valueStruct.getString("dataType");
     
+    int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenantID = 1
+    Expression expression = computeExpression(formula, tenantID);
     
     //
     //  return
     //
 
-    return new CustomCriteria(schemaAndValue, formula, dataType);
+    return new CustomCriteria(schemaAndValue, formula, dataType, expression);
   }
   
   /*****************************************
@@ -186,13 +189,8 @@ public class CustomCriteria extends GUIManagedObject
     *****************************************/
     
     this.formula = JSONUtilities.decodeString(jsonRoot, "formula", false);
-    log.info("MK decode formula : " + formula);
-    // TODO Need to compute dataType from formula
-    ExpressionReader expressionReader = new ExpressionReader(CriterionContext.FullDynamicProfile(tenantID), formula, null, tenantID);
-    log.info("MK decode expressionReader : " + expressionReader);
-    expression = expressionReader.parse(ExpressionContext.Criterion, tenantID);
-    log.info("MK decode expression : " + expression);
-    log.info("MK decode type : " + ((expression==null)?"null":expression.getType()));
+    log.debug("decode formula : " + formula);
+    expression = computeExpression(formula, tenantID);
     switch (expression.getType()) {
       case IntegerExpression:
         this.dataType = CriterionDataType.IntegerCriterion.getExternalRepresentation();
@@ -203,6 +201,7 @@ public class CustomCriteria extends GUIManagedObject
       default:
         throw new GUIManagerException("Type of " + formula + " must be numeric, not " + expression.getType(), formula);
     }
+
 
     /*****************************************
     *
@@ -238,5 +237,13 @@ public class CustomCriteria extends GUIManagedObject
       }
   }
   
+  private static Expression computeExpression(String formula, int tenantID) {
+    Expression res = null;
+    ExpressionReader expressionReader = new ExpressionReader(CriterionContext.FullDynamicProfile(tenantID), formula, null, tenantID);
+    log.debug("decode expressionReader : " + expressionReader);
+    res = expressionReader.parse(ExpressionContext.Criterion, tenantID);
+    log.debug("decode type : " + ((res==null)?"null":res.getType()));
+    return res;
+  }
   
 }
