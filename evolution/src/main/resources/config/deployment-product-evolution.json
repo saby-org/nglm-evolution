@@ -1025,6 +1025,13 @@
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
+      "name"                : "loyaltyChallengeCustomerStates",
+      "display"             : "Loyalty Challenge Customer States",
+      "description"         : "Description of the Loyalty Challenge Customer States Report",
+      "class"               : "com.evolving.nglm.evolution.reports.loyaltychallengecustomerstate.LoyaltyChallengeCustomerStatesDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
       "name"                : "customerPointsDetails",
       "display"             : "Customer Points Details",
       "description"         : "Description of the Customer Points Details Report",
