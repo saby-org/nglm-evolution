@@ -7973,7 +7973,7 @@ public class EvolutionEngine
     long waitTime = timeout.getTime() - now.getTime();
     HttpPost httpPost = new HttpPost("http://" + hostPort + "/nglm-evolutionengine/retrieveSubscriberProfile");
     httpPost.setEntity(new StringEntity(requestJSON.toString(), ContentType.create("application/json")));
-    httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
+    httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).setSocketTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
 
     //
     //  submit
