@@ -113,7 +113,6 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
     List<Map<String, Object>> records = new ArrayList<Map<String, Object>>();
     Map<String, Object> subscriberFields = map;
     LinkedHashMap<String, Object> subscriberComputedFields = new LinkedHashMap<String, Object>();
-    LinkedHashMap<String, Object> fullFields = new LinkedHashMap<String, Object>();
     if (subscriberFields != null && !subscriberFields.isEmpty())
       {
         String subscriberID = subscriberFields.get("subscriberID").toString();
@@ -149,14 +148,19 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
                 subscriberComputedFields.put("dateTime", ReportsCommonCode.getDateString(now));
                 for (int i = 0; i < loyaltyProgramsArray.size(); i++)
                   {
-                    fullFields = new LinkedHashMap<String, Object>();
+                    LinkedHashMap<String, Object> fullFields = new LinkedHashMap<String, Object>();
+                    
+                    //
+                    //  subscriberFields
+                    //
+                    
                     fullFields.putAll(subscriberComputedFields);
-                    Map<String, Object> obj = (Map<String, Object>) loyaltyProgramsArray.get(i);
                     
                     //
                     //  read ES fields
                     //
                     
+                    Map<String, Object> obj = (Map<String, Object>) loyaltyProgramsArray.get(i);
                     Object loyaltyProgramDisplay = obj.get("loyaltyProgramDisplay");
                     Object loyaltyProgramEnrollmentDate = obj.get("loyaltyProgramEnrollmentDate");
                     Object loyaltyProgramExitDate = obj.get("loyaltyProgramExitDate");
