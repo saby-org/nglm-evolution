@@ -1,6 +1,7 @@
 package com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.LoyaltyProgram;
@@ -96,21 +98,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                             Object loyaltyProgramEnrollmentDate = obj.get("loyaltyProgramEnrollmentDate");
                             Object loyaltyProgramExitDate = obj.get("loyaltyProgramExitDate");
                             
-                            if (loyaltyProgramEnrollmentDate == null)
-                              {
-                                fullFields.put("programEnrolmentDate", "");
-                              }
-                            else if (loyaltyProgramEnrollmentDate instanceof Long)
-                              {
-                                fullFields.put("programEnrolmentDate", ReportsCommonCode.getDateString(new Date((Long) loyaltyProgramEnrollmentDate)));
-                              }
-                            else
-                              {
-                                log.info("loyaltyProgramEnrollmentDate is not a Long : "
-                                    + loyaltyProgramEnrollmentDate.getClass().getName());
-                                fullFields.put("programEnrolmentDate", "");
-                              }
-
+                            fullFields.put("programEnrolmentDate", getReportFormattedDate(loyaltyProgramEnrollmentDate));
                             if (obj.get("tierName") != null)
                               {
                                 fullFields.put("tierName", obj.get("tierName"));
@@ -121,21 +109,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                               }
 
                             Object tierUpdateDate = obj.get("tierUpdateDate");
-                            if (tierUpdateDate != null)
-                              {
-                                if (tierUpdateDate instanceof Long)
-                                  {
-                                    fullFields.put("tierUpdateDate", ReportsCommonCode.getDateString(new Date((Long) tierUpdateDate)));
-                                  }
-                                else
-                                  {
-                                    log.info("tierUpdateDate is not a Long : " + tierUpdateDate.getClass().getName());
-                                  }
-                              }
-                            else
-                              {
-                                fullFields.put("tierUpdateDate", "");
-                              }
+                            fullFields.put("tierUpdateDate", getReportFormattedDate(tierUpdateDate));
 
                             if (obj.get("previousTierName") != null)
                               {
@@ -182,18 +156,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                                 fullFields.put("rewardPointsBalance", "");
                               }
                             
-                            if (loyaltyProgramExitDate == null)
-                              {
-                                fullFields.put("programExitDate", "");
-                              }
-                            else if (loyaltyProgramExitDate instanceof Long)
-                              {
-                                fullFields.put("programExitDate", ReportsCommonCode.getDateString(new Date((Long) loyaltyProgramExitDate)));
-                              }
-                            else
-                              {
-                                fullFields.put("programExitDate", "");
-                              }
+                            fullFields.put("programExitDate", getReportFormattedDate(loyaltyProgramExitDate));
                           }
                       }
                     records.add(fullFields);
@@ -231,6 +194,28 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
           }
       }
     return addHeaders;
+  }
+  
+  public String getReportFormattedDate(Object unknownDateObj)
+  {
+    String result = "";
+    if (unknownDateObj instanceof Long)
+      {
+        result = ReportsCommonCode.getDateString(new Date((Long) unknownDateObj));
+      }
+    else if (unknownDateObj instanceof String)
+      {
+        try
+          {
+            Date esDate = RLMDateUtils.parseDateFromElasticsearch((String) unknownDateObj);
+            result = ReportsCommonCode.getDateString(esDate);
+          } 
+        catch (ParseException e)
+          {
+            if (log.isErrorEnabled()) log.error("unbale to parse ES date String {}", unknownDateObj.toString());
+          }
+      }
+    return result;
   }
 
   private void addHeaders(ZipOutputStream writer, Map<String,Object> values, int offset) throws IOException {
