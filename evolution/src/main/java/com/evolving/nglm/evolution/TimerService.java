@@ -341,14 +341,39 @@ public class TimerService
   {
     synchronized (this)
       {
+        if(stopRequested) return;
+
+        // initiate stop
+        log.info("TimerService.stop() called");
         stopRequested = true;
-        scheduleLoaderThread.interrupt();
-        schedulerThread.interrupt();
-        periodicEvaluatorThread.interrupt();
-        evaluateTargetsReaderThread.interrupt();
-        evaluateTargetsWorkerThread.interrupt();
+        evaluateTargetsConsumer.wakeup();
         this.notifyAll();
       }
+
+      // wait stop
+      if(scheduleLoaderThread != null){
+        log.info("TimerService.stop() waiting for scheduleLoaderThread");
+        for(StackTraceElement stack:scheduleLoaderThread.getStackTrace()) log.info(stack.toString());
+        try { scheduleLoaderThread.join(); } catch (InterruptedException e) { log.info("TimerService.stop()",e); }
+      }
+      if(schedulerThread != null){
+        log.info("TimerService.stop() waiting for schedulerThread");
+        try { schedulerThread.join(); } catch (InterruptedException e) { log.info("TimerService.stop()",e); }
+      }
+      if(periodicEvaluatorThread != null){
+        log.info("TimerService.stop() waiting for periodicEvaluatorThread");
+        try { periodicEvaluatorThread.join(); } catch (InterruptedException e) { log.info("TimerService.stop()",e); }
+      }
+      if(evaluateTargetsReaderThread != null){
+        log.info("TimerService.stop() waiting for evaluateTargetsReaderThread");
+        try { evaluateTargetsReaderThread.join(); } catch (InterruptedException e) { log.info("TimerService.stop()",e); }
+      }
+      if(evaluateTargetsWorkerThread != null){
+        log.info("TimerService.stop() waiting for evaluateTargetsWorkerThread");
+        try { evaluateTargetsWorkerThread.join(); } catch (InterruptedException e) { log.info("TimerService.stop()",e); }
+      }
+
+        log.info("TimerService.stop() done");
   }
 
   /*****************************************
@@ -472,7 +497,7 @@ public class TimerService
 
         synchronized (this)
           {
-            while (! forceLoadSchedule && (schedule.size() > reloadThreshold || earliestOutOfMemoryDate.equals(NGLMRuntime.END_OF_TIME)))
+            while (!stopRequested && !forceLoadSchedule && (schedule.size() > reloadThreshold || earliestOutOfMemoryDate.equals(NGLMRuntime.END_OF_TIME)))
               {
                 try
                   {
@@ -490,6 +515,7 @@ public class TimerService
         *
         *****************************************/
 
+        if(stopRequested) continue;
         evolutionEngine.waitForStreams();
 
         /*****************************************
