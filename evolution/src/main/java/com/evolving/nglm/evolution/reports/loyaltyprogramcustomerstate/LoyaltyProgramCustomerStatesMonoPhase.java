@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
@@ -86,6 +87,8 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                             LoyaltyProgram loyaltyProgram = (LoyaltyProgram) guiManagedObject;
                             fullFields.put("programName", loyaltyProgram.getJSONRepresentation().get("display"));
                             Object loyaltyProgramEnrollmentDate = obj.get("loyaltyProgramEnrollmentDate");
+                            Object loyaltyProgramExitDate = obj.get("loyaltyProgramExitDate");
+                            
                             if (loyaltyProgramEnrollmentDate == null)
                               {
                                 fullFields.put("programEnrolmentDate", "");
@@ -171,6 +174,19 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                               {
                                 fullFields.put("rewardPointsBalance", "");
                               }
+                            
+                            if (loyaltyProgramExitDate == null)
+                              {
+                                fullFields.put("programExitDate", "");
+                              }
+                            else if (loyaltyProgramExitDate instanceof Long)
+                              {
+                                fullFields.put("programExitDate", ReportsCommonCode.getDateString(new Date((Long) loyaltyProgramExitDate)));
+                              }
+                            else
+                              {
+                                fullFields.put("programExitDate", "");
+                              }
                           }
                       }
                     records.add(fullFields);
@@ -249,10 +265,18 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
     String esIndexSubscriber = args[1];
     String csvfile           = args[2];
 
-    log.info("Reading data from ES in "+esIndexSubscriber+" index and writing to "+csvfile);   
+    log.info("Reading data from ES in "+esIndexSubscriber+" index and writing to "+csvfile);
+    
+    //
+    //
+    //
+    
+    QueryBuilder queryLoyaltyProgramType = QueryBuilders.termQuery("loyaltyProgramType", LoyaltyProgram.LoyaltyProgramType.POINTS.getExternalRepresentation());
+    QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(queryLoyaltyProgramType), ScoreMode.Total);
+    log.info("RAJ K executing query {}", query.toString());
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexSubscriber, query);
     
     List<String> subscriberFields = new ArrayList<>();
     subscriberFields.add("subscriberID");
