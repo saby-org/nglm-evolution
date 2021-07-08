@@ -157,10 +157,16 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
                     //  read ES fields
                     //
                     
-                    Object programID = obj.get("programID");
                     Object loyaltyProgramDisplay = obj.get("loyaltyProgramDisplay");
                     Object loyaltyProgramEnrollmentDate = obj.get("loyaltyProgramEnrollmentDate");
                     Object loyaltyProgramExitDate = obj.get("loyaltyProgramExitDate");
+                    Object levelName = obj.get("levelName");
+                    Object currentScore = obj.get("score");
+                    Object levelUpdateDate = obj.get("levelUpdateDate");
+                    Object previousLevelName = obj.get("previousLevelName");
+                    Object occurrenceNumber = obj.get("occurrenceNumber");
+                    Object previousOccurrenceLevel = obj.get("previousPeriodLevel");
+                    Object previousOccurrenceScore = obj.get("previousPeriodScore");
                     
                     //
                     //  report fields
@@ -169,13 +175,13 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
                     fullFields.put("programName", loyaltyProgramDisplay.toString());
                     fullFields.put("programEnrolmentDate", getReportFormattedDate(loyaltyProgramEnrollmentDate));
                     fullFields.put("programExitDate", getReportFormattedDate(loyaltyProgramExitDate));
-                    fullFields.put("levelName", "");
-                    fullFields.put("currentScore", "");
-                    fullFields.put("levelUpdateDate", "");
-                    fullFields.put("previousLevelName", "");
-                    fullFields.put("challengeOccurrence", "");
-                    fullFields.put("previousOccurrenceLevel", "");
-                    fullFields.put("previousOccurrenceScore", "");
+                    fullFields.put("levelName", levelName);
+                    fullFields.put("currentScore", currentScore);
+                    fullFields.put("levelUpdateDate", getReportFormattedDate(levelUpdateDate));
+                    fullFields.put("previousLevelName", previousLevelName == null ? "" : previousLevelName);
+                    fullFields.put("challengeOccurrence", occurrenceNumber);
+                    fullFields.put("previousOccurrenceLevel", previousOccurrenceLevel == null ? "" : previousOccurrenceLevel);
+                    fullFields.put("previousOccurrenceScore", previousOccurrenceScore);
                     
                     //
                     //  add
