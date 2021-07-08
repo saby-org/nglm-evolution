@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.lucene.search.join.ScoreMode;
@@ -59,6 +60,12 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                     return true;
                   }
                 List<Map<String, Object>> loyaltyProgramsArray = (List<Map<String, Object>>) subscriberFields.get("loyaltyPrograms");
+                
+                //
+                //  filter POINTS
+                //
+                
+                if (loyaltyProgramsArray != null) loyaltyProgramsArray = loyaltyProgramsArray.stream().filter(loyaltyProgramMap -> LoyaltyProgram.LoyaltyProgramType.POINTS.getExternalRepresentation().equals(loyaltyProgramMap.get("loyaltyProgramType"))).collect(Collectors.toList());
                 if (loyaltyProgramsArray.isEmpty())
                   {
                     return true;
@@ -267,16 +274,8 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
 
     log.info("Reading data from ES in "+esIndexSubscriber+" index and writing to "+csvfile);
     
-    //
-    //
-    //
-    
-    QueryBuilder queryLoyaltyProgramType = QueryBuilders.termQuery("loyaltyProgramType", LoyaltyProgram.LoyaltyProgramType.POINTS.getExternalRepresentation());
-    QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(queryLoyaltyProgramType), ScoreMode.Total);
-    log.info("RAJ K executing query {}", query.toString());
-
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexSubscriber, query);
+    esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
     
     List<String> subscriberFields = new ArrayList<>();
     subscriberFields.add("subscriberID");
