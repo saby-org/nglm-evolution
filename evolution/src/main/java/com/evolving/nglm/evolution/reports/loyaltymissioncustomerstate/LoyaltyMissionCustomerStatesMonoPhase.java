@@ -176,7 +176,7 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
                     fullFields.put("programName", loyaltyProgramDisplay.toString());
                     fullFields.put("programEnrolmentDate", getReportFormattedDate(loyaltyProgramEnrollmentDate));
                     fullFields.put("programExitDate", getReportFormattedDate(loyaltyProgramExitDate));
-                    fullFields.put("stepName", stepName);
+                    fullFields.put("stepName", stepName == null ? "" : stepName);
                     fullFields.put("stepUpdateDate", getReportFormattedDate(stepUpdateDate));
                     fullFields.put("currentProgression", currentProgression);
                     

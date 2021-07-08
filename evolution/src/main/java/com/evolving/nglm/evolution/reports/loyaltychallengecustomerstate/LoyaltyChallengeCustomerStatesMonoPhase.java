@@ -179,7 +179,7 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
                     fullFields.put("programName", loyaltyProgramDisplay.toString());
                     fullFields.put("programEnrolmentDate", getReportFormattedDate(loyaltyProgramEnrollmentDate));
                     fullFields.put("programExitDate", getReportFormattedDate(loyaltyProgramExitDate));
-                    fullFields.put("levelName", levelName);
+                    fullFields.put("levelName", levelName == null ? "" : levelName);
                     fullFields.put("currentScore", currentScore);
                     fullFields.put("levelUpdateDate", getReportFormattedDate(levelUpdateDate));
                     fullFields.put("previousLevelName", previousLevelName == null ? "" : previousLevelName);
