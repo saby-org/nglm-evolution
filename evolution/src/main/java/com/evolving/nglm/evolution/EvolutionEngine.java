@@ -3565,7 +3565,7 @@ public class EvolutionEngine
     *****************************************/
 
     String eventName = (evolutionEvent instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent)evolutionEvent).getEventName() : evolutionEvent.getClass().getSimpleName();
-    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),eventName).getStats().increment();
+    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),eventName).withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(subscriberProfile.getTenantID())).getStats().increment();
 
     /*****************************************
     *
