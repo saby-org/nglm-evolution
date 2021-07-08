@@ -353,7 +353,6 @@ public class TimerService
       // wait stop
       if(scheduleLoaderThread != null){
         log.info("TimerService.stop() waiting for scheduleLoaderThread");
-        for(StackTraceElement stack:scheduleLoaderThread.getStackTrace()) log.info(stack.toString());
         try { scheduleLoaderThread.join(); } catch (InterruptedException e) { log.info("TimerService.stop()",e); }
       }
       if(schedulerThread != null){
