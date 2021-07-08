@@ -61,6 +61,8 @@ public class ContextVariable
     Int("int"),
     String("string"),
     Double("double"),
+    Min("min"),
+    Max("max"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private Assignment(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -482,6 +484,8 @@ public class ContextVariable
                   case Int:
                   case String:
                   case Double:
+                  case Min:
+                  case Max:
                     break;
                   default:
                     // NO-OP

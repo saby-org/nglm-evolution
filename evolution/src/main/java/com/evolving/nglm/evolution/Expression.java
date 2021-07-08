@@ -164,6 +164,8 @@ public abstract class Expression
     IntFunction("int"),
     StringFunction("string"),
     DoubleFunction("double"),
+    MaxFunction("max"),
+    MinFunction("min"),
     UnknownFunction("(unknown)");
     private String functionName;
     private ExpressionFunction(String functionName) { this.functionName = functionName; }
@@ -1347,6 +1349,11 @@ public abstract class Expression
           case DoubleFunction:
             typeCheckCastFunction(function);
             break;
+
+          case MinFunction:
+          case MaxFunction:
+            typeCheckMinMaxFunctions(function, tenantID);
+            break;
             
           default:
             throw new ExpressionTypeCheckException("type exception");
@@ -1811,6 +1818,137 @@ public abstract class Expression
           break;
         default:
           log.info("string int or double function expected, got " + function);
+      }
+      
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
+    }
+
+    private void typeCheckMinMaxFunctions(ExpressionFunction function, int tenantID)
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments (2 or 3)
+      //
+      
+      if (arguments.size() < 2 || arguments.size() > 3) throw new ExpressionTypeCheckException("type exception : function " + function.getFunctionName() + " needs 2 or 3 arguments");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = arguments.get(0);
+      Expression arg2 = arguments.get(1);
+      Expression arg3 = (arguments.size() > 2) ? arguments.get(2) : null;
+
+      ExpressionDataType commonType = arg1.getType();
+      if (arguments.size() == 2) {
+        if (arg1.getType() != arg2.getType()) {
+          throw new ExpressionTypeCheckException("type exception : both args of " + function.getFunctionName() + " need to be of same type, not " + arg1.getType() + " and " + arg2.getType());
+        }
+      } else if (arguments.size() == 3) {
+        if (arg1.getType() != arg2.getType()) {
+          throw new ExpressionTypeCheckException("type exception : all args of " + function.getFunctionName() + " need to be of same type, not " + arg1.getType() + " and " + arg2.getType());
+        } else if (arg1.getType() != arg3.getType()) {
+          throw new ExpressionTypeCheckException("type exception : all args of " + function.getFunctionName() + " need to be of same type, not " + arg1.getType() + " and " + arg3.getType());
+        } 
+      }
+      
+      // set default values for optional parameters
+      if (arg3 == null) {
+        Object defaultValue = null;
+        switch (commonType)
+        {
+          case IntegerExpression:
+            defaultValue = (function == ExpressionFunction.MinFunction) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+          case DoubleExpression:
+            defaultValue = (function == ExpressionFunction.MinFunction) ? Double.MAX_VALUE : Double.MIN_VALUE;
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception : int or double expected, got " + arg1.getType());
+        }
+        arg3 = new ConstantExpression(commonType, defaultValue, tenantID);
+      }
+                  
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+      if (arg1.isConstant() && arg2.isConstant() && arg3.isConstant()) {
+        Object res1 = arg1.evaluate(null, TimeUnit.Unknown);
+        Object res2 = arg2.evaluate(null, TimeUnit.Unknown);
+        Object res3 = arg3.evaluate(null, TimeUnit.Unknown);
+        if (res1 instanceof Double) { 
+          switch (function)
+          {
+            case MinFunction:
+              preevaluatedResult = Math.min((Double) res1, Math.min((Double) res2, (Double) res3));
+              break;
+            case MaxFunction:
+              preevaluatedResult = Math.max((Double) res1, Math.max((Double) res2, (Double) res3));
+              break;
+
+            default:
+              throw new ExpressionTypeCheckException("type exception, min/max function expected, got " + function);
+          }
+        } else if (res1 instanceof Integer) {
+          switch (function)
+          {
+            case MinFunction:
+              preevaluatedResult = Math.min((Integer) res1, Math.min((Integer) res2, (Integer) res3));
+              break;
+            case MaxFunction:
+              preevaluatedResult = Math.max((Integer) res1, Math.max((Integer) res2, (Integer) res3));
+              break;
+
+            default:
+              throw new ExpressionTypeCheckException("type exception, min/max function expected, got " + function);
+          }
+        } else if (res1 instanceof Long) {
+          switch (function)
+          {
+            case MinFunction:
+              preevaluatedResult = Math.min((Long) res1, Math.min((Long) res2, (Long) res3));
+              break;
+            case MaxFunction:
+              preevaluatedResult = Math.max((Long) res1, Math.max((Long) res2, (Long) res3));
+              break;
+
+            default:
+              throw new ExpressionTypeCheckException("type exception, min/max function expected, got " + function);
+          }
+        } else throw new ExpressionTypeCheckException("type exception, int or double expected, got " + ((res1==null)?"null":res1.getClass().getSimpleName()));
+      }
+
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+
+      switch (commonType)
+      {
+        case IntegerExpression:
+          setType(ExpressionDataType.IntegerExpression);
+          break;
+        case DoubleExpression:
+          setType(ExpressionDataType.DoubleExpression);
+          break;
+        default:
+          log.info("string int or double type expected, got " + commonType);
       }
       
       /*****************************************
@@ -2452,6 +2590,12 @@ public abstract class Expression
             if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateCastFunction(arg1Value, function);
             break;
+
+          case MinFunction:
+          case MaxFunction:
+            if (expressionNullExceptionOccoured) throw expressionNullException;
+            result = evaluateMinMaxFunction(arg1Value, arg2Value, arg3Value, function);
+            break;
             
           default:
             throw new ExpressionEvaluationException();
@@ -3062,6 +3206,74 @@ public abstract class Expression
       return res;
     }
 
+    private Object evaluateMinMaxFunction(Object arg1, Object arg2, Object arg3, ExpressionFunction function)
+    {
+      Object res;
+      if (arg3 == null) {
+        arg3 = arg1; // NO-OP for min/max
+      }
+      if (arg1 instanceof Double) {
+        if (!(arg2 instanceof Double)) {
+          throw new ExpressionTypeCheckException("type exception, same types expected, got " + arg1.getClass().getSimpleName() + " and " + arg2.getClass().getSimpleName());
+        }
+        if (!(arg3 instanceof Double)) {
+          throw new ExpressionTypeCheckException("type exception, same types expected, got " + arg1.getClass().getSimpleName() + " and " + arg3.getClass().getSimpleName());
+        }
+        switch (function)
+        {
+          case MinFunction:
+            res = Math.min((Double) arg1, Math.min((Double) arg2, (Double) arg3));
+            break;
+          case MaxFunction:
+            res = Math.max((Double) arg1, Math.max((Double) arg2, (Double) arg3));
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception, min/max function expected, got " + function);
+        }
+      } else if (arg1 instanceof Integer) {
+        if (!(arg2 instanceof Integer)) {
+          throw new ExpressionTypeCheckException("type exception, same types expected, got " + arg1.getClass().getSimpleName() + " and " + arg2.getClass().getSimpleName());
+        }
+        if (!(arg3 instanceof Integer)) {
+          throw new ExpressionTypeCheckException("type exception, same types expected, got " + arg1.getClass().getSimpleName() + " and " + arg3.getClass().getSimpleName());
+        }
+        switch (function)
+        {
+          case MinFunction:
+            res = Math.min((Integer) arg1, Math.min((Integer) arg2, (Integer) arg3));
+            break;
+          case MaxFunction:
+            res = Math.max((Integer) arg1, Math.max((Integer) arg2, (Integer) arg3));
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception, min/max function expected, got " + function);
+        }
+      } else if (arg1 instanceof Long) {
+        if (!(arg2 instanceof Long)) {
+          throw new ExpressionTypeCheckException("type exception, same types expected, got " + arg1.getClass().getSimpleName() + " and " + arg2.getClass().getSimpleName());
+        }
+        if (!(arg3 instanceof Long)) {
+          throw new ExpressionTypeCheckException("type exception, same types expected, got " + arg1.getClass().getSimpleName() + " and " + arg3.getClass().getSimpleName());
+        }
+        switch (function)
+        {
+          case MinFunction:
+            res = Math.min((Long) arg1, Math.min((Long) arg2, (Long) arg3));
+            break;
+          case MaxFunction:
+            res = Math.max((Long) arg1, Math.max((Long) arg2, (Long) arg3));
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception, min/max function expected, got " + function);
+        }
+      } else throw new ExpressionTypeCheckException("type exception, int or double expected, got " + ((arg1==null)?"null":arg1.getClass().getSimpleName()));
+
+      return res;
+    }
+    
     /*****************************************
     *
     *  esQuery
