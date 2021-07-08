@@ -1872,6 +1872,7 @@ public abstract class Expression
         {
           case IntegerExpression:
             defaultValue = (function == ExpressionFunction.MinFunction) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+            break;
           case DoubleExpression:
             defaultValue = (function == ExpressionFunction.MinFunction) ? Double.MAX_VALUE : Double.MIN_VALUE;
             break;
@@ -1920,11 +1921,12 @@ public abstract class Expression
         } else if (res1 instanceof Long) {
           switch (function)
           {
+            // res3 might be Integer due to default values
             case MinFunction:
-              preevaluatedResult = Math.min((Long) res1, Math.min((Long) res2, (Long) res3));
+              preevaluatedResult = Math.min((Long) res1, Math.min((Long) res2, (res3 instanceof Long)?(Long) res3:(Integer) res3));
               break;
             case MaxFunction:
-              preevaluatedResult = Math.max((Long) res1, Math.max((Long) res2, (Long) res3));
+              preevaluatedResult = Math.max((Long) res1, Math.max((Long) res2, (res3 instanceof Long)?(Long) res3:(Integer) res3));
               break;
 
             default:
