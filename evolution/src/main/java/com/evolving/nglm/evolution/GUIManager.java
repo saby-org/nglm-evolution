@@ -30625,22 +30625,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     
     for (SubscriberMessageTemplate template : templates) {
            
-      if (template instanceof DialogTemplate) {
+      if (template instanceof DialogTemplate && !template.getReadOnly()) {
 
-        
-        String communicationChannelID = ((DialogTemplate) template).getCommunicationChannelID();
-        Collection <SourceAddress> sourceAddresses = sourceAddressService.getActiveSourceAddresses(now, tenantID);
-        for (SourceAddress sourceAddress : sourceAddresses) {
-          if (sourceAddress != null && sourceAddress.getCommunicationChannelId().equals(communicationChannelID)) {
-            source.put(sourceAddress.getGUIManagedObjectID(), sourceAddress.getGUIManagedObjectDisplay());
-            break;
-          }
-        }
-        
         JSONArray templateAreaAvailablity = (JSONArray) ((DialogTemplate) template).getJSONRepresentation()
             .get("areaAvailability");
         if (templateAreaAvailablity != null && templateAreaAvailablity.contains(areaAvailability))
           {
+            String communicationChannelID = ((DialogTemplate) template).getCommunicationChannelID();
+            Collection <SourceAddress> sourceAddresses = sourceAddressService.getActiveSourceAddresses(now, tenantID);
+            for (SourceAddress sourceAddress : sourceAddresses) {
+              if (sourceAddress != null && sourceAddress.getCommunicationChannelId().equals(communicationChannelID)) {
+                source.put(sourceAddress.getGUIManagedObjectID(), sourceAddress.getGUIManagedObjectDisplay());
+                break;
+              }
+            }
+            
             tagsMap = new HashMap<String, List<String>>();            
             Set<String> keys = tags.keySet();
             for (String key : keys)

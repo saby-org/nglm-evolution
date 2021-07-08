@@ -1926,8 +1926,8 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    SubscriberEvaluationRequest changeEventEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
-    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(changeEventEvaluationRequest); 
+    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
+    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(subscriberEvaluationRequest); 
     
     /*****************************************
     *
@@ -1935,7 +1935,7 @@ public class EvolutionEngine
     *
     *****************************************/
     
-    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(changeEventEvaluationRequest);
+    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(subscriberEvaluationRequest);
     
     /*****************************************
     *
@@ -1978,7 +1978,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    subscriberStateUpdated = updateNotifications(context, evolutionEvent) || subscriberStateUpdated;
+    subscriberStateUpdated = updateNotifications(context, evolutionEvent, subscriberEvaluationRequest) || subscriberStateUpdated;
 
 
     /*****************************************
@@ -2035,7 +2035,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updateChangeEvents(subscriberState, now, changeEventEvaluationRequest, profileChangeOldValues, tenantID);
+    updateChangeEvents(subscriberState, now, subscriberEvaluationRequest, profileChangeOldValues, tenantID);
     
     /*****************************************
     *
@@ -2043,7 +2043,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, changeEventEvaluationRequest, profileSegmentChangeOldValues, tenantID);
+    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, subscriberEvaluationRequest, profileSegmentChangeOldValues, tenantID);
 
     /*****************************************
     *
@@ -2496,18 +2496,15 @@ public class EvolutionEngine
  *
  *****************************************/
 
-private static boolean updateNotifications(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+ private static boolean updateNotifications(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, SubscriberEvaluationRequest subscriberEvaluationRequest)
  {
    
    boolean subscriberUpdated = false;
    SubscriberState subscriberState = context.getSubscriberState();
 
-   
    if (evolutionEvent instanceof NotificationEvent)
      {
-
-
-       /*****************************************
+        /*****************************************
         *
         * now
         *
@@ -2517,16 +2514,21 @@ private static boolean updateNotifications(EvolutionEventContext context, Subscr
        NotificationEvent notificationEvent = (NotificationEvent) evolutionEvent;
        int tenantID = context.getSubscriberState().getSubscriberProfile().getTenantID();
        
-       SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
-           context.getSubscriberState().getSubscriberProfile(),
-           (ExtendedSubscriberProfile) null,
-           subscriberGroupEpochReader,
-           null,
-           null,
-           null,
-           null,
-           now, tenantID);
-      
+       // Enrich subscriber Evaluation Request with the tags specific to this message type (by example voucherCode)
+       if(notificationEvent.getTags() != null)
+         {
+           for(Map.Entry<String, String> entry : notificationEvent.getTags().entrySet())
+             {
+               if(!entry.getKey().startsWith("tag."))
+                 {
+                   subscriberEvaluationRequest.getMiscData().put(("tag." + entry.getKey()).toLowerCase(), entry.getValue());
+                 }
+               else 
+                 {
+                   subscriberEvaluationRequest.getMiscData().put(entry.getKey().toLowerCase(), entry.getValue());
+                 }
+             }
+         }
        
        /*****************************************
         *
@@ -2549,17 +2551,15 @@ private static boolean updateNotifications(EvolutionEventContext context, Subscr
        
        SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
        DialogTemplate template = null;
-       DialogTemplate baseTemplate = null;
        
        if(templateID != null) {
-       baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
-       template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(context)) : null;
+         template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
        }
      
          
        String language = subscriberEvaluationRequest.getLanguage();
       
-       if (template != null)
+       if (template != null && !template.getReadOnly())
          {
            //
            // get communicationChannel
@@ -2582,22 +2582,22 @@ private static boolean updateNotifications(EvolutionEventContext context, Subscr
                DialogMessage dialogMessage = template.getDialogMessage(messageField);
                List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
                tags.put(messageField, dialogMessageTags);
-
              }
          
-           //
-           // Parameters specific to the channel toolbox but NOT related to template
-           //          
-           ParameterMap notificationParameters = new ParameterMap();
-           for(CriterionField field : communicationChannel.getToolboxParameters().values()) {
-             //notificationParameters.put(field.getID(), value);            
-           }
+//           //
+//           // Parameters specific to the channel toolbox but NOT related to template
+//           //          
+//           ParameterMap notificationParameters = new ParameterMap();
+//           for(CriterionField field : communicationChannel.getToolboxParameters().values()) {
+//             //notificationParameters.put(field.getID(), value);            
+//           }
            
            
            Object contactTypeString = notificationEvent.getContactType();
            ContactType contactType = ContactType.fromExternalRepresentation((String) contactTypeString);
                      
            // add also the mandatory parameters for all channels
+           ParameterMap notificationParameters = new ParameterMap();
            notificationParameters.put("node.parameter.contacttype", contactTypeString);
            Object sourceAddress = null;
            if (notificationEvent.getSource() != null && ! notificationEvent.getSource().isEmpty()) {
@@ -2618,7 +2618,7 @@ private static boolean updateNotifications(EvolutionEventContext context, Subscr
           NotificationManagerRequest request = null;
           if (destAddress != null)
             {
-              request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), null, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+              request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
 
               request.forceDeliveryPriority(contactType.getDeliveryPriority());
               request.setRestricted(contactType.getRestricted());
