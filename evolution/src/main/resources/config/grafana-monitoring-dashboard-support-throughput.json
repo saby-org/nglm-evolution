@@ -347,17 +347,7 @@
               "metric": "",
               "refId": "A",
               "step": 2
-            },
-            {
-          	  "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{channel=\"$channel\"}[$__interval])) by (tenant)",
-          	  "hide": false,
-          	  "intervalFactor": 1,
-          	  "legendFormat": "Total-Tenant-{{tenant}}",
-          	  "metric": "",
-          	  "refId": "D",
-          	  "step": 2
-        	}
-            
+            }
           ],
           "thresholds": [],
           "timeFrom": null,
