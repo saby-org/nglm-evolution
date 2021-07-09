@@ -168,7 +168,7 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
                     Object stepName = obj.get("stepName");
                     Object stepUpdateDate = obj.get("stepUpdateDate");
                     Object currentProgression = obj.get("currentProgression");
-                    List<Map<String, String>> completedSteps = (List<Map<String, String>>) subscriberFields.get("completedSteps");
+                    List<Map<String, String>> completedSteps = (List<Map<String, String>>) obj.get("completedSteps");
                     log.info("RAJ K completedSteps from ES {}", completedSteps);
                     
                     //
