@@ -294,7 +294,7 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
           } 
         catch (ParseException e)
           {
-            if (log.isErrorEnabled()) log.error("unbale to parse ES date String {}", unknownDateObj.toString());
+            if (log.isErrorEnabled()) log.error("unable to parse date String {}", unknownDateObj.toString());
           }
       }
     return result;
