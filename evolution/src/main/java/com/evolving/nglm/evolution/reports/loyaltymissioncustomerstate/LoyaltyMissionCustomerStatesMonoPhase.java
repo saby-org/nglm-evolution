@@ -169,6 +169,7 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
                     Object stepUpdateDate = obj.get("stepUpdateDate");
                     Object currentProgression = obj.get("currentProgression");
                     List<Map<String, String>> completedSteps = (List<Map<String, String>>) subscriberFields.get("completedSteps");
+                    log.info("RAJ K completedSteps from ES {}", completedSteps);
                     
                     //
                     //  report fields
@@ -231,13 +232,16 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
   private String prepareCompletedSteps(List<Map<String, String>> completedSteps)
   {
     StringBuilder completedStepsBuilder = new StringBuilder();
+    log.info("RAJ K completedSteps length {}", completedSteps.size());
     if (completedSteps != null && !completedSteps.isEmpty())
       {
         for (Map<String, String> completedStep : completedSteps)
           {
+            log.info("RAJ K completedStep {}", completedStep);
             completedStepsBuilder.append("[").append(completedStep.get("completedStep")).append(",").append(getReportFormattedDate(completedStep.get("completionDate"))).append("]");
           }
       }
+    log.info("RAJ K completedStep to write {}", completedStepsBuilder.toString());
     return completedStepsBuilder.toString();
   }
 

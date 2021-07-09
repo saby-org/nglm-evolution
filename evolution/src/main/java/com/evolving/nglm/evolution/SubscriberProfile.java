@@ -592,9 +592,8 @@ public abstract class SubscriberProfile
                         List<StepHistory> stepHistories = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistory();
                         if (stepHistories != null)
                           {
-                            List<StepHistory> completedStepHistories = new ArrayList<LoyaltyProgramMissionHistory.StepHistory>();
-                            completedStepHistories = completedStepHistories.stream().filter(stepHistory -> stepHistory.getFromStep() != null).collect(Collectors.toList());
-                            if (!loyaltyProgramMissionState.isMissionCompleted()) completedStepHistories = stepHistories.stream().filter(stepHistory -> !loyaltyProgramMissionState.getStepName().equals(stepHistory.getToStep())).collect(Collectors.toList());
+                            List<StepHistory> completedStepHistories = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistory();
+                            if (!loyaltyProgramMissionState.isMissionCompleted()) completedStepHistories = completedStepHistories.stream().filter(stepHistory -> !loyaltyProgramMissionState.getStepName().equals(stepHistory.getToStep())).collect(Collectors.toList());
                             if (!completedStepHistories.isEmpty())
                               {
                                 for (StepHistory stepHistory : completedStepHistories)
