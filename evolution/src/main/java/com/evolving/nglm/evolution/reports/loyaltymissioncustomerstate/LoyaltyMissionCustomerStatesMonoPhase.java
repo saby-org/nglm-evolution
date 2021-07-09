@@ -235,10 +235,12 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
     log.info("RAJ K completedSteps length {}", completedSteps.size());
     if (completedSteps != null && !completedSteps.isEmpty())
       {
+        boolean firstStep = true;
         for (Map<String, String> completedStep : completedSteps)
           {
-            log.info("RAJ K completedStep {}", completedStep);
-            completedStepsBuilder.append("[").append(completedStep.get("completedStep")).append(",").append(getReportFormattedDate(completedStep.get("completionDate"))).append("]");
+            if (!firstStep) completedStepsBuilder.append(",");
+            completedStepsBuilder.append("(").append(completedStep.get("completedStep")).append(getReportFormattedDate(completedStep.get("completionDate"))).append(")");
+            firstStep = false;
           }
       }
     log.info("RAJ K completedStep to write {}", completedStepsBuilder.toString());
