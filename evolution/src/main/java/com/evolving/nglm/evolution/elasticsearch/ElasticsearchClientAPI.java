@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -111,6 +112,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   // TODO factorize with SimpleESSinkConnector ?  // TODO retrieve from Deployment.json
   private static final int CONNECTTIMEOUT = 5; // in seconds
   private static final int QUERYTIMEOUT = 60;  // in seconds
+  
+  private static final int MAX_INDEX_LIST_LENGTH = 1850;
   
   /*****************************************
   *
@@ -1263,64 +1266,83 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         // Build Elasticsearch query
         //
         
-        BoolQueryBuilder query = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("status", Arrays.asList(specialExit))).should(QueryBuilders.termsQuery("journeyID", journeyIds));
+        BoolQueryBuilder query = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("status", Arrays.asList(specialExit)));
         
         //
-        //  request
-        //
-
-        SearchRequest request = new SearchRequest(index).source(new SearchSourceBuilder().query(query).size(0).aggregation(AggregationBuilders.terms(termAggName).size(journeyIds.size()).field(aggFieldName)));
-
-        //
-        // Send request & retrieve response synchronously (blocking call)
+        //  list existing index
         //
         
-        SearchResponse response = this.search(request, RequestOptions.DEFAULT);
-
-        //
-        // Check search response
-        //
+        GetIndexRequest existingIndexRequest = new GetIndexRequest(index);
+        GetIndexResponse existingIndexResponse = this.indices().get(existingIndexRequest, RequestOptions.DEFAULT);
+        List<String> existingIndices = Arrays.asList(existingIndexResponse.getIndices());
+        if (log.isDebugEnabled()) log.debug("exsisting journeystatistic index list {}", existingIndices);
+        Set<String> requestedIndices = journeyIds.stream().map(journeyId -> getJourneyIndex(journeyId)).collect(Collectors.toSet());
+        List<String> finalIndices = requestedIndices.stream().filter(reqIndex ->  existingIndices.contains(reqIndex)).collect(Collectors.toList());
+        if (log.isDebugEnabled()) log.debug("finalIndices to look {}", existingIndices);
         
-        if (response.getFailedShards() > 0) throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
-        Aggregations aggregations = response.getAggregations();
-        if (aggregations != null)
+        StringBuilder indexBuilder = new StringBuilder();
+        boolean shouldExecute = false;
+        for (String finalIndex : finalIndices)
           {
-            Terms journeySubscriberCountAggregationTerms = aggregations.get(termAggName);
-            for (Bucket bucket : journeySubscriberCountAggregationTerms.getBuckets())
+            if (finalIndex.length() <= MAX_INDEX_LIST_LENGTH)
               {
-                result.put(bucket.getKeyAsString(), bucket.getDocCount());
+                indexBuilder.append(finalIndex).append(",");
+              }
+            shouldExecute = shouldExecute || indexBuilder.length() > MAX_INDEX_LIST_LENGTH || finalIndices.indexOf(finalIndex) == finalIndices.size() - 1;
+            
+            if (shouldExecute)
+              {
+
+                //
+                //  execute
+                //
+                
+                //
+                //  request
+                //
+
+                System.out.println("indexBuilder " + indexBuilder.toString());
+                SearchRequest request = new SearchRequest(indexBuilder.toString()).source(new SearchSourceBuilder().query(query).size(0).aggregation(AggregationBuilders.terms(termAggName).size(finalIndices.size()).field(aggFieldName)));
+                
+                //
+                // Send request & retrieve response synchronously (blocking call)
+                //
+                
+                SearchResponse response = this.search(request, RequestOptions.DEFAULT);
+                
+                //
+                // Check search response
+                //
+                
+                if (response.getFailedShards() > 0) throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+                Aggregations aggregations = response.getAggregations();
+                if (aggregations != null)
+                  {
+                    Terms journeySubscriberCountAggregationTerms = aggregations.get(termAggName);
+                    for (Bucket bucket : journeySubscriberCountAggregationTerms.getBuckets())
+                      {
+                        result.put(bucket.getKeyAsString(), bucket.getDocCount());
+                      }
+                  }
+                
+                //
+                //  flush
+                //
+                
+                indexBuilder = new StringBuilder();
+                shouldExecute = false;
               }
           }
-
+        
         //
         // Send result
         //
         
         return result;
       } 
-    catch (ElasticsearchClientException e)
-      { 
-        if (log.isWarnEnabled()) log.warn("ElasticsearchClientException {}", e.getMessage());
-        throw e;
-      } 
-    catch (ElasticsearchStatusException e)
-      {
-        if (e.status() == RestStatus.NOT_FOUND)
-          {
-            log.debug(e.getMessage());
-            return result;
-          }
-        if (log.isWarnEnabled()) log.warn("ElasticsearchStatusException {}", e.getMessage());
-        throw new ElasticsearchClientException(e.getDetailedMessage());
-      } 
-    catch (ElasticsearchException e)
-      {
-        if (log.isWarnEnabled()) log.warn("ElasticsearchException {}", e.getMessage());
-        throw new ElasticsearchClientException(e.getDetailedMessage());
-      } 
     catch (Exception e)
       {
-        if (log.isWarnEnabled()) log.warn("Exception {}", e.getMessage());
+        log.error("Exception on to generate JourneySubscriberCount {}", e.getMessage());
         throw new ElasticsearchClientException(e.getMessage());
       }
   }
