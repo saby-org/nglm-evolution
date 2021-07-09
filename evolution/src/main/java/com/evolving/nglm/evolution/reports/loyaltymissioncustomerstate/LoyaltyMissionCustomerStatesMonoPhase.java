@@ -168,6 +168,7 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
                     Object stepName = obj.get("stepName");
                     Object stepUpdateDate = obj.get("stepUpdateDate");
                     Object currentProgression = obj.get("currentProgression");
+                    List<Map<String, String>> completedSteps = (List<Map<String, String>>) subscriberFields.get("completedSteps");
                     
                     //
                     //  report fields
@@ -179,6 +180,7 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
                     fullFields.put("stepName", stepName == null ? "" : stepName);
                     fullFields.put("stepUpdateDate", getReportFormattedDate(stepUpdateDate));
                     fullFields.put("currentProgression", currentProgression);
+                    fullFields.put("completedSteps", prepareCompletedSteps(completedSteps));
                     
                     //
                     //  add
@@ -220,6 +222,25 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
     return addHeaders;
   }
   
+  /****************************************************************
+   * 
+   * prepareCompletedSteps
+   * 
+   ***************************************************************/
+  
+  private String prepareCompletedSteps(List<Map<String, String>> completedSteps)
+  {
+    StringBuilder completedStepsBuilder = new StringBuilder();
+    if (completedSteps != null && !completedSteps.isEmpty())
+      {
+        for (Map<String, String> completedStep : completedSteps)
+          {
+            completedStepsBuilder.append("[").append(completedStep.get("completedStep")).append(",").append(getReportFormattedDate(completedStep.get("completionDate"))).append("]");
+          }
+      }
+    return completedStepsBuilder.toString();
+  }
+
   /****************************************************************
    * 
    * addHeaders

@@ -592,16 +592,19 @@ public abstract class SubscriberProfile
                         List<StepHistory> stepHistories = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistory();
                         if (stepHistories != null)
                           {
-                            List<StepHistory> completedStepHistories = stepHistories.stream().filter(stepHistory -> !loyaltyProgramMissionState.getStepName().equals(stepHistory.getToStep())).collect(Collectors.toList());
+                            List<StepHistory> completedStepHistories = new ArrayList<LoyaltyProgramMissionHistory.StepHistory>();
+                            completedStepHistories = completedStepHistories.stream().filter(stepHistory -> stepHistory.getFromStep() != null).collect(Collectors.toList());
+                            if (!loyaltyProgramMissionState.isMissionCompleted()) completedStepHistories = stepHistories.stream().filter(stepHistory -> !loyaltyProgramMissionState.getStepName().equals(stepHistory.getToStep())).collect(Collectors.toList());
                             if (!completedStepHistories.isEmpty())
                               {
                                 for (StepHistory stepHistory : completedStepHistories)
                                   {
+                                    log.info("RAJ K stepHistory {}", stepHistory);
                                     Map<String, String> stepAndCompletionDate = new HashMap<String, String>();
-                                    String completedStep = stepHistory.getFromStep();
-                                    Date completionDate = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistoryByFromName(stepHistory.getToStep()).getTransitionDate();
+                                    String completedStep = stepHistory.getToStep();
+                                    Date completionDate = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistoryByFromName(completedStep).getTransitionDate();
                                     stepAndCompletionDate.put("completedStep", completedStep);
-                                    stepAndCompletionDate.put("completionDate", completionDate == null ? "" : RLMDateUtils.formatDateForElasticsearchDefault(completionDate));
+                                    stepAndCompletionDate.put("completionDate", completionDate == null ? RLMDateUtils.formatDateForElasticsearchDefault(loyaltyProgramMissionState.getStepEnrollmentDate()) : RLMDateUtils.formatDateForElasticsearchDefault(completionDate));
                                     completedStepsJsonObjects.add(JSONUtilities.encodeObject(stepAndCompletionDate));
                                   }
                               }
