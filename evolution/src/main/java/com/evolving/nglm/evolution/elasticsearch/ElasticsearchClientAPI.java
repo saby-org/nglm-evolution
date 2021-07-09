@@ -31,9 +31,13 @@ import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.MultiSearchRequest;
+import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.action.search.MultiSearchResponse.Item;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -113,7 +117,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   private static final int CONNECTTIMEOUT = 5; // in seconds
   private static final int QUERYTIMEOUT = 60;  // in seconds
   
-  private static final int MAX_INDEX_LIST_LENGTH = 1850;
+  private static final int MAX_INDEX_LIST_SIZE = 75; // will look into max 75 index at a time
   
   /*****************************************
   *
@@ -1280,41 +1284,56 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         List<String> finalIndices = requestedIndices.stream().filter(reqIndex ->  existingIndices.contains(reqIndex)).collect(Collectors.toList());
         if (log.isDebugEnabled()) log.debug("finalIndices to look {}", existingIndices);
         
-        StringBuilder indexBuilder = new StringBuilder();
-        boolean shouldExecute = false;
+        //
+        //  mRequest
+        //
+        
+        MultiSearchRequest mRequest = new MultiSearchRequest();
+        List<String> indexBuilder = new ArrayList<String>();
+        boolean shouldAdd = false;
         for (String finalIndex : finalIndices)
           {
-            if (finalIndex.length() <= MAX_INDEX_LIST_LENGTH)
+            if (indexBuilder.size() <= MAX_INDEX_LIST_SIZE)
               {
-                indexBuilder.append(finalIndex).append(",");
+                indexBuilder.add(finalIndex);
               }
-            shouldExecute = shouldExecute || indexBuilder.length() > MAX_INDEX_LIST_LENGTH || finalIndices.indexOf(finalIndex) == finalIndices.size() - 1;
+            shouldAdd = shouldAdd || indexBuilder.size() > MAX_INDEX_LIST_SIZE || finalIndices.indexOf(finalIndex) == finalIndices.size() - 1;
             
-            if (shouldExecute)
+            if (shouldAdd)
               {
 
                 //
-                //  execute
-                //
-                
-                //
-                //  request
+                //  add request
                 //
 
-                System.out.println("indexBuilder " + indexBuilder.toString());
-                SearchRequest request = new SearchRequest(indexBuilder.toString()).source(new SearchSourceBuilder().query(query).size(0).aggregation(AggregationBuilders.terms(termAggName).size(finalIndices.size()).field(aggFieldName)));
+                SearchRequest request = new SearchRequest(indexBuilder.toArray(new String[0])).source(new SearchSourceBuilder().query(query).size(0).aggregation(AggregationBuilders.terms(termAggName).size(finalIndices.size()).field(aggFieldName))).indicesOptions(IndicesOptions.lenientExpandOpen());
+                mRequest.add(request);
                 
                 //
-                // Send request & retrieve response synchronously (blocking call)
+                //  flush
                 //
                 
-                SearchResponse response = this.search(request, RequestOptions.DEFAULT);
+                indexBuilder = new ArrayList<String>();
+                shouldAdd = false;
+              }
+          }
+        
+        //
+        //  execute
+        //
+        
+        MultiSearchResponse mResponse = this.msearch(mRequest, RequestOptions.DEFAULT);
+        if (log.isDebugEnabled()) log.debug("MultiSearchResponse took {} to complete {} requests", mResponse.getTook(), mRequest.requests().size());
+        for (Item item : mResponse.getResponses())
+          {
+            if (item.getFailure() == null)
+              {
+                SearchResponse response = item.getResponse();
                 
                 //
                 // Check search response
                 //
                 
-                if (response.getFailedShards() > 0) throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
                 Aggregations aggregations = response.getAggregations();
                 if (aggregations != null)
                   {
@@ -1324,13 +1343,6 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
                         result.put(bucket.getKeyAsString(), bucket.getDocCount());
                       }
                   }
-                
-                //
-                //  flush
-                //
-                
-                indexBuilder = new StringBuilder();
-                shouldExecute = false;
               }
           }
         
