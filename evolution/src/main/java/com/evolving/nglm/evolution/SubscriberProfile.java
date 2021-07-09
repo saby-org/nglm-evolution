@@ -598,12 +598,12 @@ public abstract class SubscriberProfile
                               {
                                 for (StepHistory stepHistory : completedStepHistories)
                                   {
-                                    log.info("RAJ K stepHistory {}", stepHistory);
                                     Map<String, String> stepAndCompletionDate = new HashMap<String, String>();
                                     String completedStep = stepHistory.getToStep();
-                                    Date completionDate = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistoryByFromName(completedStep).getTransitionDate();
+                                    StepHistory nextStep = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistoryByFromName(completedStep);
+                                    Date completionDate = nextStep == null ? loyaltyProgramMissionState.getStepEnrollmentDate() : nextStep.getTransitionDate();
                                     stepAndCompletionDate.put("completedStep", completedStep);
-                                    stepAndCompletionDate.put("completionDate", completionDate == null ? RLMDateUtils.formatDateForElasticsearchDefault(loyaltyProgramMissionState.getStepEnrollmentDate()) : RLMDateUtils.formatDateForElasticsearchDefault(completionDate));
+                                    stepAndCompletionDate.put("completionDate", RLMDateUtils.formatDateForElasticsearchDefault(completionDate));
                                     completedStepsJsonObjects.add(JSONUtilities.encodeObject(stepAndCompletionDate));
                                   }
                               }
