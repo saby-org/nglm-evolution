@@ -1282,65 +1282,67 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         if (log.isDebugEnabled()) log.debug("exsisting journeystatistic index list {}", existingIndices);
         Set<String> requestedIndices = journeyIds.stream().map(journeyId -> getJourneyIndex(journeyId)).collect(Collectors.toSet());
         List<String> finalIndices = requestedIndices.stream().filter(reqIndex ->  existingIndices.contains(reqIndex)).collect(Collectors.toList());
-        if (log.isDebugEnabled()) log.debug("finalIndices to look {}", existingIndices);
-        
-        //
-        //  mRequest
-        //
-        
-        MultiSearchRequest mRequest = new MultiSearchRequest();
-        List<String> indexBuilder = new ArrayList<String>();
-        boolean shouldAdd = false;
-        for (String finalIndex : finalIndices)
+        if (log.isDebugEnabled()) log.debug("finalIndices to look {}", finalIndices);
+        if (!finalIndices.isEmpty())
           {
-            if (indexBuilder.size() <= MAX_INDEX_LIST_SIZE)
-              {
-                indexBuilder.add(finalIndex);
-              }
-            shouldAdd = shouldAdd || indexBuilder.size() > MAX_INDEX_LIST_SIZE || finalIndices.indexOf(finalIndex) == finalIndices.size() - 1;
+            //
+            //  mRequest
+            //
             
-            if (shouldAdd)
+            MultiSearchRequest mRequest = new MultiSearchRequest();
+            List<String> indexBuilder = new ArrayList<String>();
+            boolean shouldAdd = false;
+            for (String finalIndex : finalIndices)
               {
-
-                //
-                //  add request
-                //
-
-                SearchRequest request = new SearchRequest(indexBuilder.toArray(new String[0])).source(new SearchSourceBuilder().query(query).size(0).aggregation(AggregationBuilders.terms(termAggName).size(finalIndices.size()).field(aggFieldName))).indicesOptions(IndicesOptions.lenientExpandOpen());
-                mRequest.add(request);
-                
-                //
-                //  flush
-                //
-                
-                indexBuilder = new ArrayList<String>();
-                shouldAdd = false;
-              }
-          }
-        
-        //
-        //  execute
-        //
-        
-        MultiSearchResponse mResponse = this.msearch(mRequest, RequestOptions.DEFAULT);
-        if (log.isDebugEnabled()) log.debug("MultiSearchResponse took {} to complete {} requests", mResponse.getTook(), mRequest.requests().size());
-        for (Item item : mResponse.getResponses())
-          {
-            if (item.getFailure() == null)
-              {
-                SearchResponse response = item.getResponse();
-                
-                //
-                // Check search response
-                //
-                
-                Aggregations aggregations = response.getAggregations();
-                if (aggregations != null)
+                if (indexBuilder.size() <= MAX_INDEX_LIST_SIZE)
                   {
-                    Terms journeySubscriberCountAggregationTerms = aggregations.get(termAggName);
-                    for (Bucket bucket : journeySubscriberCountAggregationTerms.getBuckets())
+                    indexBuilder.add(finalIndex);
+                  }
+                shouldAdd = shouldAdd || indexBuilder.size() > MAX_INDEX_LIST_SIZE || finalIndices.indexOf(finalIndex) == finalIndices.size() - 1;
+                
+                if (shouldAdd)
+                  {
+
+                    //
+                    //  add request
+                    //
+
+                    SearchRequest request = new SearchRequest(indexBuilder.toArray(new String[0])).source(new SearchSourceBuilder().query(query).size(0).aggregation(AggregationBuilders.terms(termAggName).size(finalIndices.size()).field(aggFieldName))).indicesOptions(IndicesOptions.lenientExpandOpen());
+                    mRequest.add(request);
+                    
+                    //
+                    //  flush
+                    //
+                    
+                    indexBuilder = new ArrayList<String>();
+                    shouldAdd = false;
+                  }
+              }
+            
+            //
+            //  execute
+            //
+            
+            MultiSearchResponse mResponse = this.msearch(mRequest, RequestOptions.DEFAULT);
+            if (log.isDebugEnabled()) log.debug("MultiSearchResponse took {} to complete {} requests", mResponse.getTook(), mRequest.requests().size());
+            for (Item item : mResponse.getResponses())
+              {
+                if (item.getFailure() == null)
+                  {
+                    SearchResponse response = item.getResponse();
+                    
+                    //
+                    // Check search response
+                    //
+                    
+                    Aggregations aggregations = response.getAggregations();
+                    if (aggregations != null)
                       {
-                        result.put(bucket.getKeyAsString(), bucket.getDocCount());
+                        Terms journeySubscriberCountAggregationTerms = aggregations.get(termAggName);
+                        for (Bucket bucket : journeySubscriberCountAggregationTerms.getBuckets())
+                          {
+                            result.put(bucket.getKeyAsString(), bucket.getDocCount());
+                          }
                       }
                   }
               }
