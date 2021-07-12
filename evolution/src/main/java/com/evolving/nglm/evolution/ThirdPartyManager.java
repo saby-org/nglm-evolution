@@ -186,6 +186,7 @@ public class ThirdPartyManager
   private ZookeeperUniqueKeyServer zuksVoucherChange;
   private ElasticsearchClientAPI elasticsearch;
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
+  private KafkaResponseListenerService<StringKey,TokenChange> tokenChangeResponseListenerService;
   private KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String, Constructor<? extends SubscriberStreamOutput>> JSON3rdPartyEventsConstructor = new HashMap<>();
@@ -529,6 +530,9 @@ public class ThirdPartyManager
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
+
+    tokenChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getTokenChangeTopic(),StringKey.serde(),TokenChange.serde());
+    tokenChangeResponseListenerService.start();
 
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
@@ -4127,7 +4131,7 @@ public class ThirdPartyManager
         Presentation presentation = new Presentation(now, presentedOfferIDs);
         List<Presentation> currentPresentationHistory = token.getPresentationHistory();
         currentPresentationHistory.add(presentation);
-        log.debug("Added " + presentation + " to presentationHistory " + currentPresentationHistory + " size " + currentPresentationHistory.size());
+        if(log.isDebugEnabled()) log.debug("Added " + presentation + " to presentationHistory " + currentPresentationHistory + " size " + currentPresentationHistory.size());
         
         // clean list by removing presentations older than oldest limit of all offers in the lists
          
@@ -4169,11 +4173,11 @@ public class ThirdPartyManager
             if (date.after(earliestDateToKeep)) {
               newPresentationHistory.add(pres);
             } else {
-              log.debug("Removed history because too old : " + pres);
+              if(log.isDebugEnabled()) log.debug("Removed history because too old : " + pres);
             }
           }
         token.setPresentationHistory(newPresentationHistory);
-        log.info("Cleanup of presentation history moved list from " + currentPresentationHistory.size() + " to " + newPresentationHistory.size() + " elements, earliest date to keep : " + earliestDateToKeep);
+        if(log.isDebugEnabled()) log.debug("Cleanup of presentation history moved list from " + currentPresentationHistory.size() + " to " + newPresentationHistory.size() + " elements, earliest date to keep : " + earliestDateToKeep);
         
         PresentationLog presentationLog = new PresentationLog(
             subscriberID, subscriberID, now, 
@@ -4181,7 +4185,7 @@ public class ThirdPartyManager
             tokenCode, 
             presentationStrategyID, transactionDurationMs, 
             presentedOfferIDs, presentedOfferScores, positions, 
-            controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, token.getPresentationDates(), tokenTypeID, null, newPresentationHistory
+            controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, token.getPresentationDates(), tokenTypeID, token, newPresentationHistory
             );
 
        //
@@ -4250,6 +4254,7 @@ public class ThirdPartyManager
      *
      *****************************************/
     String deliveryRequestID = "";
+    TokenChange redeemResponse=null;
     PurchaseFulfillmentRequest purchaseResponse=null;
     try
     {
@@ -4362,26 +4367,12 @@ public class ThirdPartyManager
             }
         }
       
-       if (!sync)
-          {
-            deliveryRequestID = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
-          }
-        else
-          {
-            purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID);
-
-            deliveryRequestID = purchaseResponse.getDeliveryRequestID();
-          }
-      
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
       String msisdn = subscriberID; // TODO check this
       String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
 
       // TODO BEGIN Following fields are currently not used in EvolutionEngine, might need to be set later
-      String callUniqueIdentifier = "";
       String controlGroupState = "controlGroupState";
       String channelID = "channelID";
       Integer actionCall = 1;
@@ -4389,6 +4380,8 @@ public class ThirdPartyManager
       // TODO END
       
       Date fulfilledDate = now;
+      String callUniqueIdentifier = zuks.getStringKey();
+      deliveryRequestID = callUniqueIdentifier;//EvE will reused that field while triggering purchase
       String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
       String tokenTypeID = subscriberStoredToken.getTokenTypeID();
       
@@ -4398,12 +4391,17 @@ public class ThirdPartyManager
           userID, tokenCode,
           presentationStrategyID, transactionDurationMs,
           controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID, tokenTypeID);
-      
+
+      Future<TokenChange> tokenChangeWaitingResponse = null;
+      Future<PurchaseFulfillmentRequest> purchaseWaitingResponse = null;
+      if(sync){
+        tokenChangeWaitingResponse = tokenChangeResponseListenerService.addWithOnValueFilter(tokenChange -> tokenChange.getCallUniqueIdentifier()!=null && tokenChange.getCallUniqueIdentifier().equals(callUniqueIdentifier));
+        purchaseWaitingResponse = purchaseResponseListenerService.addWithOnValueFilter(purchaseFulfillmentRequest -> purchaseFulfillmentRequest.getDeliveryRequestID().equals(callUniqueIdentifier));
+      }
       //
       //  submit to kafka
       //
 
-      {
       String topic = Deployment.getAcceptanceLogTopic();
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<AcceptanceLog> valueSerializer = AcceptanceLog.serde().serializer();
@@ -4413,24 +4411,17 @@ public class ThirdPartyManager
           valueSerializer.serialize(topic, acceptanceLog)
           ));
       keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-      }
-      
-      //
-      // trigger event (for campaigns)
-      //
 
-      {
-        TokenRedeemed tokenRedeemed = new TokenRedeemed(subscriberID, now, subscriberStoredToken.getTokenTypeID(), offerID);
-        String topic = Deployment.getTokenRedeemedTopic();
-        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-        Serializer<TokenRedeemed> valueSerializer = TokenRedeemed.serde().serializer();
-        kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-            topic,
-            keySerializer.serialize(topic, new StringKey(subscriberID)),
-            valueSerializer.serialize(topic, tokenRedeemed)
-            ));
-        keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+      if(tokenChangeWaitingResponse!=null){
+        redeemResponse = handleWaitingResponse(tokenChangeWaitingResponse);
       }
+
+      if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(TokenChange.OK) && purchaseWaitingResponse!=null){
+        purchaseResponse = handleWaitingResponse(purchaseWaitingResponse);
+      }else if(purchaseWaitingResponse!=null){
+        purchaseWaitingResponse.cancel(true);
+      }
+
     }
     catch (SubscriberProfileServiceException e) 
     {
@@ -4445,8 +4436,24 @@ public class ThirdPartyManager
      *****************************************/
     response.put("deliveryRequestID", deliveryRequestID);
     if(sync){
-      response.put(GENERIC_RESPONSE_CODE, purchaseResponse.getStatus().getReturnCode());
-      response.put(GENERIC_RESPONSE_MSG, purchaseResponse.getStatus().name());
+      if(purchaseResponse==null){
+        if(redeemResponse!=null){
+          log.info("unable to process acceptOffer for {}, {}", subscriberID, redeemResponse.getReturnStatus());
+          if(redeemResponse.getReturnStatus().equals(TokenChange.ALREADY_REDEEMED)){
+            updateResponse(response, RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT);
+          }else if(redeemResponse.getReturnStatus().equals(TokenChange.BAD_TOKEN_TYPE)){
+            updateResponse(response, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE);
+          }else if(redeemResponse.getReturnStatus().equals(TokenChange.NO_TOKEN)){
+            updateResponse(response, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED);
+          }
+        }else{
+          log.info("unable to process acceptOffer for {}, null redeem response", subscriberID);
+          updateResponse(response, RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+        }
+      }else{
+        response.put(GENERIC_RESPONSE_CODE, purchaseResponse.getStatus().getReturnCode());
+        response.put(GENERIC_RESPONSE_MSG, purchaseResponse.getStatus().name());
+      }
     }else{
       updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
     }

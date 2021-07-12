@@ -29,6 +29,11 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public static final String RESEND   = "Resend";
   public static final String REFUSE   = "Refuse";
   public static final String EXTEND   = "Extend";
+
+  public static final String OK = "OK";
+  public static final String BAD_TOKEN_TYPE = "invalid token type";
+  public static final String ALREADY_REDEEMED = "already redeemed";
+  public static final String NO_TOKEN = "no token";
   
   /*****************************************
   *
@@ -45,7 +50,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),9)); // 8->9: EVPRO-99: tenantID
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),10));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
@@ -56,6 +61,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("callUniqueIdentifier", Schema.OPTIONAL_STRING_SCHEMA);//map to an AcceptanceLog
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -88,6 +94,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   private String origin;
   private String moduleID;
   private String featureID;
+  private String callUniqueIdentifier;
   private int tenantID;
   
   /****************************************
@@ -111,6 +118,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
   public ActionType getActionType() { return ActionType.TokenChange; }
+  public String getCallUniqueIdentifier() { return callUniqueIdentifier; }
   public int getTenantID() { return tenantID; }
 
   //
@@ -126,6 +134,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public void setOrigin(String origin) { this.origin = origin; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
   public void setFeatureID(String featureID) { this.featureID = featureID; }
+  public void setCallUniqueIdentifier(String callUniqueIdentifier) { this.callUniqueIdentifier = callUniqueIdentifier; }
 
   /*****************************************
   *
@@ -135,7 +144,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
 
   public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID)
   {
-    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, tenantID);
+    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, tenantID);
   }
 
   /*****************************************
@@ -144,7 +153,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   *
   *****************************************/
 
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, int tenantID)
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.eventDateTime = eventDateTime;
@@ -155,6 +164,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.origin = origin;
     this.moduleID = moduleID;
     this.featureID = featureID;
+    this.callUniqueIdentifier = callUniqueIdentifier;
     this.tenantID = tenantID;
   }
 
@@ -163,7 +173,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
    * constructor unpack
    *
    *****************************************/
-  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, int tenantID)
+  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
@@ -176,6 +186,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.moduleID = moduleID;
     this.featureID = featureID;
     this.tenantID = tenantID;
+    this.callUniqueIdentifier = callUniqueIdentifier;
   }
 
   /*****************************************
@@ -198,6 +209,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     struct.put("origin", tokenChange.getOrigin());
     struct.put("moduleID", tokenChange.getModuleID());
     struct.put("featureID", tokenChange.getFeatureID());
+    if(tokenChange.getCallUniqueIdentifier()!=null) struct.put("callUniqueIdentifier", tokenChange.getCallUniqueIdentifier());
     struct.put("tenantID", (short) tokenChange.getTenantID());
     return struct;
   }
@@ -232,6 +244,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     String origin = valueStruct.getString("origin");
     String moduleID = (schemaVersion >=2 ) ? valueStruct.getString("moduleID") : "";
     String featureID = (schemaVersion >=3 ) ? valueStruct.getString("featureID") : "";
+    String callUniqueIdentifier = (schemaVersion >=10 && schema.field("callUniqueIdentifier")!=null) ? valueStruct.getString("callUniqueIdentifier") : null;
     int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
     
     //
@@ -242,7 +255,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     // return
     //
 
-    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, tenantID);
+    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, callUniqueIdentifier, tenantID);
   }
   
   

@@ -740,6 +740,7 @@ public class GUIManager
   protected ZookeeperUniqueKeyServer zuks;
   protected ZookeeperUniqueKeyServer zuksVoucherChange;
   protected KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
+  private KafkaResponseListenerService<StringKey,TokenChange> tokenChangeResponseListenerService;
   protected KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   protected int httpTimeout = Deployment.getPurchaseTimeoutMs();
 
@@ -1090,6 +1091,10 @@ public class GUIManager
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
+
+    tokenChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getTokenChangeTopic(),StringKey.serde(),TokenChange.serde());
+    tokenChangeResponseListenerService.start();
+
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
 
@@ -23981,8 +23986,6 @@ public class GUIManager
           String featureID = (userName != null) ? userName : "administrator"; // for PTT tests, never happens when called by browser
           String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
           String resellerID = "";
-          Offer offer = offerService.getActiveOffer(offerID, now);
-          deliveryRequestID = purchaseOffer(subscriberProfile,true, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
 
           // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -23991,7 +23994,6 @@ public class GUIManager
           String tokenTypeID = subscriberStoredToken.getTokenTypeID();
           
           // TODO BEGIN Following fields are currently not used in EvolutionEngine, might need to be set later
-          String callUniqueIdentifier = ""; 
           String controlGroupState = "controlGroupState";
           String channelID = "channelID";
           Integer actionCall = 1;
@@ -23999,6 +24001,8 @@ public class GUIManager
           // TODO END
 
           Date fulfilledDate = now;
+          String callUniqueIdentifier = zuks.getStringKey();
+          deliveryRequestID = callUniqueIdentifier;//EvE will reused that field while triggering purchase
 
           AcceptanceLog acceptanceLog = new AcceptanceLog(
               msisdn, subscriberID, now, 
@@ -24007,37 +24011,28 @@ public class GUIManager
               presentationStrategyID, transactionDurationMs,
               controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID, tokenTypeID);
 
-          //
-          //  submit to kafka
-          //
+          Future<TokenChange> tokenChangeWaitingResponse = tokenChangeResponseListenerService.addWithOnValueFilter(tokenChange -> tokenChange.getCallUniqueIdentifier()!=null && tokenChange.getCallUniqueIdentifier().equals(callUniqueIdentifier));
+          Future<PurchaseFulfillmentRequest> purchaseWaitingResponse = purchaseResponseListenerService.addWithOnValueFilter(purchaseFulfillmentRequest -> purchaseFulfillmentRequest.getDeliveryRequestID().equals(callUniqueIdentifier));
 
-          {
-            String topic = Deployment.getAcceptanceLogTopic();
-            Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-            Serializer<AcceptanceLog> valueSerializer = AcceptanceLog.serde().serializer();
-            kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-                topic,
-                keySerializer.serialize(topic, new StringKey(subscriberID)),
-                valueSerializer.serialize(topic, acceptanceLog)
-                ));
-          }
+          String topic = Deployment.getAcceptanceLogTopic();
+          Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+          Serializer<AcceptanceLog> valueSerializer = AcceptanceLog.serde().serializer();
+          kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+            topic,
+            keySerializer.serialize(topic, new StringKey(subscriberID)),
+            valueSerializer.serialize(topic, acceptanceLog)
+          ));
 
-          //
-          // trigger event (for campaigns)
-          //
-
-          {
-            TokenRedeemed tokenRedeemed = new TokenRedeemed(subscriberID, now, subscriberStoredToken.getTokenTypeID(), offerID);
-            String topic = Deployment.getTokenRedeemedTopic();
-            Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-            Serializer<TokenRedeemed> valueSerializer = TokenRedeemed.serde().serializer();
-            kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-                topic,
-                keySerializer.serialize(topic, new StringKey(subscriberID)),
-                valueSerializer.serialize(topic, tokenRedeemed)
-                ));
-          }
-          response.put("responseCode", "ok");
+          TokenChange redeemResponse = handleWaitingResponse(tokenChangeWaitingResponse);
+          if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(TokenChange.OK)){
+            handlePurchaseResponse(purchaseWaitingResponse);
+            response.put("responseCode", "ok");
+		  }else{
+          	purchaseWaitingResponse.cancel(true);
+            if(redeemResponse!=null) response.put("responseMessage", redeemResponse.getReturnStatus());
+            response.put("responseCode", "ko");
+            return JSONUtilities.encodeObject(response);
+		  }
         }
     }
 
@@ -25630,22 +25625,27 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         ));
 
     if (sync) {
-      PurchaseFulfillmentRequest result =  handleWaitingResponse(waitingResponse);
-        if (result != null)
-          {
-            if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
-              {
-                return handleWaitingResponse(waitingResponse);
-              }
-            else
-              {
-                String returnCode = (result.getStatus().getReturnCode()).toString();
-                String returnMessage = result.getStatus().name();
-                throw new GUIManagerException(returnMessage, returnCode);
-              }
-          }
+    	return handlePurchaseResponse(waitingResponse);
     }
     return purchaseRequest;
+  }
+
+  private PurchaseFulfillmentRequest handlePurchaseResponse(Future<PurchaseFulfillmentRequest> waitingResponse) throws GUIManagerException {
+	  PurchaseFulfillmentRequest result =  handleWaitingResponse(waitingResponse);
+	  if (result != null)
+	  {
+		  if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
+		  {
+			  return handleWaitingResponse(waitingResponse);
+		  }
+		  else
+		  {
+			  String returnCode = (result.getStatus().getReturnCode()).toString();
+			  String returnMessage = result.getStatus().name();
+			  throw new GUIManagerException(returnMessage, returnCode);
+		  }
+	  }
+	  return result;
   }
 
   private <T> T handleWaitingResponse(Future<T> waitingResponse) throws GUIManagerException {

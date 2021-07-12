@@ -339,6 +339,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //  setters
   //
 
+  public void setDeliveryrequestID(String deliveryRequestID) { this.deliveryRequestID = deliveryRequestID; }
   public void setOriginatingDeliveryRequestID(String originatingDeliveryRequestID) { this.originatingDeliveryRequestID = originatingDeliveryRequestID; }
   public void setOriginatingSubscriberID(String originatingSubscriberID) { this.originatingSubscriberID = originatingSubscriberID; };
   public void setTargetedSubscriberID(String targetedSubscriberID) { this.targetedSubscriberID = targetedSubscriberID; };
