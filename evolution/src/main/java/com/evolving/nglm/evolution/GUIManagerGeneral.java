@@ -5580,6 +5580,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         response.put("responseCode", "objetTypeNotValid");
         response.put("responseMessage", "objectType " + objetType + " not found in configuration");
+        if (log.isErrorEnabled()) log.error("{} is not configured for gui dependency checking", objetType);
       }
     
     //
