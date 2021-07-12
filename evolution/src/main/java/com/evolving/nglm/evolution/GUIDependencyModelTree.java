@@ -71,7 +71,6 @@ public class GUIDependencyModelTree
     for (Class guiDependencyDefClass : guiDependencyDefClassList)
       { List<String> dependencyList=new ArrayList<>();
     	GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
-    	log.info("RAJ K guiManagedObjectType {} and guiDependencyDef {} for class {} ", guiManagedObjectType, guiDependencyDef, guiDependencyDefClass);
         if (guiDependencyDef.dependencies().length > 0)
           {
         	for(String dep : guiDependencyDef.dependencies()) {
