@@ -4,6 +4,9 @@
   "language"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
   "country"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
   "APIresponseDateFormat"                : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
+  
+  "subscriberDeletionTimeUnit"           : "day",
+  "subscriberDeletionTimeUnitNumber"     : "30",		
 
   "topicSubscriberPartitions" : "<_SUBSCRIBER_PARTITIONS_>",
   "topicReplication"          : "<_KAFKA_REPLICATION_FACTOR_>",

@@ -71,6 +71,7 @@ import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.NGLMKafkaClientSupplier;
@@ -1782,7 +1783,18 @@ public class EvolutionEngine
         
         case Cleanup:
           // move the user to terminated state and reference the date of termination, so that is it cleaned later on
-          break;
+          if(Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber() > 0)
+            {
+              subscriberState.setCleanupDate(EvolutionUtilities.addTime(SystemTime.getCurrentTime(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(), Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
+              SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+              return subscriberState;
+            }
+          else {
+            // delete immediately
+            // cleanup the subscriber now... just return null...
+            updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
+            return null; 
+          }
       
         case CleanupImmediate:
         // cleanup the subscriber now... just return null...
@@ -1795,8 +1807,15 @@ public class EvolutionEngine
           SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
           return subscriberState;
       }
-
-
+    
+    // make effective clean if needed...
+    if(subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
+      {
+        // time to clean...
+        // cleanup the subscriber now... just return null...
+        updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
+        return null; 
+      }
 
     /*****************************************
     *

@@ -11,6 +11,7 @@ import com.evolving.nglm.evolution.CommunicationChannelTimeWindow;
 import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.DeliveryManagerAccount;
 import com.evolving.nglm.evolution.EvaluationCriterion;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.PropensityRule;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
@@ -69,7 +70,7 @@ public class Deployment extends DeploymentCommon
   private String country;
   private Map<String,SupportedLanguage> supportedLanguages;
   private String baseLanguageID;
-  
+    
   //
   // Elasticsearch
   //
@@ -87,7 +88,13 @@ public class Deployment extends DeploymentCommon
   private List<EvaluationCriterion> journeyUniversalEligibilityCriteria;
   private PropensityRule propensityRule;
   private Map<String,DeliveryManagerAccount> deliveryManagerAccounts;
+  
+  //
+  // Subscriber Deletion
+  //
 
+  private TimeUnit subscriberDeletionTimeUnit;
+  private int subscriberDeletionTimeUnitNumber;
   
   
   /*****************************************
@@ -122,6 +129,13 @@ public class Deployment extends DeploymentCommon
   public List<EvaluationCriterion> getJourneyUniversalEligibilityCriteria() { return journeyUniversalEligibilityCriteria; } 
   public PropensityRule getPropensityRule() { return propensityRule; }
   public Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; } // TODO EVPRO-99 deliveryManager accounts per tenant ?
+  
+  //
+  // subscriber deletion
+  //
+  
+  public TimeUnit getSubscriberDeletionTimeUnit() { return subscriberDeletionTimeUnit; }
+  public int getSubscriberDeletionTimeUnitNumber() { return subscriberDeletionTimeUnitNumber; }
 
   /*****************************************
   *
@@ -239,6 +253,11 @@ public class Deployment extends DeploymentCommon
           deliveryManagerAccounts.put(deliveryManagerAccount.getProviderID(), deliveryManagerAccount);
         }
       }
-
+    
+    //
+    // subscriberDeletionTimeUnit
+    //
+    subscriberDeletionTimeUnit = TimeUnit.fromExternalRepresentation(jsonReader.decodeString("subscriberDeletionTimeUnit"));
+    subscriberDeletionTimeUnitNumber = jsonReader.decodeInteger("subscriberDeletionTimeUnit");
   }
 }
