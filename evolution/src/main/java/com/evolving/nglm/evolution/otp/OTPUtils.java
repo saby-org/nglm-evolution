@@ -74,6 +74,7 @@ public class OTPUtils {
 			SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID) {
 		Date now = new Date();
 
+
 		// TODO make this list static
 		List<OTPInstance.OTPStatus> statusListValidToBurn = new ArrayList<OTPInstance.OTPStatus>();
 		statusListValidToBurn.add(OTPInstance.OTPStatus.ChecksError);
@@ -159,14 +160,9 @@ public class OTPUtils {
 			return otpRequest;
 		}
 		Date now = new Date();
-		List<OTPInstance> candidates = profile.getOTPInstances().stream()
-				.filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName()))
-				.collect(Collectors.toList());
-
-		// TODO check if needed to re-save the profile or if it will be done correctly
-		// List<OTPInstance> nonCandidates =
-		// profile.getOTPInstances().stream().filter(c->
-		// !c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())).collect(Collectors.toList());
+		
+		// TODO GFE DELETE LOGS
+		log.info("received check value |"+otpRequest.getOTPCheckValue()+"| on type |"+otpRequest.getOTPTypeName()+"|");
 
 		// check and retrieve otpType
 		OTPType otptype = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(), tenantID);
@@ -175,6 +171,8 @@ public class OTPUtils {
 			// maybe RELATIONSHIP_NOT_FOUND would have been better ...
 			return otpRequest;
 		}
+		
+
 		// maybe extent check to many more empty-like values ...
 		if (otpRequest.getOTPCheckValue() == null) {
 			otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
@@ -182,31 +180,57 @@ public class OTPUtils {
 			return otpRequest;
 		}
 
-		OTPInstance tomatch;
+		
+		List<OTPInstance> candidates = profile.getOTPInstances().stream()
+				.filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName()))
+				.collect(Collectors.toList());
+		// TODO check if needed to re-save the profile or if it will be done correctly
+		// List<OTPInstance> nonCandidates =
+		// profile.getOTPInstances().stream().filter(c->
+		// !c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())).collect(Collectors.toList());
 
+		
+		// TODO GFE DELETE LOGS
+		log.info("profileInsts size"+profile.getOTPInstances().size());
+		log.info(profile.getOTPInstances().toString());
+		log.info("candidates size"+candidates.size());
+		log.info(candidates.toString());
+		
+
+		OTPInstance tomatch;
+		
 		// GLOBAL CHECKS
 		// Check 01 : not during a ban issue
 		// testing only the latest should be enough
 		try {
 			tomatch = Collections.max(candidates, new OTPCreationDateComparator());
-
+			
+			// TODO GFE DELETE LOGS
+			log.info("post max :"+tomatch.toString());
+			
 			if (tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.RaisedBan)
 					&& DateUtils.addSeconds(tomatch.getLatestUpdate(), otptype.getBanPeriod()).after(now)) {
 				// maybe add some other return values ??
+				// TODO GFE DELETE LOGS
+				log.info("debug current tomatch saids banraised");
 				otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
 				return otpRequest;
 			}
 		} catch (NoSuchElementException e) {
 			// Check 02 at least one of the requested type
 			// candidates is empty : none of the type hence raising INVALID
+			log.info("debug check no max candidate");
 			otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.INVALID_OTP);// or maybe MISSING_PARAMETERS);
 			return otpRequest;
 		}
 
 		// Check 03 : already global errors for this type without even checking
-		if (otptype.getMaxWrongCheckAttemptsByInstance() >= candidates.stream()
+		if (otptype.getMaxWrongCheckAttemptsByInstance() <= candidates.stream()
 				.filter(c -> DateUtils.addDays(c.getCreationDate(), otptype.getTimeWindow()).after(now))
 				.mapToInt(o -> o.getErrorCount().intValue()).sum()) {
+			log.info("debug check global max reached");
+			log.info("debug timewindow "+otptype.getTimeWindow().toString());
+			log.info("debug maxcheck "+otptype.getMaxWrongCheckAttemptsByInstance().toString());
 			otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);// or maybe
 																						// MAX_NB_OF_ATTEMPT_REACHED);
 			return otpRequest;
@@ -364,7 +388,7 @@ public class OTPUtils {
 		// Check 02 : not have asked too many elements of the given type within the
 		// timewindow
 		if (otptype
-				.getMaxConcurrentWithinTimeWindow() >= initialOtpList.stream()
+				.getMaxConcurrentWithinTimeWindow() <= initialOtpList.stream()
 						.filter(c -> c.getOTPTypeDisplayName().equals(otptype.getOTPTypeName())
 								&& DateUtils.addDays(c.getCreationDate(), otptype.getTimeWindow()).after(now))
 						.count()) {

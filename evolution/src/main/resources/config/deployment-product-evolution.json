@@ -918,12 +918,12 @@
     {
       "id"           : "generateOTP",
       "methodName"   : "generateOTP",
-      "permissions"  : ["API-VALIDATE-VOUCHER"]
+      "permissions"  : ["API-GET-CUSTOMER"]
     },
     {
       "id"           : "checkOTP",
       "methodName"   : "checkOTP",
-      "permissions"  : ["API-VALIDATE-VOUCHER"]
+      "permissions"  : ["API-GET-CUSTOMER"]
     }
     
   ],

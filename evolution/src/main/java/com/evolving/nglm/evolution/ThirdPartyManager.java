@@ -5837,7 +5837,7 @@ public class ThirdPartyManager
      * return
      *
      *****************************************/
-     
+     otpResponse.put("otpCheckValue",response.getOTPCheckValue());
      return constructThirdPartyResponse(response.getReturnStatus(),otpResponse); 
   }
 
