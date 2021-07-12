@@ -127,6 +127,7 @@ import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.CustomerMetaData.MetaData;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
@@ -30603,8 +30604,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     JSONObject tags = JSONUtilities.decodeJSONObject(jsonRoot, "tags", true);
     Map<String, List<String>> tagsMap = null;
     List<String> dialogMessageTags = new ArrayList<>();
-    String contactType = "actionNotification"; //harcoded for the moment
-    Map<String, String> source = new HashMap<String, String>();
+    ContactType contactType = ContactType.ActionNotification;
+    String source = null;
     Map<String, String> tagValue = new HashMap<String, String>();
     
     /*****************************************
@@ -30635,7 +30636,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             Collection <SourceAddress> sourceAddresses = sourceAddressService.getActiveSourceAddresses(now, tenantID);
             for (SourceAddress sourceAddress : sourceAddresses) {
               if (sourceAddress != null && sourceAddress.getCommunicationChannelId().equals(communicationChannelID)) {
-                source.put(sourceAddress.getGUIManagedObjectID(), sourceAddress.getGUIManagedObjectDisplay());
+                source = sourceAddress.getGUIManagedObjectDisplay();
                 break;
               }
             }
@@ -30661,10 +30662,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 keySerializer.serialize(topic, new StringKey(subscriberID)),
                 valueSerializer.serialize(topic, notificationEvent)
                 ));
+            response.put("responseCode", "ok");
           }
       }
-    }
-    
+    }    
     return JSONUtilities.encodeObject(response);
   }
 }

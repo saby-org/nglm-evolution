@@ -2504,138 +2504,112 @@ public class EvolutionEngine
 
    if (evolutionEvent instanceof NotificationEvent)
      {
-        /*****************************************
-        *
-        * now
-        *
-        *****************************************/
-
-       Date now = SystemTime.getCurrentTime();
-       NotificationEvent notificationEvent = (NotificationEvent) evolutionEvent;
-       int tenantID = context.getSubscriberState().getSubscriberProfile().getTenantID();
-       
-       // Enrich subscriber Evaluation Request with the tags specific to this message type (by example voucherCode)
-       if(notificationEvent.getTags() != null)
-         {
-           for(Map.Entry<String, String> entry : notificationEvent.getTags().entrySet())
-             {
-               if(!entry.getKey().startsWith("tag."))
-                 {
-                   subscriberEvaluationRequest.getMiscData().put(("tag." + entry.getKey()).toLowerCase(), entry.getValue());
-                 }
-               else 
-                 {
-                   subscriberEvaluationRequest.getMiscData().put(entry.getKey().toLowerCase(), entry.getValue());
-                 }
-             }
-         }
-       
-       /*****************************************
-        *
-        * get DialogTemplate
-        *
-        *****************************************/
-       if (notificationEvent != null) {
-       String templateID = null;
-       String channelID = null;       
-       
-        if (notificationEvent.getTemplateID() != null)
-          {
-             templateID = notificationEvent.getTemplateID();
-          }
-        
-        if (notificationEvent.getChannelID() != null)
-          {
-            channelID = notificationEvent.getChannelID();
-          }
-       
-       SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
-       DialogTemplate template = null;
-       
-       if(templateID != null) {
-         template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
-       }
-     
-         
-       String language = subscriberEvaluationRequest.getLanguage();
-      
-       if (template != null && !template.getReadOnly())
-         {
-           //
-           // get communicationChannel
-           //
-
-           CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
-
-           //
-           // get dest address
-           //
-
-           CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
-           String destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
-
-
-           Map<String, List<String>> tags = new HashMap<String, List<String>>();
-                     
-           for (String messageField : template.getDialogMessageFields().keySet())
-             {
-               DialogMessage dialogMessage = template.getDialogMessage(messageField);
-               List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
-               tags.put(messageField, dialogMessageTags);
-             }
-         
-//           //
-//           // Parameters specific to the channel toolbox but NOT related to template
-//           //          
-//           ParameterMap notificationParameters = new ParameterMap();
-//           for(CriterionField field : communicationChannel.getToolboxParameters().values()) {
-//             //notificationParameters.put(field.getID(), value);            
-//           }
-           
-           
-           Object contactTypeString = notificationEvent.getContactType();
-           ContactType contactType = ContactType.fromExternalRepresentation((String) contactTypeString);
-                     
-           // add also the mandatory parameters for all channels
-           ParameterMap notificationParameters = new ParameterMap();
-           notificationParameters.put("node.parameter.contacttype", contactTypeString);
-           Object sourceAddress = null;
-           if (notificationEvent.getSource() != null && ! notificationEvent.getSource().isEmpty()) {
-             for (String key : notificationEvent.getSource().keySet()) {
-               sourceAddress = notificationEvent.getSource().get(key);
-               break;
-             }
-           }
-           notificationParameters.put("node.parameter.fromaddress", sourceAddress);
-           
-           
-           /*****************************************
-           *
-           * request
-           *
-           *****************************************/
-
-          NotificationManagerRequest request = null;
-          if (destAddress != null)
-            {
-              request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
-
-              request.forceDeliveryPriority(contactType.getDeliveryPriority());
-              request.setRestricted(contactType.getRestricted());
-              subscriberState.getDeliveryRequests().add(request);
-            }
-          else
-            {
-              log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
-            }
-
-         }      
-              
-     }
-       subscriberUpdated = true;
+       NotificationEvent notificationEvent = (NotificationEvent)evolutionEvent;
+       subscriberUpdated = sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState);
      }
    return subscriberUpdated;
  }
+
+  private static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState)
+  {
+    boolean subscriberUpdated;
+    /*****************************************
+     *
+     * now
+     *
+     *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    // Enrich subscriber Evaluation Request with the tags specific to this message
+    // type (by example voucherCode)
+    if (specificTags != null)
+      {
+        for (Map.Entry<String, String> entry : specificTags.entrySet())
+          {
+            if (!entry.getKey().startsWith("tag."))
+              {
+                subscriberEvaluationRequest.getMiscData().put(("tag." + entry.getKey()).toLowerCase(), entry.getValue());
+              }
+            else
+              {
+                subscriberEvaluationRequest.getMiscData().put(entry.getKey().toLowerCase(), entry.getValue());
+              }
+          }
+      }
+
+    /*****************************************
+     *
+     * get DialogTemplate
+     *
+     *****************************************/
+    SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
+    DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
+
+    String language = subscriberEvaluationRequest.getLanguage();
+
+    if (template != null && !template.getReadOnly())
+      {
+        //
+        // get communicationChannel
+        //
+
+        CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
+
+        //
+        // get dest address
+        //
+
+        CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
+        String destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+
+        Map<String, List<String>> tags = new HashMap<String, List<String>>();
+
+        for (String messageField : template.getDialogMessageFields().keySet())
+          {
+            DialogMessage dialogMessage = template.getDialogMessage(messageField);
+            List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
+            tags.put(messageField, dialogMessageTags);
+          }
+
+        // //
+        // // Parameters specific to the channel toolbox but NOT related to template
+        // //
+        // ParameterMap notificationParameters = new ParameterMap();
+        // for(CriterionField field :
+        // communicationChannel.getToolboxParameters().values()) {
+        // //notificationParameters.put(field.getID(), value);
+        // }
+
+        // add also the mandatory parameters for all channels
+        ParameterMap notificationParameters = new ParameterMap();
+        notificationParameters.put("node.parameter.contacttype", contactType.getExternalRepresentation());
+        notificationParameters.put("node.parameter.fromaddress", sourceAddress);
+
+        /*****************************************
+         *
+         * request
+         *
+         *****************************************/
+
+        NotificationManagerRequest request = null;
+        if (destAddress != null)
+          {
+            request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, communicationChannel.getID(), notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+
+            request.forceDeliveryPriority(contactType.getDeliveryPriority());
+            request.setRestricted(contactType.getRestricted());
+            subscriberState.getDeliveryRequests().add(request);
+          }
+        else
+          {
+            log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+          }
+
+      }
+    subscriberUpdated = true;
+    return subscriberUpdated;
+  }
 
   private static void checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
   {
