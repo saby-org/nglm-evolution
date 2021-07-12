@@ -1279,10 +1279,10 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         GetIndexRequest existingIndexRequest = new GetIndexRequest(index);
         GetIndexResponse existingIndexResponse = this.indices().get(existingIndexRequest, RequestOptions.DEFAULT);
         List<String> existingIndices = Arrays.asList(existingIndexResponse.getIndices());
-        if (log.isDebugEnabled()) log.debug("exsisting journeystatistic index list {}", existingIndices);
+        if (log.isDebugEnabled()) log.debug("getJourneySubscriberCountMap exsisting journeystatistic index list {}", existingIndices);
         Set<String> requestedIndices = journeyIds.stream().map(journeyId -> getJourneyIndex(journeyId)).collect(Collectors.toSet());
         List<String> finalIndices = requestedIndices.stream().filter(reqIndex ->  existingIndices.contains(reqIndex)).collect(Collectors.toList());
-        if (log.isDebugEnabled()) log.debug("finalIndices to look {}", finalIndices);
+        if (log.isDebugEnabled()) log.debug("getJourneySubscriberCountMap finalIndices to look {}", finalIndices);
         if (!finalIndices.isEmpty())
           {
             //
@@ -1324,7 +1324,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             //
             
             MultiSearchResponse mResponse = this.msearch(mRequest, RequestOptions.DEFAULT);
-            if (log.isDebugEnabled()) log.debug("MultiSearchResponse took {} to complete {} requests", mResponse.getTook(), mRequest.requests().size());
+            if (log.isDebugEnabled()) log.debug("getJourneySubscriberCountMap MultiSearchResponse took {} to complete {} requests", mResponse.getTook(), mRequest.requests().size());
             for (Item item : mResponse.getResponses())
               {
                 if (item.getFailure() == null)
@@ -1344,6 +1344,10 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
                             result.put(bucket.getKeyAsString(), bucket.getDocCount());
                           }
                       }
+                  }
+                else
+                  {
+                    if (log.isErrorEnabled()) log.error("one of the elastic multi search failed with error {}", item.getFailureMessage());
                   }
               }
           }
