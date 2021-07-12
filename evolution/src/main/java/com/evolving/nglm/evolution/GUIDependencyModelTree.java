@@ -8,6 +8,8 @@ import java.util.Set;
 
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 
+import jdk.internal.org.jline.utils.Log;
+
 /****************************************
 *
 *  GUIDependencyModelTree.java
@@ -63,6 +65,7 @@ public class GUIDependencyModelTree
     for (Class guiDependencyDefClass : guiDependencyDefClassList)
       { List<String> dependencyList=new ArrayList<>();
     	GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
+    	Log.info("RAJ K guiManagedObjectType {} and guiDependencyDef {}", guiManagedObjectType, guiDependencyDef);
         if (guiDependencyDef.dependencies().length > 0)
           {
         	for(String dep : guiDependencyDef.dependencies()) {

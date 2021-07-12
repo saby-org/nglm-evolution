@@ -25,7 +25,7 @@ import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "tokentype", serviceClass = TokenTypeService.class, dependencies = {})
+@GUIDependencyDef(objectType = "tokentype", serviceClass = TokenTypeService.class, dependencies = { })
 public class TokenType extends GUIManagedObject
 {
   /*****************************************
