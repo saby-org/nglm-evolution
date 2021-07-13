@@ -7,16 +7,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,6 +23,8 @@ import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.MultiSearchResponse;
@@ -46,6 +41,8 @@ import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.client.sniff.Sniffer;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -118,6 +115,27 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   private static final int QUERYTIMEOUT = 60;  // in seconds
   
   private static final int MAX_INDEX_LIST_SIZE = 75; // will look into max 75 index at a time
+  //
+  // Exponential backoff retry algorithm
+  // Every retry will wait a duration between 2^((n-1)/2) and 2^((n+1)/2) slots till it reach a limit of n=max_retry
+  // Because a maximum number of try is set, a minimum waiting time is set for every retry: 2^((n-1)/2) slots
+  // Therefore, if all tried failed, we can ensure a minimum time spend re-trying.
+  //
+  public static final int EXPBACKOFF_SLOT_DURATION = 5000; // First retry wait in ms
+  public static final int EXPBACKOFF_MAX_RETRY = 9;        // Maximum number of retry - do not take into account the first try !
+  // With the above settings :
+  // Try   n=0 (1 on 10)   - first try, do not wait before
+  // Retry n=1 (2 on 10)   - wait before retry between 5s and 10s
+  // Retry n=2 (3 on 10)   - wait before retry between 7s and 14s
+  // Retry n=3 (4 on 10)   - wait before retry between 10s and 20s
+  // Retry n=4 (5 on 10)   - wait before retry between 14s and 28s
+  // Retry n=5 (6 on 10)   - wait before retry between 20s and 40s
+  // Retry n=6 (7 on 10)   - wait before retry between 28s and 56s
+  // Retry n=7 (8 on 10)   - wait before retry between 40s and 80s
+  // Retry n=8 (9 on 10)   - wait before retry between 56s and 113s
+  // Retry n=9 (10 on 10)  - wait before retry between 80s and 160s
+  // Total min waiting time: 261s (4m21s)
+  // Total max waiting time: 522s (8m42s)
   
   /*****************************************
   *
@@ -206,7 +224,208 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     if(sniffer!=null) sniffer.close();
     super.close();
   }
+    
+  /*****************************************
+  *
+  * Override with retry mechanism
+  *
+  *****************************************/
+  /**
+   * Compute waiting time for retry with exponential backoff (see ElasticsearchClientAPI class for configuration)
+   * @param n: number of try
+   * @return
+   */
+  private int computeWaitingTimeInMs(int n) {
+    int minWaiting = (int) (EXPBACKOFF_SLOT_DURATION * Math.pow(2, (n - 1.0) / 2.0 ));
+    int maxWaiting = (int) (EXPBACKOFF_SLOT_DURATION * Math.pow(2, (n + 1.0) / 2.0 ));
+    return (int) (Math.random() * (maxWaiting - minWaiting)) + minWaiting;
+  }
   
+  /**
+   * Search request with retry mechanism. It is a synchronous call, therefore, it is blocking the thread while waiting
+   * for the next try !
+   * 
+   * Retry is done with exponential backoff with a limit (see ElasticsearchClientAPI class for configuration)
+   * 
+   * @return null if index was not found.
+   */
+  public final SearchResponse syncSearchWithRetry(SearchRequest searchRequest, RequestOptions options) {
+    return this.syncSearchWithRetry(searchRequest, options, 0);
+  }
+  
+  private final SearchResponse syncSearchWithRetry(SearchRequest searchRequest, RequestOptions options, int tryNumber) {
+    StringWriter stackTraceWriter;
+    try 
+      {
+        return this.search(searchRequest, options);
+      } 
+    catch(ElasticsearchException e)
+      {
+        if (e.status() == RestStatus.NOT_FOUND) { // Do not retry - NOT FOUND
+          log.warn("Elasticsearch index {} does not exist.", searchRequest.indices().toString());
+          return null;
+        }
+
+        stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      }
+    catch(IOException|RuntimeException e) 
+      {
+        stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      }
+    
+    // Request failed
+    tryNumber++;
+    if(tryNumber > EXPBACKOFF_MAX_RETRY) {
+      log.error("Search request failed ({} on {}). Max number of retry reached. Reason: {}", tryNumber, (EXPBACKOFF_MAX_RETRY+1), stackTraceWriter.toString());
+      throw new ElasticsearchException("Unable to execute search request. Reason: {}", stackTraceWriter.toString());
+    }
+     
+    int waiting = computeWaitingTimeInMs(tryNumber);
+    log.warn("Search request failed ({} on {}). It will be retried in {} ms. Reason: {}", tryNumber, (EXPBACKOFF_MAX_RETRY+1), waiting, stackTraceWriter.toString());
+    try {
+      Thread.sleep(waiting); // Blocking thread, and therefore all other threads if in synchronized block ! 
+    } 
+    catch (InterruptedException e) {
+      stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Sleep interrupted. {}", stackTraceWriter);
+    } 
+    return this.syncSearchWithRetry(searchRequest, options, tryNumber);
+  }
+  
+  /**
+   * Exists request with retry mechanism. It is a synchronous call, therefore, it is blocking the thread while waiting
+   * for the next try !
+   * 
+   * Retry is done with exponential backoff with a limit (see ElasticsearchClientAPI class for configuration)
+   * 
+   * @return null if index was not found.
+   */
+  public boolean syncExistsWithRetry(GetIndexRequest request, RequestOptions options) {
+    return this.syncExistsWithRetry(request, options, 0);
+  }
+
+  private boolean syncExistsWithRetry(GetIndexRequest request, RequestOptions options, int tryNumber) {
+    StringWriter stackTraceWriter;
+    try 
+      {
+        return this.indices().exists(request, options);
+      }
+    catch(IOException|RuntimeException e) 
+      {
+        stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      }
+    
+    // Request failed
+    tryNumber++;
+    if(tryNumber > EXPBACKOFF_MAX_RETRY) {
+      log.error("Exists request failed ({} on {}). Max number of retry reached. Reason: {}", tryNumber, (EXPBACKOFF_MAX_RETRY+1), stackTraceWriter.toString());
+      throw new ElasticsearchException("Unable to execute mapping request. Reason: {}", stackTraceWriter.toString());
+    }
+
+    int waiting = computeWaitingTimeInMs(tryNumber);
+    log.warn("Exists request failed ({} on {}). It will be retried in {} ms. Reason: {}", tryNumber, (EXPBACKOFF_MAX_RETRY+1), waiting, stackTraceWriter.toString());
+    try {
+      Thread.sleep(waiting); // Blocking thread, and therefore all other threads if in synchronized block ! 
+    } 
+    catch (InterruptedException e) {
+      stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Sleep interrupted. {}", stackTraceWriter);
+    } 
+    return this.syncExistsWithRetry(request, options, tryNumber);
+  }
+  
+  /**
+   * Get mapping request with retry mechanism. It is a synchronous call, therefore, it is blocking the thread while waiting
+   * for the next try !
+   * 
+   * Retry is done with exponential backoff with a limit (see ElasticsearchClientAPI class for configuration)
+   * 
+   * @return null if index was not found.
+   */
+  public GetMappingsResponse syncMappingWithRetry(GetMappingsRequest getMappingsRequest, RequestOptions options) {
+    return this.syncMappingWithRetry(getMappingsRequest, options, 0);
+  }
+
+  private GetMappingsResponse syncMappingWithRetry(GetMappingsRequest getMappingsRequest, RequestOptions options, int tryNumber) {
+    StringWriter stackTraceWriter;
+    try 
+      {
+        return this.indices().getMapping(getMappingsRequest, options);
+      }
+    catch(IOException|RuntimeException e) 
+      {
+        stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      }
+    
+    // Request failed
+    tryNumber++;
+    if(tryNumber > EXPBACKOFF_MAX_RETRY) {
+      log.error("Mapping request failed ({} on {}). Max number of retry reached. Reason: {}", tryNumber, (EXPBACKOFF_MAX_RETRY+1), stackTraceWriter.toString());
+      throw new ElasticsearchException("Unable to execute mapping request. Reason: {}", stackTraceWriter.toString());
+    }
+
+    int waiting = computeWaitingTimeInMs(tryNumber);
+    log.warn("Mapping request failed ({} on {}). It will be retried in {} ms. Reason: {}", tryNumber, (EXPBACKOFF_MAX_RETRY+1), waiting, stackTraceWriter.toString());
+    try {
+      Thread.sleep(waiting); // Blocking thread, and therefore all other threads if in synchronized block ! 
+    } 
+    catch (InterruptedException e) {
+      stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Sleep interrupted. {}", stackTraceWriter);
+    } 
+    return this.syncMappingWithRetry(getMappingsRequest, options, tryNumber);
+  }
+  
+  /**
+   * Bulkg request with retry mechanism. It is a synchronous call, therefore, it is blocking the thread while waiting
+   * for the next try !
+   * 
+   * Retry is done with exponential backoff with a limit (see ElasticsearchClientAPI class for configuration)
+   * 
+   * @return null if index was not found.
+   */
+  public final BulkResponse syncBulkWithRetry(BulkRequest bulkRequest, RequestOptions options) {
+    return this.syncBulkWithRetry(bulkRequest, options, 0);
+  }
+
+  private BulkResponse syncBulkWithRetry(BulkRequest bulkRequest, RequestOptions options, int tryNumber) {
+    StringWriter stackTraceWriter;
+    try 
+      {
+        return this.bulk(bulkRequest, options);
+      }
+    catch(IOException|RuntimeException e) 
+      {
+        stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      }
+    
+    // Request failed
+    tryNumber++;
+    if(tryNumber > EXPBACKOFF_MAX_RETRY) {
+      log.error("Bulk request failed ({} on {}). Max number of retry reached. Reason: {}", tryNumber, (EXPBACKOFF_MAX_RETRY+1), stackTraceWriter.toString());
+      throw new ElasticsearchException("Unable to execute mapping request. Reason: {}", stackTraceWriter.toString());
+    }
+
+    int waiting = computeWaitingTimeInMs(tryNumber);
+    log.warn("Bulk request failed ({} on {}). It will be retried in {} ms. Reason: {}", tryNumber, (EXPBACKOFF_MAX_RETRY+1), waiting, stackTraceWriter.toString());
+    try {
+      Thread.sleep(waiting); // Blocking thread, and therefore all other threads if in synchronized block ! 
+    } 
+    catch (InterruptedException e) {
+      stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Sleep interrupted. {}", stackTraceWriter);
+    } 
+    return this.syncBulkWithRetry(bulkRequest, options, tryNumber);
+  }
   /*****************************************
   *
   * API
