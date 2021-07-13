@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-@GUIDependencyDef(objectType = "voucher", serviceClass = VoucherService.class, dependencies = {"supplier" })
+@GUIDependencyDef(objectType = "voucher", serviceClass = VoucherService.class, dependencies = {"supplier", "vouchertype" })
 public class VoucherPersonal extends Voucher {
 
   private static Schema schema = null;
