@@ -134,6 +134,8 @@ public class SubscriberState implements StateStore
   private List<VoucherAction> voucherActions;
   private List<EvolutionEngine.JourneyTriggerEventAction> journeyTriggerEventActions;
   private List<SubscriberProfileForceUpdate> subscriberProfileForceUpdates;
+  private List<TokenRedeemed> tokenRedeemeds;
+
   //
   //  in memory only
   //
@@ -186,6 +188,7 @@ public class SubscriberState implements StateStore
   public List<VoucherAction> getVoucherActions() { return voucherActions; }
   public List<EvolutionEngine.JourneyTriggerEventAction> getJourneyTriggerEventActions() { return journeyTriggerEventActions; }
   public List<SubscriberProfileForceUpdate> getSubscriberProfileForceUpdates() { return subscriberProfileForceUpdates; }
+  public List<TokenRedeemed> getTokenRedeemeds() { return tokenRedeemeds; }
 
   //
   //  kafkaRepresentation
@@ -289,6 +292,7 @@ public class SubscriberState implements StateStore
         this.voucherActions = new ArrayList<>();
         this.journeyTriggerEventActions = new ArrayList<>();
         this.subscriberProfileForceUpdates = new ArrayList<>();
+        this.tokenRedeemeds = new ArrayList<>();
       }
     catch (InvocationTargetException e)
       {
@@ -344,6 +348,7 @@ public class SubscriberState implements StateStore
     this.voucherActions = new ArrayList<>();
     this.journeyTriggerEventActions = new ArrayList<>();
     this.subscriberProfileForceUpdates = new ArrayList<>();
+    this.tokenRedeemeds = new ArrayList<>();
     // for data migration purpose only, can be removed once all market run EVPRO-885
     this.recentJourneyStates = oldRecentJourneyStates;
   }

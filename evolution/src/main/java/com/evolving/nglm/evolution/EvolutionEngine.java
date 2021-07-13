@@ -987,7 +987,9 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyTriggerEventAction),
         (key,value) -> (value instanceof SubscriberProfileForceUpdate),
         (key,value) -> (value instanceof EDRDetails),
-        (key,value) -> (value instanceof WorkflowEvent)
+
+        (key,value) -> (value instanceof WorkflowEvent),
+        (key, value) -> (value instanceof TokenRedeemed)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1007,7 +1009,9 @@ public class EvolutionEngine
     KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
+
     KStream<StringKey, WorkflowEvent> workflowEventsStream = (KStream<StringKey, WorkflowEvent>) branchedEvolutionEngineOutputs[15];
+    KStream<StringKey, TokenRedeemed> tokenRedeemedsStream = (KStream<StringKey, TokenRedeemed>) branchedEvolutionEngineOutputs[16];
     /*****************************************
     *
     *  sink
@@ -1031,6 +1035,7 @@ public class EvolutionEngine
     voucherActionStream.to(Deployment.getVoucherActionTopic(), Produced.with(stringKeySerde, voucherActionSerde));
     subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
     edrDetailsStream.to(Deployment.getEdrDetailsTopic(), Produced.with(stringKeySerde, edrDetailsSerde));
+    tokenRedeemedsStream.to(Deployment.getTokenRedeemedTopic(), Produced.with(stringKeySerde, TokenRedeemed.serde()));
 
     //
 	//  sink DeliveryRequest
@@ -3433,7 +3438,7 @@ public class EvolutionEngine
                   }
               }
             int totalPurchased = cleanPurchaseHistory.size()+purchaseFulfillmentRequest.getQuantity();
-            log.info("cleanPurchaseHistory.size() = " + cleanPurchaseHistory.size()+ " purchaseFulfillmentRequest.getQuantity() " + purchaseFulfillmentRequest.getQuantity());
+            if(log.isTraceEnabled()) log.trace("cleanPurchaseHistory.size() = " + cleanPurchaseHistory.size()+ " purchaseFulfillmentRequest.getQuantity() " + purchaseFulfillmentRequest.getQuantity());
             if (isPurchaseLimitReached(offer, totalPurchased)) {
               if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased + " ("+cleanPurchaseHistory.size()+"+"+purchaseFulfillmentRequest.getQuantity()+") earliestDateToKeep : " + earliestDateToKeep);
               // add a dummy very old purchase (that will be removed next time we get here), so that purchaseFulfilment will refuse the purchase
@@ -4914,6 +4919,8 @@ public class EvolutionEngine
         List<Token> subscriberTokens = subscriberProfile.getTokens();
         String tokenTypeID = null;
         DNBOToken presentationLogToken = null;
+        boolean external = false;
+        String callUniqueIdentifier = null;
 
         //
         // Retrieve the token-code we are looking for, from the event log.
@@ -4933,17 +4940,20 @@ public class EvolutionEngine
             moduleID = ((AcceptanceLog)evolutionEvent).getModuleID();
             featureID = ((AcceptanceLog)evolutionEvent).getFeatureID();
             tokenTypeID = ((AcceptanceLog)evolutionEvent).getTokenTypeID();
+            callUniqueIdentifier = ((AcceptanceLog)evolutionEvent).getCallUniqueIdentifier();
           }
 
         DNBOToken subscriberStoredToken = null;
         if (tokenTypeID == null)
           {
             tokenTypeID = "external"; // predefined tokenTypeID for tokens created externally
+            external = true;
           }
         TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType(tokenTypeID, SystemTime.getCurrentTime());
         if (defaultDNBOTokenType == null)
           {
             log.error("Could not find token type with ID " + tokenTypeID + " Check your configuration.");
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.BAD_TOKEN_TYPE, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
             return false;
           }
 
@@ -5006,20 +5016,30 @@ public class EvolutionEngine
 
         if (subscriberStoredToken == null)
           {
+
             if (presentationLogToken == null)
               {
                 // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
-                subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+                if(external) subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
               }
             else
               {
                 subscriberStoredToken = presentationLogToken;
               }
+
+            if (subscriberStoredToken == null)
+            {
+              if(log.isInfoEnabled()) log.info("received "+evolutionEvent.getClass().getSimpleName()+" for a non external token "+eventTokenCode+" for subscriber "+subscriberProfile.getSubscriberID()+" but not stored in the profile");
+              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.NO_TOKEN, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
+              return subscriberStateUpdated;
+            }
+
             subscriberTokens.add(subscriberStoredToken);
             subscriberStoredToken.setFeatureID(featureID);
             subscriberStoredToken.setModuleID(moduleID);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), context.getEventID(), eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID, tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), context.getEventID(), eventTokenCode, TokenChange.CREATE, TokenChange.OK, evolutionEvent.getClass().getSimpleName(), moduleID, featureID, callUniqueIdentifier, tenantID));
             subscriberStateUpdated = true;
+
           }
 
         //
@@ -5041,7 +5061,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", "OK", "PresentationLog", moduleID, featureID, tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", "OK", "PresentationLog", moduleID, featureID, callUniqueIdentifier, tenantID));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -5085,14 +5105,34 @@ public class EvolutionEngine
             if (subscriberStoredToken.getAcceptedOfferID() != null)
               {
                 log.error("Unexpected acceptance record ("+ acceptanceLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already redeemed by a previous acceptance record");
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.ALREADY_REDEEMED, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
                 return subscriberStateUpdated;
               }
             else
               {
+                // trigger purchase if needed
+                PurchaseFulfillmentRequest purchaseFulfillmentRequest = null;
+                if(!external)
+                  {
+                    purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(context, "external", acceptanceLog.getOfferID(), 1, acceptanceLog.getSalesChannelID(), "token "+subscriberStoredToken.getTokenCode(), "", subscriberProfile.getTenantID());
+                    purchaseFulfillmentRequest.setModuleID(acceptanceLog.getModuleID());
+                    purchaseFulfillmentRequest.setFeatureID(acceptanceLog.getFeatureID());
+                    if(acceptanceLog.getCallUniqueIdentifier()!=null && !acceptanceLog.getCallUniqueIdentifier().isEmpty()) purchaseFulfillmentRequest.setDeliveryrequestID(acceptanceLog.getCallUniqueIdentifier());
+                    subscriberState.getDeliveryRequests().add(purchaseFulfillmentRequest);
+                  }
+                // update internal token
                 subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
                 subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
                 subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, "Redeem", "OK", "AcceptanceLog", moduleID, featureID, tenantID));
+                if(purchaseFulfillmentRequest!=null)
+                  {
+                    subscriberStoredToken.setPurchaseDeliveryRequestID(purchaseFulfillmentRequest.getDeliveryRequestID());
+                    subscriberStoredToken.setPurchaseStatus(purchaseFulfillmentRequest.getStatus());
+                  }
+                // trigger output log
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.OK, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
+                // trigger tokenRedeemed event (does it make sense ? should we just map token redeem event to AcceptanceLog ?
+                if(!external) subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), subscriberStoredToken.getTokenTypeID(), subscriberStoredToken.getAcceptedOfferID()));
               }
             subscriberStateUpdated = true;
           }
@@ -5114,6 +5154,22 @@ public class EvolutionEngine
                   {
                     propensityService.incrementPropensity(offerID,subscriberProfile,true,offerID.equals(subscriberStoredToken.getAcceptedOfferID()));
                   }
+              }
+          }
+      }
+
+    // update stored token status if needed on purchase response
+    if (evolutionEvent instanceof PurchaseFulfillmentRequest)
+      {
+        PurchaseFulfillmentRequest purchaseResponseEvent = (PurchaseFulfillmentRequest) evolutionEvent;
+        for(Token token:subscriberProfile.getTokens())
+          {
+            if(!(token instanceof DNBOToken)) continue;
+            DNBOToken dnboToken = (DNBOToken) token;
+            if(dnboToken.getPurchaseDeliveryRequestID()==null) continue;
+            if(dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID()))
+              {
+                dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
               }
           }
       }
@@ -7070,6 +7126,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getJourneyTriggerEventActions());
         result.addAll(subscriberState.getSubscriberProfileForceUpdates());
         result.addAll(subscriberState.getEdrDetailsWrappers());
+        result.addAll(subscriberState.getTokenRedeemeds());
       }
 
     // add stats about voucherChange done
