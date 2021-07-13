@@ -3412,7 +3412,6 @@ public class EvolutionEngine
         String offerID = purchaseFulfillmentRequest.getOfferID();
         Offer offer = offerService.getActiveOffer(offerID, now);
         String salesChannelID = purchaseFulfillmentRequest.getSalesChannelID();
-        log.info("RAJ K PurchaseFulfillmentRequest for offerID {} salesChannelID {}", offerID, salesChannelID);
         if (offer == null)
           {
             log.info("Got a purchase for inexistent offer " + offerID);
@@ -3436,7 +3435,6 @@ public class EvolutionEngine
               earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
             }
             earliestDateToKeep = earliestDateToKeep.after(last4MonthDate) ? last4MonthDate : earliestDateToKeep;
-            log.info("RAJ K PurchaseFulfillmentRequest earliestDateToKeep {}", earliestDateToKeep);
             log.debug("earliestDateToKeep for " + offerID + " : " + earliestDateToKeep + " maximumAcceptancesPeriodDays: " + maximumAcceptancesPeriodDays + " maximumAcceptancesPeriodMonths: " + maximumAcceptancesPeriodMonths);
             List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
             
@@ -3490,7 +3488,6 @@ public class EvolutionEngine
                 cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelID, now)); // add new purchase
               }
             
-            log.info("RAJ K PurchaseFulfillmentRequest final history to keep for offerID {} is {}", offerID, cleanPurchaseHistory);
             newFullPurchaseHistory.put(offerID, cleanPurchaseHistory);
             subscriberProfileUpdated = true;
           }

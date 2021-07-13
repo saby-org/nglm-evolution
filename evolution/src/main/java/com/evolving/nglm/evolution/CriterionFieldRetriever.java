@@ -68,7 +68,6 @@ public abstract class CriterionFieldRetriever
   
   public static Object getNumberOfOfferPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K calling getNumberOfOfferPurchasedForPeriod with subcriteriaVal {}", subcriteriaVal);
     long result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     String offerID = (String) subcriteriaVal.get(0);
@@ -109,13 +108,11 @@ public abstract class CriterionFieldRetriever
       {
         result = purchaseDates.size();
       }
-    log.info("RAJ K calling getNumberOfOfferPurchasedForPeriod result {}", result);
     return result;
   }
   
   public static Object getNumberOfOfferPurchasedFromSalesChnlForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K calling getNumberOfOfferPurchasedFromSalesChnlForPeriod with subcriteriaVal {}", subcriteriaVal);
     long result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     String salesChannelID = (String) subcriteriaVal.get(0);
@@ -157,7 +154,6 @@ public abstract class CriterionFieldRetriever
       {
         result = purchaseDates.size();
       }
-    log.info("RAJ K calling getNumberOfOfferPurchasedFromSalesChnlForPeriod result {}", result);
     return result;
   }
   
@@ -185,7 +181,6 @@ public abstract class CriterionFieldRetriever
         result = vouchers.size();
       }
     
-    log.info("RAJ K calling getNumberOfVoucherDeliveredForPeriod result {}", result);
     return result;
   }
   
@@ -213,7 +208,6 @@ public abstract class CriterionFieldRetriever
         result = vouchers.size();
       }
     
-    log.info("RAJ K calling getNumberOfVoucherRedeemedForPeriod result {}", result);
     return result;
   }
   
@@ -241,7 +235,6 @@ public abstract class CriterionFieldRetriever
         result = vouchers.size();
       }
     
-    log.info("RAJ K calling getNumberOfVoucherExpiredForPeriod result {}", result);
     return result;
   }
   

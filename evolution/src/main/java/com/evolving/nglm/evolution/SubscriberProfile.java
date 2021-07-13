@@ -245,7 +245,7 @@ public abstract class SubscriberProfile
   private List<ComplexObjectInstance> complexObjectInstances; 
   @Deprecated
   private Map<String, List<Date>> offerPurchaseHistory;
-  private Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory; //RAJ K
+  private Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory;
   private int tenantID;
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
