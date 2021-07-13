@@ -413,6 +413,13 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "saleschannel", "id" : "-1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "supplier", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValuesList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValuesSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"genders"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValues; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion": 1, "tenantID":1, "id":"genders","availableValues":[{"id": "male","display": "male"},{"id": "female","display": "female"},{"id": "other","display": "other"}]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion": 1, "tenantID":1, "id":"supportedStatuses","availableValues":[{ "id" : "active", "display" : "active" }, { "id" : "inactive", "display" : "inactive" }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"genders"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCriterionFieldAvailableValues; echo
+
 --
 --  configAdaptor
 -- 

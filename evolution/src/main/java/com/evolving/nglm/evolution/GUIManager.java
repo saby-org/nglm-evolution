@@ -11275,7 +11275,7 @@ public class GUIManager
     String criterionFieldAvailableValuesID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (criterionFieldAvailableValuesID == null)
       {
-        criterionFieldAvailableValuesID = communicationChannelBlackoutService.generateCommunicationChannelBlackoutID();
+        criterionFieldAvailableValuesID = criterionFieldAvailableValuesService.generateCriterionFieldAvailableValuesID();
         jsonRoot.put("id", criterionFieldAvailableValuesID);
       }
 
@@ -11410,7 +11410,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject criterionFieldAvailableValues = salesChannelService.getStoredSalesChannel(criterionFieldAvailableValuesID, includeArchived);
+    GUIManagedObject criterionFieldAvailableValues = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldAvailableValuesID, includeArchived);
     JSONObject criterionFieldAvailableValuesJSON = criterionFieldAvailableValuesService.generateResponseJSON(criterionFieldAvailableValues, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -27194,7 +27194,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           boolean foundValue = false;
           if(includeDynamic)
             {
-              for(CriterionFieldAvailableValues availableValues : criterionFieldAvailableValuesService.getActiveCriterionFieldAvailableValues(now, tenantID))
+              // EVPRO-1113 the list of available values might be defined in another tenant -> check tenant 0 to scan all tenants
+              for(CriterionFieldAvailableValues availableValues : criterionFieldAvailableValuesService.getActiveCriterionFieldAvailableValues(now, 0))
                 {
                   if(availableValues.getGUIManagedObjectID().equals(reference))
                     {
@@ -27209,6 +27210,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                               foundValue = true;
                             }
                         }
+                      break;
                     }
                 }
             }
