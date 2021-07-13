@@ -11,7 +11,7 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
-
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
@@ -25,12 +25,14 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -58,6 +60,223 @@ public abstract class CriterionFieldRetriever
 
   private static final Logger log = LoggerFactory.getLogger(CriterionFieldRetriever.class);
   
+  /*****************************************
+  *
+  *  adv criteria - with sub criteria
+  *
+  *****************************************/
+  
+  public static Object getNumberOfOfferPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    long result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String offerID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    List<Date> purchaseDates = new ArrayList<Date>();
+    
+    //
+    //  offerID
+    //
+    
+    if (offerID != null)
+      {
+        if (subscriberProfile.getOfferPurchaseHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseHistory().get(offerID));
+        if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+      }
+    else
+      {
+        purchaseDates = subscriberProfile.getOfferPurchaseHistory().values().stream().flatMap(vl -> vl.stream()).collect(Collectors.toList());
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
+      }
+    
+    //
+    //  period
+    //
+    
+    if (period != null)
+      {
+        String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+        Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+        Date startDate = startEndDatePair.getFirstElement();
+        Date endDate = startEndDatePair.getSecondElement();
+        result = purchaseDates.stream().filter(purchaseDate -> purchaseDate.after(startDate) && purchaseDate.before(endDate)).count();
+      }
+    else
+      {
+        result = purchaseDates.size();
+      }
+    return result;
+  }
+  
+  public static Object getNumberOfOfferPurchasedFromSalesChnlForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    long result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String salesChannelID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    List<Date> purchaseDates = new ArrayList<Date>();
+    
+    //
+    //  salesChannelID
+    //
+    
+    if (salesChannelID != null)
+      {
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().filter(element -> element.getFirstElement().equals(salesChannelID)).map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
+      }
+    else
+      {
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
+      }
+    
+    //
+    //  period
+    //
+    
+    if (period != null)
+      {
+        String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+        Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+        Date startDate = startEndDatePair.getFirstElement();
+        Date endDate = startEndDatePair.getSecondElement();
+        result = purchaseDates.stream().filter(purchaseDate -> purchaseDate.after(startDate) && purchaseDate.before(endDate)).count();
+      }
+    else
+      {
+        result = purchaseDates.size();
+      }
+    return result;
+  }
+  
+  public static Object getNumberOfVoucherDeliveredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherDeliveryDate() != null && voucher.getVoucherDeliveryDate().after(startDate) && voucher.getVoucherDeliveryDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
+    return result;
+  }
+  
+  public static Object getNumberOfVoucherRedeemedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherRedeemDate() != null && voucher.getVoucherRedeemDate().after(startDate) && voucher.getVoucherRedeemDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
+    return result;
+  }
+  
+  public static Object getNumberOfVoucherExpiredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherExpiryDate() != null && voucher.getVoucherExpiryDate().after(startDate) && voucher.getVoucherExpiryDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
+    return result;
+  }
+  
+  protected static Pair<Date, Date> getStartAndEndDate(String period, String timeZone)
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date startDate = now, endDate = now;
+    switch (period)
+    {
+      case "today":
+        startDate = RLMDateUtils.truncate(now, Calendar.DATE, timeZone);
+        break;
+        
+      case "yesterday":
+        startDate = RLMDateUtils.addDays(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.DATE, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone);
+        break;
+        
+      case "this.month":
+        startDate = RLMDateUtils.truncate(now, Calendar.MONTH, timeZone);
+        break;
+        
+      case "last.1.month":
+        startDate = RLMDateUtils.addMonths(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.MONTH, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.MONTH, timeZone);
+        break;
+        
+      case "last.3.month":
+        startDate = RLMDateUtils.addMonths(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.MONTH, timeZone);
+        startDate = RLMDateUtils.addMonths(startDate, -2, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.MONTH, timeZone);
+        break;
+
+      default:
+        break;
+    }
+    return new Pair<Date, Date>(startDate, endDate);
+  }
+
   /*****************************************
   *
   *  simple

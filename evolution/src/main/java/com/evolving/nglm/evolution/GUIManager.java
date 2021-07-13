@@ -25868,6 +25868,28 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               }
             
             //
+            //  subcriteria
+            //
+            
+            JSONArray subcriteriaJSONArray = JSONUtilities.decodeJSONArray(criterionFieldJSON, "subcriteria", null);
+            if (subcriteriaJSONArray != null && !subcriteriaJSONArray.isEmpty())
+              {
+                List<JSONObject> subcriterias = new ArrayList<JSONObject>();
+                for (int i = 0; i < subcriteriaJSONArray.size(); i++)
+                  {
+                    JSONObject subcriteriaJSON = (JSONObject) subcriteriaJSONArray.get(i);
+                    Map<String, Object> subcriteriaMap = new LinkedHashMap<String, Object>();
+                    subcriteriaMap.put("id", JSONUtilities.decodeString(subcriteriaJSON, "id", true));
+                    subcriteriaMap.put("display", JSONUtilities.decodeString(subcriteriaJSON, "display", false));
+                    subcriteriaMap.put("dataType", JSONUtilities.decodeString(subcriteriaJSON, "dataType", true));
+                    subcriteriaMap.put("mandatory", JSONUtilities.decodeBoolean(subcriteriaJSON, "mandatory", Boolean.FALSE));
+                    subcriteriaMap.put("availableValues", JSONUtilities.encodeArray(evaluateAvailableValues(JSONUtilities.decodeJSONArray(subcriteriaJSON, "availableValues", false), now, tenantID)));
+                    subcriterias.add(JSONUtilities.encodeObject(subcriteriaMap));
+                  }
+                criterionFieldJSON.put("subcriteria", JSONUtilities.encodeArray(subcriterias));
+              }
+            
+            //
             //  add
             //
 
@@ -26233,7 +26255,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
       {
-        
         case "suppliersDisplayExp":
           if (includeDynamic)
             {

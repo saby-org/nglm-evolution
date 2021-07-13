@@ -3411,6 +3411,7 @@ public class EvolutionEngine
         PurchaseFulfillmentRequest purchaseFulfillmentRequest = (PurchaseFulfillmentRequest) evolutionEvent;
         String offerID = purchaseFulfillmentRequest.getOfferID();
         Offer offer = offerService.getActiveOffer(offerID, now);
+        String salesChannelID = purchaseFulfillmentRequest.getSalesChannelID();
         if (offer == null)
           {
             log.info("Got a purchase for inexistent offer " + offerID);
@@ -3418,43 +3419,78 @@ public class EvolutionEngine
         else
           {
             Date earliestDateToKeep = computeEarliestDateToKeep(now, offer, tenantID);
-            List<Date> cleanPurchaseHistory = new ArrayList<Date>();
-            Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-            List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
-            if (purchaseHistory != null)
+            List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
+            
+            //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
+            // so it is important to migrate data, but once all customer run over this version, this should be removed
+            // ------ START DATA MIGRATION COULD BE REMOVED
+            Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+            List<Date> oldPurchaseHistory = oldFullPurchaseHistory.get(offerID);
+            
+            //
+            //  oldPurchaseHistory migration TO BE removed
+            //
+            
+            if (oldPurchaseHistory != null)
               {
+                String salesChannelIDMigration = "migrating-ActualWasntAvlbl";
                 // only keep recent purchase dates (discard dates that are too old)
-                for (Date purchaseDate : purchaseHistory)
+                for (Date purchaseDate : oldPurchaseHistory)
                   {
                     if (purchaseDate.after(earliestDateToKeep))
                       {
-                        cleanPurchaseHistory.add(purchaseDate);
+                        cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelIDMigration, purchaseDate));
+                      }
+                  }
+                oldFullPurchaseHistory.put(offerID, new ArrayList<Date>()); // old will be blank - will be removed future
+              }
+            // ------ END DATA MIGRATION COULD BE REMOVED
+            
+            //
+            //  newPurchaseHistory
+            //
+            
+            Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+            List<Pair<String, Date>> newPurchaseHistory = newFullPurchaseHistory.get(offerID);
+            if (newPurchaseHistory != null)
+              {
+                for (Pair<String, Date> purchaseDatePair : newPurchaseHistory)
+                  {
+                    Date purchaseDate = purchaseDatePair.getSecondElement();
+                    if (purchaseDate.after(earliestDateToKeep))
+                      {
+                        cleanPurchaseHistory.add(new Pair<String, Date>(purchaseDatePair.getFirstElement(), purchaseDatePair.getSecondElement()));
                       }
                   }
               }
-            int totalPurchased = cleanPurchaseHistory.size()+purchaseFulfillmentRequest.getQuantity();
+            int totalPurchased = cleanPurchaseHistory.size() + purchaseFulfillmentRequest.getQuantity();
             log.info("cleanPurchaseHistory.size() = " + cleanPurchaseHistory.size()+ " purchaseFulfillmentRequest.getQuantity() " + purchaseFulfillmentRequest.getQuantity());
-            if (isPurchaseLimitReached(offer, totalPurchased)) {
-              if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased + " ("+cleanPurchaseHistory.size()+"+"+purchaseFulfillmentRequest.getQuantity()+") earliestDateToKeep : " + earliestDateToKeep);
-              // add a dummy very old purchase (that will be removed next time we get here), so that purchaseFulfilment will refuse the purchase
-              for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
-                {
-                  cleanPurchaseHistory.add(NGLMRuntime.BEGINNING_OF_TIME); // add new purchase in sub history
-                }
-              fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
-              subscriberProfileUpdated = true;
-            } else {
-              // TODO : this could be size-optimized by storing date/quantity in a new object
-              for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
-                {
-                  cleanPurchaseHistory.add(now); // add new purchase in sub history
-                }
-              fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
-              subscriberProfileUpdated = true;
-            }
-            // signal PurchaseFulfilmentManager that the list includes this purchase (needed because request may be processed in random order) 
+            if (isPurchaseLimitReached(offer, totalPurchased))
+              {
+                if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer " + offer.getOfferID() + " exceeded for subscriber " + subscriberProfile.getSubscriberID() + " as totalPurchased = " + totalPurchased + " (" + cleanPurchaseHistory.size() + "+" + purchaseFulfillmentRequest.getQuantity() + ") earliestDateToKeep : " + earliestDateToKeep);
+                // add a dummy very old purchase (that will be removed next time we get here),
+                // so that purchaseFulfilment will refuse the purchase
+                for (int n = 0; n < purchaseFulfillmentRequest.getQuantity(); n++)
+                  {
+                    cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelID, NGLMRuntime.BEGINNING_OF_TIME)); // add new purchase in sub history
+                  }
+                newFullPurchaseHistory.put(offerID, cleanPurchaseHistory);
+                subscriberProfileUpdated = true;
+              } 
+            else
+              {
+                // TODO : this could be size-optimized by storing date/quantity in a new object
+                for (int n = 0; n < purchaseFulfillmentRequest.getQuantity(); n++)
+                  {
+                    cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelID, now)); // add new purchase in sub history
+                  }
+                newFullPurchaseHistory.put(offerID, cleanPurchaseHistory);
+                subscriberProfileUpdated = true;
+              }
+            // signal PurchaseFulfilmentManager that the list includes this purchase (needed
+            // because request may be processed in random order)
             // these "TBR_" entries will need to be cleaned up at some point
-            fullPurchaseHistory.put("TBR_"+purchaseFulfillmentRequest.getDeliveryRequestID(), new ArrayList<>());
+            newFullPurchaseHistory.put("TBR_" + purchaseFulfillmentRequest.getDeliveryRequestID(), new ArrayList<>());
           }
       }
 
@@ -3579,6 +3615,7 @@ public class EvolutionEngine
 
   public static Date computeEarliestDateToKeep(Date now, Offer offer, int tenantID)
   {
+    Date last4MonthDate = RLMDateUtils.addMonths(now, -4, Deployment.getDeployment(tenantID).getTimeZone());
     Date earliestDateToKeep = null;
     Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
     if (maximumAcceptancesPeriodDays != Offer.UNSET) {
@@ -3596,6 +3633,8 @@ public class EvolutionEngine
         earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
       }
     }
+    
+    earliestDateToKeep = earliestDateToKeep.after(last4MonthDate) ? last4MonthDate : earliestDateToKeep; // we must persist 4months of data for the adv criteria EVPRO-1066 - Must to be checked with Fred, Bruno
     return earliestDateToKeep;
   }
 
