@@ -661,7 +661,7 @@
     ],
     "kpisMetaData" :
     [
-      { "id": "1",   "textProperty": true,  "display": "Activity", "displayGroups" : [{"rangeUpTo": "active", "imageURL": "ffa fa-ok", "color" : "#3adc3a"}, {"rangeUpTo": "inactive", "imageURL": "fa fa-times", "color" : "#ff0000"}, {"rangeUpTo": null, "imageURL": "fa fa-times", "color" : "#ffff00"}],  "dataType": "int", "name": "activity", "kpiUnit": null, "topLevel": false, "additionalGeneralDetails": [] }
+      { "id": "1",   "textProperty": true,  "display": "Activity", "displayGroups" : [{"rangeUpTo": "active", "imageURL": "fa fa-check-square-o", "color" : "#54a133"}, {"rangeUpTo": "inactive", "imageURL": "fa fa-times", "color" : "#c43333"}, {"rangeUpTo": null, "imageURL": "fa fa-times", "color" : "#ffff00"}],  "dataType": "string", "name": "activity", "kpiUnit": null, "topLevel": true, "additionalGeneralDetails": [] }
     ]
   },
 
