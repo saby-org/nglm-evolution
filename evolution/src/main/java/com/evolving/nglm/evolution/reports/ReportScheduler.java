@@ -93,11 +93,15 @@ public class ReportScheduler {
   
   private void run()
   {
-    log.info("Starting scheduler");
-    for (Tenant tenant : Deployment.getTenants()) {
-      int tenantID = tenant.getTenantID();
-      reportScheduler.get(tenantID).runScheduler();
-    }
+    if (log.isInfoEnabled()) log.info("Starting all schedulers...");
+    for (Tenant tenant : Deployment.getTenants())
+      {
+        int tenantID = tenant.getTenantID();
+        JobScheduler reportSchedulerForTenant = reportScheduler.get(tenantID);
+        String schedulerName = "report-scheduler-tenant"+tenantID;
+        new Thread(reportSchedulerForTenant::runScheduler, schedulerName).start();
+        if (log.isInfoEnabled()) log.info("Started {} ...", schedulerName);
+      }
   }
   
   /*****************************************
