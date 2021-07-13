@@ -761,6 +761,7 @@ public class ThirdPartyManager
           }
       }
 
+    int tenantID = -1; // initialize with unknown tenant
     try
       {
       /*****************************************
@@ -812,7 +813,7 @@ public class ThirdPartyManager
        *
        *****************************************/
 
-      int tenantID = authenticateAndCheckAccess(jsonRoot, api.name());
+      tenantID = authenticateAndCheckAccess(jsonRoot, api.name());
 
       /*****************************************
        *
@@ -967,7 +968,7 @@ public class ThirdPartyManager
 
       if (jsonResponse == null)
         {
-          addUnknownStats(api.name(),startTime);
+          addUnknownStats(api.name(),startTime, tenantID);
           throw new ServerException("no handler for " + api);
         }
 
@@ -988,7 +989,7 @@ public class ThirdPartyManager
       //
 
       if (log.isDebugEnabled()) log.debug("API (raw response): {}", jsonResponse.toString());
-      addOKStats(api.name(),startTime);
+      addOKStats(api.name(),startTime, tenantID);
 
       //
       //  send
@@ -1017,7 +1018,7 @@ public class ThirdPartyManager
       //  statistics
       //
 
-      addKOStats(api.name(),startTime);
+      addKOStats(api.name(),startTime, tenantID);
 
       //
       //  send error response
@@ -1071,7 +1072,7 @@ public class ThirdPartyManager
         //  statistics
         //
 
-        addKOStats(api.name(),startTime);
+        addKOStats(api.name(),startTime, tenantID);
 
         //
         //  send error response
@@ -1115,7 +1116,7 @@ public class ThirdPartyManager
         //  statistics
         //
 
-        addKOStats(api.name(),startTime);
+        addKOStats(api.name(),startTime, tenantID);
 
         //
         //  send error response
@@ -7035,16 +7036,16 @@ public class ThirdPartyManager
   }
 
   // helpers for stats
-  private void addOKStats(String apiName, long startTime){
-    addStats(apiName,startTime,StatsBuilders.STATUS.ok);
+  private void addOKStats(String apiName, long startTime, int tenantID){
+    addStats(apiName,startTime,StatsBuilders.STATUS.ok, tenantID);
   }
-  private void addKOStats(String apiName, long startTime){
-    addStats(apiName,startTime,StatsBuilders.STATUS.ko);
+  private void addKOStats(String apiName, long startTime, int tenantID){
+    addStats(apiName,startTime,StatsBuilders.STATUS.ko, tenantID);
   }
-  private void addUnknownStats(String apiName, long startTime){
-    addStats(apiName,startTime,StatsBuilders.STATUS.unknown);
+  private void addUnknownStats(String apiName, long startTime, int tenantID){
+    addStats(apiName,startTime,StatsBuilders.STATUS.unknown, tenantID);
   }
-  private void addStats(String apiName, long startTime, StatsBuilders.STATUS status){
+  private void addStats(String apiName, long startTime, StatsBuilders.STATUS status, int tenantID){
     if(statsDuration==null){
       log.warn("trying to add stats while not initialized "+apiName);
       return;
@@ -7052,6 +7053,7 @@ public class ThirdPartyManager
     // exact same for duration
     statsDuration.withLabel(StatsBuilders.LABEL.name.name(),apiName)
          .withLabel(StatsBuilders.LABEL.status.name(),status.name())
+         .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(tenantID))
          .getStats().add(startTime);
   }
   

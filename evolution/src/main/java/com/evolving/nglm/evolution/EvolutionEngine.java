@@ -3628,7 +3628,7 @@ public class EvolutionEngine
     *****************************************/
 
     String eventName = (evolutionEvent instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent)evolutionEvent).getEventName() : evolutionEvent.getClass().getSimpleName();
-    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),eventName).getStats().increment();
+    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),eventName).withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(subscriberProfile.getTenantID())).getStats().increment();
 
     /*****************************************
     *
@@ -7194,6 +7194,7 @@ public class EvolutionEngine
             .withLabel(StatsBuilders.LABEL.operation.name(),voucherChange.getAction().getExternalRepresentation())
             .withLabel(StatsBuilders.LABEL.module.name(),Module.fromExternalRepresentation(voucherChange.getModuleID()).name())
             .withLabel(StatsBuilders.LABEL.status.name(),voucherChange.getReturnStatus().getGenericResponseMessage())
+            .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(voucherChange.getTenantID()))
             .getStats().increment()
       );
     }
