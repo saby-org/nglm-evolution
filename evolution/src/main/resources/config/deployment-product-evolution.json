@@ -117,6 +117,7 @@
     "mapping_journeys":                 2,
     "mapping_journeyrewards":           2,
     "mapping_deliverables":             2,
+    "mapping_partners":             	2,
     "mapping_basemanagment":            2,
     "mapping_journeyobjective":         2
   },
