@@ -1201,6 +1201,8 @@
   "externalAPITopics" : [],
   
   "generateSimpleProfileDimensions" : true,
-  "recurrentCampaignCreationDaysRange" : 3
+  "recurrentCampaignCreationDaysRange" : 3,
+
+  "addSubscribersToUcgByCounting" : true
   
 }

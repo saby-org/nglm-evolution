@@ -471,6 +471,8 @@ public class DeploymentCommon
   private static int guiConfigurationInitialConsumerMaxPollRecords;
   private static int guiConfigurationInitialConsumerMaxFetchBytes;
 
+  private static boolean addSubscribersToUcgByCounting;
+
 
   
   /*****************************************
@@ -768,6 +770,7 @@ public class DeploymentCommon
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
+  public static boolean getAddSubscribersToUcgByCounting() { return addSubscribersToUcgByCounting; }
   
   
   /****************************************
@@ -1403,6 +1406,8 @@ public class DeploymentCommon
           allTopics.put(declaration.getPreprocessTopic().getName(),declaration.getPreprocessTopic());
         }
       }
+
+    addSubscribersToUcgByCounting = jsonReader.decodeBoolean("addSubscribersToUcgByCounting");
     
   }
 
