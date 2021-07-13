@@ -428,11 +428,6 @@ public class DeploymentCommon
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers;
   private static Map<String,DeliveryManagerDeclaration> fulfillmentProviders;
   private static Map<String,NodeType> nodeTypes;
-  private static Map<String,ToolboxSection> journeyToolbox;
-  private static Map<String,ToolboxSection> campaignToolbox;
-  private static Map<String,ToolboxSection> workflowToolbox;
-  private static Map<String,ToolboxSection> loyaltyWorkflowToolbox;
-  private static Map<String,ToolboxSection> catalogWorkflowToolbox;
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap;
   private static Integer authResponseCacheLifetimeInMinutes;
   private static Integer reportManagerMaxMessageLength;
@@ -726,11 +721,6 @@ public class DeploymentCommon
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
   public static Map<String,DeliveryManagerDeclaration> getFulfillmentProviders() { return fulfillmentProviders; } // TODO EVPRO-99 fulfillmentProviders accounts per tenant ?
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; } // EVPRO-99 should not be per tenant...
-  public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
-  public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
-  public static Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
-  public static Map<String,ToolboxSection> getLoyaltyWorkflowToolbox() { return loyaltyWorkflowToolbox; }
-  public static Map<String,ToolboxSection> getCatalogWorkflowToolbox() { return catalogWorkflowToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; } // TODO EVPRO-99 check for tenant and static
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
   public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; } // TODO EVPRO-99 check for tenant and static
@@ -1255,124 +1245,6 @@ public class DeploymentCommon
         }
       }
     }
-
-    journeyToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "journeyToolbox");
-    campaignToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "campaignToolbox");
-    workflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "workflowToolbox");
-    loyaltyWorkflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "loyaltyWorkflowToolbox");
-    catalogWorkflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "catalogWorkflowToolbox");
-    
-    // Iterate over the communication channels and, for generic ones, let enrich, if needed the journey toolbox
-    for(CommunicationChannel cc : getCommunicationChannels().values())
-      {
-        if(cc.isGeneric() && cc.getJourneyGUINodeSectionID() != null)
-          {
-            ToolboxSection section = journeyToolbox.get(cc.getJourneyGUINodeSectionID());
-            if(section == null) {
-              log.warn("Deployment: Can't retrieve Journey ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
-            }
-            else {
-              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
-              if(items != null) {
-                JSONObject item = new JSONObject();
-                item.put("id", cc.getToolboxID());
-                item.put("name", cc.getName());
-                // ensure this box effectively exists
-                if(getNodeTypes().get(cc.getToolboxID()) != null) {
-                  items.add(item);
-                }
-                else {
-                  log.warn("Deployment: Can't retrieve Journey NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
-                }
-              }
-              section.getJSONRepresentation().put("items", items);
-            }
-          }
-      }
-
-    // Iterate over the communication channels and, for generic ones, let enrich, if needed the campaign toolbox
-    for(CommunicationChannel cc : getCommunicationChannels().values())
-      {
-        if(cc.isGeneric() && cc.getCampaignGUINodeSectionID() != null)
-          {
-            ToolboxSection section = campaignToolbox.get(cc.getCampaignGUINodeSectionID());
-            if(section == null) {
-              log.warn("Deployment: Can't retrieve Campaign ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
-            }
-            else {
-              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
-              if(items != null) {
-                JSONObject item = new JSONObject();
-                item.put("id", cc.getToolboxID());
-                item.put("name", cc.getName());
-                // ensure this box effectively exists
-                if(getNodeTypes().get(cc.getToolboxID()) != null) {
-                  items.add(item);
-                }
-                else {
-                  log.warn("Deployment: Can't retrieve Campaign NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
-                }
-              }
-              section.getJSONRepresentation().put("items", items);
-            }
-          }
-      }
-
-    // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
-    for(CommunicationChannel cc : getCommunicationChannels().values())
-      {
-        if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null)
-          {
-            ToolboxSection section = workflowToolbox.get(cc.getWorkflowGUINodeSectionID());
-            if(section == null) {
-              log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
-            }
-            else {
-              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
-              if(items != null) {
-                JSONObject item = new JSONObject();
-                item.put("id", cc.getToolboxID());
-                item.put("name", cc.getName());
-                // ensure this box effectively exists
-                if(getNodeTypes().get(cc.getToolboxID()) != null) {
-                  items.add(item);
-                }
-                else {
-                  log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
-                }
-              }
-              section.getJSONRepresentation().put("items", items);
-            }
-          }
-      }
-
-    // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
-    for(CommunicationChannel cc : getCommunicationChannels().values())
-      {
-        if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null)
-          {
-            ToolboxSection section = loyaltyWorkflowToolbox.get(cc.getWorkflowGUINodeSectionID());
-            if(section == null) {
-              log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
-            }
-            else {
-              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
-              if(items != null) {
-                JSONObject item = new JSONObject();
-                item.put("id", cc.getToolboxID());
-                item.put("name", cc.getName());
-                // ensure this box effectively exists
-                if(getNodeTypes().get(cc.getToolboxID()) != null) {
-                  items.add(item);
-                }
-                else {
-                  log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
-                }
-              }
-              section.getJSONRepresentation().put("items", items);
-            }
-          }
-      }
     
     //
     //  thirdPartyMethodPermissions

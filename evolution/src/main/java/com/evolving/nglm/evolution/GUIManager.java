@@ -264,20 +264,9 @@ public class GUIManager
     updateWorkflow("updateWorkflow"),
     setStatusWorkflow("setStatusWorkflow"),
     
-    getLoyaltyWorkflowList("getLoyaltyWorkflowList"),
-    getLoyaltyWorkflowSummaryList("getLoyaltyWorkflowSummaryList"),
-    getLoyaltyWorkflow("getLoyaltyWorkflow"),
-    putLoyaltyWorkflow("putLoyaltyWorkflow"),
-    removeLoyaltyWorkflow("removeLoyaltyWorkflow"),
     getLoyaltyWorkflowToolbox("getLoyaltyWorkflowToolbox"),
     
-    getCatalogWorkflowList("getCatalogWorkflowList"),
-    getCatalogWorkflowSummaryList("getCatalogWorkflowSummaryList"),
-    getCatalogWorkflow("getCatalogWorkflow"),
-    putCatalogWorkflow("putCatalogWorkflow"),
-    removeCatalogWorkflow("removeCatalogWorkflow"),
-    getCatalogWorkflowToolbox("getCatalogWorkflowToolbox"),
-    
+        
     getBulkCampaignList("getBulkCampaignList"),
     getBulkCampaignSummaryList("getBulkCampaignSummaryList"),
     getBulkCampaign("getBulkCampaign"),
@@ -1301,11 +1290,12 @@ public class GUIManager
                 }
             }
   
-          /*****************************************
-          *
-          *  remove unused deliverables
-          *
-          *****************************************/
+          if (tenantID != 0) {
+            /*****************************************
+             *
+             *  remove unused deliverables
+             *
+             *****************************************/
           
             for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime(), tenantID))
               {
@@ -1315,13 +1305,12 @@ public class GUIManager
                     log.info("provider deliverable {} {}", deliverable.getDeliverableID(), "remove");
                   }
               }
-            
           
             /*****************************************
-            *
-            *  remove unused paymentMeans
-            *
-            *****************************************/
+             *
+             *  remove unused paymentMeans
+             *
+             *****************************************/
   
             for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime(), tenantID))
               {
@@ -1331,6 +1320,7 @@ public class GUIManager
                     log.info("provider paymentMean {} {}", paymentMean.getPaymentMeanID(), "remove");
                   }
               }
+          }
         }
       }
 
@@ -2006,21 +1996,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
         restServer.createContext("/nglm-guimanager/removeWorkflow", new APISimpleHandler(API.removeWorkflow));
         restServer.createContext("/nglm-guimanager/updateWorkflow", new APISimpleHandler(API.updateWorkflow));
-        restServer.createContext("/nglm-guimanager/setStatusWorkflow", new APISimpleHandler(API.setStatusWorkflow));
-        
-        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowList", new APISimpleHandler(API.getLoyaltyWorkflowList));
-        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowSummaryList", new APISimpleHandler(API.getLoyaltyWorkflowSummaryList));
-        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflow", new APISimpleHandler(API.getLoyaltyWorkflow));
-        restServer.createContext("/nglm-guimanager/putLoyaltyWorkflow", new APISimpleHandler(API.putLoyaltyWorkflow));
-        restServer.createContext("/nglm-guimanager/removeLoyaltyWorkflow", new APISimpleHandler(API.removeLoyaltyWorkflow));
+        restServer.createContext("/nglm-guimanager/setStatusWorkflow", new APISimpleHandler(API.setStatusWorkflow));        
+       
         restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowToolbox", new APISimpleHandler(API.getLoyaltyWorkflowToolbox));
-        
-        restServer.createContext("/nglm-guimanager/getCatalogWorkflowList", new APISimpleHandler(API.getCatalogWorkflowList));
-        restServer.createContext("/nglm-guimanager/getCatalogWorkflowSummaryList", new APISimpleHandler(API.getCatalogWorkflowSummaryList));
-        restServer.createContext("/nglm-guimanager/getCatalogWorkflow", new APISimpleHandler(API.getCatalogWorkflow));
-        restServer.createContext("/nglm-guimanager/putCatalogWorkflow", new APISimpleHandler(API.putCatalogWorkflow));
-        restServer.createContext("/nglm-guimanager/removeCatalogWorkflow", new APISimpleHandler(API.removeCatalogWorkflow));
-        restServer.createContext("/nglm-guimanager/getCatalogWorkflowToolbox", new APISimpleHandler(API.getCatalogWorkflowToolbox));
         
         restServer.createContext("/nglm-guimanager/getBulkCampaignList", new APISimpleHandler(API.getBulkCampaignList));
         restServer.createContext("/nglm-guimanager/getBulkCampaignSummaryList", new APISimpleHandler(API.getBulkCampaignSummaryList));
@@ -2964,56 +2942,13 @@ public class GUIManager
 
                 case setStatusWorkflow:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Workflow, tenantID);
-                  break;
-                  
-                case getLoyaltyWorkflowList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, true, true, includeArchived, tenantID);
-                  break;
-
-                case getLoyaltyWorkflowSummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, false, true, includeArchived, tenantID);
-                  break;
-                  
-                case getLoyaltyWorkflow:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, true, includeArchived, tenantID);
-                  break;
-
-                case putLoyaltyWorkflow:
-                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, tenantID);
-                  break;
-
-                case removeLoyaltyWorkflow:
-                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, tenantID);
-                  break;
+                  break;                  
+               
                   
                 case getLoyaltyWorkflowToolbox:
                   jsonResponse = processGetLoyaltyWorkflowToolbox(userID, jsonRoot, tenantID);
                   break;
                   
-                case getCatalogWorkflowList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.CatalogWorkflow, true, true, includeArchived, tenantID);
-                  break;
-
-                case getCatalogWorkflowSummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.CatalogWorkflow, false, true, includeArchived, tenantID);
-                  break;
-                  
-                case getCatalogWorkflow:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.CatalogWorkflow, true, includeArchived, tenantID);
-                  break;
-
-                case putCatalogWorkflow:
-                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.CatalogWorkflow, tenantID);
-                  break;
-
-                case removeCatalogWorkflow:
-                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.CatalogWorkflow, tenantID);
-                  break;
-                  
-                case getCatalogWorkflowToolbox:
-                  jsonResponse = processGetCatalogWorkflowToolbox(userID, jsonRoot, tenantID);
-                  break;
-
                 case getBulkCampaignList:
                   jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true, true, includeArchived, tenantID);
                   break;                  
@@ -5096,7 +5031,7 @@ public class GUIManager
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType, targetFileVariables, tenantID), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType, tenantID);
         Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields(tenantID);
-        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups, tenantID);
+        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups, expectedDataType, tenantID);
         
         //
         //  intersect and put only Evaluation week Day and Time (if schedule node)
@@ -5738,9 +5673,7 @@ public class GUIManager
               } 
             catch (ElasticsearchClientException e)
               {
-                StringWriter stackTraceWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                log.warn("Exception processing REST api: {}", e);
               }
              
             journeyInfo.put("subscriberCount", subscriberCount);
@@ -5806,14 +5739,6 @@ public class GUIManager
 
       case Workflow:
         response.put("workflows", JSONUtilities.encodeArray(journeys));
-        break;
-        
-      case LoyaltyWorkflow:
-        response.put("loyaltyWorkflows", JSONUtilities.encodeArray(journeys));
-        break;
-        
-      case CatalogWorkflow:
-        response.put("catalogWorkflows", JSONUtilities.encodeArray(journeys));
         break;
 
       case BulkCampaign:
@@ -5882,16 +5807,6 @@ public class GUIManager
         case Workflow:
           response.put("responseCode", (journey != null) ? "ok" : "workflowNotFound");
           if (journey != null) response.put("workflow", journeyJSON);
-          break;
-
-        case LoyaltyWorkflow:
-          response.put("responseCode", (journey != null) ? "ok" : "loyaltyWorkflowNotFound");
-          if (journey != null) response.put("loyaltyWorkflow", journeyJSON);
-          break;
-          
-        case CatalogWorkflow:
-          response.put("responseCode", (journey != null) ? "ok" : "catalogWorkflowNotFound");
-          if (journey != null) response.put("catalogWorkflow", journeyJSON);
           break;
 
         case BulkCampaign:
@@ -6014,7 +5929,7 @@ public class GUIManager
         ****************************************/
 
         Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, approval, tenantID);
-        if(GUIManagedObjectType.Workflow.equals(objectType) || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType) || GUIManagedObjectType.CatalogWorkflow.equals(objectType)) {
+        if(GUIManagedObjectType.Workflow.equals(objectType)) {
           
              journey.setApproval(JourneyStatus.StartedApproved);
         }
@@ -6151,15 +6066,7 @@ public class GUIManager
             case Workflow:
               response.put("responseCode", "workflowNotValid");
               break;
-
-            case LoyaltyWorkflow:
-              response.put("responseCode", "loyaltyWorkflowNotValid");
-              break;
               
-            case CatalogWorkflow:
-              response.put("responseCode", "catalogWorkflowNotValid");
-              break;
-
             case BulkCampaign:
               response.put("responseCode", "bulkCampaignNotValid");
               break;
@@ -6498,8 +6405,7 @@ public class GUIManager
                 journeyService, catalogCharacteristicService, subscriberMessageTemplateService,
                 dynamicEventDeclarationsService, journeyTemplateService, approval, tenantID);
 
-            if (GUIManagedObjectType.Workflow.equals(objectType)
-                || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType))
+            if (GUIManagedObjectType.Workflow.equals(objectType))
               {
                 journey.setApproval(JourneyStatus.StartedApproved);
               }
@@ -7103,39 +7009,8 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
-  /*****************************************
-  *
-  *  processGetCatalogWorkflowToolbox
-  *
-  *****************************************/
-
-  private JSONObject processGetCatalogWorkflowToolbox(String userID, JSONObject jsonRoot, int tenantID)
-  {
-    /*****************************************
-    *
-    *  retrieve catalogWorkflowToolbox
-    *
-    *****************************************/
-
-    List<JSONObject> catalogWorkflowToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection catalogWorkflowToolboxSection :Deployment.getDeployment(tenantID).getCatalogWorkflowToolbox().values())
-      {
-        JSONObject workflowToolboxSectionJSON = catalogWorkflowToolboxSection.getJSONRepresentation();
-        catalogWorkflowToolboxSections.add(workflowToolboxSectionJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("catalogWorkflowToolbox", JSONUtilities.encodeArray(catalogWorkflowToolboxSections));
-    return JSONUtilities.encodeObject(response);
-  }
   
+   
   
   /*****************************************
   *
@@ -8581,9 +8456,7 @@ public class GUIManager
         }
         catch (ElasticsearchClientException e) {
           // Log
-          StringWriter stackTraceWriter = new StringWriter();
-          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-          log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+          log.warn("Exception processing REST api: {}", e);
           
           // Response
           response.put("responseCode", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
@@ -24461,7 +24334,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
          *
          *****************************************/
 
-        List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService)).collect(Collectors.toList());
+        List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService
+            )).collect(Collectors.toList());
         response.put("offers", JSONUtilities.encodeArray(offersJson));
         response.put("responseCode", "ok");
       }
@@ -25492,7 +25366,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
         List<JSONObject> offersJson = offers.stream()
             .map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService,
-                offerObjectiveService, productService, voucherService, salesChannelService))
+                offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService))
             .collect(Collectors.toList());
 
         response.put("simpleOffers", JSONUtilities.encodeArray(offersJson));

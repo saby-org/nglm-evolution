@@ -10,6 +10,8 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -17,6 +19,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -961,6 +964,62 @@ public class Offer extends GUIManagedObject implements StockableItem
    // result.put("CatalogCharacteristic", getCatalogCharacteristics());
     
     
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  hasThisOfferCharacteristics
+  *
+  *****************************************/
+  
+  public boolean hasThisOfferCharacteristics(OfferCharacteristics offerCharacteristics)
+  {
+    boolean result = false;
+    if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
+      {
+        for (OfferCharacteristicsLanguageProperty characteristicsLanguageProperty : offerCharacteristics.getOfferCharacteristicProperties())
+          {
+            OfferCharacteristicsLanguageProperty languageProperty = getOfferCharacteristics().getOfferCharacteristicProperties().stream().filter(offerLanChar -> offerLanChar.getLanguageID().equals(characteristicsLanguageProperty.getLanguageID())).findFirst().orElse(null);
+            if (languageProperty != null)
+              {
+                for (OfferCharacteristicsProperty offerCharacteristicsProperty : characteristicsLanguageProperty.getProperties())
+                  {
+                    result = languageProperty.getProperties().stream().anyMatch(property -> property.equalsNonRobustly(offerCharacteristicsProperty));
+                    if (!result) break;
+                  }
+              }
+            else
+              {
+                result = false;
+              }
+            if (!result)break;
+          }
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  hasThisOfferCharacteristics
+  *
+  *****************************************/
+  
+  public boolean hasThisOfferObjectiveAndCharacteristics(final OfferObjectiveInstance offerObjectiveInstance)
+  {
+    boolean result = false;
+    if (getOfferObjectives() != null && !getOfferObjectives().isEmpty())
+      {
+        OfferObjectiveInstance offerObjective = getOfferObjectives().stream().filter(offerObj -> offerObj.getOfferObjectiveID().equals(offerObjectiveInstance.getOfferObjectiveID())).findFirst().orElse(null);
+        if (offerObjective != null)
+          {
+            for (CatalogCharacteristicInstance catalogCharacteristicInstance : offerObjectiveInstance.getCatalogCharacteristics())
+              {
+                result = offerObjective.getCatalogCharacteristics().stream().anyMatch(catalogChara -> catalogChara.equalsNonRobustly(catalogCharacteristicInstance));
+                if (!result)break;
+              }
+          }
+      }
     return result;
   }
 }

@@ -2090,7 +2090,11 @@ public class EvolutionEngine
 
     if (subscriberProfile.getSubscriberTraceEnabled())
       {
-        subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, subscriberState, context.getSubscriberTraceDetails())));
+        try{
+          subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, subscriberState, context.getSubscriberTraceDetails())));
+        }catch(Exception e){
+          log.warn("subscriber trace exception",e);
+        }
         subscriberStateUpdated = true;
       }
 
@@ -3441,28 +3445,13 @@ public class EvolutionEngine
           }
         else
           {
-            // EVPRO-1061 : For day unit, limit should be 0h on (today - number of days + 1)
-            // for month unit, the limit should be on 0h on (1st day of this month - number of months + 1)
-            Date earliestDateToKeep = null;
-            Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
-            if (maximumAcceptancesPeriodDays != Offer.UNSET) {
-              earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays+1, Deployment.getDeployment(tenantID).getTimeZone());
-              earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
-            } else if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
-              earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths+1, Deployment.getDeployment(tenantID).getTimeZone());
-              earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
-            } else {
-              log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
-              earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
-            }
-            log.debug("earliestDateToKeep for " + offerID + " : " + earliestDateToKeep + " maximumAcceptancesPeriodDays: " + maximumAcceptancesPeriodDays + " maximumAcceptancesPeriodMonths: " + maximumAcceptancesPeriodMonths);
+            Date earliestDateToKeep = computeEarliestDateToKeep(now, offer, tenantID);
             List<Date> cleanPurchaseHistory = new ArrayList<Date>();
             Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
             List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
             if (purchaseHistory != null)
               {
-                // clean list : only keep relevant purchase dates
+                // only keep recent purchase dates (discard dates that are too old)
                 for (Date purchaseDate : purchaseHistory)
                   {
                     if (purchaseDate.after(earliestDateToKeep))
@@ -3471,13 +3460,29 @@ public class EvolutionEngine
                       }
                   }
               }
-            // TODO : this could be size-optimized by storing date/quantity in a new object
-            for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
-              {
-                cleanPurchaseHistory.add(now); // add new purchase
-              }
-            fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
-            subscriberProfileUpdated = true;
+            int totalPurchased = cleanPurchaseHistory.size()+purchaseFulfillmentRequest.getQuantity();
+            log.info("cleanPurchaseHistory.size() = " + cleanPurchaseHistory.size()+ " purchaseFulfillmentRequest.getQuantity() " + purchaseFulfillmentRequest.getQuantity());
+            if (isPurchaseLimitReached(offer, totalPurchased)) {
+              if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased + " ("+cleanPurchaseHistory.size()+"+"+purchaseFulfillmentRequest.getQuantity()+") earliestDateToKeep : " + earliestDateToKeep);
+              // add a dummy very old purchase (that will be removed next time we get here), so that purchaseFulfilment will refuse the purchase
+              for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
+                {
+                  cleanPurchaseHistory.add(NGLMRuntime.BEGINNING_OF_TIME); // add new purchase in sub history
+                }
+              fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
+              subscriberProfileUpdated = true;
+            } else {
+              // TODO : this could be size-optimized by storing date/quantity in a new object
+              for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
+                {
+                  cleanPurchaseHistory.add(now); // add new purchase in sub history
+                }
+              fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
+              subscriberProfileUpdated = true;
+            }
+            // signal PurchaseFulfilmentManager that the list includes this purchase (needed because request may be processed in random order) 
+            // these "TBR_" entries will need to be cleaned up at some point
+            fullPurchaseHistory.put("TBR_"+purchaseFulfillmentRequest.getDeliveryRequestID(), new ArrayList<>());
           }
       }
 
@@ -3600,6 +3605,38 @@ public class EvolutionEngine
     return subscriberProfileUpdated;
   }
 
+  public static Date computeEarliestDateToKeep(Date now, Offer offer, int tenantID)
+  {
+    Date earliestDateToKeep = null;
+    Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
+    if (maximumAcceptancesPeriodDays != Offer.UNSET) {
+      earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+    } else {
+      Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
+      if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
+        if (maximumAcceptancesPeriodMonths == 1) { // current month
+          earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+        } else {
+          earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getDeployment(tenantID).getTimeZone());
+        }
+      } else {
+        log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
+        earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+      }
+    }
+    return earliestDateToKeep;
+  }
+
+  public static boolean isPurchaseLimitReached(Offer offer, int alreadyPurchased) {
+    // "Allow no more than 0 purchases" OR "within 0 days/months" <==> unlimited (no limit check)
+    boolean unlimited = (
+        (offer.getMaximumAcceptances() == 0)
+     || ((offer.getMaximumAcceptancesPeriodDays() != null) && (offer.getMaximumAcceptancesPeriodDays() == 0))
+     || ((offer.getMaximumAcceptancesPeriodMonths() != null) && (offer.getMaximumAcceptancesPeriodMonths() == 0)));
+    boolean res = !unlimited && (alreadyPurchased > offer.getMaximumAcceptances());
+    if (log.isTraceEnabled()) log.trace("isPurchaseLimitReached " + res + " " + alreadyPurchased + " " + offer.getOfferID());
+    return res;
+  }
 
   private static boolean executeActionOtherSubscriber(EvolutionEventContext evolutionEventContext, SubscriberStreamEvent evolutionEvent, int tenantID)
   {
@@ -4946,7 +4983,7 @@ public class EvolutionEngine
         //
         // Subscriber token list cleaning.
         // We will delete all already expired tokens before doing anything.
-        //
+        //TODO: do this cleaning using com.evolving.nglm.evolution.retention.RetentionService, as other objects
 
         List<Token> cleanedList = new ArrayList<Token>();
         boolean changed = false;
@@ -4955,10 +4992,13 @@ public class EvolutionEngine
           {
             if (token.getTokenExpirationDate().before(now))
               {
-                changed = true;
-                break;
+                if(log.isTraceEnabled()) log.trace("removing token "+token.getTokenCode()+" expired on "+token.getTokenExpirationDate()+" for "+subscriberProfile.getSubscriberID());
+                changed=true;
               }
-            cleanedList.add(token);
+            else
+              {
+                cleanedList.add(token);
+              }
           }
 
         if (changed)
@@ -5882,6 +5922,41 @@ public class EvolutionEngine
         if(journeyState.isSpecialExit()) {
           inactiveJourneyStates.add(journeyState);
           continue;
+        }
+        
+        
+        /******************************************************
+        *
+        * ignore workflow execution in case source is stopped/finished/removed
+        * 
+        *******************************************************/
+        if (journey != null && journey.isWorkflow()) {
+          String featureID = journeyState.getsourceFeatureID();
+          DeliveryRequest.Module moduleID = DeliveryRequest.Module.fromExternalRepresentation(journeyState.getSourceModuleID());
+          GUIManagedObject caller = null;
+          boolean mustCheck = true;
+          switch (moduleID) {
+            case Journey_Manager:
+              caller = journeyService.getStoredJourney(featureID);
+              break;
+            case Loyalty_Program:
+              caller = loyaltyProgramService.getStoredLoyaltyProgram(featureID);
+              break;
+            case Unknown:
+              log.debug("Unknown moduleID : " + moduleID.getExternalRepresentation());
+              mustCheck = false;
+              break;
+          }
+          if (mustCheck) {
+            if (caller == null) {
+              // if source was removed, just stop workflow
+              inactiveJourneyStates.add(journeyState);
+              continue;
+            } else if (!caller.getActive()) {
+              // if source stopped, just ignore workflow
+              continue;
+            } 
+          }
         }
 
         if (journey == null || journeyNode == null) {
@@ -6894,7 +6969,11 @@ public class EvolutionEngine
 
     if (extendedSubscriberProfile.getSubscriberTraceEnabled())
       {
-        extendedSubscriberProfile.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentExtendedSubscriberProfile, extendedSubscriberProfile, context.getSubscriberTraceDetails())));
+        try{
+          extendedSubscriberProfile.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentExtendedSubscriberProfile, extendedSubscriberProfile, context.getSubscriberTraceDetails())));
+        }catch(Exception e){
+          log.warn("subscriber trace exception",e);
+        }
         extendedSubscriberProfileUpdated = true;
       }
 
@@ -7087,7 +7166,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState, List<String> subscriberTraceDetails)
+  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState, List<String> subscriberTraceDetails) throws Exception
   {
     /*****************************************
     *
@@ -7209,7 +7288,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, ExtendedSubscriberProfile currentExtendedSubscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, List<String> subscriberTraceDetails)
+  private static String generateSubscriberTraceMessage(SubscriberStreamEvent evolutionEvent, ExtendedSubscriberProfile currentExtendedSubscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, List<String> subscriberTraceDetails) throws Exception
   {
     /*****************************************
     *
@@ -7929,7 +8008,7 @@ public class EvolutionEngine
     long waitTime = timeout.getTime() - now.getTime();
     HttpPost httpPost = new HttpPost("http://" + hostPort + "/nglm-evolutionengine/retrieveSubscriberProfile");
     httpPost.setEntity(new StringEntity(requestJSON.toString(), ContentType.create("application/json")));
-    httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
+    httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).setSocketTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
 
     //
     //  submit

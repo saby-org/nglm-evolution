@@ -17,7 +17,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1621434860635,
+  "iteration": 1624614923278,
   "links": [],
   "panels": [
     {
@@ -1157,7 +1157,6 @@
           "description": "",
           "fieldConfig": {
             "defaults": {
-              "custom": {},
               "links": []
             },
             "overrides": []
@@ -1191,7 +1190,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1266,7 +1265,6 @@
               "color": {
                 "mode": "thresholds"
               },
-              "custom": {},
               "decimals": 2,
               "displayName": "",
               "mappings": [],
@@ -1306,7 +1304,7 @@
             "showUnfilled": true,
             "text": {}
           },
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "targets": [
             {
               "expr": "avg(increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{}[$interval]) * 100 / (increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{}[$interval]) + increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{}[$interval]))) by (connectorName)",
@@ -1328,7 +1326,6 @@
               "color": {
                 "mode": "thresholds"
               },
-              "custom": {},
               "decimals": 2,
               "mappings": [],
               "max": 100,
@@ -1366,7 +1363,7 @@
             "showUnfilled": true,
             "text": {}
           },
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "targets": [
             {
               "expr": "avg(increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{}[$interval]) * 100 / (increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{}[$interval]) + increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{}[$interval]))) by (connectorName)",
@@ -1403,7 +1400,6 @@
               "color": {
                 "mode": "thresholds"
               },
-              "custom": {},
               "mappings": [
                 {
                   "id": 0,
@@ -1451,7 +1447,7 @@
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "targets": [
             {
               "exemplar": false,
@@ -1471,7 +1467,7 @@
               "id": "renameByRegex",
               "options": {
                 "regex": "notificationmanager-00",
-                "renamePattern": "Notification Manager n°"
+                "renamePattern": "Notification Manager n�"
               }
             }
           ],
@@ -1485,7 +1481,6 @@
           "datasource": "prometheus-application",
           "fieldConfig": {
             "defaults": {
-              "custom": {},
               "links": []
             },
             "overrides": []
@@ -1519,7 +1514,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1529,10 +1524,11 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "com_evolving_nglm_evolution_notificationdelivery_count_total",
+              "exemplar": true,
+              "expr": "sum by(channel, status)(increase(com_evolving_nglm_evolution_notificationdelivery_count_total[1d]))",
               "format": "time_series",
               "interval": "",
-              "legendFormat": "{{process}} / {{status}}",
+              "legendFormat": "{{channel}} / {{status}}",
               "refId": "A"
             }
           ],
@@ -1551,7 +1547,7 @@
               "id": "renameByRegex",
               "options": {
                 "regex": "notificationmanager-00",
-                "renamePattern": "Notification Manager n°"
+                "renamePattern": "Notification Manager n"
               }
             }
           ],
@@ -1596,7 +1592,6 @@
           "datasource": "prometheus-application",
           "fieldConfig": {
             "defaults": {
-              "custom": {},
               "links": []
             },
             "overrides": []
@@ -1629,7 +1624,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1744,7 +1739,7 @@
             "h": 14,
             "w": 3,
             "x": 0,
-            "y": 6
+            "y": 21
           },
           "id": 34,
           "interval": null,
@@ -1768,17 +1763,11 @@
           "pluginVersion": "7.5.2",
           "targets": [
             {
-              "expr": "sum(increase(com_evolving_nglm_evolution_commoditydelivery_count_total{status = \"delivered\"}[${__range_s}s]))",
+              "exemplar": true,
+              "expr": "sum by(process, status)(increase(com_evolving_nglm_evolution_commoditydelivery_count_total{}[${__range_s}s]))",
               "interval": "",
-              "legendFormat": "Delivered",
+              "legendFormat": "{{process}} / {{status}}",
               "refId": "A"
-            },
-            {
-              "expr": "sum(increase(com_evolving_nglm_evolution_commoditydelivery_count_total{status != \"delivered\"}[${__range_s}s]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Failed",
-              "refId": "B"
             }
           ],
           "timeFrom": null,
@@ -1789,7 +1778,7 @@
               "id": "renameByRegex",
               "options": {
                 "regex": "commoditydeliverymanager-00",
-                "renamePattern": "Commodity Delivery Mgr n°"
+                "renamePattern": "Commodity Delivery Mgr no"
               }
             },
             {
@@ -1827,7 +1816,7 @@
             "h": 14,
             "w": 10,
             "x": 3,
-            "y": 6
+            "y": 21
           },
           "hiddenSeries": false,
           "id": 36,
@@ -1860,7 +1849,8 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by(process, status)(com_evolving_nglm_evolution_commoditydelivery_count_total)",
+              "exemplar": true,
+              "expr": "sum by(process, status)(increase(com_evolving_nglm_evolution_commoditydelivery_count_total[1d]))",
               "interval": "",
               "legendFormat": "{{process}} / {{status}}",
               "refId": "A"
@@ -1881,7 +1871,7 @@
               "id": "renameByRegex",
               "options": {
                 "regex": "commoditydeliverymanager-00",
-                "renamePattern": "Commodity Delivery Mgr n°"
+                "renamePattern": "Commodity Delivery Mgr no"
               }
             }
           ],
@@ -1938,7 +1928,7 @@
             "h": 14,
             "w": 11,
             "x": 13,
-            "y": 6
+            "y": 21
           },
           "hiddenSeries": false,
           "id": 60,
@@ -2081,7 +2071,7 @@
             "h": 14,
             "w": 3,
             "x": 0,
-            "y": 7
+            "y": 36
           },
           "id": 121,
           "interval": null,
@@ -2106,18 +2096,11 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(increase(com_evolving_nglm_evolution_voucher_change_count_total{status= \"SUCCESS\"}[${__range_s}s]))",
-              "interval": "",
-              "legendFormat": "Delivered",
-              "refId": "A"
-            },
-            {
-              "exemplar": true,
-              "expr": "sum(increase(com_evolving_nglm_evolution_voucher_change_count_total{status != \"SUCCESS\"}[${__range_s}s]))",
+              "expr": "sum(increase(com_evolving_nglm_evolution_voucher_change_count_total{}[${__range_s}s])) by(module ,operation, status)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Failed",
-              "refId": "B"
+              "legendFormat": "{{module }} / {{operation}} / {{status}}",
+              "refId": "A"
             }
           ],
           "timeFrom": null,
@@ -2166,7 +2149,7 @@
             "h": 14,
             "w": 10,
             "x": 3,
-            "y": 7
+            "y": 36
           },
           "hiddenSeries": false,
           "id": 122,
@@ -2200,7 +2183,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum by(module ,operation, status)(com_evolving_nglm_evolution_voucher_change_count_total)",
+              "expr": "sum by(module ,operation, status)(increase(com_evolving_nglm_evolution_voucher_change_count_total[1d]))",
               "interval": "",
               "legendFormat": "{{module }} / {{operation}} / {{status}}",
               "refId": "A"
@@ -2278,7 +2261,7 @@
             "h": 14,
             "w": 11,
             "x": 13,
-            "y": 7
+            "y": 36
           },
           "hiddenSeries": false,
           "id": 123,
@@ -2416,7 +2399,7 @@
             "h": 12,
             "w": 3,
             "x": 0,
-            "y": 8
+            "y": 51
           },
           "id": 28,
           "interval": null,
@@ -2438,9 +2421,10 @@
           "pluginVersion": "7.5.2",
           "targets": [
             {
-              "expr": "sum(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{}[${__range_s}s]))by(status)",
+              "exemplar": true,
+              "expr": "sum(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{}[${__range_s}s]))by(module, status)",
               "interval": "",
-              "legendFormat": "{{status}}",
+              "legendFormat": "{{module}} / {{status}}",
               "refId": "A"
             }
           ],
@@ -2467,7 +2451,7 @@
             "h": 12,
             "w": 10,
             "x": 3,
-            "y": 8
+            "y": 51
           },
           "hiddenSeries": false,
           "id": 30,
@@ -2499,7 +2483,8 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by(module,status)(com_evolving_nglm_evolution_purchasefulfillment_count_total)",
+              "exemplar": true,
+              "expr": "sum by(module,status)(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total[1d]))",
               "interval": "",
               "legendFormat": "{{module}} {{status}}",
               "refId": "A"
@@ -2585,7 +2570,7 @@
             "h": 12,
             "w": 11,
             "x": 13,
-            "y": 8
+            "y": 51
           },
           "hiddenSeries": false,
           "id": 31,
@@ -2722,7 +2707,7 @@
             "h": 17,
             "w": 3,
             "x": 0,
-            "y": 37
+            "y": 64
           },
           "id": 108,
           "interval": "1d",
@@ -2742,17 +2727,11 @@
           "pluginVersion": "7.5.2",
           "targets": [
             {
-              "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total{status = \"SUCCESS\"}[${__range_s}s])) by(process)",
+              "exemplar": true,
+              "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total{}[${__range_s}s])) by(process, status)",
               "interval": "",
-              "legendFormat": "{{process}} SUCCESS",
+              "legendFormat": "{{process}} / {{status}}",
               "refId": "B"
-            },
-            {
-              "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total{status != \"SUCCESS\"}[${__range_s}s])) by(process)",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "{{process}}  FAILED",
-              "refId": "A"
             }
           ],
           "timeFrom": null,
@@ -2794,7 +2773,7 @@
             "h": 17,
             "w": 10,
             "x": 3,
-            "y": 37
+            "y": 64
           },
           "hiddenSeries": false,
           "id": 109,
@@ -2827,9 +2806,10 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "com_evolving_nglm_evolution_infulfillmentdelivery_count_total ",
+              "exemplar": true,
+              "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total[1d])) by(process, operation, status)",
               "interval": "",
-              "legendFormat": "{{process}} {{operation}} {{status}}",
+              "legendFormat": "{{process}} / {{operation}} / {{status}}",
               "refId": "B"
             }
           ],
@@ -2910,7 +2890,7 @@
             "h": 17,
             "w": 11,
             "x": 13,
-            "y": 37
+            "y": 64
           },
           "hiddenSeries": false,
           "id": 97,
@@ -3025,7 +3005,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 54
+            "y": 81
           },
           "hiddenSeries": false,
           "id": 99,
@@ -3133,7 +3113,7 @@
       "type": "row"
     },
     {
-      "collapsed": true,
+      "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
@@ -3142,323 +3122,321 @@
         "y": 9
       },
       "id": 45,
-      "panels": [
-        {
-          "cacheTimeout": null,
-          "datasource": "prometheus-application",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "custom": {},
-              "mappings": [
-                {
-                  "id": 0,
-                  "op": "=",
-                  "text": "N/A",
-                  "type": 1,
-                  "value": "null"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "rgb(155, 155, 155)",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
+      "panels": [],
+      "title": "3'rd Party API",
+      "type": "row"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "prometheus-application",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
           },
-          "gridPos": {
-            "h": 12,
-            "w": 3,
-            "x": 0,
-            "y": 9
-          },
-          "id": 67,
-          "interval": null,
-          "links": [],
-          "maxDataPoints": 100,
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "text": {},
-            "textMode": "auto"
-          },
-          "pluginVersion": "7.4.0",
-          "targets": [
+          "mappings": [
             {
-              "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total{}[${__range_s}s]))by(name, status)",
-              "interval": "",
-              "legendFormat": "{{name}} / {{status}}",
-              "refId": "A"
+              "id": 0,
+              "op": "=",
+              "text": "N/A",
+              "type": 1,
+              "value": "null"
             }
           ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Overall Count over $interval",
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "ok",
-                "renamePattern": "SUCCESS"
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(155, 155, 155)",
+                "value": null
               }
-            },
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "ko",
-                "renamePattern": "FAILED"
-              }
-            }
-          ],
-          "type": "stat"
+            ]
+          },
+          "unit": "short"
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 3,
+        "x": 0,
+        "y": 10
+      },
+      "id": 67,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
         {
-          "aliasColors": {},
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-application",
-          "fieldConfig": {
-            "defaults": {
-              "custom": {},
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 12,
-            "w": 10,
-            "x": 3,
-            "y": 9
-          },
-          "hiddenSeries": false,
-          "id": 69,
-          "interval": "1d",
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": false,
-          "linewidth": 1,
-          "nullPointMode": "null",
+          "exemplar": true,
+          "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total{}[${__range_s}s]))by(name, status)",
+          "interval": "",
+          "legendFormat": "{{name}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Overall Count over $interval",
+      "transformations": [
+        {
+          "id": "renameByRegex",
           "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.4.0",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum by(name, status)(com_evolving_nglm_evolution_thirdpartyaccess_count_total)",
-              "interval": "",
-              "legendFormat": "{{name}} {{status}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Success and Failure (Count / Day)",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "ok",
-                "renamePattern": "/ Success"
-              }
-            },
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "ko",
-                "renamePattern": "/ Failed"
-              }
-            }
-          ],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:3316",
-              "format": "short",
-              "label": "Call",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "$$hashKey": "object:3317",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
+            "regex": "ok",
+            "renamePattern": "SUCCESS"
           }
         },
         {
-          "aliasColors": {
-            "sum(increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[5m]))": "red"
-          },
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-application",
-          "fieldConfig": {
-            "defaults": {
-              "custom": {},
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 12,
-            "w": 11,
-            "x": 13,
-            "y": 9
-          },
-          "hiddenSeries": false,
-          "id": 70,
-          "interval": "1m",
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null as zero",
+          "id": "renameByRegex",
           "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.4.0",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status !=\"ok\"}[$__interval]))",
-              "interval": "",
-              "legendFormat": "Failed",
-              "refId": "A"
-            },
-            {
-              "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status = \"ok\"}[$__interval]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Success",
-              "refId": "B"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Success and Failure Rate (Call / Second)",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:3406",
-              "format": "short",
-              "label": "Call",
-              "logBase": 1,
-              "max": null,
-              "min": "0",
-              "show": true
-            },
-            {
-              "$$hashKey": "object:3407",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
+            "regex": "ko",
+            "renamePattern": "FAILED"
           }
         }
       ],
-      "title": "3'rd Party API",
-      "type": "row"
+      "type": "stat"
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 12,
+        "w": 10,
+        "x": 3,
+        "y": 10
+      },
+      "hiddenSeries": false,
+      "id": 69,
+      "interval": "1d",
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": false,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total[1d]))by(name, status)",
+          "interval": "",
+          "legendFormat": "{{name}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Success and Failure (Count / Day)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "ok",
+            "renamePattern": "/ Success"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "ko",
+            "renamePattern": "/ Failed"
+          }
+        }
+      ],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:3316",
+          "format": "short",
+          "label": "Call",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:3317",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {
+        "sum(increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[5m]))": "red"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 12,
+        "w": 11,
+        "x": 13,
+        "y": 10
+      },
+      "hiddenSeries": false,
+      "id": 70,
+      "interval": "1m",
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status !=\"ok\"}[$__interval]))",
+          "interval": "",
+          "legendFormat": "Failed",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status = \"ok\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Success",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Success and Failure Rate (Call / Second)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:3406",
+          "format": "short",
+          "label": "Call",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:3407",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "collapsed": true,
@@ -3467,7 +3445,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 22
       },
       "id": 75,
       "panels": [
@@ -3479,7 +3457,6 @@
               "color": {
                 "mode": "thresholds"
               },
-              "custom": {},
               "mappings": [
                 {
                   "id": 0,
@@ -3506,7 +3483,7 @@
             "h": 9,
             "w": 5,
             "x": 0,
-            "y": 10
+            "y": 23
           },
           "id": 76,
           "interval": null,
@@ -3527,7 +3504,7 @@
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "targets": [
             {
               "alias": "Subscribers",
@@ -3571,14 +3548,7 @@
           },
           "datasource": "SubscriberProfile",
           "fieldConfig": {
-            "defaults": {
-              "color": {},
-              "custom": {},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": []
-              }
-            },
+            "defaults": {},
             "overrides": []
           },
           "fontSize": "80%",
@@ -3587,7 +3557,7 @@
             "h": 9,
             "w": 6,
             "x": 5,
-            "y": 10
+            "y": 23
           },
           "id": 78,
           "interval": null,
@@ -3656,14 +3626,7 @@
           },
           "datasource": "SubscriberProfile",
           "fieldConfig": {
-            "defaults": {
-              "color": {},
-              "custom": {},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": []
-              }
-            },
+            "defaults": {},
             "overrides": []
           },
           "fontSize": "80%",
@@ -3672,7 +3635,7 @@
             "h": 9,
             "w": 6,
             "x": 11,
-            "y": 10
+            "y": 23
           },
           "id": 79,
           "interval": null,
@@ -3741,14 +3704,7 @@
           },
           "datasource": "SubscriberProfile",
           "fieldConfig": {
-            "defaults": {
-              "color": {},
-              "custom": {},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": []
-              }
-            },
+            "defaults": {},
             "overrides": []
           },
           "fontSize": "80%",
@@ -3757,7 +3713,7 @@
             "h": 9,
             "w": 7,
             "x": 17,
-            "y": 10
+            "y": 23
           },
           "id": 116,
           "interval": null,
@@ -3825,7 +3781,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 11
+        "y": 23
       },
       "id": 51,
       "panels": [
@@ -4279,7 +4235,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 24
       },
       "id": 39,
       "panels": [
@@ -4468,19 +4424,19 @@
         "name": "segments",
         "options": [
           {
+            "selected": true,
+            "text": "Carrier Segment",
+            "value": "Carrier Segment"
+          },
+          {
             "selected": false,
             "text": "Global",
             "value": "Global"
           },
           {
             "selected": false,
-            "text": "Subscriber Evolution Internal Previous Status",
-            "value": "Subscriber Evolution Internal Previous Status"
-          },
-          {
-            "selected": false,
-            "text": "Subscriber Evolution Internal Status",
-            "value": "Subscriber Evolution Internal Status"
+            "text": "Subscriber Gender",
+            "value": "Subscriber Gender"
           },
           {
             "selected": false,
@@ -4489,16 +4445,11 @@
           },
           {
             "selected": false,
-            "text": "Subscriber Profile",
-            "value": "Subscriber Profile"
+            "text": "Subscriber Previous Status",
+            "value": "Subscriber Previous Status"
           },
           {
             "selected": false,
-            "text": "Subscriber Seniority",
-            "value": "Subscriber Seniority"
-          },
-          {
-            "selected": true,
             "text": "Subscriber Status",
             "value": "Subscriber Status"
           },
@@ -4506,11 +4457,6 @@
             "selected": false,
             "text": "Subscriber Universal Control Group",
             "value": "Subscriber Universal Control Group"
-          },
-          {
-            "selected": false,
-            "text": "test-Dashboards",
-            "value": "test-Dashboards"
           }
         ],
         "query": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
@@ -4547,6 +4493,6 @@
   "timezone": "",
   "title": "Admin - Monitoring Dashboard",
   "uid": "gMbUkWlWz",
-  "version": 1
-  }
+  "version": 25
+ }
 }

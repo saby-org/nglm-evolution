@@ -7,6 +7,7 @@
 package com.evolving.nglm.core;
 
 import com.evolving.nglm.evolution.BillingMode;
+import com.evolving.nglm.evolution.CommunicationChannel;
 import com.evolving.nglm.evolution.CommunicationChannelTimeWindow;
 import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.DeliveryManagerAccount;
@@ -18,6 +19,7 @@ import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.SupportedCurrency;
 import com.evolving.nglm.evolution.SupportedLanguage;
 import com.evolving.nglm.evolution.SupportedTimeUnit;
+import com.evolving.nglm.evolution.ToolboxSection;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings;
@@ -54,7 +56,6 @@ public class Deployment extends DeploymentCommon
   * Static data
   *
   *****************************************/
-  protected static final Logger log = LoggerFactory.getLogger(Deployment.class);
   
   /*****************************************
   *
@@ -88,11 +89,14 @@ public class Deployment extends DeploymentCommon
   private List<EvaluationCriterion> journeyUniversalEligibilityCriteria;
   private PropensityRule propensityRule;
   private Map<String,DeliveryManagerAccount> deliveryManagerAccounts;
+  private Map<String,ToolboxSection> journeyToolbox;
+  private Map<String,ToolboxSection> campaignToolbox;
+  private Map<String,ToolboxSection> workflowToolbox;
+  private Map<String,ToolboxSection> loyaltyWorkflowToolbox;
   
   //
   // Subscriber Deletion
   //
-
   private TimeUnit subscriberDeletionTimeUnit;
   private int subscriberDeletionTimeUnitNumber;
   
@@ -130,10 +134,16 @@ public class Deployment extends DeploymentCommon
   public PropensityRule getPropensityRule() { return propensityRule; }
   public Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; } // TODO EVPRO-99 deliveryManager accounts per tenant ?
   
+  public Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
+  public Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
+  public Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
+  public Map<String,ToolboxSection> getLoyaltyWorkflowToolbox() { return loyaltyWorkflowToolbox; }
+  
+
   //
   // subscriber deletion
   //
-  
+
   public TimeUnit getSubscriberDeletionTimeUnit() { return subscriberDeletionTimeUnit; }
   public int getSubscriberDeletionTimeUnitNumber() { return subscriberDeletionTimeUnitNumber; }
 
@@ -239,7 +249,6 @@ public class Deployment extends DeploymentCommon
         getJourneyUniversalEligibilityCriteria().add(evaluationCriterion);                  
       }
     
-    
     //
     //  deliveryManagerAccounts
     //
@@ -255,6 +264,125 @@ public class Deployment extends DeploymentCommon
       }
     
     //
+    // Toolboxes
+    //
+    journeyToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "journeyToolbox");
+    campaignToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "campaignToolbox");
+    workflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "workflowToolbox");
+    loyaltyWorkflowToolbox = jsonReader.decodeMapFromArray(ToolboxSection.class, "loyaltyWorkflowToolbox");
+    
+    // Iterate over the communication channels and, for generic ones, let enrich, if needed the journey toolbox
+    for(CommunicationChannel cc : getCommunicationChannels().values())
+      {
+        if(cc.isGeneric() && cc.getJourneyGUINodeSectionID() != null)
+          {
+            ToolboxSection section = journeyToolbox.get(cc.getJourneyGUINodeSectionID());
+            if(section == null) {
+              log.warn("Deployment: Can't retrieve Journey ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
+            }
+            else {
+              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
+              if(items != null) {
+                JSONObject item = new JSONObject();
+                item.put("id", cc.getToolboxID());
+                item.put("name", cc.getName());
+                // ensure this box effectively exists
+                if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                  items.add(item);
+                }
+                else {
+                  log.warn("Deployment: Can't retrieve Journey NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                }
+              }
+              section.getJSONRepresentation().put("items", items);
+            }
+          }
+      }
+
+    // Iterate over the communication channels and, for generic ones, let enrich, if needed the campaign toolbox
+    for(CommunicationChannel cc : getCommunicationChannels().values())
+      {
+        if(cc.isGeneric() && cc.getCampaignGUINodeSectionID() != null)
+          {
+            ToolboxSection section = campaignToolbox.get(cc.getCampaignGUINodeSectionID());
+            if(section == null) {
+              log.warn("Deployment: Can't retrieve Campaign ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
+            }
+            else {
+              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
+              if(items != null) {
+                JSONObject item = new JSONObject();
+                item.put("id", cc.getToolboxID());
+                item.put("name", cc.getName());
+                // ensure this box effectively exists
+                if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                  items.add(item);
+                }
+                else {
+                  log.warn("Deployment: Can't retrieve Campaign NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                }
+              }
+              section.getJSONRepresentation().put("items", items);
+            }
+          }
+      }
+
+    // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
+    for(CommunicationChannel cc : getCommunicationChannels().values())
+      {
+        if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null)
+          {
+            ToolboxSection section = workflowToolbox.get(cc.getWorkflowGUINodeSectionID());
+            if(section == null) {
+              log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
+            }
+            else {
+              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
+              if(items != null) {
+                JSONObject item = new JSONObject();
+                item.put("id", cc.getToolboxID());
+                item.put("name", cc.getName());
+                // ensure this box effectively exists
+                if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                  items.add(item);
+                }
+                else {
+                  log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                }
+              }
+              section.getJSONRepresentation().put("items", items);
+            }
+          }
+      }
+
+    // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
+    for(CommunicationChannel cc : getCommunicationChannels().values())
+      {
+        if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null)
+          {
+            ToolboxSection section = loyaltyWorkflowToolbox.get(cc.getWorkflowGUINodeSectionID());
+            if(section == null) {
+              log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
+            }
+            else {
+              JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items"); // TODO EVPRO-99 remove JSONUtilities
+              if(items != null) {
+                JSONObject item = new JSONObject();
+                item.put("id", cc.getToolboxID());
+                item.put("name", cc.getName());
+                // ensure this box effectively exists
+                if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                  items.add(item);
+                }
+                else {
+                  log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                }
+              }
+              section.getJSONRepresentation().put("items", items);
+            }
+          }
+      }
+
     // subscriberDeletionTimeUnit
     //
     subscriberDeletionTimeUnit = TimeUnit.fromExternalRepresentation(jsonReader.decodeString("subscriberDeletionTimeUnit"));

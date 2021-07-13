@@ -62,6 +62,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   private static final String DATA_POINT_REDEEMED = "_Redeemed";
   private static final String DATA_POINT_EXPIRED = "_Expired";
   private static final String DATA_POINT_REDEMPTIONS = "_Redemptions";
+  private static final String DATA_POINT_BALANCE = "_Balance";
   private static final String DATA_METRIC_PREFIX = "metric_";
   private static final String DATA_FILTER_STRATUM_PREFIX = "statisticsStratum."; // from journeystatistic index
   private static final String DATACUBE_FILTER_STRATUM_PREFIX = "stratum."; // pushed in datacube index - same as SubscriberProfileDatacube
@@ -213,10 +214,12 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       termStratumBuilder.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_REDEEMED).field("pointFluctuations." + rewardID + ".today.redeemed"));
       termStratumBuilder.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_REDEMPTIONS).field("pointFluctuations." + rewardID + ".today.redemptions"));
       termStratumBuilder.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_EXPIRED).field("pointFluctuations." + rewardID + ".today.expired"));
+      termStratumBuilder.subAggregation(AggregationBuilders.sum("TODAY." + rewardID + DATA_POINT_BALANCE).field("pointFluctuations." + rewardID + ".today.balance"));
       termStratumBuilder.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_EARNED).field("pointFluctuations." + rewardID + ".yesterday.earned"));
       termStratumBuilder.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_REDEEMED).field("pointFluctuations." + rewardID + ".yesterday.redeemed"));
       termStratumBuilder.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_REDEMPTIONS).field("pointFluctuations." + rewardID + ".yesterday.redemptions"));
       termStratumBuilder.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_EXPIRED).field("pointFluctuations." + rewardID + ".yesterday.expired"));
+      termStratumBuilder.subAggregation(AggregationBuilders.sum("YESTERDAY." + rewardID + DATA_POINT_BALANCE).field("pointFluctuations." + rewardID + ".yesterday.balance"));
     }
     
     //
@@ -321,6 +324,13 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         log.error("Unable to extract rewards.expired metric for reward: " + rewardID + ", aggregation is missing.");
       } else {
         metrics.put("rewards.expired", new Long((int) rewardExpired.getValue()));
+      }
+
+      ParsedSum rewardBalance = metricAggregations.get(metricPrefix + rewardID + DATA_POINT_BALANCE);
+      if (rewardBalance == null) {
+        log.error("Unable to extract rewards.balance metric for reward: " + rewardID + ", aggregation is missing.");
+      } else {
+        metrics.put("rewards.balance", new Long((int) rewardBalance.getValue()));
       }
     }
     

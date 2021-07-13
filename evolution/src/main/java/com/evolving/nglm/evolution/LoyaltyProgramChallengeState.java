@@ -251,7 +251,7 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
             LoyaltyProgramChallenge loyaltyProgramChallenge = (LoyaltyProgramChallenge) loyaltyProgram;
             ChallengeLevel level = loyaltyProgramChallenge.getLevel(toLevel);
             ChallengeLevel previousLevel = loyaltyProgramChallenge.getLevel(fromLevel);
-            loyaltyProgramLevelChange = ChallengeLevel.changeFromLevelToLevel(level, previousLevel);
+            loyaltyProgramLevelChange = ChallengeLevel.changeFromLevelToLevel(previousLevel, level);
             occouranceNumber = loyaltyProgramChallenge.getOccurrenceNumber();
           }
       }

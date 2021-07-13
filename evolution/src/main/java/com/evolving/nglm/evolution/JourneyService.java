@@ -167,10 +167,6 @@ public class JourneyService extends GUIService
       {
         result.put("areaAvailability", guiManagedObject.getJSONRepresentation().get("areaAvailability"));
       }
-    if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.LoyaltyWorkflow))
-      {
-        result.put("areaAvailability", guiManagedObject.getJSONRepresentation().get("areaAvailability"));
-      }
     return result;
   }
   
@@ -189,7 +185,7 @@ public class JourneyService extends GUIService
   public Journey getActiveJourney(String journeyID, Date date) 
   { 
     Journey activeJourney = (Journey) getActiveGUIManagedObject(journeyID, date);
-    if (activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType()&& GUIManagedObjectType.LoyaltyWorkflow != activeJourney.getGUIManagedObjectType())
+    if (activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType())
       {
         return JourneyStatus.StartedApproved == activeJourney.getApproval() ? activeJourney : null; 
       }

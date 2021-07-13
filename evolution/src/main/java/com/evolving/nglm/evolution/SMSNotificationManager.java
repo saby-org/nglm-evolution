@@ -592,15 +592,37 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+     
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
         {
-          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+          JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");
+          if (areaAvailability != null && !(areaAvailability.isEmpty())) {
+          for (int i = 0; i < areaAvailability.size(); i++)
+            {
+              if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
+                {
+                  newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  break;
+                }
+            }
+          }
         }
-      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.CatalogWorkflow)
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
         {
-          newModuleID = Module.Offer_Catalog.getExternalRepresentation();
+          JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");
+          if (areaAvailability != null && !(areaAvailability.isEmpty()))
+            {
+              for (int i = 0; i < areaAvailability.size(); i++)
+                {
+                  if (areaAvailability.get(i).equals("realtime"))
+                    {
+                      newModuleID = Module.Offer_Catalog.getExternalRepresentation();
+                      break;
+                    }
+                }
+            }
+
         }
-      
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       
       String msisdn = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getMSISDN();

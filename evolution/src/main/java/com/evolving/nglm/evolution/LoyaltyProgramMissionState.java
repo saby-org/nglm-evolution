@@ -230,7 +230,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
             LoyaltyProgramMission loyaltyProgramMission = (LoyaltyProgramMission) loyaltyProgram;
             MissionStep step = loyaltyProgramMission.getStep(toStep);
             MissionStep previousStep = loyaltyProgramMission.getStep(fromStep);
-            loyaltyProgramStepChange = MissionStep.changeFromStepToStep(step, previousStep);
+            loyaltyProgramStepChange = MissionStep.changeFromStepToStep(previousStep, step);
           }
       }
     

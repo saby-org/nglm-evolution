@@ -486,7 +486,8 @@ public class DatacubeJobs
     JourneyTrafficDatacubeGenerator trafficDatacube = new JourneyTrafficDatacubeGenerator(NAME_PREFIX(config)+"Journey:Traffic", config.getTenantID(), datacubeManager);
     JourneyRewardsDatacubeGenerator rewardsDatacube = new JourneyRewardsDatacubeGenerator(NAME_PREFIX(config)+"Journey:Rewards", config.getTenantID(), datacubeManager);
     DatacubeWriter datacubeWriter = datacubeManager.getDatacubeWriter();
-    JourneysMap journeysMap = datacubeManager.getJourneysMap();
+    // JourneysMap is NOT thread-safe and must be used by only on thread
+    JourneysMap journeysMap = new JourneysMap(datacubeManager.getJourneyService());
     
     return new AsyncScheduledJob(config)
     {

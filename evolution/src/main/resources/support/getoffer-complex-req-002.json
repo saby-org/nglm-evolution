@@ -1,0 +1,18 @@
+{
+  "apiVersion":1,
+  "loginName":"Administrator",
+  "password":"password",
+  "offerCharacteristics":{
+    "language":"English",
+    "properties":[
+      {
+        "catalogCharacteristicName":"STR",
+        "value":["RK1"]
+      },
+      {
+        "catalogCharacteristicName":"STR_LIST",
+        "value":[ "A", "D" ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,3193 @@
+{
+"dashboard": 
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "iteration": 1618578253598,
+  "links": [],
+  "panels": [
+    {
+      "columns": [],
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "fontSize": "80%",
+      "gridPos": {
+        "h": 6,
+        "w": 13,
+        "x": 0,
+        "y": 0
+      },
+      "id": 12,
+      "pageSize": 20,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
+      },
+      "styles": [
+        {
+          "alias": "Number of Customers",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": null,
+          "mappingType": 1,
+          "pattern": "Sum",
+          "thresholds": [],
+          "type": "number",
+          "unit": "locale"
+        },
+        {
+          "alias": "Date",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "timestamp",
+          "thresholds": [],
+          "type": "date",
+          "unit": "short"
+        },
+        {
+          "alias": "Customer Status",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "filter.evolutionSubscriberStatus",
+          "thresholds": [],
+          "type": "number",
+          "unit": "short"
+        }
+      ],
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "4",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            },
+            {
+              "fake": true,
+              "field": "filter.evolutionSubscriberStatus",
+              "id": "3",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "asc",
+                "orderBy": "1",
+                "size": "0"
+              },
+              "type": "terms"
+            }
+          ],
+          "hide": false,
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Customer Count  Evolution per Status for \"$subscrStatus\"",
+      "transform": "table",
+      "type": "table-old"
+    },
+    {
+      "columns": [],
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "fontSize": "80%",
+      "gridPos": {
+        "h": 6,
+        "w": 11,
+        "x": 13,
+        "y": 0
+      },
+      "id": 14,
+      "interval": "1d",
+      "pageSize": 20,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
+      },
+      "styles": [
+        {
+          "alias": "Date",
+          "align": "auto",
+          "dateFormat": "YYYY-MM-DD",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "alias": "Number of Customers",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 0,
+          "pattern": "Sum count",
+          "thresholds": [],
+          "type": "number",
+          "unit": "locale"
+        }
+      ],
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Customer Daily Count",
+      "transform": "timeseries_to_columns",
+      "type": "table-old"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "hiddenSeries": false,
+      "id": 16,
+      "interval": "1d",
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": false,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "filter.evolutionSubscriberStatus",
+              "id": "3",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "1",
+                "size": "10"
+              },
+              "type": "terms"
+            },
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "offset": "-06h",
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Customer Daily Count per Status for \"$subscrStatus\"",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "locale",
+          "label": "Number of customers",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "decimals": 0,
+          "format": "locale",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "columns": [],
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "fontSize": "80%",
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 18,
+      "pageSize": 20,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
+      },
+      "styles": [
+        {
+          "alias": "Date",
+          "align": "auto",
+          "dateFormat": "YYYY-MM-DD",
+          "pattern": "timestamp",
+          "type": "date"
+        },
+        {
+          "alias": "Customer Status",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 0,
+          "pattern": "filter.evolutionSubscriberStatus",
+          "thresholds": [],
+          "type": "number",
+          "unit": "locale"
+        },
+        {
+          "alias": "Tier Name",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 0,
+          "mappingType": 1,
+          "pattern": "filter.tier",
+          "thresholds": [],
+          "type": "string",
+          "unit": "locale"
+        },
+        {
+          "alias": "Number of Customers",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 0,
+          "mappingType": 1,
+          "pattern": "Sum",
+          "thresholds": [],
+          "type": "number",
+          "unit": "locale"
+        }
+      ],
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "5",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            },
+            {
+              "fake": true,
+              "field": "filter.evolutionSubscriberStatus",
+              "id": "6",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "asc",
+                "orderBy": "_term",
+                "size": "15"
+              },
+              "type": "terms"
+            },
+            {
+              "fake": true,
+              "field": "filter.tier",
+              "id": "4",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "asc",
+                "orderBy": "1",
+                "size": "15"
+              },
+              "type": "terms"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Customer Daily Count per Tier for \"$subscrStatus\"",
+      "transform": "table",
+      "type": "table-old"
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "hiddenSeries": false,
+      "id": 20,
+      "interval": "1d",
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": false,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": false,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "filter.evolutionSubscriberStatus",
+              "id": "6",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "asc",
+                "orderBy": "_term",
+                "size": "15"
+              },
+              "type": "terms"
+            },
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "4",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 1,
+                "offset": "-06h",
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Customer Daily Count for \"$subscrStatus\"",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "locale",
+          "label": "Number of Customers",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "decimals": 0,
+          "format": "locale",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "timestamp"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "unit",
+                "value": "time: YYYY-MM-DD"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "filter.tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Tier Name"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Active Days In Month"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active Days In Month"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Data Revenue PayG And Subscription Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Data Revenue PayG And Subscription Daily"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Recharge Amount Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Recharge Amount"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Recharge Count Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Recharge Count"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily MO Duration"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily MO Duration"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily Revenue PayG And Subscriptions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily Revenue PayG And Subscriptions"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily Voice Revenue PayG And Subscriptions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily Voice Revenue PayG And Subscriptions"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Data Volume Daily MB"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Data Volume Daily MB"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum count"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bucket Script"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active Days in Month"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 22,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Date"
+          }
+        ]
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "6",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            },
+            {
+              "fake": true,
+              "field": "filter.tier",
+              "id": "7",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "asc",
+                "orderBy": "8",
+                "size": "10"
+              },
+              "type": "terms"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "metric.custom.Active Days In Month",
+              "hide": true,
+              "id": "8",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "count",
+              "hide": true,
+              "id": "9",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Amount Daily",
+              "id": "10",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "8"
+                },
+                {
+                  "name": "var2",
+                  "pipelineAgg": "9"
+                }
+              ],
+              "settings": {
+                "script": "params.var1/params.var2"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Data Revenue PayG And Subscription Daily",
+              "id": "11",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Amount Daily",
+              "id": "12",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Count Daily",
+              "id": "13",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily MO Duration",
+              "id": "14",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily Revenue PayG And Subscriptions",
+              "id": "15",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily Voice Revenue PayG And Subscriptions",
+              "id": "16",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Data Volume Daily MB",
+              "id": "17",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "General Report Table KPIS per Tier",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Sum count": true,
+              "Sum metric.custom.Active Days In Month": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "unit",
+                "value": "time: YYYY-MM-DD"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "filter.tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Tier Name"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Active Days In Month"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active Days In Month"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Data Revenue PayG And Subscription Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Data Revenue PayG And Subscription Daily"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Recharge Amount Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Recharge Amount"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Recharge Count Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Recharge Count"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily MO Duration"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily MO Duration"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily Revenue PayG And Subscriptions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily Revenue PayG And Subscriptions"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily Voice Revenue PayG And Subscriptions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily Voice Revenue PayG And Subscriptions"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Data Volume Daily MB"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Data Volume Daily MB"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Active Days In Month / Sum count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active days in Month"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 24,
+      "interval": "1d",
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Date"
+          }
+        ]
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "6",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "metric.custom.Active Days In Month",
+              "hide": true,
+              "id": "8",
+              "inlineScript": null,
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "count",
+              "hide": true,
+              "id": "9",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Amount Daily",
+              "id": "10",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "8"
+                },
+                {
+                  "name": "var2",
+                  "pipelineAgg": "9"
+                }
+              ],
+              "settings": {
+                "script": "params.var1 / params.var2"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Data Revenue PayG And Subscription Daily",
+              "id": "11",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Amount Daily",
+              "id": "12",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Count Daily",
+              "id": "13",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily MO Duration",
+              "id": "14",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily Revenue PayG And Subscriptions",
+              "id": "15",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily Voice Revenue PayG And Subscriptions",
+              "id": "16",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Data Volume Daily MB",
+              "id": "17",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "General Report Table KPIS per Day",
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "reducers": []
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "timestamp"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "unit",
+                "value": "time: YYYY-MM-DD"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bucket Script"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active Days in Month"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "filter.redeemer"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Redemeer"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "from": "",
+                    "id": 1,
+                    "text": "False",
+                    "to": "",
+                    "type": 1,
+                    "value": "0"
+                  },
+                  {
+                    "from": "",
+                    "id": 2,
+                    "text": "True",
+                    "to": "",
+                    "type": 1,
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bucket Script"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active days in month"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Data Revenue PayG And Subscription Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Data Revenue PayG And Subscription Daily"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Recharge Amount Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Recharge Amount Daily"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Active Days In Month"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum count"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Recharge Count Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Recharge Count Daily"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily MO Duration"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily MO Duration"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily Revenue PayG And Subscriptions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily Revenue PayG And Subscriptions"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily Voice Revenue PayG And Subscriptions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Daily Voice Revenue PayG And Subscriptions"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Data Volume Daily MB"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Data Volume Daily MB"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total active subs"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily Voice Revenue PayG And Subscriptions"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 26,
+      "interval": "1d",
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Date"
+          }
+        ]
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "13",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            },
+            {
+              "fake": true,
+              "field": "filter.redeemer",
+              "id": "4",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "10"
+              },
+              "type": "terms"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "metric.custom.Active Days In Month",
+              "hide": true,
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "count",
+              "hide": true,
+              "id": "3",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "select field",
+              "id": "5",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                },
+                {
+                  "name": "var2",
+                  "pipelineAgg": "3"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var1>0)&&(params.var2>0)){params.var1/params.var2} else 0;"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Data Revenue PayG And Subscription Daily",
+              "id": "6",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Amount Daily",
+              "id": "7",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Count Daily",
+              "id": "8",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily MO Duration",
+              "id": "9",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily Revenue PayG And Subscriptions",
+              "id": "10",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Daily Voice Revenue PayG And Subscriptions",
+              "id": "11",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Total Data Volume Daily MB",
+              "id": "12",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "General Table Report KPIS by Redeemer",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Sum count": true,
+              "Sum metric.custom.Active Days In Month": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "timestamp"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "unit",
+                "value": "time: YYYY-MM-DD"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Churned customers"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "filter.redeemer"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Redeemer"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "from": "",
+                    "id": 1,
+                    "text": "True",
+                    "to": "",
+                    "type": 1,
+                    "value": "1"
+                  },
+                  {
+                    "from": "",
+                    "id": 2,
+                    "text": "False",
+                    "to": "",
+                    "type": 1,
+                    "value": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum period"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bucket Script"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "% Churned"
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total active customers"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Churned customers"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "id": 32,
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "7",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "0"
+              },
+              "type": "terms"
+            },
+            {
+              "fake": true,
+              "field": "filter.redeemer",
+              "id": "4",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "0"
+              },
+              "type": "terms"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['filter.evolutionSubscriberStatus'].value == 'active' ) { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['filter.evolutionSubscriberStatus'].value == 'active' ) { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "B",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "",
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "7",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "0"
+              },
+              "type": "terms"
+            },
+            {
+              "fake": true,
+              "field": "filter.redeemer",
+              "id": "4",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "0"
+              },
+              "type": "terms"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['filter.evolutionSubscriberStatus'].value == 'churned' ) { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['filter.evolutionSubscriberStatus'].value == 'churned' ) { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "period",
+              "id": "5",
+              "inlineScript": "long total = 0; total = doc['count'].value; return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; total = doc['count'].value; return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "select field",
+              "id": "6",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                },
+                {
+                  "name": "var2",
+                  "pipelineAgg": "5"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var1>0)&&(params.var2>0)){params.var1/(params.var2)*100} else 0;"
+              },
+              "type": "bucket_script"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Total Churned Customers among Redeemers/Non Redeemers",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Sum period": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "left",
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "timestamp"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "unit",
+                "value": "time: YYYY-MM-DD"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "filter.redeemer"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Redeemer"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "from": "",
+                    "id": 1,
+                    "text": "False",
+                    "to": "",
+                    "type": 1,
+                    "value": "0"
+                  },
+                  {
+                    "from": "",
+                    "id": 2,
+                    "text": "True",
+                    "to": "",
+                    "type": 1,
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Recharge Count Daily"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total No. of Recharges"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Recharge Amount Daily"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Data Revenue PayG And Subscription Daily"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg. Amount of Recharges per user "
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg. Amount of Recharges per user"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg. Revenue generated per user"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg. Revenue generated per user "
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg. MoU"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg. MoU"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily MO Duration"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Daily Voice Revenue PayG And Subscriptions"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg. Voice Revenue generated per user"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg. Voice Revenue generated per user"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Total Data Volume Daily MB"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg. Data Volume Used (MB) per user"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg. Data Volume Used (MB) per user"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Data Revenue PayG And Subscription Daily"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum metric.custom.Active Days In Month"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg. Data Revenue generated per user"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg. Data Revenue generated per user"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg. DoU"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg. DoU"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum count"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 53
+      },
+      "id": 28,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Date"
+          }
+        ]
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "4",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            },
+            {
+              "field": "filter.redeemer",
+              "id": "2",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "1",
+                "size": "10"
+              },
+              "type": "terms"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Count Daily",
+              "id": "3",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "metric.custom.Recharge Amount Daily",
+              "hide": true,
+              "id": "5",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "select field",
+              "id": "6",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "5"
+                },
+                {
+                  "name": "var2",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var1>0)&&(params.var2>0)){params.var1/(params.var2)*100} else 0;"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Total Daily Revenue PayG And Subscriptions",
+              "hide": true,
+              "id": "7",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "select field2",
+              "id": "8",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var3",
+                  "pipelineAgg": "7"
+                },
+                {
+                  "name": "var4",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var3>0)&&(params.var4>0)){params.var3/(params.var4)*100} else 0;"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Total Daily MO Duration",
+              "hide": true,
+              "id": "9",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "select field3",
+              "id": "10",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var5",
+                  "pipelineAgg": "9"
+                },
+                {
+                  "name": "var6",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var5>0)&&(params.var6>0)){params.var5/(params.var6)*100} else 0;"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Total Daily Voice Revenue PayG And Subscriptions",
+              "hide": true,
+              "id": "11",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "select field4",
+              "id": "12",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var7",
+                  "pipelineAgg": "11"
+                },
+                {
+                  "name": "var8",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var7>0)&&(params.var8>0)){params.var7/(params.var8)*100} else 0;"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Total Data Volume Daily MB",
+              "hide": true,
+              "id": "13",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "select field5",
+              "id": "14",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var9",
+                  "pipelineAgg": "13"
+                },
+                {
+                  "name": "var10",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var9>0)&&(params.var10>0)){params.var9/(params.var10)*100} else 0;"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Data Revenue PayG And Subscription Daily",
+              "hide": true,
+              "id": "15",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "select field6",
+              "id": "16",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var11",
+                  "pipelineAgg": "7"
+                },
+                {
+                  "name": "var12",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var11>0)&&(params.var12>0)){params.var11/(params.var12)*100} else 0;"
+              },
+              "type": "bucket_script"
+            },
+            {
+              "field": "metric.custom.Active Days In Month",
+              "hide": true,
+              "id": "17",
+              "meta": {},
+              "settings": {},
+              "type": "sum"
+            },
+            {
+              "field": "select field7",
+              "id": "18",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var13",
+                  "pipelineAgg": "17"
+                },
+                {
+                  "name": "var14",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if ((params.var13>0)&&(params.var14>0)){params.var13/(params.var14)*100} else 0;"
+              },
+              "type": "bucket_script"
+            }
+          ],
+          "query": "filter.evolutionSubscriberStatus:$subscrStatus AND filter.tier:$tier",
+          "refId": "A",
+          "timeField": "timestamp"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "New KPIS",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Sum count": true,
+              "Sum metric.custom.Active Days In Month": true,
+              "Sum metric.custom.Data Revenue PayG And Subscription Daily": true,
+              "Sum metric.custom.Recharge Amount Daily": true,
+              "Sum metric.custom.Recharge Count Daily": false,
+              "Sum metric.custom.Total Daily MO Duration": true,
+              "Sum metric.custom.Total Daily Revenue PayG And Subscriptions": true,
+              "Sum metric.custom.Total Daily Voice Revenue PayG And Subscriptions": true,
+              "Sum metric.custom.Total Data Volume Daily MB": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Sum metric.custom.Total Daily MO Duration": "",
+              "if ((params.var11>0)&&(params.var12>0)){params.var11/(params.var12)*100} else 0;": "Avg. Data Revenue generated per user",
+              "if ((params.var13>0)&&(params.var14>0)){params.var13/(params.var14)*100} else 0;": "Avg. DoU",
+              "if ((params.var1>0)&&(params.var2>0)){params.var1/(params.var2)*100} else 0;": "Avg. Amount of Recharges per user ",
+              "if ((params.var3>0)&&(params.var4>0)){params.var3/(params.var4)*100} else 0;": "Avg. Revenue generated per user",
+              "if ((params.var5>0)&&(params.var6>0)){params.var5/(params.var6)*100} else 0;": "Avg. MoU",
+              "if ((params.var7>0)&&(params.var8>0)){params.var7/(params.var8)*100} else 0;": "Avg. Voice Revenue generated per user",
+              "if ((params.var9>0)&&(params.var10>0)){params.var9/(params.var10)*100} else 0;": "Avg. Data Volume Used (MB) per user"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "LoyaltyProgramsHistory",
+        "definition": "{\"find\" : \"terms\",\"field\": \"filter.evolutionSubscriberStatus\", \"size\": 10000}",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "Evolution Customer Status",
+        "multi": true,
+        "name": "subscrStatus",
+        "options": [],
+        "query": "{\"find\" : \"terms\",\"field\": \"filter.evolutionSubscriberStatus\", \"size\": 10000}",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "LoyaltyProgramsHistory",
+        "definition": "{\"find\" : \"terms\", \"field\": \"filter.tier\",\"query\": \"filter.evolutionSubscriberStatus:$subscrStatus\"}",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "New Tier",
+        "multi": true,
+        "name": "tier",
+        "options": [],
+        "query": "{\"find\" : \"terms\", \"field\": \"filter.tier\",\"query\": \"filter.evolutionSubscriberStatus:$subscrStatus\"}",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-2y",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "General Dashboard",
+  "uid": "oAOFa81Gm",
+  "version": 32
+}
+}

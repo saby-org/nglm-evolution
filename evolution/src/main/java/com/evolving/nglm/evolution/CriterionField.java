@@ -844,10 +844,10 @@ public class CriterionField extends DeploymentManagedObject
           return 6;
 
         case IntegerCriterion:
-          return 6;
+          return 10;
           
         case DoubleCriterion:
-          return 9;
+          return 12;
           
         case TimeCriterion:
         case AniversaryCriterion:
