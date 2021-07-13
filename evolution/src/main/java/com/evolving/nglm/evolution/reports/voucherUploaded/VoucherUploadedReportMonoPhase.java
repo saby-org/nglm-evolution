@@ -55,7 +55,28 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
   private VoucherService voucherService;
   private SupplierService supplierService;
   private VoucherTypeService voucherTypeService;
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  
+  private static final String voucherCode = "voucherCode";
+  private static final String supplier = "supplier";
+  private static final String expiryDate = "expiryDate";
+  private static final String voucherStatus = "voucherStatus";
+  private static final String voucherType = "voucherType";
+  private static final String fileName = "fileName";
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(voucherCode);
+    headerFieldsOrder.add(supplier);
+    headerFieldsOrder.add(expiryDate);
+    headerFieldsOrder.add(voucherStatus);
+    headerFieldsOrder.add(voucherType);
+    headerFieldsOrder.add(fileName);
+  }
 
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
@@ -89,11 +110,11 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
 
         if (voucherPersonal.get("_id") != null)
           {
-            voucherInfo.put("voucherCode", voucherPersonal.get("_id"));
+            voucherInfo.put(voucherCode, voucherPersonal.get("_id"));
           }
         else
           {
-            voucherInfo.put("voucherCode", "");
+            voucherInfo.put(voucherCode, "");
           }
         if (voucher != null)
           {
@@ -104,15 +125,15 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
               }
             else
               {
-                voucherInfo.put("supplier", "");
+                voucherInfo.put(supplier, "");
               }
 
-            if (voucherPersonal.get("expiryDate") != null)
+            if (voucherPersonal.get(expiryDate) != null)
               {
                 Object expiryDateObj = voucherPersonal.get("expiryDate");
                 if (expiryDateObj instanceof String)
                   {
-                    voucherInfo.put("expiryDate", ReportsCommonCode.parseDate((String) expiryDateObj));
+                    voucherInfo.put(expiryDate, ReportsCommonCode.parseDate((String) expiryDateObj));
                   }
                 else
                   {
@@ -121,7 +142,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
               }
             else
               {
-                voucherInfo.put("expiryDate", "");
+                voucherInfo.put(expiryDate, "");
               }
             
             Date expiryDate = null;
@@ -143,15 +164,15 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
 
             if (expiryDate != null && expiryDate.before(now))
               {
-                voucherInfo.put("voucherStatus", "expired");
+                voucherInfo.put(voucherStatus, "expired");
               }
             else if (voucherPersonal.containsKey("subscriberId") && voucherPersonal.get("subscriberId") != null)
               {
-                voucherInfo.put("voucherStatus", "delivered");
+                voucherInfo.put(voucherStatus, "delivered");
               }
             else 
               {
-                voucherInfo.put("voucherStatus", "available");
+                voucherInfo.put(voucherStatus, "available");
               }
 
             if (voucher.getVoucherTypeId() != null)
@@ -162,7 +183,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
               }
             else
               {
-                voucherInfo.put("voucherType", "");
+                voucherInfo.put(voucherType, "");
               }
             
             JSONObject voucherJSON = voucher.getJSONRepresentation();
@@ -175,14 +196,14 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
                     String currentFileID = voucherPersonal.get("fileId").toString();
                     if (voucherFile.get("fileId").equals(currentFileID))
                       {
-                        voucherInfo.put("fileName", voucherFile.get("fileName").toString());
+                        voucherInfo.put(fileName, voucherFile.get("fileName").toString());
                         break;
                       }
                   }
               }
             else
               {
-                voucherInfo.put("fileName", "");
+                voucherInfo.put(fileName, "");
               }
      
             //

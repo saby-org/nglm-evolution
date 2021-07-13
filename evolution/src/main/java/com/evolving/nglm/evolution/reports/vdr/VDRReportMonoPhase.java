@@ -75,7 +75,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
 
-  private static List<String> headerFieldsOrder = new LinkedList<String>();
+  static List<String> headerFieldsOrder = new LinkedList<String>();
   static
     {
       DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");    // TODO EVPRO-99

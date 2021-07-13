@@ -46,6 +46,47 @@ public class TokenReportMonoPhase implements ReportCsvFactory
 
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
+  
+  private static final String tokenCode = "tokenCode";
+  private static final String tokenType = "tokenType";
+  private static final String creationDate = "creationDate";
+  private static final String expirationDate = "expirationDate";
+  private static final String redeemedDate = "redeemedDate";
+  private static final String lastAllocationDate = "lastAllocationDate";
+  private static final String tokenStatus = "tokenStatus";
+  private static final String qtyAllocations = "qtyAllocations";
+  private static final String qtyAllocatedOffers = "qtyAllocatedOffers";
+  private static final String presentationStrategy = "presentationStrategy";
+  private static final String scoringStrategy = "scoringStrategy";
+  private static final String acceptedOffer = "acceptedOffer";
+  private static final String module = "module";
+  private static final String featureName = "featureName";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(tokenCode);
+    headerFieldsOrder.add(tokenType);
+    headerFieldsOrder.add(creationDate);
+    headerFieldsOrder.add(expirationDate);
+    headerFieldsOrder.add(redeemedDate);
+    headerFieldsOrder.add(lastAllocationDate);
+    headerFieldsOrder.add(tokenStatus);
+    headerFieldsOrder.add(qtyAllocations);
+    headerFieldsOrder.add(qtyAllocatedOffers);
+    headerFieldsOrder.add(presentationStrategy);
+    headerFieldsOrder.add(scoringStrategy);
+    headerFieldsOrder.add(acceptedOffer);
+    headerFieldsOrder.add(module);
+    headerFieldsOrder.add(featureName);
+  }
 
   private OfferService offerService = null;
   private TokenTypeService tokenTypeService = null;
@@ -95,15 +136,15 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                         result.putAll(commonFields);
                         Map<String, Object> token = (Map<String, Object>) tokensArray.get(i);
 
-                        result.put("tokenCode", token.get("tokenCode"));
-                        result.put("tokenType", token.get("tokenType"));
-                        result.put("creationDate", dateOrEmptyString(token.get("creationDate")));
-                        result.put("expirationDate", dateOrEmptyString(token.get("expirationDate")));
-                        result.put("redeemedDate", dateOrEmptyString(token.get("redeemedDate")));
-                        result.put("lastAllocationDate", dateOrEmptyString(token.get("lastAllocationDate")));
-                        result.put("tokenStatus", token.get("tokenStatus"));
-                        result.put("qtyAllocations", token.get("qtyAllocations"));
-                        result.put("qtyAllocatedOffers", token.get("qtyAllocatedOffers"));
+                        result.put(tokenCode, token.get("tokenCode"));
+                        result.put(tokenType, token.get("tokenType"));
+                        result.put(creationDate, dateOrEmptyString(token.get("creationDate")));
+                        result.put(expirationDate, dateOrEmptyString(token.get("expirationDate")));
+                        result.put(redeemedDate, dateOrEmptyString(token.get("redeemedDate")));
+                        result.put(lastAllocationDate, dateOrEmptyString(token.get("lastAllocationDate")));
+                        result.put(tokenStatus, token.get("tokenStatus"));
+                        result.put(qtyAllocations, token.get("qtyAllocations"));
+                        result.put(qtyAllocatedOffers, token.get("qtyAllocatedOffers"));
 
                         GUIManagedObject presentationStrategy = null;
                         if (token.get("presentationStrategyID") != null)
@@ -170,7 +211,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                             if (featureID != null)
                               {
                                 String featureDisplay = DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService);
-                                result.put("featureName", featureDisplay);
+                                result.put(featureName, featureDisplay);
                               }
                             else
                               {
@@ -179,8 +220,8 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                           }
                         else
                           {
-                            result.put("module", "");
-                            result.put("featureName", "");
+                            result.put(module, "");
+                            result.put(featureName, "");
                           }
 
                         if (addHeaders)

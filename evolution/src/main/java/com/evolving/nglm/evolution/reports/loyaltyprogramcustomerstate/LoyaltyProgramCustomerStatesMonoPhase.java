@@ -34,9 +34,42 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
   private static final Logger log = LoggerFactory.getLogger(LoyaltyProgramCustomerStatesMonoPhase.class);
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  
+  private static final String customerID = "customerID";
+  private static final String dateTime = "dateTime";
+  private static final String programName = "programName";
+  private static final String programEnrolmentDate = "programEnrolmentDate";
+  private static final String tierName = "tierName";
+  private static final String tierUpdateDate = "tierUpdateDate";
+  private static final String previousTierName = "previousTierName";
+  private static final String statusPointsName = "statusPointsName";
+  private static final String statusPointsBalance = "statusPointsBalance";
+  private static final String rewardPointsName = "rewardPointsName";
+  private static final String rewardPointsBalance = "rewardPointsBalance";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(dateTime);
+    headerFieldsOrder.add(programName);
+    headerFieldsOrder.add(programEnrolmentDate);
+    headerFieldsOrder.add(tierName);
+    headerFieldsOrder.add(tierUpdateDate);
+    headerFieldsOrder.add(previousTierName);
+    headerFieldsOrder.add(statusPointsName);
+    headerFieldsOrder.add(statusPointsBalance);
+    headerFieldsOrder.add(rewardPointsName);
+    headerFieldsOrder.add(rewardPointsBalance);
+  }
+  
   private LoyaltyProgramService loyaltyProgramService;
-  private final static String customerID = "customerID";
 
   @Override
   public boolean dumpElementToCsvMono(Map<String, Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
@@ -71,7 +104,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                         subscriberComputedFields.put(alternateID.getName(), alternateId);
                       }
                   }
-                subscriberComputedFields.put("dateTime", ReportsCommonCode.getDateString(now));
+                subscriberComputedFields.put(dateTime, ReportsCommonCode.getDateString(now));
                 for (int i = 0; i < loyaltyProgramsArray.size(); i++)
                   {
                     fullFields = new LinkedHashMap<String, Object>();
@@ -84,30 +117,30 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                         if (guiManagedObject instanceof LoyaltyProgram)
                           {
                             LoyaltyProgram loyaltyProgram = (LoyaltyProgram) guiManagedObject;
-                            fullFields.put("programName", loyaltyProgram.getJSONRepresentation().get("display"));
+                            fullFields.put(programName, loyaltyProgram.getJSONRepresentation().get("display"));
                             Object loyaltyProgramEnrollmentDate = obj.get("loyaltyProgramEnrollmentDate");
                             if (loyaltyProgramEnrollmentDate == null)
                               {
-                                fullFields.put("programEnrolmentDate", "");
+                                fullFields.put(programEnrolmentDate, "");
                               }
                             else if (loyaltyProgramEnrollmentDate instanceof Long)
                               {
-                                fullFields.put("programEnrolmentDate", ReportsCommonCode.getDateString(new Date((Long) loyaltyProgramEnrollmentDate)));
+                                fullFields.put(programEnrolmentDate, ReportsCommonCode.getDateString(new Date((Long) loyaltyProgramEnrollmentDate)));
                               }
                             else
                               {
                                 log.info("loyaltyProgramEnrollmentDate is not a Long : "
                                     + loyaltyProgramEnrollmentDate.getClass().getName());
-                                fullFields.put("programEnrolmentDate", "");
+                                fullFields.put(programEnrolmentDate, "");
                               }
 
-                            if (obj.get("tierName") != null)
+                            if (obj.get(tierName) != null)
                               {
-                                fullFields.put("tierName", obj.get("tierName"));
+                                fullFields.put(tierName, obj.get("tierName"));
                               }
                             else
                               {
-                                fullFields.put("tierName", "");
+                                fullFields.put(tierName, "");
                               }
 
                             Object tierUpdateDate = obj.get("tierUpdateDate");
@@ -129,47 +162,47 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
 
                             if (obj.get("previousTierName") != null)
                               {
-                                fullFields.put("previousTierName", obj.get("previousTierName"));
+                                fullFields.put(previousTierName, obj.get("previousTierName"));
                               }
                             else
                               {
-                                fullFields.put("previousTierName", "");
+                                fullFields.put(previousTierName, "");
                               }
 
                             if (obj.get("statusPointName") != null)
                               {
-                                fullFields.put("statusPointsName", obj.get("statusPointName"));
+                                fullFields.put(statusPointsName, obj.get("statusPointName"));
                               }
                             else
                               {
-                                fullFields.put("statusPointsName", "");
+                                fullFields.put(statusPointsName, "");
                               }
 
                             if (obj.get("statusPointBalance") != null)
                               {
-                                fullFields.put("statusPointsBalance", obj.get("statusPointBalance"));
+                                fullFields.put(statusPointsBalance, obj.get("statusPointBalance"));
                               }
                             else
                               {
-                                fullFields.put("statusPointsBalance", "");
+                                fullFields.put(statusPointsBalance, "");
                               }
 
                             if (obj.get("rewardPointName") != null)
                               {
-                                fullFields.put("rewardPointsName", obj.get("rewardPointName"));
+                                fullFields.put(rewardPointsName, obj.get("rewardPointName"));
                               }
                             else
                               {
-                                fullFields.put("rewardPointsName", "");
+                                fullFields.put(rewardPointsName, "");
                               }
 
                             if (obj.get("rewardPointBalance") != null)
                               {
-                                fullFields.put("rewardPointsBalance", obj.get("rewardPointBalance"));
+                                fullFields.put(rewardPointsBalance, obj.get("rewardPointBalance"));
                               }
                             else
                               {
-                                fullFields.put("rewardPointsBalance", "");
+                                fullFields.put(rewardPointsBalance, "");
                               }
                           }
                       }

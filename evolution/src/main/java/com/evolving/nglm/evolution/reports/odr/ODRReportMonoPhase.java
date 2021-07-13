@@ -96,7 +96,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private static final String resellerID = "resellerID";
   private static final String vouchers = "vouchers";
 
-  private static List<String> headerFieldsOrder = new LinkedList<String>();
+  static List<String> headerFieldsOrder = new LinkedList<String>();
   static
   {
     headerFieldsOrder.add(moduleId);

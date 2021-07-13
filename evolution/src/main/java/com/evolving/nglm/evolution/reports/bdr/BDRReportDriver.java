@@ -43,9 +43,7 @@ public class BDRReportDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    List<String> result = new ArrayList<>();
-    result.add(BDRReportMonoPhase.moduleName);
-    result.add(BDRReportMonoPhase.deliverableDisplay);
+    List<String> result = BDRReportMonoPhase.headerFieldsOrder;
     return result;
   }
 
