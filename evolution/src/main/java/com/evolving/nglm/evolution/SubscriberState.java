@@ -15,7 +15,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
-import com.evolving.nglm.core.AssignSubscriberIDs;
+import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
@@ -137,7 +137,7 @@ public class SubscriberState implements StateStore
   private List<VoucherAction> voucherActions;
   private List<EvolutionEngine.JourneyTriggerEventAction> journeyTriggerEventActions;
   private List<SubscriberProfileForceUpdate> subscriberProfileForceUpdates;
-  private List<AssignSubscriberIDs> immediateCleanupActions;
+  private List<CleanupSubscriber> immediateCleanupActions;
   //
   //  in memory only
   //
@@ -192,7 +192,7 @@ public class SubscriberState implements StateStore
   public List<VoucherAction> getVoucherActions() { return voucherActions; }
   public List<EvolutionEngine.JourneyTriggerEventAction> getJourneyTriggerEventActions() { return journeyTriggerEventActions; }
   public List<SubscriberProfileForceUpdate> getSubscriberProfileForceUpdates() { return subscriberProfileForceUpdates; }
-  public List<AssignSubscriberIDs> getImmediateCleanupActions() { return immediateCleanupActions; }
+  public List<CleanupSubscriber> getImmediateCleanupActions() { return immediateCleanupActions; }
 
 
   //

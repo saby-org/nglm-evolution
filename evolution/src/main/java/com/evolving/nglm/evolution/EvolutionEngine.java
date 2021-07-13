@@ -67,7 +67,6 @@ import org.rocksdb.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
@@ -990,7 +989,7 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyTriggerEventAction),
         (key,value) -> (value instanceof SubscriberProfileForceUpdate),
         (key,value) -> (value instanceof EDRDetails),
-        (key,value) -> (value instanceof WorkflowEvent)
+        (key,value) -> (value instanceof CleanupSubscriber)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1010,7 +1009,8 @@ public class EvolutionEngine
     KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
-    KStream<StringKey, WorkflowEvent> workflowEventsStream = (KStream<StringKey, WorkflowEvent>) branchedEvolutionEngineOutputs[15];
+    KStream<StringKey, CleanupSubscriber> immediateCleanupStream = (KStream<StringKey, CleanupSubscriber>) branchedEvolutionEngineOutputs[15];
+    
     /*****************************************
     *
     *  sink
@@ -1034,6 +1034,7 @@ public class EvolutionEngine
     voucherActionStream.to(Deployment.getVoucherActionTopic(), Produced.with(stringKeySerde, voucherActionSerde));
     subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
     edrDetailsStream.to(Deployment.getEdrDetailsTopic(), Produced.with(stringKeySerde, edrDetailsSerde));
+    immediateCleanupStream.to(Deployment.getCleanupSubscriberTopic(), Produced.with(stringKeySerde, cleanupSubscriberSerde));
 
     //
 	//  sink DeliveryRequest
@@ -1792,7 +1793,7 @@ public class EvolutionEngine
           if(subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
             {
               // generate a cleanup immediately event
-              AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.CleanupImmediate, new HashMap<String, String>(), tenantID);
+              CleanupSubscriber assignSubscriberIDs = new CleanupSubscriber(subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.CleanupImmediate);
               subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);
             }
           
@@ -1815,7 +1816,7 @@ public class EvolutionEngine
     if(subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
       {
         // time to trig an immediate cleanup event
-        AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.CleanupImmediate, new HashMap<String, String>(), tenantID);
+        CleanupSubscriber assignSubscriberIDs = new CleanupSubscriber(subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.CleanupImmediate);
         subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);
       }
 
@@ -2521,8 +2522,6 @@ public class EvolutionEngine
       // default KO
       voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
     }
-    // TODO Auto-generated method stub
-    
   }
 
 
@@ -7105,6 +7104,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getJourneyTriggerEventActions());
         result.addAll(subscriberState.getSubscriberProfileForceUpdates());
         result.addAll(subscriberState.getEdrDetailsWrappers());
+        result.addAll(subscriberState.getImmediateCleanupActions());
       }
 
     // add stats about voucherChange done
