@@ -258,6 +258,6 @@ public class Deployment extends DeploymentCommon
     // subscriberDeletionTimeUnit
     //
     subscriberDeletionTimeUnit = TimeUnit.fromExternalRepresentation(jsonReader.decodeString("subscriberDeletionTimeUnit"));
-    subscriberDeletionTimeUnitNumber = jsonReader.decodeInteger("subscriberDeletionTimeUnit");
+    subscriberDeletionTimeUnitNumber = jsonReader.decodeInteger("subscriberDeletionTimeUnitNumber");
   }
 }

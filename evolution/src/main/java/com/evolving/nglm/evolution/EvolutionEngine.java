@@ -67,6 +67,7 @@ import org.rocksdb.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
@@ -88,6 +89,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SubscriberTraceControl;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -1775,26 +1777,27 @@ public class EvolutionEngine
     /*****************************************
     *
     *  cleanup
+    *  
+    *  If the event contains Cleanup, then tag the subscriber to be cleaned. 
+    *  When the time to clean is reached, then generate an event with subscriber action cleanup immediately.
     *
     *****************************************/
 
     switch (evolutionEvent.getSubscriberAction())
-      {
-        
+      {        
         case Cleanup:
           // move the user to terminated state and reference the date of termination, so that is it cleaned later on
-          if(Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber() > 0)
+          subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
+          subscriberState.setCleanupDate(EvolutionUtilities.addTime(SystemTime.getCurrentTime(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(), Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
+          if(subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
             {
-              subscriberState.setCleanupDate(EvolutionUtilities.addTime(SystemTime.getCurrentTime(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(), Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
-              SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
-              return subscriberState;
+              // generate a cleanup immediately event
+              AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.CleanupImmediate, new HashMap<String, String>(), tenantID);
+              subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);
             }
-          else {
-            // delete immediately
-            // cleanup the subscriber now... just return null...
-            updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
-            return null; 
-          }
+          
+          SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+          return subscriberState;
       
         case CleanupImmediate:
         // cleanup the subscriber now... just return null...
@@ -1811,10 +1814,9 @@ public class EvolutionEngine
     // make effective clean if needed...
     if(subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
       {
-        // time to clean...
-        // cleanup the subscriber now... just return null...
-        updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
-        return null; 
+        // time to trig an immediate cleanup event
+        AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.CleanupImmediate, new HashMap<String, String>(), tenantID);
+        subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);
       }
 
     /*****************************************

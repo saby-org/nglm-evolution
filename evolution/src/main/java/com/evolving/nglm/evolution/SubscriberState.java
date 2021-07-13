@@ -15,6 +15,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
+import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
@@ -136,6 +137,7 @@ public class SubscriberState implements StateStore
   private List<VoucherAction> voucherActions;
   private List<EvolutionEngine.JourneyTriggerEventAction> journeyTriggerEventActions;
   private List<SubscriberProfileForceUpdate> subscriberProfileForceUpdates;
+  private List<AssignSubscriberIDs> immediateCleanupActions;
   //
   //  in memory only
   //
@@ -164,6 +166,8 @@ public class SubscriberState implements StateStore
   public Integer getUCGEpoch() { return ucgEpoch; }
   public Date getUCGRefreshDay() { return ucgRefreshDay; }
   public Date getLastEvaluationDate() { return lastEvaluationDate; }
+  public Date getCleanupDate() { return cleanupDate; }
+  
   public List<JourneyRequest> getJourneyRequests() { return journeyRequests; }
   public List<JourneyRequest> getJourneyResponses() { return journeyResponses; }
   public List<LoyaltyProgramRequest> getLoyaltyProgramRequests() { return loyaltyProgramRequests; }
@@ -188,7 +192,8 @@ public class SubscriberState implements StateStore
   public List<VoucherAction> getVoucherActions() { return voucherActions; }
   public List<EvolutionEngine.JourneyTriggerEventAction> getJourneyTriggerEventActions() { return journeyTriggerEventActions; }
   public List<SubscriberProfileForceUpdate> getSubscriberProfileForceUpdates() { return subscriberProfileForceUpdates; }
-  public Date getCleanupDate() { return cleanupDate; }
+  public List<AssignSubscriberIDs> getImmediateCleanupActions() { return immediateCleanupActions; }
+
 
   //
   //  kafkaRepresentation
@@ -294,6 +299,7 @@ public class SubscriberState implements StateStore
         this.voucherActions = new ArrayList<>();
         this.journeyTriggerEventActions = new ArrayList<>();
         this.subscriberProfileForceUpdates = new ArrayList<>();
+        this.immediateCleanupActions = new ArrayList<>();
         this.cleanupDate = null;
       }
     catch (InvocationTargetException e)
@@ -350,6 +356,7 @@ public class SubscriberState implements StateStore
     this.voucherActions = new ArrayList<>();
     this.journeyTriggerEventActions = new ArrayList<>();
     this.subscriberProfileForceUpdates = new ArrayList<>();
+    this.immediateCleanupActions = new ArrayList<>();
     // for data migration purpose only, can be removed once all market run EVPRO-885
     this.recentJourneyStates = oldRecentJourneyStates;
     this.cleanupDate = cleanupDate;
