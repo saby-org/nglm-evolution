@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -30,9 +31,13 @@ import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.MultiSearchRequest;
+import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.action.search.MultiSearchResponse.Item;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -55,6 +60,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -110,6 +116,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   // TODO factorize with SimpleESSinkConnector ?  // TODO retrieve from Deployment.json
   private static final int CONNECTTIMEOUT = 5; // in seconds
   private static final int QUERYTIMEOUT = 60;  // in seconds
+  
+  private static final int MAX_INDEX_LIST_SIZE = 75; // will look into max 75 index at a time
   
   /*****************************************
   *
@@ -204,54 +212,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   * API
   *
   *****************************************/
-  public long getJourneySubscriberCount(String journeyID) throws ElasticsearchClientException {
-    try {
-      //
-      // Build Elasticsearch query
-      // 
-      String index = getJourneyIndex(journeyID);
-      CountRequest countRequest = new CountRequest(index).query(QueryBuilders.matchAllQuery());
-      
-      //
-      // Send request & retrieve response synchronously (blocking call)
-      // 
-      CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
-      
-      //
-      // Check search response
-      //
-      // @rl TODO checking status seems useless because it raises exception
-      if (countResponse.getFailedShards() > 0) {
-        throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
-      }
-
-      //
-      // Send result
-      //
-      return countResponse.getCount();
-    }
-    catch (ElasticsearchClientException e) { // forward
-      throw e;
-    }
-    catch (ElasticsearchStatusException e)
-    {
-      if(e.status() == RestStatus.NOT_FOUND) { // index not found
-        log.debug(e.getMessage());
-        return 0;
-      }
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getDetailedMessage());
-    }
-    catch (ElasticsearchException e) {
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getDetailedMessage());
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getMessage());
-    }
-  }
-
+  
   public Map<String, Long> getJourneyNodeCount(String journeyID) throws ElasticsearchClientException {
     try {
       Map<String, Long> result = new HashMap<String, Long>();
@@ -1288,6 +1249,120 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     result = result == null || result.trim().isEmpty() ? defaulteValue : result;
     if (log.isDebugEnabled()) log.debug("reading data from index {}", result);
     return result;
+  }
+
+  /*****************************************************
+   * 
+   * getJourneySubscriberCountMap
+   * 
+   ****************************************************/
+  
+  public Map<String, Long> getJourneySubscriberCountMap(List<String> journeyIds) throws ElasticsearchClientException
+  {
+    Map<String, Long> result = new HashMap<String, Long>();
+    try
+      {
+        String index = "journeystatistic-*";
+        String termAggName = "JourneySubscriberCount";
+        String aggFieldName = "journeyID";
+        
+        //
+        // Build Elasticsearch query
+        //
+        
+        BoolQueryBuilder query = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("status", Arrays.asList(specialExit)));
+        
+        //
+        //  list existing index
+        //
+        
+        GetIndexRequest existingIndexRequest = new GetIndexRequest(index);
+        GetIndexResponse existingIndexResponse = this.indices().get(existingIndexRequest, RequestOptions.DEFAULT);
+        List<String> existingIndices = Arrays.asList(existingIndexResponse.getIndices());
+        if (log.isDebugEnabled()) log.debug("getJourneySubscriberCountMap exsisting journeystatistic index list {}", existingIndices);
+        Set<String> requestedIndices = journeyIds.stream().map(journeyId -> getJourneyIndex(journeyId)).collect(Collectors.toSet());
+        List<String> finalIndices = requestedIndices.stream().filter(reqIndex ->  existingIndices.contains(reqIndex)).collect(Collectors.toList());
+        if (log.isDebugEnabled()) log.debug("getJourneySubscriberCountMap finalIndices to look {}", finalIndices);
+        if (!finalIndices.isEmpty())
+          {
+            //
+            //  mRequest
+            //
+            
+            MultiSearchRequest mRequest = new MultiSearchRequest();
+            List<String> indexBuilder = new ArrayList<String>();
+            boolean shouldAdd = false;
+            for (String finalIndex : finalIndices)
+              {
+                if (indexBuilder.size() <= MAX_INDEX_LIST_SIZE)
+                  {
+                    indexBuilder.add(finalIndex);
+                  }
+                shouldAdd = shouldAdd || indexBuilder.size() > MAX_INDEX_LIST_SIZE || finalIndices.indexOf(finalIndex) == finalIndices.size() - 1;
+                
+                if (shouldAdd)
+                  {
+
+                    //
+                    //  add request
+                    //
+
+                    SearchRequest request = new SearchRequest(indexBuilder.toArray(new String[0])).source(new SearchSourceBuilder().query(query).size(0).aggregation(AggregationBuilders.terms(termAggName).size(finalIndices.size()).field(aggFieldName))).indicesOptions(IndicesOptions.lenientExpandOpen());
+                    mRequest.add(request);
+                    
+                    //
+                    //  flush
+                    //
+                    
+                    indexBuilder = new ArrayList<String>();
+                    shouldAdd = false;
+                  }
+              }
+            
+            //
+            //  execute
+            //
+            
+            MultiSearchResponse mResponse = this.msearch(mRequest, RequestOptions.DEFAULT);
+            if (log.isDebugEnabled()) log.debug("getJourneySubscriberCountMap MultiSearchResponse took {} to complete {} requests", mResponse.getTook(), mRequest.requests().size());
+            for (Item item : mResponse.getResponses())
+              {
+                if (item.getFailure() == null)
+                  {
+                    SearchResponse response = item.getResponse();
+                    
+                    //
+                    // Check search response
+                    //
+                    
+                    Aggregations aggregations = response.getAggregations();
+                    if (aggregations != null)
+                      {
+                        Terms journeySubscriberCountAggregationTerms = aggregations.get(termAggName);
+                        for (Bucket bucket : journeySubscriberCountAggregationTerms.getBuckets())
+                          {
+                            result.put(bucket.getKeyAsString(), bucket.getDocCount());
+                          }
+                      }
+                  }
+                else
+                  {
+                    if (log.isErrorEnabled()) log.error("one of the elastic multi search failed with error {}", item.getFailureMessage());
+                  }
+              }
+          }
+        
+        //
+        // Send result
+        //
+        
+        return result;
+      } 
+    catch (Exception e)
+      {
+        log.error("Exception on to generate JourneySubscriberCount {}", e.getMessage());
+        throw new ElasticsearchClientException(e.getMessage());
+      }
   }
  
 }

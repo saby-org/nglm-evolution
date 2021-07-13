@@ -5566,6 +5566,7 @@ public class GUIManager
 
   private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails, boolean externalOnly, boolean includeArchived, int tenantID)
   {
+    
     /*****************************************
      *
      * retrieve and convert journeys
@@ -5619,72 +5620,87 @@ public class GUIManager
       showDeliveriesCount = true; // Only for Bulk Campaigns for the moment
     }
     
+    //
+    //  subscriberCount (Elasticsearch)
+    //
+    
+    List<String> journeyIds = journeyObjects.stream().map(journeyObj -> journeyObj.getGUIManagedObjectID()).collect(Collectors.toList());
+    Map<String, Long> journeySubscriberCountMap = new HashMap<String, Long>();
+    try
+      {
+        if (journeyIds != null && !journeyIds.isEmpty()) journeySubscriberCountMap = this.elasticsearch.getJourneySubscriberCountMap(journeyIds);
+      } 
+    catch (ElasticsearchClientException e1)
+      {
+        log.warn("Exception processing getJourneySubscriberCountMap : {}", e1.getMessage());
+      }
+    
+    
     for (GUIManagedObject journey : journeyObjects)
       {
         if (journey.getGUIManagedObjectType().equals(objectType) && (!externalOnly || !journey.getInternalOnly()))
           {
             JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
-            long subscriberCount = 0;
             JSONObject deliveriesCount = new JSONObject();
             String journeyID = journey.getGUIManagedObjectID();
             String journeyDisplay = journey.getGUIManagedObjectDisplay();
 
             //
-            // retrieve from Elasticsearch 
+            // DeliveriesCount (Elasticsearch)
             //
-            try
-              {
-                // SubscriberCount
-                Long count = this.elasticsearch.getJourneySubscriberCount(journeyID);
-                count = (count != null) ? count : 0;
-                count = count-this.elasticsearch.getSpecialExitCount(journeyID);
-                subscriberCount = (count != null) ? count : 0;
-                
-                // DeliveriesCount 
-                if(showDeliveriesCount) {
-                  Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay, journey.getTenantID());
-                  Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay, journey.getTenantID());
-                  
-                  long messagesSuccess = 0;
-                  long messagesFailure = 0;
-                  for(String key: messages.keySet()) {
-                    if(key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage())) {
-                      messagesSuccess += messages.get(key);
-                    } else {
-                      messagesFailure += messages.get(key);
-                    }
-                  }
-                  JSONObject messagesCount = new JSONObject();
-                  messagesCount.put("success", messagesSuccess);
-                  messagesCount.put("failure", messagesFailure);
-                  
-                  long bonusesSuccess = 0;
-                  long bonusesFailure = 0;
-                  for(String key: bonuses.keySet()) {
-                    if(key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage())) {
-                      bonusesSuccess += bonuses.get(key);
-                    } else {
-                      bonusesFailure += bonuses.get(key);
-                    }
-                  }
-                  JSONObject bonusesCount = new JSONObject();
-                  bonusesCount.put("success", bonusesSuccess);
-                  bonusesCount.put("failure", bonusesFailure);
 
-                  deliveriesCount.put("messages", messagesCount);
-                  deliveriesCount.put("bonuses", bonusesCount);
-                  
-                }
-              } 
-            catch (ElasticsearchClientException e)
+            if (showDeliveriesCount)
               {
-                log.warn("Exception processing REST api: {}", e);
+                try
+                  {
+                    Map<String, Long> messages = this.elasticsearch.getJourneyMessagesCount(journeyDisplay, journey.getTenantID());
+                    Map<String, Long> bonuses = this.elasticsearch.getJourneyBonusesCount(journeyDisplay, journey.getTenantID());
+
+                    long messagesSuccess = 0;
+                    long messagesFailure = 0;
+                    for (String key : messages.keySet())
+                      {
+                        if (key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage()))
+                          {
+                            messagesSuccess += messages.get(key);
+                          } 
+                        else
+                          {
+                            messagesFailure += messages.get(key);
+                          }
+                      }
+                    JSONObject messagesCount = new JSONObject();
+                    messagesCount.put("success", messagesSuccess);
+                    messagesCount.put("failure", messagesFailure);
+
+                    long bonusesSuccess = 0;
+                    long bonusesFailure = 0;
+                    for (String key : bonuses.keySet())
+                      {
+                        if (key.equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage()))
+                          {
+                            bonusesSuccess += bonuses.get(key);
+                          } 
+                        else
+                          {
+                            bonusesFailure += bonuses.get(key);
+                          }
+                      }
+                    JSONObject bonusesCount = new JSONObject();
+                    bonusesCount.put("success", bonusesSuccess);
+                    bonusesCount.put("failure", bonusesFailure);
+
+                    deliveriesCount.put("messages", messagesCount);
+                    deliveriesCount.put("bonuses", bonusesCount);
+                    journeyInfo.put("deliveriesCount", deliveriesCount);
+
+                  } 
+                catch (ElasticsearchClientException e)
+                  {
+                    log.warn("Exception processing REST api: {}", e);
+                  }
               }
-             
-            journeyInfo.put("subscriberCount", subscriberCount);
-            if(showDeliveriesCount) {
-              journeyInfo.put("deliveriesCount", deliveriesCount);
-            }
+            journeyInfo.put("subscriberCount", journeySubscriberCountMap.get(journey.getGUIManagedObjectID()) == null ? Long.valueOf(0L) : journeySubscriberCountMap.get(journey.getGUIManagedObjectID()));
             journeys.add(journeyInfo);
           }
       }
