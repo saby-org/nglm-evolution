@@ -350,6 +350,7 @@ public class DeploymentCommon
   private static String voucherChangeResponseTopic;
   private static String edrDetailsTopic;
   private static String workflowEventTopic;
+  private static String subscriberProfileForceUpdateResponseTopic;
     
   //
   // Others
@@ -656,7 +657,8 @@ public class DeploymentCommon
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
   public static String getEdrDetailsTopic() { return edrDetailsTopic; }
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
-  
+  public static String getSubscriberProfileForceUpdateResponseTopic() { return subscriberProfileForceUpdateResponseTopic; }
+    
   
   
   //
@@ -950,6 +952,7 @@ public class DeploymentCommon
     sourceAddressTopic = jsonReader.decodeString("sourceAddressTopic");
     voucherChangeRequestTopic = jsonReader.decodeString("voucherChangeRequestTopic");
     voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
+    subscriberProfileForceUpdateResponseTopic = jsonReader.decodeString("subscriberProfileForceUpdateResponseTopic");
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
     

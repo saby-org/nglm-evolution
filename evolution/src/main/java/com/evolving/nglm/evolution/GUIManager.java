@@ -22237,7 +22237,7 @@ public class GUIManager
         validityPeriodType = point.getValidity().getPeriodType();
         validityPeriod = point.getValidity().getPeriodQuantity();
       }
-     CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+     CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(false,paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       throw new GUIManagerException(e);
     }
@@ -22328,7 +22328,7 @@ public class GUIManager
     String eventID = deliveryRequestID.concat("-").concat(Module.Customer_Care.toString());
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
-      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(false,paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       throw new GUIManagerException(e);
     }
@@ -29676,7 +29676,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                               // SubscriberProfileForceUpdate
                               //
                               
-                              SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap());
+                              SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap(), null);
                               subscriberProfileForceUpdate.getParameterMap().put("score", scoreToDebit*-1);
                               subscriberProfileForceUpdate.getParameterMap().put("challengeID", challenge.getGUIManagedObjectID());
                               subscriberProfileForceUpdate.getParameterMap().put("isPeriodChange", Boolean.TRUE);

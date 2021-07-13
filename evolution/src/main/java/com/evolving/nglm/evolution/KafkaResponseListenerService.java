@@ -31,12 +31,12 @@ public class KafkaResponseListenerService<K,V> {
 
   private Set<BlockingResponse> waitingForResponse =  new HashSet<>();
 
-  KafkaResponseListenerService(String broker, String topic, Serde<K> keySerde, Serde<V> valueSerde){
+  public KafkaResponseListenerService(String broker, String topic, Serde<K> keySerde, Serde<V> valueSerde){
     synchronized (this){
       Properties topicConsumerProperties = new Properties();
       topicConsumerProperties.put("bootstrap.servers", broker);
       topicConsumerProperties.put("auto.offset.reset", "latest");
-      topicConsumerProperties.put("enable.auto.commit", "false");
+      topicConsumerProperties.put("enabSle.auto.commit", "false");
       topicConsumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
       topicConsumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
       kafkaConsumer = new KafkaConsumer<>(topicConsumerProperties);

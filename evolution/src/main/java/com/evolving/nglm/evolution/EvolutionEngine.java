@@ -727,6 +727,7 @@ public class EvolutionEngine
     final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
     final ConnectSerde<EDRDetails> edrDetailsSerde = EDRDetails.serde();
     final ConnectSerde<WorkflowEvent> workflowEventSerde = WorkflowEvent.serde();
+    final ConnectSerde<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseSerde = SubscriberProfileForceUpdateResponse.serde();
 
     //
     //  special serdes
@@ -987,9 +988,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyTriggerEventAction),
         (key,value) -> (value instanceof SubscriberProfileForceUpdate),
         (key,value) -> (value instanceof EDRDetails),
-
-        (key,value) -> (value instanceof WorkflowEvent),
         (key, value) -> (value instanceof TokenRedeemed)
+        (key,value) -> (value instanceof SubscriberProfileForceUpdateResponse)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1009,9 +1009,9 @@ public class EvolutionEngine
     KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
-
     KStream<StringKey, WorkflowEvent> workflowEventsStream = (KStream<StringKey, WorkflowEvent>) branchedEvolutionEngineOutputs[15];
     KStream<StringKey, TokenRedeemed> tokenRedeemedsStream = (KStream<StringKey, TokenRedeemed>) branchedEvolutionEngineOutputs[16];
+    KStream<StringKey, SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseStream = (KStream<StringKey, SubscriberProfileForceUpdateResponse>) branchedEvolutionEngineOutputs[17];
     /*****************************************
     *
     *  sink
@@ -1036,6 +1036,7 @@ public class EvolutionEngine
     subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
     edrDetailsStream.to(Deployment.getEdrDetailsTopic(), Produced.with(stringKeySerde, edrDetailsSerde));
     tokenRedeemedsStream.to(Deployment.getTokenRedeemedTopic(), Produced.with(stringKeySerde, TokenRedeemed.serde()));
+    subscriberProfileForceUpdateResponseStream.to(Deployment.getSubscriberProfileForceUpdateResponseTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateResponseSerde));
 
     //
 	//  sink DeliveryRequest
@@ -2936,6 +2937,13 @@ public class EvolutionEngine
         //
 
         SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) evolutionEvent;
+        String SubscriberProfileForceUpdateRequestID = null;
+        String returnCode = null;
+        
+        if (subscriberProfileForceUpdate != null && subscriberProfileForceUpdate.getSubscriberProfileForceUpdateRequestID() != null)
+          {
+            SubscriberProfileForceUpdateRequestID = subscriberProfileForceUpdate.getSubscriberProfileForceUpdateRequestID();
+          }
 
         //
         //  evolutionSubscriberStatus
@@ -3114,7 +3122,10 @@ public class EvolutionEngine
                   }
               }
           }
+        returnCode = "success";
         
+        SubscriberProfileForceUpdateResponse subscriberProfileForceUpdateResponse = new SubscriberProfileForceUpdateResponse(returnCode , SubscriberProfileForceUpdateRequestID);
+        context.getSubscriberState().getSubscriberProfileForceUpdatesResponse().add(subscriberProfileForceUpdateResponse);
       }
     
     /*****************************************
@@ -7127,6 +7138,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getSubscriberProfileForceUpdates());
         result.addAll(subscriberState.getEdrDetailsWrappers());
         result.addAll(subscriberState.getTokenRedeemeds());
+        result.addAll(subscriberState.getSubscriberProfileForceUpdatesResponse());
       }
 
     // add stats about voucherChange done
@@ -8721,7 +8733,7 @@ public class EvolutionEngine
       String paramName = null;
       String attributeName = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.attribute.name");
       String attributeValue = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.attribute.value");
-      SubscriberProfileForceUpdate update = new SubscriberProfileForceUpdate("dummy", evolutionEventContext.now(), new ParameterMap());
+      SubscriberProfileForceUpdate update = new SubscriberProfileForceUpdate("dummy", evolutionEventContext.now(), new ParameterMap(), null);
       update.getParameterMap().put(attributeName, attributeValue);
       update.getParameterMap().put("fromJourney", true);
 
