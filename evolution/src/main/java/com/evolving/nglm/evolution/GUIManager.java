@@ -107,6 +107,7 @@ import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
@@ -126,6 +127,7 @@ import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.CustomerMetaData.MetaData;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
@@ -635,6 +637,8 @@ public class GUIManager
     getDependencies("getDependencies"),
     
     getSoftwareVersions("getSoftwareVersions"),
+    
+    sendMessage("sendMessage"),
 
     
     //
@@ -2357,6 +2361,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSimpleOfferList", new APISimpleHandler(API.getSimpleOfferList));
         restServer.createContext("/nglm-guimanager/getSimpleOfferSummaryList", new APISimpleHandler(API.getSimpleOfferSummaryList));
         restServer.createContext("/nglm-guimanager/removeSimpleOffer", new APISimpleHandler(API.removeSimpleOffer));
+        
+        restServer.createContext("/nglm-guimanager/sendMessage", new APISimpleHandler(API.sendMessage));
 
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -4281,6 +4287,10 @@ public class GUIManager
                 case getSoftwareVersions:
                 jsonResponse = processSoftwareVersions(userID, jsonRoot, 1); // for the moment, will see later
                 break;
+                
+                case sendMessage:
+                  jsonResponse = processSendMessage(userID, jsonRoot, tenantID);
+                  break;
 
               }
           }
@@ -30669,5 +30679,81 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     response.put("customerVersion", com.evolving.nglm.core.Deployment.getDeployment(tenantID).getCustomerVersion());
     return JSONUtilities.encodeObject(response);
   }
-}
+  
+  
+  public JSONObject processSendMessage(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
 
+    Date now = SystemTime.getCurrentTime();
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String areaAvailability = JSONUtilities.decodeString(jsonRoot, "areaAvailability", true);
+    JSONObject tags = JSONUtilities.decodeJSONObject(jsonRoot, "tags", true);
+    Map<String, List<String>> tagsMap = null;
+    List<String> dialogMessageTags = new ArrayList<>();
+    ContactType contactType = ContactType.ActionNotification;
+    String source = null;
+    Map<String, String> tagValue = new HashMap<String, String>();
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+   String subscriberID = resolveSubscriberID(customerID, tenantID);
+   if (subscriberID == null)
+   {
+     log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+     response.put("responseCode", "CustomerNotFound");
+     return JSONUtilities.encodeObject(response);
+   }
+    
+    Collection <SubscriberMessageTemplate> templates = subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now, tenantID);  
+    
+    for (SubscriberMessageTemplate template : templates) {
+           
+      if (template instanceof DialogTemplate && !template.getReadOnly()) {
+
+        JSONArray templateAreaAvailablity = (JSONArray) ((DialogTemplate) template).getJSONRepresentation()
+            .get("areaAvailability");
+        if (templateAreaAvailablity != null && templateAreaAvailablity.contains(areaAvailability))
+          {
+            String communicationChannelID = ((DialogTemplate) template).getCommunicationChannelID();
+            Collection <SourceAddress> sourceAddresses = sourceAddressService.getActiveSourceAddresses(now, tenantID);
+            for (SourceAddress sourceAddress : sourceAddresses) {
+              if (sourceAddress != null && sourceAddress.getCommunicationChannelId().equals(communicationChannelID)) {
+                source = sourceAddress.getGUIManagedObjectDisplay();
+                break;
+              }
+            }
+            
+            tagsMap = new HashMap<String, List<String>>();            
+            Set<String> keys = tags.keySet();
+            for (String key : keys)
+              {
+                 String keyValue = key;
+                 String value = tags.get(key).toString();
+                 tagValue.put(keyValue, value);
+              } 
+            
+            String templateID = ((DialogTemplate) template).getDialogTemplateID();
+            
+            String topic = Deployment.getNotificationEventTopic();
+            Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+            Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, source); 
+            
+            kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+                topic,
+                keySerializer.serialize(topic, new StringKey(subscriberID)),
+                valueSerializer.serialize(topic, notificationEvent)
+                ));
+            response.put("responseCode", "ok");
+          }
+      }
+    }    
+    return JSONUtilities.encodeObject(response);
+  }
+}

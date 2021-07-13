@@ -241,6 +241,7 @@
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
   "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
+  "notificationEventTopic"                               : "${topic.notificationEvent}",
 
   "supportedDataTypes" :
     [
@@ -536,7 +537,7 @@
       { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "stringSet",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
 	  { "id" : "loyaltyprograms.challenge.levels",     "display" : "Loyalty Challenges Current Levels",   "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getLoyaltyChallengesLevels",    "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null },
 	  { "id" : "loyaltyprograms.mission.steps",        "display" : "Loyalty Mission Current Steps",       "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getLoyaltyMissionsSteps",    "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null }
-   ],
+      ],
 
   "offerOptimizationAlgorithms": 
     [

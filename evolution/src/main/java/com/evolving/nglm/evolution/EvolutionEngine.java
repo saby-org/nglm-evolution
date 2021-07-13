@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
+import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -87,6 +88,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -97,6 +99,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
@@ -324,7 +327,7 @@ public class EvolutionEngine
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
     String workflowEventTopic = Deployment.getWorkflowEventTopic();
-
+    String notificationEventTopic = Deployment.getNotificationEventTopic();
     //
     //  changelogs
     //
@@ -730,6 +733,7 @@ public class EvolutionEngine
     final ConnectSerde<EDRDetails> edrDetailsSerde = EDRDetails.serde();
     final ConnectSerde<WorkflowEvent> workflowEventSerde = WorkflowEvent.serde();
     final ConnectSerde<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseSerde = SubscriberProfileForceUpdateResponse.serde();
+    final ConnectSerde<NotificationEvent> notificationEventSerde = NotificationEvent.serde();
 
     //
     //  special serdes
@@ -794,6 +798,7 @@ public class EvolutionEngine
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
     KStream<StringKey, WorkflowEvent> workflowEventStream = builder.stream(workflowEventTopic, Consumed.with(stringKeySerde, workflowEventSerde));
+    KStream<StringKey, NotificationEvent> notificationEventStream = builder.stream(notificationEventTopic, Consumed.with(stringKeySerde, notificationEventSerde));
     
     //
     //  timedEvaluationStreams
@@ -939,6 +944,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) workflowEventStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) notificationEventStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     evolutionEventStreams.addAll(deliveryManagerRequestToProcessStreams);
@@ -992,6 +998,7 @@ public class EvolutionEngine
         (key,value) -> (value instanceof EDRDetails),
         (key, value) -> (value instanceof TokenRedeemed)
         (key,value) -> (value instanceof SubscriberProfileForceUpdateResponse)
+        (key,value) -> (value instanceof NotificationEvent)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1014,6 +1021,7 @@ public class EvolutionEngine
     KStream<StringKey, WorkflowEvent> workflowEventsStream = (KStream<StringKey, WorkflowEvent>) branchedEvolutionEngineOutputs[15];
     KStream<StringKey, TokenRedeemed> tokenRedeemedsStream = (KStream<StringKey, TokenRedeemed>) branchedEvolutionEngineOutputs[16];
     KStream<StringKey, SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseStream = (KStream<StringKey, SubscriberProfileForceUpdateResponse>) branchedEvolutionEngineOutputs[17];
+    KStream<StringKey, NotificationEvent> notificationEventsStream = (KStream<StringKey, NotificationEvent>) branchedEvolutionEngineOutputs[18];
     /*****************************************
     *
     *  sink
@@ -1926,8 +1934,8 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    SubscriberEvaluationRequest changeEventEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
-    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(changeEventEvaluationRequest); 
+    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
+    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(subscriberEvaluationRequest); 
     
     /*****************************************
     *
@@ -1935,7 +1943,7 @@ public class EvolutionEngine
     *
     *****************************************/
     
-    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(changeEventEvaluationRequest);
+    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(subscriberEvaluationRequest);
     
     /*****************************************
     *
@@ -1971,6 +1979,14 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateWorkflows(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
+    *  update notificationEvent
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateNotifications(context, evolutionEvent, subscriberEvaluationRequest) || subscriberStateUpdated;
 
 
     /*****************************************
@@ -2027,7 +2043,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updateChangeEvents(subscriberState, now, changeEventEvaluationRequest, profileChangeOldValues, tenantID);
+    updateChangeEvents(subscriberState, now, subscriberEvaluationRequest, profileChangeOldValues, tenantID);
     
     /*****************************************
     *
@@ -2035,7 +2051,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, changeEventEvaluationRequest, profileSegmentChangeOldValues, tenantID);
+    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, subscriberEvaluationRequest, profileSegmentChangeOldValues, tenantID);
 
     /*****************************************
     *
@@ -2478,6 +2494,128 @@ public class EvolutionEngine
         workflowTriggering.add(toBeAdded);
         subscriberUpdated=true;
       }
+    return subscriberUpdated;
+  }
+ 
+ 
+ /*****************************************
+ *
+ *  updateWorkflows
+ *
+ *****************************************/
+
+ private static boolean updateNotifications(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, SubscriberEvaluationRequest subscriberEvaluationRequest)
+ {
+   
+   boolean subscriberUpdated = false;
+   SubscriberState subscriberState = context.getSubscriberState();
+
+   if (evolutionEvent instanceof NotificationEvent)
+     {
+       NotificationEvent notificationEvent = (NotificationEvent)evolutionEvent;
+       subscriberUpdated = sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState);
+     }
+   return subscriberUpdated;
+ }
+
+  private static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState)
+  {
+    boolean subscriberUpdated;
+    /*****************************************
+     *
+     * now
+     *
+     *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    // Enrich subscriber Evaluation Request with the tags specific to this message
+    // type (by example voucherCode)
+    if (specificTags != null)
+      {
+        for (Map.Entry<String, String> entry : specificTags.entrySet())
+          {
+            if (!entry.getKey().startsWith("tag."))
+              {
+                subscriberEvaluationRequest.getMiscData().put(("tag." + entry.getKey()).toLowerCase(), entry.getValue());
+              }
+            else
+              {
+                subscriberEvaluationRequest.getMiscData().put(entry.getKey().toLowerCase(), entry.getValue());
+              }
+          }
+      }
+
+    /*****************************************
+     *
+     * get DialogTemplate
+     *
+     *****************************************/
+    SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
+    DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
+
+    String language = subscriberEvaluationRequest.getLanguage();
+
+    if (template != null && !template.getReadOnly())
+      {
+        //
+        // get communicationChannel
+        //
+
+        CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
+
+        //
+        // get dest address
+        //
+
+        CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
+        String destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+
+        Map<String, List<String>> tags = new HashMap<String, List<String>>();
+
+        for (String messageField : template.getDialogMessageFields().keySet())
+          {
+            DialogMessage dialogMessage = template.getDialogMessage(messageField);
+            List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
+            tags.put(messageField, dialogMessageTags);
+          }
+
+        // //
+        // // Parameters specific to the channel toolbox but NOT related to template
+        // //
+        // ParameterMap notificationParameters = new ParameterMap();
+        // for(CriterionField field :
+        // communicationChannel.getToolboxParameters().values()) {
+        // //notificationParameters.put(field.getID(), value);
+        // }
+
+        // add also the mandatory parameters for all channels
+        ParameterMap notificationParameters = new ParameterMap();
+        notificationParameters.put("node.parameter.contacttype", contactType.getExternalRepresentation());
+        notificationParameters.put("node.parameter.fromaddress", sourceAddress);
+
+        /*****************************************
+         *
+         * request
+         *
+         *****************************************/
+
+        NotificationManagerRequest request = null;
+        if (destAddress != null)
+          {
+            request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, communicationChannel.getID(), notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+
+            request.forceDeliveryPriority(contactType.getDeliveryPriority());
+            request.setRestricted(contactType.getRestricted());
+            subscriberState.getDeliveryRequests().add(request);
+          }
+        else
+          {
+            log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+          }
+
+      }
+    subscriberUpdated = true;
     return subscriberUpdated;
   }
 
