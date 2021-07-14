@@ -50,7 +50,7 @@
     <gui-iar.version>2.0.0</gui-iar.version>
     <gui-opr.version>1.5.7</gui-opr.version>
     <gui-stg.version>2.0.0</gui-stg.version>
-    <gui-sbm.version>2.0.0</gui-sbm.version>
+    <gui-sbm.version>2.0.1</gui-sbm.version>
     <gui-lpm.version>2.0.0</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.8</gui-audit.version>
