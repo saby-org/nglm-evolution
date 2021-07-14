@@ -440,6 +440,7 @@ public abstract class Expression
       super(tenantID);
       this.constant = constant;
       this.type = type;
+      log.info("RAJ K inside ConstantExpression cons with constant value {}", constant);
     }
   }
 
@@ -3936,6 +3937,7 @@ public abstract class Expression
             break;
 
           case STRING:
+            log.info("RAJ K inside parsePrimary  tokenValue {}", tokenValue);
             result = new ConstantExpression(ExpressionDataType.StringExpression, tokenValue, tenantID);
             break;
 
