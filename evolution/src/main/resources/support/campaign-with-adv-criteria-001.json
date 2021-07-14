@@ -18,7 +18,7 @@
     {
       "argument":{
         "valueType":"simple",
-        "value":5,
+        "value":0,
         "valueMultiply":null,
         "valueAdd":null,
         "timeUnit":null,
@@ -29,14 +29,7 @@
       "subcriteria":[
         {
           "field":"offer.id",
-          "argument":{
-            "valueType":"simpleEnter.string",
-            "value":"1",
-            "valueMultiply":null,
-            "valueAdd":null,
-            "timeUnit":null,
-            "expression":"'1'"
-          }
+          "argument": null
         },
         {
           "field":"period",
