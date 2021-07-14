@@ -1,5 +1,5 @@
 {
-  "effectiveEndDate":"2021-06-30T00:00:00+05:30",
+  "effectiveEndDate":"2050-06-30T00:00:00+05:30",
   "dryRun":false,
   "targetingCriteria":[
     
@@ -22,7 +22,7 @@
         "valueMultiply":null,
         "valueAdd":null,
         "timeUnit":null,
-        "expression":"5"
+        "expression":"0"
       },
       "criterionField":"offer.offername.purchased.period",
       "criterionOperator":"==",
