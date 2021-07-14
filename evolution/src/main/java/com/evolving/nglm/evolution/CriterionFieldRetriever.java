@@ -110,6 +110,7 @@ public abstract class CriterionFieldRetriever
       {
         result = purchaseDates.size();
       }
+    log.info("RAJ K return result {}", result);
     return result;
   }
   
