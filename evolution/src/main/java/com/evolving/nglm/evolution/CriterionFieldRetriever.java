@@ -68,13 +68,11 @@ public abstract class CriterionFieldRetriever
   
   public static Object getNumberOfOfferPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K subcriteriaVal {}", subcriteriaVal);
     long result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     String offerID = (String) subcriteriaVal.get(0);
     String period = (String) subcriteriaVal.get(1);
     List<Date> purchaseDates = new ArrayList<Date>();
-    log.info("RAJ K offerID {} and period {}", offerID, period);
     
     //
     //  offerID
@@ -110,7 +108,6 @@ public abstract class CriterionFieldRetriever
       {
         result = purchaseDates.size();
       }
-    log.info("RAJ K return result {}", result);
     return result;
   }
   
