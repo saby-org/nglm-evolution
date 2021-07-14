@@ -19,7 +19,7 @@
   "guiConfigurationInitialConsumerMaxFetchBytes": 3145728,
 
   "kafkaRetentionDaysExpiredTokens"   : 31,
-  "kafkaRetentionDaysExpiredVouchers" : 31,
+  "kafkaRetentionDaysExpiredVouchers" : 122,
   "kafkaRetentionDaysLoyaltyPrograms" : 31,
   "kafkaRetentionDaysTargets"         : 7,
   
