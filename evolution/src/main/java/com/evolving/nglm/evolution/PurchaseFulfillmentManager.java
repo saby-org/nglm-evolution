@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
@@ -1426,22 +1427,35 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // check offer purchase limit for this subscriber
         //
         
-        //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
+        Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(now, offer, deliveryRequest.getTenantID());
+        List<Date> purchaseHistory = new ArrayList<Date>();
+        
+      //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
         // so it is important to migrate data, but once all customer run over this version, this should be removed
         // ------ START DATA MIGRATION COULD BE REMOVED
         Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-        List<Date> purchaseHistory = offerPurchaseHistory.get(offerID);
-        int totalPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+        if (offerPurchaseHistory.get(offerID) != null)
+          {
+            purchaseHistory = offerPurchaseHistory.get(offerID).stream().filter(date -> date.after(earliestDateToKeep)).collect(Collectors.toList());
+          }
+        
         // ------ END DATA MIGRATION COULD BE REMOVED
         
-        int alreadyPurchasedNew = subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null ? subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).size() : 0;
-        totalPurchased = totalPurchased + alreadyPurchasedNew;
+        //
+        // new version
+        //
+        
+        if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null)
+          {
+            purchaseHistory.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().filter(datepair -> datepair.getSecondElement().after(earliestDateToKeep)).map(datepair -> datepair.getSecondElement()).collect(Collectors.toList()));
+          }
+        
+        int totalPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
 
-        if (offerPurchaseHistory.get("TBR_"+purchaseRequest.getDeliveryRequestID()) == null) { // EvolEngine has not processed this one yet
+        if (offerPurchaseHistory.get("TBR_"+purchaseRequest.getDeliveryRequestID()) == null && subscriberProfile.getOfferPurchaseSalesChannelHistory().get("TBR_"+purchaseRequest.getDeliveryRequestID()) == null) { // EvolEngine has not processed this one yet
           if (purchaseHistory != null)
             {
               // only keep recent purchase dates (discard dates that are too old)
-              Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(now, offer, deliveryRequest.getTenantID());
               totalPurchased = purchaseRequest.getQuantity();
               for (Date purchaseDate : purchaseHistory)
                 {
