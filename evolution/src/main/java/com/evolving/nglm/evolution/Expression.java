@@ -317,7 +317,6 @@ public abstract class Expression
 
     @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
     {
-      log.info("RAJ K evaluateConstant and returns {}", constant);
       return constant;
     }
 
@@ -440,7 +439,6 @@ public abstract class Expression
       super(tenantID);
       this.constant = constant;
       this.type = type;
-      log.info("RAJ K inside ConstantExpression cons with constant value {}", constant);
     }
   }
 
@@ -624,7 +622,6 @@ public abstract class Expression
       //  return
       //
       
-      log.info("RAJ K evaluateRefer and returns {}", referenceValue);
       return referenceValue;
     }
 
@@ -962,7 +959,6 @@ public abstract class Expression
       *
       *****************************************/
 
-      log.info("RAJ K evaluateOperator and returns {}", result);
       return result;
     }
 
@@ -1175,7 +1171,6 @@ public abstract class Expression
       *
       *****************************************/
 
-      log.info("RAJ K evaluateUnary and returns {}", result);
       return result;
     }
 
@@ -2468,7 +2463,6 @@ public abstract class Expression
       *
       *****************************************/
 
-      log.info("RAJ K evaluateFunc and returns {}", result);
       return result;
     }
 
@@ -3937,7 +3931,6 @@ public abstract class Expression
             break;
 
           case STRING:
-            log.info("RAJ K inside parsePrimary  tokenValue {}", tokenValue);
             result = new ConstantExpression(ExpressionDataType.StringExpression, tokenValue, tenantID);
             break;
 

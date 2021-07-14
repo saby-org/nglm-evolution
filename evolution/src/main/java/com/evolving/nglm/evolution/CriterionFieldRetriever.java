@@ -74,8 +74,6 @@ public abstract class CriterionFieldRetriever
     String period = (String) subcriteriaVal.get(1);
     List<Date> purchaseDates = new ArrayList<Date>();
     
-    log.info("RAJ K getNumberOfOfferPurchasedForPeriod with offerID {} and period {}", offerID, period);
-    
     //
     //  offerID
     //

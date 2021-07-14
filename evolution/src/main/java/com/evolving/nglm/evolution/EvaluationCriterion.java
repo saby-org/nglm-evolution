@@ -1313,15 +1313,12 @@ public class EvaluationCriterion
         for (String field : getSubcriteriaExpressions().keySet())
           {
             Expression subArgument = getSubcriteriaExpressions().get(field);
-            log.info("RAJ K {} - expression types is {}", field, subArgument.getClass());
             TimeUnit subArgumentBaseTimeUnit = getSubcriteriaArgumentMap().get(field).getArgumentBaseTimeUnit();
             Object evaluatedArgument = (subArgument != null) ? subArgument.evaluateExpression(evaluationRequest, subArgumentBaseTimeUnit) : null;
-            log.info("RAJ K {} - evaluatedArgument value for {} is {} and type is {}", field, evaluatedArgument, evaluatedArgument.getClass());
             result.put(field, evaluatedArgument);
           }
         if (criterionField.getSubcriterias().size() != result.size()) throw new RuntimeException(criterionField.getDisplay() + " has " + criterionField.getSubcriterias().size() + " sub criterias but found " + result.size() + " evaluation expressions");
       }
-    log.info("RAJ K getSubcriteriaArgumentValues return {}", result);
     return result;
   }
 
