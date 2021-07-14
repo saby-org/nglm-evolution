@@ -607,11 +607,13 @@ public class CriterionField extends DeploymentManagedObject
           {
             if (hasSubcriterias())
               {
+                log.info("RAJ K subcriteriaArgumentValues {}", subcriteriaArgumentValues);
                 List<Object> subcriteriaVals = new ArrayList<Object>(getSubcriterias().size());
                 for (String subc : getSubcriterias())
                   {
                     subcriteriaVals.add(subcriteriaArgumentValues.get(subc));
                   }
+                log.info("RAJ K invoking with list {}", subcriteriaVals);
                 return retriever.invokeExact(evaluationRequest, this.getID(), subcriteriaVals);
               }
             else

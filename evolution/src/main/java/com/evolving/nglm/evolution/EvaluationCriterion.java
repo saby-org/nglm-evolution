@@ -1319,6 +1319,7 @@ public class EvaluationCriterion
           }
         if (criterionField.getSubcriterias().size() != result.size()) throw new RuntimeException(criterionField.getDisplay() + " has " + criterionField.getSubcriterias().size() + " sub criterias but found " + result.size() + " evaluation expressions");
       }
+    log.info("RAJ K getSubcriteriaArgumentValues return {}", result);
     return result;
   }
 
