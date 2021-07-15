@@ -218,7 +218,7 @@ public class OTPInstance // implements Action
     OTPInstance otpInstance = (OTPInstance) value;
     Struct struct = new Struct(schema);
     struct.put("otpType", otpInstance.getOTPTypeDisplayName());
-    struct.put("otpStatus", otpInstance.getOTPStatus());
+    struct.put("otpStatus", otpInstance.getOTPStatus().getExternalRepresentation());
     struct.put("otpValue", otpInstance.getOTPValue());
     struct.put("checksCount", otpInstance.getChecksCount());
     struct.put("errorCount", otpInstance.getErrorCount());

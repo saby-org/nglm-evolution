@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.json.simple.JSONObject;
+// import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,9 +161,6 @@ public class OTPUtils {
 		}
 		Date now = new Date();
 		
-		// TODO GFE DELETE LOGS
-		log.info("received check value |"+otpRequest.getOTPCheckValue()+"| on type |"+otpRequest.getOTPTypeName()+"|");
-
 		// check and retrieve otpType
 		OTPType otptype = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(), tenantID);
 		if (otptype == null) {
@@ -183,19 +180,7 @@ public class OTPUtils {
 		
 		List<OTPInstance> candidates = profile.getOTPInstances().stream()
 				.filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName()))
-				.collect(Collectors.toList());
-		// TODO check if needed to re-save the profile or if it will be done correctly
-		// List<OTPInstance> nonCandidates =
-		// profile.getOTPInstances().stream().filter(c->
-		// !c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())).collect(Collectors.toList());
-
-		
-		// TODO GFE DELETE LOGS
-		log.info("profileInsts size"+profile.getOTPInstances().size());
-		log.info(profile.getOTPInstances().toString());
-		log.info("candidates size"+candidates.size());
-		log.info(candidates.toString());
-		
+				.collect(Collectors.toList());		
 
 		OTPInstance tomatch;
 		
@@ -205,14 +190,9 @@ public class OTPUtils {
 		try {
 			tomatch = Collections.max(candidates, new OTPCreationDateComparator());
 			
-			// TODO GFE DELETE LOGS
-			log.info("post max :"+tomatch.toString());
-			
 			if (tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.RaisedBan)
 					&& DateUtils.addSeconds(tomatch.getLatestUpdate(), otptype.getBanPeriod()).after(now)) {
 				// maybe add some other return values ??
-				// TODO GFE DELETE LOGS
-				log.info("debug current tomatch saids banraised");
 				otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
 				return otpRequest;
 			}
@@ -228,9 +208,6 @@ public class OTPUtils {
 		if (otptype.getMaxWrongCheckAttemptsByInstance() <= candidates.stream()
 				.filter(c -> DateUtils.addDays(c.getCreationDate(), otptype.getTimeWindow()).after(now))
 				.mapToInt(o -> o.getErrorCount().intValue()).sum()) {
-			log.info("debug check global max reached");
-			log.info("debug timewindow "+otptype.getTimeWindow().toString());
-			log.info("debug maxcheck "+otptype.getMaxWrongCheckAttemptsByInstance().toString());
 			otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);// or maybe
 																						// MAX_NB_OF_ATTEMPT_REACHED);
 			return otpRequest;
@@ -249,11 +226,9 @@ public class OTPUtils {
 
 		// Check 05 : check if already burnt
 		if (tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.Burnt)) {
-			otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.INVALID_OTP);// could be OTP_EXPIRED);
+			otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.OTP_EXPIRED);// could be INVALID_OTP);
 			// maybe add updates of the status (or just wait for daily event update
-			// if (!tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.Expired) &&
-			// !tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.RaisedBan)){
-			// TODO decide if this should count as an aditionnal error or not
+			// TODO decide if this should count as an additional error or not, so far yes
 			tomatch.setErrorCount(tomatch.getErrorCount() + 1);
 			tomatch.setLatestError(now);
 			tomatch.setLatestUpdate(now);
@@ -421,15 +396,19 @@ public class OTPUtils {
 			otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
 			return otpRequest;
 		}
-		OTPInstance otpInstance = new OTPInstance(otptype.getOTPTypeName(), OTPStatus.New, otpValue, 0, 0, now, now,
+		OTPInstance otpInstance = new OTPInstance(otptype.getDisplay(), OTPStatus.New, otpValue, 0, 0, now, now,
 				null, null, DateUtils.addSeconds(now, otptype.getInstanceExpirationDelay()));
 
 		// put the relevant content of this instance in the returning event
-		OTPInstanceChangeEvent otpResponse = new OTPInstanceChangeEvent(otpRequest);
-		otpResponse.setOTPCheckValue(otpValue); // at least for debug now, but should not be returned to the customer...
-		otpResponse.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance().toString());
-		otpResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-		return otpResponse;
+				List<OTPInstance> existingInstances = profile.getOTPInstances();
+				if (existingInstances == null) existingInstances = new ArrayList<OTPInstance>();
+				existingInstances.add(otpInstance);
+				profile.setOTPInstances(existingInstances);
+				
+		otpRequest.setOTPCheckValue(otpValue); // at least for debug now, but should not be returned to the customer...
+		otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance().toString());
+		otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+		return otpRequest;
 	}
 
 	// sample code generators

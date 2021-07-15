@@ -5817,8 +5817,10 @@ public class ThirdPartyManager
         RESTAPIGenericReturnCodes.UNKNOWN,
         tenantID);
 
-     String topic = Deployment.getOTPInstanceChangeRequestTopic();
-     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID)), OTPInstanceChangeEvent.serde().serializer().serialize(topic, request)));
+     //String topic = Deployment.getOTPInstanceChangeRequestTopic();
+     //kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID)), OTPInstanceChangeEvent.serde().serializer().serialize(topic, request)));
+     
+     
      Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
 
      String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();

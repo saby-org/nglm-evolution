@@ -1826,6 +1826,7 @@ public class EvolutionEngine
     	subscriberState.getOTPInstanceChangeEvent().add(
         		OTPUtils.handleOTPEvent((OTPInstanceChangeEvent)evolutionEvent, subscriberProfile, otpTypeService, tenantID)
         		);
+    	subscriberStateUpdated = true;
       }
 
     /*****************************************
@@ -2168,7 +2169,7 @@ public class EvolutionEngine
     *  return
     *
     ****************************************/
-
+    
     if(subscriberStateUpdated){
         log.trace("updateSubscriberState : subscriberStateUpdated enriching event with it for down stream processing");
         evolutionHackyEvent.enrichWithSubscriberState(subscriberState);
@@ -3493,6 +3494,16 @@ public class EvolutionEngine
             subscriberProfileUpdated = true;
           }
       }
+
+    /*****************************************
+    *
+    *  OTP to update in profile
+    *
+    *****************************************/
+// TODO need some mechanism to use what triggered daily check that potentially deleted old otps !!
+    if (evolutionEvent instanceof OTPInstanceChangeEvent) {
+        subscriberProfileUpdated = true;
+    }
 
     /*****************************************
     *

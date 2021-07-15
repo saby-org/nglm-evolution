@@ -117,6 +117,7 @@ public enum RESTAPIGenericReturnCodes
   BLOCKED_BY_EXCLUSION_LIST(712, "BLOCKED_BY_EXCLUSION_LIST", "Message is blocked due to exclusion list"),
   BLOCKED_BY_CUSTOMER_STATUS(713, "BLOCKED_BY_CUSTOMER_STATUS", "Message is blocked due to customer status"),
   BLOCKED_BY_CHANNEL_QUOTA(714, "BLOCKED_BY_CHANNEL_QUOTA", "Message is blocked due to channel quota"),
+//  RESET_YOUR_PASSWORD(999,"RESET_YOUR_PASSWORD","Reset Your Password"),
   UNKNOWN(-1, "UNKNOWN", "UNKNOWN");
   
   private int genericResponseCode;

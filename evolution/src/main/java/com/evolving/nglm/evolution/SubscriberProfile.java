@@ -733,25 +733,7 @@ public abstract class SubscriberProfile
     }
     return result;
   }
-  
-  // GFE CHECK IF NEEDED a getOTPInstancesJSON()
-//  public JSONObject getOTPInstancesJSON()
-//  {
-//    JSONObject result = new JSONObject();
-//    if(this.otpInstances != null)
-//    {
-//      JSONArray array = new JSONArray();
-//      for(ITPInstance otp : otpInstances)
-//      {
-//        JSONObject obj = new JSONObject();
-//        obj.put("<fieldHere>",otp.get<FieldGetter>());
-//        array.add(obj);
-//      }
-//      result.put("otp", array);
-//    }
-//    return result;
-//  }
-
+ 
   
   /****************************************
   *
@@ -2031,6 +2013,7 @@ public abstract class SubscriberProfile
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
+    struct.put("otps", packOTPInstances(subscriberProfile.getOTPInstances()));
   }
 
   /****************************************
@@ -2149,6 +2132,24 @@ public abstract class SubscriberProfile
     for (Token token : tokens)
       {
         result.add(Token.commonSerde().pack(token));
+      }
+    return result;
+  }
+  
+  
+  /****************************************
+  *
+  *  packOTPInstances
+  *
+  ****************************************/
+
+  private static Object packOTPInstances(List<OTPInstance> otps)
+  {
+    List<Object> result = new ArrayList<Object>();
+    if (otps == null) return result;
+    for (OTPInstance otp : otps)
+      {
+        result.add(OTPInstance.serde().pack(otp));
       }
     return result;
   }
