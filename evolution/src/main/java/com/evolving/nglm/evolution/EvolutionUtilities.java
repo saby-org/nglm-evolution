@@ -38,6 +38,7 @@ public class EvolutionUtilities
     Week("week", "WEEKS"),
     Month("month", "MONTHS"),
     Year("year", "YEARS"),
+    Quarters("quarters", "QUARTERS"),
     Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
     private String chronoUnit;
@@ -166,6 +167,21 @@ public class EvolutionUtilities
             break;
           }
           result = RLMDateUtils.addYears(result, amount, timeZone);
+          break;
+          
+        case Quarters:
+          switch (roundingSelection) {
+          case RoundUp:
+            result = RLMDateUtils.ceiling(result, Calendar.YEAR, timeZone);
+            break;
+          case RoundDown:
+            result = RLMDateUtils.truncate(result, Calendar.YEAR, timeZone);
+            break;
+          default :
+            break;
+          }
+          int monthsToAdd = 3 * amount;
+          result = RLMDateUtils.addMonths(result, monthsToAdd, timeZone);
           break;
 
         default:
