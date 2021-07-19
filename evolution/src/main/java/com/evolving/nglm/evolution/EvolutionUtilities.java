@@ -180,8 +180,7 @@ public class EvolutionUtilities
             default :
               break;
             }
-          int monthsToAdd = 3 * amount;
-          result = RLMDateUtils.addMonths(result, monthsToAdd, timeZone);
+          result = RLMDateUtils.addQuarter(result, amount, timeZone);
           break;
 
         default:
