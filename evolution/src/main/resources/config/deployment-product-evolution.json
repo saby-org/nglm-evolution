@@ -393,12 +393,13 @@
 
   "supportedTimeUnits" :
     [ 
-      { "id" : "instant", "display" : "Instant" },
-      { "id" : "minute",  "display" : "Minute" },
-      { "id" : "hour",    "display" : "Hour" },
-      { "id" : "day",     "display" : "Day" },
-      { "id" : "month",   "display" : "Month" },
-      { "id" : "year",    "display" : "Year" }
+      { "id" : "instant",	"display" : "Instant" },
+      { "id" : "minute",	"display" : "Minute" },
+      { "id" : "hour",		"display" : "Hour" },
+      { "id" : "day",		"display" : "Day" },
+      { "id" : "month",		"display" : "Month" },
+      { "id" : "year",		"display" : "Year" },
+      { "id" : "quarter",	"display" : "Quarter" }
     ],
 
     "supportedTokenCodesFormats" :
