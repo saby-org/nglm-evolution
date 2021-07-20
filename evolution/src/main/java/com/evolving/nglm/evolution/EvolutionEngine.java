@@ -1756,14 +1756,14 @@ public class EvolutionEngine
       }
 
     // NO MORE DEEP COPY !!!!
-	// previous one or new empty
+    // previous one or new empty
     SubscriberState subscriberState = (previousSubscriberState != null) ? previousSubscriberState : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
     // keep the previous stored byte[]
     byte[] storedBefore = (previousSubscriberState != null) ? previousSubscriberState.getKafkaRepresentation() : new byte[0];// this empty means as well subscriber was not existing before
     // need to save the previous scheduled evaluation
-	Set<TimedEvaluation> scheduledEvaluationsBefore = new TreeSet<>(subscriberState.getScheduledEvaluations());
-	// and clean it
-	subscriberState.getScheduledEvaluations().clear();
+    Set<TimedEvaluation> scheduledEvaluationsBefore = new TreeSet<>(subscriberState.getScheduledEvaluations());
+    // and clean it
+    subscriberState.getScheduledEvaluations().clear();
 
     boolean subscriberStateUpdated = previousSubscriberState == null;
 
@@ -1788,7 +1788,7 @@ public class EvolutionEngine
       {        
         case Cleanup:
           // move the user to terminated state and reference the date of termination, so that is it cleaned later on
-          subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
+//          subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
           subscriberState.setCleanupDate(EvolutionUtilities.addTime(SystemTime.getCurrentTime(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(), Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
           if(subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
             {
@@ -6918,7 +6918,7 @@ public class EvolutionEngine
       {
         
         case Cleanup:
-          // move the user to terminated state and reference the date of termination, so that is it cleaned later on
+          // nothing to do
           break;
         
         case CleanupImmediate:

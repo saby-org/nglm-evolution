@@ -5,8 +5,8 @@
   "country"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
   "APIresponseDateFormat"                : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
   
-  "subscriberDeletionTimeUnit"           : "second",
-  "subscriberDeletionTimeUnitNumber"     : 30,		
+  "subscriberDeletionTimeUnit"           : "day",
+  "subscriberDeletionTimeUnitNumber"     : 0,		
 
   "topicSubscriberPartitions" : "<_SUBSCRIBER_PARTITIONS_>",
   "topicReplication"          : "<_KAFKA_REPLICATION_FACTOR_>",
@@ -650,9 +650,9 @@
   {
     "generalDetailsMetaData" :
     [
-      { "id" : "1000",   "textProperty" : true,  "display" : "Evolution Subscriber Status",             "editable" : true,  "alternateID" : false, "topLevel": true,      "dataType" : "string",      "name" : "evolutionSubscriberStatus",                 "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "(unknown)"] },
+      { "id" : "1000",   "textProperty" : true,  "display" : "Evolution Subscriber Status",             "editable" : true,  "alternateID" : false, "topLevel": true,      "dataType" : "string",      "name" : "evolutionSubscriberStatus",                 "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "terminated", "(unknown)"] },
       { "id" : "1001",   "textProperty" : true,  "display" : "Evolution Subscriber Status Change Date", "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "date",        "name" : "evolutionSubscriberStatusChangeDate",       "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
-      { "id" : "1002",   "textProperty" : true,  "display" : "Previous Evolution Subscriber Status",    "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "previousEvolutionSubscriberStatus",         "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "(unknown)"] },
+      { "id" : "1002",   "textProperty" : true,  "display" : "Previous Evolution Subscriber Status",    "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "previousEvolutionSubscriberStatus",         "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "terminated", "(unknown)"] },
       { "id" : "1003",   "textProperty" : true,  "display" : "Subscriber Language",                     "editable" : true,  "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "language",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
       { "id" : "1004",   "textProperty" : true,  "display" : "Subscriber Segments",                     "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "stringSet",   "name" : "segments",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
       { "id" : "1005",   "textProperty" : true,  "display" : "Subscriber ID",                           "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "subscriberID",                              "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
