@@ -170,7 +170,23 @@ public class EvolutionUtilities
           break;
           
         case Quarter:
+          int noOfMonthToAdd = 3 * amount;
+          result = RLMDateUtils.addMonths(result, noOfMonthToAdd, timeZone);
+          switch (roundingSelection) {
+            case RoundUp:
+              result = RLMDateUtils.getLastDayOfQuarter(result, timeZone);
+              result = RLMDateUtils.ceiling(result, Calendar.DATE, timeZone);
+              break;
+            case RoundDown:
+              result = RLMDateUtils.getFirstDayOfQuarter(result, timeZone);
+              result = RLMDateUtils.truncate(result, Calendar.DATE, timeZone);
+              break;
+            default :
+              break;
+            }
+          break;
           
+          /*
           //
           //  result is quarter last date
           //
@@ -185,8 +201,7 @@ public class EvolutionUtilities
               break;
             default :
               break;
-            }
-          break;
+            }*/
 
         default:
           throw new RuntimeException("unsupported timeunit: " + timeUnit);

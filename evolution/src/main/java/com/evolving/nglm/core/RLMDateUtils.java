@@ -244,11 +244,30 @@ public class RLMDateUtils
     return calendar.getTime();
   }
   
+  public static Date getLastDayOfQuarter(Date anyQarterDate, String timeZone)
+  {
+    Calendar calendar = getCalendarInstance1(timeZone);
+    calendar.setTime(anyQarterDate);
+    calendar.set(Calendar.DAY_OF_MONTH, 1);
+    calendar.set(Calendar.MONTH, calendar.get(Calendar.MONTH)/3 * 3 + 2);
+    calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+    return calendar.getTime();
+  }
+  
+  public static Date getFirstDayOfQuarter(Date anyQarterDate, String timeZone)
+  {
+    Calendar calendar = getCalendarInstance1(timeZone);
+    calendar.setTime(anyQarterDate);
+    calendar.set(Calendar.DAY_OF_MONTH, 1);
+    calendar.set(Calendar.MONTH, calendar.get(Calendar.MONTH)/3 * 3);
+    return calendar.getTime();
+  }
+  
   //
   //  addQuarter - returns last date of the quarter always
   //
 
-  public static Date addQuarter(Date date, int amount, String timeZone)
+  /*public static Date addQuarter(Date date, int amount, String timeZone)
   {
     Date result = date;
     Calendar calendar = getCalendarInstance1(timeZone);
@@ -280,7 +299,7 @@ public class RLMDateUtils
           }
       }
     return result;
-  }
+  }*/
 
   //
   //  addMonths
