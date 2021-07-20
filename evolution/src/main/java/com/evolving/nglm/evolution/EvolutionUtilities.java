@@ -170,17 +170,22 @@ public class EvolutionUtilities
           break;
           
         case Quarter:
+          
+          //
+          //  result is quarter last date
+          //
+          
+          result = RLMDateUtils.addQuarter(result, amount, timeZone);
           switch (roundingSelection) {
             case RoundUp:
-              result = RLMDateUtils.ceiling(result, Calendar.MONTH, timeZone);
+              result = RLMDateUtils.ceiling(result, Calendar.DATE, timeZone);
               break;
             case RoundDown:
-              result = RLMDateUtils.truncate(result, Calendar.MONTH, timeZone);
+              result = RLMDateUtils.truncate(result, Calendar.DATE, timeZone);
               break;
             default :
               break;
             }
-          result = RLMDateUtils.addQuarter(result, amount, timeZone);
           break;
 
         default:
