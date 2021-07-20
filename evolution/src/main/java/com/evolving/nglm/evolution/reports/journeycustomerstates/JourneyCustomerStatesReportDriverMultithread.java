@@ -37,8 +37,8 @@ public class JourneyCustomerStatesReportDriverMultithread extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = JourneyCustomerStatesReportMultithread.headerFieldsOrder;
+    return result;
   }
   
 }

@@ -88,7 +88,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private static final String templateID = "templateID";
   private static final String language = "language";
   
-  private static List<String> headerFieldsOrder = new LinkedList<String>();
+  static List<String> headerFieldsOrder = new LinkedList<String>();
   static
   {
     headerFieldsOrder.add(moduleId);

@@ -106,7 +106,7 @@ public class JourneyRewardsMap
     GetMappingsRequest request = new GetMappingsRequest();
     request.indices("journeystatistic-*");
     
-    GetMappingsResponse getMappingResponse = elasticsearch.indices().getMapping(request, RequestOptions.DEFAULT);
+    GetMappingsResponse getMappingResponse = elasticsearch.syncMappingWithRetry(request, RequestOptions.DEFAULT);
 
     for(String journeystatisticIndex: getMappingResponse.mappings().keySet()) {
       //

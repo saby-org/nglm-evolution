@@ -51,11 +51,12 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_profile_force_update");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),2));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("parameterMap", ParameterMap.schema());
+    schemaBuilder.field("subscriberProfileForceUpdateRequestID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -82,6 +83,7 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
   private String subscriberID;
   private Date eventDate;
   private ParameterMap parameterMap;
+  private String subscriberProfileForceUpdateRequestID;
 
   /*****************************************
   *
@@ -92,6 +94,7 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
   public String getSubscriberID() { return subscriberID; }
   public Date getEventDate() { return eventDate; }
   public ParameterMap getParameterMap() { return parameterMap; }
+  public String getSubscriberProfileForceUpdateRequestID() { return subscriberProfileForceUpdateRequestID; }
 
   /*****************************************
   *
@@ -180,6 +183,8 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
         this.parameterMap.put("score", score);
         this.parameterMap.put("challengeID", challengeID);
       }
+    
+    this.subscriberProfileForceUpdateRequestID = JSONUtilities.decodeString(jsonRoot, "subscriberProfileForceUpdateRequestID", false);
   }
 
   /*****************************************
@@ -188,19 +193,21 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
   *
   *****************************************/
 
-  public SubscriberProfileForceUpdate(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, ParameterMap parameterMap)
+  public SubscriberProfileForceUpdate(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, ParameterMap parameterMap, String subscriberProfileForceUpdateRequestID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.parameterMap = parameterMap;
+    this.subscriberProfileForceUpdateRequestID = subscriberProfileForceUpdateRequestID;
   }
 
-  public SubscriberProfileForceUpdate(String subscriberID, Date eventDate, ParameterMap parameterMap)
+  public SubscriberProfileForceUpdate(String subscriberID, Date eventDate, ParameterMap parameterMap, String subscriberProfileForceUpdateRequestID)
   {
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.parameterMap = parameterMap;
+    this.subscriberProfileForceUpdateRequestID = subscriberProfileForceUpdateRequestID;
   }
 
   /*****************************************
@@ -217,6 +224,7 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
     struct.put("subscriberID", subscriberProfileForceUpdate.getSubscriberID());
     struct.put("eventDate", subscriberProfileForceUpdate.getEventDate());
     struct.put("parameterMap", ParameterMap.pack(subscriberProfileForceUpdate.getParameterMap()));
+    struct.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdate.getSubscriberProfileForceUpdateRequestID());
     return struct;
   }
 
@@ -250,12 +258,13 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
     String subscriberID = valueStruct.getString("subscriberID");
     Date eventDate = (Date) valueStruct.get("eventDate");
     ParameterMap parameterMap = ParameterMap.unpack(new SchemaAndValue(schema.field("parameterMap").schema(), valueStruct.get("parameterMap")));
+    String subscriberProfileForceUpdateRequestID = (schema.field("subscriberProfileForceUpdateRequestID") != null) ? valueStruct.getString("subscriberProfileForceUpdateRequestID") : null;
     
     //
     //  return
     //
 
-    return new SubscriberProfileForceUpdate(schemaAndValue, subscriberID, eventDate, parameterMap);
+    return new SubscriberProfileForceUpdate(schemaAndValue, subscriberID, eventDate, parameterMap, subscriberProfileForceUpdateRequestID);
   }
   
   @Override

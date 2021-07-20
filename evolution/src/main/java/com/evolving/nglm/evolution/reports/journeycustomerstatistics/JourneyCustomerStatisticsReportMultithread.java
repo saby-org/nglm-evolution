@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject;
@@ -32,9 +33,39 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportMultithread.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private JourneyService journeyService;
-  List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
-  private final String customerID = "customerID";
+  private final static String customerID = "customerID";
+  
+  private static final String journeyID = "journeyID";
+  private static final String journeyName = "journeyName";
+  private static final String journeyType = "journeyType";
+  private static final String customerState = "customerState";
+  private static final String customerStatus = "customerStatus";
+  private static final String sample = "sample";
+  private static final String dateTime = "dateTime";
+  private static final String startDate = "startDate";
+  private static final String endDate = "endDate";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(journeyID);
+    headerFieldsOrder.add(journeyName);
+    headerFieldsOrder.add(journeyType);
+    headerFieldsOrder.add(customerState);
+    headerFieldsOrder.add(customerStatus);
+    headerFieldsOrder.add(sample);
+    headerFieldsOrder.add(dateTime);
+    headerFieldsOrder.add(startDate);
+    headerFieldsOrder.add(endDate);
+  }
   
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
@@ -75,10 +106,10 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
                 journeyInfo.put(alternateID.getID(), alternateId);
               }
           }
-        journeyInfo.put("journeyID", journey.getJourneyID());
-        journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-        journeyInfo.put("journeyType", journey.getTargetingType());
-        journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("nodeID")).getNodeName());
+        journeyInfo.put(journeyID, journey.getJourneyID());
+        journeyInfo.put(journeyName, journey.getGUIManagedObjectDisplay());
+        journeyInfo.put(journeyType, journey.getTargetingType());
+        journeyInfo.put(customerState, journey.getJourneyNodes().get(journeyStats.get("nodeID")).getNodeName());
 
         // No need to do all that anymore, "status" is already correct in ES
         /*
@@ -90,15 +121,15 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
                 Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
                 journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
          */
-        journeyInfo.put("customerStatus", journeyStats.get("status"));
+        journeyInfo.put(customerStatus, journeyStats.get("status"));
 
-        if (journeyStats.get("sample") != null)
+        if (journeyStats.get(sample) != null)
           {
-            journeyInfo.put("sample", journeyStats.get("sample"));
+            journeyInfo.put(sample, journeyStats.get("sample"));
           }
         else
           {
-            journeyInfo.put("sample", "");
+            journeyInfo.put(sample, "");
           }
         //Required Changes in accordance to EVPRO-530          
         //                String specialExit=journeyStats.get("status") == null ? null : (String) journeyStats.get("status");
@@ -107,9 +138,9 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
         //                journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
         //                else 
         Date currentDate = SystemTime.getCurrentTime();
-        journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
-        journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-        journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+        journeyInfo.put(dateTime, ReportsCommonCode.getDateString(currentDate));
+        journeyInfo.put(startDate, ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+        journeyInfo.put(endDate, ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
         for (JourneyMetricDeclaration journeyMetricDeclaration : DeploymentCommon.getJourneyMetricConfiguration().getMetrics().values())
           {

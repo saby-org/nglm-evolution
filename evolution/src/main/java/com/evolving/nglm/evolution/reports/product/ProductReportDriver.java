@@ -13,6 +13,8 @@ import com.evolving.nglm.evolution.*;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.journeys.JourneysReportDriver;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -32,6 +34,36 @@ public class ProductReportDriver extends ReportDriver
   private SupplierService supplierService;
   private DeliverableService deliverableService;
   private ProductTypeService productTypeService;
+  
+  private static final String productId = "productId";
+  private static final String productName = "productName";
+  private static final String productStartDate = "productStartDate";
+  private static final String productEndDate = "productEndDate";
+  private static final String supplierName = "supplierName";
+  private static final String fulfillment = "fulfillment";
+  private static final String recommendedPrice = "recommendedPrice";
+  private static final String active = "active";
+  private static final String unitaryCost = "unitaryCost";
+  private static final String stock = "stock";
+  private static final String productType = "productType";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(productId);
+    headerFieldsOrder.add(productName);
+    headerFieldsOrder.add(productStartDate);
+    headerFieldsOrder.add(productEndDate);
+    headerFieldsOrder.add(supplierName);
+    headerFieldsOrder.add(fulfillment);
+    headerFieldsOrder.add(recommendedPrice);
+    headerFieldsOrder.add(active);
+    headerFieldsOrder.add(unitaryCost);
+    headerFieldsOrder.add(stock);
+    headerFieldsOrder.add(productType);
+  }
 
   /****************************************
    * 
@@ -146,22 +178,22 @@ public class ProductReportDriver extends ReportDriver
 
     try
       {
-        productFields.put("productId", recordJson.get("id"));
-        productFields.put("productName", recordJson.get("display"));
-        productFields.put("productStartDate", recordJson.get("effectiveStartDate"));
-        productFields.put("productEndDate", recordJson.get("effectiveEndDate"));
-        productFields.put("supplierName", (supplierService.getStoredSupplier((String) recordJson.get("supplierID"))).getJSONRepresentation().get("display"));
+        productFields.put(productId, recordJson.get("id"));
+        productFields.put(productName, recordJson.get("display"));
+        productFields.put(productStartDate, recordJson.get("effectiveStartDate"));
+        productFields.put(productEndDate, recordJson.get("effectiveEndDate"));
+        productFields.put(supplierName, (supplierService.getStoredSupplier((String) recordJson.get("supplierID"))).getJSONRepresentation().get("display"));
         if (recordJson.get("deliverableID") != null)
           {
-            productFields.put("fulfillment", (deliverableService.getStoredDeliverable((String) recordJson.get("deliverableID"))).getJSONRepresentation().get("name"));
+            productFields.put(fulfillment, (deliverableService.getStoredDeliverable((String) recordJson.get("deliverableID"))).getJSONRepresentation().get("name"));
           } else
           {
-            productFields.put("fulfillment", "");
+            productFields.put(fulfillment, "");
           }
-        productFields.put("recommendedPrice", recordJson.get("recommendedPrice"));
-        productFields.put("active", recordJson.get("active"));
-        productFields.put("unitaryCost", recordJson.get("unitaryCost"));
-        productFields.put("stock", recordJson.get("stock"));
+        productFields.put(recommendedPrice, recordJson.get(recommendedPrice));
+        productFields.put(active, recordJson.get(active));
+        productFields.put(unitaryCost, recordJson.get(unitaryCost));
+        productFields.put(stock, recordJson.get(stock));
 
           {
             List<Map<String, Object>> productTypeJSON = new ArrayList<>();
@@ -196,7 +228,7 @@ public class ProductReportDriver extends ReportDriver
                       }
                   }
               }
-            productFields.put("productType", ReportUtils.formatJSON(productTypeJSON));
+            productFields.put(productType, ReportUtils.formatJSON(productTypeJSON));
           }
 
         if (productFields != null)
@@ -248,7 +280,7 @@ public class ProductReportDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-	  // TODO Auto-generated method stub
-	  return null;
+    List<String> result = ProductReportDriver.headerFieldsOrder;
+    return result;
   }
 }

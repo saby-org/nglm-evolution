@@ -159,6 +159,8 @@
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>
     <topic.workflowEvent>workflowEvent</topic.workflowEvent>
+    <topic.subscriberProfileForceUpdateResponse>subscriberProfileForceUpdateResponse</topic.subscriberProfileForceUpdateResponse>
+    <topic.notificationEvent>notificationEvent</topic.notificationEvent>
 
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>

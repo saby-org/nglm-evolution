@@ -8,6 +8,8 @@ package com.evolving.nglm.evolution;
 
 import java.util.Date;
 
+import com.evolving.nglm.core.SubscriberStreamOutput;
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -17,12 +19,11 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class TokenRedeemed implements EvolutionEngineEvent
+public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEngineEvent
 {
   /*****************************************
   *
@@ -39,7 +40,8 @@ public class TokenRedeemed implements EvolutionEngineEvent
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_redeemed");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("tokenType", Schema.STRING_SCHEMA);
@@ -121,6 +123,15 @@ public class TokenRedeemed implements EvolutionEngineEvent
   *
   *****************************************/
 
+  public TokenRedeemed(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, String tokenType, String acceptedOfferId)
+  {
+    super(schemaAndValue);
+    this.subscriberID = subscriberID;
+    this.eventDate = eventDate;
+    this.tokenType = tokenType;
+    this.acceptedOfferId = acceptedOfferId;
+  }
+
   public TokenRedeemed(String subscriberID, Date eventDate, String tokenType, String acceptedOfferId)
   {
     this.subscriberID = subscriberID;
@@ -139,6 +150,7 @@ public class TokenRedeemed implements EvolutionEngineEvent
   {
     TokenRedeemed tokenRedeemed = (TokenRedeemed) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,tokenRedeemed);
     struct.put("subscriberID", tokenRedeemed.getSubscriberID());
     struct.put("eventDate", tokenRedeemed.getEventDate());
     struct.put("tokenType", tokenRedeemed.getTokenType());
@@ -166,7 +178,7 @@ public class TokenRedeemed implements EvolutionEngineEvent
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -182,6 +194,6 @@ public class TokenRedeemed implements EvolutionEngineEvent
     //  return
     //
 
-    return new TokenRedeemed(subscriberID, eventDate, tokenType, acceptedOfferId);
+    return new TokenRedeemed(schemaAndValue, subscriberID, eventDate, tokenType, acceptedOfferId);
   }
 }

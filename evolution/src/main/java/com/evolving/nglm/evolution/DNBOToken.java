@@ -51,7 +51,7 @@ public class DNBOToken extends Token
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("dnbo_token");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),5));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),6));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("presentationStrategyID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("scoringStrategyIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
@@ -62,6 +62,8 @@ public class DNBOToken extends Token
     schemaBuilder.field("acceptedOfferID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).defaultValue(new ArrayList<Date>()).schema());
     schemaBuilder.field("presentationHistory", SchemaBuilder.array(Presentation.schema()).defaultValue(new ArrayList<Presentation>()).schema());
+    schemaBuilder.field("purchaseDeliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("purchaseStatus", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -95,6 +97,9 @@ public class DNBOToken extends Token
   
   private List<Presentation> presentationHistory; // history of pres of offers, with dates/offerIds
 
+  private String purchaseDeliveryRequestID;  // the delivery request id of the corresponding purchase request triggered
+  private PurchaseFulfillmentManager.PurchaseFulfillmentStatus purchaseStatus; // the last known status for the corresponding purchase
+
   /****************************************
   *
   * accessors - basic
@@ -114,6 +119,8 @@ public class DNBOToken extends Token
   public String getAcceptedOfferID() { return acceptedOfferID; }
   public List<Date> getPresentationDates() { return presentationDates;}
   public List<Presentation> getPresentationHistory() {return presentationHistory;}
+  public String getPurchaseDeliveryRequestID() {return purchaseDeliveryRequestID;}
+  public PurchaseFulfillmentManager.PurchaseFulfillmentStatus getPurchaseStatus() {return purchaseStatus;}
 
   //
   //  setters
@@ -128,6 +135,8 @@ public class DNBOToken extends Token
   public void setAcceptedOfferID(String acceptedOfferID) { this.acceptedOfferID = acceptedOfferID; }
   public void setPresentationDates(List<Date> presentationDates) { this.presentationDates = presentationDates; }
   public void setPresentationHistory(List<Presentation> presentationHistory) { this.presentationHistory = presentationHistory; }
+  public void setPurchaseDeliveryRequestID(String purchaseDeliveryRequestID) { this.purchaseDeliveryRequestID = purchaseDeliveryRequestID; }
+  public void setPurchaseStatus(PurchaseFulfillmentManager.PurchaseFulfillmentStatus purchaseStatus) { this.purchaseStatus = purchaseStatus; }
 
   /*****************************************
   *
@@ -190,7 +199,7 @@ public class DNBOToken extends Token
   *
   *****************************************/
 
-  protected DNBOToken(SchemaAndValue schemaAndValue, String presentationStrategyID, List<String> scoringStrategyIDs, boolean isAutoBound, boolean isAutoRedeemed, List<String> presentedOfferIDs, String presentedOffersSalesChannel, String acceptedOfferID, List<Date> presentationDates, List<Presentation> presentationHistory)
+  protected DNBOToken(SchemaAndValue schemaAndValue, String presentationStrategyID, List<String> scoringStrategyIDs, boolean isAutoBound, boolean isAutoRedeemed, List<String> presentedOfferIDs, String presentedOffersSalesChannel, String acceptedOfferID, List<Date> presentationDates, List<Presentation> presentationHistory, String purchaseDeliveryRequestID, PurchaseFulfillmentManager.PurchaseFulfillmentStatus purchaseStatus)
   {
     super(schemaAndValue);
     this.presentationStrategyID = presentationStrategyID;
@@ -202,6 +211,8 @@ public class DNBOToken extends Token
     this.acceptedOfferID = acceptedOfferID;
     this.presentationDates = presentationDates;
     this.presentationHistory = presentationHistory;
+    this.purchaseDeliveryRequestID = purchaseDeliveryRequestID;
+    this.purchaseStatus = purchaseStatus;
   }
 
   /*****************************************
@@ -224,6 +235,8 @@ public class DNBOToken extends Token
     struct.put("acceptedOfferID", dnboToken.getAcceptedOfferID());
     struct.put("presentationDates", dnboToken.getPresentationDates());
     struct.put("presentationHistory", packPresentationHistory(dnboToken.getPresentationHistory()));
+    if(dnboToken.getPurchaseDeliveryRequestID()!=null) struct.put("purchaseDeliveryRequestID", dnboToken.getPurchaseDeliveryRequestID());
+    if(dnboToken.getPurchaseStatus()!=null)  struct.put("purchaseStatus", dnboToken.getPurchaseStatus().getReturnCode());
     return struct;
   }
 
@@ -245,17 +258,10 @@ public class DNBOToken extends Token
 
   public static DNBOToken unpack(SchemaAndValue schemaAndValue)
   {
-    //
-    // data
-    //
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
     Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
-
-    //
-    // unpack
-    //
 
     Struct valueStruct = (Struct) value;
     String presentationStrategyID = valueStruct.getString("presentationStrategyID");
@@ -267,16 +273,10 @@ public class DNBOToken extends Token
     String acceptedOfferID = valueStruct.getString("acceptedOfferID");
     List<Date> presentationDates = (schemaVersion >= 4) ? (List<Date>) valueStruct.get("presentationDates") : new ArrayList<Date>();
     List<Presentation> presentationHistory = (schemaVersion >= 5) ? unpackPresentationHistory(schema.field("presentationHistory").schema(), valueStruct.get("presentationHistory")) : new ArrayList<Presentation>();
-    
-    //
-    // validate
-    //
+    String purchaseDeliveryRequestID = (schemaVersion >= 6) ? (String) valueStruct.get("purchaseDeliveryRequestID") : null;
+    PurchaseFulfillmentManager.PurchaseFulfillmentStatus purchaseStatus = (schemaVersion >= 6) ? (valueStruct.getInt32("purchaseStatus")!=null ? PurchaseFulfillmentManager.PurchaseFulfillmentStatus.fromReturnCode(valueStruct.getInt32("purchaseStatus")) : null) : null;
 
-    //
-    // return
-    //
-
-    return new DNBOToken(schemaAndValue, presentationStrategyID, scoringStrategyIDs, isAutoBound, isAutoRedeemed, presentedOfferIDs, presentedOffersSalesChannel, acceptedOfferID, presentationDates, presentationHistory);
+    return new DNBOToken(schemaAndValue, presentationStrategyID, scoringStrategyIDs, isAutoBound, isAutoRedeemed, presentedOfferIDs, presentedOffersSalesChannel, acceptedOfferID, presentationDates, presentationHistory, purchaseDeliveryRequestID, purchaseStatus);
   }
   
   private static List<Presentation> unpackPresentationHistory(Schema schema, Object value)
@@ -302,7 +302,10 @@ public class DNBOToken extends Token
         + (presentedOffersSalesChannel != null ? "presentedOffersSalesChannel=" + presentedOffersSalesChannel + ", " : "")
         + (acceptedOfferID != null ? "acceptedOfferID=" + acceptedOfferID + ", " : "")
         + (presentationHistory != null ? "presentationHistory=" + presentationHistory + ", " : "")
-        + (presentationDates != null ? "presentationDates=" + presentationDates : "") + "]";
+        + (presentationDates != null ? "presentationDates=" + presentationDates + ", " : "")
+        + (purchaseDeliveryRequestID != null ? "purchaseDeliveryRequestID=" + purchaseDeliveryRequestID + ", " : "")
+        + (purchaseStatus != null ? "purchaseStatus=" + purchaseStatus.name() : "")
+        + "]";
   }
   
   
