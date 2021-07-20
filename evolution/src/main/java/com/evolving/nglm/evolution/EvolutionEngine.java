@@ -3744,7 +3744,6 @@ public class EvolutionEngine
               //increase number of subscribers in ucg for ucg group assigned to current user
               subscriberUCGGroup.incrementUCGSubscribers(1);
               currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
-              log.info("added "+subscriberUCGGroup.getShiftProbability().toString());
             }
             if (removeFromUCG)
             {
@@ -3752,7 +3751,6 @@ public class EvolutionEngine
               //decrease number of subscribers in ucg for ucg group assigned to current user
               subscriberUCGGroup.decrementUCGSubscribers(1);
               currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
-              log.info("removed "+subscriberUCGGroup.getShiftProbability().toString());
             }
             context.getSubscriberState().setUCGState(ucgState, now, tenantID);
           }
