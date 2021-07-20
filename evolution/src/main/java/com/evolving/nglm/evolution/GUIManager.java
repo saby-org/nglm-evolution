@@ -191,6 +191,7 @@ import com.sun.net.httpserver.HttpServer;
 import kafka.utils.Log4jControllerRegistration;
 
 public class GUIManager
+
 {
   /*****************************************
   *
@@ -30753,7 +30754,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             response.put("responseCode", "ok");
           }
       }
-    }    
+    }
+    if(response.get("responseCode") == null)
+      {
+        response.put("responseCode", RESTAPIGenericReturnCodes.NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY.getGenericDescription());
+      }
     return JSONUtilities.encodeObject(response);
   }
 }
