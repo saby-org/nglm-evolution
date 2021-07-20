@@ -61,7 +61,7 @@ public class UCGState implements ReferenceDataValue<String>
     schemaBuilder.field("ucgGroups", SchemaBuilder.array(UCGGroup.schema()).schema());
     schemaBuilder.field("evaluationDate", Timestamp.SCHEMA);
     //this is added to not calculate this targetRatio at each subscriber evaluation
-    schemaBuilder.field("targetRatio",Schema.FLOAT64_SCHEMA);
+    schemaBuilder.field("targetRatio",Schema.OPTIONAL_FLOAT64_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -315,7 +315,7 @@ public class UCGState implements ReferenceDataValue<String>
     UCGRule ucgRule = UCGRule.unpack(new SchemaAndValue(schema.field("ucgRule").schema(), valueStruct.get("ucgRule")));
     Set<UCGGroup> ucgGroups = unpackUCGGroups(schema.field("ucgGroups").schema(), valueStruct.get("ucgGroups"));
     Date evaluationDate = (Date) valueStruct.get("evaluationDate");
-    Double targetRatio = valueStruct.getFloat64("targetRatio");
+    Double targetRatio = (schemaVersion >= 2) ? valueStruct.getFloat64("targetRatio") : 0;
     
     //
     //  return
