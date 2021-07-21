@@ -257,6 +257,7 @@ public class PointBalance
     DeliveryManagerDeclaration pointManagerDeclaration = Deployment.getDeliveryManagers().get("pointFulfillment");
     JSONObject pointManagerJSON = (pointManagerDeclaration != null) ? pointManagerDeclaration.getJSONRepresentation() : null;
     String providerID = (pointManagerJSON != null) ? (String) pointManagerJSON.get("providerID") : null;
+    log.info("RAJ K providerID {} pointID {}", providerID, point.getPointID());
     Iterator<Date> expirationDates = balances.keySet().iterator();
     while (expirationDates.hasNext())
       {
@@ -290,12 +291,14 @@ public class PointBalance
               Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate, tenantID);
               Deliverable searchedDeliverable = null;
               for(Deliverable deliverable : deliverables){
+                log.info("RAJ K deliverable {}", deliverable.getJSONRepresentation());
                 if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(point.getPointID())){
                   searchedDeliverable = deliverable;
                   break;
                 }
               }
               
+              log.info("RAJ K searchedDeliverable {}", searchedDeliverable);
               if(searchedDeliverable != null)
                 {
 
@@ -572,6 +575,7 @@ public class PointBalance
     commodityDeliveryRequest.setStatusMessage("Success");
     commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
 
+    log.info("RAJ K commodityDeliveryRequest {}", commodityDeliveryRequest.getJSONRepresentation(tenantID));
     context.getSubscriberState().getDeliveryRequests().add(commodityDeliveryRequest);
 
   }
