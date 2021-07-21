@@ -244,6 +244,10 @@ public class RLMDateUtils
     return calendar.getTime();
   }
   
+  //
+  //  getLastDayOfQuarter
+  //
+  
   public static Date getLastDayOfQuarter(Date anyQarterDate, String timeZone)
   {
     Calendar calendar = getCalendarInstance1(timeZone);
@@ -253,6 +257,10 @@ public class RLMDateUtils
     calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
     return calendar.getTime();
   }
+  
+  //
+  //  getFirstDayOfQuarter
+  //
   
   public static Date getFirstDayOfQuarter(Date anyQarterDate, String timeZone)
   {
