@@ -33,7 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@GUIDependencyDef(objectType = "loyaltyProgramPoints", serviceClass = LoyaltyProgramService.class, dependencies = {"point" , "catalogcharacteristic"})
+@GUIDependencyDef(objectType = "loyaltyProgramPoints", serviceClass = LoyaltyProgramService.class, dependencies = {"point" , "catalogcharacteristic", "workflow"})
 public class LoyaltyProgramPoints extends LoyaltyProgram
 {
   
@@ -618,6 +618,8 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 		Map<String, List<String>> result = new HashMap<String, List<String>>();
 		List<String> pointIDs = new ArrayList<String>();
 		List<String> charIDs = new ArrayList<String>();
+		List<String> wrkflowIDs = new ArrayList<String>();
+		
 		if (this.getRewardPointsID() != null)
 			pointIDs.add(this.getRewardPointsID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
 		if (this.getStatusPointsID() != null)
@@ -625,7 +627,19 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 		if (this.getCharacteristics() != null)
 		{	for(CatalogCharacteristicInstance character:this.getCharacteristics())
 				charIDs.add(character.getCatalogCharacteristicID());
-		} 
+		}
+		if (getTiers() != null)
+	      {
+	        for (Tier tier : getTiers())
+	          {
+	            if (tier.getWorkflowChange() != null && !tier.getWorkflowChange().isEmpty()) wrkflowIDs.add(tier.getWorkflowChange());
+	            if (tier.getWorkflowDaily() != null && !tier.getWorkflowDaily().isEmpty()) wrkflowIDs.add(tier.getWorkflowDaily());
+	            if (tier.getWorkflowReward() != null && !tier.getWorkflowReward().isEmpty()) wrkflowIDs.add(tier.getWorkflowReward());
+	            if (tier.getWorkflowStatus() != null && !tier.getWorkflowStatus().isEmpty()) wrkflowIDs.add(tier.getWorkflowStatus());
+	          }
+	      }
+		
+		result.put("workflow", wrkflowIDs);
 		result.put("point", pointIDs);
 		result.put("catalogcharacteristic", charIDs);
 		return result;

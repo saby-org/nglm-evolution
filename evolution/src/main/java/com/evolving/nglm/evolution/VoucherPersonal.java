@@ -15,10 +15,12 @@ import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
-@GUIDependencyDef(objectType = "voucher", serviceClass = VoucherService.class, dependencies = {"supplier", "vouchertype" })
+@GUIDependencyDef(objectType = "voucher", serviceClass = VoucherService.class, dependencies = {"supplier", "vouchertype", "workflow" })
 public class VoucherPersonal extends Voucher {
 
   private static Schema schema = null;
@@ -168,6 +170,23 @@ public class VoucherPersonal extends Voucher {
       }
     }
     return jsonRoot;
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> wrkflowIDs = new ArrayList<String>();
+    List<String> supplierIDs = new ArrayList<String>();
+    List<String> vouchertypeIDs = new ArrayList<String>();
+    
+    if (getWorkflowID() != null && !getWorkflowID().isEmpty()) wrkflowIDs.add(getWorkflowID());
+    supplierIDs.add(getSupplierID());
+    vouchertypeIDs.add(getVoucherTypeId());
+    
+    result.put("workflow", wrkflowIDs);
+    result.put("supplier", supplierIDs);
+    result.put("vouchertype", vouchertypeIDs);
+    return result;
   }
 
 }
