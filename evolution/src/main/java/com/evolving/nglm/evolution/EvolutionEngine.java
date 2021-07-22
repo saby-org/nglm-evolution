@@ -1823,10 +1823,8 @@ public class EvolutionEngine
       }
     if(evolutionEvent instanceof OTPInstanceChangeEvent)
       {
-    	subscriberState.getOTPInstanceChangeEvent().add(
-        		OTPUtils.handleOTPEvent((OTPInstanceChangeEvent)evolutionEvent, subscriberProfile, otpTypeService, tenantID)
-        		);
-    	subscriberStateUpdated = true;
+    	  subscriberState.getOTPInstanceChangeEvent().add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent)evolutionEvent, subscriberProfile, otpTypeService, tenantID));
+    	  subscriberStateUpdated = true;
       }
 
     /*****************************************
