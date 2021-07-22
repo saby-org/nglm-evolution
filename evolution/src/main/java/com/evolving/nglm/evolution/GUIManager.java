@@ -204,7 +204,7 @@ public class GUIManager
   {
     //
     //  GUI APIs
-    //  
+    //  getStaticConfiguration
 
     getStaticConfiguration("getStaticConfiguration"),
     getSupportedLanguages("getSupportedLanguages"),
@@ -514,6 +514,7 @@ public class GUIManager
     getTimeWindows("getTimeWindows"),
     putTimeWindows("putTimeWindows"),
     removeTimeWindows("removeTimeWindows"),
+    getDefaultNotificationDailyWindow("getDefaultNotificationDailyWindow"),
 
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
@@ -2249,6 +2250,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTimeWindows", new APISimpleHandler(API.getTimeWindows));
         restServer.createContext("/nglm-guimanager/putTimeWindows", new APISimpleHandler(API.putTimeWindows));
         restServer.createContext("/nglm-guimanager/removeTimeWindows", new APISimpleHandler(API.removeTimeWindows));
+        restServer.createContext("/nglm-guimanager/getDefaultNotificationDailyWindow", new APISimpleHandler(API.getDefaultNotificationDailyWindow));
+        
 
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
@@ -3883,8 +3886,7 @@ public class GUIManager
                   jsonResponse = processRemoveBlackoutPeriods(userID, jsonRoot, tenantID);
                   break;
                   
-                  
-                  
+      
                 case getTimeWindowsList:
                   jsonResponse = CommunicationChannelTimeWindow.processGetChannelTimeWindowList(userID, jsonRoot, true, includeArchived, communicationChannelTimeWindowService, tenantID);
                   break;
@@ -3903,6 +3905,10 @@ public class GUIManager
 
                 case removeTimeWindows:
                   jsonResponse = CommunicationChannelTimeWindow.processRemoveTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService, tenantID);
+                  break;
+
+                case getDefaultNotificationDailyWindow:
+                  jsonResponse = guiManagerGeneral.processGetDefaultNotificationDailyWindow(userID, jsonRoot, tenantID);
                   break;
 
                 case getLoyaltyProgramTypeList:
