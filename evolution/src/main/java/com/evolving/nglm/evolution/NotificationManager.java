@@ -1048,6 +1048,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
             .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
             .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
             .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
+            .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
             .getStats().increment();
   }
 

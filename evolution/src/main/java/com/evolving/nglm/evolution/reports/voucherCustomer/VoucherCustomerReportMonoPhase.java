@@ -45,6 +45,29 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
 
+  private static final String voucherCode = "voucherCode";
+  private static final String supplier = "supplier";
+  private static final String deliveryDate = "deliveryDate";
+  private static final String expiryDate = "expiryDate";
+  private static final String voucherStatus = "voucherStatus";
+  private static final String voucherType = "voucherType";
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(voucherCode);
+    headerFieldsOrder.add(supplier);
+    headerFieldsOrder.add(deliveryDate);
+    headerFieldsOrder.add(expiryDate);
+    headerFieldsOrder.add(voucherStatus);
+    headerFieldsOrder.add(voucherType);
+  }
+  
   private VoucherService voucherService = null;
   private SupplierService supplierService = null;
   private VoucherTypeService voucherTypeService = null;
@@ -91,13 +114,13 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                         result.clear();
                         result.putAll(commonFields);
                         Map<String, Object> voucher = (Map<String, Object>) vouchersArray.get(i);
-                        if (voucher.containsKey("voucherCode") && voucher.get("voucherCode") != null)
+                        if (voucher.containsKey(voucherCode) && voucher.get(voucherCode) != null)
                           {
-                            result.put("voucherCode", voucher.get("voucherCode"));
+                            result.put(voucherCode, voucher.get(voucherCode));
                           }
                         else
                           {
-                            result.put("voucherCode", "");
+                            result.put(voucherCode, "");
                           }
                         String supplierID = null;
                         Voucher currentVoucher = null;
@@ -120,40 +143,40 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
 
                             if (supplierObject != null && supplierObject instanceof Supplier)
                               {
-                                result.put("supplier", ((Supplier) supplierObject).getGUIManagedObjectDisplay());
+                                result.put(supplier, ((Supplier) supplierObject).getGUIManagedObjectDisplay());
                               }
                             else
                               {
-                                result.put("supplier", "");
+                                result.put(supplier, "");
                               }
                           }
                         else
                           {
-                            result.put("supplier", "");
+                            result.put(supplier, "");
                           }
                         if (voucher.containsKey("voucherDeliveryDate") && voucher.get("voucherDeliveryDate") != null)
                           {
-                            result.put("deliveryDate", dateOrEmptyString(voucher.get("voucherDeliveryDate")));
+                            result.put(deliveryDate, dateOrEmptyString(voucher.get("voucherDeliveryDate")));
                           }
                         else
                           {
-                            result.put("deliveryDate", "");
+                            result.put(deliveryDate, "");
                           }
                         if (voucher.containsKey("voucherExpiryDate") && voucher.get("voucherExpiryDate") != null)
                           {
-                            result.put("expiryDate", dateOrEmptyString(voucher.get("voucherExpiryDate")));
+                            result.put(expiryDate, dateOrEmptyString(voucher.get("voucherExpiryDate")));
                           }
                         else
                           {
-                            result.put("expiryDate", "");
+                            result.put(expiryDate, "");
                           }
-                        if (voucher.containsKey("voucherStatus") && voucher.get("voucherStatus") != null)
+                        if (voucher.containsKey(voucherStatus) && voucher.get(voucherStatus) != null)
                           {
-                            result.put("voucherStatus", voucher.get("voucherStatus"));
+                            result.put(voucherStatus, voucher.get(voucherStatus));
                           }
                         else
                           {
-                            result.put("voucherStatus", "");
+                            result.put(voucherStatus, "");
                           }
                         if (currentVoucher != null && currentVoucher instanceof Voucher)
                           {
@@ -161,17 +184,17 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                                 .getStoredVoucherType(currentVoucher.getVoucherTypeId());
                             if (voucherTypeObject != null && voucherTypeObject instanceof VoucherType)
                               {
-                                result.put("voucherType",
+                                result.put(voucherType,
                                     ((VoucherType) voucherTypeObject).getGUIManagedObjectDisplay());
                               }
                             else
                               {
-                                result.put("voucherType", "");
+                                result.put(voucherType, "");
                               }
                           }
                         else
                           {
-                            result.put("voucherType", "");
+                            result.put(voucherType, "");
                           }
 
        

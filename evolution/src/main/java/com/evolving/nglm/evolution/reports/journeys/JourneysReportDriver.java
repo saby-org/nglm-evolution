@@ -45,6 +45,8 @@ import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver;
+
 import java.util.Date;
 
 public class JourneysReportDriver extends ReportDriver
@@ -54,7 +56,34 @@ public class JourneysReportDriver extends ReportDriver
   private static JourneyService journeyService;
   private static PointService pointService;
   private static JourneyObjectiveService journeyObjectiveService;
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  
+  private static final String journeyID = "journeyID";
+  private static final String journeyName = "journeyName";
+  private static final String journeyDescription = "journeyDescription";
+  private static final String journeyType = "journeyType";
+  private static final String journeyObjectives = "journeyObjectives";
+  private static final String startDate = "startDate";
+  private static final String endDate = "endDate";
+  private static final String customerStates = "customerStates";
+  private static final String customerStatuses = "customerStatuses";
+  private static final String listOfCommodities = "listOfCommodities";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(journeyID);
+    headerFieldsOrder.add(journeyName);
+    headerFieldsOrder.add(journeyDescription);
+    headerFieldsOrder.add(journeyType);
+    headerFieldsOrder.add(journeyObjectives);
+    headerFieldsOrder.add(startDate);
+    headerFieldsOrder.add(endDate);
+    headerFieldsOrder.add(customerStates);
+    headerFieldsOrder.add(customerStatuses);
+    headerFieldsOrder.add(listOfCommodities);
+  }
 
   /****************************************
   *
@@ -117,17 +146,17 @@ public class JourneysReportDriver extends ReportDriver
 
                   String journeyID = journey.getJourneyID();
                   journeyInfo.put("journeyID", journeyID);
-                  journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-                  journeyInfo.put("journeyDescription", journey.getJSONRepresentation().get("description"));
-                  journeyInfo.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation()); 
+                  journeyInfo.put(journeyName, journey.getGUIManagedObjectDisplay());
+                  journeyInfo.put(journeyDescription, journey.getJSONRepresentation().get("description"));
+                  journeyInfo.put(journeyType, journey.getGUIManagedObjectType().getExternalRepresentation()); 
                   Set<JourneyObjective> activejourneyObjectives = journey.getAllObjectives(journeyObjectiveService, SystemTime.getCurrentTime());                 
                   for (JourneyObjective journeyObjective : activejourneyObjectives) {
                     sbJourneyObjectives.append(journeyObjective.getGUIManagedObjectDisplay()).append(",");            
                   }   
 
-                  journeyInfo.put("journeyObjectives", sbJourneyObjectives);
-                  journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-                  journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));                
+                  journeyInfo.put(journeyObjectives, sbJourneyObjectives);
+                  journeyInfo.put(startDate, ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+                  journeyInfo.put(endDate, ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));                
 
                   StringBuilder sbStatus = new StringBuilder();
                   StringBuilder sbStates = new StringBuilder();
@@ -158,9 +187,9 @@ public class JourneysReportDriver extends ReportDriver
                     sbRewards.append(rewardName).append(",");
                   }
                   journeyRewards = (sbRewards.length() > 0)? sbRewards.toString().substring(0, sbRewards.toString().length()-1) : "";
-                  journeyInfo.put("customerStates", journeyStates);
-                  journeyInfo.put("customerStatuses", journeyStatus);         
-                  journeyInfo.put("listOfCommodities", journeyRewards);          
+                  journeyInfo.put(customerStates, journeyStates);
+                  journeyInfo.put(customerStatuses, journeyStatus);         
+                  journeyInfo.put(listOfCommodities, journeyRewards);          
                 }
 
                 if(addHeaders){
@@ -265,24 +294,20 @@ public class JourneysReportDriver extends ReportDriver
   public List<FilterObject> reportFilters() {
 	    List<FilterObject> result = new ArrayList<>();
 	    
-	    result.add(new FilterObject("journeyType", ColumnType.MULTIPLE_STRING, new String[] {"journey","campaign","workflow","loyaltyWorkflow","bulkCampaign"}));
+	    result.add(new FilterObject(journeyType, ColumnType.MULTIPLE_STRING, new String[] {"journey","campaign","workflow","loyaltyWorkflow","bulkCampaign"}));
 	    List<String> values = new ArrayList<>();
 	    for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
 	      values.add(states.getDisplay());
 	    }
 	    String[] valuesArray = values.toArray(new String[0]);
-	    result.add(new FilterObject("customerStatuses", ColumnType.MULTIPLE_STRING, valuesArray));
+	    result.add(new FilterObject(customerStatuses, ColumnType.MULTIPLE_STRING, valuesArray));
 	    
 	    return result;
 	  }
 	  
   @Override
   public List<String> reportHeader() {
-	  List<String> result = new ArrayList<>();
-	    
-	    result.add("journeyType");
-	    result.add("customerStatuses");
-	    
-	    return result;
+    List<String> result = JourneysReportDriver.headerFieldsOrder;
+    return result;
   }
 }

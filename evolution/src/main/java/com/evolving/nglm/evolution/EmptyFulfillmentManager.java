@@ -590,6 +590,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
         statsCounter.withLabel(StatsBuilders.LABEL.status.name(),((EmptyFulfillmentRequest) deliveryRequest).getStatus().name())
                 .withLabel(StatsBuilders.LABEL.operation.name(),((EmptyFulfillmentRequest) deliveryRequest).getOperation().name())
                 .withLabel(StatsBuilders.LABEL.module.name(), deliveryRequest.getModule().name())
+                .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(deliveryRequest.getTenantID()))
                 .getStats().increment();
 
       }

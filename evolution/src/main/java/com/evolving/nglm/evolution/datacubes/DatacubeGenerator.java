@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -215,27 +216,7 @@ public abstract class DatacubeGenerator
   *****************************************/
   protected boolean isESIndexAvailable(String index)
   {
-    SearchSourceBuilder request = new SearchSourceBuilder()
-        .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-        .query(QueryBuilders.matchAllQuery())
-        .size(1);
-    
-    try 
-      {
-        elasticsearch.search(new SearchRequest(index).source(request), RequestOptions.DEFAULT);
-      } 
-    catch(ElasticsearchException e) 
-      {
-        if (e.status() == RestStatus.NOT_FOUND) {
-          // ES index does not exist.
-          return false;
-        }
-      }
-    catch(IOException e)
-      {
-      }
-    
-    return true;
+    return elasticsearch.syncExistsWithRetry(new GetIndexRequest(index), RequestOptions.DEFAULT);
   }
 
   /*****************************************
@@ -344,21 +325,11 @@ public abstract class DatacubeGenerator
         //
         // Send Elasticsearch request
         //
-        SearchResponse response;
-        try 
-          {
-            response = this.elasticsearch.search(request, RequestOptions.DEFAULT);
-          } 
-        catch(ElasticsearchException e)
-          {
-            if (e.status() == RestStatus.NOT_FOUND) {
-              log.warn("Elasticsearch index ["+request.indices()[0] +"] does not exist. Datacube generation stop here.");
-              return;
-            } 
-            else {
-              throw e;
-            }
-          }
+        SearchResponse response = this.elasticsearch.syncSearchWithRetry(request, RequestOptions.DEFAULT);
+        if(response == null) {
+          log.warn("Elasticsearch index ["+request.indices()[0] +"] does not exist. Datacube generation stop here.");
+          return;
+        }
         log.debug("Retrieving Elasticsearch response: "+response+"");
         
         //

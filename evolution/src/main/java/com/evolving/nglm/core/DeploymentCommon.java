@@ -354,6 +354,8 @@ public class DeploymentCommon
   private static String otpInstanceChangeResponseTopic;
   private static String edrDetailsTopic;
   private static String workflowEventTopic;
+  private static String subscriberProfileForceUpdateResponseTopic;
+  private static String notificationEventTopic;
     
   //
   // Others
@@ -476,6 +478,8 @@ public class DeploymentCommon
   private static int guiConfigurationInitialConsumerMaxPollRecords;
   private static int guiConfigurationInitialConsumerMaxFetchBytes;
 
+  private static boolean addSubscribersToUcgByCounting;
+
 
   
   /*****************************************
@@ -550,6 +554,7 @@ public class DeploymentCommon
   public static Long getElasticsearchMappingJourneysTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeys"); }
   public static Long getElasticsearchMappingJourneyrewardsTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyrewards"); }
   public static Long getElasticsearchMappingDeliverablesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_deliverables"); }
+  public static Long getElasticsearchMappingPartnersTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_partners"); }
   public static Long getElasticsearchMappingBasemanagementTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_basemanagment"); }
   public static Long getElasticsearchMappingJourneyobjectiveTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyobjective"); }
 
@@ -664,7 +669,8 @@ public class DeploymentCommon
   public static String getOTPInstanceChangeResponseTopic() { return otpInstanceChangeResponseTopic;}
   public static String getEdrDetailsTopic() { return edrDetailsTopic; }
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
-  
+  public static String getSubscriberProfileForceUpdateResponseTopic() { return subscriberProfileForceUpdateResponseTopic; }    
+  public static String getNotificationEventTopic() { return notificationEventTopic; }
   
   
   //
@@ -777,6 +783,7 @@ public class DeploymentCommon
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
+  public static boolean getAddSubscribersToUcgByCounting() { return addSubscribersToUcgByCounting; }
   
   
   /****************************************
@@ -962,8 +969,10 @@ public class DeploymentCommon
     voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
     otpInstanceChangeRequestTopic = jsonReader.decodeString("otpInstanceChangeRequestTopic");
     otpInstanceChangeResponseTopic = jsonReader.decodeString("otpInstanceChangeResponseTopic");
+    subscriberProfileForceUpdateResponseTopic = jsonReader.decodeString("subscriberProfileForceUpdateResponseTopic");
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
+    notificationEventTopic = jsonReader.decodeString("notificationEventTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     
@@ -1416,6 +1425,8 @@ public class DeploymentCommon
           allTopics.put(declaration.getPreprocessTopic().getName(),declaration.getPreprocessTopic());
         }
       }
+
+    addSubscribersToUcgByCounting = jsonReader.decodeBoolean("addSubscribersToUcgByCounting");
     
   }
 

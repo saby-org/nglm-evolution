@@ -343,6 +343,37 @@ public class ThirdPartyJSONGenerator
   
   /*****************************************
   *
+  *  generateVoucherJSONForThirdParty
+  *
+  *****************************************/
+  
+  public static JSONObject generateVoucherJSON(VoucherService voucherService, GUIManagedObject voucher, Date now)
+  {
+    JSONObject voucherJSON = voucherService.generateResponseJSON(voucher, true, now);
+    
+    //
+    //  remove internal fields
+    //
+    
+    voucherJSON.remove("simpleOffer");
+    voucherJSON.remove("userID");
+    voucherJSON.remove("valid");
+    voucherJSON.remove("groupID");
+    voucherJSON.remove("readOnly");
+    voucherJSON.remove("userName");
+    voucherJSON.remove("name");
+    voucherJSON.remove("processing");
+    voucherJSON.remove("deleted");
+    
+    //
+    //  return
+    //
+    
+    return voucherJSON;
+  }
+  
+  /*****************************************
+  *
   *  getResellerJson
   *
   *****************************************/

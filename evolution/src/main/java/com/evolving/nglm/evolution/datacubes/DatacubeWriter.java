@@ -66,9 +66,9 @@ public class DatacubeWriter
     
     try {
       log.info("[DatacubeWriter]: Pushing {} document(s) in Elasticsearch.", request.numberOfActions());
-      BulkResponse bulkResponse = elasticsearch.bulk(request, RequestOptions.DEFAULT);
+      BulkResponse bulkResponse = elasticsearch.syncBulkWithRetry(request, RequestOptions.DEFAULT);
     }
-    catch(IOException|RuntimeException e) {
+    catch(RuntimeException e) {
       StringWriter stackTraceWriter = new StringWriter();
       e.printStackTrace(new PrintWriter(stackTraceWriter, true));
       log.error("[DatacubeWriter]: Failed to push a bulk request. {}", stackTraceWriter.toString());

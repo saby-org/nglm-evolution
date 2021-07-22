@@ -39,11 +39,10 @@ import com.evolving.nglm.evolution.tenancy.Tenant;
 
 public class SubscriberReportMonoPhase implements ReportCsvFactory {
 
-	private static final Logger log = LoggerFactory.getLogger(SubscriberReportMonoPhase.class);
+  private static final Logger log = LoggerFactory.getLogger(SubscriberReportMonoPhase.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
   private static SegmentationDimensionService segmentationDimensionService = null;
   private final static String subscriberID = "subscriberID";
-  private final static String customerID = "customerID";
   private final static String segments = "segments";
   private final static String evolutionSubscriberStatusChangeDate = "evolutionSubscriberStatusChangeDate";
   private static Map<Integer, Map<String, String[]>> segmentsNamesPerTenant = new HashMap<>(); // TenantID -> [segmentID -> [dimensionName, segmentName]]
@@ -55,6 +54,27 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
   private Map<Integer, Map<String, String>> dimNameDisplayMappingPerTenant = new HashMap<>();
 
+  private static final String customerID = "customerID";
+  private static final String activationDate = "activationDate";
+  private static final String relationships = "relationships";
+  private static final String dimDisplay = "dimDisplay";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(activationDate);
+    headerFieldsOrder.add(relationships);
+    headerFieldsOrder.add(dimDisplay);
+    headerFieldsOrder.add(evolutionSubscriberStatusChangeDate);
+  }
+  
   /****************************************
   *
   *  dumpElementToCsv
@@ -93,7 +113,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
                       {
                         Date date = parseSDF1.parse(activationDateStr);
                         // replace with new value
-                        result.put("activationDate", ReportsCommonCode.getDateString(date)); 
+                        result.put(activationDate, ReportsCommonCode.getDateString(date)); 
                       }
                     catch (ParseException e1)
                       {
@@ -102,7 +122,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
                           {
                             Date date = parseSDF2.parse(activationDateStr);
                             // replace with new value
-                            result.put("activationDate", ReportsCommonCode.getDateString(date));
+                            result.put(activationDate, ReportsCommonCode.getDateString(date));
                           }
                         catch (ParseException e2)
                           {
@@ -117,7 +137,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
               }
             else
               {
-                result.put("activationDate", "");
+                result.put(activationDate, "");
               }
         
         if (elasticFields.containsKey("relationships"))
@@ -125,16 +145,16 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
             if (elasticFields.get("relationships") != null)
               {
                 Object relationshipObject = elasticFields.get("relationships");
-                result.put("relationships", relationshipObject);
+                result.put(relationships, relationshipObject);
               }
             else
               {
-                result.put("relationships", "");
+                result.put(relationships, "");
               }
           }
         else
           {
-            result.put("relationships", "");
+            result.put(relationships, "");
           }
 
         result.putAll(allDimensionsMapPerTenant.get(tenantID)); // all dimensions have empty segments

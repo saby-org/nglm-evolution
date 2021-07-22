@@ -7,9 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import java.io.*;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,6 +27,7 @@ import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
 import com.evolving.nglm.evolution.otp.OTPType;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
 import com.evolving.nglm.evolution.otp.OTPUtils;
+import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -95,6 +93,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -105,6 +104,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
@@ -245,6 +245,11 @@ public class EvolutionEngine
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
   private static EvolutionEngineEventDeclaration voucherActionEventDeclaration = null;
   public static EvolutionEngineEventDeclaration fileWithVariableEventDeclaration = null;
+
+  //keeps current ucg state for recalculating shift probability after add/remove subs to ucg
+  private static UCGState currentUCGState;
+  private static HashMap<String,Integer> ucgSegmentEvaluationCount = new HashMap<>();
+
   static
     {
       try
@@ -329,7 +334,7 @@ public class EvolutionEngine
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
     String workflowEventTopic = Deployment.getWorkflowEventTopic();
     String otpInstanceChangeEventRequestTopic = Deployment.getOTPInstanceChangeRequestTopic();
-
+    String notificationEventTopic = Deployment.getNotificationEventTopic();
     //
     //  changelogs
     //
@@ -742,6 +747,8 @@ public class EvolutionEngine
     final ConnectSerde<EDRDetails> edrDetailsSerde = EDRDetails.serde();
     final ConnectSerde<WorkflowEvent> workflowEventSerde = WorkflowEvent.serde();
     final ConnectSerde<OTPInstanceChangeEvent> otpInstanceChangeEventSerde = OTPInstanceChangeEvent.serde();
+    final ConnectSerde<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseSerde = SubscriberProfileForceUpdateResponse.serde();
+    final ConnectSerde<NotificationEvent> notificationEventSerde = NotificationEvent.serde();
 
     //
     //  special serdes
@@ -808,6 +815,7 @@ public class EvolutionEngine
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
     KStream<StringKey, WorkflowEvent> workflowEventStream = builder.stream(workflowEventTopic, Consumed.with(stringKeySerde, workflowEventSerde));
     KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventRequestStream = builder.stream(otpInstanceChangeEventRequestTopic, Consumed.with(stringKeySerde, otpInstanceChangeEventSerde));
+    KStream<StringKey, NotificationEvent> notificationEventStream = builder.stream(notificationEventTopic, Consumed.with(stringKeySerde, notificationEventSerde));
     
     //
     //  timedEvaluationStreams
@@ -953,6 +961,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) workflowEventStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) notificationEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) otpInstanceChangeEventRequestStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
@@ -1005,7 +1014,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyTriggerEventAction),
         (key,value) -> (value instanceof SubscriberProfileForceUpdate),
         (key,value) -> (value instanceof EDRDetails),
-        (key,value) -> (value instanceof WorkflowEvent),
+        (key,value) -> (value instanceof TokenRedeemed),
+        (key,value) -> (value instanceof SubscriberProfileForceUpdateResponse),
         (key,value) -> (value instanceof OTPInstanceChangeEvent)
     );
 
@@ -1026,8 +1036,9 @@ public class EvolutionEngine
     KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
-    KStream<StringKey, WorkflowEvent> workflowEventsStream = (KStream<StringKey, WorkflowEvent>) branchedEvolutionEngineOutputs[15];
-    KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventsStream = (KStream<StringKey, OTPInstanceChangeEvent>) branchedEvolutionEngineOutputs[16];
+    KStream<StringKey, TokenRedeemed> tokenRedeemedsStream = (KStream<StringKey, TokenRedeemed>) branchedEvolutionEngineOutputs[15];
+    KStream<StringKey, SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseStream = (KStream<StringKey, SubscriberProfileForceUpdateResponse>) branchedEvolutionEngineOutputs[16];
+    KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventsStream = (KStream<StringKey, OTPInstanceChangeEvent>) branchedEvolutionEngineOutputs[17];
     /*****************************************
     *
     *  sink
@@ -1051,9 +1062,9 @@ public class EvolutionEngine
     voucherActionStream.to(Deployment.getVoucherActionTopic(), Produced.with(stringKeySerde, voucherActionSerde));
     subscriberProfileForceUpdateStream.to(Deployment.getSubscriberProfileForceUpdateTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateSerde));
     edrDetailsStream.to(Deployment.getEdrDetailsTopic(), Produced.with(stringKeySerde, edrDetailsSerde));
-    workflowEventsStream.to(Deployment.getWorkflowEventTopic(), Produced.with(stringKeySerde, workflowEventSerde));
+    tokenRedeemedsStream.to(Deployment.getTokenRedeemedTopic(), Produced.with(stringKeySerde, TokenRedeemed.serde()));
+    subscriberProfileForceUpdateResponseStream.to(Deployment.getSubscriberProfileForceUpdateResponseTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateResponseSerde));
     otpInstanceChangeEventsStream.to(Deployment.getOTPInstanceChangeResponseTopic(), Produced.with(stringKeySerde, OTPInstanceChangeEvent.serde()));
-    
 
     //
     //  sink DeliveryRequest
@@ -1954,8 +1965,8 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    SubscriberEvaluationRequest changeEventEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
-    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(changeEventEvaluationRequest); 
+    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
+    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(subscriberEvaluationRequest); 
     
     /*****************************************
     *
@@ -1963,7 +1974,7 @@ public class EvolutionEngine
     *
     *****************************************/
     
-    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(changeEventEvaluationRequest);
+    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(subscriberEvaluationRequest);
     
     /*****************************************
     *
@@ -1999,6 +2010,14 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateWorkflows(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
+    *  update notificationEvent
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateNotifications(context, evolutionEvent, subscriberEvaluationRequest) || subscriberStateUpdated;
 
 
     /*****************************************
@@ -2055,7 +2074,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updateChangeEvents(subscriberState, now, changeEventEvaluationRequest, profileChangeOldValues, tenantID);
+    updateChangeEvents(subscriberState, now, subscriberEvaluationRequest, profileChangeOldValues, tenantID);
     
     /*****************************************
     *
@@ -2063,7 +2082,7 @@ public class EvolutionEngine
     *
     *****************************************/
         
-    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, changeEventEvaluationRequest, profileSegmentChangeOldValues, tenantID);
+    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, subscriberEvaluationRequest, profileSegmentChangeOldValues, tenantID);
 
     /*****************************************
     *
@@ -2506,6 +2525,128 @@ public class EvolutionEngine
         workflowTriggering.add(toBeAdded);
         subscriberUpdated=true;
       }
+    return subscriberUpdated;
+  }
+ 
+ 
+ /*****************************************
+ *
+ *  updateWorkflows
+ *
+ *****************************************/
+
+ private static boolean updateNotifications(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, SubscriberEvaluationRequest subscriberEvaluationRequest)
+ {
+   
+   boolean subscriberUpdated = false;
+   SubscriberState subscriberState = context.getSubscriberState();
+
+   if (evolutionEvent instanceof NotificationEvent)
+     {
+       NotificationEvent notificationEvent = (NotificationEvent)evolutionEvent;
+       subscriberUpdated = sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState);
+     }
+   return subscriberUpdated;
+ }
+
+  private static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState)
+  {
+    boolean subscriberUpdated;
+    /*****************************************
+     *
+     * now
+     *
+     *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    // Enrich subscriber Evaluation Request with the tags specific to this message
+    // type (by example voucherCode)
+    if (specificTags != null)
+      {
+        for (Map.Entry<String, String> entry : specificTags.entrySet())
+          {
+            if (!entry.getKey().startsWith("tag."))
+              {
+                subscriberEvaluationRequest.getMiscData().put(("tag." + entry.getKey()).toLowerCase(), entry.getValue());
+              }
+            else
+              {
+                subscriberEvaluationRequest.getMiscData().put(entry.getKey().toLowerCase(), entry.getValue());
+              }
+          }
+      }
+
+    /*****************************************
+     *
+     * get DialogTemplate
+     *
+     *****************************************/
+    SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
+    DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
+
+    String language = subscriberEvaluationRequest.getLanguage();
+
+    if (template != null && !template.getReadOnly())
+      {
+        //
+        // get communicationChannel
+        //
+
+        CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
+
+        //
+        // get dest address
+        //
+
+        CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
+        String destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+
+        Map<String, List<String>> tags = new HashMap<String, List<String>>();
+
+        for (String messageField : template.getDialogMessageFields().keySet())
+          {
+            DialogMessage dialogMessage = template.getDialogMessage(messageField);
+            List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
+            tags.put(messageField, dialogMessageTags);
+          }
+
+        // //
+        // // Parameters specific to the channel toolbox but NOT related to template
+        // //
+        // ParameterMap notificationParameters = new ParameterMap();
+        // for(CriterionField field :
+        // communicationChannel.getToolboxParameters().values()) {
+        // //notificationParameters.put(field.getID(), value);
+        // }
+
+        // add also the mandatory parameters for all channels
+        ParameterMap notificationParameters = new ParameterMap();
+        notificationParameters.put("node.parameter.contacttype", contactType.getExternalRepresentation());
+        notificationParameters.put("node.parameter.fromaddress", sourceAddress);
+
+        /*****************************************
+         *
+         * request
+         *
+         *****************************************/
+
+        NotificationManagerRequest request = null;
+        if (destAddress != null)
+          {
+            request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, communicationChannel.getID(), notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+
+            request.forceDeliveryPriority(contactType.getDeliveryPriority());
+            request.setRestricted(contactType.getRestricted());
+            subscriberState.getDeliveryRequests().add(request);
+          }
+        else
+          {
+            log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+          }
+
+      }
+    subscriberUpdated = true;
     return subscriberUpdated;
   }
 
@@ -2967,6 +3108,13 @@ public class EvolutionEngine
         //
 
         SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) evolutionEvent;
+        String SubscriberProfileForceUpdateRequestID = null;
+        String returnCode = null;
+        
+        if (subscriberProfileForceUpdate != null && subscriberProfileForceUpdate.getSubscriberProfileForceUpdateRequestID() != null)
+          {
+            SubscriberProfileForceUpdateRequestID = subscriberProfileForceUpdate.getSubscriberProfileForceUpdateRequestID();
+          }
 
         //
         //  evolutionSubscriberStatus
@@ -3145,7 +3293,10 @@ public class EvolutionEngine
                   }
               }
           }
+        returnCode = "success";
         
+        SubscriberProfileForceUpdateResponse subscriberProfileForceUpdateResponse = new SubscriberProfileForceUpdateResponse(returnCode , SubscriberProfileForceUpdateRequestID);
+        context.getSubscriberState().getSubscriberProfileForceUpdatesResponse().add(subscriberProfileForceUpdateResponse);
       }
     
     /*****************************************
@@ -3453,28 +3604,13 @@ public class EvolutionEngine
           }
         else
           {
-            // EVPRO-1061 : For day unit, limit should be 0h on (today - number of days + 1)
-            // for month unit, the limit should be on 0h on (1st day of this month - number of months + 1)
-            Date earliestDateToKeep = null;
-            Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
-            if (maximumAcceptancesPeriodDays != Offer.UNSET) {
-              earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays+1, Deployment.getDeployment(tenantID).getTimeZone());
-              earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
-            } else if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
-              earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths+1, Deployment.getDeployment(tenantID).getTimeZone());
-              earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
-            } else {
-              log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
-              earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
-            }
-            log.debug("earliestDateToKeep for " + offerID + " : " + earliestDateToKeep + " maximumAcceptancesPeriodDays: " + maximumAcceptancesPeriodDays + " maximumAcceptancesPeriodMonths: " + maximumAcceptancesPeriodMonths);
+            Date earliestDateToKeep = computeEarliestDateToKeep(now, offer, tenantID);
             List<Date> cleanPurchaseHistory = new ArrayList<Date>();
             Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
             List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
             if (purchaseHistory != null)
               {
-                // clean list : only keep relevant purchase dates
+                // only keep recent purchase dates (discard dates that are too old)
                 for (Date purchaseDate : purchaseHistory)
                   {
                     if (purchaseDate.after(earliestDateToKeep))
@@ -3483,13 +3619,29 @@ public class EvolutionEngine
                       }
                   }
               }
-            // TODO : this could be size-optimized by storing date/quantity in a new object
-            for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
-              {
-                cleanPurchaseHistory.add(now); // add new purchase
-              }
-            fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
-            subscriberProfileUpdated = true;
+            int totalPurchased = cleanPurchaseHistory.size()+purchaseFulfillmentRequest.getQuantity();
+            if(log.isTraceEnabled()) log.trace("cleanPurchaseHistory.size() = " + cleanPurchaseHistory.size()+ " purchaseFulfillmentRequest.getQuantity() " + purchaseFulfillmentRequest.getQuantity());
+            if (isPurchaseLimitReached(offer, totalPurchased)) {
+              if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased + " ("+cleanPurchaseHistory.size()+"+"+purchaseFulfillmentRequest.getQuantity()+") earliestDateToKeep : " + earliestDateToKeep);
+              // add a dummy very old purchase (that will be removed next time we get here), so that purchaseFulfilment will refuse the purchase
+              for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
+                {
+                  cleanPurchaseHistory.add(NGLMRuntime.BEGINNING_OF_TIME); // add new purchase in sub history
+                }
+              fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
+              subscriberProfileUpdated = true;
+            } else {
+              // TODO : this could be size-optimized by storing date/quantity in a new object
+              for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
+                {
+                  cleanPurchaseHistory.add(now); // add new purchase in sub history
+                }
+              fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
+              subscriberProfileUpdated = true;
+            }
+            // signal PurchaseFulfilmentManager that the list includes this purchase (needed because request may be processed in random order) 
+            // these "TBR_" entries will need to be cleaned up at some point
+            fullPurchaseHistory.put("TBR_"+purchaseFulfillmentRequest.getDeliveryRequestID(), new ArrayList<>());
           }
       }
 
@@ -3510,7 +3662,13 @@ public class EvolutionEngine
     *****************************************/
 
     UCGState ucgState = ucgStateReader.get(UCGState.getSingletonKey());
-    if (ucgState != null && ucgState.getRefreshEpoch() != null)
+    //at start or when a new state were calculated the current ucg state is replaced
+
+    if(currentUCGState == null || currentUCGState.getEvaluationDate().compareTo(ucgState.getEvaluationDate()) < 0)
+    {
+      currentUCGState = ucgState;
+    }
+    if (currentUCGState != null && currentUCGState.getRefreshEpoch() != null)
       {
         //
         //  refreshUCG -- should we refresh the UCG status of this subscriber?
@@ -3518,8 +3676,9 @@ public class EvolutionEngine
 
         boolean refreshUCG = false;
         refreshUCG = refreshUCG || context.getSubscriberState().getUCGEpoch() == null;
-        refreshUCG = refreshUCG || ! Objects.equals(context.getSubscriberState().getUCGRuleID(), ucgState.getUCGRuleID());
-        refreshUCG = refreshUCG || context.getSubscriberState().getUCGEpoch() < ucgState.getRefreshEpoch();
+        refreshUCG = refreshUCG || ! Objects.equals(context.getSubscriberState().getUCGRuleID(), currentUCGState.getUCGRuleID());
+        refreshUCG = refreshUCG || context.getSubscriberState().getUCGEpoch() < currentUCGState.getRefreshEpoch();
+
 
         //
         //  refreshWindow -- is this subscriber outside the window where we can refresh the UCG?
@@ -3527,7 +3686,7 @@ public class EvolutionEngine
 
         boolean refreshWindow = false;
         refreshWindow = refreshWindow || context.getSubscriberState().getUCGRefreshDay() == null;
-        refreshWindow = refreshWindow || RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), ucgState.getRefreshWindowDays(), Deployment.getDeployment(tenantID).getTimeZone()).compareTo(now) <= 0;
+        refreshWindow = refreshWindow || RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), currentUCGState.getRefreshWindowDays(), Deployment.getDeployment(tenantID).getTimeZone()).compareTo(now) <= 0;
 
         //
         //  refresh if necessary
@@ -3551,7 +3710,7 @@ public class EvolutionEngine
             boolean isInUCG = subscriberProfile.getUniversalControlGroup();
             Set<String> userStratum = new HashSet<String>();
             Map<String, String> userSegmentsMap = subscriberProfile.getSegmentsMap(subscriberGroupEpochReader);
-            for (String dimensionID : ucgState.getUCGRule().getSelectedDimensions())
+            for (String dimensionID : currentUCGState.getUCGRule().getSelectedDimensions())
               {
                 userStratum.add(userSegmentsMap.get(dimensionID));
               }
@@ -3564,20 +3723,27 @@ public class EvolutionEngine
             //
             
             double shiftProbability = 0.0d;
-            Iterator<UCGGroup> iterator = ucgState.getUCGGroups().iterator();
+            UCGGroup subscriberUCGGroup = null;
+            Iterator<UCGGroup> iterator = currentUCGState.getUCGGroups().iterator();
             while(iterator.hasNext()) 
               {
                 UCGGroup g = iterator.next();
                 if(g.getSegmentIDs().equals(userStratum)) 
                   {
-                    if (g.getShiftProbability() != null) 
-                      {
-                        shiftProbability = g.getShiftProbability();
-                      }
+                    //if (g.getShiftProbability() != null)
+                    //  {
+                    //    shiftProbability = g.getShiftProbability();
+                    //  }
                     // TODO What if shift probability is null ? manually re-compute it ?
+                    subscriberUCGGroup = g;
                     break;
                   }
               }
+
+            if(subscriberUCGGroup !=null && subscriberUCGGroup.getShiftProbability() != null)
+            {
+              shiftProbability = subscriberUCGGroup.getShiftProbability();
+            }
 
             if(shiftProbability < 0 && isInUCG) 
               {
@@ -3585,12 +3751,28 @@ public class EvolutionEngine
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 removeFromUCG = (random.nextDouble() < -shiftProbability);
               }
-            else if(shiftProbability > 0 && !isInUCG) 
+            else if(shiftProbability > 0 && !isInUCG && !Deployment.getAddSubscribersToUcgByCounting())
               {
                 // If there is not enough customers in the Universal Control Group.
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 addToUCG = (random.nextDouble() < shiftProbability);
               }
+            else
+            {
+              //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
+              String key = String.join("-",subscriberUCGGroup.getSegmentIDs());
+              //counting is starting from 1
+              if(ucgSegmentEvaluationCount.getOrDefault(key,1) < 1/ucgState.getTargetRatio())
+              {
+                //increment value of count (or put ititial record if it not exist
+                ucgSegmentEvaluationCount.put(key,ucgSegmentEvaluationCount.getOrDefault(key,1)+1);
+              }else
+              {
+                //mark add to ucg true and reset counter to 1
+                addToUCG = true;
+                ucgSegmentEvaluationCount.put(key,1);
+              }
+            }
 
             /*****************************************
             *
@@ -3598,8 +3780,20 @@ public class EvolutionEngine
             *
             *****************************************/
 
-            if (addToUCG) subscriberProfile.setUniversalControlGroup(true);
-            if (removeFromUCG) subscriberProfile.setUniversalControlGroup(false);
+            if (addToUCG)
+            {
+              subscriberProfile.setUniversalControlGroup(true);
+              //increase number of subscribers in ucg for ucg group assigned to current user
+              subscriberUCGGroup.incrementUCGSubscribers(1);
+              currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
+            }
+            if (removeFromUCG)
+            {
+              subscriberProfile.setUniversalControlGroup(false);
+              //decrease number of subscribers in ucg for ucg group assigned to current user
+              subscriberUCGGroup.decrementUCGSubscribers(1);
+              currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
+            }
             context.getSubscriberState().setUCGState(ucgState, now, tenantID);
           }
       }
@@ -3611,7 +3805,7 @@ public class EvolutionEngine
     *****************************************/
 
     String eventName = (evolutionEvent instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent)evolutionEvent).getEventName() : evolutionEvent.getClass().getSimpleName();
-    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),eventName).getStats().increment();
+    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),eventName).withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(subscriberProfile.getTenantID())).getStats().increment();
 
     /*****************************************
     *
@@ -3622,6 +3816,38 @@ public class EvolutionEngine
     return subscriberProfileUpdated;
   }
 
+  public static Date computeEarliestDateToKeep(Date now, Offer offer, int tenantID)
+  {
+    Date earliestDateToKeep = null;
+    Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
+    if (maximumAcceptancesPeriodDays != Offer.UNSET) {
+      earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+    } else {
+      Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
+      if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
+        if (maximumAcceptancesPeriodMonths == 1) { // current month
+          earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+        } else {
+          earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getDeployment(tenantID).getTimeZone());
+        }
+      } else {
+        log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
+        earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+      }
+    }
+    return earliestDateToKeep;
+  }
+
+  public static boolean isPurchaseLimitReached(Offer offer, int alreadyPurchased) {
+    // "Allow no more than 0 purchases" OR "within 0 days/months" <==> unlimited (no limit check)
+    boolean unlimited = (
+        (offer.getMaximumAcceptances() == 0)
+     || ((offer.getMaximumAcceptancesPeriodDays() != null) && (offer.getMaximumAcceptancesPeriodDays() == 0))
+     || ((offer.getMaximumAcceptancesPeriodMonths() != null) && (offer.getMaximumAcceptancesPeriodMonths() == 0)));
+    boolean res = !unlimited && (alreadyPurchased > offer.getMaximumAcceptances());
+    if (log.isTraceEnabled()) log.trace("isPurchaseLimitReached " + res + " " + alreadyPurchased + " " + offer.getOfferID());
+    return res;
+  }
 
   private static boolean executeActionOtherSubscriber(EvolutionEventContext evolutionEventContext, SubscriberStreamEvent evolutionEvent, int tenantID)
   {
@@ -4927,6 +5153,8 @@ public class EvolutionEngine
         List<Token> subscriberTokens = subscriberProfile.getTokens();
         String tokenTypeID = null;
         DNBOToken presentationLogToken = null;
+        boolean external = false;
+        String callUniqueIdentifier = null;
 
         //
         // Retrieve the token-code we are looking for, from the event log.
@@ -4946,17 +5174,20 @@ public class EvolutionEngine
             moduleID = ((AcceptanceLog)evolutionEvent).getModuleID();
             featureID = ((AcceptanceLog)evolutionEvent).getFeatureID();
             tokenTypeID = ((AcceptanceLog)evolutionEvent).getTokenTypeID();
+            callUniqueIdentifier = ((AcceptanceLog)evolutionEvent).getCallUniqueIdentifier();
           }
 
         DNBOToken subscriberStoredToken = null;
         if (tokenTypeID == null)
           {
             tokenTypeID = "external"; // predefined tokenTypeID for tokens created externally
+            external = true;
           }
         TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType(tokenTypeID, SystemTime.getCurrentTime());
         if (defaultDNBOTokenType == null)
           {
             log.error("Could not find token type with ID " + tokenTypeID + " Check your configuration.");
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.BAD_TOKEN_TYPE, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
             return false;
           }
 
@@ -5019,20 +5250,30 @@ public class EvolutionEngine
 
         if (subscriberStoredToken == null)
           {
+
             if (presentationLogToken == null)
               {
                 // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
-                subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+                if(external) subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
               }
             else
               {
                 subscriberStoredToken = presentationLogToken;
               }
+
+            if (subscriberStoredToken == null)
+            {
+              if(log.isInfoEnabled()) log.info("received "+evolutionEvent.getClass().getSimpleName()+" for a non external token "+eventTokenCode+" for subscriber "+subscriberProfile.getSubscriberID()+" but not stored in the profile");
+              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.NO_TOKEN, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
+              return subscriberStateUpdated;
+            }
+
             subscriberTokens.add(subscriberStoredToken);
             subscriberStoredToken.setFeatureID(featureID);
             subscriberStoredToken.setModuleID(moduleID);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), context.getEventID(), eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID, tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), context.getEventID(), eventTokenCode, TokenChange.CREATE, TokenChange.OK, evolutionEvent.getClass().getSimpleName(), moduleID, featureID, callUniqueIdentifier, tenantID));
             subscriberStateUpdated = true;
+
           }
 
         //
@@ -5054,7 +5295,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", "OK", "PresentationLog", moduleID, featureID, tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", "OK", "PresentationLog", moduleID, featureID, callUniqueIdentifier, tenantID));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -5098,14 +5339,34 @@ public class EvolutionEngine
             if (subscriberStoredToken.getAcceptedOfferID() != null)
               {
                 log.error("Unexpected acceptance record ("+ acceptanceLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already redeemed by a previous acceptance record");
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.ALREADY_REDEEMED, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
                 return subscriberStateUpdated;
               }
             else
               {
+                // trigger purchase if needed
+                PurchaseFulfillmentRequest purchaseFulfillmentRequest = null;
+                if(!external)
+                  {
+                    purchaseFulfillmentRequest = new PurchaseFulfillmentRequest(context, "external", acceptanceLog.getOfferID(), 1, acceptanceLog.getSalesChannelID(), "token "+subscriberStoredToken.getTokenCode(), "", subscriberProfile.getTenantID());
+                    purchaseFulfillmentRequest.setModuleID(acceptanceLog.getModuleID());
+                    purchaseFulfillmentRequest.setFeatureID(acceptanceLog.getFeatureID());
+                    if(acceptanceLog.getCallUniqueIdentifier()!=null && !acceptanceLog.getCallUniqueIdentifier().isEmpty()) purchaseFulfillmentRequest.setDeliveryrequestID(acceptanceLog.getCallUniqueIdentifier());
+                    subscriberState.getDeliveryRequests().add(purchaseFulfillmentRequest);
+                  }
+                // update internal token
                 subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
                 subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
                 subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, "Redeem", "OK", "AcceptanceLog", moduleID, featureID, tenantID));
+                if(purchaseFulfillmentRequest!=null)
+                  {
+                    subscriberStoredToken.setPurchaseDeliveryRequestID(purchaseFulfillmentRequest.getDeliveryRequestID());
+                    subscriberStoredToken.setPurchaseStatus(purchaseFulfillmentRequest.getStatus());
+                  }
+                // trigger output log
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.OK, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
+                // trigger tokenRedeemed event (does it make sense ? should we just map token redeem event to AcceptanceLog ?
+                if(!external) subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), subscriberStoredToken.getTokenTypeID(), subscriberStoredToken.getAcceptedOfferID()));
               }
             subscriberStateUpdated = true;
           }
@@ -5127,6 +5388,22 @@ public class EvolutionEngine
                   {
                     propensityService.incrementPropensity(offerID,subscriberProfile,true,offerID.equals(subscriberStoredToken.getAcceptedOfferID()));
                   }
+              }
+          }
+      }
+
+    // update stored token status if needed on purchase response
+    if (evolutionEvent instanceof PurchaseFulfillmentRequest)
+      {
+        PurchaseFulfillmentRequest purchaseResponseEvent = (PurchaseFulfillmentRequest) evolutionEvent;
+        for(Token token:subscriberProfile.getTokens())
+          {
+            if(!(token instanceof DNBOToken)) continue;
+            DNBOToken dnboToken = (DNBOToken) token;
+            if(dnboToken.getPurchaseDeliveryRequestID()==null) continue;
+            if(dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID()))
+              {
+                dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
               }
           }
       }
@@ -7083,6 +7360,8 @@ public class EvolutionEngine
         result.addAll(subscriberState.getJourneyTriggerEventActions());
         result.addAll(subscriberState.getSubscriberProfileForceUpdates());
         result.addAll(subscriberState.getEdrDetailsWrappers());
+        result.addAll(subscriberState.getTokenRedeemeds());
+        result.addAll(subscriberState.getSubscriberProfileForceUpdatesResponse());
         result.addAll(subscriberState.getOTPInstanceChangeEvent());
       }
 
@@ -7093,6 +7372,7 @@ public class EvolutionEngine
             .withLabel(StatsBuilders.LABEL.operation.name(),voucherChange.getAction().getExternalRepresentation())
             .withLabel(StatsBuilders.LABEL.module.name(),Module.fromExternalRepresentation(voucherChange.getModuleID()).name())
             .withLabel(StatsBuilders.LABEL.status.name(),voucherChange.getReturnStatus().getGenericResponseMessage())
+            .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(voucherChange.getTenantID()))
             .getStats().increment()
       );
     }
@@ -7987,7 +8267,7 @@ public class EvolutionEngine
     long waitTime = timeout.getTime() - now.getTime();
     HttpPost httpPost = new HttpPost("http://" + hostPort + "/nglm-evolutionengine/retrieveSubscriberProfile");
     httpPost.setEntity(new StringEntity(requestJSON.toString(), ContentType.create("application/json")));
-    httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
+    httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).setSocketTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
 
     //
     //  submit
@@ -8678,7 +8958,7 @@ public class EvolutionEngine
       String paramName = null;
       String attributeName = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.attribute.name");
       String attributeValue = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.attribute.value");
-      SubscriberProfileForceUpdate update = new SubscriberProfileForceUpdate("dummy", evolutionEventContext.now(), new ParameterMap());
+      SubscriberProfileForceUpdate update = new SubscriberProfileForceUpdate("dummy", evolutionEventContext.now(), new ParameterMap(), null);
       update.getParameterMap().put(attributeName, attributeValue);
       update.getParameterMap().put("fromJourney", true);
 

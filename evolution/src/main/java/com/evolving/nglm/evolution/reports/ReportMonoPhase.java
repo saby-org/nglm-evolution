@@ -264,9 +264,21 @@ public class ReportMonoPhase
               totalBatchTime += elapsedBatch;
               nbBatch++;
               startBatch = System.currentTimeMillis();
-              SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-              scrollRequest.scroll(scroll);
-              searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+              // EVPRO-1080 : retry search (with same scrollId) to catch spurious "ConnectionClosedException: Connection is closed"
+              int retryCountSearchScroll = 5;  
+              while (true) {
+                try {
+                  SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId).scroll(scroll);
+                  searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+                  break;
+                } catch (org.apache.http.ConnectionClosedException ex) {
+                  if (--retryCountSearchScroll < 1) {
+                    throw ex; // stop retrying, rethrow original exception
+                  }
+                  log.info("Got exception while doing searchScroll - wait a bit and retry " + retryCountSearchScroll + " more times : " + ex.getLocalizedMessage());
+                  try { Thread.sleep(60000L); } catch (InterruptedException ie) {} // wait a bit before retry
+                }
+              }
               scrollId = searchResponse.getScrollId();
               searchHits = searchResponse.getHits().getHits();
             }
@@ -468,9 +480,21 @@ public class ReportMonoPhase
                     totalBatchTime += elapsedBatch;
                     nbBatch++;
                     startBatch = System.currentTimeMillis();
-                    SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-                    scrollRequest.scroll(scroll);
-                    searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+                    // EVPRO-1080 : retry search (with same scrollId) to catch spurious "ConnectionClosedException: Connection is closed"
+                    int retryCountSearchScroll = 5;  
+                    while (true) {
+                      try {
+                        SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId).scroll(scroll);
+                        searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+                        break;
+                      } catch (org.apache.http.ConnectionClosedException ex) {
+                        if (--retryCountSearchScroll < 1) {
+                          throw ex; // stop retrying, rethrow original exception
+                        }
+                        log.info("Got exception while doing searchScroll - wait a bit and retry " + retryCountSearchScroll + " more times : " + ex.getLocalizedMessage());
+                        try { Thread.sleep(60000L); } catch (InterruptedException ie) {} // wait a bit before retry
+                      }
+                    }
                     scrollId = searchResponse.getScrollId();
                     searchHits = searchResponse.getHits().getHits();
 

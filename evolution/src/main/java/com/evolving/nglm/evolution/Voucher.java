@@ -125,8 +125,13 @@ public abstract class Voucher extends GUIManagedObject {
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     ArrayList<String> supplierIDs=new ArrayList<>();
+    ArrayList<String> voucherTypeIDs=new ArrayList<>();
+    
+    voucherTypeIDs.add(getVoucherTypeId());
     supplierIDs.add(getSupplierID());
+    
     result.put("supplier",supplierIDs ) ;
+    result.put("vouchertype",voucherTypeIDs ) ;
     return result;
   }
   @Override

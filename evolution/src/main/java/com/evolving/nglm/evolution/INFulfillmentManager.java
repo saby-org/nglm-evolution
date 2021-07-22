@@ -625,6 +625,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         statsDuration.withLabel(StatsBuilders.LABEL.status.name(),((INFulfillmentRequest) deliveryRequest).getStatus().name())
                      .withLabel(StatsBuilders.LABEL.operation.name(),((INFulfillmentRequest) deliveryRequest).getOperation().name())
                      .withLabel(StatsBuilders.LABEL.module.name(), deliveryRequest.getModule().name())
+                     .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(deliveryRequest.getTenantID()))
                      .getStats().add(startTime);
 
       }

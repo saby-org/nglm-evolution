@@ -254,7 +254,22 @@ public class ConnectSerde<T> implements Serde<T>
       @Override public void close() { }
       @Override public byte[] serialize(String topic, T data)
       {
-        return converter.fromConnectData(topic, schema, pack(data));
+        Object packData = pack(data);
+        try
+        {
+          return converter.fromConnectData(topic, schema, packData);
+        }
+        catch (DataException e)
+        {
+          if (packData instanceof Struct)
+          {
+            Struct struct = (Struct) packData;
+
+            struct.validate(); // this should throw the more useful exception
+
+          }
+          throw e;
+        }
       }
     };
   }

@@ -22,8 +22,10 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+@GUIDependencyDef(objectType = "tokentype", serviceClass = TokenTypeService.class, dependencies = { })
 public class TokenType extends GUIManagedObject
 {
   /*****************************************

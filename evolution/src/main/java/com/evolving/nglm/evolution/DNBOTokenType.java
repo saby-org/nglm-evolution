@@ -7,8 +7,10 @@
 package com.evolving.nglm.evolution;
 
 import org.apache.kafka.connect.data.SchemaAndValue;
-import com.evolving.nglm.evolution.TokenType.TokenTypeKind;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
+
+@GUIDependencyDef(objectType = "dnbotokentype", serviceClass = TokenTypeService.class, dependencies = { })
 public class DNBOTokenType extends TokenType {
 
   public DNBOTokenType(SchemaAndValue schemaAndValue, TokenTypeValidity validity, String codeFormat, Integer maxNumberOfPlays) {

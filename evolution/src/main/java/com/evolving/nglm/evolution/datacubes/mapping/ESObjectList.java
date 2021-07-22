@@ -95,20 +95,10 @@ public abstract class ESObjectList<T>
         .query(QueryBuilders.matchAllQuery())
         .size(BUCKETS_MAX_NBR);
     
-    SearchResponse response = null;
-    try 
-      {
-        response = elasticsearch.search(new SearchRequest(mappingEsIndex).source(request), RequestOptions.DEFAULT);
-      } 
-    catch(ElasticsearchException e)
-      {
-        if (e.status() == RestStatus.NOT_FOUND) {
-          log.warn("Elasticsearch index {} does not exist.", mappingEsIndex);
-          return;
-        } else {
-          throw e;
-        }
-      }
+    SearchResponse response = elasticsearch.syncSearchWithRetry(new SearchRequest(mappingEsIndex).source(request), RequestOptions.DEFAULT);
+    if(response == null) { // Index not found
+      return;
+    }
     
     if(response.isTimedOut()
         || response.getFailedShards() > 0

@@ -117,6 +117,7 @@
     "mapping_journeys":                 2,
     "mapping_journeyrewards":           2,
     "mapping_deliverables":             2,
+    "mapping_partners":             	2,
     "mapping_basemanagment":            2,
     "mapping_journeyobjective":         2
   },
@@ -242,6 +243,8 @@
   "edrDetailsTopic"                           			 : "${topic.edrdetails}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
+  "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
+  "notificationEventTopic"                               : "${topic.notificationEvent}",
 
   "supportedDataTypes" :
     [
@@ -537,7 +540,7 @@
       { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "stringSet",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
 	  { "id" : "loyaltyprograms.challenge.levels",     "display" : "Loyalty Challenges Current Levels",   "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getLoyaltyChallengesLevels",    "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null },
 	  { "id" : "loyaltyprograms.mission.steps",        "display" : "Loyalty Mission Current Steps",       "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getLoyaltyMissionsSteps",    "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null }
-   ],
+      ],
 
   "offerOptimizationAlgorithms": 
     [
@@ -662,7 +665,7 @@
     ],
     "kpisMetaData" :
     [
-      { "id": "1",   "textProperty": true,  "display": "Activity", "displayGroups" : [{"rangeUpTo": "active", "imageURL": "ffa fa-ok", "color" : "#3adc3a"}, {"rangeUpTo": "inactive", "imageURL": "fa fa-times", "color" : "#ff0000"}, {"rangeUpTo": null, "imageURL": "fa fa-times", "color" : "#ffff00"}],  "dataType": "int", "name": "activity", "kpiUnit": null, "topLevel": false, "additionalGeneralDetails": [] }
+      { "id": "1",   "textProperty": true,  "display": "Activity", "displayGroups" : [{"rangeUpTo": "active", "imageURL": "fa fa-check-square-o", "color" : "#54a133"}, {"rangeUpTo": "inactive", "imageURL": "fa fa-times", "color" : "#c43333"}, {"rangeUpTo": null, "imageURL": "fa fa-times", "color" : "#ffff00"}],  "dataType": "string", "name": "activity", "kpiUnit": null, "topLevel": true, "additionalGeneralDetails": [] }
     ]
   },
 
@@ -918,14 +921,18 @@
     {
       "id"           : "generateOTP",
       "methodName"   : "generateOTP",
-      "permissions"  : ["API-GET-CUSTOMER"]
+      "permissions"  : ["API-GENERATE-OTP"]
     },
     {
       "id"           : "checkOTP",
       "methodName"   : "checkOTP",
-      "permissions"  : ["API-GET-CUSTOMER"]
+      "permissions"  : ["API-CHECK-OTP"]
+    },
+    {
+      "id"           : "getVoucherList",
+      "methodName"   : "getVoucherList",
+      "permissions"  : ["API-GET-VOUCHER-LIST"]
     }
-    
   ],
 
   "uploadedFileSeparator" : ";",
@@ -1215,6 +1222,8 @@
   "externalAPITopics" : [],
   
   "generateSimpleProfileDimensions" : true,
-  "recurrentCampaignCreationDaysRange" : 3
+  "recurrentCampaignCreationDaysRange" : 3,
+
+  "addSubscribersToUcgByCounting" : true
   
 }
