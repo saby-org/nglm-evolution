@@ -20571,13 +20571,16 @@ public class GUIManager
     for (CommunicationChannel staticCommunicationChannel : communicationChannelObjects)
       {
         CommunicationChannel dynamicCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(staticCommunicationChannel.getID(), SystemTime.getCurrentTime());
+        boolean isDefaultChannel = true;
         if(dynamicCommunicationChannel == null)
           {
             // use the static communicationChannel
             dynamicCommunicationChannel = staticCommunicationChannel;
+            isDefaultChannel = false;
           }
 
         JSONObject channel = dynamicCommunicationChannel.generateResponseJSON(fullDetails, now);
+        channel.put("isDefault", isDefaultChannel);
         communicationChannelList.add(channel);
       }
 
@@ -20626,12 +20629,15 @@ public class GUIManager
     CommunicationChannel staticCommunicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
 
     CommunicationChannel dynamicCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, SystemTime.getCurrentTime());
+    boolean isDefaultChannel = true;
     if(dynamicCommunicationChannel == null)
       {
         // use the static communicationChannel
         dynamicCommunicationChannel = staticCommunicationChannel;
+        isDefaultChannel = false;
       }
     JSONObject communicationChannelJSON = dynamicCommunicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
+    communicationChannelJSON.put("isDefault", isDefaultChannel);
 
     /*****************************************
     *
@@ -20689,8 +20695,6 @@ public class GUIManager
         *
         *****************************************/
         
-        CommunicationChannelTimeWindow existingCommunicationChannelTimeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, now);
-        
         if(jsonRoot.get("notificationDailyWindows") != null) {
           // let GUIMangedObject This (this is a F$$$ hack)
           JSONObject json = (JSONObject) jsonRoot.get("notificationDailyWindows");
@@ -20705,7 +20709,8 @@ public class GUIManager
           json.put("userID", jsonRoot.get("userID"));
           json.put("userName", jsonRoot.get("userName"));
           json.put("groupID", jsonRoot.get("groupID"));          
-          
+
+          CommunicationChannelTimeWindow existingCommunicationChannelTimeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, now);
           CommunicationChannelTimeWindow communicationChannelTimeWindow = new CommunicationChannelTimeWindow(json, epoch, existingCommunicationChannelTimeWindow, tenantID);
           
           /*****************************************
