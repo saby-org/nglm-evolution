@@ -921,7 +921,12 @@
       "id"           : "getVoucherList",
       "methodName"   : "getVoucherList",
       "permissions"  : ["API-GET-VOUCHER-LIST"]
-    }
+    },
+    {
+      "id"           : "deleteSubscriber",
+      "methodName"   : "deleteSubscriber",
+      "permissions"  : ["API-VALIDATE-VOUCHER"]
+    }    
   ],
 
   "uploadedFileSeparator" : ";",

@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStreamEvent
+public class AssignSubscriberIDs extends SubscriberStreamOutput implements com.evolving.nglm.core.SubscriberStreamEvent
 {
   /*****************************************
   *

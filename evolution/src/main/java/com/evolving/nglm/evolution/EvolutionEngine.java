@@ -65,6 +65,7 @@ import org.rocksdb.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
@@ -320,6 +321,7 @@ public class EvolutionEngine
 
     String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
     String cleanupSubscriberTopic = Deployment.getCleanupSubscriberTopic();
+    String deleteSubscriberTopic = Deployment.getAssignSubscriberIDsTopic();
     String subscriberProfileForceUpdateTopic = Deployment.getSubscriberProfileForceUpdateTopic();
     String executeActionOtherSubscriberTopic = Deployment.getExecuteActionOtherSubscriberTopic();
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
@@ -711,6 +713,7 @@ public class EvolutionEngine
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
     final ConnectSerde<CleanupSubscriber> cleanupSubscriberSerde = CleanupSubscriber.serde();
+    final ConnectSerde<AssignSubscriberIDs> assignSubscriberIDsSerde = AssignSubscriberIDs.serde();
     final ConnectSerde<PresentationLog> presentationLogSerde = PresentationLog.serde();
     final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
     final ConnectSerde<PointFulfillmentRequest> pointFulfillmentRequestSerde = PointFulfillmentRequest.serde();
@@ -756,6 +759,7 @@ public class EvolutionEngine
     ArrayList<ConnectSerde<? extends SubscriberStreamEvent>> evolutionEventSerdes = new ArrayList<ConnectSerde<? extends SubscriberStreamEvent>>();
     evolutionEventSerdes.add(timedEvaluationSerde);
     evolutionEventSerdes.add(cleanupSubscriberSerde);
+    evolutionEventSerdes.add(assignSubscriberIDsSerde);
     evolutionEventSerdes.add(subscriberProfileForceUpdateSerde);
     evolutionEventSerdes.add(executeActionOtherSubscriberSerde);
     evolutionEventSerdes.add(recordSubscriberIDSerde);
@@ -1000,7 +1004,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof EDRDetails),
         (key, value) -> (value instanceof TokenRedeemed),
         (key,value) -> (value instanceof SubscriberProfileForceUpdateResponse),
-        (key,value) -> (value instanceof CleanupSubscriber)
+        (key,value) -> (value instanceof CleanupSubscriber),
+        (key,value) -> (value instanceof AssignSubscriberIDs)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1023,6 +1028,7 @@ public class EvolutionEngine
     KStream<StringKey, TokenRedeemed> tokenRedeemedsStream = (KStream<StringKey, TokenRedeemed>) branchedEvolutionEngineOutputs[15];
     KStream<StringKey, SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseStream = (KStream<StringKey, SubscriberProfileForceUpdateResponse>) branchedEvolutionEngineOutputs[16];
     KStream<StringKey, CleanupSubscriber> immediateCleanupStream = (KStream<StringKey, CleanupSubscriber>) branchedEvolutionEngineOutputs[17];
+    KStream<StringKey, AssignSubscriberIDs> deleteActionStream = (KStream<StringKey, AssignSubscriberIDs>) branchedEvolutionEngineOutputs[18];
     /*****************************************
     *
     *  sink
@@ -1049,53 +1055,54 @@ public class EvolutionEngine
     tokenRedeemedsStream.to(Deployment.getTokenRedeemedTopic(), Produced.with(stringKeySerde, TokenRedeemed.serde()));
     subscriberProfileForceUpdateResponseStream.to(Deployment.getSubscriberProfileForceUpdateResponseTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateResponseSerde));
     immediateCleanupStream.to(Deployment.getCleanupSubscriberTopic(), Produced.with(stringKeySerde, cleanupSubscriberSerde));
+    deleteActionStream.to(Deployment.getAssignSubscriberIDsTopic(), Produced.with(stringKeySerde, assignSubscriberIDsSerde));
 
     //
-	//  sink DeliveryRequest
-	//
+    //  sink DeliveryRequest
+    //
 
-	// rekeyed as needed
-	KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
-	// topics/predicates/serdes for branching by request or response and priority
-	// important to keep those 2 lists coherent one with the other!
-	LinkedList<String> topics = new LinkedList<>();
-	LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
-	Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
-	// populate
-	for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
-	  for(DeliveryPriority priority:DeliveryPriority.values()){
-	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine() || deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)/*or special case the "hacky loyalty point update BDR only" (sounds to me that is actually not the hacky at all, sending point request to commodity delivery manager to send back to engine to send back to commodity delivery manager to send back to engine feels a bit more shitty)*/){
-	  	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
-		  topics.add(topic);
-	  	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
-	  	  deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
-		}
-		String topic = deliveryManagerDeclaration.getRequestTopic(priority);// a request we are doing
-		topics.add(topic);
-		deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
-		deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
-	  }
-	}
-	//branch and sink
-	Iterator<String> topicIterator = topics.iterator();
-	for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.toArray(new Predicate[deliveryRequestPredicates.size()]))){
-	  String topic = topicIterator.next();
-	  stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
-	}
+    // rekeyed as needed
+    KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
+    // topics/predicates/serdes for branching by request or response and priority
+    // important to keep those 2 lists coherent one with the other!
+    LinkedList<String> topics = new LinkedList<>();
+    LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
+    Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
+    // populate
+    for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
+      for(DeliveryPriority priority:DeliveryPriority.values()){
+          if(deliveryManagerDeclaration.isProcessedByEvolutionEngine() || deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)/*or special case the "hacky loyalty point update BDR only" (sounds to me that is actually not the hacky at all, sending point request to commodity delivery manager to send back to engine to send back to commodity delivery manager to send back to engine feels a bit more shitty)*/){
+            String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
+          topics.add(topic);
+            deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
+            deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
+        }
+        String topic = deliveryManagerDeclaration.getRequestTopic(priority);// a request we are doing
+        topics.add(topic);
+        deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
+        deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
+      }
+       }
+       //branch and sink
+       Iterator<String> topicIterator = topics.iterator();
+       for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.toArray(new Predicate[deliveryRequestPredicates.size()]))){
+         String topic = topicIterator.next();
+         stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
+       }
 
-	//
+       //
     // sink TriggerEvent
     //
 
     // important to keep those 2 lists coherent one with the other!
     LinkedList<EvolutionEngineEventDeclaration> triggerEventsDeclarations = new LinkedList<>();
     LinkedList<Predicate<StringKey,JourneyTriggerEventAction>> triggerEventsPredicates = new LinkedList<>();
-	for(EvolutionEngineEventDeclaration eventDeclaration:Deployment.getEvolutionEngineEvents().values()){
-	  if(!eventDeclaration.isTriggerEvent()) continue;
-	  triggerEventsDeclarations.add(eventDeclaration);
-	  triggerEventsPredicates.add((key,value)->value.getEventDeclaration().getEventClass().equals(eventDeclaration.getEventClass()));
-	}
-	//branch and sink if needed
+       for(EvolutionEngineEventDeclaration eventDeclaration:Deployment.getEvolutionEngineEvents().values()){
+         if(!eventDeclaration.isTriggerEvent()) continue;
+         triggerEventsDeclarations.add(eventDeclaration);
+         triggerEventsPredicates.add((key,value)->value.getEventDeclaration().getEventClass().equals(eventDeclaration.getEventClass()));
+       }
+       //branch and sink if needed
     if(!triggerEventsDeclarations.isEmpty()){
       Iterator<EvolutionEngineEventDeclaration> eventDeclarationIterator = triggerEventsDeclarations.iterator();
       for(KStream<StringKey,JourneyTriggerEventAction> stream:journeyTriggerEventActionStream.branch(triggerEventsPredicates.toArray(new Predicate[triggerEventsPredicates.size()]))){
@@ -7356,6 +7363,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getTokenRedeemeds());
         result.addAll(subscriberState.getSubscriberProfileForceUpdatesResponse());
         result.addAll(subscriberState.getImmediateCleanupActions());
+        result.addAll(subscriberState.getDeleteActions());
       }
 
     // add stats about voucherChange done

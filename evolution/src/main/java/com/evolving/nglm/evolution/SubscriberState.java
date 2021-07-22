@@ -15,6 +15,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
+import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
@@ -137,7 +138,8 @@ public class SubscriberState implements StateStore
   private List<VoucherAction> voucherActions;
   private List<EvolutionEngine.JourneyTriggerEventAction> journeyTriggerEventActions;
   private List<SubscriberProfileForceUpdate> subscriberProfileForceUpdates;
-  private List<CleanupSubscriber> immediateCleanupActions;
+  private List<CleanupSubscriber> immediateCleanupActions; // for Evolution internal cleanup
+  private List<AssignSubscriberIDs> deleteActions; // for Evolution to simulate an incoming assignSubscriberID to Subscriber Manager that will generate a cleanup event for EvolutionEngine
   private List<TokenRedeemed> tokenRedeemeds;
   private List<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdatesResponse;
   //
@@ -195,6 +197,7 @@ public class SubscriberState implements StateStore
   public List<EvolutionEngine.JourneyTriggerEventAction> getJourneyTriggerEventActions() { return journeyTriggerEventActions; }
   public List<SubscriberProfileForceUpdate> getSubscriberProfileForceUpdates() { return subscriberProfileForceUpdates; }
   public List<CleanupSubscriber> getImmediateCleanupActions() { return immediateCleanupActions; }
+  public List<AssignSubscriberIDs> getDeleteActions() { return deleteActions; }
   public List<TokenRedeemed> getTokenRedeemeds() { return tokenRedeemeds; }
   public List<SubscriberProfileForceUpdateResponse> getSubscriberProfileForceUpdatesResponse() { return subscriberProfileForceUpdatesResponse; }
 
@@ -303,6 +306,7 @@ public class SubscriberState implements StateStore
         this.journeyTriggerEventActions = new ArrayList<>();
         this.subscriberProfileForceUpdates = new ArrayList<>();
         this.immediateCleanupActions = new ArrayList<>();
+        this.deleteActions = new ArrayList<>();
         this.cleanupDate = null;
         this.tokenRedeemeds = new ArrayList<>();
         this.subscriberProfileForceUpdatesResponse = new ArrayList<>();
@@ -362,6 +366,7 @@ public class SubscriberState implements StateStore
     this.journeyTriggerEventActions = new ArrayList<>();
     this.subscriberProfileForceUpdates = new ArrayList<>();
     this.immediateCleanupActions = new ArrayList<>();
+    this.deleteActions = new ArrayList<>();
     this.cleanupDate = cleanupDate;
     this.tokenRedeemeds = new ArrayList<>();
     // for data migration purpose only, can be removed once all market run EVPRO-885
