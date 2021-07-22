@@ -20592,57 +20592,8 @@ public class GUIManager
   }
 
 
-  
-  
-    /*****************************************
-    *
-    *  retrieve communication channel list
-    *
-    *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> communicationChannelList = new ArrayList<JSONObject>();
-    Collection <CommunicationChannel> communicationChannelObjects = new ArrayList<CommunicationChannel>();
-    
-    if (jsonRoot.containsKey("ids"))
-      {
-        JSONArray communicationChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
-        for (int i = 0; i < communicationChannelIDs.size(); i++)
-          {
-            String communicationChannelID = communicationChannelIDs.get(i).toString();
-            CommunicationChannel communicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
-            if (communicationChannel != null && communicationChannel.getTenantID() == tenantID)
-              {
-                communicationChannelObjects.add(communicationChannel);
-              }
-          }
-      }
-    else
-      {
-        communicationChannelObjects = Deployment.getDeployment(tenantID).getCommunicationChannels().values();
-      }
-    for (CommunicationChannel communicationChannel : communicationChannelObjects)
-      {
-        JSONObject channel = communicationChannel.generateResponseJSON(false, now);        
-        communicationChannelList.add(channel);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
-    
-    return JSONUtilities.encodeObject(response);
-  }
-
-
-
-  /*****************************************
+  /****************************************
   *
   *  processGetCommunicationChannel
   *
