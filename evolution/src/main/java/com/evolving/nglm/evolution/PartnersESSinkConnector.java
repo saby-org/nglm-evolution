@@ -76,6 +76,7 @@ public class PartnersESSinkConnector extends SimpleESSinkConnector
           documentMap.put("parentId", supplier.getParentSupplierID());
           documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
           documentMap.put("provider", JSONUtilities.decodeString(itemJson, "fulfillmentProviderID", ""));
+          documentMap.put("address", JSONUtilities.decodeString(itemJson, "address", ""));
         }
       else if (item instanceof Reseller)
         {
@@ -89,6 +90,7 @@ public class PartnersESSinkConnector extends SimpleESSinkConnector
           documentMap.put("parentId", reseller.getParentResellerID());
           documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
           documentMap.put("provider", "");
+          documentMap.put("address", JSONUtilities.decodeString(itemJson, "address", ""));
         }
       else
         {
