@@ -4969,7 +4969,7 @@ public class ThirdPartyManager
             else if(autoProvisionEvent != null)
               {
                 // means this is an autoprovision event, case 2...
-                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody, (Integer) tenantID });
+                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody, tenantID });
                 eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
               }
           }
