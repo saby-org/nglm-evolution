@@ -547,12 +547,13 @@
               "mandatory" : false,
               "width"     : "50%",
               "availableValues" : [
-                  { "id" : "minute", "display" : "Minutes" },
-                  { "id" : "hour",   "display" : "Hours" },
-                  { "id" : "day",    "display" : "Days" },
-                  { "id" : "week",   "display" : "Weeks" },
-                  { "id" : "month",  "display" : "Months" },
-                  { "id" : "year",  "display" : "Years" }
+                  { "id" : "minute",	"display" : "Minutes" },
+                  { "id" : "hour",		"display" : "Hours" },
+                  { "id" : "day",    	"display" : "Days" },
+                  { "id" : "week",   	"display" : "Weeks" },
+                  { "id" : "month",  	"display" : "Months" },
+                  { "id" : "year",  	"display" : "Years" },
+                  { "id" : "quarter",	"display" : "Quarters" }
               ], 
               "defaultValue" : null
             },

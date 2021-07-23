@@ -50,6 +50,7 @@ public class EvolutionUtilities
     Week("week", "WEEKS"),
     Month("month", "MONTHS"),
     Year("year", "YEARS"),
+    Quarter("quarter", "QUARTERS"),
     Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
     private String chronoUnit;
@@ -181,6 +182,40 @@ public class EvolutionUtilities
           }
           result = RLMDateUtils.addYears(result, amount, timeZone);
           break;
+          
+        case Quarter:
+          int noOfMonthToAdd = 3 * amount;
+          result = RLMDateUtils.addMonths(result, noOfMonthToAdd, timeZone);
+          switch (roundingSelection) {
+            case RoundUp:
+              result = RLMDateUtils.getLastDayOfQuarter(result, timeZone);
+              result = RLMDateUtils.ceiling(result, Calendar.DATE, timeZone);
+              break;
+            case RoundDown:
+              result = RLMDateUtils.getFirstDayOfQuarter(result, timeZone);
+              result = RLMDateUtils.truncate(result, Calendar.DATE, timeZone);
+              break;
+            default :
+              break;
+            }
+          break;
+          
+          /*
+          //
+          //  result is quarter last date
+          //
+          
+          result = RLMDateUtils.addQuarter(result, amount, timeZone);
+          switch (roundingSelection) {
+            case RoundUp:
+              result = RLMDateUtils.ceiling(result, Calendar.DATE, timeZone);
+              break;
+            case RoundDown:
+              result = RLMDateUtils.truncate(result, Calendar.DATE, timeZone);
+              break;
+            default :
+              break;
+            }*/
 
         default:
           throw new RuntimeException("unsupported timeunit: " + timeUnit);
