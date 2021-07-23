@@ -277,6 +277,8 @@ public abstract class FileSourceTask extends SourceTask
     consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     consumerProperties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 180000);
+    consumerProperties.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 180000);
+    consumerProperties.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 180000);
     consumer = new KafkaConsumer<byte[], byte[]>(consumerProperties);
     ConsumerRebalanceListener listener = new ConsumerRebalanceListener()
     {
