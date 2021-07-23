@@ -502,6 +502,7 @@ public class GUIManager
     getCommunicationChannelSummaryList("getCommunicationChannelSummaryList"),
     getCommunicationChannel("getCommunicationChannel"),
     putCommunicationChannel("putCommunicationChannel"),
+    restoreCommunicationChannel("restoreCommunicationChannel"),
     getBlackoutPeriodsList("getBlackoutPeriodsList"),
     getBlackoutPeriodsSummaryList("getBlackoutPeriodsSummaryList"),
     getBlackoutPeriods("getBlackoutPeriods"),
@@ -3861,7 +3862,10 @@ public class GUIManager
                 case putCommunicationChannel:
                   jsonResponse = processPutCommunicationChannel(userID, jsonRoot, tenantID);
                   break;
-
+                                    
+                case restoreCommunicationChannel:
+                jsonResponse = processRestoreCommunicationChannel(userID, jsonRoot, tenantID);
+                break;
 
                 case getBlackoutPeriodsList:
                   jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, true, includeArchived, tenantID);
@@ -20689,29 +20693,8 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  extract TimeWindow
-        *
-        *****************************************/
-        
-        if(jsonRoot.get("notificationDailyWindows") != null) {
-          // let GUIMangedObject This (this is a F$$$ hack)
-          JSONObject json = (JSONObject) jsonRoot.get("notificationDailyWindows");
-          json.put("communicationChannelID", communicationChannelID);
-          json.put("id", "timewindow-" + communicationChannelID);
-          json.put("name", "timewindow-" + communicationChannelID);
-          json.put("display", "timewindow-" + communicationChannelID);
-          json.put("readOnly", false);
-          json.put("internalOnly", false);
-          json.put("active", true);
-          json.put("deleted", false);
-          json.put("userID", jsonRoot.get("userID"));
-          json.put("userName", jsonRoot.get("userName"));
-          json.put("groupID", jsonRoot.get("groupID"));          
-
-          CommunicationChannelTimeWindow existingCommunicationChannelTimeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, now);
-          CommunicationChannelTimeWindow communicationChannelTimeWindow = new CommunicationChannelTimeWindow(json, epoch, existingCommunicationChannelTimeWindow, tenantID);
+          CommunicationChannel existingCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, now);
+          CommunicationChannel communicationChannel = new CommunicationChannel(jsonRoot, tenantID);
           
           /*****************************************
           *
@@ -20719,14 +20702,91 @@ public class GUIManager
           *
           *****************************************/
 
-          communicationChannelTimeWindowService.putCommunicationChannelTimeWindow(communicationChannelTimeWindow, (existingCommunicationChannelTimeWindow == null), userID);
+          communicationChannelService.putCommunicationChannel(communicationChannel, (existingCommunicationChannel == null), userID);
           
-        }else {
           // delete this time window for the associated channel
-          communicationChannelTimeWindowService.removeCommunicationChannelTimeWindow(communicationChannelID, userID, tenantID);
-        }
+          communicationChannelService.restoreCommunicationChannel(communicationChannelID, userID, tenantID);
         
- 
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", communicationChannelID);
+        response.put("accepted", true);
+        response.put("valid", true);
+        response.put("processing", true);
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("communicationChannelID", communicationChannelID);
+        response.put("responseCode", "communicationChannelNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  private JSONObject processRestoreCommunicationChannel(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  communicationChannelID
+    *
+    *****************************************/
+
+    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (communicationChannelID == null)
+      {
+        throw new GUIManagerException("No communication channel ID", "");
+      }
+
+    /*****************************************
+    *
+    *  process CommunicationChannel
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+          CommunicationChannel existingCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, now);
+          CommunicationChannel communicationChannel = new CommunicationChannel(jsonRoot, tenantID);
+          
+          /*****************************************
+          *
+          *  store
+          *
+          *****************************************/
+
+        // delete this time window for the associated channel
+          communicationChannelService.restoreCommunicationChannel(communicationChannelID, userID, tenantID);
+        
 
         /*****************************************
         *
