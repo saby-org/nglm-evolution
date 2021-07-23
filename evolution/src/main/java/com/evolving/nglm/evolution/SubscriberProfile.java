@@ -85,6 +85,7 @@ public abstract class SubscriberProfile
   {
     Active("active"),
     Inactive("inactive"),
+    Terminated("terminated"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private EvolutionSubscriberStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

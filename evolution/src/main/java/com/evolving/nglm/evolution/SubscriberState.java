@@ -15,6 +15,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
+import com.evolving.nglm.core.AssignSubscriberIDs;
+import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
@@ -57,7 +59,7 @@ public class SubscriberState implements StateStore
 
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_state");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(12));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(13));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
       schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
@@ -71,6 +73,7 @@ public class SubscriberState implements StateStore
       schemaBuilder.field("lastEvaluationDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("trackingID", Schema.OPTIONAL_BYTES_SCHEMA);
       schemaBuilder.field("notificationHistory",SchemaBuilder.array(notificationHistorySchema).optional());
+      schemaBuilder.field("cleanupDate", Timestamp.builder().optional().schema());
 
       schema = schemaBuilder.build();
     };
@@ -108,6 +111,7 @@ public class SubscriberState implements StateStore
   private Date ucgRefreshDay;
   private Date lastEvaluationDate;
   private List<UUID> trackingIDs;
+  private Date cleanupDate; // define the date after which the subscriber must effectively be cleaned...
 
   
   //
@@ -136,6 +140,8 @@ public class SubscriberState implements StateStore
   private List<EvolutionEngine.JourneyTriggerEventAction> journeyTriggerEventActions;
   private List<SubscriberProfileForceUpdate> subscriberProfileForceUpdates;
   private List<OTPInstanceChangeEvent> otpInstanceChangeEvents;  
+  private List<CleanupSubscriber> immediateCleanupActions; // for Evolution internal cleanup
+  private List<AssignSubscriberIDs> deleteActions; // for Evolution to simulate an incoming assignSubscriberID to Subscriber Manager that will generate a cleanup event for EvolutionEngine
   private List<TokenRedeemed> tokenRedeemeds;
   private List<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdatesResponse;
   //
@@ -166,6 +172,8 @@ public class SubscriberState implements StateStore
   public Integer getUCGEpoch() { return ucgEpoch; }
   public Date getUCGRefreshDay() { return ucgRefreshDay; }
   public Date getLastEvaluationDate() { return lastEvaluationDate; }
+  public Date getCleanupDate() { return cleanupDate; }
+  
   public List<JourneyRequest> getJourneyRequests() { return journeyRequests; }
   public List<JourneyRequest> getJourneyResponses() { return journeyResponses; }
   public List<LoyaltyProgramRequest> getLoyaltyProgramRequests() { return loyaltyProgramRequests; }
@@ -191,6 +199,8 @@ public class SubscriberState implements StateStore
   public List<EvolutionEngine.JourneyTriggerEventAction> getJourneyTriggerEventActions() { return journeyTriggerEventActions; }
   public List<SubscriberProfileForceUpdate> getSubscriberProfileForceUpdates() { return subscriberProfileForceUpdates; }
   public List<OTPInstanceChangeEvent> getOTPInstanceChangeEvent() { return otpInstanceChangeEvents; }
+  public List<CleanupSubscriber> getImmediateCleanupActions() { return immediateCleanupActions; }
+  public List<AssignSubscriberIDs> getDeleteActions() { return deleteActions; }
   public List<TokenRedeemed> getTokenRedeemeds() { return tokenRedeemeds; }
   public List<SubscriberProfileForceUpdateResponse> getSubscriberProfileForceUpdatesResponse() { return subscriberProfileForceUpdatesResponse; }
 
@@ -250,6 +260,8 @@ public class SubscriberState implements StateStore
     this.ucgEpoch = ucgState.getRefreshEpoch();
     this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
   }
+  
+  public void setCleanupDate(Date cleanupDate) { this.cleanupDate = cleanupDate; }
 
   /*****************************************
    *
@@ -297,6 +309,9 @@ public class SubscriberState implements StateStore
         this.journeyTriggerEventActions = new ArrayList<>();
         this.subscriberProfileForceUpdates = new ArrayList<>();
         this.otpInstanceChangeEvents = new ArrayList<>();
+        this.immediateCleanupActions = new ArrayList<>();
+        this.deleteActions = new ArrayList<>();
+        this.cleanupDate = null;
         this.tokenRedeemeds = new ArrayList<>();
         this.subscriberProfileForceUpdatesResponse = new ArrayList<>();
       }
@@ -316,7 +331,7 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyEndedState> journeyEndedStates, Set<JourneyState> oldRecentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<UUID> trackingIDs, Map<String,MetricHistory> notificationHistory)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyEndedState> journeyEndedStates, Set<JourneyState> oldRecentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<UUID> trackingIDs, Map<String,MetricHistory> notificationHistory, Date cleanupDate)
   {
     // stored
     this.subscriberID = subscriberID;
@@ -355,6 +370,9 @@ public class SubscriberState implements StateStore
     this.journeyTriggerEventActions = new ArrayList<>();
     this.subscriberProfileForceUpdates = new ArrayList<>();
     this.otpInstanceChangeEvents = new ArrayList<>();
+    this.immediateCleanupActions = new ArrayList<>();
+    this.deleteActions = new ArrayList<>();
+    this.cleanupDate = cleanupDate;
     this.tokenRedeemeds = new ArrayList<>();
     // for data migration purpose only, can be removed once all market run EVPRO-885
     this.recentJourneyStates = oldRecentJourneyStates;
@@ -384,6 +402,7 @@ public class SubscriberState implements StateStore
     struct.put("lastEvaluationDate", subscriberState.getLastEvaluationDate());
     struct.put("trackingID", EvolutionUtilities.getBytesFromUUIDs(subscriberState.getTrackingIDs()));
     struct.put("notificationHistory", packNotificationHistory(subscriberState.getNotificationHistory()));
+    struct.put("cleanupDate", subscriberState.getCleanupDate());
     return struct;
   }
 
@@ -524,11 +543,13 @@ public class SubscriberState implements StateStore
         }
       }
     }
+    Date cleanupDate = schema.field("cleanupDate") != null ? (Date) valueStruct.get("cleanupDate") : null;
+    
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, journeyEndedStates, oldRecentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, trackingIDs, notificationHistory);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, journeyEndedStates, oldRecentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, trackingIDs, notificationHistory, cleanupDate);
   }
 
   /*****************************************
@@ -695,7 +716,7 @@ public class SubscriberState implements StateStore
         + (journeyRequests != null ? "journeyRequests=" + journeyRequests + ", " : "") + (journeyResponses != null ? "journeyResponses=" + journeyResponses + ", " : "") + (loyaltyProgramRequests != null ? "loyaltyProgramRequests=" + loyaltyProgramRequests + ", " : "") + (loyaltyProgramResponses != null ? "loyaltyProgramResponses=" + loyaltyProgramResponses + ", " : "") + (pointFulfillmentResponses != null ? "pointFulfillmentResponses=" + pointFulfillmentResponses + ", " : "")
         + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyStatisticWrappers != null ? "journeyStatisticWrappers=" + journeyStatisticWrappers + ", " : "") + (journeyMetrics != null ? "journeyMetrics=" + journeyMetrics + ", " : "") + (profileChangeEvents != null ? "profileChangeEvents=" + profileChangeEvents + ", " : "") + (profileSegmentChangeEvents != null ? "profileSegmentChangeEvents=" + profileSegmentChangeEvents + ", " : "")
         + (profileLoyaltyProgramChangeEvents != null ? "profileLoyaltyProgramChangeEvents=" + profileLoyaltyProgramChangeEvents + ", " : "") + (subscriberTrace != null ? "subscriberTrace=" + subscriberTrace + ", " : "") + (externalAPIOutput != null ? "externalAPIOutput=" + externalAPIOutput + ", " : "") + (tokenChanges != null ? "tokenChanges=" + tokenChanges + ", " : "") + (notificationHistory != null ? "notificationHistory=" + notificationHistory + ", " : "")
-        + (voucherChanges != null ? "voucherChanges=" + voucherChanges : "") + "]";
+        + (voucherChanges != null ? "voucherChanges=" + voucherChanges : "") + ",cleanupDate" + cleanupDate+ "]";
   }
 
 

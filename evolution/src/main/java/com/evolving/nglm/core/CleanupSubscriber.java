@@ -7,6 +7,8 @@
 package com.evolving.nglm.core;
 
 import com.evolving.nglm.evolution.DeliveryRequest;
+
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -15,7 +17,7 @@ import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Date;
 
-public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStreamEvent
+public class CleanupSubscriber extends SubscriberStreamOutput implements com.evolving.nglm.core.SubscriberStreamEvent
 {
   /*****************************************
   *
@@ -32,9 +34,11 @@ public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStrea
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("cleanup_subscriber");
-    schemaBuilder.version(com.evolving.nglm.core.SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 3));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
+    schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
     schema = schemaBuilder.build();
   };
 
@@ -60,6 +64,7 @@ public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStrea
 
   private String subscriberID;
   private Date eventDate;
+  private SubscriberAction subscriberAction;
 
   /****************************************
   *
@@ -69,19 +74,34 @@ public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStrea
 
   @Override public String getSubscriberID() { return subscriberID; }
   @Override public Date getEventDate() { return eventDate; }
-  @Override public SubscriberAction getSubscriberAction() { return SubscriberAction.Cleanup; }
+  @Override public SubscriberAction getSubscriberAction() { return subscriberAction; }
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
 
+  /*****************************************
+  *
+  *  constructor (simple)
+  *
+  *****************************************/
+
+  public CleanupSubscriber(String subscriberID, Date eventDate, SubscriberAction subscriberAction)
+  {
+    this.subscriberID = subscriberID;
+    this.eventDate = eventDate;
+    this.subscriberAction = subscriberAction;
+  }
+  
   /*****************************************
   *
   *  constructor (simple/unpack)
   *
   *****************************************/
 
-  public CleanupSubscriber(String subscriberID, Date eventDate)
+  public CleanupSubscriber(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, SubscriberAction subscriberAction)
   {
+    super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
+    this.subscriberAction = subscriberAction;
   }
 
   /*****************************************
@@ -94,6 +114,7 @@ public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStrea
   {
     this.subscriberID = cleanupSubscriber.getSubscriberID();
     this.eventDate = cleanupSubscriber.getEventDate();
+    this.subscriberAction = cleanupSubscriber.getSubscriberAction();
   }
 
   /*****************************************
@@ -106,8 +127,10 @@ public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStrea
   {
     CleanupSubscriber cleanupSubscriber = (CleanupSubscriber) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct, cleanupSubscriber);
     struct.put("subscriberID", cleanupSubscriber.getSubscriberID());
     struct.put("eventDate", cleanupSubscriber.getEventDate());
+    struct.put("subscriberAction", cleanupSubscriber.getSubscriberAction().getExternalRepresentation());
     return struct;
   }
 
@@ -131,7 +154,7 @@ public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStrea
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? com.evolving.nglm.core.SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -140,11 +163,13 @@ public class CleanupSubscriber implements com.evolving.nglm.core.SubscriberStrea
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
     Date eventDate = (Date) valueStruct.get("eventDate");
+    
+    SubscriberAction subscriberAction = schema.field("subscriberAction") != null ? SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : SubscriberAction.Cleanup;
 
     //
     //  return
     //
 
-    return new CleanupSubscriber(subscriberID, eventDate);
+    return new CleanupSubscriber(schemaAndValue, subscriberID, eventDate, subscriberAction);
   }
 }

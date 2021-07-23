@@ -67,6 +67,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.AutoProvisionEvent;
 import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.ConnectSerde;
@@ -85,6 +86,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -283,6 +285,7 @@ public class ThirdPartyManager
     generateOTP(37),
     checkOTP(38),
     getVoucherList(39);
+    deleteCustomer(40);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -613,6 +616,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/generateOTP", new APIHandler(API.generateOTP));
       restServer.createContext("/nglm-thirdpartymanager/checkOTP", new APIHandler(API.checkOTP));      
       restServer.createContext("/nglm-thirdpartymanager/getVoucherList", new APIHandler(API.getVoucherList));
+      restServer.createContext("/nglm-thirdpartymanager/deleteCustomer", new APIHandler(API.deleteCustomer));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -974,6 +978,9 @@ public class ThirdPartyManager
             	
             case getVoucherList:
               jsonResponse = processGetVoucherList(jsonRoot, tenantID);
+              break;
+            case deleteCustomer:
+              jsonResponse = processDeleteCustomer(jsonRoot, tenantID);
               break;
           }
         }
@@ -5196,7 +5203,7 @@ public class ThirdPartyManager
             else if(autoProvisionEvent != null)
               {
                 // means this is an autoprovision event, case 2...
-                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody });
+                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody, tenantID });
                 eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
               }
           }
@@ -5223,6 +5230,73 @@ public class ThirdPartyManager
 
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processTriggerEvent
+  *
+  *****************************************/
+
+  private JSONObject processDeleteCustomer(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+    //
+    //  subscriberID
+    //
+
+    String subscriberID = null;
+    try
+    {
+      subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+    }
+    catch(ThirdPartyManagerException e)
+    {
+      // return cusotmerNotFound
+      updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    SubscriberAction subscriberAction = null;
+    Boolean subscriberActionBoolean = JSONUtilities.decodeBoolean(jsonRoot, "deleteImmediate");
+    if(subscriberActionBoolean == null)
+      {
+        // return cusotmerNotFound
+        updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
+        response.put(GENERIC_RESPONSE_MSG, "missing boolean deleteImmediate");
+        return JSONUtilities.encodeObject(response);
+      }
+    if(subscriberActionBoolean.booleanValue())
+      {
+        // delete immediate
+        subscriberAction = SubscriberAction.DeleteImmediate;
+      }
+    else 
+      {
+        // normal delete
+        subscriberAction = SubscriberAction.Delete;
+      }
+    
+    AssignSubscriberIDs assignSubscriberID = new AssignSubscriberIDs(subscriberID, SystemTime.getCurrentTime(), subscriberAction, null, tenantID);
+    String topic = Deployment.getAssignSubscriberIDsTopic();
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID)), AssignSubscriberIDs.serde().serializer().serialize(topic, assignSubscriberID)));
+    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS, "{delete triggered}");
+
+    /*****************************************
+    *
+    * return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
   
   /*****************************************
   *

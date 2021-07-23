@@ -26,6 +26,7 @@ import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
 import org.apache.kafka.streams.state.Stores;
 
+import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.core.UpdateAlternateID.AssignmentType;
 
 import org.slf4j.Logger;
@@ -1296,7 +1297,7 @@ public class SubscriberManager
           break;
 
         case UnassignSubscriberID:
-          if (newlyProvisioned || ! Objects.equals(currentProvisionedAlternateID.getAllSubscriberIDs(), provisionedAlternateID.getAllSubscriberIDs()) || updateAlternateID.getSubscriberAction() == com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Delete)
+          if (newlyProvisioned || ! Objects.equals(currentProvisionedAlternateID.getAllSubscriberIDs(), provisionedAlternateID.getAllSubscriberIDs()) || updateAlternateID.getSubscriberAction() == com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Delete || updateAlternateID.getSubscriberAction() == com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.DeleteImmediate)
             {
               provisionedAlternateID.setDeprovisionedSubscriberID(new RecordSubscriberID(updateAlternateID.getSubscriberID(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), updateAlternateID.getSubscriberAction(), tenantID));
               provisionedAlternateIDUpdated = true;
@@ -1425,8 +1426,12 @@ public class SubscriberManager
     switch (assignSubscriberIDs.getSubscriberAction())
       {
         case Delete:
-          result.add(new CleanupSubscriber(assignSubscriberIDs.getSubscriberID(), assignSubscriberIDs.getEventDate()));
+          result.add(new CleanupSubscriber(assignSubscriberIDs.getSubscriberID(), assignSubscriberIDs.getEventDate(), SubscriberAction.Cleanup));
           break;
+        case DeleteImmediate:
+          result.add(new CleanupSubscriber(assignSubscriberIDs.getSubscriberID(), assignSubscriberIDs.getEventDate(), SubscriberAction.CleanupImmediate));
+          break;
+
       }
     return result;
   }

@@ -17,6 +17,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,10 +61,11 @@ public abstract class ExtendedSubscriberProfile implements StateStore
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("terminationDate", Timestamp.builder().optional().schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -130,6 +132,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
   private String subscriberID;
   private boolean subscriberTraceEnabled;
   private SubscriberTrace subscriberTrace;
+  private Date terminationDate;
 
   //
   //  in memory only
@@ -146,6 +149,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
   public String getSubscriberID() { return subscriberID; }
   public boolean getSubscriberTraceEnabled() { return subscriberTraceEnabled; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
+  public Date getTerminationDate() { return terminationDate; }
 
   //
   //  kafkaRepresentation
@@ -161,6 +165,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
   *****************************************/
 
   public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
+  public void setTerminationDate(Date terminationDate) { this.terminationDate = terminationDate; }
 
   /*****************************************
   *
@@ -392,6 +397,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
     this.subscriberTraceEnabled = false;
     this.subscriberTrace = null;
     this.kafkaRepresentation = null;
+    this.terminationDate = null;
   }
 
   /*****************************************
@@ -418,6 +424,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
     String subscriberID = valueStruct.getString("subscriberID");
     Boolean subscriberTraceEnabled = valueStruct.getBoolean("subscriberTraceEnabled");
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
+    Date terminationDate = schema.field("terminationDate") != null ? (Date) valueStruct.get("terminationDate") : null;
 
     //
     //  return
@@ -426,6 +433,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
     this.subscriberID = subscriberID;
     this.subscriberTraceEnabled = subscriberTraceEnabled;
     this.subscriberTrace = subscriberTrace;
+    this.terminationDate = terminationDate;
     this.kafkaRepresentation = null;
   }
 
@@ -440,6 +448,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
     this.subscriberID = extendedSubscriberProfile.getSubscriberID();
     this.subscriberTraceEnabled = extendedSubscriberProfile.getSubscriberTraceEnabled();
     this.subscriberTrace = extendedSubscriberProfile.getSubscriberTrace();
+    this.terminationDate = extendedSubscriberProfile.getTerminationDate();
     this.kafkaRepresentation = null;
   }
 
@@ -454,6 +463,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
     struct.put("subscriberID", extendedSubscriberProfile.getSubscriberID());
     struct.put("subscriberTraceEnabled", extendedSubscriberProfile.getSubscriberTraceEnabled());
     struct.put("subscriberTraceMessage", extendedSubscriberProfile.getSubscriberTrace() != null ? extendedSubscriberProfile.getSubscriberTrace().getSubscriberTraceMessage() : null);
+    struct.put("terminationDate", extendedSubscriberProfile.getTerminationDate());
   }
 
   /*****************************************
@@ -558,6 +568,7 @@ public abstract class ExtendedSubscriberProfile implements StateStore
     StringBuilder b = new StringBuilder();
     b.append(subscriberID);
     b.append("," + subscriberTraceEnabled);
+    b.append("," + terminationDate);
     return b.toString();
   }
   

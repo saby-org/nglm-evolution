@@ -130,7 +130,7 @@ public class RecordAlternateIDRedisSinkConnector extends com.evolving.nglm.core.
           
           int dbIndex = alternateID.getRedisCacheIndex();
           Integer ttlOnDelete = alternateID.getRedisCacheTTLOnDelete();
-          if (alternateIDBytes != null) cacheEntries.add(new CacheEntry(alternateIDBytes, ((numberOfSubscriberIDs > 0) ? subscriberIDBytes : null), dbIndex, ((recordAlternateID.getSubscriberAction() != SubscriberStreamEvent.SubscriberAction.Delete && !alternateID.getSharedID()) ? ttlOnDelete : null), recordAlternateID.getTenantID()));
+          if (alternateIDBytes != null) cacheEntries.add(new CacheEntry(alternateIDBytes, ((numberOfSubscriberIDs > 0) ? subscriberIDBytes : null), dbIndex, ((recordAlternateID.getSubscriberAction() != SubscriberStreamEvent.SubscriberAction.Delete && recordAlternateID.getSubscriberAction() != SubscriberStreamEvent.SubscriberAction.DeleteImmediate && recordAlternateID.getSubscriberAction() != SubscriberStreamEvent.SubscriberAction.DeleteImmediate && !alternateID.getSharedID()) ? ttlOnDelete : null), recordAlternateID.getTenantID()));
         }
       else
         {

@@ -519,6 +519,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "ids" : ["1", "2", "3", "4"] }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getVoucherList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getVoucherList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "deleteImmediate" : true }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/deleteSubscriber; echo
  
 --
 --  dnbo proxy

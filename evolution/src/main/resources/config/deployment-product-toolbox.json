@@ -1323,6 +1323,38 @@
         {
           "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$UpdateProfileAction"
         }
+      },
+      {
+        "id"                     : "303",
+        "name"                   : "delete.subscriber",
+        "display"                : "Delete Subscriber",
+        "icon"                   : "jmr_components/styles/images/objects/account-edit.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "enableCycle"            : false,
+        "allowContextVariables"  : true,
+        "outputType"             : "static",
+        "outputConnectors"       :
+        [
+          { "name" : "deleteTriggered", "display" : "Delete Triggered", "transitionCriteria" : [ ] }
+        ],
+        "parameters" :
+        [
+          {
+            "id" : "node.parameter.isdeleteimmediate",
+            "display" : "Immediate Delete",
+            "dataType" : "boolean",
+            "width" : "100%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : [ true, false ],
+            "defaultValue" : false
+          }
+        ],
+        "action" :
+        {
+          "actionManagerClass" : "com.evolving.nglm.evolution.DeleteSubscriberActionManager"
+        }
       }
     ],
 
@@ -1367,6 +1399,7 @@
         "items" :
           [
             { "id" : "302", "name" : "update.profile" },
+            { "id" : "303", "name" : "delete.subscriber" },
             { "id" : "131", "name" : "campaign" },
             { "id" : "132", "name" : "subjourney" },
             { "id" : "301", "name" : "workflow" },
@@ -1428,6 +1461,7 @@
         "items" :
           [
             { "id" : "302", "name" : "update.profile" },
+            { "id" : "303", "name" : "delete.subscriber" },
             { "id" : "137", "name" : "journey.status" },
             { "id" : "301", "name" : "workflow" },
             { "id" : "133", "name" : "bonus.point.credit" },
