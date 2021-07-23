@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -40,6 +41,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
@@ -593,6 +595,30 @@ public abstract class SubscriberProfile
                     MissionStep step = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getStepName());
                     MissionStep previousStep = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getPreviousStepName());
                     loyalty.put("stepChangeType", MissionStep.changeFromStepToStep(previousStep, step).getExternalRepresentation());
+                    List<JSONObject> completedStepsJsonObjects = new ArrayList<JSONObject>();
+                    if (loyaltyProgramMissionState.getLoyaltyProgramExitDate() == null)
+                      {
+                        List<StepHistory> stepHistories = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistory();
+                        if (stepHistories != null)
+                          {
+                            List<StepHistory> completedStepHistories = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistory();
+                            if (!loyaltyProgramMissionState.isMissionCompleted()) completedStepHistories = completedStepHistories.stream().filter(stepHistory -> !loyaltyProgramMissionState.getStepName().equals(stepHistory.getToStep())).collect(Collectors.toList());
+                            if (!completedStepHistories.isEmpty())
+                              {
+                                for (StepHistory stepHistory : completedStepHistories)
+                                  {
+                                    Map<String, String> stepAndCompletionDate = new HashMap<String, String>();
+                                    String completedStep = stepHistory.getToStep();
+                                    StepHistory nextStep = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistoryByFromName(completedStep);
+                                    Date completionDate = nextStep == null ? loyaltyProgramMissionState.getStepEnrollmentDate() : nextStep.getTransitionDate();
+                                    stepAndCompletionDate.put("completedStep", completedStep);
+                                    stepAndCompletionDate.put("completionDate", RLMDateUtils.formatDateForElasticsearchDefault(completionDate));
+                                    completedStepsJsonObjects.add(JSONUtilities.encodeObject(stepAndCompletionDate));
+                                  }
+                              }
+                          }
+                      }
+                    loyalty.put("completedSteps", JSONUtilities.encodeArray(completedStepsJsonObjects));
                   }
               }
             array.add(JSONUtilities.encodeObject(loyalty));

@@ -1,14 +1,17 @@
 package com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
@@ -16,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.LoyaltyProgram;
@@ -91,6 +95,12 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                     return true;
                   }
                 List<Map<String, Object>> loyaltyProgramsArray = (List<Map<String, Object>>) subscriberFields.get("loyaltyPrograms");
+                
+                //
+                //  filter POINTS
+                //
+                
+                if (loyaltyProgramsArray != null) loyaltyProgramsArray = loyaltyProgramsArray.stream().filter(loyaltyProgramMap -> LoyaltyProgram.LoyaltyProgramType.POINTS.getExternalRepresentation().equals(loyaltyProgramMap.get("loyaltyProgramType"))).collect(Collectors.toList());
                 if (loyaltyProgramsArray.isEmpty())
                   {
                     return true;
@@ -119,22 +129,10 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                             LoyaltyProgram loyaltyProgram = (LoyaltyProgram) guiManagedObject;
                             fullFields.put(programName, loyaltyProgram.getJSONRepresentation().get("display"));
                             Object loyaltyProgramEnrollmentDate = obj.get("loyaltyProgramEnrollmentDate");
-                            if (loyaltyProgramEnrollmentDate == null)
-                              {
-                                fullFields.put(programEnrolmentDate, "");
-                              }
-                            else if (loyaltyProgramEnrollmentDate instanceof Long)
-                              {
-                                fullFields.put(programEnrolmentDate, ReportsCommonCode.getDateString(new Date((Long) loyaltyProgramEnrollmentDate)));
-                              }
-                            else
-                              {
-                                log.info("loyaltyProgramEnrollmentDate is not a Long : "
-                                    + loyaltyProgramEnrollmentDate.getClass().getName());
-                                fullFields.put(programEnrolmentDate, "");
-                              }
-
-                            if (obj.get(tierName) != null)
+                            Object loyaltyProgramExitDate = obj.get("loyaltyProgramExitDate");
+                            
+                            fullFields.put("programEnrolmentDate", getReportFormattedDate(loyaltyProgramEnrollmentDate));
+                            if (obj.get("tierName") != null)
                               {
                                 fullFields.put(tierName, obj.get("tierName"));
                               }
@@ -144,21 +142,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                               }
 
                             Object tierUpdateDate = obj.get("tierUpdateDate");
-                            if (tierUpdateDate != null)
-                              {
-                                if (tierUpdateDate instanceof Long)
-                                  {
-                                    fullFields.put("tierUpdateDate", ReportsCommonCode.getDateString(new Date((Long) tierUpdateDate)));
-                                  }
-                                else
-                                  {
-                                    log.info("tierUpdateDate is not a Long : " + tierUpdateDate.getClass().getName());
-                                  }
-                              }
-                            else
-                              {
-                                fullFields.put("tierUpdateDate", "");
-                              }
+                            fullFields.put("tierUpdateDate", getReportFormattedDate(tierUpdateDate));
 
                             if (obj.get("previousTierName") != null)
                               {
@@ -204,6 +188,8 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                               {
                                 fullFields.put(rewardPointsBalance, "");
                               }
+                            
+                            fullFields.put("programExitDate", getReportFormattedDate(loyaltyProgramExitDate));
                           }
                       }
                     records.add(fullFields);
@@ -241,6 +227,28 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
           }
       }
     return addHeaders;
+  }
+  
+  public String getReportFormattedDate(Object unknownDateObj)
+  {
+    String result = "";
+    if (unknownDateObj instanceof Long)
+      {
+        result = ReportsCommonCode.getDateString(new Date((Long) unknownDateObj));
+      }
+    else if (unknownDateObj instanceof String)
+      {
+        try
+          {
+            Date esDate = RLMDateUtils.parseDateFromElasticsearch((String) unknownDateObj);
+            result = ReportsCommonCode.getDateString(esDate);
+          } 
+        catch (ParseException e)
+          {
+            if (log.isErrorEnabled()) log.error("unbale to parse ES date String {}", unknownDateObj.toString());
+          }
+      }
+    return result;
   }
 
   private void addHeaders(ZipOutputStream writer, Map<String,Object> values, int offset) throws IOException {
@@ -282,8 +290,8 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
     String esIndexSubscriber = args[1];
     String csvfile           = args[2];
 
-    log.info("Reading data from ES in "+esIndexSubscriber+" index and writing to "+csvfile);   
-
+    log.info("Reading data from ES in "+esIndexSubscriber+" index and writing to "+csvfile);
+    
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
     
