@@ -419,7 +419,7 @@ public class OTPUtils
 
     // send the notification
     Map<String, String> tags = new HashMap<>();
-    tags.put("optCode", otpInstance.getOTPValue());
+    tags.put("otpCode", otpInstance.getOTPValue());
     
     List<Pair<DialogTemplate, String>> templates = EvolutionUtilities.getNotificationTemplateForAreaAvailability("realtime", subscriberMessageTemplateService, sourceAddressService, tenantID);
     for(Pair<DialogTemplate, String> template : templates)
