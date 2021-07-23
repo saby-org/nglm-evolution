@@ -166,6 +166,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
+    schemaBuilder.field("offerPurchaseSalesChannelHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(SalesChannelPurchaseDate.schema())).name("subscriber_profile_purchase_saleschannel_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("otps",   SchemaBuilder.array(OTPInstance.serde().schema()).defaultValue(Collections.<OTPInstance>emptyList()).schema());
 
@@ -244,7 +245,9 @@ public abstract class SubscriberProfile
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private Map<String,Integer> exclusionInclusionTargets; 
   private List<ComplexObjectInstance> complexObjectInstances; 
+  @Deprecated
   private Map<String, List<Date>> offerPurchaseHistory;
+  private Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory;
   private int tenantID;
   private List<OTPInstance> otpInstances;
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
@@ -279,7 +282,9 @@ public abstract class SubscriberProfile
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
   public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
+  @Deprecated
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
+  public Map<String, List<Pair<String, Date>>> getOfferPurchaseSalesChannelHistory() { return offerPurchaseSalesChannelHistory; }
   public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
   public List<OTPInstance> getOTPInstances() { return otpInstances; }
   public int getTenantID() { return tenantID; }
@@ -1560,6 +1565,7 @@ public abstract class SubscriberProfile
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
     this.complexObjectInstances = new ArrayList<>();
     this.offerPurchaseHistory = new HashMap<>();
+    this.offerPurchaseSalesChannelHistory = new HashMap<String, List<Pair<String,Date>>>();
     this.tenantID = tenantID;
   }
 
@@ -1604,8 +1610,10 @@ public abstract class SubscriberProfile
     List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
+    Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory = schema.field("offerPurchaseSalesChannelHistory") != null ? unpackOfferPurchaseSalesChannelHistory(schema.field("offerPurchaseSalesChannelHistory").schema(), (Map<String,List<Object>>) valueStruct.get("offerPurchaseSalesChannelHistory")) : new HashMap<String, List<Pair<String,Date>>>();
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     List<OTPInstance> otpInstances = (schemaVersion >= 11) ? unpackOTPs(schema.field("otps").schema(), valueStruct.get("otps")) : Collections.<OTPInstance>emptyList();
+
     //
     //  return
     //
@@ -1632,8 +1640,47 @@ public abstract class SubscriberProfile
     this.offerPurchaseHistory = offerPurchaseHistory;
     this.tenantID = tenantID;
     this.otpInstances = otpInstances;
+    this.offerPurchaseSalesChannelHistory = offerPurchaseSalesChannelHistory;
   }
 
+  /*****************************************
+  *
+  *  unpackEvaluationCriteriaParameters
+  *
+  *****************************************/
+
+  public static Map<String, List<Pair<String, Date>>> unpackOfferPurchaseSalesChannelHistory(Schema schema, Map<String,List<Object>> value)
+  {
+    //
+    //  get schema
+    //
+
+    Schema salesChannelSchema = schema.valueSchema().valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String, List<Pair<String, Date>>> result = new HashMap<String, List<Pair<String,Date>>>();
+    for (String key : value.keySet())
+      {
+        List<Pair<String, Date>> salesChannelPurchaseDates = new ArrayList<Pair<String, Date>>();
+        List<Object> packedSalesChannelPurchaseDates = value.get(key);
+        for (Object packedSalesChannelPurchaseDate : packedSalesChannelPurchaseDates)
+          {
+            SalesChannelPurchaseDate salesChannelPurchaseDate = SalesChannelPurchaseDate.unpack(new SchemaAndValue(salesChannelSchema, packedSalesChannelPurchaseDate));
+            salesChannelPurchaseDates.add(new Pair<String, Date>(salesChannelPurchaseDate.getSalesChannelID(), salesChannelPurchaseDate.getPurchaseDate()));
+          }
+        result.put(key, salesChannelPurchaseDates);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
   /*****************************************
   *
   *  unpackSegments
@@ -1980,6 +2027,7 @@ public abstract class SubscriberProfile
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
     this.complexObjectInstances = subscriberProfile.getComplexObjectInstances();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+    this.offerPurchaseSalesChannelHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
     this.tenantID = subscriberProfile.getTenantID();
   }
@@ -2012,10 +2060,34 @@ public abstract class SubscriberProfile
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
+    struct.put("offerPurchaseSalesChannelHistory", packOfferPurchaseSalesChannelHistory(subscriberProfile.getOfferPurchaseSalesChannelHistory()));
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
     struct.put("otps", packOTPInstances(subscriberProfile.getOTPInstances()));
   }
 
+  /*****************************************
+  *
+  *  packEvaluationCriteriaParameters
+  *
+  *****************************************/
+
+  private static Map<String, List<Object>> packOfferPurchaseSalesChannelHistory(Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistoryMap)
+  {
+    Map<String,List<Object>> result = new HashMap<String,List<Object>>();
+    for (String offerID : offerPurchaseSalesChannelHistoryMap.keySet())
+      {
+        List<Object> packedOfferPurchaseSalesChannels = new ArrayList<Object>();
+        List<Pair<String, Date>> packedOfferPurchaseSalesChannelsPair = offerPurchaseSalesChannelHistoryMap.get(offerID);
+        for (Pair<String, Date> packedOfferPurchaseSalesChannelPair : packedOfferPurchaseSalesChannelsPair)
+          {
+            SalesChannelPurchaseDate channelPurchaseDate = new SalesChannelPurchaseDate(packedOfferPurchaseSalesChannelPair.getFirstElement(), packedOfferPurchaseSalesChannelPair.getSecondElement());
+            packedOfferPurchaseSalesChannels.add(SalesChannelPurchaseDate.pack(channelPurchaseDate));
+          }
+        result.put(offerID, packedOfferPurchaseSalesChannels);
+      }
+    return result;
+  }
+  
   /****************************************
   *
   *  packSegments

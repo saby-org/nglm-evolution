@@ -1,0 +1,130 @@
+{
+  "effectiveEndDate":"2050-06-30T00:00:00+05:30",
+  "dryRun":false,
+  "targetingCriteria":[
+    
+  ],
+  "updatedDate":"2021-06-17T19:31:21:514+05:30",
+  "userID":"1158",
+  "fullStatistics":false,
+  "journeyParameters":[
+    
+  ],
+  "valid":true,
+  "lastCompletedOccurrenceNumber":null,
+  "effectiveStartDate":"2021-06-01T00:00:00+05:30",
+  "tenantID":1,
+  "eligibilityCriteria":[
+    {
+      "argument":{
+        "valueType":"simple",
+        "value":0,
+        "valueMultiply":null,
+        "valueAdd":null,
+        "timeUnit":null,
+        "expression":"0"
+      },
+      "criterionField":"offer.offername.purchased.period",
+      "criterionOperator":"==",
+      "subcriteria":[
+        {
+          "field":"offer.id",
+          "argument": null
+        },
+        {
+          "field":"period",
+          "argument":{
+            "valueType":"simpleEnter.string",
+            "value":"this.month",
+            "valueMultiply":null,
+            "valueAdd":null,
+            "timeUnit":null,
+            "expression":"'this.month'"
+          }
+        }
+      ]
+    }
+  ],
+  "targetingType":"manual",
+  "links":[
+    {
+      "sourceNodeID":"1",
+      "sourceConnectionPoint":0,
+      "destinationNodeID":"2",
+      "display":""
+    }
+  ],
+  "targetingEvent":null,
+  "effectiveEntryPeriodEndDate":null,
+  "groupID":"WKG-CUSTOMER-TENANT-DEFAULT",
+  "display":"rk-1",
+  "active":false,
+  "accepted":true,
+  "readOnly":false,
+  "priority":1,
+  "userName":"tavi",
+  "nodes":[
+    {
+      "nodeTypeName":"start",
+      "display":"Start",
+      "outputConnectors":[
+        {
+          "display":"Start",
+          "evaluateContextVariables":true,
+          "name":"start",
+          "transitionCriteria":[
+            
+          ]
+        }
+      ],
+      "guiDetails":{
+        "icon":"jmr_components/styles/images/objects/1-1-start.png",
+        "color":"#c72285",
+        "height":90,
+        "width":90,
+        "x":82.999984741210938,
+        "y":91.114578247070312
+      },
+      "name":"Start",
+      "id":"1",
+      "nodeTypeID":"101",
+      "parameters":[
+        
+      ]
+    },
+    {
+      "nodeTypeName":"end",
+      "display":"End",
+      "outputConnectors":[
+        
+      ],
+      "guiDetails":{
+        "icon":"jmr_components/styles/images/objects/1-4-stop.png",
+        "color":"#B63482",
+        "height":90,
+        "width":90,
+        "x":377.99998474121094,
+        "y":154.11457824707031
+      },
+      "name":"End",
+      "id":"2",
+      "nodeTypeID":"102",
+      "parameters":[
+        
+      ]
+    }
+  ],
+  "createdDate":"2021-06-17T19:26:36:047+05:30",
+  "deleted":false,
+  "appendInclusionLists":true,
+  "name":"cmp20210617192856858",
+  "processing":false,
+  "story":{
+    "eligibility":"<span class='comment-color'><span class='black-color'>Offer purchased over a period equals 10",
+    "targeting":"Type: Manual",
+    "objectives":"No objectives",
+    "targetCount":""
+  },
+  "status":"Pending",
+  "apiVersion":1
+}
