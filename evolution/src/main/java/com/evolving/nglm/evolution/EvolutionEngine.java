@@ -22,6 +22,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
+import com.evolving.nglm.evolution.otp.OTPInstance;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
+import com.evolving.nglm.evolution.otp.OTPType;
+import com.evolving.nglm.evolution.otp.OTPTypeService;
+import com.evolving.nglm.evolution.otp.OTPUtils;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
@@ -200,8 +205,10 @@ public class EvolutionEngine
   private static DNBOMatrixService dnboMatrixService;
   private static TokenTypeService tokenTypeService;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
+  private static SourceAddressService sourceAddressService;
   private static DeliverableService deliverableService;
   private static SegmentContactPolicyService segmentContactPolicyService;
+  private static OTPTypeService otpTypeService;
   // can not remove yet all of it, keep it for state store log stats, but not jmx exported anymore
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   // evolution event count
@@ -327,6 +334,7 @@ public class EvolutionEngine
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
     String workflowEventTopic = Deployment.getWorkflowEventTopic();
+    String otpInstanceChangeEventRequestTopic = Deployment.getOTPInstanceChangeRequestTopic();
     String notificationEventTopic = Deployment.getNotificationEventTopic();
     //
     //  changelogs
@@ -486,6 +494,14 @@ public class EvolutionEngine
 
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "evolutionengine-subscribermessagetemplateservice-" + evolutionEngineKey, Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
+    
+    //
+    //  sourceAddressService
+    //
+
+    sourceAddressService = new SourceAddressService(bootstrapServers, "evolutionengine-sourceaddressservice-" + evolutionEngineKey, Deployment.getSourceAddressTopic(), false);
+    sourceAddressService.start();
+
 
     //
     //  deliverableService
@@ -500,6 +516,13 @@ public class EvolutionEngine
 
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "evolutionengine-segmentcontactpolicyservice-" + evolutionEngineKey, Deployment.getSegmentContactPolicyTopic(), false);
     segmentContactPolicyService.start();
+    
+    //
+    //  otpTypeService
+    //
+
+    otpTypeService = new OTPTypeService(bootstrapServers, "evolutionengine-otptypeservice-" + evolutionEngineKey, Deployment.getOTPTypeTopic(), false);
+    otpTypeService.start();
     
     //
     // pointService
@@ -732,6 +755,7 @@ public class EvolutionEngine
     final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
     final ConnectSerde<EDRDetails> edrDetailsSerde = EDRDetails.serde();
     final ConnectSerde<WorkflowEvent> workflowEventSerde = WorkflowEvent.serde();
+    final ConnectSerde<OTPInstanceChangeEvent> otpInstanceChangeEventSerde = OTPInstanceChangeEvent.serde();
     final ConnectSerde<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseSerde = SubscriberProfileForceUpdateResponse.serde();
     final ConnectSerde<NotificationEvent> notificationEventSerde = NotificationEvent.serde();
 
@@ -761,6 +785,7 @@ public class EvolutionEngine
     evolutionEventSerdes.add(loyaltyProgramRequestSerde);
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
+    evolutionEventSerdes.add(otpInstanceChangeEventSerde);
     evolutionEventSerdes.addAll(evolutionEngineEventSerdes.values());
     for(DeliveryManagerDeclaration dmd:Deployment.getDeliveryManagers().values()) evolutionEventSerdes.add(dmd.getRequestSerde());
     final ConnectSerde<SubscriberStreamEvent> evolutionEventSerde = new ConnectSerde<SubscriberStreamEvent>("evolution_event", false, evolutionEventSerdes.toArray(new ConnectSerde[0]));
@@ -798,6 +823,7 @@ public class EvolutionEngine
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
     KStream<StringKey, WorkflowEvent> workflowEventStream = builder.stream(workflowEventTopic, Consumed.with(stringKeySerde, workflowEventSerde));
+    KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventRequestStream = builder.stream(otpInstanceChangeEventRequestTopic, Consumed.with(stringKeySerde, otpInstanceChangeEventSerde));
     KStream<StringKey, NotificationEvent> notificationEventStream = builder.stream(notificationEventTopic, Consumed.with(stringKeySerde, notificationEventSerde));
     
     //
@@ -945,6 +971,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) workflowEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) notificationEventStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) otpInstanceChangeEventRequestStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     evolutionEventStreams.addAll(deliveryManagerRequestToProcessStreams);
@@ -996,9 +1023,9 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyTriggerEventAction),
         (key,value) -> (value instanceof SubscriberProfileForceUpdate),
         (key,value) -> (value instanceof EDRDetails),
-        (key, value) -> (value instanceof TokenRedeemed),
+        (key,value) -> (value instanceof TokenRedeemed),
         (key,value) -> (value instanceof SubscriberProfileForceUpdateResponse),
-        (key,value) -> (value instanceof NotificationEvent)
+        (key,value) -> (value instanceof OTPInstanceChangeEvent)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1020,7 +1047,7 @@ public class EvolutionEngine
     KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
     KStream<StringKey, TokenRedeemed> tokenRedeemedsStream = (KStream<StringKey, TokenRedeemed>) branchedEvolutionEngineOutputs[15];
     KStream<StringKey, SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseStream = (KStream<StringKey, SubscriberProfileForceUpdateResponse>) branchedEvolutionEngineOutputs[16];
-    KStream<StringKey, NotificationEvent> notificationEventsStream = (KStream<StringKey, NotificationEvent>) branchedEvolutionEngineOutputs[17];
+    KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventsStream = (KStream<StringKey, OTPInstanceChangeEvent>) branchedEvolutionEngineOutputs[17];
     /*****************************************
     *
     *  sink
@@ -1046,41 +1073,42 @@ public class EvolutionEngine
     edrDetailsStream.to(Deployment.getEdrDetailsTopic(), Produced.with(stringKeySerde, edrDetailsSerde));
     tokenRedeemedsStream.to(Deployment.getTokenRedeemedTopic(), Produced.with(stringKeySerde, TokenRedeemed.serde()));
     subscriberProfileForceUpdateResponseStream.to(Deployment.getSubscriberProfileForceUpdateResponseTopic(), Produced.with(stringKeySerde, subscriberProfileForceUpdateResponseSerde));
+    otpInstanceChangeEventsStream.to(Deployment.getOTPInstanceChangeResponseTopic(), Produced.with(stringKeySerde, OTPInstanceChangeEvent.serde()));
 
     //
-	//  sink DeliveryRequest
-	//
+    //  sink DeliveryRequest
+    //
 
-	// rekeyed as needed
-	KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
-	// topics/predicates/serdes for branching by request or response and priority
-	// important to keep those 2 lists coherent one with the other!
-	LinkedList<String> topics = new LinkedList<>();
-	LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
-	Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
-	// populate
-	for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
-	  for(DeliveryPriority priority:DeliveryPriority.values()){
-	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine() || deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)/*or special case the "hacky loyalty point update BDR only" (sounds to me that is actually not the hacky at all, sending point request to commodity delivery manager to send back to engine to send back to commodity delivery manager to send back to engine feels a bit more shitty)*/){
-	  	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
-		  topics.add(topic);
-	  	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
-	  	  deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
-		}
-		String topic = deliveryManagerDeclaration.getRequestTopic(priority);// a request we are doing
-		topics.add(topic);
-		deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
-		deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
-	  }
-	}
-	//branch and sink
-	Iterator<String> topicIterator = topics.iterator();
-	for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.toArray(new Predicate[deliveryRequestPredicates.size()]))){
-	  String topic = topicIterator.next();
-	  stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
-	}
+    // rekeyed as needed
+    KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
+    // topics/predicates/serdes for branching by request or response and priority
+    // important to keep those 2 lists coherent one with the other!
+    LinkedList<String> topics = new LinkedList<>();
+    LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
+    Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
+    // populate
+    for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
+      for(DeliveryPriority priority:DeliveryPriority.values()){
+      	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine() || deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)/*or special case the "hacky loyalty point update BDR only" (sounds to me that is actually not the hacky at all, sending point request to commodity delivery manager to send back to engine to send back to commodity delivery manager to send back to engine feels a bit more shitty)*/){
+      	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
+      topics.add(topic);
+      	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
+      	  deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
+    	}
+    	String topic = deliveryManagerDeclaration.getRequestTopic(priority);// a request we are doing
+    	topics.add(topic);
+    	deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
+    	deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
+      }
+    }
+    //branch and sink
+    Iterator<String> topicIterator = topics.iterator();
+    for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.toArray(new Predicate[deliveryRequestPredicates.size()]))){
+      String topic = topicIterator.next();
+      stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
+    }
 
-	//
+    //
     // sink TriggerEvent
     //
 
@@ -1767,14 +1795,14 @@ public class EvolutionEngine
       }
 
     // NO MORE DEEP COPY !!!!
-	// previous one or new empty
+    // previous one or new empty
     SubscriberState subscriberState = (previousSubscriberState != null) ? previousSubscriberState : new SubscriberState(evolutionEvent.getSubscriberID(), tenantID);
     // keep the previous stored byte[]
     byte[] storedBefore = (previousSubscriberState != null) ? previousSubscriberState.getKafkaRepresentation() : new byte[0];// this empty means as well subscriber was not existing before
     // need to save the previous scheduled evaluation
-	Set<TimedEvaluation> scheduledEvaluationsBefore = new TreeSet<>(subscriberState.getScheduledEvaluations());
-	// and clean it
-	subscriberState.getScheduledEvaluations().clear();
+    Set<TimedEvaluation> scheduledEvaluationsBefore = new TreeSet<>(subscriberState.getScheduledEvaluations());
+    // and clean it
+    subscriberState.getScheduledEvaluations().clear();
 
     boolean subscriberStateUpdated = previousSubscriberState == null;
 
@@ -1803,8 +1831,23 @@ public class EvolutionEngine
           SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
           return subscriberState;
       }
-
-
+    
+    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
+    
+    /*****************************************
+    *
+    *  handle One Time Password (OTP)
+    *
+    *****************************************/
+    if(evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation()) 
+      {
+        OTPUtils.clearOldOTPs(subscriberProfile, otpTypeService, tenantID);
+      }
+    if(evolutionEvent instanceof OTPInstanceChangeEvent)
+      {
+    	  subscriberState.getOTPInstanceChangeEvent().add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent)evolutionEvent, subscriberState, otpTypeService, subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, context, tenantID));
+    	  subscriberStateUpdated = true;
+      }
 
     /*****************************************
     *
@@ -1933,7 +1976,6 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
     ParameterMap profileChangeOldValues = saveProfileChangeOldValues(subscriberEvaluationRequest); 
     
     /*****************************************
@@ -2154,7 +2196,7 @@ public class EvolutionEngine
     *  return
     *
     ****************************************/
-
+    
     if(subscriberStateUpdated){
         log.trace("updateSubscriberState : subscriberStateUpdated enriching event with it for down stream processing");
         evolutionHackyEvent.enrichWithSubscriberState(subscriberState);
@@ -2512,111 +2554,10 @@ public class EvolutionEngine
    if (evolutionEvent instanceof NotificationEvent)
      {
        NotificationEvent notificationEvent = (NotificationEvent)evolutionEvent;
-       subscriberUpdated = sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState);
+       subscriberUpdated = EvolutionUtilities.sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState);
      }
    return subscriberUpdated;
  }
-
-  private static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState)
-  {
-    boolean subscriberUpdated;
-    /*****************************************
-     *
-     * now
-     *
-     *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    // Enrich subscriber Evaluation Request with the tags specific to this message
-    // type (by example voucherCode)
-    if (specificTags != null)
-      {
-        for (Map.Entry<String, String> entry : specificTags.entrySet())
-          {
-            if (!entry.getKey().startsWith("tag."))
-              {
-                subscriberEvaluationRequest.getMiscData().put(("tag." + entry.getKey()).toLowerCase(), entry.getValue());
-              }
-            else
-              {
-                subscriberEvaluationRequest.getMiscData().put(entry.getKey().toLowerCase(), entry.getValue());
-              }
-          }
-      }
-
-    /*****************************************
-     *
-     * get DialogTemplate
-     *
-     *****************************************/
-    SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
-    DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
-
-    String language = subscriberEvaluationRequest.getLanguage();
-
-    if (template != null && !template.getReadOnly())
-      {
-        //
-        // get communicationChannel
-        //
-
-        CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
-
-        //
-        // get dest address
-        //
-
-        CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
-        String destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
-
-        Map<String, List<String>> tags = new HashMap<String, List<String>>();
-
-        for (String messageField : template.getDialogMessageFields().keySet())
-          {
-            DialogMessage dialogMessage = template.getDialogMessage(messageField);
-            List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
-            tags.put(messageField, dialogMessageTags);
-          }
-
-        // //
-        // // Parameters specific to the channel toolbox but NOT related to template
-        // //
-        // ParameterMap notificationParameters = new ParameterMap();
-        // for(CriterionField field :
-        // communicationChannel.getToolboxParameters().values()) {
-        // //notificationParameters.put(field.getID(), value);
-        // }
-
-        // add also the mandatory parameters for all channels
-        ParameterMap notificationParameters = new ParameterMap();
-        notificationParameters.put("node.parameter.contacttype", contactType.getExternalRepresentation());
-        notificationParameters.put("node.parameter.fromaddress", sourceAddress);
-
-        /*****************************************
-         *
-         * request
-         *
-         *****************************************/
-
-        NotificationManagerRequest request = null;
-        if (destAddress != null)
-          {
-            request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, communicationChannel.getID(), notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
-
-            request.forceDeliveryPriority(contactType.getDeliveryPriority());
-            request.setRestricted(contactType.getRestricted());
-            subscriberState.getDeliveryRequests().add(request);
-          }
-        else
-          {
-            log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
-          }
-
-      }
-    subscriberUpdated = true;
-    return subscriberUpdated;
-  }
 
   private static void checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
   {
@@ -3612,6 +3553,16 @@ public class EvolutionEngine
             fullPurchaseHistory.put("TBR_"+purchaseFulfillmentRequest.getDeliveryRequestID(), new ArrayList<>());
           }
       }
+
+    /*****************************************
+    *
+    *  OTP to update in profile
+    *
+    *****************************************/
+// TODO need some mechanism to use what triggered daily check that potentially deleted old otps !!
+    if (evolutionEvent instanceof OTPInstanceChangeEvent) {
+        subscriberProfileUpdated = true;
+    }
 
     /*****************************************
     *
@@ -7320,6 +7271,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getEdrDetailsWrappers());
         result.addAll(subscriberState.getTokenRedeemeds());
         result.addAll(subscriberState.getSubscriberProfileForceUpdatesResponse());
+        result.addAll(subscriberState.getOTPInstanceChangeEvent());
       }
 
     // add stats about voucherChange done

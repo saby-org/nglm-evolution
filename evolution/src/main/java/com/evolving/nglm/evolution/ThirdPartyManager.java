@@ -72,6 +72,7 @@ import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -117,6 +118,9 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
+import com.evolving.nglm.evolution.otp.OTPUtils;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent.OTPChangeAction;
 import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
@@ -129,6 +133,8 @@ public class ThirdPartyManager
   private static final String DEFAULT_FEATURE_ID = "<anonymous>";
   private static final String CUSTOMER_ID = "customerID";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
+  
+  private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
 
   /*****************************************
    *
@@ -188,6 +194,7 @@ public class ThirdPartyManager
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
   private KafkaResponseListenerService<StringKey,TokenChange> tokenChangeResponseListenerService;
   private KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
+  private KafkaResponseListenerService<StringKey,OTPInstanceChangeEvent> otpChangeResponseListenerService;
   private KafkaResponseListenerService<StringKey,JourneyRequest> enterCampaignResponseListenerService;
   private KafkaResponseListenerService<StringKey,SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseListenerService;
   private KafkaResponseListenerService<StringKey,LoyaltyProgramRequest> loyaltyProgramOptInOutResponseListenerService;
@@ -273,7 +280,9 @@ public class ThirdPartyManager
     removeSimpleOffer(34),
     getResellerDetails(35),
     getCustomerEDRs(36),
-    getVoucherList(37);
+    generateOTP(37),
+    checkOTP(38),
+    getVoucherList(39);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -543,6 +552,9 @@ public class ThirdPartyManager
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
     
+    otpChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getOTPInstanceChangeResponseTopic(),StringKey.serde(),OTPInstanceChangeEvent.serde());
+    otpChangeResponseListenerService.start();
+
     DeliveryManagerDeclaration dmdj = Deployment.getDeliveryManagers().get(JOURNEY_FULFILLMENT_MANAGER_TYPE);
     enterCampaignResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmdj.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),JourneyRequest.serde());
     enterCampaignResponseListenerService.start();
@@ -567,7 +579,6 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
       restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerEDRs", new APIHandler(API.getCustomerEDRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerPoints", new APIHandler(API.getCustomerPoints));
       restServer.createContext("/nglm-thirdpartymanager/creditBonus", new APIHandler(API.creditBonus));
@@ -598,6 +609,9 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getSimpleOfferList", new APIHandler(API.getSimpleOfferList));
       restServer.createContext("/nglm-thirdpartymanager/removeSimpleOffer", new APIHandler(API.removeSimpleOffer));
       restServer.createContext("/nglm-thirdpartymanager/getResellerDetails", new APIHandler(API.getResellerDetails));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerEDRs", new APIHandler(API.getCustomerEDRs));
+      restServer.createContext("/nglm-thirdpartymanager/generateOTP", new APIHandler(API.generateOTP));
+      restServer.createContext("/nglm-thirdpartymanager/checkOTP", new APIHandler(API.checkOTP));      
       restServer.createContext("/nglm-thirdpartymanager/getVoucherList", new APIHandler(API.getVoucherList));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
@@ -658,7 +672,7 @@ public class ThirdPartyManager
     private DeliverableService deliverableService;
     private DynamicCriterionFieldService dynamicCriterionFieldService;
     private CallingChannelService callingChannelService;
-    private ExclusionInclusionTargetService exclusionInclusionTargetService;    
+    private ExclusionInclusionTargetService exclusionInclusionTargetService;
 
     //
     //  constructor
@@ -951,6 +965,13 @@ public class ThirdPartyManager
             case removeSimpleOffer:
               jsonResponse = processRemoveSimpleOffer(jsonRoot);
               break;
+            case generateOTP:
+            	jsonResponse = processGenerateOTP(jsonRoot, tenantID);
+            	break;
+            case checkOTP:
+            	jsonResponse = processCheckOTP(jsonRoot, tenantID);
+            	break;
+            	
             case getVoucherList:
               jsonResponse = processGetVoucherList(jsonRoot, tenantID);
               break;
@@ -5866,6 +5887,127 @@ public class ThirdPartyManager
         throw e;
       }
   }
+  
+  private JSONObject processDummyResponse(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+
+  {
+	  Map<String, Object> response = new HashMap<String, Object>();
+      response.put("warning", "NOT IMPLEMENTED METHOD");
+      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+
+  return JSONUtilities.encodeObject(response);
+
+  }
+
+  
+  private JSONObject processCheckOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
+
+  {// GFE TODO check implem
+	  String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+	  
+	  Map<String,Object> otpResponse = new HashMap<>();
+	  	    
+	    //build the request to send
+	  
+	  OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
+	            SystemTime.getCurrentTime(),
+	            subscriberID,
+	            zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
+	            OTPInstanceChangeEvent.OTPChangeAction.Check,
+	            JSONUtilities.decodeString(jsonRoot, "otpType", true),
+	            JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
+	            0, //remainingAttempts
+	            0, //validationDuration
+	            0, //currentTypeErrors
+	            0, // globalErrorCounts
+	            RESTAPIGenericReturnCodes.UNKNOWN,
+	            tenantID);
+
+	    Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+
+	    String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();
+	    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+	            requestTopic,
+	            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+	            OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
+	    ));
+
+	    
+	    OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
+	    if (!response.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS)) otpResponse.put("numberOfRetriesLeft", response.getRemainingAttempts());
+	    return constructThirdPartyResponse(response.getReturnStatus(),otpResponse);
+  }
+
+	  
+  private JSONObject processGenerateOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
+  {
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+    //
+    //  eventName
+    //
+
+    String optTypeDisplay = JSONUtilities.decodeString(jsonRoot, "otpType", true);
+    if (optTypeDisplay == null || optTypeDisplay.isEmpty())
+      {
+        Map<String, Object> response = new HashMap<String, Object>();
+        updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS, "-{optType is missing}");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    //
+    //  subscriberID
+    //
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+
+    OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
+        SystemTime.getCurrentTime(),
+        subscriberID,
+        zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
+        OTPInstanceChangeEvent.OTPChangeAction.Generate,
+        optTypeDisplay,
+        (String) null, //otpCheckValue
+        0, //remainingAttempts
+        0, //validationDuration
+        0, //currentTypeErrors
+        0, // globalErrorCounts
+        RESTAPIGenericReturnCodes.UNKNOWN,
+        tenantID);
+
+     //String topic = Deployment.getOTPInstanceChangeRequestTopic();
+     //kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID)), OTPInstanceChangeEvent.serde().serializer().serialize(topic, request)));
+     
+     
+     Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+
+     String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();
+     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+             requestTopic,
+             StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+             OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
+     ));
+
+     OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
+     
+     Map<String,Object> otpResponse = new HashMap<>();
+     
+     /*****************************************
+     *
+     * return
+     *
+     *****************************************/
+     // TODO GFE stop returning otpCheckValue once tests have proven OK
+     otpResponse.put("otpCheckValue",response.getOTPCheckValue());
+     
+     otpResponse.put("numberOfRetriesLeft",response.getRemainingAttempts());
+     otpResponse.put("validityDuration",response.getValidityDuration());
+     
+     return constructThirdPartyResponse(response.getReturnStatus(),otpResponse); 
+  }
 
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
     if(response==null) response=new HashMap<>();
@@ -6361,7 +6503,6 @@ public class ThirdPartyManager
 
             if (storedReseller.getUserIDs() != null && !((storedReseller.getUserIDs()).isEmpty()))
               {
-
                 if ((storedReseller.getUserIDs()).contains(userID))
                   {
                     if (resellerService.isActiveReseller(storedReseller, now))
@@ -6371,7 +6512,6 @@ public class ThirdPartyManager
                         parentResellerID.add(storedReseller.getParentResellerID());
                         response.put("parentResellerID", parentResellerID);
                         break;
-
                       }
                     else
                       {

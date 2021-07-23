@@ -305,6 +305,7 @@ public class DeploymentCommon
   private static String ucgRuleTopic;
   private static String deliverableTopic;
   private static String tokenTypeTopic;
+  private static String otpTypeTopic;
   private static String voucherTypeTopic;
   private static String voucherTopic;
   private static String subscriberMessageTemplateTopic;
@@ -329,6 +330,7 @@ public class DeploymentCommon
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
+
   private static String voucherActionTopic;
   private static String fileWithVariableEventTopic;
   private static String tokenRedeemedTopic;
@@ -348,6 +350,8 @@ public class DeploymentCommon
   private static String sourceAddressTopic;
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
+  private static String otpInstanceChangeRequestTopic;
+  private static String otpInstanceChangeResponseTopic;
   private static String edrDetailsTopic;
   private static String workflowEventTopic;
   private static String subscriberProfileForceUpdateResponseTopic;
@@ -410,6 +414,7 @@ public class DeploymentCommon
   private static JSONArray initialOfferObjectivesJSONArray;
   private static JSONArray initialProductTypesJSONArray;
   private static JSONArray initialTokenTypesJSONArray;
+  private static JSONArray initialOTPTypesJSONArray;
   private static JSONArray initialVoucherCodeFormatsJSONArray;
   private static JSONArray initialSegmentationDimensionsJSONArray;
   private static JSONArray initialComplexObjectJSONArray;
@@ -616,6 +621,7 @@ public class DeploymentCommon
   public static String getUCGRuleTopic() { return ucgRuleTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getTokenTypeTopic() { return tokenTypeTopic; }
+  public static String getOTPTypeTopic() { return otpTypeTopic; }
   public static String getVoucherTypeTopic() { return voucherTypeTopic; }
   public static String getVoucherTopic() { return voucherTopic; }
   public static String getSubscriberMessageTemplateTopic() { return subscriberMessageTemplateTopic; }
@@ -659,6 +665,8 @@ public class DeploymentCommon
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
+  public static String getOTPInstanceChangeRequestTopic() { return otpInstanceChangeRequestTopic;}
+  public static String getOTPInstanceChangeResponseTopic() { return otpInstanceChangeResponseTopic;}
   public static String getEdrDetailsTopic() { return edrDetailsTopic; }
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
   public static String getSubscriberProfileForceUpdateResponseTopic() { return subscriberProfileForceUpdateResponseTopic; }    
@@ -706,6 +714,7 @@ public class DeploymentCommon
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
+  public static JSONArray getInitialOTPTypesJSONArray() { return initialOTPTypesJSONArray; }
   public static JSONArray getInitialVoucherCodeFormatsJSONArray() { return initialVoucherCodeFormatsJSONArray; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static JSONArray getInitialComplexObjectJSONArray() { return initialComplexObjectJSONArray; }
@@ -914,6 +923,7 @@ public class DeploymentCommon
     ucgRuleTopic = jsonReader.decodeString("ucgRuleTopic");
     deliverableTopic = jsonReader.decodeString("deliverableTopic");
     tokenTypeTopic = jsonReader.decodeString("tokenTypeTopic");
+    otpTypeTopic = jsonReader.decodeString("otpTypeTopic");
     voucherTypeTopic = jsonReader.decodeString("voucherTypeTopic");
     voucherTopic = jsonReader.decodeString("voucherTopic");
     subscriberMessageTemplateTopic = jsonReader.decodeString("subscriberMessageTemplateTopic");
@@ -957,6 +967,8 @@ public class DeploymentCommon
     sourceAddressTopic = jsonReader.decodeString("sourceAddressTopic");
     voucherChangeRequestTopic = jsonReader.decodeString("voucherChangeRequestTopic");
     voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
+    otpInstanceChangeRequestTopic = jsonReader.decodeString("otpInstanceChangeRequestTopic");
+    otpInstanceChangeResponseTopic = jsonReader.decodeString("otpInstanceChangeResponseTopic");
     subscriberProfileForceUpdateResponseTopic = jsonReader.decodeString("subscriberProfileForceUpdateResponseTopic");
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
@@ -1090,6 +1102,7 @@ public class DeploymentCommon
     initialOfferObjectivesJSONArray = jsonReader.decodeJSONArray("initialOfferObjectives");
     initialProductTypesJSONArray = jsonReader.decodeJSONArray("initialProductTypes");
     initialTokenTypesJSONArray = jsonReader.decodeJSONArray("initialTokenTypes");
+    initialOTPTypesJSONArray = jsonReader.decodeJSONArray("initialOTPTypes");
     initialVoucherCodeFormatsJSONArray = jsonReader.decodeJSONArray("initialVoucherCodeFormats");
     initialSegmentationDimensionsJSONArray = jsonReader.decodeJSONArray("initialSegmentationDimensions");
     initialComplexObjectJSONArray = jsonReader.decodeJSONArray("initialComplexObjects");

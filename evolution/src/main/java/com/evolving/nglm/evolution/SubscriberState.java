@@ -20,6 +20,7 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberTrace;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
 
 public class SubscriberState implements StateStore
 {
@@ -134,6 +135,7 @@ public class SubscriberState implements StateStore
   private List<VoucherAction> voucherActions;
   private List<EvolutionEngine.JourneyTriggerEventAction> journeyTriggerEventActions;
   private List<SubscriberProfileForceUpdate> subscriberProfileForceUpdates;
+  private List<OTPInstanceChangeEvent> otpInstanceChangeEvents;  
   private List<TokenRedeemed> tokenRedeemeds;
   private List<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdatesResponse;
   //
@@ -188,6 +190,7 @@ public class SubscriberState implements StateStore
   public List<VoucherAction> getVoucherActions() { return voucherActions; }
   public List<EvolutionEngine.JourneyTriggerEventAction> getJourneyTriggerEventActions() { return journeyTriggerEventActions; }
   public List<SubscriberProfileForceUpdate> getSubscriberProfileForceUpdates() { return subscriberProfileForceUpdates; }
+  public List<OTPInstanceChangeEvent> getOTPInstanceChangeEvent() { return otpInstanceChangeEvents; }
   public List<TokenRedeemed> getTokenRedeemeds() { return tokenRedeemeds; }
   public List<SubscriberProfileForceUpdateResponse> getSubscriberProfileForceUpdatesResponse() { return subscriberProfileForceUpdatesResponse; }
 
@@ -293,6 +296,7 @@ public class SubscriberState implements StateStore
         this.voucherActions = new ArrayList<>();
         this.journeyTriggerEventActions = new ArrayList<>();
         this.subscriberProfileForceUpdates = new ArrayList<>();
+        this.otpInstanceChangeEvents = new ArrayList<>();
         this.tokenRedeemeds = new ArrayList<>();
         this.subscriberProfileForceUpdatesResponse = new ArrayList<>();
       }
@@ -350,6 +354,7 @@ public class SubscriberState implements StateStore
     this.voucherActions = new ArrayList<>();
     this.journeyTriggerEventActions = new ArrayList<>();
     this.subscriberProfileForceUpdates = new ArrayList<>();
+    this.otpInstanceChangeEvents = new ArrayList<>();
     this.tokenRedeemeds = new ArrayList<>();
     // for data migration purpose only, can be removed once all market run EVPRO-885
     this.recentJourneyStates = oldRecentJourneyStates;

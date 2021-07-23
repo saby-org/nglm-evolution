@@ -12,13 +12,25 @@ import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import org.json.simple.JSONArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 
 public class EvolutionUtilities
 {
@@ -58,6 +70,8 @@ public class EvolutionUtilities
     public String getExternalRepresentation() { return externalRepresentation; }
     public static RoundingSelection fromExternalRepresentation(String externalRepresentation) { for (RoundingSelection enumeratedValue : RoundingSelection.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
+  
+  private static final Logger log = LoggerFactory.getLogger(EvolutionUtilities.class);
 
   /*****************************************
   *
@@ -288,4 +302,132 @@ public class EvolutionUtilities
       highRandomNo |= (sourceIDLong << 56);
       return new UUID(highRandomNo, timeMillis);
     }
+  
+  public static List<Pair<DialogTemplate, String>> getNotificationTemplateForAreaAvailability(String areaAvailability, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, int tenantID)
+  {
+    Collection <SubscriberMessageTemplate> templates = subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(SystemTime.getCurrentTime(), tenantID);  
+    List<Pair<DialogTemplate, String>> result = new ArrayList<>();
+    for (SubscriberMessageTemplate template : templates) {           
+      if (template instanceof DialogTemplate && !template.getReadOnly()) 
+        {
+          if (areaAvailability != null && areaAvailability.contains(areaAvailability))
+            {
+              String communicationChannelID = ((DialogTemplate) template).getCommunicationChannelID();
+              Collection <SourceAddress> sourceAddresses = sourceAddressService.getActiveSourceAddresses(SystemTime.getCurrentTime(), tenantID);
+              for (SourceAddress sourceAddress : sourceAddresses) 
+                {
+                  if (sourceAddress != null && sourceAddress.getCommunicationChannelId().equals(communicationChannelID)) 
+                    {
+                      String source = sourceAddress.getGUIManagedObjectDisplay();
+                      result.add(new Pair<DialogTemplate, String>((DialogTemplate)template, source));
+                      break;
+                    }
+                }
+            }
+        }
+    }
+    return result;
+  }
+  
+  public static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState)
+  {
+    boolean subscriberUpdated;
+    /*****************************************
+     *
+     * now
+     *
+     *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    // Enrich subscriber Evaluation Request with the tags specific to this message
+    // type (by example voucherCode)
+    if (specificTags != null)
+      {
+        for (Map.Entry<String, String> entry : specificTags.entrySet())
+          {
+            if (!entry.getKey().startsWith("tag."))
+              {
+                subscriberEvaluationRequest.getMiscData().put(("tag." + entry.getKey()).toLowerCase(), entry.getValue());
+              }
+            else
+              {
+                subscriberEvaluationRequest.getMiscData().put(entry.getKey().toLowerCase(), entry.getValue());
+              }
+          }
+      }
+
+    /*****************************************
+     *
+     * get DialogTemplate
+     *
+     *****************************************/
+    SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
+    DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
+
+    String language = subscriberEvaluationRequest.getLanguage();
+
+    if (template != null && !template.getReadOnly())
+      {
+        //
+        // get communicationChannel
+        //
+
+        CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
+
+        //
+        // get dest address
+        //
+
+        CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
+        String destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+
+        Map<String, List<String>> tags = new HashMap<String, List<String>>();
+
+        for (String messageField : template.getDialogMessageFields().keySet())
+          {
+            DialogMessage dialogMessage = template.getDialogMessage(messageField);
+            List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
+            tags.put(messageField, dialogMessageTags);
+          }
+
+        // //
+        // // Parameters specific to the channel toolbox but NOT related to template
+        // //
+        // ParameterMap notificationParameters = new ParameterMap();
+        // for(CriterionField field :
+        // communicationChannel.getToolboxParameters().values()) {
+        // //notificationParameters.put(field.getID(), value);
+        // }
+
+        // add also the mandatory parameters for all channels
+        ParameterMap notificationParameters = new ParameterMap();
+        notificationParameters.put("node.parameter.contacttype", contactType.getExternalRepresentation());
+        notificationParameters.put("node.parameter.fromaddress", sourceAddress);
+
+        /*****************************************
+         *
+         * request
+         *
+         *****************************************/
+
+        NotificationManagerRequest request = null;
+        if (destAddress != null)
+          {
+            request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, communicationChannel.getID(), notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+
+            request.forceDeliveryPriority(contactType.getDeliveryPriority());
+            request.setRestricted(contactType.getRestricted());
+            subscriberState.getDeliveryRequests().add(request);
+          }
+        else
+          {
+            log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+          }
+
+      }
+    subscriberUpdated = true;
+    return subscriberUpdated;
+  }
+
 }

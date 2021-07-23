@@ -413,6 +413,11 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "saleschannel", "id" : "-1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "supplier", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
 
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/otptype.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putOTPType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"otpType_1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOTPType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOTPTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOTPTypeSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"otpType_3" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeOTPType; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValuesList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValuesSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"genders"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValues; echo
@@ -507,6 +512,10 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "voucherCode" : "voucher1", "supplier" : "supplier_1", "origin" : "test" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/redeemVoucher; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "newParent<_THIRDPARTYAPI_CUSTOMER_ID_>" : "123", "relationship" : "Quadruple play",  }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/updateCustomerParent; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "relationship" : "Quadruple play",  }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/removeCustomerParent; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "admint1", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "otpType" : "otpType1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/generateOTP; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "admint1", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>":"19195551000", "otpType" : "otpType1", "otpCheckValue": "ABCDEF" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/checkOTP; echo
+
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password", "ids" : ["1", "2", "3", "4"] }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getVoucherList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getVoucherList; echo
  

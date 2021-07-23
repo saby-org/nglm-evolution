@@ -181,6 +181,9 @@
   "ucgRuleTopic"                                         : "${topic.ucgrule}",
   "deliverableTopic"                                     : "${topic.deliverable}",
   "tokenTypeTopic"                                       : "${topic.tokentype}",  
+  "otpTypeTopic"                                         : "${topic.otptype}",
+  "otpInstanceChangeRequestTopic"                        : "${topic.otpinstancechange.request}",
+  "otpInstanceChangeResponseTopic"                       : "${topic.otpinstancechange.response}",
   "voucherTypeTopic"                                     : "${topic.vouchertype}",  
   "voucherTopic"                                         : "${topic.voucher}",  
   "guiAuditTopic"                                        : "${topic.guiaudit}",
@@ -714,6 +717,7 @@
   "initialOfferObjectives" : [],
   "initialProductTypes" : [],
   "initialTokenTypes" : [],
+  "initialOTPTypes" : [],
   "initialSegmentationDimensions" : [],
   "initialComplexObjects" : [],
   "initialCallingChannels": [],
@@ -913,6 +917,16 @@
       "id"           : "getResellerDetails",
       "methodName"   : "getResellerDetails",
       "permissions"  : ["API-GET-RESELLER-DETAILS"]
+    },
+    {
+      "id"           : "generateOTP",
+      "methodName"   : "generateOTP",
+      "permissions"  : ["API-GENERATE-OTP"]
+    },
+    {
+      "id"           : "checkOTP",
+      "methodName"   : "checkOTP",
+      "permissions"  : ["API-CHECK-OTP"]
     },
     {
       "id"           : "getVoucherList",
