@@ -47,9 +47,10 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	    schemaBuilder.field("otpCheckValue", Schema.OPTIONAL_STRING_SCHEMA);
 	    // OUT   
 	    schemaBuilder.field("returnStatus", Schema.OPTIONAL_STRING_SCHEMA);
-	    schemaBuilder.field("remainingAttempts", Schema.OPTIONAL_STRING_SCHEMA);
-	    schemaBuilder.field("currentTypeErrors", Schema.OPTIONAL_STRING_SCHEMA);
-	    schemaBuilder.field("globalErrorCounts", Schema.OPTIONAL_STRING_SCHEMA);
+	    schemaBuilder.field("remainingAttempts", Schema.OPTIONAL_INT32_SCHEMA);
+	    schemaBuilder.field("validityDuration", Schema.OPTIONAL_INT32_SCHEMA);
+	    schemaBuilder.field("currentTypeErrors", Schema.OPTIONAL_INT32_SCHEMA);
+	    schemaBuilder.field("globalErrorCounts", Schema.OPTIONAL_INT32_SCHEMA);
 	    // global
 	    schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
 	    schema = schemaBuilder.build();
@@ -104,9 +105,10 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	  private OTPChangeAction action;
 	  private String otpTypeName;
 	  private String otpCheckValue;
-	  private String remainingAttempts;
-	  private String currentTypeErrors;
-	  private String globalErrorCounts;
+	  private Integer remainingAttempts;
+	  private Integer validityDuration;
+	  private Integer currentTypeErrors;
+	  private Integer globalErrorCounts;
 	  private RESTAPIGenericReturnCodes returnStatus;
 	  private int tenantID;
 
@@ -127,9 +129,10 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	  public OTPChangeAction getAction() { return action; }
 	  public String getOTPTypeName() { return otpTypeName; }
 	  public String getOTPCheckValue() { return otpCheckValue; }
-	  public String getRemainingAttempts() { return remainingAttempts; }
-	  public String getCurrentTypeErrors() { return currentTypeErrors; }
-	  public String getGlobalErrorCounts() { return globalErrorCounts; }
+	  public Integer getRemainingAttempts() { return remainingAttempts; }
+	  public Integer getValidityDuration() { return validityDuration; }
+	  public Integer getCurrentTypeErrors() { return currentTypeErrors; }
+	  public Integer getGlobalErrorCounts() { return globalErrorCounts; }
 	  public RESTAPIGenericReturnCodes getReturnStatus() { return returnStatus; }
 	  public int getTenantID() { return tenantID; }
 	  
@@ -140,8 +143,8 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	  *****************************************/
 
 	  public OTPInstanceChangeEvent(Date eventDate, String subscriberID, String eventID, OTPChangeAction action,
-			String otpTypeName, String otpCheckValue, String remainingAttempts, String currentTypeErrors,
-			String globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, int tenantID
+			String otpTypeName, String otpCheckValue, Integer remainingAttempts, Integer validityDuration, Integer currentTypeErrors,
+			Integer globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, int tenantID
 			) {
 		//super();
 		this.eventDate = eventDate;
@@ -151,6 +154,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 		this.otpTypeName = otpTypeName;
 		this.otpCheckValue = otpCheckValue;
 		this.remainingAttempts = remainingAttempts;
+		this.validityDuration = validityDuration;
 		this.currentTypeErrors = currentTypeErrors;
 		this.globalErrorCounts = globalErrorCounts;
 		this.returnStatus = returnStatus;
@@ -167,6 +171,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 		this.otpTypeName = eventToClone.getOTPTypeName();
 		this.otpCheckValue = eventToClone.getOTPCheckValue();
 		this.remainingAttempts = eventToClone.getRemainingAttempts();
+		this.validityDuration = eventToClone.getValidityDuration();
 		this.currentTypeErrors = eventToClone.getCurrentTypeErrors();
 		this.globalErrorCounts = eventToClone.getGlobalErrorCounts();
 		this.returnStatus = eventToClone.getReturnStatus();
@@ -181,8 +186,8 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 
 	  public OTPInstanceChangeEvent(SchemaAndValue schemaAndValue, 
 			  Date eventDate, String subscriberID, String eventID, OTPChangeAction action,
-				String otpTypeName, String otpCheckValue, String remainingAttempts, String currentTypeErrors,
-				String globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, int tenantID
+				String otpTypeName, String otpCheckValue, Integer remainingAttempts, Integer validityDuration, 
+				Integer currentTypeErrors, Integer globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, int tenantID
 				) {
 	    super(schemaAndValue);
 		this.eventDate = eventDate;
@@ -192,6 +197,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 		this.otpTypeName = otpTypeName;
 		this.otpCheckValue = otpCheckValue;
 		this.remainingAttempts = remainingAttempts;
+		this.validityDuration = validityDuration;
 		this.currentTypeErrors = currentTypeErrors;
 		this.globalErrorCounts = globalErrorCounts;
 		this.returnStatus = returnStatus;
@@ -207,9 +213,10 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	            ", action=" + action.getExternalRepresentation() +
 	            ", otpTypeName='" + otpTypeName + '\'' +
 	            ", otpCheckValue='" + otpCheckValue + '\'' +
-	            ", remainingAttempts='" + remainingAttempts + '\'' +
-	            ", currentTypeErrors='" + currentTypeErrors + '\'' +
-	            ", globalErrorCounts='" + globalErrorCounts + '\'' +
+	            ", remainingAttempts=" + remainingAttempts +
+	            ", validityDuration=" + validityDuration +
+	            ", currentTypeErrors=" + currentTypeErrors +
+	            ", globalErrorCounts=" + globalErrorCounts +
 	            ", returnStatus=" + returnStatus.getGenericResponseMessage() +
 	            '\'' +", tenantID='" + tenantID + 
 	            '}';
@@ -275,9 +282,10 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	      OTPChangeAction action = OTPChangeAction.fromExternalRepresentation(valueStruct.getString("action"));
 	      String otpTypeName = valueStruct.getString("otpTypeName");
 	      String otpCheckValue = valueStruct.getString("otpCheckValue");
-	      String remainingAttempts = valueStruct.getString("remainingAttempts");
-	      String currentTypeErrors = valueStruct.getString("currentTypeErrors");
-	      String globalErrorCounts = valueStruct.getString("globalErrorCounts");
+	      Integer remainingAttempts = valueStruct.getInt32("remainingAttempts");
+	      Integer validityDuration = valueStruct.getInt32("validityDuration");
+	      Integer currentTypeErrors = valueStruct.getInt32("currentTypeErrors");
+	      Integer globalErrorCounts = valueStruct.getInt32("globalErrorCounts");
 	      RESTAPIGenericReturnCodes returnStatus = RESTAPIGenericReturnCodes.fromGenericResponseMessage(valueStruct.getString("returnStatus"));
 	      int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
 
@@ -287,7 +295,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 	   
 	      return new OTPInstanceChangeEvent( schemaAndValue, 
 				   eventDate,  subscriberID,  eventID,  action,
-					 otpTypeName,  otpCheckValue,  remainingAttempts,  currentTypeErrors,
+					 otpTypeName,  otpCheckValue,  remainingAttempts,  validityDuration, currentTypeErrors,
 					 globalErrorCounts,  returnStatus, tenantID
 					);
 	  }
@@ -307,13 +315,16 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 			public void setOTPCheckValue(String otpCheckValue) {
 				this.otpCheckValue = otpCheckValue;
 			}
-			public void setRemainingAttempts(String remainingAttempts) {
+			public void setRemainingAttempts(Integer remainingAttempts) {
 				this.remainingAttempts = remainingAttempts;
 			}
-			public void setCurrentTypeErrors(String currentTypeErrors) {
+			public void setValidityDuration(Integer validityDuration) {
+				this.validityDuration = validityDuration;
+			}
+			public void setCurrentTypeErrors(Integer currentTypeErrors) {
 				this.currentTypeErrors = currentTypeErrors;
 			}
-			public void setGlobalErrorCounts(String globalErrorCounts) {
+			public void setGlobalErrorCounts(Integer globalErrorCounts) {
 				this.globalErrorCounts = globalErrorCounts;
 			}		  
 		  

@@ -269,7 +269,7 @@ public class OTPUtils
         // and check for higher ban while collecting counters:
         // check maxed this instance
         int remainingAttempts = otptype.getMaxWrongCheckAttemptsByInstance() - tomatch.getErrorCount();
-        otpRequest.setRemainingAttempts(Integer.toString(remainingAttempts));
+        otpRequest.setRemainingAttempts(remainingAttempts);
         if (remainingAttempts <= 0)
           {
             tomatch.setOTPStatus(OTPInstance.OTPStatus.Burnt);
@@ -277,7 +277,7 @@ public class OTPUtils
           }
         // check global counter for all candidates of the type
         int globalerrorstimewindow = candidates.stream().filter(c -> DateUtils.addSeconds(c.getLatestError(), otptype.getTimeWindow()).after(now)).mapToInt(o -> o.getErrorCount()).sum();
-        otpRequest.setGlobalErrorCounts(Integer.toString(globalerrorstimewindow));
+        otpRequest.setGlobalErrorCounts(globalerrorstimewindow);
         if (globalerrorstimewindow >= otptype.getMaxWrongCheckAttemptsByTimeWindow())
           {
             tomatch.setOTPStatus(OTPInstance.OTPStatus.RaisedBan);
@@ -428,7 +428,8 @@ public class OTPUtils
       }
     
     otpRequest.setOTPCheckValue(otpValue); // at least for debug now, but should not be returned to the customer...
-    otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance().toString());
+    otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance());
+    otpRequest.setValidityDuration(otptype.getInstanceExpirationDelay());
     otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
 
     return otpRequest;

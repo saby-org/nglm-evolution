@@ -5916,9 +5916,10 @@ public class ThirdPartyManager
 	            OTPInstanceChangeEvent.OTPChangeAction.Check,
 	            JSONUtilities.decodeString(jsonRoot, "otpType", true),
 	            JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
-	            (String) null, //remainingAttempts
-	            (String) null, //currentTypeErrors
-	            (String) null, // globalErrorCounts
+	            0, //remainingAttempts
+	            0, //validationDuration
+	            0, //currentTypeErrors
+	            0, // globalErrorCounts
 	            RESTAPIGenericReturnCodes.UNKNOWN,
 	            tenantID);
 
@@ -5933,6 +5934,7 @@ public class ThirdPartyManager
 
 	    
 	    OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
+	    if (!response.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS)) otpResponse.put("numberOfRetriesLeft", response.getRemainingAttempts());
 	    return constructThirdPartyResponse(response.getReturnStatus(),otpResponse);
   }
 
@@ -5969,9 +5971,10 @@ public class ThirdPartyManager
         OTPInstanceChangeEvent.OTPChangeAction.Generate,
         optTypeDisplay,
         (String) null, //otpCheckValue
-        (String) null, //remainingAttempts
-        (String) null, //currentTypeErrors
-        (String) null, // globalErrorCounts
+        0, //remainingAttempts
+        0, //validationDuration
+        0, //currentTypeErrors
+        0, // globalErrorCounts
         RESTAPIGenericReturnCodes.UNKNOWN,
         tenantID);
 
@@ -5997,7 +6000,12 @@ public class ThirdPartyManager
      * return
      *
      *****************************************/
+     // TODO GFE stop returning otpCheckValue once tests have proven OK
      otpResponse.put("otpCheckValue",response.getOTPCheckValue());
+     
+     otpResponse.put("numberOfRetriesLeft",response.getRemainingAttempts());
+     otpResponse.put("validityDuration",response.getValidityDuration());
+     
      return constructThirdPartyResponse(response.getReturnStatus(),otpResponse); 
   }
 
