@@ -204,7 +204,7 @@ public class GUIManager
   {
     //
     //  GUI APIs
-    //  getStaticConfiguration
+    //  
 
     getStaticConfiguration("getStaticConfiguration"),
     getSupportedLanguages("getSupportedLanguages"),
