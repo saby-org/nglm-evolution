@@ -205,6 +205,7 @@ public class EvolutionEngine
   private static DNBOMatrixService dnboMatrixService;
   private static TokenTypeService tokenTypeService;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
+  private static SourceAddressService sourceAddressService;
   private static DeliverableService deliverableService;
   private static SegmentContactPolicyService segmentContactPolicyService;
   private static OTPTypeService otpTypeService;
@@ -493,6 +494,14 @@ public class EvolutionEngine
 
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "evolutionengine-subscribermessagetemplateservice-" + evolutionEngineKey, Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
+    
+    //
+    //  sourceAddressService
+    //
+
+    sourceAddressService = new SourceAddressService(bootstrapServers, "evolutionengine-sourceaddressservice-" + evolutionEngineKey, Deployment.getSourceAddressTopic(), false);
+    sourceAddressService.start();
+
 
     //
     //  deliverableService
@@ -1823,6 +1832,8 @@ public class EvolutionEngine
           return subscriberState;
       }
     
+    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
+    
     /*****************************************
     *
     *  handle One Time Password (OTP)
@@ -1834,7 +1845,7 @@ public class EvolutionEngine
       }
     if(evolutionEvent instanceof OTPInstanceChangeEvent)
       {
-    	  subscriberState.getOTPInstanceChangeEvent().add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent)evolutionEvent, subscriberProfile, otpTypeService, tenantID));
+    	  subscriberState.getOTPInstanceChangeEvent().add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent)evolutionEvent, subscriberState, otpTypeService, subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, context, tenantID));
     	  subscriberStateUpdated = true;
       }
 
@@ -1965,7 +1976,6 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
     ParameterMap profileChangeOldValues = saveProfileChangeOldValues(subscriberEvaluationRequest); 
     
     /*****************************************
@@ -2544,111 +2554,10 @@ public class EvolutionEngine
    if (evolutionEvent instanceof NotificationEvent)
      {
        NotificationEvent notificationEvent = (NotificationEvent)evolutionEvent;
-       subscriberUpdated = sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState);
+       subscriberUpdated = EvolutionUtilities.sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState);
      }
    return subscriberUpdated;
  }
-
-  private static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState)
-  {
-    boolean subscriberUpdated;
-    /*****************************************
-     *
-     * now
-     *
-     *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    // Enrich subscriber Evaluation Request with the tags specific to this message
-    // type (by example voucherCode)
-    if (specificTags != null)
-      {
-        for (Map.Entry<String, String> entry : specificTags.entrySet())
-          {
-            if (!entry.getKey().startsWith("tag."))
-              {
-                subscriberEvaluationRequest.getMiscData().put(("tag." + entry.getKey()).toLowerCase(), entry.getValue());
-              }
-            else
-              {
-                subscriberEvaluationRequest.getMiscData().put(entry.getKey().toLowerCase(), entry.getValue());
-              }
-          }
-      }
-
-    /*****************************************
-     *
-     * get DialogTemplate
-     *
-     *****************************************/
-    SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
-    DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
-
-    String language = subscriberEvaluationRequest.getLanguage();
-
-    if (template != null && !template.getReadOnly())
-      {
-        //
-        // get communicationChannel
-        //
-
-        CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
-
-        //
-        // get dest address
-        //
-
-        CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
-        String destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
-
-        Map<String, List<String>> tags = new HashMap<String, List<String>>();
-
-        for (String messageField : template.getDialogMessageFields().keySet())
-          {
-            DialogMessage dialogMessage = template.getDialogMessage(messageField);
-            List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
-            tags.put(messageField, dialogMessageTags);
-          }
-
-        // //
-        // // Parameters specific to the channel toolbox but NOT related to template
-        // //
-        // ParameterMap notificationParameters = new ParameterMap();
-        // for(CriterionField field :
-        // communicationChannel.getToolboxParameters().values()) {
-        // //notificationParameters.put(field.getID(), value);
-        // }
-
-        // add also the mandatory parameters for all channels
-        ParameterMap notificationParameters = new ParameterMap();
-        notificationParameters.put("node.parameter.contacttype", contactType.getExternalRepresentation());
-        notificationParameters.put("node.parameter.fromaddress", sourceAddress);
-
-        /*****************************************
-         *
-         * request
-         *
-         *****************************************/
-
-        NotificationManagerRequest request = null;
-        if (destAddress != null)
-          {
-            request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, communicationChannel.getID(), notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
-
-            request.forceDeliveryPriority(contactType.getDeliveryPriority());
-            request.setRestricted(contactType.getRestricted());
-            subscriberState.getDeliveryRequests().add(request);
-          }
-        else
-          {
-            log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
-          }
-
-      }
-    subscriberUpdated = true;
-    return subscriberUpdated;
-  }
 
   private static void checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
   {

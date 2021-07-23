@@ -168,7 +168,12 @@ public abstract class Expression
     private String functionName;
     private ExpressionFunction(String functionName) { this.functionName = functionName; }
     public String getFunctionName() { return functionName; }
-    public static ExpressionFunction fromFunctionName(String functionName) { for (ExpressionFunction enumeratedValue : ExpressionFunction.values()) { if (enumeratedValue.getFunctionName().equalsIgnoreCase(functionName)) return enumeratedValue; } return UnknownFunction; }
+    public static ExpressionFunction fromFunctionName(String functionName) { 
+      for (ExpressionFunction enumeratedValue : ExpressionFunction.values()) 
+        { 
+          if (enumeratedValue.getFunctionName().equalsIgnoreCase(functionName)) return enumeratedValue; 
+        } return UnknownFunction; 
+    }
   }
   
   /*****************************************
@@ -3394,7 +3399,7 @@ public abstract class Expression
     private boolean printable(char c) { return (c != CR && c != LF && c != FF && c != EOF); }
     private boolean letter(char c) { return in_range('A',c,'Z') || in_range('a',c,'z'); }
     private boolean digit(char c) { return in_range('0',c,'9'); }
-    private boolean id_char(char c) { return (letter(c) || digit(c) || c == '.'); }
+    private boolean id_char(char c) { return (letter(c) || digit(c) || c == '.' || c == '_'); }
     private boolean unary_char(char c) { return (c == '+' || c == '-'); }
 
     /*****************************************
@@ -3582,6 +3587,14 @@ public abstract class Expression
       switch (functionCall)
         {
           case UnknownFunction:
+            for(Map.Entry<String, CriterionField> criterion : criterionContext.getCriterionFields(this.tenantID).entrySet()) {
+              System.out.println(criterion.getKey());
+              if(identifier.toLowerCase().equals(criterion.getKey().toLowerCase()))
+                {
+                  System.out.println("found for " + identifier + " CRITERION " + criterion.getKey());
+                }
+            }
+            
             CriterionField criterionField = criterionContext.getCriterionFields(this.tenantID).get(identifier); // TODO EVPRO-99 check if tenant 0 here, not sure at all...
             if (criterionField != null)
               {

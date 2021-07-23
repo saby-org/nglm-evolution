@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -15,8 +17,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.Pair;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.EvolutionUtilities;
 import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
+import com.evolving.nglm.evolution.SourceAddressService;
+import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
+import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
 import com.evolving.nglm.evolution.SubscriberProfile;
+import com.evolving.nglm.evolution.SubscriberState;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.DialogTemplate;
 import com.evolving.nglm.evolution.otp.OTPInstance.OTPStatus;
 
 public class OTPUtils
@@ -101,17 +112,17 @@ public class OTPUtils
   }
 
   // called by EvolutionEngine when receiving an event from thirdparty message
-  public static OTPInstanceChangeEvent handleOTPEvent(OTPInstanceChangeEvent otpRequest, SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID)
+  public static OTPInstanceChangeEvent handleOTPEvent(OTPInstanceChangeEvent otpRequest, SubscriberState subscriberState, OTPTypeService otpTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, SubscriberEvaluationRequest subscriberEvaluationRequest, EvolutionEventContext evolutionEventContextint,int tenantID)
   {
     switch (otpRequest.getAction())
       {
       case Check:
-        return checkOTP(otpRequest, profile, otpTypeService, tenantID);
+        return checkOTP(otpRequest, subscriberState.getSubscriberProfile(), otpTypeService, tenantID);
       case Generate:
-        return generateOTP(otpRequest, profile, otpTypeService, tenantID);
+        return generateOTP(otpRequest, subscriberState, otpTypeService, subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, evolutionEventContextint, tenantID);
       case Burn:
         // pending story but will come soon ...
-        return burnOTPsFromGivenType(otpRequest, profile, otpTypeService, tenantID);
+        return burnOTPsFromGivenType(otpRequest, subscriberState.getSubscriberProfile(), otpTypeService, tenantID);
       default:
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
         return otpRequest;
@@ -316,16 +327,17 @@ public class OTPUtils
   }
 
   // OTP Creation
-  public static OTPInstanceChangeEvent generateOTP(OTPInstanceChangeEvent otpRequest, SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID)
+  public static OTPInstanceChangeEvent generateOTP(OTPInstanceChangeEvent otpRequest, SubscriberState subscriberState, OTPTypeService otpTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, SubscriberEvaluationRequest subscriberEvaluationRequest, EvolutionEventContext evolutionEventContext, int tenantID)
   {
 
-    if (profile == null)
+    if (subscriberState == null)
       {
         // probably already raised before it reaches this section but for safety reasons
         // lets reject
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
         return otpRequest;
       }
+    SubscriberProfile profile = subscriberState.getSubscriberProfile();
     Date now = new Date();
     List<OTPInstance> initialOtpList = profile.getOTPInstances().stream().filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())).collect(Collectors.toList());
 
@@ -406,11 +418,19 @@ public class OTPUtils
     profile.setOTPInstances(existingInstances);
 
     // send the notification
-    sdf
+    Map<String, String> tags = new HashMap<>();
+    tags.put("optCode", otpInstance.getOTPValue());
+    
+    List<Pair<DialogTemplate, String>> templates = EvolutionUtilities.getNotificationTemplateForAreaAvailability("realtime", subscriberMessageTemplateService, sourceAddressService, tenantID);
+    for(Pair<DialogTemplate, String> template : templates)
+      {
+        EvolutionUtilities.sendMessage(evolutionEventContext, tags, template.getFirstElement().getDialogTemplateID(), ContactType.ActionNotification, template.getSecondElement(), subscriberEvaluationRequest, subscriberState);
+      }
     
     otpRequest.setOTPCheckValue(otpValue); // at least for debug now, but should not be returned to the customer...
     otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance().toString());
     otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+
     return otpRequest;
   }
 
