@@ -140,11 +140,11 @@ public class CommunicationChannelService extends GUIService
   
   /*****************************************
   *
-  *  removeCommunicationChannel
+  *  restoreCommunicationChannel
   *
   *****************************************/
 
-  public void removeCommunicationChannel(String communicationChannelID, String userID, int tenantID) { removeGUIManagedObject(getCommunicationChannelID(communicationChannelID), SystemTime.getCurrentTime(), userID, tenantID); }
+  public void restoreCommunicationChannel(String communicationChannelID, String userID, int tenantID) { removeGUIManagedObject(getCommunicationChannelID(communicationChannelID), SystemTime.getCurrentTime(), userID, tenantID); }
   
   /*****************************************
   *
