@@ -2240,6 +2240,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCommunicationChannelSummaryList", new APISimpleHandler(API.getCommunicationChannelSummaryList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannel", new APISimpleHandler(API.getCommunicationChannel));
         restServer.createContext("/nglm-guimanager/putCommunicationChannel", new APISimpleHandler(API.putCommunicationChannel));
+        restServer.createContext("/nglm-guimanager/restoreCommunicationChannel", new APISimpleHandler(API.restoreCommunicationChannel));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsList", new APISimpleHandler(API.getBlackoutPeriodsList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsSummaryList", new APISimpleHandler(API.getBlackoutPeriodsSummaryList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriods", new APISimpleHandler(API.getBlackoutPeriods));
@@ -20748,76 +20749,103 @@ public class GUIManager
     *
     ****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
 
-    /*****************************************
+    /****************************************
     *
-    *  communicationChannelID
+    *  argument
     *
-    *****************************************/
+    ****************************************/
 
-    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (communicationChannelID == null)
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> communicationChannels = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray communicationChannelIDs = new JSONArray();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single communicationChannel
+    //
+    if (jsonRoot.containsKey("id"))
       {
-        throw new GUIManagerException("No communication channel ID", "");
+        String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        communicationChannelIDs.add(communicationChannelID);
+        GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
+        if (communicationChannel != null && (force || !communicationChannel.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (communicationChannel != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            singleIDresponseCode = "communicationChannelNotFound";
+          }
       }
-
-    /*****************************************
-    *
-    *  process CommunicationChannel
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
       {
-          CommunicationChannel existingCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, now);
-          CommunicationChannel communicationChannel = new CommunicationChannel(jsonRoot, epoch, existingCommunicationChannel, tenantID);
-          
-          /*****************************************
-          *
-          *  store
-          *
-          *****************************************/
+        communicationChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+    
+    for (int i = 0; i < communicationChannelIDs.size(); i++)
+      {
+        String communicationChannelID = communicationChannelIDs.get(i).toString();
+        GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
 
-        // delete this time window for the associated channel
-          communicationChannelService.restoreCommunicationChannel(communicationChannelID, userID, tenantID);
+        if (communicationChannel != null && (force || !communicationChannel.getReadOnly()))
+          {
+
+            communicationChannels.add(communicationChannel);
+            validIDs.add(communicationChannelID);
+          }
+      }
         
 
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", communicationChannelID);
-        response.put("accepted", true);
-        response.put("valid", true);
-        response.put("processing", true);
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+    for (int i = 0; i < communicationChannels.size(); i++)
       {
-        //
-        //  log
-        //
+        GUIManagedObject communicationChannel = communicationChannels.get(i);
 
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        communicationChannelService.restoreCommunicationChannel(communicationChannel.getGUIManagedObjectID(), userID, tenantID);
+      }
 
-        //
-        //  response
-        //
-
-        response.put("communicationChannelID", communicationChannelID);
-        response.put("responseCode", "communicationChannelNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+    /*****************************************
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
         return JSONUtilities.encodeObject(response);
       }
+
+    else
+      {
+        response.put("responseCode", "ok");
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+
+    response.put("removedCommunicationChannelIDs", JSONUtilities.encodeArray(validIDs));
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
