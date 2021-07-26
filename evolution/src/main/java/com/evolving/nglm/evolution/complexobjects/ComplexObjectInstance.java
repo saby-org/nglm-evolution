@@ -375,7 +375,7 @@ public class ComplexObjectInstance
 
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
     if(complexObjectType == null) { return null; }
-
+    if(byteRepresentation == null) { return new HashMap<String, DataModelFieldValue>();}
     return deserialize(byteRepresentation, complexObjectType.getSubfields(), this.complexObjectTypeID);
   }
 
