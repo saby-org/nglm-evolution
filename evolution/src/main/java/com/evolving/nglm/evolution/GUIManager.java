@@ -20703,9 +20703,6 @@ public class GUIManager
           *****************************************/
 
           communicationChannelService.putCommunicationChannel(communicationChannel, (existingCommunicationChannel == null), userID);
-          
-          // delete this time window for the associated channel
-          communicationChannelService.restoreCommunicationChannel(communicationChannelID, userID, tenantID);
         
 
         /*****************************************

@@ -31,6 +31,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -298,8 +299,8 @@ public class CommunicationChannel extends GUIManagedObject
     Struct valueStruct = (Struct) value;
     String profileAddressField = valueStruct.getString("profileAddressField");
     String deliveryType = valueStruct.getString("deliveryType");
-    Map<String, CriterionField> parameters = unpackParameters(valueStruct.get("parameters"));
-    Map<String, CriterionField> toolboxParameters = unpackParameters(valueStruct.get("toolboxParameters"));
+    Map<String, CriterionField> parameters = unpackAdditionalCriterionFields(schema.field("parameters").schema(), valueStruct.get("parameters"));
+    Map<String, CriterionField> toolboxParameters = unpackAdditionalCriterionFields(schema.field("toolboxParameters").schema(), valueStruct.get("toolboxParameters"));
     String notificationPluginClass = valueStruct.getString("notificationPluginClass");
     String notificationPluginConfiguration = valueStruct.getString("notificationPluginConfiguration");
     String icon = valueStruct.getString("icon");
@@ -328,17 +329,24 @@ public class CommunicationChannel extends GUIManagedObject
   *
   *****************************************/
 
-  private static Map<String, CriterionField> unpackParameters(Object value)
+  private static Map<String,CriterionField> unpackAdditionalCriterionFields(Schema schema, Object value)
   {
+    //
+    //  get schema for CriterionField
+    //
+
+    Schema criterionFieldSchema = schema.valueSchema();
+    
     //
     //  unpack
     //
 
-    Map<String, CriterionField> result = new HashMap<String, CriterionField>();
+    Map<String,CriterionField> result = new LinkedHashMap<String,CriterionField>();
     Map<String, Object> valueMap = (Map<String, Object>) value;
     for (String key : valueMap.keySet())
       {
-        result.put(key, CriterionField.unpack(new SchemaAndValue(CriterionField.schema().valueSchema(), valueMap.get(key))));
+        CriterionField criterionField = CriterionField.unpack(new SchemaAndValue(criterionFieldSchema, valueMap.get(key)));
+        result.put(criterionField.getID(), criterionField);
       }
 
     //
