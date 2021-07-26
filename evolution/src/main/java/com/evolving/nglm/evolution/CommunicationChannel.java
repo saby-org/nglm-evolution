@@ -192,7 +192,7 @@ public class CommunicationChannel extends GUIManagedObject
       return deliveryDate;
     }
 
-   /*****************************************
+  /*****************************************
   *
   *  constructor -- unpack
   *
@@ -346,7 +346,7 @@ public class CommunicationChannel extends GUIManagedObject
     for (String key : valueMap.keySet())
       {
         CriterionField criterionField = CriterionField.unpack(new SchemaAndValue(criterionFieldSchema, valueMap.get(key)));
-        result.put(criterionField.getID(), criterionField);
+        result.put(key, criterionField);
       }
 
     //
