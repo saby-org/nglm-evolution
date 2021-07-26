@@ -190,10 +190,12 @@ public class EvolutionUtilities
             case RoundUp:
               result = RLMDateUtils.getLastDayOfQuarter(result, timeZone);
               result = RLMDateUtils.ceiling(result, Calendar.DATE, timeZone);
+              result = RLMDateUtils.addMilliseconds(result, -1);
               break;
             case RoundDown:
               result = RLMDateUtils.getFirstDayOfQuarter(result, timeZone);
               result = RLMDateUtils.truncate(result, Calendar.DATE, timeZone);
+              result = RLMDateUtils.addMilliseconds(result, -1);
               break;
             default :
               break;
