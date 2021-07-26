@@ -84,6 +84,13 @@ public class DeploymentCommon
 
   public static void initialize() { /* Just to be sure the static bloc is read. */ }
   public static Set<Tenant> getTenants() { return jsonConfigPerTenant.keySet(); }
+  public static Set<Tenant> getRealTenants() { // all but tenant 0
+    Set<Tenant> tenants = new HashSet<>();
+    for (Tenant tenant : getTenants()) {
+      if (tenant.getTenantID() != 0) tenants.add(tenant);
+    }
+    return tenants;
+  }
   public static Deployment getDeployment(int tenantID) { return deploymentsPerTenant.get(tenantID); }
   public static Deployment getDefault() { return getDeployment(0); }
   

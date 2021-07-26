@@ -430,6 +430,8 @@ public class ReportService extends GUIService
   public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
 	  JSONObject responseJSON = super.generateResponseJSON(guiManagedObject, fullDetails, date);
+	  
+	  responseJSON.put("tenantID", guiManagedObject.getTenantID());
 
 	  if (guiManagedObject instanceof Report)
 	  {

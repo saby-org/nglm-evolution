@@ -28,7 +28,6 @@
   "datacubeJobsScheduling.comment": "CRON are scheduled in the time-zone of THE TENANT. Two jobs scheduled at midnight for different tenants in different time-zone will therefore not run at the same time. Fields name are JobUniqueID. They can be used to override them in the project deployment.json. You can also add new jobs by using a different JobUniqueID. BEWARE that every job will have an instance for EVERY tenants. CRON Format: minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
   "datacubeJobsScheduling" : {
     "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
-    "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "ODR-daily-definitive"           : { "type": "ODR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
     "ODR-hourly-preview"             : { "type": "ODR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "ODR-hourly-definitive"          : { "type": "ODR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
@@ -130,7 +129,9 @@
   },
 
   "hourlyReportCronEntryString"   : "0 * * * *",
+  
   "dailyReportCronEntryString"    : "5 2 * * *",
+  
   "weeklyReportCronEntryString"   : "10 2 * * 0",
   "monthlyReportCronEntryString"  : "15 3 1 * *",
   
