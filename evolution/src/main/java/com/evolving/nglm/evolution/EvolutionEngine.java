@@ -1031,7 +1031,7 @@ public class EvolutionEngine
         (key,value) -> (value instanceof EDRDetails),
         (key,value) -> (value instanceof TokenRedeemed),
         (key,value) -> (value instanceof SubscriberProfileForceUpdateResponse),
-        (key,value) -> (value instanceof OTPInstanceChangeEvent)
+        (key,value) -> (value instanceof OTPInstanceChangeEvent),
         (key,value) -> (value instanceof CleanupSubscriber),
         (key,value) -> (value instanceof AssignSubscriberIDs)
     );
@@ -1826,74 +1826,88 @@ public class EvolutionEngine
 
     Date now = context.now();
 
-    /*****************************************
-    *
-    *  cleanup
-    *  
-    *  If the event contains Cleanup, then tag the subscriber to be cleaned. 
-    *  When the time to clean is reached, then generate an event with subscriber action cleanup immediately.
-    *
-    *****************************************/
+	/*****************************************
+	 *
+	 * cleanup
+	 * 
+	 * If the event contains Cleanup, then tag the subscriber to be cleaned. When
+	 * the time to clean is reached, then generate an event with subscriber action
+	 * cleanup immediately.
+	 *
+	 *****************************************/
 
-    switch (evolutionEvent.getSubscriberAction())
-      {        
-        case Cleanup:
-          // move the user to terminated state and reference the date of termination, so that is it cleaned later on
-//          subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
-          subscriberState.setCleanupDate(EvolutionUtilities.addTime(SystemTime.getCurrentTime(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(), Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(), Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
-          if(subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
-            {
-              // generate a cleanup immediately event
-              CleanupSubscriber assignSubscriberIDs = new CleanupSubscriber(subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.CleanupImmediate);
-              subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);
-            }
-          
-          SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
-          return subscriberState;
-      
-        case CleanupImmediate:
-        // cleanup the subscriber now... just return null...
-        updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
-        return null; 
-          
-        case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
-        case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution Engine
-          if(previousSubscriberState==null) return null;
-          SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
-          return subscriberState;
-      }
-    // make effective clean if needed...
-    if(subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
-        // time to trig an immediate cleanup event
-        CleanupSubscriber assignSubscriberIDs = new CleanupSubscriber(subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.CleanupImmediate);
-        subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);
-      }
+	switch (evolutionEvent.getSubscriberAction()) {
+	case Cleanup:
+		// move the user to terminated state and reference the date of termination, so
+		// that is it cleaned later on
+		subscriberState.setCleanupDate(EvolutionUtilities.addTime(SystemTime.getCurrentTime(),
+				Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(),
+				Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(),
+				Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
+		if (subscriberState.getCleanupDate().before(SystemTime.getCurrentTime())) {
+			// generate a cleanup immediately event
+			CleanupSubscriber assignSubscriberIDs = new CleanupSubscriber(
+					subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(),
+					SubscriberAction.CleanupImmediate);
+			subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);
+		}
 
-    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
-    
-    /*****************************************
-    *
-    *  handle One Time Password (OTP)
-    *
-    *****************************************/
-    if(evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation()) 
-      {
-        OTPUtils.clearOldOTPs(subscriberProfile, otpTypeService, tenantID);
-      }
-    if(evolutionEvent instanceof OTPInstanceChangeEvent)
-      {
-    	  subscriberState.getOTPInstanceChangeEvent().add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent)evolutionEvent, subscriberState, otpTypeService, subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, context, tenantID));
-    	  subscriberStateUpdated = true;
-      }
+		SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
+				subscriberState);
+		return subscriberState;
 
-    /*****************************************
-    *
-    *  update subscriber hierarchy
-    *
-    *****************************************/
+	case CleanupImmediate:
+		// cleanup the subscriber now... just return null...
+		updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
+		return null;
 
-    if(evolutionEvent instanceof UpdateParentRelationshipEvent && ((UpdateParentRelationshipEvent)evolutionEvent).getNewParent() != null && ((UpdateParentRelationshipEvent)evolutionEvent).getRelationshipDisplay() != null)
-      {
+	case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
+	case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution
+							// Engine
+		if (previousSubscriberState == null)
+			return null;
+		SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
+				subscriberState);
+		return subscriberState;
+	}
+	// make effective clean if needed...
+	if (subscriberState.getCleanupDate() != null
+			&& subscriberState.getCleanupDate().before(SystemTime.getCurrentTime())) {
+		// time to trig an immediate cleanup event
+		CleanupSubscriber cleanupSubscriber = new CleanupSubscriber(
+				subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(),
+				SubscriberAction.CleanupImmediate);
+		subscriberState.getImmediateCleanupActions().add(cleanupSubscriber);
+	}
+
+	SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
+			extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
+
+	/*****************************************
+	 *
+	 * handle One Time Password (OTP)
+	 *
+	 *****************************************/
+	if (evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation) evolutionEvent).getPeriodicEvaluation()) {
+		OTPUtils.clearOldOTPs(subscriberProfile, otpTypeService, tenantID);
+	}
+	if (evolutionEvent instanceof OTPInstanceChangeEvent) {
+		subscriberState.getOTPInstanceChangeEvent()
+				.add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent) evolutionEvent, subscriberState, otpTypeService,
+						subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, context,
+						tenantID));
+		subscriberStateUpdated = true;
+	}
+
+	/*****************************************
+	 *
+	 * update subscriber hierarchy
+	 *
+	 *****************************************/
+
+	if (evolutionEvent instanceof UpdateParentRelationshipEvent
+			&& ((UpdateParentRelationshipEvent) evolutionEvent).getNewParent() != null
+			&& ((UpdateParentRelationshipEvent) evolutionEvent).getRelationshipDisplay() != null) {
         UpdateParentRelationshipEvent updateParentRelationshipEvent = (UpdateParentRelationshipEvent)evolutionEvent;
         // This is the children that set or unset a parent for a given type of relation
         String relationshipDisplay = updateParentRelationshipEvent.getRelationshipDisplay();

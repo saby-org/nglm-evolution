@@ -284,7 +284,7 @@ public class ThirdPartyManager
     getCustomerEDRs(36),
     generateOTP(37),
     checkOTP(38),
-    getVoucherList(39);
+    getVoucherList(39),
     deleteCustomer(40);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }

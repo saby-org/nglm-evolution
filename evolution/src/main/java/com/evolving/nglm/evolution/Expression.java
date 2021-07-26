@@ -3587,14 +3587,6 @@ public abstract class Expression
       switch (functionCall)
         {
           case UnknownFunction:
-            for(Map.Entry<String, CriterionField> criterion : criterionContext.getCriterionFields(this.tenantID).entrySet()) {
-              System.out.println(criterion.getKey());
-              if(identifier.toLowerCase().equals(criterion.getKey().toLowerCase()))
-                {
-                  System.out.println("found for " + identifier + " CRITERION " + criterion.getKey());
-                }
-            }
-            
             CriterionField criterionField = criterionContext.getCriterionFields(this.tenantID).get(identifier); // TODO EVPRO-99 check if tenant 0 here, not sure at all...
             if (criterionField != null)
               {
