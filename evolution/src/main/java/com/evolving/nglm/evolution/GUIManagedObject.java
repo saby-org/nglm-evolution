@@ -170,6 +170,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(DialogTemplate.serde());
     guiManagedObjectSerdes.add(UploadedFile.serde());
     guiManagedObjectSerdes.add(com.evolving.nglm.evolution.Target.serde());
+    guiManagedObjectSerdes.add(CommunicationChannel.serde());
     guiManagedObjectSerdes.add(CommunicationChannelBlackoutPeriod.serde());
     guiManagedObjectSerdes.add(CommunicationChannelTimeWindow.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramPoints.serde());
