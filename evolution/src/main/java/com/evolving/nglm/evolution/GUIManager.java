@@ -29461,7 +29461,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           journeyJSON.put("id", journeyID);
           journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
           journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
-          journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
+          journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay());
           journeyJSON.put("effectiveStartDate", RLMDateUtils.formatDateForREST(startDate, timeZone));
           journeyJSON.put("effectiveEndDate", RLMDateUtils.formatDateForREST(endDate, timeZone));
           journeyJSON.put("effectiveEntryPeriodEndDate", RLMDateUtils.formatDateForREST(recRawEffectiveEntryPeriodEndDate, timeZone));
