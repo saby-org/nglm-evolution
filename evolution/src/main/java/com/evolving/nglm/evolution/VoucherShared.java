@@ -12,6 +12,7 @@ import org.json.simple.JSONObject;
 import java.util.*;
 import java.util.Date;
 
+@GUIDependencyDef(objectType = "vouchershared", serviceClass = VoucherService.class, dependencies = {"supplier", "vouchertype", "workflow" })
 public class VoucherShared extends Voucher implements StockableItem {
 
   private static Schema schema = null;
@@ -110,6 +111,23 @@ public class VoucherShared extends Voucher implements StockableItem {
     commonValidate(voucherTypeService, now);
     // check type id is Shared
     if(!voucherTypeService.getActiveVoucherType(getVoucherTypeId(),now).getCodeType().equals(VoucherType.CodeType.Shared)) throw new GUIManagerException("wrong VoucherType for "+this.getClass().getSimpleName(),getVoucherTypeId());
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> wrkflowIDs = new ArrayList<String>();
+    List<String> supplierIDs = new ArrayList<String>();
+    List<String> vouchertypeIDs = new ArrayList<String>();
+    
+    if (getWorkflowID() != null && !getWorkflowID().isEmpty()) wrkflowIDs.add(getWorkflowID());
+    supplierIDs.add(getSupplierID());
+    vouchertypeIDs.add(getVoucherTypeId());
+    
+    result.put("workflow", wrkflowIDs);
+    result.put("supplier", supplierIDs);
+    result.put("vouchertype", vouchertypeIDs);
+    return result;
   }
 
 }
