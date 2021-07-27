@@ -1812,7 +1812,8 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
+            //dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
+            dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
 
           }
 

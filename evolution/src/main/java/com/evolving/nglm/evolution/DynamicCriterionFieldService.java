@@ -6,9 +6,13 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -17,6 +21,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
@@ -445,6 +450,99 @@ public class DynamicCriterionFieldService extends GUIService
                 break;
               }
           }
+      }
+  }
+  
+  
+  /*****************************************
+  *
+  *  addComplexObjectTypeAdvanceCriterionFields
+  *
+  *****************************************/
+
+  public void addComplexObjectTypeAdvanceCriterionFields(ComplexObjectType complexObjectType, boolean newComplexObjectType, int tenantID) throws GUIManagerException
+  {
+    //
+    //  subcriteria
+    //
+    
+    List<JSONObject> subcriteriaJSONArray = new LinkedList<JSONObject>();
+    Map<String, Object>subcriteriaMap = new HashMap<String, Object>();
+    String subCriteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + "element";
+    String subCriteriaDisplay = complexObjectType.getGUIManagedObjectDisplay() + " Element Name";
+    List<JSONObject> subCriteriaAvailableValues = new ArrayList<JSONObject>();
+    for (String s : complexObjectType.getAvailableElements())
+      {
+        Map<String, String> availableValueMap = new HashMap<String, String>();
+        availableValueMap.put("id", s);
+        availableValueMap.put("display", s);
+        subCriteriaAvailableValues.add(JSONUtilities.encodeObject(availableValueMap));
+      }
+    subcriteriaMap.put("id", subCriteriaID);
+    subcriteriaMap.put("display", subCriteriaDisplay);
+    subcriteriaMap.put("dataType", "string");
+    subcriteriaMap.put("availableValues", JSONUtilities.encodeArray(subCriteriaAvailableValues));
+    subcriteriaJSONArray.add(JSONUtilities.encodeObject(subcriteriaMap));
+    
+    for(Map.Entry<Integer, ComplexObjectTypeSubfield> subfield : complexObjectType.getSubfields().entrySet())
+      {
+        String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName();
+        String criteriaDisplay = "Complex " + complexObjectType.getGUIManagedObjectDisplay() + " " + subfield.getValue().getSubfieldName();
+        String retriever = null;
+        switch (subfield.getValue().getCriterionDataType())
+        {
+          case IntegerCriterion :
+            retriever = "getComplexObjectLong";
+            break;
+            
+          case StringCriterion :
+            retriever = "getComplexObjectString";
+            break;
+            
+          case BooleanCriterion :
+            retriever = "getComplexObjectBoolean";
+            break;
+            
+          case DateCriterion :
+            retriever = "getComplexObjectDate";
+            break;
+            
+          case StringSetCriterion :
+            retriever = "getComplexObjectStringSet";
+            break;
+            
+          default:
+            log.warn("ComplexObjectType: Unsupported CriterionDataType " + subfield.getValue().getCriterionDataType());
+            throw new GUIManagerException("ComplexObjectType: Unsupported CriterionDataType ", subfield.getValue().getCriterionDataType().getExternalRepresentation());
+        }
+        
+        Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
+        criterionFieldJSONMAP.put("id", criteriaID);
+        criterionFieldJSONMAP.put("display", criteriaDisplay);
+        criterionFieldJSONMAP.put("dataType", subfield.getValue().getCriterionDataType().getExternalRepresentation());
+        criterionFieldJSONMAP.put("tagMaxLength", 100);
+        //criterionFieldJSONMAP.put("esField", esField);
+        criterionFieldJSONMAP.put("retriever", retriever);
+        criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
+        
+        //
+        //  criterionFieldJSON
+        //
+        
+        JSONObject criterionFieldJSON = JSONUtilities.encodeObject(criterionFieldJSONMAP);
+        
+        //
+        //  criterionField
+        //
+        
+        DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON, tenantID);
+        log.info("RAJ K put criteria {}", criterionField.getJSONRepresentation());
+        
+        //
+        //  put
+        //
+
+        putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);
       }
   }
 
