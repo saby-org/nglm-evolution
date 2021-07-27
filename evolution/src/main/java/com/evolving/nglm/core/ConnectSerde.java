@@ -300,6 +300,10 @@ public class ConnectSerde<T> implements Serde<T>
               packedData = concretePackedData;
               break;
 
+            case INT16:
+              packedData = concretePackedData;
+              break;
+
             case INT32:
               packedData = concretePackedData;
               break;
