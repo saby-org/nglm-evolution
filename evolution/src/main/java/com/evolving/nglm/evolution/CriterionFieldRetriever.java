@@ -1242,6 +1242,7 @@ public abstract class CriterionFieldRetriever
      return status;
   }
   
+  @Deprecated //should use getComplexObjectXXXX
   public static Object getComplexObjectFieldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
     // parse the field name to retrieve the good value...
